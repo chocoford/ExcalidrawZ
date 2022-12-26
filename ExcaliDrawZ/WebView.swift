@@ -8,14 +8,27 @@
 import Foundation
 import SwiftUI
 import WebKit
+import Combine
 
+class ExcaliDrawWebView: WKWebView {
+    static let shared: WKWebView //= .init()
+    = {
+        let webView = WKWebView()
+        webView.load(URLRequest(url: URL(string: "https://excalidraw.com")!))
+        return webView
+    }()
+}
 
 struct WebView {
-    let webView: WKWebView
+    let webView: WKWebView = ExcaliDrawWebView.shared
+    var currentFile: URL?
+        
+    @Binding var loading: Bool
     
-    init(url: URL) {
-        webView = WKWebView(frame: .zero)
-        webView.load(URLRequest(url: url))
+    init(url: URL, currentFile: URL? = nil, isLoading: Binding<Bool>) {
+        self._loading = isLoading
+        self.currentFile = currentFile
+        executeScript()
     }
 }
 
@@ -25,20 +38,79 @@ extension WebView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> WKWebView {
         webView.navigationDelegate = context.coordinator
-        
+        webView.configuration.userContentController.add(context.coordinator, name: "iosListener")
         return webView
     }
     
     func updateNSView(_ nsView: WKWebView, context: Context) {
-        
+        context.coordinator.parent = self
     }
-    
+
+    func makeCoordinator() -> WebViewCoordinator {
+        WebViewCoordinator(self)
+    }
 }
 
 
 extension WebView {
-    func makeCoordinator() -> WebViewCoordinator {
-        WebViewCoordinator(self)
+    func getScript(url: URL?) -> String {
+        if let url = url {
+            guard let data = try? Data(contentsOf: url) else { return "" }
+            
+            
+            var buffer = [UInt8].init(repeating: 0, count: data.count)
+            data.copyBytes(to: &buffer, count: data.count)
+            
+            let jsCode =
+"""
+(() => {
+    let uint8Array = new Uint8Array(\(buffer));
+    let file = new File([uint8Array], "abc.excalidraw", {
+      lastModified: new Date(2020, 1, 1).getTime(),
+      type: "",
+    });
+
+    function FakeDataTransfer(file) {
+      this.dropEffect = "all";
+      this.effectAllowed = "all";
+      this.items = [{getAsFileSystemHandle: async () => null}];
+      this.types = ["Files"];
+      this.getData = function () {
+        return file;
+      };
+      this.files = {
+        item: (index) => {
+          return file;
+        },
+      };
+    }
+
+    let fakeDropEvent = new DragEvent("drop", {bubbles: true});
+    fakeDropEvent.simulated = true;
+    Object.defineProperty(fakeDropEvent, "dataTransfer", {
+      value: new FakeDataTransfer(file),
+    });
+
+    let node = document.querySelector(".excalidraw-container");
+    node.dispatchEvent(fakeDropEvent);
+})()
+"""
+            return jsCode
+        }
+        return ""
+    }
+    
+    func executeScript() {
+        guard let url = currentFile else { return }
+        self.webView.evaluateJavaScript(getScript(url: url)) { response, error in
+            if let error = error {
+                dump(error)
+                return
+            }
+            Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
+                loading = false
+            }
+        }
     }
 }
 
@@ -55,12 +127,10 @@ extension WebViewCoordinator: WKNavigationDelegate {
         return (.allow, preferences)
     }
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
-        dump(navigationAction)
         return .allow
     }
     
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
-        dump(navigationResponse)
         if let scheme = navigationResponse.response.url?.scheme,
            scheme == "blob" {
             return .download
@@ -82,6 +152,10 @@ extension WebViewCoordinator: WKNavigationDelegate {
         print("didStartProvisionalNavigation")
     }
     
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        print("didFinish")
+    }
+        
     func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {
         download.delegate = self
     }
@@ -96,12 +170,10 @@ extension WebViewCoordinator: WKNavigationDelegate {
 
 extension WebViewCoordinator: WKDownloadDelegate {
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
-        let url = AppFileManager.shared.assetDir.appendingPathComponent(UUID().uuidString, conformingTo: .fileURL)
-//        dump(url, name: "download url")
+        // TODO: Can not get file name, cuz appState.name is undefined.
+        let url = AppFileManager.shared.assetDir.appendingPathComponent("Untitled", conformingTo: .fileURL).appendingPathExtension("excalidraw")
         return url
     }
-    
-    
 }
 
 extension WebViewCoordinator: WKUIDelegate {
@@ -110,6 +182,14 @@ extension WebViewCoordinator: WKUIDelegate {
         return nil
     }
 }
+
+extension WebViewCoordinator: WKScriptMessageHandler {
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        dump(message)
+    }
+    
+}
+
 
 #elseif os(iOS)
 

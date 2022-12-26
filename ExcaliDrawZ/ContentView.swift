@@ -9,26 +9,58 @@ import SwiftUI
 
 
 struct ContentView: View {
+    @ObservedObject var fileManager: AppFileManager = .shared
+    
+    @State private var currentFileURL: URL?
+    @State private var isLoading = false
+    
     var body: some View {
         NavigationSplitView {
-            List(AppFileManager.shared.assetFiles) { fileInfo in
-                VStack(alignment: .leading) {
-                    Text(fileInfo.name ?? "Untitled")
-                        .font(.title3)
-                    
-                    HStack {
-                        Text((fileInfo.updatedAt ?? .distantPast).formatted())
-                            .font(.footnote)
-                        Spacer()
-                        Text(fileInfo.size ?? "")
-                            .font(.footnote)
+            List(fileManager.assetFiles, selection: $currentFileURL) { fileInfo in
+                NavigationLink(value: fileInfo.url) {
+                    VStack(alignment: .leading) {
+                        HStack(spacing: 0) {
+                            Text(fileInfo.name ?? "Untitled")
+                                .layoutPriority(1)
+                            Text("." + (fileInfo.fileExtension ?? ""))
+                                .opacity(0.5)
+                        }
+                        .font(.headline)
+                        .fontWeight(.medium)
+                        
+                        HStack {
+                            Text((fileInfo.updatedAt ?? .distantPast).formatted())
+                                .font(.footnote)
+                            Spacer()
+                            Text(fileInfo.size ?? "")
+                                .font(.footnote)
+                        }
                     }
                 }
-                .padding(.vertical)
             }
         } detail: {
             if let url = URL(string: "https://excalidraw.com") {
-                WebView(url: url)
+                GeometryReader { geometry in
+                    ZStack {
+                        WebView(url: url, currentFile: currentFileURL, isLoading: $isLoading)
+                        if isLoading {
+                            ZStack {
+                                Rectangle()
+                                    .frame(width: geometry.size.width, height: geometry.size.height)
+                                    .backgroundStyle(.ultraThickMaterial)
+                                VStack {
+                                    LoadingView(strokeColor: Color.accentColor)
+                                    Text("Loading...")
+                                }
+                            }
+                        }
+                    }
+                    .transition(.opacity)
+                    .animation(.default, value: isLoading)
+                    .onChange(of: currentFileURL) { newValue in
+                        isLoading = true
+                    }
+                }
             }
         }
     }
