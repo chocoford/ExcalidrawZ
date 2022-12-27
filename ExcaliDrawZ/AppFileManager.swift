@@ -82,6 +82,30 @@ extension AppFileManager {
             assetFiles = []
         }
     }
+    
+    func generateNewFileName() -> URL {
+        var name = assetDir.appending(path: "Untitled").appendingPathExtension("excalidraw")
+        var i = 1
+        while fileManager.fileExists(atPath: name.path(percentEncoded: false)) {
+            name = assetDir.appending(path: "Untitled \(i)").appendingPathExtension("excalidraw")
+            i += 1
+        }
+        return name
+    }
+    
+    func createNewFile() -> URL? {
+        guard let template = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else { return nil }
+        let desURL = generateNewFileName()
+        do {
+            let data = try Data(contentsOf: template)
+            fileManager.createFile(atPath: desURL.path(percentEncoded: false), contents: data)
+            self.assetFiles.insert(self.generateFileInfo(url: desURL)!, at: 0)
+            return desURL
+        } catch {
+            dump(error)
+            return nil
+        }
+    }
 }
 
 private extension AppFileManager {

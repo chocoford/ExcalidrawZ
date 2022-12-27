@@ -7,7 +7,7 @@
 
 import Foundation
 
-func load<T: Decodable>(_ filename: String) -> T {
+func loadResource<T: Decodable>(_ filename: String) -> T {
     let data: Data
 
     guard let file = Bundle.main.url(forResource: filename, withExtension: nil)
