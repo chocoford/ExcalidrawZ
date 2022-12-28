@@ -18,9 +18,7 @@ struct ExcaliDrawZApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(store)
-                .onReceive(store.objectWillChange) { _ in
-                    print("=========== store will change ============")
-                }
         }
+        .defaultSize(width: 900, height: 500)
     }
 }

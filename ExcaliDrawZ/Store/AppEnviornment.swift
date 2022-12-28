@@ -8,4 +8,5 @@
 import Foundation
 
 struct AppEnvironment {
+    let fileManager = AppFileManager()
 }

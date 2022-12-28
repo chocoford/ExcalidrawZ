@@ -41,7 +41,7 @@ extension WebView: NSViewRepresentable {
     typealias NSViewType = WKWebView
 
     func makeNSView(context: Context) -> WKWebView {
-        logger.info("on makeNSView")
+//        logger.info("on makeNSView")
         webView.navigationDelegate = context.coordinator
         return webView
     }
@@ -49,9 +49,9 @@ extension WebView: NSViewRepresentable {
     func updateNSView(_ nsView: WKWebView, context: Context) {
         context.coordinator.parent = self
         guard !self.webView.isLoading else { return }
-        logger.info("on updateNSView, currentFile: \(currentFile?.lastPathComponent.description ?? "nil"), previousFile: \(previousFile?.lastPathComponent.description ?? "nil")")
+//        logger.info("on updateNSView, currentFile: \(currentFile?.lastPathComponent.description ?? "nil"), previousFile: \(previousFile?.lastPathComponent.description ?? "nil")")
         Task {
-            if currentFile != previousFile {
+            if currentFile == nil || currentFile != previousFile {
                 await self.loadCurrentFile()
                 context.coordinator.watchLocalStorage()
             }
@@ -139,10 +139,10 @@ extension WebView {
 //        }
     }
     
+    @MainActor
     func changeCurrentFile(_ url: URL?) {
         logger.debug("change current file: \(url?.lastPathComponent.description ?? "nil")")
         currentFile = url
-        
     }
 }
 
@@ -268,8 +268,8 @@ extension WebViewCoordinator: WKDownloadDelegate {
         logger.info("on download. currentFile: \(currentFile?.lastPathComponent ?? "unknwon")")
 
         if currentFile == nil {
-            let url = AppFileManager.shared.createNewFile()
-            self.parent.changeCurrentFile(url)
+            let url = await AppFileManager.shared.createNewFile()
+            await self.parent.changeCurrentFile(url)
 
         } else if let url = generateTempSavedFile() {
             logger.info("on download. currentFile: \(currentFile?.lastPathComponent ?? "unknwon"), temp file: \(url.lastPathComponent)")

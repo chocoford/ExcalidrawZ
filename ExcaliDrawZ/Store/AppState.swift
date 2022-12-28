@@ -9,11 +9,13 @@ import Foundation
 import Combine
 
 struct AppState {
+    var assetFiles: [AppFileManager.FileInfo] = []
     var currentFile: URL? = nil
 }
 
 enum AppAction {
     case setCurrentFile(_ file: URL?)
+    case loadAssets
 }
 
 typealias AppStore = Store<AppState, AppAction, AppEnvironment>
@@ -22,6 +24,9 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
     switch action {
         case .setCurrentFile(let file):
             state.currentFile = file
+            
+        case .loadAssets:
+            state.assetFiles = environment.fileManager.loadAssets()
     }
     
     return Empty()

@@ -25,28 +25,54 @@ struct Reducer<State, Action, Environment> {
 final class Store<State, Action, Environment>: ObservableObject {
     @Published private(set) var state: State
     
-    private let environment: Environment
     private let reducer: (inout State, Action) -> AnyPublisher<Action, Never>
+    private var effectCancellables: [UUID: AnyCancellable] = [:]
     private let queue: DispatchQueue
     
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Store")
 
     init(state: State, reducer: Reducer<State, Action, Environment>, environment: Environment,
-         subscriptionQueue: DispatchQueue = .init(label: "com.chocoford.store")) {
+         subscriptionQueue: DispatchQueue = .init(label: "com.chocoford.ExcaliDrawZ.store")) {
         self.state = state
         self.reducer = { state, action in
             reducer(&state, action, environment)
         }
-        self.environment = environment
         self.queue = subscriptionQueue
     }
     
-    func send(_ action: Action) async {        
+    
+    @available(*, deprecated, message: "Not ready")
+    func send(_ action: Action) async {
+        logger.info("send: \(String(describing: action))")
         /// AnyPublisher<Action, Never>
         let effect = reducer(&state, action)
         
         for await action in effect.values {
             await send(action)
+        }
+    }
+    
+    func send(_ action: Action) {
+        logger.info("send: \(String(describing: action))")
+        /// AnyPublisher<Action, Never>
+        let effect = reducer(&state, action)
+        
+        var didComplete = false
+        let uuid = UUID()
+        
+        let cancellable = effect
+            .subscribe(on: queue)
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] _ in
+                    didComplete = true
+                    self?.effectCancellables[uuid] = nil
+                },
+                receiveValue: { [weak self] in self?.send($0) }
+            )
+        
+        if !didComplete {
+            effectCancellables[uuid] = cancellable
         }
     }
 }
@@ -58,11 +84,7 @@ extension Store {
     ) -> Binding<Value> {
         Binding<Value>(
             get: { self.state[keyPath: keyPath] },
-            set: { val in
-                Task {
-                   await self.send(toAction(val))
-                }
-            }
+            set: { self.send(toAction($0)) }
         )
     }
 }

@@ -13,16 +13,18 @@ struct ExcaliDrawView: View {
 
     @State private var isLoading = true
 
-    var currentFile: URL? {
-        store.state.currentFile
+
+    private var currentFile: Binding<URL?> {
+        store.binding(for: \.currentFile,
+                      toAction: {
+            return .setCurrentFile($0)
+        })
     }
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-//                store.binding(for: \.currentFile,
-//                                                   toAction: { .setCurrentFile($0) })
-                WebView(currentFile: .constant(store.state.currentFile),
+                WebView(currentFile: currentFile,
                         loading: $isLoading)
                 
                 if isLoading {
@@ -41,17 +43,19 @@ struct ExcaliDrawView: View {
             .animation(.default, value: isLoading)
             .onChange(of: isLoading) { newValue in
                 if !newValue {
-                    Task {
-                        await store.send(.setCurrentFile(fileManager.assetFiles.first?.url))
-                    }
+                    store.send(.setCurrentFile(fileManager.assetFiles.first?.url))
                 }
             }
         }
     }
 }
 
+#if DEBUG
 struct ExcaliDrawView_Previews: PreviewProvider {
     static var previews: some View {
         ExcaliDrawView()
+            .environmentObject(AppStore.preview)
+            .frame(width: 800, height: 600)
     }
 }
+#endif

@@ -24,7 +24,7 @@ struct ContentView: View {
     
     private var selectedFile: Binding<URL?> {
         store.binding(for: \.currentFile) {
-            .setCurrentFile($0)
+            return .setCurrentFile($0)
         }
     }
     
@@ -49,6 +49,7 @@ struct ContentView: View {
                             .font(.footnote)
                     }
                 }
+                .padding(.vertical)
             }
         }
     }
@@ -57,9 +58,7 @@ struct ContentView: View {
 extension ContentView {
     func createNewFile() {
         guard let file = fileManager.createNewFile() else { return }
-        Task {
-            await store.send(.setCurrentFile(file))
-        }
+        store.send(.setCurrentFile(file))
     }
 }
 
@@ -97,8 +96,13 @@ extension ContentView {
     }
 #endif
 }
+
+#if DEBUG
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
+            .environmentObject(AppStore.preview)
+            .frame(minWidth: 800, minHeight: 600)
     }
 }
+#endif

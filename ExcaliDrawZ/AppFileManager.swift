@@ -12,7 +12,8 @@ import OSLog
 class AppFileManager: ObservableObject {
     static let shared = AppFileManager()
     
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "AppFileManager")
+    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!,
+                        category: "AppFileManager")
     
     let fileManager = FileManager.default
     let rootDir = try! FileManager.default
@@ -23,7 +24,7 @@ class AppFileManager: ObservableObject {
         rootDir.appendingPathComponent("assets", conformingTo: .directory)
     }
         
-    private(set) var assetFiles: [FileInfo] = []
+    @Published private(set) var assetFiles: [FileInfo] = []
 
     lazy var monitor: DirMonitor = DirMonitor(dir: assetDir, queue: .init(label: "com.chocoford.ExcaliDrawZ-DirMonitor"))
     
@@ -39,13 +40,12 @@ class AppFileManager: ObservableObject {
         if !monitor.start() {
             fatalError("Dir monitor starts failed.")
         }
-        monitorCancellable = monitor.dirWillChange.sink { [weak self] _ in
-            guard let self = self else { return }
-            self.loadFiles()
-            DispatchQueue.main.async {
-                self.objectWillChange.send()
+        monitorCancellable = monitor.dirWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                self.loadFiles()
             }
-        }
     }
 }
 
@@ -60,7 +60,18 @@ extension AppFileManager {
         var size: String?
         
         var id: String {
-            url.path()
+            url.path(percentEncoded: false)
+        }
+    }
+    
+    func loadAssets() -> [FileInfo] {
+        do {
+            return try fileManager
+                .contentsOfDirectory(at: assetDir, includingPropertiesForKeys: nil)
+                .compactMap { generateFileInfo(url: $0) }
+                .sorted { $0.updatedAt ?? .distantPast > $1.updatedAt ?? .distantPast}
+        } catch {
+            return []
         }
     }
     
@@ -85,6 +96,7 @@ extension AppFileManager {
         return name
     }
     
+    @MainActor
     func createNewFile() -> URL? {
         guard let template = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else { return nil }
         let desURL = generateNewFileName()
