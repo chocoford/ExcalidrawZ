@@ -12,6 +12,8 @@ import OSLog
 class AppFileManager: ObservableObject {
     static let shared = AppFileManager()
     
+    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "AppFileManager")
+    
     let fileManager = FileManager.default
     let rootDir = try! FileManager.default
         .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
@@ -48,7 +50,7 @@ class AppFileManager: ObservableObject {
 }
 
 extension AppFileManager {
-    struct FileInfo: Identifiable {
+    struct FileInfo: Identifiable, Hashable {
         var url: URL
         
         var name: String?
@@ -61,16 +63,6 @@ extension AppFileManager {
             url.path()
         }
     }
-    
-//    var assetFiles: [FileInfo] {
-//        do {
-//            return try fileManager
-//                .contentsOfDirectory(at: assetDir, includingPropertiesForKeys: nil)
-//                .compactMap { generateFileInfo(url: $0) }
-//        } catch {
-//            return []
-//        }
-//    }
     
     func loadFiles() {
         do {
@@ -100,16 +92,25 @@ extension AppFileManager {
             let data = try Data(contentsOf: template)
             fileManager.createFile(atPath: desURL.path(percentEncoded: false), contents: data)
             self.assetFiles.insert(self.generateFileInfo(url: desURL)!, at: 0)
+            logger.info("create new file done. \(desURL.lastPathComponent)")
             return desURL
         } catch {
             dump(error)
             return nil
         }
     }
+    
+    func updateFile(_ file: URL, from tempFile: URL) {
+        do {
+            try? FileManager.default.removeItem(at: file)
+            try FileManager.default.moveItem(at: tempFile, to: file)
+        } catch {
+            logger.error("\(error)")
+        }
+    }
 }
 
 private extension AppFileManager {
-
     func generateFileInfo(url: URL) -> FileInfo? {
         var result = FileInfo(url: url, name: String(url.lastPathComponent.split(separator: ".").first ?? "Untitled"))
         guard url.pathExtension == "excalidraw" else { return nil }
@@ -254,10 +255,10 @@ class DirMonitor {
     private func handle(events: [(url: URL, flags: FSEventStreamEventFlags, eventIDs: FSEventStreamEventId)]) {
         // In this example we just print the events with get, prefixed by a
         // count so that we can see the batching in action.
-        logger.info("\(events.count)")
-        for (url, flags, eventID) in events {
-            logger.info("\(eventID) \(flags) \(url.path)")
-        }
+//        logger.info("\(events.count)")
+//        for (url, flags, eventID) in events {
+//            logger.info("\(eventID) \(flags) \(url.path)")
+//        }
         dirWillChange.send(events)
     }
 

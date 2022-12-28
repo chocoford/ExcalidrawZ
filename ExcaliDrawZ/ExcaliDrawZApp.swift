@@ -8,10 +8,19 @@
 import SwiftUI
 
 @main
+@MainActor
 struct ExcaliDrawZApp: App {
+    let store = AppStore(state: AppState(),
+                         reducer: appReducer,
+                         environment: AppEnvironment())
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(store)
+                .onReceive(store.objectWillChange) { _ in
+                    print("=========== store will change ============")
+                }
         }
     }
 }

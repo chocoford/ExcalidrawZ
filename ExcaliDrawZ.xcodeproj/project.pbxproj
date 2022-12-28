@@ -22,6 +22,9 @@
 		397E468F295AAE5E003B824B /* template.excalidraw in Resources */ = {isa = PBXBuildFile; fileRef = 397E468E295AAE5D003B824B /* template.excalidraw */; };
 		39AD1EE7295AC30400DA9657 /* ExcaliDrawView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EE6295AC30400DA9657 /* ExcaliDrawView.swift */; };
 		39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
+		39AD1EEB295B501600DA9657 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEA295B501500DA9657 /* Store.swift */; };
+		39AD1EF0295B504C00DA9657 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEC295B504C00DA9657 /* App.swift */; };
+		39AD1EF2295B504C00DA9657 /* AppEnviornment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +64,9 @@
 		397E468E295AAE5D003B824B /* template.excalidraw */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = template.excalidraw; sourceTree = "<group>"; };
 		39AD1EE6295AC30400DA9657 /* ExcaliDrawView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcaliDrawView.swift; sourceTree = "<group>"; };
 		39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = FakeSaveCommand.js; sourceTree = "<group>"; };
+		39AD1EEA295B501500DA9657 /* Store.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		39AD1EEC295B504C00DA9657 /* App.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+		39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppEnviornment.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,10 +120,12 @@
 				397E4656295838CF003B824B /* ExcaliDrawZApp.swift */,
 				397E4658295838CF003B824B /* ContentView.swift */,
 				39AD1EE6295AC30400DA9657 /* ExcaliDrawView.swift */,
-				397E468329583D81003B824B /* AppFileManager.swift */,
 				397E4681295839B7003B824B /* WebView.swift */,
+				397E468329583D81003B824B /* AppFileManager.swift */,
 				397E468829599E85003B824B /* Utils.swift */,
 				397E468C295A02E7003B824B /* LoadingView.swift */,
+				39AD1EEA295B501500DA9657 /* Store.swift */,
+				39AD1EF4295B505400DA9657 /* Store */,
 				397E468529599DA0003B824B /* Resources */,
 				397E465A295838D0003B824B /* Assets.xcassets */,
 				397E465C295838D0003B824B /* ExcaliDrawZ.entitlements */,
@@ -159,6 +167,15 @@
 				397E468E295AAE5D003B824B /* template.excalidraw */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		39AD1EF4295B505400DA9657 /* Store */ = {
+			isa = PBXGroup;
+			children = (
+				39AD1EEC295B504C00DA9657 /* App.swift */,
+				39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */,
+			);
+			path = Store;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -294,13 +311,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				39AD1EF0295B504C00DA9657 /* App.swift in Sources */,
 				397E468929599E85003B824B /* Utils.swift in Sources */,
 				397E4682295839B7003B824B /* WebView.swift in Sources */,
 				397E4659295838CF003B824B /* ContentView.swift in Sources */,
+				39AD1EEB295B501600DA9657 /* Store.swift in Sources */,
 				397E4657295838CF003B824B /* ExcaliDrawZApp.swift in Sources */,
 				39AD1EE7295AC30400DA9657 /* ExcaliDrawView.swift in Sources */,
 				397E468429583D81003B824B /* AppFileManager.swift in Sources */,
 				397E468D295A02E7003B824B /* LoadingView.swift in Sources */,
+				39AD1EF2295B504C00DA9657 /* AppEnviornment.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

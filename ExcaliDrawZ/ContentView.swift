@@ -9,22 +9,27 @@ import SwiftUI
 
 
 struct ContentView: View {
+    @EnvironmentObject var store: AppStore
     @ObservedObject var fileManager: AppFileManager = .shared
     
-    @State private var currentFileURL: URL?
     
     var body: some View {
         NavigationSplitView {
             sidebarList
                 .toolbar(content: toolbarContent)
         } detail: {
-            ExcaliDrawView(currentFileURL: $currentFileURL)
+            ExcaliDrawView()
         }
     }
     
+    private var selectedFile: Binding<URL?> {
+        store.binding(for: \.currentFile) {
+            .setCurrentFile($0)
+        }
+    }
     
     @ViewBuilder private var sidebarList: some View {
-        List(fileManager.assetFiles, selection: $currentFileURL) { fileInfo in
+        List(fileManager.assetFiles, selection: selectedFile) { fileInfo in
             NavigationLink(value: fileInfo.url) {
                 VStack(alignment: .leading) {
                     HStack(spacing: 0) {
@@ -52,7 +57,9 @@ struct ContentView: View {
 extension ContentView {
     func createNewFile() {
         guard let file = fileManager.createNewFile() else { return }
-        currentFileURL = file
+        Task {
+            await store.send(.setCurrentFile(file))
+        }
     }
 }
 
@@ -76,7 +83,7 @@ extension ContentView {
     @ToolbarContentBuilder
     private func toolbarContent_macOS() -> some ToolbarContent {
         ToolbarItemGroup(placement: .status) {
-            Text(currentFileURL?.lastPathComponent ?? "Untitled.excalidraw")
+            Text(store.state.currentFile?.lastPathComponent ?? "Untitled.excalidraw")
         }
         
         ToolbarItemGroup(placement: .primaryAction) {
