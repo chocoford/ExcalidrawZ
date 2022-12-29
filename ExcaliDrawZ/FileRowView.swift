@@ -98,13 +98,23 @@ struct FileRowView: View {
 }
 
 extension FileRowView {
+    /// Maybe make a global identifier for file is a better way, which will not cause `List` selection change when file name is changed.
     func renameFile() {
         renameMode.toggle()
+        var isCurrentFile = false
+        if fileInfo.url == store.state.currentFile {
+            isCurrentFile = true
+        }
         do {
+            // It will trigger file info change. Causing `List` change its selection.
+            // But the procedure is not synchronizign.
             let url = try AppFileManager.shared.renameFile(fileInfo.url, to: newFilename)
-            print("===============rename file - setCurrentFile \(url.lastPathComponent.description)")
-            DispatchQueue.main.async {
-                store.send(.setCurrentFile(url))
+            
+            if isCurrentFile {
+                // Use async on main thread to make sure `setCurrentFile` will execute after `List`'s selection changing.
+                DispatchQueue.main.async {
+                    store.send(.setCurrentFile(url))
+                }
             }
         } catch {
             renameHasError = true

@@ -18,9 +18,6 @@ struct ContentView: View {
             ZStack{
                 sidebarList
                     .toolbar(content: toolbarContent)
-                if store.state.anyFileNameInEdit {
-                    
-                }
             }
         } detail: {
             ExcaliDrawView()
@@ -37,9 +34,6 @@ struct ContentView: View {
         List(fileManager.assetFiles, selection: selectedFile) { fileInfo in
             FileRowView(fileInfo: fileInfo)
         }
-//        List {
-//            TextField("text", text: $text)
-//        }
     }
 }
 
