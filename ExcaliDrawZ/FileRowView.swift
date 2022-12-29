@@ -7,21 +7,6 @@
 
 import SwiftUI
 
-enum RenameError: LocalizedError {
-    case unexpected(_ error: Error?)
-    case notFound
-    
-    var errorDescription: String? {
-        switch self {
-            case .notFound:
-                return "File not found."
-                
-            case .unexpected(let error):
-                return "Unexpected error: \(error?.localizedDescription ?? "nil")"
-                
-        }
-    }
-}
 
 struct FileRowView: View {
     @EnvironmentObject var store: AppStore
@@ -29,8 +14,11 @@ struct FileRowView: View {
     
     @State private var renameMode: Bool = false
     @State private var newFilename: String = ""
-    @State private var renameHasError: Bool = false
-    @State private var renameError: RenameError? = nil
+    @State private var hasError: Bool = false
+    @State private var error: AppError? = nil
+    
+    @State private var showDeleteAlert: Bool = false
+    
     @FocusState private var isFocused: Bool
 
     var body: some View {
@@ -73,8 +61,21 @@ struct FileRowView: View {
         .contextMenu {
             listRowContextMenu
         }
-        .alert(isPresented: $renameHasError, error: renameError) {
+        .alert(isPresented: $hasError, error: error) {
             
+        }
+        .alert("Are you sure to delete file: \(fileInfo.name ?? "")", isPresented: $showDeleteAlert) {
+            Button(role: .cancel) {
+                showDeleteAlert.toggle()
+            } label: {
+                Text("Cancel")
+            }
+            
+            Button(role: .destructive) {
+                deleteFile()
+            } label: {
+                Text("Delete")
+            }
         }
     }
     
@@ -117,8 +118,17 @@ extension FileRowView {
                 }
             }
         } catch {
-            renameHasError = true
-            renameError = .unexpected(error)
+            hasError = true
+            self.error = .renameError(.unexpected(error))
+        }
+    }
+    
+    func deleteFile() {
+        do {
+            try AppFileManager.shared.removeFile(at: fileInfo.url)
+        } catch {
+            hasError = true
+            self.error = .deleteError(.unexpected(error))
         }
     }
 }
@@ -133,7 +143,7 @@ extension FileRowView {
         }
         
         Button(role: .destructive) {
-            
+            showDeleteAlert.toggle()
         } label: {
             Text("Delete")
         }

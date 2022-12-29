@@ -23,6 +23,10 @@ class AppFileManager: ObservableObject {
     var assetDir: URL {
         rootDir.appendingPathComponent("assets", conformingTo: .directory)
     }
+    
+    var trashDir: URL {
+        rootDir.appendingPathComponent("trash", conformingTo: .directory)
+    }
         
     @Published private(set) var assetFiles: [FileInfo] = []
 
@@ -34,6 +38,7 @@ class AppFileManager: ObservableObject {
         // create asset dir if needed.
         do {
             try fileManager.createDirectory(at: assetDir, withIntermediateDirectories: true)
+            try fileManager.createDirectory(at: trashDir, withIntermediateDirectories: true)
         } catch {
             dump(error)
         }
@@ -120,6 +125,28 @@ extension AppFileManager {
         self.assetFiles[index].url = newURL
         self.assetFiles[index].name = name
         return newURL
+    }
+    
+    func removeFile(at url: URL) throws {
+        guard let index = assetFiles.firstIndex(where: {
+            $0.url == url
+        }) else {
+            throw DeleteError.notFound
+        }
+        guard let originName = url.lastPathComponent.split(separator: ".").first else {
+            throw DeleteError.nameError
+        }
+        
+        let filename = String(originName)
+        
+        var name = trashDir.appending(path: filename).appendingPathExtension("excalidraw")
+        var i = 1
+        while fileManager.fileExists(atPath: name.path(percentEncoded: false)) {
+            name = trashDir.appending(path: "\(filename) (\(i))").appendingPathExtension("excalidraw")
+            i += 1
+        }
+        try FileManager.default.moveItem(at: url, to: name)
+        self.assetFiles.remove(at: index)
     }
 }
 

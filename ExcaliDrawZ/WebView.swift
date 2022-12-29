@@ -41,7 +41,6 @@ extension WebView: NSViewRepresentable {
     typealias NSViewType = WKWebView
 
     func makeNSView(context: Context) -> WKWebView {
-//        logger.info("on makeNSView")
         webView.navigationDelegate = context.coordinator
         return webView
     }
@@ -49,7 +48,6 @@ extension WebView: NSViewRepresentable {
     func updateNSView(_ nsView: WKWebView, context: Context) {
         context.coordinator.parent = self
         guard !self.webView.isLoading else { return }
-//        logger.info("on updateNSView, currentFile: \(currentFile?.lastPathComponent.description ?? "nil"), previousFile: \(previousFile?.lastPathComponent.description ?? "nil")")
         Task {
             if currentFile == nil || currentFile != previousFile {
                 await self.loadCurrentFile()
