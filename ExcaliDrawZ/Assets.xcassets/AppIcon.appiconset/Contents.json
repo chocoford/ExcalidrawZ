@@ -1,56 +1,67 @@
 {
   "images" : [
     {
+      "filename" : "ExcaliDrawZ ios logo.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
     },
     {
+      "filename" : "AppIcon-16.0x16.0@1x.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "16x16"
     },
     {
+      "filename" : "AppIcon-16.0x16.0@2x.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "16x16"
     },
     {
+      "filename" : "AppIcon-32.0x32.0@1x.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "32x32"
     },
     {
+      "filename" : "AppIcon-32.0x32.0@2x.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "32x32"
     },
     {
+      "filename" : "AppIcon-128.0x128.0@1x.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "128x128"
     },
     {
+      "filename" : "AppIcon-128.0x128.0@2x.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "128x128"
     },
     {
+      "filename" : "AppIcon-256.0x256.0@1x.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "256x256"
     },
     {
+      "filename" : "AppIcon-256.0x256.0@2x.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "256x256"
     },
     {
+      "filename" : "AppIcon-512.0x512.0@1x.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "512x512"
     },
     {
+      "filename" : "AppIcon-512.0x512.0@2x.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "512x512"
