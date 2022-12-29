@@ -126,6 +126,7 @@ extension FileRowView {
     func deleteFile() {
         do {
             try AppFileManager.shared.removeFile(at: fileInfo.url)
+            store.send(.setCurrentFile(AppFileManager.shared.assetFiles.first?.url))
         } catch {
             hasError = true
             self.error = .deleteError(.unexpected(error))

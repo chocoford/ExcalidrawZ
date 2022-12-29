@@ -20,13 +20,9 @@ class AppFileManager: ObservableObject {
         .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
         .appendingPathComponent(Bundle.main.bundleIdentifier!, isDirectory: true)
     
-    var assetDir: URL {
-        rootDir.appendingPathComponent("assets", conformingTo: .directory)
-    }
-    
-    var trashDir: URL {
-        rootDir.appendingPathComponent("trash", conformingTo: .directory)
-    }
+    var assetDir: URL { rootDir.appendingPathComponent("assets", conformingTo: .directory) }
+    var trashDir: URL { rootDir.appendingPathComponent("trash", conformingTo: .directory) }
+    var backupDir: URL { rootDir.appendingPathComponent("backup", conformingTo: .directory) }
         
     @Published private(set) var assetFiles: [FileInfo] = []
 
@@ -35,13 +31,38 @@ class AppFileManager: ObservableObject {
     var monitorCancellable: AnyCancellable? = nil
     
     init() {
-        // create asset dir if needed.
+        createDir()
+        backupFiles()
+        configureMonitor()
+    }
+    
+    func backupFiles() {
+        logger.info("backup files...")
+        let today = Date.now.ISO8601Format(.iso8601Date(timeZone: .current))
+        let ok = UnsafeMutablePointer<ObjCBool>.allocate(capacity: 1)
+        ok[0] = false
+        let todayDir = backupDir.appendingPathComponent(today, conformingTo: .directory)
+        guard !fileManager.fileExists(atPath: todayDir.path(percentEncoded: true),
+                                      isDirectory: ok) else { return }
+        ok.deallocate()
+        do {
+            try fileManager.copyItem(at: assetDir, to: todayDir)
+        } catch {
+            logger.error("\(error)")
+        }
+    }
+    
+    func createDir() {
         do {
             try fileManager.createDirectory(at: assetDir, withIntermediateDirectories: true)
             try fileManager.createDirectory(at: trashDir, withIntermediateDirectories: true)
+            try fileManager.createDirectory(at: backupDir, withIntermediateDirectories: true)
         } catch {
-            dump(error)
+            logger.error("\(error)")
         }
+    }
+    
+    func configureMonitor() {
         if !monitor.start() {
             fatalError("Dir monitor starts failed.")
         }
@@ -71,8 +92,11 @@ extension AppFileManager {
         do {
             assetFiles = try fileManager
                 .contentsOfDirectory(at: assetDir, includingPropertiesForKeys: nil)
-                .compactMap { FileInfo(from: $0) }
+                .map { FileInfo(from: $0) }
                 .filter { $0.fileExtension == "excalidraw" }
+//                .sorted(by: {
+//                    $0.name?.hashValue ?? 0 < $1.name?.hashValue ?? 0
+//                })
                 .sorted { $0.updatedAt ?? .distantPast > $1.updatedAt ?? .distantPast}
         } catch {
             assetFiles = []
