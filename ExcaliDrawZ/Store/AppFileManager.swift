@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 import Combine
 import OSLog
 
@@ -70,7 +71,9 @@ class AppFileManager: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                self.loadFiles()
+                withAnimation {
+                    self.loadFiles()
+                }
             }
     }
 }
@@ -120,7 +123,10 @@ extension AppFileManager {
         do {
             let data = try Data(contentsOf: template)
             fileManager.createFile(atPath: desURL.path(percentEncoded: false), contents: data)
-            self.assetFiles.insert(FileInfo(from: desURL), at: 0)
+            withAnimation {
+                self.assetFiles.insert(FileInfo(from: desURL), at: 0)
+            }
+            
             logger.info("create new file done. \(desURL.lastPathComponent)")
             return desURL
         } catch {
@@ -185,6 +191,10 @@ struct FileInfo: Identifiable, Hashable {
     
     var id: String {
         url.path(percentEncoded: false)
+    }
+  
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(url)
     }
     
     init(url: URL, name: String? = nil, fileExtension: String? = nil, createdAt: Date? = nil, updatedAt: Date? = nil, size: String? = nil) {
