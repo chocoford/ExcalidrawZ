@@ -12,11 +12,16 @@ struct ContentView: View {
     @EnvironmentObject var store: AppStore
     @ObservedObject var fileManager: AppFileManager = .shared
     
-    
+    @State private var text = ""
     var body: some View {
         NavigationSplitView {
-            sidebarList
-                .toolbar(content: toolbarContent)
+            ZStack{
+                sidebarList
+                    .toolbar(content: toolbarContent)
+                if store.state.anyFileNameInEdit {
+                    
+                }
+            }
         } detail: {
             ExcaliDrawView()
         }
@@ -30,28 +35,11 @@ struct ContentView: View {
     
     @ViewBuilder private var sidebarList: some View {
         List(fileManager.assetFiles, selection: selectedFile) { fileInfo in
-            NavigationLink(value: fileInfo.url) {
-                VStack(alignment: .leading) {
-                    HStack(spacing: 0) {
-                        Text(fileInfo.name ?? "Untitled")
-                            .layoutPriority(1)
-                        Text("." + (fileInfo.fileExtension ?? ""))
-                            .opacity(0.5)
-                    }
-                    .font(.headline)
-                    .fontWeight(.medium)
-                    
-                    HStack {
-                        Text((fileInfo.updatedAt ?? .distantPast).formatted())
-                            .font(.footnote)
-                        Spacer()
-                        Text(fileInfo.size ?? "")
-                            .font(.footnote)
-                    }
-                }
-                .padding(.vertical)
-            }
+            FileRowView(fileInfo: fileInfo)
         }
+//        List {
+//            TextField("text", text: $text)
+//        }
     }
 }
 
@@ -96,6 +84,8 @@ extension ContentView {
     }
 #endif
 }
+
+
 
 #if DEBUG
 struct ContentView_Previews: PreviewProvider {

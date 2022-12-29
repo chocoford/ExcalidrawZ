@@ -50,25 +50,12 @@ class AppFileManager: ObservableObject {
 }
 
 extension AppFileManager {
-    struct FileInfo: Identifiable, Hashable {
-        var url: URL
-        
-        var name: String?
-        var fileExtension: String?
-        var createdAt: Date?
-        var updatedAt: Date?
-        var size: String?
-        
-        var id: String {
-            url.path(percentEncoded: false)
-        }
-    }
-    
     func loadAssets() -> [FileInfo] {
         do {
             return try fileManager
                 .contentsOfDirectory(at: assetDir, includingPropertiesForKeys: nil)
-                .compactMap { generateFileInfo(url: $0) }
+                .compactMap { FileInfo(from: $0) }
+                .filter { $0.fileExtension == "excalidraw" }
                 .sorted { $0.updatedAt ?? .distantPast > $1.updatedAt ?? .distantPast}
         } catch {
             return []
@@ -79,7 +66,8 @@ extension AppFileManager {
         do {
             assetFiles = try fileManager
                 .contentsOfDirectory(at: assetDir, includingPropertiesForKeys: nil)
-                .compactMap { generateFileInfo(url: $0) }
+                .compactMap { FileInfo(from: $0) }
+                .filter { $0.fileExtension == "excalidraw" }
                 .sorted { $0.updatedAt ?? .distantPast > $1.updatedAt ?? .distantPast}
         } catch {
             assetFiles = []
@@ -103,7 +91,7 @@ extension AppFileManager {
         do {
             let data = try Data(contentsOf: template)
             fileManager.createFile(atPath: desURL.path(percentEncoded: false), contents: data)
-            self.assetFiles.insert(self.generateFileInfo(url: desURL)!, at: 0)
+            self.assetFiles.insert(FileInfo(from: desURL), at: 0)
             logger.info("create new file done. \(desURL.lastPathComponent)")
             return desURL
         } catch {
@@ -120,13 +108,50 @@ extension AppFileManager {
             logger.error("\(error)")
         }
     }
+    
+    func renameFile(_ url: URL, to name: String) throws -> URL {
+        guard let index = self.assetFiles.firstIndex(where: {
+            $0.url == url
+        }) else {
+            throw RenameError.notFound
+        }
+        let newURL = url.deletingLastPathComponent().appending(path: name).appendingPathExtension(url.pathExtension)
+        try FileManager.default.moveItem(at: url, to: newURL)
+        self.assetFiles[index].url = newURL
+        self.assetFiles[index].name = name
+        return newURL
+    }
 }
 
-private extension AppFileManager {
-    func generateFileInfo(url: URL) -> FileInfo? {
-        var result = FileInfo(url: url, name: String(url.lastPathComponent.split(separator: ".").first ?? "Untitled"))
-        guard url.pathExtension == "excalidraw" else { return nil }
-        result.fileExtension = url.pathExtension
+struct FileInfo: Identifiable, Hashable {
+    var url: URL
+    
+    var name: String?
+    var fileExtension: String?
+    var createdAt: Date?
+    var updatedAt: Date?
+    var size: String?
+    
+    var id: String {
+        url.path(percentEncoded: false)
+    }
+    
+    init(url: URL, name: String? = nil, fileExtension: String? = nil, createdAt: Date? = nil, updatedAt: Date? = nil, size: String? = nil) {
+        self.url = url
+        self.name = name
+        self.fileExtension = fileExtension
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.size = size
+    }
+    
+    init(from url: URL) {
+        self.url = url
+        if let name = url.lastPathComponent.split(separator: ".").first {
+            self.name = String(name)
+        }
+        
+        self.fileExtension = url.pathExtension
         
         let path = url.path(percentEncoded: false)
         do {
@@ -134,12 +159,12 @@ private extension AppFileManager {
             
             // MARK: Created At
             if let createdAt = attributes[FileAttributeKey.creationDate] as? Date {
-                result.createdAt = createdAt
+                self.createdAt = createdAt
             }
             
             // MARK: Updated At
             if let updatedAt = attributes[FileAttributeKey.modificationDate] as? Date {
-                result.updatedAt = updatedAt
+                self.updatedAt = updatedAt
             }
             
             // MARK: Size
@@ -147,19 +172,23 @@ private extension AppFileManager {
                 let fileKB = size / 1024
                 if fileKB > 1024 {
                     let fileMB: Double = fileKB / 1024
-                    result.size = String(format: "%.1fMB", fileMB)
+                    self.size = String(format: "%.1fMB", fileMB)
                 } else {
-                    result.size = String(format: "%.1fKB", fileKB)
+                    self.size = String(format: "%.1fKB", fileKB)
                 }
             }
         } catch {
             dump(error)
         }
-        return result
-            
     }
+
 }
 
+#if DEBUG
+extension FileInfo {
+    static let preview: FileInfo = .init(from: Bundle.main.url(forResource: "template", withExtension: "excalidraw")!)
+}
+#endif
 
 class DirMonitor {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "DirMonitor")

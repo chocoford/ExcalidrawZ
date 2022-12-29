@@ -9,13 +9,15 @@ import Foundation
 import Combine
 
 struct AppState {
-    var assetFiles: [AppFileManager.FileInfo] = []
+    var assetFiles: [FileInfo] = []
     var currentFile: URL? = nil
+    var anyFileNameInEdit: Bool = false
 }
 
 enum AppAction {
     case setCurrentFile(_ file: URL?)
     case loadAssets
+    case toggleFileNameEdit
 }
 
 typealias AppStore = Store<AppState, AppAction, AppEnvironment>
@@ -27,6 +29,9 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
             
         case .loadAssets:
             state.assetFiles = environment.fileManager.loadAssets()
+            
+        case .toggleFileNameEdit:
+            state.anyFileNameInEdit.toggle()
     }
     
     return Empty()

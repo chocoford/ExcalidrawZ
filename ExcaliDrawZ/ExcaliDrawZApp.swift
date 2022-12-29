@@ -19,6 +19,8 @@ struct ExcaliDrawZApp: App {
             ContentView()
                 .environmentObject(store)
         }
+        #if os(macOS)
         .defaultSize(width: 900, height: 500)
+        #endif
     }
 }
