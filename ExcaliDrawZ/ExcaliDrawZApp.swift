@@ -13,7 +13,11 @@ struct ExcaliDrawZApp: App {
     let store = AppStore(state: AppState(),
                          reducer: appReducer,
                          environment: AppEnvironment())
-    
+#if os(macOS)
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+#elseif os(iOS)
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+#endif
     var body: some Scene {
         WindowGroup {
             ContentView()
