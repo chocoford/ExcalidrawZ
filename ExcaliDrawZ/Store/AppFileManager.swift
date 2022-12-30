@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import SwiftUI
 import Combine
 import OSLog
 
@@ -71,9 +70,7 @@ class AppFileManager: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                withAnimation {
-                    self.loadFiles()
-                }
+                self.loadFiles()
             }
     }
 }
@@ -106,6 +103,12 @@ extension AppFileManager {
         }
     }
     
+//    func shuffleFiles() {
+//        withAnimation {
+//            assetFiles.shuffle()
+//        }
+//    }
+    
     func generateNewFileName() -> URL {
         var name = assetDir.appending(path: "Untitled").appendingPathExtension("excalidraw")
         var i = 1
@@ -123,10 +126,7 @@ extension AppFileManager {
         do {
             let data = try Data(contentsOf: template)
             fileManager.createFile(atPath: desURL.path(percentEncoded: false), contents: data)
-            withAnimation {
-                self.assetFiles.insert(FileInfo(from: desURL), at: 0)
-            }
-            
+            self.assetFiles.insert(FileInfo(from: desURL), at: 0)
             logger.info("create new file done. \(desURL.lastPathComponent)")
             return desURL
         } catch {

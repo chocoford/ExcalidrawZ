@@ -15,10 +15,13 @@ struct ContentView: View {
     @State private var text = ""
     var body: some View {
         NavigationSplitView {
-            ZStack{
-                sidebarList
-                    .toolbar(content: toolbarContent)
+            List {
+                Text("Default")
             }
+//            .navigationTitle("Folder")
+        } content: {
+            sidebarList
+                .toolbar(content: toolbarContent)
         } detail: {
             ExcaliDrawView()
         }
@@ -34,6 +37,12 @@ struct ContentView: View {
         List(fileManager.assetFiles, selection: selectedFile) { fileInfo in
             FileRowView(fileInfo: fileInfo)
         }
+        .animation(.easeIn, value: fileManager.assetFiles)
+//        Button {
+//            fileManager.shuffleFiles()
+//        } label: {
+//            Text("shuffle")
+//        }
     }
 }
 

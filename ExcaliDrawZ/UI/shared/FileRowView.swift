@@ -44,6 +44,7 @@ struct FileRowView: View {
                 }
                 .font(.headline)
                 .fontWeight(.medium)
+                .lineLimit(1)
                 
                 HStack {
                     Text((fileInfo.updatedAt ?? .distantPast).formatted())
