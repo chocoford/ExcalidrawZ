@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Foundation
 
 
 struct ContentView: View {
@@ -13,12 +14,30 @@ struct ContentView: View {
     @ObservedObject var fileManager: AppFileManager = .shared
     
     @State private var text = ""
+    
+    private var hasError: Binding<Bool> {
+        store.binding(for: \.hasError) {
+            .setHasError($0)
+        }
+    }
+    
     var body: some View {
+        content
+        .alert(isPresented: hasError,
+               error: store.state.error,
+               actions: { error in
+            
+        }, message: { error in
+//            Text(error.errorDescription ?? "")
+        })
+    }
+    
+    @ViewBuilder private var content: some View {
         NavigationSplitView {
             List {
                 Text("Default")
             }
-//            .navigationTitle("Folder")
+            .navigationTitle("Folder")
         } content: {
             sidebarList
                 .toolbar(content: toolbarContent)
@@ -26,6 +45,7 @@ struct ContentView: View {
             ExcaliDrawView()
         }
     }
+
     
     private var selectedFile: Binding<URL?> {
         store.binding(for: \.currentFile) {
@@ -38,11 +58,6 @@ struct ContentView: View {
             FileRowView(fileInfo: fileInfo)
         }
         .animation(.easeIn, value: fileManager.assetFiles)
-//        Button {
-//            fileManager.shuffleFiles()
-//        } label: {
-//            Text("shuffle")
-//        }
     }
 }
 
@@ -78,11 +93,39 @@ extension ContentView {
         
         ToolbarItemGroup(placement: .primaryAction) {
             Spacer()
+            // import
+            Button {
+                let panel = ExcaliDrawOpenPanel()
+                panel.allowsMultipleSelection = false
+                panel.canChooseDirectories = false
+                panel.allowedContentTypes = [.init(filenameExtension: "excalidraw")].compactMap{ $0 }
+                if panel.runModal() == .OK {
+                    if let url = panel.url {
+                        do {
+                            let importedURL = try fileManager.importFile(from: url)
+                            store.send(.setCurrentFile(importedURL))
+                        } catch let error as ImportError {
+                            store.send(.setError(.importError(error)))
+                        } catch {
+                            store.send(.setError(.importError(.unexpected(error))))
+                        }
+                    } else {
+                        store.send(.setError(.importError(.invalidURL)))
+                    }
+                }
+            } label: {
+                Image(systemName: "square.and.arrow.down")
+            }
+            
+            // create
             Button {
                 createNewFile()
             } label: {
                 Image(systemName: "square.and.pencil")
             }
+            
+           
+
         }
     }
 #endif

@@ -18,6 +18,7 @@ struct ExcaliDrawZApp: App {
 #elseif os(iOS)
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 #endif
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -28,3 +29,4 @@ struct ExcaliDrawZApp: App {
         #endif
     }
 }
+

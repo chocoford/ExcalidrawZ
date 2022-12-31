@@ -13,7 +13,6 @@ struct ExcaliDrawView: View {
 
     @State private var isLoading = true
 
-
     private var currentFile: Binding<URL?> {
         store.binding(for: \.currentFile,
                       toAction: {

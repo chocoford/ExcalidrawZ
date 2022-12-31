@@ -27,6 +27,8 @@
 		397F98DA295EDF61009BED55 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98D9295EDF61009BED55 /* File.swift */; };
 		397F98DC295EDF74009BED55 /* Group.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98DB295EDF74009BED55 /* Group.swift */; };
 		397F98DE295EE18E009BED55 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98DD295EE18E009BED55 /* AppDelegate.swift */; };
+		397F98E0295F3233009BED55 /* DirMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98DF295F3233009BED55 /* DirMonitor.swift */; };
+		397F98E229607D58009BED55 /* ExcaliDrawOpenPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98E129607D58009BED55 /* ExcaliDrawOpenPanel.swift */; };
 		39AD1EE7295AC30400DA9657 /* ExcaliDrawView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EE6295AC30400DA9657 /* ExcaliDrawView.swift */; };
 		39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
 		39AD1EEB295B501600DA9657 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEA295B501500DA9657 /* Store.swift */; };
@@ -76,6 +78,8 @@
 		397F98D9295EDF61009BED55 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
 		397F98DB295EDF74009BED55 /* Group.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Group.swift; sourceTree = "<group>"; };
 		397F98DD295EE18E009BED55 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		397F98DF295F3233009BED55 /* DirMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirMonitor.swift; sourceTree = "<group>"; };
+		397F98E129607D58009BED55 /* ExcaliDrawOpenPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcaliDrawOpenPanel.swift; sourceTree = "<group>"; };
 		39AD1EE6295AC30400DA9657 /* ExcaliDrawView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcaliDrawView.swift; sourceTree = "<group>"; };
 		39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = FakeSaveCommand.js; sourceTree = "<group>"; };
 		39AD1EEA295B501500DA9657 /* Store.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
@@ -195,6 +199,8 @@
 				397E468829599E85003B824B /* Utils.swift */,
 				397F98CF295DA071009BED55 /* Error.swift */,
 				39AD1EEA295B501500DA9657 /* Store.swift */,
+				397F98DF295F3233009BED55 /* DirMonitor.swift */,
+				397F98E129607D58009BED55 /* ExcaliDrawOpenPanel.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -380,6 +386,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				397F98E0295F3233009BED55 /* DirMonitor.swift in Sources */,
 				397F98D3295DC121009BED55 /* TestView.swift in Sources */,
 				39AD1EF0295B504C00DA9657 /* AppState.swift in Sources */,
 				397F98CB295CBC01009BED55 /* FileRowView.swift in Sources */,
@@ -389,6 +396,7 @@
 				397E4682295839B7003B824B /* WebView.swift in Sources */,
 				397E4659295838CF003B824B /* ContentView.swift in Sources */,
 				39AD1EEB295B501600DA9657 /* Store.swift in Sources */,
+				397F98E229607D58009BED55 /* ExcaliDrawOpenPanel.swift in Sources */,
 				397E4657295838CF003B824B /* ExcaliDrawZApp.swift in Sources */,
 				39AD1EE7295AC30400DA9657 /* ExcaliDrawView.swift in Sources */,
 				397F98DA295EDF61009BED55 /* File.swift in Sources */,
@@ -554,7 +562,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcaliDrawZ/ExcaliDrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcaliDrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = EQSKXJ7B7B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -595,7 +603,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcaliDrawZ/ExcaliDrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcaliDrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 85UKH2MY8J;
 				ENABLE_HARDENED_RUNTIME = YES;

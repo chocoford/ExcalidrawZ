@@ -11,13 +11,21 @@ import Combine
 struct AppState {
     var assetFiles: [FileInfo] = []
     var currentFile: URL? = nil
+//    var currentFolder: URL
     var anyFileNameInEdit: Bool = false
+    
+    var hasError: Bool = false
+    var error: AppError? = nil
 }
 
 enum AppAction {
     case setCurrentFile(_ file: URL?)
     case loadAssets
     case toggleFileNameEdit
+    
+    // error
+    case setHasError(_ hasError: Bool)
+    case setError(_ error: AppError)
 }
 
 typealias AppStore = Store<AppState, AppAction, AppEnvironment>
@@ -32,6 +40,13 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
             
         case .toggleFileNameEdit:
             state.anyFileNameInEdit.toggle()
+            
+        case .setHasError(let hasError):
+            state.hasError = hasError
+            
+        case .setError(let error):
+            state.error = error
+            state.hasError = true
     }
     
     return Empty()
