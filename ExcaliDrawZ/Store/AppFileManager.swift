@@ -150,11 +150,8 @@ extension AppFileManager {
     @MainActor
     func importFile(from url: URL) throws -> URL {
         guard url.pathExtension == "excalidraw" else { throw AppError.importError(.invalidURL) }
-        let desURL = defaultGroupURL.appendingPathComponent(url.lastPathComponent, conformingTo: .fileURL)
+        let desURL = avoidDuplicate(url: defaultGroupURL.appendingPathComponent(url.lastPathComponent, conformingTo: .fileURL))
         let data = try Data(contentsOf: url)
-        guard !fileManager.fileExists(atPath: desURL.path(percentEncoded: false)) else {
-            throw AppError.importError(.alreadyExist)
-        }
         guard fileManager.createFile(atPath: desURL.path(percentEncoded: false), contents: data) else {
             throw AppError.importError(.createError)
         }
@@ -204,6 +201,18 @@ extension AppFileManager {
         }
         try FileManager.default.moveItem(at: url, to: name)
         self.assetFiles.remove(at: index)
+    }
+    
+    func avoidDuplicate(url: URL) -> URL {
+        var result = url
+        let name = String(url.lastPathComponent.split(separator: ".").first ?? "Untitled")
+        let dir = url.deletingLastPathComponent()
+        var i = 1
+        while fileManager.fileExists(atPath: result.path(percentEncoded: false)) {
+            result = dir.appending(path: "\(name) \(i)").appendingPathExtension("excalidraw")
+            i += 1
+        }
+        return result
     }
 }
 

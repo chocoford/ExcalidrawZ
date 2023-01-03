@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3914876D2960AFD10042927A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 3914876C2960AFD10042927A /* Sparkle */; };
+		3914876F2961D6D00042927A /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3914876E2961D6D00042927A /* UpdateChecker.swift */; };
+		391487712961D9AE0042927A /* CheckForUpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391487702961D9AE0042927A /* CheckForUpdatesView.swift */; };
 		397E4657295838CF003B824B /* ExcaliDrawZApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4656295838CF003B824B /* ExcaliDrawZApp.swift */; };
 		397E4659295838CF003B824B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4658295838CF003B824B /* ContentView.swift */; };
 		397E465B295838D0003B824B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 397E465A295838D0003B824B /* Assets.xcassets */; };
@@ -54,6 +57,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		3914876E2961D6D00042927A /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
+		391487702961D9AE0042927A /* CheckForUpdatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesView.swift; sourceTree = "<group>"; };
+		39148772296316720042927A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		397E4653295838CF003B824B /* ExcaliDrawZ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExcaliDrawZ.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		397E4656295838CF003B824B /* ExcaliDrawZApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcaliDrawZApp.swift; sourceTree = "<group>"; };
 		397E4658295838CF003B824B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -92,6 +98,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3914876D2960AFD10042927A /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -135,6 +142,7 @@
 		397E4655295838CF003B824B /* ExcaliDrawZ */ = {
 			isa = PBXGroup;
 			children = (
+				39148772296316720042927A /* Info.plist */,
 				397E4656295838CF003B824B /* ExcaliDrawZApp.swift */,
 				397F98DD295EE18E009BED55 /* AppDelegate.swift */,
 				397F98D5295DC150009BED55 /* UI */,
@@ -198,6 +206,7 @@
 			children = (
 				397E468829599E85003B824B /* Utils.swift */,
 				397F98CF295DA071009BED55 /* Error.swift */,
+				3914876E2961D6D00042927A /* UpdateChecker.swift */,
 				39AD1EEA295B501500DA9657 /* Store.swift */,
 				397F98DF295F3233009BED55 /* DirMonitor.swift */,
 				397F98E129607D58009BED55 /* ExcaliDrawOpenPanel.swift */,
@@ -221,6 +230,7 @@
 				39AD1EE6295AC30400DA9657 /* ExcaliDrawView.swift */,
 				397E4681295839B7003B824B /* WebView.swift */,
 				397F98CA295CBC01009BED55 /* FileRowView.swift */,
+				391487702961D9AE0042927A /* CheckForUpdatesView.swift */,
 			);
 			path = shared;
 			sourceTree = "<group>";
@@ -269,6 +279,9 @@
 			dependencies = (
 			);
 			name = ExcaliDrawZ;
+			packageProductDependencies = (
+				3914876C2960AFD10042927A /* Sparkle */,
+			);
 			productName = ExcaliDrawZ;
 			productReference = 397E4653295838CF003B824B /* ExcaliDrawZ.app */;
 			productType = "com.apple.product-type.application";
@@ -341,6 +354,9 @@
 				Base,
 			);
 			mainGroup = 397E464A295838CF003B824B;
+			packageReferences = (
+				3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			productRefGroup = 397E4654295838CF003B824B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -396,6 +412,7 @@
 				397E4682295839B7003B824B /* WebView.swift in Sources */,
 				397E4659295838CF003B824B /* ContentView.swift in Sources */,
 				39AD1EEB295B501600DA9657 /* Store.swift in Sources */,
+				3914876F2961D6D00042927A /* UpdateChecker.swift in Sources */,
 				397F98E229607D58009BED55 /* ExcaliDrawOpenPanel.swift in Sources */,
 				397E4657295838CF003B824B /* ExcaliDrawZApp.swift in Sources */,
 				39AD1EE7295AC30400DA9657 /* ExcaliDrawView.swift in Sources */,
@@ -405,6 +422,7 @@
 				397F98CE295CC1A5009BED55 /* View+Extension.swift in Sources */,
 				397F98DE295EE18E009BED55 /* AppDelegate.swift in Sources */,
 				39AD1EF2295B504C00DA9657 /* AppEnviornment.swift in Sources */,
+				391487712961D9AE0042927A /* CheckForUpdatesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -562,12 +580,13 @@
 				CODE_SIGN_ENTITLEMENTS = ExcaliDrawZ/ExcaliDrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcaliDrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = EQSKXJ7B7B;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ExcaliDrawZ/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "ExcaliDrawZ-Debug";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -584,7 +603,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.ExcaliDrawZ;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -603,12 +622,13 @@
 				CODE_SIGN_ENTITLEMENTS = ExcaliDrawZ/ExcaliDrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcaliDrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 85UKH2MY8J;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ExcaliDrawZ/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ExcaliDrawZ;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -625,7 +645,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.visionwx.chocoford.ExcaliDrawZ;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -766,6 +786,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3914876C2960AFD10042927A /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 397E464B295838CF003B824B /* Project object */;
 }
