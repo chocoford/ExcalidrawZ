@@ -29,11 +29,7 @@ class AppFileManager: ObservableObject {
     lazy var defaultGroup: GroupInfo = .init(url: defaultGroupURL)
     
     @Published private(set) var assetFiles: [FileInfo] = []
-    @Published private(set) var assetGroups: [GroupInfo] = [] {
-        didSet {
-            loadFiles()
-        }
-    }
+    @Published private(set) var assetGroups: [GroupInfo] = []
 
     lazy var monitor: DirMonitor = DirMonitor(dir: assetDir, queue: .init(label: "com.chocoford.ExcaliDrawZ-DirMonitor"))
     
@@ -106,20 +102,11 @@ extension AppFileManager {
                                      includingPropertiesForKeys: nil)
                 .map { FileInfo(from: $0) }
                 .filter { $0.fileExtension == "excalidraw" }
-//                .sorted(by: {
-//                    $0.name?.hashValue ?? 0 < $1.name?.hashValue ?? 0
-//                })
                 .sorted { $0.updatedAt ?? .distantPast > $1.updatedAt ?? .distantPast}
         } catch {
             assetFiles = []
         }
     }
-    
-//    func shuffleFiles() {
-//        withAnimation {
-//            assetFiles.shuffle()
-//        }
-//    }
     
     func generateNewFileName() -> URL {
         var name = defaultGroupURL.appending(path: "Untitled").appendingPathExtension("excalidraw")

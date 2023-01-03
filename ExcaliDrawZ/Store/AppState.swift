@@ -11,7 +11,7 @@ import Combine
 struct AppState {
     var assetFiles: [FileInfo] = []
     var currentFile: URL? = nil
-//    var currentFolder: URL
+    var currentGroup: URL = AppFileManager.shared.defaultGroupURL
     var anyFileNameInEdit: Bool = false
     
     var hasError: Bool = false
@@ -19,6 +19,7 @@ struct AppState {
 }
 
 enum AppAction {
+    case setCurrentGroup(_ group: URL)
     case setCurrentFile(_ file: URL?)
     case loadAssets
     case toggleFileNameEdit
@@ -32,6 +33,9 @@ typealias AppStore = Store<AppState, AppAction, AppEnvironment>
 
 let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, action, environment in
     switch action {
+        case .setCurrentGroup(let group):
+            state.currentGroup = group
+            
         case .setCurrentFile(let file):
             state.currentFile = file
             

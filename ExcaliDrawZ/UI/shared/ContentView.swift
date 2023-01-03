@@ -32,10 +32,16 @@ struct ContentView: View {
         })
     }
     
+    private var selectedGroup: Binding<URL> {
+        store.binding(for: \.currentGroup) {
+            return .setCurrentGroup($0)
+        }
+    }
+    
     @ViewBuilder private var content: some View {
         NavigationSplitView {
-            List {
-                Text("Default")
+            List(fileManager.assetGroups, selection: selectedGroup) { group in
+                NavigationLink(group.name, value: group.url)
             }
             .navigationTitle("Folder")
         } content: {
