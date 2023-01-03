@@ -138,7 +138,7 @@ extension AppFileManager {
     func importFile(from url: URL) throws -> URL {
         guard url.pathExtension == "excalidraw" else { throw AppError.importError(.invalidURL) }
         let desURL = avoidDuplicate(url: defaultGroupURL.appendingPathComponent(url.lastPathComponent, conformingTo: .fileURL))
-        let data = try Data(contentsOf: url)
+        let data = try Data(contentsOf: url, options: .uncached) // .uncached fix import bug occur in x86 mac
         guard fileManager.createFile(atPath: desURL.path(percentEncoded: false), contents: data) else {
             throw AppError.importError(.createError)
         }
