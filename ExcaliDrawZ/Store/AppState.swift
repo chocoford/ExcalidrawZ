@@ -29,6 +29,8 @@ enum AppAction {
     case renameFile(of: FileInfo, newName: String)
     case deleteFile(_ file: FileInfo)
     
+    case createGroup(_ name: String)
+    
     case toggleFileNameEdit
     
     // error
@@ -42,6 +44,8 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
     switch action {
         case .setCurrentGroup(let group):
             state.currentGroup = group
+            state.assetFiles = environment.fileManager.loadFiles(in: state.currentGroup)
+            state.currentFile = state.assetFiles.first?.url
             
         case .setCurrentFile(let file):
             if file == nil && state.assetFiles.count > 0 {
@@ -114,6 +118,16 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                     .eraseToAnyPublisher()
             } catch {
                 return Just(AppAction.setError(.unexpected(error)))
+                    .eraseToAnyPublisher()
+            }
+            
+        case .createGroup(let name):
+            do {
+                let groupInfo = try environment.fileManager.createNewFolder(name: name)
+                state.assetGroups.append(groupInfo)
+                state.currentGroup = groupInfo
+            } catch {
+                return Just(.setError(.fileError(.unexpected(error))))
                     .eraseToAnyPublisher()
             }
             

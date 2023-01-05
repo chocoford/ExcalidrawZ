@@ -104,6 +104,12 @@ extension AppFileManager {
         }
     }
     
+    func createNewFolder(name: String) throws -> GroupInfo {
+        let url = assetDir.appendingPathComponent(name, conformingTo: .directory)
+        try fileManager.createDirectory(at: url, withIntermediateDirectories: false)
+        return GroupInfo(url: url)
+    }
+    
     func importFile(from url: URL, to group: GroupInfo) throws -> URL {
         guard url.pathExtension == "excalidraw" else { throw AppError.fileError(.invalidURL) }
         let desURL = avoidDuplicate(url: group.url.appendingPathComponent(url.lastPathComponent, conformingTo: .fileURL))

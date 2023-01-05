@@ -33,14 +33,14 @@ struct GroupSidebarView: View {
             NavigationLink(group.name, value: group)
         }
         .navigationTitle("Folder")
-
+        
         HStack {
             Button {
                 showCreateFolderDialog.toggle()
             } label: {
                 Label("New folder", systemImage: "plus.circle")
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.borderless)
             
             Spacer()
         }
@@ -81,7 +81,7 @@ extension GroupSidebarView {
         let name = "New Folder"
         var result = name
         var i = 1
-        while store.state.assetGroups.first(where: {$0.name == name}) != nil {
+        while store.state.assetGroups.first(where: {$0.name == result}) != nil {
             result = "\(name) \(i)"
             i += 1
         }
@@ -89,6 +89,7 @@ extension GroupSidebarView {
     }
     
     func createFolder() {
+        store.send(.createGroup(newFolderName))
         showCreateFolderDialog.toggle()
     }
 }
