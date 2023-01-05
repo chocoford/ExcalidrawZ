@@ -116,7 +116,9 @@ class DirMonitor {
         // In this example we just print the events with get, prefixed by a
         // count so that we can see the batching in action.
         logger.info("file changed.")
-        dirWillChange.send(events)
+        DispatchQueue.main.async {
+            self.dirWillChange.send(events)
+        }
     }
 
     func stop() {

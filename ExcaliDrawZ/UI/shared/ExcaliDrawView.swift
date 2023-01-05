@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ExcaliDrawView: View {
     @EnvironmentObject var store: AppStore
-    @ObservedObject var fileManager: AppFileManager = .shared
 
     @State private var isLoading = true
 
@@ -23,7 +22,8 @@ struct ExcaliDrawView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                WebView(currentFile: currentFile,
+                WebView(store: store,
+                        currentFile: currentFile,
                         loading: $isLoading)
                 
                 if isLoading {
@@ -42,7 +42,7 @@ struct ExcaliDrawView: View {
             .animation(.default, value: isLoading)
             .onChange(of: isLoading) { newValue in
                 if !newValue {
-                    store.send(.setCurrentFile(fileManager.assetFiles.first?.url))
+                    store.send(.setCurrentFile(store.state.assetFiles.first?.url))
                 }
             }
         }

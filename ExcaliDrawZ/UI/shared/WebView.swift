@@ -31,6 +31,8 @@ struct WebView {
     // must use a static variable
     let webView: WKWebView = ExcaliDrawWebView.shared
     
+    @ObservedObject var store: AppStore
+    
     @State private var previousFile: URL? = nil
     @Binding var currentFile: URL?
     @Binding var loading: Bool
@@ -121,7 +123,9 @@ extension WebView {
                 return
             }
             Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
-                loading = false
+                DispatchQueue.main.async {
+                    self.loading = false
+                }
             }
         }
         
@@ -168,7 +172,7 @@ class WebViewCoordinator: NSObject {
                     self.logger.error("\(error)")
                     return
                 }
-//                self.logger.debug("watching version: \(response as? String ?? "nil")")
+
                 if let versionString = response as? String,
                    let version = Int(versionString),
                    self.lastVersion < version {
@@ -262,12 +266,12 @@ extension WebViewCoordinator: WKDownloadDelegate {
 
     /// if `currentFile` is nil, will generate a file named `Untitled`.
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
-        let currentFile = self.parent.currentFile
+        let currentFile = await self.parent.currentFile
         logger.info("on download. currentFile: \(currentFile?.lastPathComponent ?? "unknwon")")
 
         if currentFile == nil {
-            let url = await AppFileManager.shared.createNewFile()
-            await self.parent.changeCurrentFile(url)
+            let file = AppFileManager.shared.createNewFile(at: AppFileManager.shared.defaultGroupURL)
+            await self.parent.changeCurrentFile(file?.url)
 
         } else if let url = generateTempSavedFile() {
             logger.info("on download. currentFile: \(currentFile?.lastPathComponent ?? "unknwon"), temp file: \(url.lastPathComponent)")

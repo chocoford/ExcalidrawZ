@@ -10,8 +10,12 @@ import Foundation
 struct FileInfo: Identifiable, Hashable {
     var url: URL
     
-    var name: String?
-    var fileExtension: String?
+    var name: String? {
+        String(url.lastPathComponent.split(separator: ".").first)
+    }
+    var fileExtension: String? {
+        url.pathExtension
+    }
     var createdAt: Date?
     var updatedAt: Date?
     var size: String?
@@ -24,10 +28,8 @@ struct FileInfo: Identifiable, Hashable {
         hasher.combine(url)
     }
     
-    init(url: URL, name: String? = nil, fileExtension: String? = nil, createdAt: Date? = nil, updatedAt: Date? = nil, size: String? = nil) {
+    init(url: URL, createdAt: Date? = nil, updatedAt: Date? = nil, size: String? = nil) {
         self.url = url
-        self.name = name
-        self.fileExtension = fileExtension
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.size = size
@@ -35,11 +37,6 @@ struct FileInfo: Identifiable, Hashable {
     
     init(from url: URL) {
         self.url = url
-        if let name = url.lastPathComponent.split(separator: ".").first {
-            self.name = String(name)
-        }
-        
-        self.fileExtension = url.pathExtension
         
         let path = url.path(percentEncoded: false)
         do {
@@ -70,6 +67,13 @@ struct FileInfo: Identifiable, Hashable {
         }
     }
 
+    mutating func rename(to name: String) {
+        let newURL = url.deletingLastPathComponent().appendingPathComponent(name).appendingPathExtension("excalidraw")
+//        if FileManager.default.fileExists(atPath: newURL.path(percentEncoded: false)) {
+//            throw FileError.alreadyExist
+//        }
+        self.url = newURL
+    }
 }
 
 #if DEBUG

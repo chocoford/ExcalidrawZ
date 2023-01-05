@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3901E25E29652AD800E79788 /* URL+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3901E25D29652AD800E79788 /* URL+Extension.swift */; };
+		3901E26029656FC500E79788 /* GroupSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3901E25F29656FC500E79788 /* GroupSidebarView.swift */; };
+		3901E2622965704400E79788 /* FileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3901E2612965704400E79788 /* FileListView.swift */; };
+		3908EB942966E7690054A3ED /* Array+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB932966E7690054A3ED /* Array+Extension.swift */; };
+		3908EB96296719170054A3ED /* String+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB95296719170054A3ED /* String+Extension.swift */; };
 		3914876D2960AFD10042927A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 3914876C2960AFD10042927A /* Sparkle */; };
 		3914876F2961D6D00042927A /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3914876E2961D6D00042927A /* UpdateChecker.swift */; };
 		391487712961D9AE0042927A /* CheckForUpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391487702961D9AE0042927A /* CheckForUpdatesView.swift */; };
@@ -57,6 +62,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		3901E25D29652AD800E79788 /* URL+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+Extension.swift"; sourceTree = "<group>"; };
+		3901E25F29656FC500E79788 /* GroupSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupSidebarView.swift; sourceTree = "<group>"; };
+		3901E2612965704400E79788 /* FileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileListView.swift; sourceTree = "<group>"; };
+		3908EB932966E7690054A3ED /* Array+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Array+Extension.swift"; sourceTree = "<group>"; };
+		3908EB95296719170054A3ED /* String+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extension.swift"; sourceTree = "<group>"; };
 		3914876E2961D6D00042927A /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		391487702961D9AE0042927A /* CheckForUpdatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesView.swift; sourceTree = "<group>"; };
 		39148772296316720042927A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -197,6 +207,9 @@
 			isa = PBXGroup;
 			children = (
 				397F98CD295CC1A5009BED55 /* View+Extension.swift */,
+				3908EB95296719170054A3ED /* String+Extension.swift */,
+				3901E25D29652AD800E79788 /* URL+Extension.swift */,
+				3908EB932966E7690054A3ED /* Array+Extension.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -227,6 +240,8 @@
 			isa = PBXGroup;
 			children = (
 				397E4658295838CF003B824B /* ContentView.swift */,
+				3901E25F29656FC500E79788 /* GroupSidebarView.swift */,
+				3901E2612965704400E79788 /* FileListView.swift */,
 				39AD1EE6295AC30400DA9657 /* ExcaliDrawView.swift */,
 				397E4681295839B7003B824B /* WebView.swift */,
 				397F98CA295CBC01009BED55 /* FileRowView.swift */,
@@ -405,7 +420,11 @@
 				397F98E0295F3233009BED55 /* DirMonitor.swift in Sources */,
 				397F98D3295DC121009BED55 /* TestView.swift in Sources */,
 				39AD1EF0295B504C00DA9657 /* AppState.swift in Sources */,
+				3901E25E29652AD800E79788 /* URL+Extension.swift in Sources */,
 				397F98CB295CBC01009BED55 /* FileRowView.swift in Sources */,
+				3901E26029656FC500E79788 /* GroupSidebarView.swift in Sources */,
+				3908EB96296719170054A3ED /* String+Extension.swift in Sources */,
+				3908EB942966E7690054A3ED /* Array+Extension.swift in Sources */,
 				397F98DC295EDF74009BED55 /* Group.swift in Sources */,
 				397E468929599E85003B824B /* Utils.swift in Sources */,
 				397F98D0295DA071009BED55 /* Error.swift in Sources */,
@@ -420,6 +439,7 @@
 				397E468429583D81003B824B /* AppFileManager.swift in Sources */,
 				397E468D295A02E7003B824B /* LoadingView.swift in Sources */,
 				397F98CE295CC1A5009BED55 /* View+Extension.swift in Sources */,
+				3901E2622965704400E79788 /* FileListView.swift in Sources */,
 				397F98DE295EE18E009BED55 /* AppDelegate.swift in Sources */,
 				39AD1EF2295B504C00DA9657 /* AppEnviornment.swift in Sources */,
 				391487712961D9AE0042927A /* CheckForUpdatesView.swift in Sources */,
@@ -582,7 +602,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcaliDrawZ/Preview Content\"";
-				DEVELOPMENT_TEAM = EQSKXJ7B7B;
+				DEVELOPMENT_TEAM = 96RJ77RT4T;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -629,7 +649,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ExcaliDrawZ/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ExcaliDrawZ;
+				INFOPLIST_KEY_CFBundleDisplayName = "ExcaliDrawZ-Debug";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

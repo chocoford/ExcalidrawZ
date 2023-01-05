@@ -16,8 +16,16 @@ struct GroupInfo: Identifiable, Hashable {
     var name: String {
         url.lastPathComponent
     }
+    var createdAt: Date
     
     init(url: URL) {
         self.url = url
+        
+        let attributes = try? FileManager.default.attributesOfItem(atPath: url.path(percentEncoded: false))
+        
+        // MARK: Created At
+        self.createdAt = attributes?[FileAttributeKey.creationDate] as? Date ?? .distantPast
+            
+
     }
 }

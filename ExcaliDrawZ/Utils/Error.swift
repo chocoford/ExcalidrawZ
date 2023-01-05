@@ -8,62 +8,25 @@
 import Foundation
 
 enum AppError: LocalizedError {
-    case renameError(_ error: RenameError)
-    case deleteError(_ error: DeleteError)
-    case importError(_ error: ImportError)
-    
-    var errorDescription: String? {
-        switch self {
-            case .renameError(let error):
-                return error.errorDescription
-            case .deleteError(let error):
-                return error.errorDescription
-            case .importError(let error):
-                return error.errorDescription
-        }
-    }
-}
-
-
-
-enum RenameError: LocalizedError {
     case unexpected(_ error: Error?)
-    case notFound
+    case fileError(_ error: FileError)
+    case dirMonitorError(_ error: DirMonitorError)
     
     var errorDescription: String? {
         switch self {
-            case .notFound:
-                return "File not found."
-                
             case .unexpected(let error):
                 return "Unexpected error: \(error?.localizedDescription ?? "nil")"
-                
+            case .fileError(let error):
+                return error.errorDescription
+            case .dirMonitorError(let error):
+                return error.errorDescription
         }
     }
 }
 
-enum DeleteError: LocalizedError {
+enum FileError: LocalizedError {
     case unexpected(_ error: Error?)
-    case nameError
     case notFound
-    
-    var errorDescription: String? {
-        switch self {
-            case .nameError:
-                return "File name error."
-                
-            case .notFound:
-                return "File not found."
-                
-            case .unexpected(let error):
-                return "Unexpected error: \(error?.localizedDescription ?? "nil")"
-                
-        }
-    }
-}
-
-enum ImportError: LocalizedError {
-    case unexpected(_ error: Error?)
     case invalidURL
     case createError
     case alreadyExist
@@ -72,12 +35,30 @@ enum ImportError: LocalizedError {
         switch self {
             case .unexpected(let error):
                 return "Unexpected error: \(error?.localizedDescription ?? "nil")"
+            case .notFound:
+                return "File not found."
+                
             case .invalidURL:
                 return "Invalid URL."
             case .createError:
                 return "Create file failed."
             case .alreadyExist:
                 return "File already exists."
+        }
+    }
+}
+
+enum DirMonitorError: LocalizedError {
+    case unexpected(_ error: Error?)
+    case startFailed
+    
+    var errorDescription: String? {
+        switch self {
+            case .unexpected(let error):
+                return "Unexpected error: \(error?.localizedDescription ?? "nil")"
+                
+            case .startFailed:
+                return "Directory monitor start failed."
         }
     }
 }

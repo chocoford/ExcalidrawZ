@@ -13,7 +13,8 @@ struct ContentView: View {
     @EnvironmentObject var store: AppStore
     @ObservedObject var fileManager: AppFileManager = .shared
     
-    @State private var text = ""
+    @State private var dirMonitor = DirMonitor(dir: AppFileManager.shared.assetDir,
+                                               queue: .init(label: "com.chocoford.ExcaliDrawZ-DirMonitor"))
     
     private var hasError: Binding<Bool> {
         store.binding(for: \.hasError) {
@@ -28,49 +29,38 @@ struct ContentView: View {
                actions: { error in
             
         }, message: { error in
-//            Text(error.errorDescription ?? "")
+            
         })
-    }
-    
-    private var selectedGroup: Binding<URL> {
-        store.binding(for: \.currentGroup) {
-            return .setCurrentGroup($0)
-        }
-    }
-    
-    @ViewBuilder private var content: some View {
-        NavigationSplitView {
-            List(fileManager.assetGroups, selection: selectedGroup) { group in
-                NavigationLink(group.name, value: group.url)
-            }
-            .navigationTitle("Folder")
-        } content: {
-            sidebarList
-                .toolbar(content: toolbarContent)
-        } detail: {
-            ExcaliDrawView()
-        }
     }
 
     
-    private var selectedFile: Binding<URL?> {
-        store.binding(for: \.currentFile) {
-            return .setCurrentFile($0)
+    @ViewBuilder private var content: some View {
+        NavigationSplitView {
+            GroupSidebarView()
+        } content: {
+            FileListView()
+        } detail: {
+            ExcaliDrawView()
         }
-    }
-    
-    @ViewBuilder private var sidebarList: some View {
-        List(fileManager.assetFiles, selection: selectedFile) { fileInfo in
-            FileRowView(fileInfo: fileInfo)
+        .toolbar(content: toolbarContent)
+        .onAppear(perform: startMonitorFiles)
+        .onReceive(dirMonitor.dirWillChange) { _ in
+            store.send(.loadAssets)
         }
-        .animation(.easeIn, value: fileManager.assetFiles)
     }
 }
 
 extension ContentView {
     func createNewFile() {
-        guard let file = fileManager.createNewFile() else { return }
-        store.send(.setCurrentFile(file))
+        store.send(.newFile)
+    }
+    
+    func startMonitorFiles() {
+        guard dirMonitor.start() else {
+            store.send(.setError(.dirMonitorError(.startFailed)))
+            return
+        }
+        store.send(.loadAssets)
     }
 }
 
@@ -107,16 +97,9 @@ extension ContentView {
                 panel.allowedContentTypes = [.init(filenameExtension: "excalidraw")].compactMap{ $0 }
                 if panel.runModal() == .OK {
                     if let url = panel.url {
-                        do {
-                            let importedURL = try fileManager.importFile(from: url)
-                            store.send(.setCurrentFile(importedURL))
-                        } catch let error as ImportError {
-                            store.send(.setError(.importError(error)))
-                        } catch {
-                            store.send(.setError(.importError(.unexpected(error))))
-                        }
+                        store.send(.importFile(url))
                     } else {
-                        store.send(.setError(.importError(.invalidURL)))
+                        store.send(.setError(.fileError(.invalidURL)))
                     }
                 }
             } label: {
@@ -129,9 +112,6 @@ extension ContentView {
             } label: {
                 Image(systemName: "square.and.pencil")
             }
-            
-           
-
         }
     }
 #endif

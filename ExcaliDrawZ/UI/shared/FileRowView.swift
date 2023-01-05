@@ -14,9 +14,6 @@ struct FileRowView: View {
     
     @State private var renameMode: Bool = false
     @State private var newFilename: String = ""
-    @State private var hasError: Bool = false
-    @State private var error: AppError? = nil
-    
     @State private var showDeleteAlert: Bool = false
     
     @FocusState private var isFocused: Bool
@@ -62,9 +59,6 @@ struct FileRowView: View {
         .contextMenu {
             listRowContextMenu
         }
-        .alert(isPresented: $hasError, error: error) {
-            
-        }
         .alert("Are you sure to delete file: \(fileInfo.name ?? "")", isPresented: $showDeleteAlert) {
             Button(role: .cancel) {
                 showDeleteAlert.toggle()
@@ -103,35 +97,11 @@ extension FileRowView {
     /// Maybe make a global identifier for file is a better way, which will not cause `List` selection change when file name is changed.
     func renameFile() {
         renameMode.toggle()
-        var isCurrentFile = false
-        if fileInfo.url == store.state.currentFile {
-            isCurrentFile = true
-        }
-        do {
-            // It will trigger file info change. Causing `List` change its selection.
-            // But the procedure is not synchronizign.
-            let url = try AppFileManager.shared.renameFile(fileInfo.url, to: newFilename)
-            
-            if isCurrentFile {
-                // Use async on main thread to make sure `setCurrentFile` will execute after `List`'s selection changing.
-                DispatchQueue.main.async {
-                    store.send(.setCurrentFile(url))
-                }
-            }
-        } catch {
-            hasError = true
-            self.error = .renameError(.unexpected(error))
-        }
+        store.send(.renameFile(of: fileInfo, newName: newFilename))
     }
     
     func deleteFile() {
-        do {
-            try AppFileManager.shared.removeFile(at: fileInfo.url)
-            store.send(.setCurrentFile(AppFileManager.shared.assetFiles.first?.url))
-        } catch {
-            hasError = true
-            self.error = .deleteError(.unexpected(error))
-        }
+        store.send(.deleteFile(fileInfo))
     }
 }
 

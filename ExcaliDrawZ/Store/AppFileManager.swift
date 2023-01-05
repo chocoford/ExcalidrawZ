@@ -25,26 +25,15 @@ class AppFileManager: ObservableObject {
     var backupDir: URL { rootDir.appendingPathComponent("backup", conformingTo: .directory) }
        
     var defaultGroupURL: URL { assetDir.appendingPathComponent("default", conformingTo: .directory) }
-    
-    lazy var defaultGroup: GroupInfo = .init(url: defaultGroupURL)
-    
-    @Published private(set) var assetFiles: [FileInfo] = []
-    @Published private(set) var assetGroups: [GroupInfo] = []
-
-    lazy var monitor: DirMonitor = DirMonitor(dir: assetDir, queue: .init(label: "com.chocoford.ExcaliDrawZ-DirMonitor"))
-    
-    var monitorCancellable: AnyCancellable? = nil
-    
+        
     init() {
         performMigration()
         
         createDir()
         backupFiles()
-        configureMonitor()
     }
     
-    func backupFiles() {
-        logger.info("backup files...")
+    private func backupFiles() {
         let today = Date.now.ISO8601Format(.iso8601Date(timeZone: .current))
         let ok = UnsafeMutablePointer<ObjCBool>.allocate(capacity: 1)
         ok[0] = true
@@ -63,31 +52,37 @@ class AppFileManager: ObservableObject {
         }
     }
     
-    func createDir() {
+    private func createDir() {
         try? fileManager.createDirectory(at: assetDir, withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: trashDir, withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: backupDir, withIntermediateDirectories: true)
     }
-    
-    func configureMonitor() {
-        if !monitor.start() {
-            fatalError("Dir monitor starts failed.")
-        }
-        monitorCancellable = monitor.dirWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                self.loadFiles()
-            }
-    }
 }
 
 extension AppFileManager {
-    func loadAssets() -> [FileInfo] {
+    /// load folders
+    func loadGroups() -> [GroupInfo] {
         do {
             return try fileManager
-                .contentsOfDirectory(at: defaultGroupURL, includingPropertiesForKeys: nil)
-                .compactMap { FileInfo(from: $0) }
+                .contentsOfDirectory(at: assetDir,
+                                     includingPropertiesForKeys: nil)
+                .filter { $0.isDirectory }
+                .compactMap { GroupInfo(url: $0) }
+                .sorted(by: {
+                    $0.createdAt < $1.createdAt
+                })
+        } catch {
+            return []
+        }
+    }
+
+    
+    func loadFiles(in group: GroupInfo) -> [FileInfo] {
+        do {
+            return try fileManager
+                .contentsOfDirectory(at: group.url,
+                                     includingPropertiesForKeys: nil)
+                .map { FileInfo(from: $0) }
                 .filter { $0.fileExtension == "excalidraw" }
                 .sorted { $0.updatedAt ?? .distantPast > $1.updatedAt ?? .distantPast}
         } catch {
@@ -95,54 +90,27 @@ extension AppFileManager {
         }
     }
     
-    func loadFiles() {
-        do {
-            assetFiles = try fileManager
-                .contentsOfDirectory(at: defaultGroupURL,
-                                     includingPropertiesForKeys: nil)
-                .map { FileInfo(from: $0) }
-                .filter { $0.fileExtension == "excalidraw" }
-                .sorted { $0.updatedAt ?? .distantPast > $1.updatedAt ?? .distantPast}
-        } catch {
-            assetFiles = []
-        }
-    }
-    
-    func generateNewFileName() -> URL {
-        var name = defaultGroupURL.appending(path: "Untitled").appendingPathExtension("excalidraw")
-        var i = 1
-        while fileManager.fileExists(atPath: name.path(percentEncoded: false)) {
-            name = defaultGroupURL.appending(path: "Untitled \(i)").appendingPathExtension("excalidraw")
-            i += 1
-        }
-        return name
-    }
-    
-    @MainActor
-    func createNewFile() -> URL? {
+    func createNewFile(at dir: URL) -> FileInfo? {
         guard let template = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else { return nil }
-        let desURL = generateNewFileName()
+        let desURL = avoidDuplicate(url: dir.appending(path: "Untitled").appendingPathExtension("excalidraw"))
         do {
             let data = try Data(contentsOf: template)
             fileManager.createFile(atPath: desURL.path(percentEncoded: false), contents: data)
-            self.assetFiles.insert(FileInfo(from: desURL), at: 0)
             logger.info("create new file done. \(desURL.lastPathComponent)")
-            return desURL
+            return FileInfo(from: desURL)
         } catch {
             dump(error)
             return nil
         }
     }
     
-    @MainActor
-    func importFile(from url: URL) throws -> URL {
-        guard url.pathExtension == "excalidraw" else { throw AppError.importError(.invalidURL) }
-        let desURL = avoidDuplicate(url: defaultGroupURL.appendingPathComponent(url.lastPathComponent, conformingTo: .fileURL))
-        let data = try Data(contentsOf: url, options: .uncached) // .uncached fix import bug occur in x86 mac
+    func importFile(from url: URL, to group: GroupInfo) throws -> URL {
+        guard url.pathExtension == "excalidraw" else { throw AppError.fileError(.invalidURL) }
+        let desURL = avoidDuplicate(url: group.url.appendingPathComponent(url.lastPathComponent, conformingTo: .fileURL))
+        let data = try Data(contentsOf: url, options: .uncached) // .uncached fixes the import bug occurs in x86 mac OS
         guard fileManager.createFile(atPath: desURL.path(percentEncoded: false), contents: data) else {
-            throw AppError.importError(.createError)
+            throw AppError.fileError(.createError)
         }
-        self.assetFiles.insert(FileInfo(from: desURL), at: 0)
         return desURL
     }
     
@@ -155,39 +123,20 @@ extension AppFileManager {
         }
     }
     
-    func renameFile(_ url: URL, to name: String) throws -> URL {
-        guard let index = self.assetFiles.firstIndex(where: {
-            $0.url == url
-        }) else {
-            throw RenameError.notFound
-        }
+    func renameFile(_ url: URL, to name: String) throws {
         let newURL = url.deletingLastPathComponent().appending(path: name).appendingPathExtension(url.pathExtension)
         try FileManager.default.moveItem(at: url, to: newURL)
-        self.assetFiles[index].url = newURL
-        self.assetFiles[index].name = name
-        return newURL
+//        return newURL
     }
     
     func removeFile(at url: URL) throws {
-        guard let index = assetFiles.firstIndex(where: {
-            $0.url == url
-        }) else {
-            throw DeleteError.notFound
-        }
         guard let originName = url.lastPathComponent.split(separator: ".").first else {
-            throw DeleteError.nameError
+            throw FileError.invalidURL
         }
         
         let filename = String(originName)
-        
-        var name = trashDir.appending(path: filename).appendingPathExtension("excalidraw")
-        var i = 1
-        while fileManager.fileExists(atPath: name.path(percentEncoded: false)) {
-            name = trashDir.appending(path: "\(filename) (\(i))").appendingPathExtension("excalidraw")
-            i += 1
-        }
-        try FileManager.default.moveItem(at: url, to: name)
-        self.assetFiles.remove(at: index)
+        let trashURL = avoidDuplicate(url: trashDir.appending(path: filename).appendingPathExtension("excalidraw"))
+        try FileManager.default.moveItem(at: url, to: trashURL)
     }
     
     func avoidDuplicate(url: URL) -> URL {
