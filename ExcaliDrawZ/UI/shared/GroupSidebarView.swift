@@ -36,9 +36,7 @@ struct GroupSidebarView: View {
             NavigationLink(group.name ?? "Untitled", value: group)
         }
         .onChange(of: groups, perform: { newValue in
-            
             if newValue.count > 0 && selectedGroup.wrappedValue == nil {
-                print("set to default group")
                 store.send(.setCurrentGroup(groups.first))
             }
         })

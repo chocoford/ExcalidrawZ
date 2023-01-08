@@ -44,7 +44,7 @@ struct FileRowView: View {
                 .lineLimit(1)
                 
                 HStack {
-                    Text((fileInfo.updatedAt ?? .distantPast).formatted())
+                    Text((fileInfo.updatedAt ?? fileInfo.createdAt ?? .distantPast).formatted())
                         .font(.footnote)
                     Spacer()
 //                    Text(fileInfo.size ?? "")
@@ -97,11 +97,11 @@ extension FileRowView {
     /// Maybe make a global identifier for file is a better way, which will not cause `List` selection change when file name is changed.
     func renameFile() {
         renameMode.toggle()
-//        store.send(.renameFile(of: fileInfo, newName: newFilename))
+        store.send(.renameFile(of: fileInfo, newName: newFilename))
     }
     
     func deleteFile() {
-//        store.send(.deleteFile(fileInfo))
+        store.send(.deleteFile(fileInfo))
     }
 }
 

@@ -8,6 +8,6 @@
 import Foundation
 
 struct AppEnvironment {
-    let fileManager = AppFileManager()
+//    let fileManager = AppFileManager()
     let persistence = PersistenceController.shared
 }

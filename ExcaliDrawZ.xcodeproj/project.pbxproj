@@ -45,7 +45,6 @@
 		39AD1EEB295B501600DA9657 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEA295B501500DA9657 /* Store.swift */; };
 		39AD1EF0295B504C00DA9657 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEC295B504C00DA9657 /* AppState.swift */; };
 		39AD1EF2295B504C00DA9657 /* AppEnviornment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */; };
-		39E27A28296AF75300DE4959 /* Excalidraw.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E27A27296AF75300DE4959 /* Excalidraw.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -108,7 +107,6 @@
 		39AD1EEA295B501500DA9657 /* Store.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		39AD1EEC295B504C00DA9657 /* AppState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppEnviornment.swift; sourceTree = "<group>"; };
-		39E27A27296AF75300DE4959 /* Excalidraw.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Excalidraw.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -281,7 +279,6 @@
 		397F98D8295EDF53009BED55 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				39E27A27296AF75300DE4959 /* Excalidraw.swift */,
 				397F98D9295EDF61009BED55 /* File.swift */,
 				397F98DB295EDF74009BED55 /* Group.swift */,
 			);
@@ -446,7 +443,6 @@
 				3901E26029656FC500E79788 /* GroupSidebarView.swift in Sources */,
 				3908EB96296719170054A3ED /* String+Extension.swift in Sources */,
 				3908EB942966E7690054A3ED /* Array+Extension.swift in Sources */,
-				39E27A28296AF75300DE4959 /* Excalidraw.swift in Sources */,
 				397F98DC295EDF74009BED55 /* Group.swift in Sources */,
 				397E468929599E85003B824B /* Utils.swift in Sources */,
 				397F98D0295DA071009BED55 /* Error.swift in Sources */,

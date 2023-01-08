@@ -11,6 +11,9 @@ import Foundation
 #if os(macOS)
 import AppKit
 class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillTerminate(_ notification: Notification) {
+        PersistenceController.shared.save()
+    }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         true
     }

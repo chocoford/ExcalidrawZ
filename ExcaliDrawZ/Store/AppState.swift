@@ -15,11 +15,6 @@ struct AppState {
     var currentFile: File? = nil
     var currentGroup: Group? = nil
     
-//    var currentGroup: Group? {
-//        guard let currentGroupID = currentGroupID else { return nil }
-//
-//    }
-    
     var anyFileNameInEdit: Bool = false
     
     var hasError: Bool = false
@@ -27,19 +22,19 @@ struct AppState {
 }
 
 enum AppAction {
-    case setGroups(_ groups: [Group])
-    case setFiles(_ files: [File])
-    
     case setCurrentGroup(_ groupID: Group?)
+    case setCurrentGroupToFirst
     case setCurrentFile(_ file: File?)
-//    case loadAssets
+    case setCurrentFileToFirst
     
     case newFile(_ elementsData: Data? = nil)
     case importFile(_ file: URL)
-    case renameFile(of: FileInfo, newName: String)
-    case deleteFile(_ file: FileInfo)
+    case renameFile(of: File, newName: String)
+    case deleteFile(_ file: File)
     
     case createGroup(_ name: String)
+    
+    case saveCoreData
     
     case toggleFileNameEdit
     
@@ -52,25 +47,45 @@ typealias AppStore = Store<AppState, AppAction, AppEnvironment>
 
 let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, action, environment in
     switch action {
-        case .setGroups(let groups):
-            state.groups = groups
-        case .setFiles(let files):
-            state.files = files
-            
         case .setCurrentGroup(let group):
             guard group != nil else { break }
             state.currentGroup = group
-//            state.assetFiles = environment.fileManager.loadFiles(in: state.currentGroup)
-//            state.currentFile = state.assetFiles.first?.url
+            do {
+                if let group = group {
+                    state.currentFile = try environment.persistence.listFiles(in: group).first
+                } else {
+                    throw AppError.stateError(.currentGroupNil)
+                }
+            } catch {
+                return Just(.setError(.unexpected(error)))
+                    .eraseToAnyPublisher()
+            }
+            
+        case .setCurrentGroupToFirst:
+            do {
+                state.currentGroup = try environment.persistence.listGroups().first
+            } catch {
+                return Just(.setError(.unexpected(error)))
+                    .eraseToAnyPublisher()
+            }
             
         case .setCurrentFile(let file):
             guard file != nil || state.files.count > 0 else { break }
             state.currentFile = file
             
-//        case .loadAssets:
-//            state.groups = environment.fileManager.loadGroups()
-////            state.assetFiles = environment.fileManager.loadFiles(in: state.currentGroup)
-
+        case .setCurrentFileToFirst:
+            do {
+                if let group = state.currentGroup {
+                    state.currentFile = try environment.persistence.listFiles(in: group).first
+                } else {
+                    throw AppError.stateError(.currentGroupNil)
+                }
+            } catch {
+                return Just(.setError(.unexpected(error)))
+                    .eraseToAnyPublisher()
+            }
+            
+                
         case .createGroup(let name):
             do {
                 let group = try environment.persistence.createGroup(name: name)
@@ -93,64 +108,44 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
             }
             
         case .importFile(let url):
-            break
-//            do {
-//                let fileURL = try environment.fileManager.importFile(from: url, to: state.currentGroup)
-//                state.assetFiles.insert(FileInfo(from: fileURL), at: 0)
-////                return Just(.setCurrentFile(fileURL))
-////                    .eraseToAnyPublisher()
-//            } catch let error as FileError {
-//                return Just(AppAction.setError(.fileError(error)))
-//                    .eraseToAnyPublisher()
-//            } catch {
-//                return Just(AppAction.setError(.unexpected(error)))
-//                    .eraseToAnyPublisher()
-//            }
+            do {
+                guard url.pathExtension == "excalidraw" else { throw AppError.fileError(.invalidURL) }
+                let data = try Data(contentsOf: url, options: .uncached) // .uncached fixes the import bug occurs in x86 mac OS
+
+                guard let group = state.currentGroup else { throw AppError.stateError(.currentGroupNil) }
+                let file = try environment.persistence.createFile(in: group)
+                file.name = String(url.lastPathComponent.split(separator: ".").first ?? "Untitled")
+                file.content = data
+                
+                state.currentFile = file
+            } catch let error as FileError {
+                return Just(AppAction.setError(.fileError(error)))
+                    .eraseToAnyPublisher()
+            } catch {
+                return Just(AppAction.setError(.unexpected(error)))
+                    .eraseToAnyPublisher()
+            }
             
         case .renameFile(let file, let name):
-            break
-//            do {
-//                var isCurrentFile = false
-//                if file.url == state.currentFile {
-//                    isCurrentFile = true
-//                }
-//                guard let fileIndex = state.assetFiles.firstIndex(of: file) else { throw FileError.notFound }
-//                // It will trigger file info change. Causing `List` change its selection.
-//                // But the procedure is not synchronizign.
-//                try environment.fileManager.renameFile(file.url, to: name)
-//                state.assetFiles[fileIndex].rename(to: name)
-//
-//                if isCurrentFile {
-//                    // Use async on main thread to make sure `setCurrentFile` will execute after `List`'s selection changing.
-//                    return Just(.setCurrentFile(state.assetFiles[fileIndex].url)).eraseToAnyPublisher()
-//                }
-//            } catch let error as FileError {
-//                return Just(AppAction.setError(.fileError(error)))
-//                    .eraseToAnyPublisher()
-//            } catch {
-//                return Just(AppAction.setError(.unexpected(error)))
-//                    .eraseToAnyPublisher()
-//            }
+            file.name = name
             
         case .deleteFile(let file):
-            break
-//            do {
-//                guard let index = state.assetFiles.firstIndex(of: file) else { throw FileError.notFound }
-//                try environment.fileManager.removeFile(at: file.url)
-//                state.assetFiles.remove(at: index)
-//                if state.currentFile == file.url {
-//                    return Just(.setCurrentFile(state.assetFiles.safeSubscribe(at: index)?.url))
-//                        .eraseToAnyPublisher()
-//                }
-//            } catch let error as FileError {
-//                return Just(AppAction.setError(.fileError(error)))
-//                    .eraseToAnyPublisher()
-//            } catch {
-//                return Just(AppAction.setError(.unexpected(error)))
-//                    .eraseToAnyPublisher()
-//            }
+            // get current group files
+            do {
+                guard let group = state.currentGroup else { throw AppError.stateError(.currentGroupNil)}
+                var files = try environment.persistence.listFiles(in: group)
+                let index = files.firstIndex(of: file) ?? 1
+                environment.persistence.container.viewContext.delete(file)
+                files.remove(at: index)
+                state.currentFile = files.safeSubscribe(at: index - 1)
+            } catch {
+                return Just(.setError(.unexpected(error)))
+                    .eraseToAnyPublisher()
+            }
             
-
+        case .saveCoreData:
+            environment.persistence.save()
+            
         case .toggleFileNameEdit:
             state.anyFileNameInEdit.toggle()
             

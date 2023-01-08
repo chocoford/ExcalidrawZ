@@ -11,11 +11,7 @@ import Foundation
 
 struct ContentView: View {
     @EnvironmentObject var store: AppStore
-    @ObservedObject var fileManager: AppFileManager = .shared
-    
-    @State private var dirMonitor = DirMonitor(dir: AppFileManager.shared.assetDir,
-                                               queue: .init(label: "com.chocoford.ExcalidrawZ-DirMonitor"))
-    
+
     private var hasError: Binding<Bool> {
         store.binding(for: \.hasError) {
             .setHasError($0)
@@ -43,20 +39,15 @@ struct ContentView: View {
             ExcalidrawView()
         }
         .toolbar(content: toolbarContent)
+        .onAppear {
+            store.send(.setCurrentGroupToFirst)
+        }
     }
 }
 
 extension ContentView {
     func createNewFile() {
         store.send(.newFile())
-    }
-    
-    func startMonitorFiles() {
-        guard dirMonitor.start() else {
-            store.send(.setError(.dirMonitorError(.startFailed)))
-            return
-        }
-//        store.send(.loadAssets)
     }
 }
 

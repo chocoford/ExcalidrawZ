@@ -41,9 +41,9 @@ struct ExcalidrawView: View {
             .transition(.opacity)
             .animation(.default, value: isLoading)
             .onChange(of: isLoading) { newValue in
-//                if !newValue {
-//                    store.send(.setCurrentFile(store.state.assetFiles.first?.url))
-//                }
+                if !newValue {
+                    store.send(.setCurrentFileToFirst)
+                }
             }
         }
     }

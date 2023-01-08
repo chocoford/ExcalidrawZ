@@ -10,7 +10,7 @@ import CoreData
 
 struct PersistenceController {
     // A singleton for our entire app to use
-    static let shared = PersistenceController(inMemory: true)
+    static let shared = PersistenceController()
 
     // Storage for Core Data
     let container: NSPersistentContainer
@@ -60,6 +60,18 @@ struct PersistenceController {
 }
 
 extension PersistenceController {
+    func listGroups() throws -> [Group] {
+        let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+        fetchRequest.sortDescriptors = [.init(key: "createdAt", ascending: false)]
+        return try container.viewContext.fetch(fetchRequest)
+    }
+    func listFiles(in group: Group) throws -> [File] {
+        let fetchRequest = NSFetchRequest<File>(entityName: "File")
+        fetchRequest.predicate = NSPredicate(format: "group == %@", group)
+        fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false), .init(key: "createdAt", ascending: false)]
+        return try container.viewContext.fetch(fetchRequest)
+    }
+    
     func createGroup(name: String) throws -> Group {
         let group = Group(context: container.viewContext)
         group.id = UUID()
@@ -102,6 +114,7 @@ extension File {
         let elements = try JSONSerialization.jsonObject(with: elementsData)
         obj["elements"] = elements
         self.content = try JSONSerialization.data(withJSONObject: obj)
+        self.updatedAt = .now
     }
 }
 

@@ -9,13 +9,11 @@ import SwiftUI
 
 struct FileListView: View {
     @EnvironmentObject var store: AppStore
-//    @FetchRequest(sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)],
-//                  predicate: group != nil ? NSPredicate(format: "group == %@", group!) : NSPredicate(value: false))
-//                  animation: .easeIn)
     @FetchRequest var files: FetchedResults<File>
     
     init(group: Group?) {
-        self._files = FetchRequest<File>(sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)],
+        self._files = FetchRequest<File>(sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse),
+                                                           SortDescriptor(\.createdAt, order: .reverse)],
                                    predicate: group != nil ? NSPredicate(format: "group == %@", group!) : NSPredicate(value: false))
     }
     
@@ -29,12 +27,6 @@ struct FileListView: View {
         List(files, id: \.id, selection: selectedFile) { file in
             FileRowView(fileInfo: file)
         }
-//        .onChange(of: store.state.currentGroup) { newValue in
-//            if let group = newValue {
-//                files.nsPredicate = .init(format: "group == %@", group)
-//            }
-//            dump(files)
-//        }
         .animation(.easeIn, value: files)
     }
 }

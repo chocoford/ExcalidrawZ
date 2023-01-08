@@ -20,6 +20,8 @@ struct ExcalidrawZApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 #endif
     
+    @Environment(\.scenePhase) var scenePhase
+    
     private let updaterController: SPUStandardUpdaterController
     
     init() {
@@ -43,6 +45,9 @@ struct ExcalidrawZApp: App {
         #if os(macOS)
         .defaultSize(width: 900, height: 500)
         #endif
+        .onChange(of: scenePhase) { _ in
+//            store.send(.saveCoreData)
+        }
     }
 }
 

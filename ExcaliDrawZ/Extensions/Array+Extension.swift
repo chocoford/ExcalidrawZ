@@ -9,9 +9,9 @@ import Foundation
 
 extension Array {
     func safeSubscribe(at index: Self.Index) -> Self.Element? {
-        if index < 0 || self.count == 0 {
+        if self.count == 0 {
             return nil
         }
-        return self[Swift.min(index, self.count - 1)]
+        return self[Swift.max(0, Swift.min(index, self.count - 1))]
     }
 }

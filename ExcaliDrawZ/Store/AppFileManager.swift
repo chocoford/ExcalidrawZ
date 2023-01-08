@@ -9,6 +9,7 @@ import Foundation
 import Combine
 import OSLog
 
+@available(*, deprecated)
 class AppFileManager: ObservableObject {
     static let shared = AppFileManager()
     
@@ -27,10 +28,10 @@ class AppFileManager: ObservableObject {
     var defaultGroupURL: URL { assetDir.appendingPathComponent("default", conformingTo: .directory) }
         
     init() {
-        performMigration()
-        
-        createDir()
-        backupFiles()
+//        performMigration()
+//
+//        createDir()
+//        backupFiles()
     }
     
     private func backupFiles() {
@@ -132,7 +133,6 @@ extension AppFileManager {
     func renameFile(_ url: URL, to name: String) throws {
         let newURL = url.deletingLastPathComponent().appending(path: name).appendingPathExtension(url.pathExtension)
         try FileManager.default.moveItem(at: url, to: newURL)
-//        return newURL
     }
     
     func removeFile(at url: URL) throws {
