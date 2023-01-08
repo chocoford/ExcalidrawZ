@@ -1,18 +1,18 @@
 //
-//  ExcaliDrawView.swift
-//  ExcaliDrawZ
+//  ExcalidrawView.swift
+//  ExcalidrawZ
 //
 //  Created by Dove Zachary on 2022/12/27.
 //
 
 import SwiftUI
 
-struct ExcaliDrawView: View {
+struct ExcalidrawView: View {
     @EnvironmentObject var store: AppStore
 
     @State private var isLoading = true
 
-    private var currentFile: Binding<URL?> {
+    private var currentFile: Binding<File?> {
         store.binding(for: \.currentFile,
                       toAction: {
             return .setCurrentFile($0)
@@ -21,7 +21,7 @@ struct ExcaliDrawView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            ZStack {
+            ZStack(alignment: .center) {
                 WebView(store: store,
                         currentFile: currentFile,
                         loading: $isLoading)
@@ -41,18 +41,18 @@ struct ExcaliDrawView: View {
             .transition(.opacity)
             .animation(.default, value: isLoading)
             .onChange(of: isLoading) { newValue in
-                if !newValue {
-                    store.send(.setCurrentFile(store.state.assetFiles.first?.url))
-                }
+//                if !newValue {
+//                    store.send(.setCurrentFile(store.state.assetFiles.first?.url))
+//                }
             }
         }
     }
 }
 
 #if DEBUG
-struct ExcaliDrawView_Previews: PreviewProvider {
+struct ExcalidrawView_Previews: PreviewProvider {
     static var previews: some View {
-        ExcaliDrawView()
+        ExcalidrawView()
             .environmentObject(AppStore.preview)
             .frame(width: 800, height: 600)
     }

@@ -1,6 +1,6 @@
 //
-//  ExcaliDrawZApp.swift
-//  ExcaliDrawZ
+//  ExcalidrawZApp.swift
+//  ExcalidrawZ
 //
 //  Created by Dove Zachary on 2022/12/25.
 //
@@ -10,7 +10,7 @@ import Sparkle
 
 @main
 @MainActor
-struct ExcaliDrawZApp: App {
+struct ExcalidrawZApp: App {
     let store = AppStore(state: AppState(),
                          reducer: appReducer,
                          environment: AppEnvironment())
@@ -33,6 +33,7 @@ struct ExcaliDrawZApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(store)
+                .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
         }
         .commands {
             CommandGroup(after: .appInfo) {

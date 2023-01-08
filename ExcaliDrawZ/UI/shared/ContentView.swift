@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  ExcaliDrawZ
+//  ExcalidrawZ
 //
 //  Created by Dove Zachary on 2022/12/25.
 //
@@ -14,7 +14,7 @@ struct ContentView: View {
     @ObservedObject var fileManager: AppFileManager = .shared
     
     @State private var dirMonitor = DirMonitor(dir: AppFileManager.shared.assetDir,
-                                               queue: .init(label: "com.chocoford.ExcaliDrawZ-DirMonitor"))
+                                               queue: .init(label: "com.chocoford.ExcalidrawZ-DirMonitor"))
     
     private var hasError: Binding<Bool> {
         store.binding(for: \.hasError) {
@@ -38,21 +38,17 @@ struct ContentView: View {
         NavigationSplitView {
             GroupSidebarView()
         } content: {
-            FileListView()
+            FileListView(group: store.state.currentGroup)
         } detail: {
-            ExcaliDrawView()
+            ExcalidrawView()
         }
         .toolbar(content: toolbarContent)
-        .onAppear(perform: startMonitorFiles)
-        .onReceive(dirMonitor.dirWillChange) { _ in
-            store.send(.loadAssets)
-        }
     }
 }
 
 extension ContentView {
     func createNewFile() {
-        store.send(.newFile)
+        store.send(.newFile())
     }
     
     func startMonitorFiles() {
@@ -60,7 +56,7 @@ extension ContentView {
             store.send(.setError(.dirMonitorError(.startFailed)))
             return
         }
-        store.send(.loadAssets)
+//        store.send(.loadAssets)
     }
 }
 
@@ -84,14 +80,14 @@ extension ContentView {
     @ToolbarContentBuilder
     private func toolbarContent_macOS() -> some ToolbarContent {
         ToolbarItemGroup(placement: .status) {
-            Text(store.state.currentFile?.lastPathComponent ?? "Untitled.excalidraw")
+//            Text(store.state.currentFile?.lastPathComponent ?? "Untitled.excalidraw")
         }
         
         ToolbarItemGroup(placement: .primaryAction) {
             Spacer()
             // import
             Button {
-                let panel = ExcaliDrawOpenPanel()
+                let panel = ExcalidrawOpenPanel()
                 panel.allowsMultipleSelection = false
                 panel.canChooseDirectories = false
                 panel.allowedContentTypes = [.init(filenameExtension: "excalidraw")].compactMap{ $0 }

@@ -12,6 +12,9 @@
 		3901E2622965704400E79788 /* FileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3901E2612965704400E79788 /* FileListView.swift */; };
 		3908EB942966E7690054A3ED /* Array+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB932966E7690054A3ED /* Array+Extension.swift */; };
 		3908EB96296719170054A3ED /* String+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB95296719170054A3ED /* String+Extension.swift */; };
+		3908EB9929674DF60054A3ED /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB9729674DF60054A3ED /* Model.xcdatamodeld */; };
+		390B2C792967CF5C00AA359C /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B2C782967CF5C00AA359C /* PersistenceController.swift */; };
+		390B2C7B2967EACA00AA359C /* FetchResults+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B2C7A2967EACA00AA359C /* FetchResults+Extension.swift */; };
 		3914876D2960AFD10042927A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 3914876C2960AFD10042927A /* Sparkle */; };
 		3914876F2961D6D00042927A /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3914876E2961D6D00042927A /* UpdateChecker.swift */; };
 		391487712961D9AE0042927A /* CheckForUpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391487702961D9AE0042927A /* CheckForUpdatesView.swift */; };
@@ -37,11 +40,12 @@
 		397F98DE295EE18E009BED55 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98DD295EE18E009BED55 /* AppDelegate.swift */; };
 		397F98E0295F3233009BED55 /* DirMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98DF295F3233009BED55 /* DirMonitor.swift */; };
 		397F98E229607D58009BED55 /* ExcaliDrawOpenPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98E129607D58009BED55 /* ExcaliDrawOpenPanel.swift */; };
-		39AD1EE7295AC30400DA9657 /* ExcaliDrawView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EE6295AC30400DA9657 /* ExcaliDrawView.swift */; };
+		39AD1EE7295AC30400DA9657 /* ExcalidrawView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EE6295AC30400DA9657 /* ExcalidrawView.swift */; };
 		39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
 		39AD1EEB295B501600DA9657 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEA295B501500DA9657 /* Store.swift */; };
 		39AD1EF0295B504C00DA9657 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEC295B504C00DA9657 /* AppState.swift */; };
 		39AD1EF2295B504C00DA9657 /* AppEnviornment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */; };
+		39E27A28296AF75300DE4959 /* Excalidraw.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E27A27296AF75300DE4959 /* Excalidraw.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +71,9 @@
 		3901E2612965704400E79788 /* FileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileListView.swift; sourceTree = "<group>"; };
 		3908EB932966E7690054A3ED /* Array+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Array+Extension.swift"; sourceTree = "<group>"; };
 		3908EB95296719170054A3ED /* String+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extension.swift"; sourceTree = "<group>"; };
+		3908EB9829674DF60054A3ED /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
+		390B2C782967CF5C00AA359C /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
+		390B2C7A2967EACA00AA359C /* FetchResults+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FetchResults+Extension.swift"; sourceTree = "<group>"; };
 		3914876E2961D6D00042927A /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		391487702961D9AE0042927A /* CheckForUpdatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesView.swift; sourceTree = "<group>"; };
 		39148772296316720042927A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -96,11 +103,12 @@
 		397F98DD295EE18E009BED55 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		397F98DF295F3233009BED55 /* DirMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirMonitor.swift; sourceTree = "<group>"; };
 		397F98E129607D58009BED55 /* ExcaliDrawOpenPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcaliDrawOpenPanel.swift; sourceTree = "<group>"; };
-		39AD1EE6295AC30400DA9657 /* ExcaliDrawView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcaliDrawView.swift; sourceTree = "<group>"; };
+		39AD1EE6295AC30400DA9657 /* ExcalidrawView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawView.swift; sourceTree = "<group>"; };
 		39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = FakeSaveCommand.js; sourceTree = "<group>"; };
 		39AD1EEA295B501500DA9657 /* Store.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		39AD1EEC295B504C00DA9657 /* AppState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppEnviornment.swift; sourceTree = "<group>"; };
+		39E27A27296AF75300DE4959 /* Excalidraw.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Excalidraw.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -129,6 +137,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		390B2C772967CF4500AA359C /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				390B2C782967CF5C00AA359C /* PersistenceController.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
 		397E464A295838CF003B824B = {
 			isa = PBXGroup;
 			children = (
@@ -158,6 +174,7 @@
 				397F98D5295DC150009BED55 /* UI */,
 				39AD1EF4295B505400DA9657 /* Store */,
 				397F98D8295EDF53009BED55 /* Model */,
+				390B2C772967CF4500AA359C /* Persistence */,
 				397F98CC295CC182009BED55 /* Extensions */,
 				397F98D4295DC131009BED55 /* Utils */,
 				397E468529599DA0003B824B /* Resources */,
@@ -199,6 +216,7 @@
 				397E468629599DD3003B824B /* FakeDrop.js */,
 				39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */,
 				397E468E295AAE5D003B824B /* template.excalidraw */,
+				3908EB9729674DF60054A3ED /* Model.xcdatamodeld */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -210,6 +228,7 @@
 				3908EB95296719170054A3ED /* String+Extension.swift */,
 				3901E25D29652AD800E79788 /* URL+Extension.swift */,
 				3908EB932966E7690054A3ED /* Array+Extension.swift */,
+				390B2C7A2967EACA00AA359C /* FetchResults+Extension.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -242,7 +261,7 @@
 				397E4658295838CF003B824B /* ContentView.swift */,
 				3901E25F29656FC500E79788 /* GroupSidebarView.swift */,
 				3901E2612965704400E79788 /* FileListView.swift */,
-				39AD1EE6295AC30400DA9657 /* ExcaliDrawView.swift */,
+				39AD1EE6295AC30400DA9657 /* ExcalidrawView.swift */,
 				397E4681295839B7003B824B /* WebView.swift */,
 				397F98CA295CBC01009BED55 /* FileRowView.swift */,
 				391487702961D9AE0042927A /* CheckForUpdatesView.swift */,
@@ -262,6 +281,7 @@
 		397F98D8295EDF53009BED55 /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				39E27A27296AF75300DE4959 /* Excalidraw.swift */,
 				397F98D9295EDF61009BED55 /* File.swift */,
 				397F98DB295EDF74009BED55 /* Group.swift */,
 			);
@@ -422,19 +442,23 @@
 				39AD1EF0295B504C00DA9657 /* AppState.swift in Sources */,
 				3901E25E29652AD800E79788 /* URL+Extension.swift in Sources */,
 				397F98CB295CBC01009BED55 /* FileRowView.swift in Sources */,
+				3908EB9929674DF60054A3ED /* Model.xcdatamodeld in Sources */,
 				3901E26029656FC500E79788 /* GroupSidebarView.swift in Sources */,
 				3908EB96296719170054A3ED /* String+Extension.swift in Sources */,
 				3908EB942966E7690054A3ED /* Array+Extension.swift in Sources */,
+				39E27A28296AF75300DE4959 /* Excalidraw.swift in Sources */,
 				397F98DC295EDF74009BED55 /* Group.swift in Sources */,
 				397E468929599E85003B824B /* Utils.swift in Sources */,
 				397F98D0295DA071009BED55 /* Error.swift in Sources */,
 				397E4682295839B7003B824B /* WebView.swift in Sources */,
 				397E4659295838CF003B824B /* ContentView.swift in Sources */,
 				39AD1EEB295B501600DA9657 /* Store.swift in Sources */,
+				390B2C7B2967EACA00AA359C /* FetchResults+Extension.swift in Sources */,
+				390B2C792967CF5C00AA359C /* PersistenceController.swift in Sources */,
 				3914876F2961D6D00042927A /* UpdateChecker.swift in Sources */,
 				397F98E229607D58009BED55 /* ExcaliDrawOpenPanel.swift in Sources */,
 				397E4657295838CF003B824B /* ExcaliDrawZApp.swift in Sources */,
-				39AD1EE7295AC30400DA9657 /* ExcaliDrawView.swift in Sources */,
+				39AD1EE7295AC30400DA9657 /* ExcalidrawView.swift in Sources */,
 				397F98DA295EDF61009BED55 /* File.swift in Sources */,
 				397E468429583D81003B824B /* AppFileManager.swift in Sources */,
 				397E468D295A02E7003B824B /* LoadingView.swift in Sources */,
@@ -607,7 +631,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ExcaliDrawZ/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "ExcaliDrawZ-Debug";
+				INFOPLIST_KEY_CFBundleDisplayName = "ExcalidrawZ-Debug";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -649,7 +673,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ExcaliDrawZ/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "ExcaliDrawZ-Debug";
+				INFOPLIST_KEY_CFBundleDisplayName = ExcalidrawZ;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -825,6 +849,19 @@
 			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
+
+/* Begin XCVersionGroup section */
+		3908EB9729674DF60054A3ED /* Model.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				3908EB9829674DF60054A3ED /* Model.xcdatamodel */,
+			);
+			currentVersion = 3908EB9829674DF60054A3ED /* Model.xcdatamodel */;
+			path = Model.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 	};
 	rootObject = 397E464B295838CF003B824B /* Project object */;
 }

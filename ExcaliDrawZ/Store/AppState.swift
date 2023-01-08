@@ -7,12 +7,19 @@
 
 import Foundation
 import Combine
+import CoreData
 
 struct AppState {
-    var assetGroups: [GroupInfo] = []
-    var assetFiles: [FileInfo] = []
-    var currentFile: URL? = nil
-    var currentGroup: GroupInfo = GroupInfo(url: AppFileManager.shared.defaultGroupURL)
+    var groups: [Group] = []
+    var files: [File] = []
+    var currentFile: File? = nil
+    var currentGroup: Group? = nil
+    
+//    var currentGroup: Group? {
+//        guard let currentGroupID = currentGroupID else { return nil }
+//
+//    }
+    
     var anyFileNameInEdit: Bool = false
     
     var hasError: Bool = false
@@ -20,11 +27,14 @@ struct AppState {
 }
 
 enum AppAction {
-    case setCurrentGroup(_ group: GroupInfo)
-    case setCurrentFile(_ file: URL?)
-    case loadAssets
+    case setGroups(_ groups: [Group])
+    case setFiles(_ files: [File])
     
-    case newFile
+    case setCurrentGroup(_ groupID: Group?)
+    case setCurrentFile(_ file: File?)
+//    case loadAssets
+    
+    case newFile(_ elementsData: Data? = nil)
     case importFile(_ file: URL)
     case renameFile(of: FileInfo, newName: String)
     case deleteFile(_ file: FileInfo)
@@ -42,95 +52,105 @@ typealias AppStore = Store<AppState, AppAction, AppEnvironment>
 
 let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, action, environment in
     switch action {
+        case .setGroups(let groups):
+            state.groups = groups
+        case .setFiles(let files):
+            state.files = files
+            
         case .setCurrentGroup(let group):
+            guard group != nil else { break }
             state.currentGroup = group
-            state.assetFiles = environment.fileManager.loadFiles(in: state.currentGroup)
-            state.currentFile = state.assetFiles.first?.url
+//            state.assetFiles = environment.fileManager.loadFiles(in: state.currentGroup)
+//            state.currentFile = state.assetFiles.first?.url
             
         case .setCurrentFile(let file):
-            if file == nil && state.assetFiles.count > 0 {
-                break
-            }
+            guard file != nil || state.files.count > 0 else { break }
             state.currentFile = file
             
-        case .loadAssets:
-            state.assetGroups = environment.fileManager.loadGroups()
-            state.assetFiles = environment.fileManager.loadFiles(in: state.currentGroup)
-            
-        case .newFile:
-            guard let newFile = environment.fileManager.createNewFile(at: state.currentGroup.url) else {
-                return Just(.setError(.fileError(.createError)))
-                    .eraseToAnyPublisher()
-            }
-            state.assetFiles.insert(newFile, at: 0)
-            return Just(.setCurrentFile(newFile.url))
-                .eraseToAnyPublisher()
-            
-        case .importFile(let url):
-            do {
-                let fileURL = try environment.fileManager.importFile(from: url, to: state.currentGroup)
-                state.assetFiles.insert(FileInfo(from: fileURL), at: 0)
-                return Just(.setCurrentFile(fileURL))
-                    .eraseToAnyPublisher()
-            } catch let error as FileError {
-                return Just(AppAction.setError(.fileError(error)))
-                    .eraseToAnyPublisher()
-            } catch {
-                return Just(AppAction.setError(.unexpected(error)))
-                    .eraseToAnyPublisher()
-            }
-            
-        case .renameFile(let file, let name):
-            do {
-                var isCurrentFile = false
-                if file.url == state.currentFile {
-                    isCurrentFile = true
-                }
-                guard let fileIndex = state.assetFiles.firstIndex(of: file) else { throw FileError.notFound }
-                // It will trigger file info change. Causing `List` change its selection.
-                // But the procedure is not synchronizign.
-                try environment.fileManager.renameFile(file.url, to: name)
-                state.assetFiles[fileIndex].rename(to: name)
-                
-                if isCurrentFile {
-                    // Use async on main thread to make sure `setCurrentFile` will execute after `List`'s selection changing.
-                    return Just(.setCurrentFile(state.assetFiles[fileIndex].url)).eraseToAnyPublisher()
-                }
-            } catch let error as FileError {
-                return Just(AppAction.setError(.fileError(error)))
-                    .eraseToAnyPublisher()
-            } catch {
-                return Just(AppAction.setError(.unexpected(error)))
-                    .eraseToAnyPublisher()
-            }
-            
-        case .deleteFile(let file):
-            do {
-                guard let index = state.assetFiles.firstIndex(of: file) else { throw FileError.notFound }
-                try environment.fileManager.removeFile(at: file.url)
-                state.assetFiles.remove(at: index)
-                if state.currentFile == file.url {
-                    return Just(.setCurrentFile(state.assetFiles.safeSubscribe(at: index)?.url))
-                        .eraseToAnyPublisher()
-                }
-            } catch let error as FileError {
-                return Just(AppAction.setError(.fileError(error)))
-                    .eraseToAnyPublisher()
-            } catch {
-                return Just(AppAction.setError(.unexpected(error)))
-                    .eraseToAnyPublisher()
-            }
-            
+//        case .loadAssets:
+//            state.groups = environment.fileManager.loadGroups()
+////            state.assetFiles = environment.fileManager.loadFiles(in: state.currentGroup)
+
         case .createGroup(let name):
             do {
-                let groupInfo = try environment.fileManager.createNewFolder(name: name)
-                state.assetGroups.append(groupInfo)
-                state.currentGroup = groupInfo
+                let group = try environment.persistence.createGroup(name: name)
+                state.currentGroup = group
             } catch {
                 return Just(.setError(.fileError(.unexpected(error))))
                     .eraseToAnyPublisher()
             }
             
+            
+        case .newFile(let elementsData):
+            do {
+                guard let group = state.currentGroup else { throw AppError.stateError(.currentGroupNil) }
+                let file = try environment.persistence.createFile(in: group)
+                if let data = elementsData { try file.updateElements(with: data) }
+                state.currentFile = file
+            } catch {
+                return Just(.setError(.unexpected(error)))
+                    .eraseToAnyPublisher()
+            }
+            
+        case .importFile(let url):
+            break
+//            do {
+//                let fileURL = try environment.fileManager.importFile(from: url, to: state.currentGroup)
+//                state.assetFiles.insert(FileInfo(from: fileURL), at: 0)
+////                return Just(.setCurrentFile(fileURL))
+////                    .eraseToAnyPublisher()
+//            } catch let error as FileError {
+//                return Just(AppAction.setError(.fileError(error)))
+//                    .eraseToAnyPublisher()
+//            } catch {
+//                return Just(AppAction.setError(.unexpected(error)))
+//                    .eraseToAnyPublisher()
+//            }
+            
+        case .renameFile(let file, let name):
+            break
+//            do {
+//                var isCurrentFile = false
+//                if file.url == state.currentFile {
+//                    isCurrentFile = true
+//                }
+//                guard let fileIndex = state.assetFiles.firstIndex(of: file) else { throw FileError.notFound }
+//                // It will trigger file info change. Causing `List` change its selection.
+//                // But the procedure is not synchronizign.
+//                try environment.fileManager.renameFile(file.url, to: name)
+//                state.assetFiles[fileIndex].rename(to: name)
+//
+//                if isCurrentFile {
+//                    // Use async on main thread to make sure `setCurrentFile` will execute after `List`'s selection changing.
+//                    return Just(.setCurrentFile(state.assetFiles[fileIndex].url)).eraseToAnyPublisher()
+//                }
+//            } catch let error as FileError {
+//                return Just(AppAction.setError(.fileError(error)))
+//                    .eraseToAnyPublisher()
+//            } catch {
+//                return Just(AppAction.setError(.unexpected(error)))
+//                    .eraseToAnyPublisher()
+//            }
+            
+        case .deleteFile(let file):
+            break
+//            do {
+//                guard let index = state.assetFiles.firstIndex(of: file) else { throw FileError.notFound }
+//                try environment.fileManager.removeFile(at: file.url)
+//                state.assetFiles.remove(at: index)
+//                if state.currentFile == file.url {
+//                    return Just(.setCurrentFile(state.assetFiles.safeSubscribe(at: index)?.url))
+//                        .eraseToAnyPublisher()
+//                }
+//            } catch let error as FileError {
+//                return Just(AppAction.setError(.fileError(error)))
+//                    .eraseToAnyPublisher()
+//            } catch {
+//                return Just(AppAction.setError(.unexpected(error)))
+//                    .eraseToAnyPublisher()
+//            }
+            
+
         case .toggleFileNameEdit:
             state.anyFileNameInEdit.toggle()
             

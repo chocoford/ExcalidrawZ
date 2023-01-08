@@ -1,6 +1,6 @@
 //
 //  WebView.swift
-//  ExcaliDrawZ
+//  ExcalidrawZ
 //
 //  Created by Dove Zachary on 2022/12/25.
 //
@@ -11,7 +11,7 @@ import WebKit
 import Combine
 import OSLog
 
-class ExcaliDrawWebView: WKWebView {
+class ExcalidrawWebView: WKWebView {
     static let shared: WKWebView = makeWebView()
     
     static func makeWebView() -> WKWebView {
@@ -29,12 +29,12 @@ class ExcaliDrawWebView: WKWebView {
 struct WebView {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "WebView")
     // must use a static variable
-    let webView: WKWebView = ExcaliDrawWebView.shared
+    let webView: WKWebView = ExcalidrawWebView.shared
     
     @ObservedObject var store: AppStore
     
-    @State private var previousFile: URL? = nil
-    @Binding var currentFile: URL?
+    @State private var previousFileID: UUID? = nil
+    @Binding var currentFile: File?
     @Binding var loading: Bool
 }
 
@@ -51,9 +51,9 @@ extension WebView: NSViewRepresentable {
         context.coordinator.parent = self
         guard !self.webView.isLoading else { return }
         Task {
-            if currentFile == nil || currentFile != previousFile {
+            if currentFile == nil || currentFile?.id != previousFileID {
                 await self.loadCurrentFile()
-                context.coordinator.watchLocalStorage()
+                context.coordinator.startWatchingLocalStorage()
             }
         }
     }
@@ -65,19 +65,17 @@ extension WebView: NSViewRepresentable {
 
 
 extension WebView {
-    func getScript(url: URL?) -> String {
-        if let url = url {
-            guard let data = try? Data(contentsOf: url) else { return "" }
-            
-            var buffer = [UInt8].init(repeating: 0, count: data.count)
-            data.copyBytes(to: &buffer, count: data.count)
-            
-            let jsCode =
+    func getScript(from file: File) -> String {
+        guard let data = file.content else { return "" }
+        var buffer = [UInt8].init(repeating: 0, count: data.count)
+        data.copyBytes(to: &buffer, count: data.count)
+        
+        let jsCode =
 """
 (() => {
     let uint8Array = new Uint8Array(\(buffer));
-    let file = new File([uint8Array], "abc.excalidraw", {
-      lastModified: new Date(2020, 1, 1).getTime(),
+    let file = new File([uint8Array], "file.excalidraw", {
+      lastModified: new Date().getTime(),
       type: "",
     });
 
@@ -106,18 +104,20 @@ extension WebView {
     node.dispatchEvent(fakeDropEvent);
 })()
 """
-            return jsCode
-        }
-        return ""
+        return jsCode
     }
     
+    /// Load current `File`.
+    ///
+    /// This function will simulate the *file drop* operation to `excalidraw.com`.
+    /// It evaluates `javascript` code that dispatch `DragEvent` to the specific `HTMLElement`.
     @MainActor
     func loadCurrentFile() async {
-        guard let url = currentFile else { return }
-        previousFile = url
-        logger.info("loadCurrentFile: \(url.lastPathComponent)")
+        guard let file = currentFile else { return }
+        previousFileID = file.id
+        logger.info("loadCurrentFile: \(file.name ?? "nil")")
         
-        self.webView.evaluateJavaScript(getScript(url: url)) { response, error in
+        self.webView.evaluateJavaScript(getScript(from: file)) { response, error in
             if let error = error {
                 dump(error)
                 return
@@ -142,9 +142,9 @@ extension WebView {
     }
     
     @MainActor
-    func changeCurrentFile(_ url: URL?) {
-        logger.debug("change current file: \(url?.lastPathComponent.description ?? "nil")")
-        currentFile = url
+    func changeCurrentFile(_ file: File?) {
+        logger.debug("change current file: \(file?.name ?? "nil")")
+        currentFile = file
     }
 }
 
@@ -161,7 +161,9 @@ class WebViewCoordinator: NSObject {
     
     var lastVersion: Int = 0
     
-    func watchLocalStorage() {
+    var downloads: [WKDownload : (URL, File)] = [:]
+    
+    func startWatchingLocalStorage() {
         logger.info("Start watching local storage.")
         let script = "localStorage.getItem('version-files')"
         lsMonitorTimer?.invalidate()
@@ -186,14 +188,36 @@ class WebViewCoordinator: NSObject {
         }
     }
     
+    
+    /// Save `currentFile` or creating if neccessary.
+    ///
+    /// This function will get the local storage of `excalidraw.com`.
+    /// Then it will set the data got from local storage to `currentFile`.
     func saveCurrentFile() {
-        guard let path = Bundle.main.url(forResource: "FakeSaveCommand", withExtension: "js"),
-              let data = try? Data(contentsOf: path),
-              let script = String(data: data, encoding: .utf8) else { return }
-        self.parent.webView.evaluateJavaScript(script) { response, error in
+        let getExcalidrawScript = "localStorage.getItem('excalidraw')"
+        let fileID = self.parent.currentFile?.id
+        self.parent.webView.evaluateJavaScript(getExcalidrawScript) { response, error in
             if let error = error {
                 dump(error)
                 return
+            }
+            // File has changed. Ignored.
+            guard self.parent.currentFile?.id == fileID else { return }
+            
+            guard let response = response as? String  else { return }
+            do {
+                guard let resData = response.data(using: .utf8) else { throw AppError.fileError(.createError) }
+                if let file = self.parent.currentFile {
+                    // parse current file content
+                    try file.updateElements(with: resData)
+                } else {
+                    // create the file
+                    DispatchQueue.main.async {
+                        self.parent.store.send(.newFile(resData))
+                    }
+                }
+            } catch {
+                dump(error)
             }
             self.lastVersion = Int((Date().timeIntervalSince1970 + 2) * 1000)
         }
@@ -256,27 +280,27 @@ extension WebViewCoordinator: WKDownloadDelegate {
     /// generate a temp name by adding `_` in front of the original name.
     ///
     /// After downloading done, it will move the temp `_<originName>` file to overwrite the original file.
-    func generateTempSavedFile() -> URL? {
-        guard let currentFile = parent.currentFile else { return nil }
-        let fileName = currentFile.lastPathComponent
-        let newFileName = "⎽" + fileName
-        let url = currentFile.deletingLastPathComponent().appendingPathComponent(newFileName, conformingTo: .fileURL)
-        return url
-    }
+//    func generateTempSavedFile() -> URL? {
+//        guard let currentFile = parent.currentFile else { return nil }
+//        let fileName = currentFile.lastPathComponent
+//        let newFileName = "⎽" + fileName
+//        let url = currentFile.deletingLastPathComponent().appendingPathComponent(newFileName, conformingTo: .fileURL)
+//        return url
+//    }
 
-    /// if `currentFile` is nil, will generate a file named `Untitled`.
+    /// Tell the delegate where to download the file to.
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
-        let currentFile = await self.parent.currentFile
-        logger.info("on download. currentFile: \(currentFile?.lastPathComponent ?? "unknwon")")
-
-        if currentFile == nil {
-            let file = AppFileManager.shared.createNewFile(at: AppFileManager.shared.defaultGroupURL)
-            await self.parent.changeCurrentFile(file?.url)
-
-        } else if let url = generateTempSavedFile() {
-            logger.info("on download. currentFile: \(currentFile?.lastPathComponent ?? "unknwon"), temp file: \(url.lastPathComponent)")
-            return url
-        }
+//        guard let currentFile = await self.parent.currentFile else { return nil }
+//        let url = FileManager.default.temporaryDirectory
+//        logger.info("download file to \(url)")
+//        downloads[download] = (url, currentFile)
+//
+//        if currentFile == nil {
+//            await self.parent.changeCurrentFile(file)
+//
+//        } else if let url = generateTempSavedFile() {
+//            return url
+//        }
         return nil
     }
     
@@ -284,10 +308,19 @@ extension WebViewCoordinator: WKDownloadDelegate {
     ///
     /// it overwrite the original file.
     func downloadDidFinish(_ download: WKDownload) {
-        logger.info("download did finish! currentFile: \(self.parent.currentFile?.lastPathComponent ?? "unknwon")")
-        guard let currentFile = parent.currentFile else { return }
-        guard let tempFile = generateTempSavedFile() else { return }
-        AppFileManager.shared.updateFile(currentFile, from: tempFile)
+//        guard let url = downloads[download] else {
+//            logger.error("Download finished. But the url was not found.")
+//            return
+//        }
+//        logger.info("download did finish to \(url)")
+//        do {
+//            try FileManager.default.removeItem(at: url)
+//        } catch {
+//            logger.error("Delete file error: \(error)")
+//        }
+//        guard let currentFile = parent.currentFile else { return }
+//        guard let tempFile = generateTempSavedFile() else { return }
+//        AppFileManager.shared.updateFile(currentFile, from: tempFile)
     }
 }
 

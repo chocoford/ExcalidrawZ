@@ -1,6 +1,6 @@
 //
 //  FileRowView.swift
-//  ExcaliDrawZ
+//  ExcalidrawZ
 //
 //  Created by Dove Zachary on 2022/12/29.
 //
@@ -10,7 +10,7 @@ import SwiftUI
 
 struct FileRowView: View {
     @EnvironmentObject var store: AppStore
-    var fileInfo: FileInfo
+    var fileInfo: File
     
     @State private var renameMode: Bool = false
     @State private var newFilename: String = ""
@@ -47,8 +47,8 @@ struct FileRowView: View {
                     Text((fileInfo.updatedAt ?? .distantPast).formatted())
                         .font(.footnote)
                     Spacer()
-                    Text(fileInfo.size ?? "")
-                        .font(.footnote)
+//                    Text(fileInfo.size ?? "")
+//                        .font(.footnote)
                 }
             }
         }
@@ -77,7 +77,7 @@ struct FileRowView: View {
     @ViewBuilder private var filename: some View {
         Text(fileInfo.name ?? "Untitled")
             .layoutPriority(1)
-        Text("." + (fileInfo.fileExtension ?? ""))
+        Text(".excalidraw")
             .opacity(0.5)
     }
     
@@ -86,7 +86,7 @@ struct FileRowView: View {
         if renameMode {
                 content()
         } else {
-            NavigationLink(value: fileInfo.url) {
+            NavigationLink(value: fileInfo) {
                 content()
             }
         }
@@ -97,11 +97,11 @@ extension FileRowView {
     /// Maybe make a global identifier for file is a better way, which will not cause `List` selection change when file name is changed.
     func renameFile() {
         renameMode.toggle()
-        store.send(.renameFile(of: fileInfo, newName: newFilename))
+//        store.send(.renameFile(of: fileInfo, newName: newFilename))
     }
     
     func deleteFile() {
-        store.send(.deleteFile(fileInfo))
+//        store.send(.deleteFile(fileInfo))
     }
 }
 
@@ -123,10 +123,10 @@ extension FileRowView {
 }
 
 #if DEBUG
-struct FileRowView_Previews: PreviewProvider {
-    static var previews: some View {
-        FileRowView(fileInfo: .preview)
-            .frame(width: 200)
-    }
-}
+//struct FileRowView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        FileRowView(fileInfo: .preview)
+//            .frame(width: 200)
+//    }
+//}
 #endif
