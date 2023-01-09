@@ -150,6 +150,12 @@ extension WebView {
         logger.debug("change current file: \(file?.name ?? "nil")")
         currentFile = file
     }
+    
+    func hideDropdownButton() {
+        logger.info("remove dropdown menu button and its decor.")
+        let script = "document.querySelector('.App-menu_top__left').firstElementChild.style.display = 'none';"
+        self.webView.evaluateJavaScript(script)
+    }
 }
 
 class WebViewCoordinator: NSObject {
@@ -266,6 +272,7 @@ extension WebViewCoordinator: WKNavigationDelegate {
         logger.info("did finish navigation")
         Task { @MainActor in
             parent.loading = false
+            self.parent.hideDropdownButton()
             parent.loadCurrentFile {
                 self.startWatchingLocalStorage()
             }
