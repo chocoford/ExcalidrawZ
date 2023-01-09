@@ -77,7 +77,7 @@ extension PersistenceController {
         group.id = UUID()
         group.name = name
         group.createdAt = .now
-
+        
         return group
     }
     

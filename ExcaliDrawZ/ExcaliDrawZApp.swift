@@ -22,6 +22,8 @@ struct ExcalidrawZApp: App {
     
     @Environment(\.scenePhase) var scenePhase
     
+    @State private var timer = Timer.publish(every: 5, on: .main, in: .default).autoconnect()
+    
     private let updaterController: SPUStandardUpdaterController
     
     init() {
@@ -36,6 +38,9 @@ struct ExcalidrawZApp: App {
             ContentView()
                 .environmentObject(store)
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
+                .onReceive(timer) { _ in
+                    store.send(.saveCoreData)
+                }
         }
         .commands {
             CommandGroup(after: .appInfo) {
@@ -46,7 +51,7 @@ struct ExcalidrawZApp: App {
         .defaultSize(width: 900, height: 500)
         #endif
         .onChange(of: scenePhase) { _ in
-//            store.send(.saveCoreData)
+            //            store.send(.saveCoreData)
         }
     }
 }
