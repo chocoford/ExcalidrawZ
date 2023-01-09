@@ -107,16 +107,6 @@ extension PersistenceController {
     }
 }
 
-extension File {
-    func updateElements(with elementsData: Data) throws {
-        guard let data = self.content else { return }
-        var obj = try JSONSerialization.jsonObject(with: data) as! [String : Any]
-        let elements = try JSONSerialization.jsonObject(with: elementsData)
-        obj["elements"] = elements
-        self.content = try JSONSerialization.data(withJSONObject: obj)
-        self.updatedAt = .now
-    }
-}
 
 #if DEBUG
 extension PersistenceController {

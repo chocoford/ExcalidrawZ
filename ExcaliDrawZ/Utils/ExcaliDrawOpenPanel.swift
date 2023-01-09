@@ -10,13 +10,10 @@ import AppKit
 
 class ExcalidrawOpenPanel: NSOpenPanel {
     
-    
 }
 
 extension ExcalidrawOpenPanel: NSOpenSavePanelDelegate {
     func panel(_ sender: Any, shouldEnable url: URL) -> Bool {
         return url.pathExtension == "excalidraw"
     }
-    
-    
 }
