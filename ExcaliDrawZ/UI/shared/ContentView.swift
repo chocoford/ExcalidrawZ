@@ -11,7 +11,10 @@ import Foundation
 
 struct ContentView: View {
     @EnvironmentObject var store: AppStore
-
+//    @AppStorage("columnVisibility") var columnVisibility: NavigationSplitViewVisibility = .automatic
+    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+    @State private var hideContent: Bool = false
+    
     private var hasError: Binding<Bool> {
         store.binding(for: \.hasError) {
             .setHasError($0)
@@ -31,17 +34,22 @@ struct ContentView: View {
 
     
     @ViewBuilder private var content: some View {
-        NavigationSplitView {
+        navigationView
+        .navigationSplitViewColumnWidth(min: 200, ideal: 200, max: 300)
+        .navigationSplitViewStyle(.automatic)
+        .toolbar(content: toolbarContent)
+        .onAppear {
+            store.send(.setCurrentGroupFromLastSelected)
+        }
+    }
+    
+    @ViewBuilder private var navigationView: some View {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             GroupSidebarView()
         } content: {
             FileListView(group: store.state.currentGroup)
         } detail: {
             ExcalidrawView()
-        }
-        .navigationSplitViewColumnWidth(min: 200, ideal: 200, max: 300)
-        .toolbar(content: toolbarContent)
-        .onAppear {
-            store.send(.setCurrentGroupFromLastSelected)
         }
     }
 }
@@ -71,8 +79,16 @@ extension ContentView {
 #else
     @ToolbarContentBuilder
     private func toolbarContent_macOS() -> some ToolbarContent {
+//        ToolbarItemGroup(placement: .navigation) {
+//            Button {
+//                hideContent.toggle()
+//            } label: {
+//                Image(systemName: "sidebar.left")
+//            }
+//        }
+        
         ToolbarItemGroup(placement: .status) {
-//            Text(store.state.currentFile?.lastPathComponent ?? "Untitled.excalidraw")
+            Text(store.state.currentFile?.name ?? "Untitled")
         }
         
         ToolbarItemGroup(placement: .primaryAction) {
