@@ -620,7 +620,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcaliDrawZ/ExcaliDrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcaliDrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 96RJ77RT4T;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -643,7 +643,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.2.4;
+				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.ExcaliDrawZ;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -662,7 +662,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcaliDrawZ/ExcaliDrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcaliDrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 85UKH2MY8J;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -685,7 +685,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.2.4;
+				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.visionwx.chocoford.ExcaliDrawZ;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
