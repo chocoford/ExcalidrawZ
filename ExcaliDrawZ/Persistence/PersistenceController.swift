@@ -62,7 +62,7 @@ struct PersistenceController {
 extension PersistenceController {
     func listGroups() throws -> [Group] {
         let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
-        fetchRequest.sortDescriptors = [.init(key: "createdAt", ascending: false)]
+        fetchRequest.sortDescriptors = [.init(key: "createdAt", ascending: true)]
         return try container.viewContext.fetch(fetchRequest)
     }
     func listFiles(in group: Group) throws -> [File] {
@@ -91,6 +91,16 @@ extension PersistenceController {
         file.group = group
         file.content = try Data(contentsOf: templateURL)
         return file
+    }
+    
+    func duplicateFile(file: File) -> File {
+        let newFile = File(context: container.viewContext)
+        newFile.id = UUID()
+        newFile.createdAt = .now
+        newFile.name = file.name
+        newFile.content = file.content
+        newFile.group = file.group
+        return newFile
     }
     
     func save() {

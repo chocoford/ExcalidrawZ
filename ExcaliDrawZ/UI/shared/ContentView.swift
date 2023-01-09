@@ -38,9 +38,10 @@ struct ContentView: View {
         } detail: {
             ExcalidrawView()
         }
+        .navigationSplitViewColumnWidth(min: 200, ideal: 200, max: 300)
         .toolbar(content: toolbarContent)
         .onAppear {
-            store.send(.setCurrentGroupToFirst)
+            store.send(.setCurrentGroupFromLastSelected)
         }
     }
 }

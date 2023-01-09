@@ -27,7 +27,6 @@ struct GroupSidebarView: View {
             .sheet(isPresented: $showCreateFolderDialog) {
                 createGroupDialogView
             }
-            
     }
     
     
@@ -37,10 +36,10 @@ struct GroupSidebarView: View {
         }
         .onChange(of: groups, perform: { newValue in
             if newValue.count > 0 && selectedGroup.wrappedValue == nil {
-                store.send(.setCurrentGroup(groups.first))
+//                store.send(.setCurrentGroup(groups.first))
+//                store.send(.setCurrentGroupToFirst)
             }
         })
-        .navigationTitle("Folder")
         
         HStack {
             Button {

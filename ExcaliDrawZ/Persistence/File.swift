@@ -17,3 +17,15 @@ extension File {
         self.updatedAt = .now
     }
 }
+
+#if DEBUG
+extension File {
+    static let preview = {
+        let file = File(context: PersistenceController.preview.container.viewContext)
+        file.id = UUID()
+        file.name = "preview"
+        file.createdAt = .now
+        return file
+    }()
+}
+#endif

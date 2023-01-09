@@ -28,12 +28,28 @@ struct FileListView: View {
             FileRowView(fileInfo: file)
         }
         .animation(.easeIn, value: files)
+//        .toolbar(content: toolbarContent)
     }
 }
 
+extension FileListView {
+    @ToolbarContentBuilder private func toolbarContent() -> some ToolbarContent {
+        ToolbarItemGroup(placement: .principal) {
+            Button {
+                
+            } label: {
+                Image(systemName: "trash")
+            }
+        }
+    }
+}
+
+
+#if DEBUG
 struct FileListView_Previews: PreviewProvider {
     static var previews: some View {
         FileListView(group: nil)
+            .environmentObject(AppStore.preview)
     }
 }
-
+#endif

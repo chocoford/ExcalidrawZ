@@ -39,10 +39,10 @@ struct FileRowView: View {
                     }
                     
                 }
-                .font(.headline)
+                .font(.title3)
                 .fontWeight(.medium)
                 .lineLimit(1)
-                
+                .padding(.bottom, 4)
                 HStack {
                     Text((fileInfo.updatedAt ?? fileInfo.createdAt ?? .distantPast).formatted())
                         .font(.footnote)
@@ -55,7 +55,7 @@ struct FileRowView: View {
         .onAppear {
             newFilename = fileInfo.name ?? "Untitled"
         }
-        .padding(.vertical)
+        .padding(.vertical, 6)
         .contextMenu {
             listRowContextMenu
         }
@@ -89,6 +89,7 @@ struct FileRowView: View {
             NavigationLink(value: fileInfo) {
                 content()
             }
+            .buttonStyle(.borderless)
         }
     }
 }
@@ -111,22 +112,28 @@ extension FileRowView {
         Button {
             renameMode.toggle()
         } label: {
-            Text("Rename")
+           Label("Rename", systemImage: "pencil")
+        }
+        
+        Button {
+            store.send(.duplicateFile(self.fileInfo))
+        } label: {
+            Label("Duplicate", systemImage: "doc.on.doc")
         }
         
         Button(role: .destructive) {
             showDeleteAlert.toggle()
         } label: {
-            Text("Delete")
+            Label("Delete", systemImage: "trash")
         }
     }
 }
 
 #if DEBUG
-//struct FileRowView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        FileRowView(fileInfo: .preview)
-//            .frame(width: 200)
-//    }
-//}
+struct FileRowView_Previews: PreviewProvider {
+    static var previews: some View {
+        FileRowView(fileInfo: .preview)
+            .frame(width: 200)
+    }
+}
 #endif

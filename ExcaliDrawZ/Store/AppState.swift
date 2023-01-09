@@ -13,7 +13,11 @@ struct AppState {
     var groups: [Group] = []
     var files: [File] = []
     var currentFile: File? = nil
-    var currentGroup: Group? = nil
+    var currentGroup: Group? {
+        didSet {
+            UserDefaults.standard.set(currentGroup?.id?.uuidString, forKey: "selectedGroup")
+        }
+    }
     
     var anyFileNameInEdit: Bool = false
     
@@ -23,7 +27,7 @@ struct AppState {
 
 enum AppAction {
     case setCurrentGroup(_ groupID: Group?)
-    case setCurrentGroupToFirst
+    case setCurrentGroupFromLastSelected
     case setCurrentFile(_ file: File?)
     case setCurrentFileToFirst
     
@@ -31,6 +35,8 @@ enum AppAction {
     case importFile(_ file: URL)
     case renameFile(of: File, newName: String)
     case deleteFile(_ file: File)
+    case duplicateFile(_ file: File)
+    
     
     case createGroup(_ name: String)
     
@@ -61,14 +67,20 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                     .eraseToAnyPublisher()
             }
             
-        case .setCurrentGroupToFirst:
+        case .setCurrentGroupFromLastSelected:
             do {
-                state.currentGroup = try environment.persistence.listGroups().first
+                let allGroups = try environment.persistence.listGroups()
+                if let lastGroupIDString = UserDefaults.standard.value(forKey: "selectedGroup") as? String,
+                   let lastGroupID = UUID(uuidString: lastGroupIDString),
+                   let lastGroup = allGroups.first(where: { $0.id == lastGroupID}) {
+                    state.currentGroup = lastGroup
+                } else {
+                    state.currentGroup = allGroups.first
+                }
             } catch {
                 return Just(.setError(.unexpected(error)))
                     .eraseToAnyPublisher()
             }
-            
         case .setCurrentFile(let file):
             guard file != nil || state.files.count > 0 else { break }
             state.currentFile = file
@@ -142,6 +154,10 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 return Just(.setError(.unexpected(error)))
                     .eraseToAnyPublisher()
             }
+            
+        case .duplicateFile(let file):
+            let newFile = environment.persistence.duplicateFile(file: file)
+            state.currentFile = newFile
             
         case .saveCoreData:
             environment.persistence.save()
