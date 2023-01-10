@@ -31,16 +31,11 @@ struct GroupSidebarView: View {
     
     
     @ViewBuilder private var content: some View {
-        List(groups, selection: selectedGroup) { group in
-            NavigationLink(group.name ?? "Untitled", value: group)
+        List(groups.filter({ $0.groupType != .trash || $0.files?.count ?? 0 > 0 }),
+             selection: selectedGroup) { group in
+            GroupRowView(group: group)
         }
-        .onChange(of: groups, perform: { newValue in
-            if newValue.count > 0 && selectedGroup.wrappedValue == nil {
-//                store.send(.setCurrentGroup(groups.first))
-//                store.send(.setCurrentGroupToFirst)
-            }
-        })
-        
+
         HStack {
             Button {
                 showCreateFolderDialog.toggle()

@@ -31,14 +31,15 @@ enum AppAction {
     case setCurrentFile(_ file: File?)
     case setCurrentFileToFirst
     
+    case createGroup(_ name: String)
+    case deleteGroup(_ group: Group)
+    
     case newFile(_ elementsData: Data? = nil)
     case importFile(_ file: URL)
     case renameFile(of: File, newName: String)
     case deleteFile(_ file: File)
     case duplicateFile(_ file: File)
     
-    
-    case createGroup(_ name: String)
     
     case saveCoreData
     
@@ -104,6 +105,22 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 state.currentGroup = group
             } catch {
                 return Just(.setError(.fileError(.unexpected(error))))
+                    .eraseToAnyPublisher()
+            }
+            
+        case .deleteGroup(let group):
+            do {
+                var groups = try environment.persistence.listGroups()
+                let files = try environment.persistence.listFiles(in: group)
+                let index = groups.firstIndex(of: group) ?? 0
+                files.forEach {
+                    environment.persistence.container.viewContext.delete($0 )
+                }
+                environment.persistence.container.viewContext.delete(group)
+                groups.remove(at: index)
+                state.currentGroup = groups.safeSubscribe(at: index - 1)
+            } catch {
+                return Just(.setError(.unexpected(error)))
                     .eraseToAnyPublisher()
             }
             

@@ -89,6 +89,7 @@ extension ContentView {
         
         ToolbarItemGroup(placement: .status) {
             Text(store.state.currentFile?.name ?? "Untitled")
+                .frame(width: 200)
         }
         
         ToolbarItemGroup(placement: .primaryAction) {

@@ -39,16 +39,24 @@ struct PersistenceController {
         Task {
             do {
                 let fetch: NSFetchRequest<Group> = NSFetchRequest(entityName: "Group")
-                fetch.predicate = NSPredicate(format: "name == 'default'")
                 
                 try await container.viewContext.perform {
                     let groups = try fetch.execute()
-                    if groups.count == 0 {
+                    if groups.first(where: {$0.groupType == .default}) == nil {
                         // create the default group
                         let group = Group(context: container.viewContext)
                         group.id = UUID()
                         group.name = "default"
                         group.createdAt = .now
+                        group.groupType = .default
+                    }
+                    
+                    if groups.first(where: {$0.groupType == .default}) == nil {
+                        let group = Group(context: container.viewContext)
+                        group.id = UUID()
+                        group.name = "Recently deleted"
+                        group.createdAt = .now
+                        group.groupType = .trash
                     }
                 }
                 

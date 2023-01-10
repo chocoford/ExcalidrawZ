@@ -25,6 +25,7 @@ extension File {
         file.id = UUID()
         file.name = "preview"
         file.createdAt = .now
+        file.group = Group.preview
         return file
     }()
 }

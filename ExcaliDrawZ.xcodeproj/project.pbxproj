@@ -42,6 +42,8 @@
 		39AD1EF0295B504C00DA9657 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEC295B504C00DA9657 /* AppState.swift */; };
 		39AD1EF2295B504C00DA9657 /* AppEnviornment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */; };
 		39B7B878296C110B005F7E9D /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B7B877296C110B005F7E9D /* File.swift */; };
+		39E0577B296C92DD00304655 /* GroupRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E0577A296C92DD00304655 /* GroupRowView.swift */; };
+		39E0577D296C935200304655 /* Group.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E0577C296C935200304655 /* Group.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -101,6 +103,8 @@
 		39AD1EEC295B504C00DA9657 /* AppState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppEnviornment.swift; sourceTree = "<group>"; };
 		39B7B877296C110B005F7E9D /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
+		39E0577A296C92DD00304655 /* GroupRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupRowView.swift; sourceTree = "<group>"; };
+		39E0577C296C935200304655 /* Group.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Group.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -134,6 +138,7 @@
 			children = (
 				390B2C782967CF5C00AA359C /* PersistenceController.swift */,
 				39B7B877296C110B005F7E9D /* File.swift */,
+				39E0577C296C935200304655 /* Group.swift */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";
@@ -252,6 +257,7 @@
 			children = (
 				397E4658295838CF003B824B /* ContentView.swift */,
 				3901E25F29656FC500E79788 /* GroupSidebarView.swift */,
+				39E0577A296C92DD00304655 /* GroupRowView.swift */,
 				3901E2612965704400E79788 /* FileListView.swift */,
 				39AD1EE6295AC30400DA9657 /* ExcalidrawView.swift */,
 				397E4681295839B7003B824B /* WebView.swift */,
@@ -432,6 +438,7 @@
 				3908EB9929674DF60054A3ED /* Model.xcdatamodeld in Sources */,
 				3901E26029656FC500E79788 /* GroupSidebarView.swift in Sources */,
 				3908EB96296719170054A3ED /* String+Extension.swift in Sources */,
+				39E0577D296C935200304655 /* Group.swift in Sources */,
 				3908EB942966E7690054A3ED /* Array+Extension.swift in Sources */,
 				397E468929599E85003B824B /* Utils.swift in Sources */,
 				397F98D0295DA071009BED55 /* Error.swift in Sources */,
@@ -439,6 +446,7 @@
 				397E4659295838CF003B824B /* ContentView.swift in Sources */,
 				39AD1EEB295B501600DA9657 /* Store.swift in Sources */,
 				390B2C7B2967EACA00AA359C /* FetchResults+Extension.swift in Sources */,
+				39E0577B296C92DD00304655 /* GroupRowView.swift in Sources */,
 				390B2C792967CF5C00AA359C /* PersistenceController.swift in Sources */,
 				39B7B878296C110B005F7E9D /* File.swift in Sources */,
 				3914876F2961D6D00042927A /* UpdateChecker.swift in Sources */,
