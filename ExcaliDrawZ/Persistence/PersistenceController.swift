@@ -79,6 +79,17 @@ extension PersistenceController {
         fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false), .init(key: "createdAt", ascending: false)]
         return try container.viewContext.fetch(fetchRequest)
     }
+    func findGroup(id: UUID) throws -> Group? {
+        let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+        fetchRequest.predicate = NSPredicate(format: "id == %@", id.uuidString)
+        return try container.viewContext.fetch(fetchRequest).first
+    }
+    func findFile(id: UUID) throws -> File? {
+        let fetchRequest = NSFetchRequest<File>(entityName: "File")
+        fetchRequest.predicate = NSPredicate(format: "id == %@", id.uuidString)
+        return try container.viewContext.fetch(fetchRequest).first
+    }
+    
     
     func createGroup(name: String) throws -> Group {
         let group = Group(context: container.viewContext)

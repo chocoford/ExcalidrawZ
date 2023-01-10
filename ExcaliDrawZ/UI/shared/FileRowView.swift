@@ -15,9 +15,12 @@ struct FileRowView: View {
     @State private var renameMode: Bool = false
     @State private var newFilename: String = ""
     @State private var showDeleteAlert: Bool = false
+    @State private var hovering = false
     
     @FocusState private var isFocused: Bool
 
+    
+    
     var body: some View {
         rowWrapper {
             VStack(alignment: .leading) {
@@ -47,11 +50,26 @@ struct FileRowView: View {
                     Text((fileInfo.updatedAt ?? fileInfo.createdAt ?? .distantPast).formatted())
                         .font(.footnote)
                     Spacer()
-//                    Text(fileInfo.size ?? "")
-//                        .font(.footnote)
+
+                    if hovering {
+                        Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
+                            .resizable()
+                            .frame(width: 10, height: 10)
+                            .draggable(FileLocalizable(fileID: fileInfo.id!, groupID: fileInfo.group!.id!)) {
+                                FileRowView(fileInfo: fileInfo)
+                                    .frame(width: 200)
+                                    .padding(.horizontal, 4)
+                                    .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 8))
+                            }
+                    }
                 }
             }
         }
+        .onHover(perform: { hover in
+            withAnimation {
+                hovering = hover
+            }
+        })
         .onAppear {
             newFilename = fileInfo.name ?? "Untitled"
         }

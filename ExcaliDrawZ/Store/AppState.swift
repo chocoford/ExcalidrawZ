@@ -39,7 +39,7 @@ enum AppAction {
     case renameFile(of: File, newName: String)
     case deleteFile(_ file: File)
     case duplicateFile(_ file: File)
-    
+    case moveFile(_ fileID: UUID, _ group: Group)
     
     case saveCoreData
     
@@ -176,6 +176,17 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
             let newFile = environment.persistence.duplicateFile(file: file)
             state.currentFile = newFile
             
+        case .moveFile(let fileID, let group):
+            do {
+                guard let file = try environment.persistence.findFile(id: fileID) else { throw AppError.fileError(.notFound) }
+                file.group = group
+                return Just(.setCurrentFileToFirst)
+                    .eraseToAnyPublisher()
+            } catch {
+                return Just(.setError(.unexpected(error)))
+                    .eraseToAnyPublisher()
+            }
+        
         case .saveCoreData:
             environment.persistence.save()
             

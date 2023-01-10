@@ -28,7 +28,6 @@ struct FileListView: View {
             FileRowView(fileInfo: file)
         }
         .animation(.easeIn, value: files)
-//        .toolbar(content: toolbarContent)
     }
 }
 

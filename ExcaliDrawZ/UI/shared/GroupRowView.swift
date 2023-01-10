@@ -29,6 +29,11 @@ struct GroupRowView: View {
                 }
             }
         })
+        .dropDestination(for: FileLocalizable.self) { fileInfos, location in
+            guard let file = fileInfos.first else { return false }
+            store.send(.moveFile(file.fileID, group))
+            return true
+        }
         .contextMenu {
             contextMenuView
         }
@@ -53,12 +58,13 @@ struct GroupRowView: View {
 // MARK: - Context Menu
 extension GroupRowView {
     @ViewBuilder private var contextMenuView: some View {
-        Button(role: .destructive) {
-            alertDeletion.toggle()
-        } label: {
-            Label("delete", systemImage: "trash")
+        if group.groupType == .normal {
+            Button(role: .destructive) {
+                alertDeletion.toggle()
+            } label: {
+                Label("delete", systemImage: "trash")
+            }
         }
-
     }
 }
 

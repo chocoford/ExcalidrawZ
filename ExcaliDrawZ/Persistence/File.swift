@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 extension File {
     func updateElements(with elementsData: Data) throws {
@@ -17,6 +18,31 @@ extension File {
         self.updatedAt = .now
     }
 }
+
+struct FileLocalizable: Codable {
+    let fileID: UUID
+    let groupID: UUID
+}
+
+extension FileLocalizable: Transferable {
+    static var transferRepresentation: some TransferRepresentation {
+        CodableRepresentation(contentType: .data)
+    }
+}
+
+//extension File: Transferable {
+//    public static var transferRepresentation: some TransferRepresentation {
+//        CodableRepresentation(contentType: .content)
+//        DataRepresentation(contentType: .layer) { layer in
+//            layer.data()
+//        }, importing: { data in
+//            try Layer(data: data)
+//        }
+//        DataRepresentation(exportedContentType: .png) { layer in
+//            layer.pngData()
+//        }
+//    }
+//}
 
 #if DEBUG
 extension File {
