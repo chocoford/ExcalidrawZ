@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  ExcaliDrawZ
+//  ExcalidrawZ
 //
 //  Created by Dove Zachary on 2022/12/25.
 //
@@ -11,10 +11,9 @@ import Foundation
 
 struct ContentView: View {
     @EnvironmentObject var store: AppStore
-    @ObservedObject var fileManager: AppFileManager = .shared
-    
-    @State private var dirMonitor = DirMonitor(dir: AppFileManager.shared.assetDir,
-                                               queue: .init(label: "com.chocoford.ExcaliDrawZ-DirMonitor"))
+//    @AppStorage("columnVisibility") var columnVisibility: NavigationSplitViewVisibility = .automatic
+    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+    @State private var hideContent: Bool = false
     
     private var hasError: Binding<Bool> {
         store.binding(for: \.hasError) {
@@ -35,32 +34,29 @@ struct ContentView: View {
 
     
     @ViewBuilder private var content: some View {
-        NavigationSplitView {
+        navigationView
+        .navigationSplitViewColumnWidth(min: 200, ideal: 200, max: 300)
+        .navigationSplitViewStyle(.automatic)
+        .toolbar(content: toolbarContent)
+        .onAppear {
+            store.send(.setCurrentGroupFromLastSelected)
+        }
+    }
+    
+    @ViewBuilder private var navigationView: some View {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             GroupSidebarView()
         } content: {
-            FileListView()
+            FileListView(group: store.state.currentGroup)
         } detail: {
-            ExcaliDrawView()
-        }
-        .toolbar(content: toolbarContent)
-        .onAppear(perform: startMonitorFiles)
-        .onReceive(dirMonitor.dirWillChange) { _ in
-            store.send(.loadAssets)
+            ExcalidrawView()
         }
     }
 }
 
 extension ContentView {
     func createNewFile() {
-        store.send(.newFile)
-    }
-    
-    func startMonitorFiles() {
-        guard dirMonitor.start() else {
-            store.send(.setError(.dirMonitorError(.startFailed)))
-            return
-        }
-        store.send(.loadAssets)
+        store.send(.newFile())
     }
 }
 
@@ -83,15 +79,24 @@ extension ContentView {
 #else
     @ToolbarContentBuilder
     private func toolbarContent_macOS() -> some ToolbarContent {
+//        ToolbarItemGroup(placement: .navigation) {
+//            Button {
+//                hideContent.toggle()
+//            } label: {
+//                Image(systemName: "sidebar.left")
+//            }
+//        }
+        
         ToolbarItemGroup(placement: .status) {
-            Text(store.state.currentFile?.lastPathComponent ?? "Untitled.excalidraw")
+            Text(store.state.currentFile?.name ?? "Untitled")
+                .frame(width: 200)
         }
         
         ToolbarItemGroup(placement: .primaryAction) {
             Spacer()
             // import
             Button {
-                let panel = ExcaliDrawOpenPanel()
+                let panel = ExcalidrawOpenPanel()
                 panel.allowsMultipleSelection = false
                 panel.canChooseDirectories = false
                 panel.allowedContentTypes = [.init(filenameExtension: "excalidraw")].compactMap{ $0 }

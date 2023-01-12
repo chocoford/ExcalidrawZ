@@ -1,6 +1,6 @@
 //
 //  GroupSidebarView.swift
-//  ExcaliDrawZ
+//  ExcalidrawZ
 //
 //  Created by Dove Zachary on 2023/1/4.
 //
@@ -10,10 +10,12 @@ import SwiftUI
 struct GroupSidebarView: View {
     @EnvironmentObject var store: AppStore
     
+    @FetchRequest(sortDescriptors: [SortDescriptor(\.createdAt)]) private var groups: FetchedResults<Group>
+    
     @State private var showCreateFolderDialog = false
     @State private var newFolderName = ""
 
-    private var selectedGroup: Binding<GroupInfo> {
+    private var selectedGroup: Binding<Group?> {
         store.binding(for: \.currentGroup) {
             return .setCurrentGroup($0)
         }
@@ -29,11 +31,11 @@ struct GroupSidebarView: View {
     
     
     @ViewBuilder private var content: some View {
-        List(store.state.assetGroups, selection: selectedGroup) { group in
-            NavigationLink(group.name, value: group)
+        List(groups.filter({ $0.groupType != .trash || $0.files?.count ?? 0 > 0 }),
+             selection: selectedGroup) { group in
+            GroupRowView(group: group)
         }
-        .navigationTitle("Folder")
-        
+
         HStack {
             Button {
                 showCreateFolderDialog.toggle()
@@ -81,7 +83,7 @@ extension GroupSidebarView {
         let name = "New Folder"
         var result = name
         var i = 1
-        while store.state.assetGroups.first(where: {$0.name == result}) != nil {
+        while store.state.groups.first(where: {$0.name == result}) != nil {
             result = "\(name) \(i)"
             i += 1
         }

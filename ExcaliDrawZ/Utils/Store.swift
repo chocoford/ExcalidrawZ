@@ -32,7 +32,7 @@ final class Store<State, Action, Environment>: ObservableObject {
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Store")
 
     init(state: State, reducer: Reducer<State, Action, Environment>, environment: Environment,
-         subscriptionQueue: DispatchQueue = .init(label: "com.chocoford.ExcaliDrawZ.store")) {
+         subscriptionQueue: DispatchQueue = .init(label: "com.chocoford.ExcalidrawZ.store")) {
         self.state = state
         self.reducer = { state, action in
             reducer(&state, action, environment)

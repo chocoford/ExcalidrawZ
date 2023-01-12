@@ -1,6 +1,6 @@
 //
 //  Error.swift
-//  ExcaliDrawZ
+//  ExcalidrawZ
 //
 //  Created by Dove Zachary on 2022/12/29.
 //
@@ -9,6 +9,7 @@ import Foundation
 
 enum AppError: LocalizedError {
     case unexpected(_ error: Error?)
+    case stateError(_ error: StateError)
     case fileError(_ error: FileError)
     case dirMonitorError(_ error: DirMonitorError)
     
@@ -16,10 +17,23 @@ enum AppError: LocalizedError {
         switch self {
             case .unexpected(let error):
                 return "Unexpected error: \(error?.localizedDescription ?? "nil")"
+            case .stateError(let error):
+                return error.errorDescription
             case .fileError(let error):
                 return error.errorDescription
             case .dirMonitorError(let error):
                 return error.errorDescription
+        }
+    }
+}
+
+enum StateError: LocalizedError {
+    case currentGroupNil
+    
+    var errorDescription: String? {
+        switch self {
+            case .currentGroupNil:
+                return "Current group is nil."
         }
     }
 }

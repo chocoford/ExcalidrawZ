@@ -1,6 +1,6 @@
 //
-//  ExcaliDrawZApp.swift
-//  ExcaliDrawZ
+//  ExcalidrawZApp.swift
+//  ExcalidrawZ
 //
 //  Created by Dove Zachary on 2022/12/25.
 //
@@ -10,7 +10,7 @@ import Sparkle
 
 @main
 @MainActor
-struct ExcaliDrawZApp: App {
+struct ExcalidrawZApp: App {
     let store = AppStore(state: AppState(),
                          reducer: appReducer,
                          environment: AppEnvironment())
@@ -19,6 +19,10 @@ struct ExcaliDrawZApp: App {
 #elseif os(iOS)
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 #endif
+    
+    @Environment(\.scenePhase) var scenePhase
+    
+    @State private var timer = Timer.publish(every: 5, on: .main, in: .default).autoconnect()
     
     private let updaterController: SPUStandardUpdaterController
     
@@ -33,6 +37,10 @@ struct ExcaliDrawZApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(store)
+                .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
+                .onReceive(timer) { _ in
+                    store.send(.saveCoreData)
+                }
         }
         .commands {
             CommandGroup(after: .appInfo) {
@@ -42,6 +50,9 @@ struct ExcaliDrawZApp: App {
         #if os(macOS)
         .defaultSize(width: 900, height: 500)
         #endif
+        .onChange(of: scenePhase) { _ in
+            //            store.send(.saveCoreData)
+        }
     }
 }
 
