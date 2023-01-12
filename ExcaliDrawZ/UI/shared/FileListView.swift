@@ -27,6 +27,11 @@ struct FileListView: View {
         List(files, id: \.id, selection: selectedFile) { file in
             FileRowView(fileInfo: file)
         }
+//        .onChange(of: files, perform: { newValue in
+//            if newValue.count == 0 && store.state.currentGroup?.groupType == .trash {
+//                store.send(.setCurrentGroup(<#T##groupID: Group?##Group?#>))
+//            }
+//        })
         .animation(.easeIn, value: files)
     }
 }

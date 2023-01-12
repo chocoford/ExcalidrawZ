@@ -122,6 +122,10 @@ extension PersistenceController {
         return newFile
     }
     
+//    func deleteFile(file: File) {
+//        file.group =
+//    }
+    
     func save() {
         let context = container.viewContext
 

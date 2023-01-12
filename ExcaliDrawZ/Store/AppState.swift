@@ -113,8 +113,11 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 var groups = try environment.persistence.listGroups()
                 let files = try environment.persistence.listFiles(in: group)
                 let index = groups.firstIndex(of: group) ?? 0
+                guard let trash = groups.first(where: { $0.groupType == .trash }) else {
+                    throw AppError.fileError(.notFound)
+                }
                 files.forEach {
-                    environment.persistence.container.viewContext.delete($0 )
+                    $0.group = trash
                 }
                 environment.persistence.container.viewContext.delete(group)
                 groups.remove(at: index)
@@ -164,7 +167,10 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 guard let group = state.currentGroup else { throw AppError.stateError(.currentGroupNil)}
                 var files = try environment.persistence.listFiles(in: group)
                 let index = files.firstIndex(of: file) ?? 1
-                environment.persistence.container.viewContext.delete(file)
+                guard let trash = try environment.persistence.listGroups().first(where: { $0.groupType == .trash }) else {
+                    throw AppError.fileError(.notFound)
+                }
+                file.group = trash
                 files.remove(at: index)
                 state.currentFile = files.safeSubscribe(at: index - 1)
             } catch {
@@ -180,8 +186,14 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
             do {
                 guard let file = try environment.persistence.findFile(id: fileID) else { throw AppError.fileError(.notFound) }
                 file.group = group
-                return Just(.setCurrentFileToFirst)
-                    .eraseToAnyPublisher()
+                if state.currentGroup?.groupType == .trash && state.currentGroup?.files?.count == 0 {
+                    return Just(.setCurrentGroup(group))
+                        .eraseToAnyPublisher()
+                } else {
+                    return Just(.setCurrentFileToFirst)
+                        .eraseToAnyPublisher()
+                }
+                
             } catch {
                 return Just(.setError(.unexpected(error)))
                     .eraseToAnyPublisher()

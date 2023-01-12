@@ -75,10 +75,11 @@ extension GroupRowView {
     }
 }
 
-
+#if DEBUG
 struct GroupRowView_Previews: PreviewProvider {
     static var previews: some View {
         GroupRowView(group: .preview)
             .environmentObject(AppStore.preview)
     }
 }
+#endif

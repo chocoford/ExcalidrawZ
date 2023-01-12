@@ -127,22 +127,24 @@ extension FileRowView {
 // MARK: - Context Menu
 extension FileRowView {
     @ViewBuilder private var listRowContextMenu: some View {
-        Button {
-            renameMode.toggle()
-        } label: {
-           Label("Rename", systemImage: "pencil")
-        }
-        
-        Button {
-            store.send(.duplicateFile(self.fileInfo))
-        } label: {
-            Label("Duplicate", systemImage: "doc.on.doc")
-        }
-        
-        Button(role: .destructive) {
-            showDeleteAlert.toggle()
-        } label: {
-            Label("Delete", systemImage: "trash")
+        if fileInfo.group?.groupType != .trash {
+            Button {
+                renameMode.toggle()
+            } label: {
+                Label("Rename", systemImage: "pencil")
+            }
+            
+            Button {
+                store.send(.duplicateFile(self.fileInfo))
+            } label: {
+                Label("Duplicate", systemImage: "doc.on.doc")
+            }
+            
+            Button(role: .destructive) {
+                showDeleteAlert.toggle()
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
         }
     }
 }

@@ -259,9 +259,9 @@
 				3901E25F29656FC500E79788 /* GroupSidebarView.swift */,
 				39E0577A296C92DD00304655 /* GroupRowView.swift */,
 				3901E2612965704400E79788 /* FileListView.swift */,
+				397F98CA295CBC01009BED55 /* FileRowView.swift */,
 				39AD1EE6295AC30400DA9657 /* ExcalidrawView.swift */,
 				397E4681295839B7003B824B /* WebView.swift */,
-				397F98CA295CBC01009BED55 /* FileRowView.swift */,
 				391487702961D9AE0042927A /* CheckForUpdatesView.swift */,
 			);
 			path = shared;
@@ -682,7 +682,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 0.3.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.visionwx.chocoford.ExcalidrawZ;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.ExcalidrawZ;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
