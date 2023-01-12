@@ -75,8 +75,13 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                    let lastGroupID = UUID(uuidString: lastGroupIDString),
                    let lastGroup = allGroups.first(where: { $0.id == lastGroupID}) {
                     state.currentGroup = lastGroup
-                } else {
+                } else if allGroups.first != nil {
+                    // First Time
                     state.currentGroup = allGroups.first
+                } else {
+                    return Just(.setCurrentGroupFromLastSelected)
+                        .delay(for: 1.0, scheduler: environment.delayQueue)
+                        .eraseToAnyPublisher()
                 }
             } catch {
                 return Just(.setError(.unexpected(error)))

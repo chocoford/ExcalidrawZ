@@ -9,4 +9,5 @@ import Foundation
 
 struct AppEnvironment {
     let persistence = PersistenceController.shared
+    let delayQueue = DispatchQueue(label: "com.chocoford.ExcalidrawZ_DelayQueue")
 }

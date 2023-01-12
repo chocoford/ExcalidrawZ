@@ -79,13 +79,6 @@ extension ContentView {
 #else
     @ToolbarContentBuilder
     private func toolbarContent_macOS() -> some ToolbarContent {
-//        ToolbarItemGroup(placement: .navigation) {
-//            Button {
-//                hideContent.toggle()
-//            } label: {
-//                Image(systemName: "sidebar.left")
-//            }
-//        }
         
         ToolbarItemGroup(placement: .status) {
             Text(store.state.currentFile?.name ?? "Untitled")

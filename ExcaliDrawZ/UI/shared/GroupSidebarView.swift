@@ -31,7 +31,7 @@ struct GroupSidebarView: View {
     
     
     @ViewBuilder private var content: some View {
-        List(groups.filter({ $0.groupType != .trash || $0.files?.count ?? 0 > 0 }),
+        List(groups.filter({ $0.groupType != .trash || $0.files?.count ?? 0 > 0 }).sorted(by: { $0.groupType < $1.groupType }),
              selection: selectedGroup) { group in
             GroupRowView(group: group)
         }

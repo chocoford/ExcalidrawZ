@@ -24,6 +24,17 @@ extension Group {
         case `default` = "default"
         case trash = "trash"
         case normal = "normal"
+        
+        var rank: Int {
+            switch self {
+                case .default:
+                    return 0
+                case .trash:
+                    return 100
+                case .normal:
+                    return 1
+            }
+        }
     }
     var groupType: GroupType {
         get {
@@ -35,6 +46,11 @@ extension Group {
     }
 }
 
+extension Group.GroupType: Comparable {
+    static func < (lhs: Group.GroupType, rhs: Group.GroupType) -> Bool {
+        return lhs.rank < rhs.rank
+    }
+}
 
 
 
