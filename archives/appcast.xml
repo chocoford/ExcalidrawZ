@@ -3,6 +3,19 @@
     <channel>
         <title>ExcaliDrawZ</title>
         <item>
+            <title>0.3.0</title>
+            <pubDate>Thu, 12 Jan 2023 20:41:17 +0800</pubDate>
+            <sparkle:version>5</sparkle:version>
+            <sparkle:shortVersionString>0.3.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:releaseNotesLink>https://excalidrawz.web.app/ExcalidrawZ%200.3.0.html</sparkle:releaseNotesLink>
+            <enclosure url="https://excalidrawz.web.app/ExcalidrawZ%200.3.0.dmg" length="3183594" type="application/octet-stream" sparkle:edSignature="NkE6d7gyFDO+PEglsOPBZ0CAsGV7SFCha5Kn3XUgyAq/RO5p0G4ppJxbAMF/mHDzjJjD8IRKpyA76lI2j/fnCA=="/>
+            <sparkle:deltas>
+                <enclosure url="https://excalidrawz.web.app/ExcaliDrawZ5-4.delta" sparkle:deltaFrom="4" length="198626" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="1378880" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,en" sparkle:edSignature="MpyVdai445MrWFmK0hU9Ce4libHbBdT4D0IDUv2JXxN7Sk3rEhxnYCthMwAhm81TWalzIlHaqG5eLbU6ykJaBA=="/>
+                <enclosure url="https://excalidrawz.web.app/ExcaliDrawZ5-3.delta" sparkle:deltaFrom="3" length="198546" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="1378880" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,en" sparkle:edSignature="NtIuRup4jsuGeDkWMJ1oE5+viMUiSx3K4eKk7/OdUaNIlt/oVU4zAtyBUBvOp+pgShuH/U967RVlUGxJyXvSCQ=="/>
+            </sparkle:deltas>
+        </item>
+        <item>
             <title>0.2.4</title>
             <pubDate>Wed, 04 Jan 2023 09:51:36 +0800</pubDate>
             <sparkle:version>4</sparkle:version>
@@ -28,18 +41,6 @@
                 <enclosure url="https://excalidrawz.web.app/ExcaliDrawZ3-1.delta" sparkle:deltaFrom="1" length="47870" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="1378880" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,en" sparkle:edSignature="/KNjQh1AnF8iJafGRzw2lQDVOyMx508mxsHoMR9fpcaLCT7ls5KvvzZSgpzvQdNIf0nFQCOljMsXvzVYhN3ZCQ=="/>
                 <enclosure url="https://excalidrawz.web.app/ExcaliDrawZ3-2.delta" sparkle:deltaFrom="2" length="47662" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="1378880" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,en" sparkle:edSignature="j9xZrj3LlWZ7glSGHAXI3bkkH0WJa+yAN0N1oI2QuNWKnearazp6k2CexO5+cxYaWLSIQWX6fZ9DC2ejlw4wAg=="/>
             </sparkle:deltas>
-        </item>
-        <item>
-            <title>0.2.2</title>
-            <pubDate>Tue, 03 Jan 2023 13:48:27 +0800</pubDate>
-            <sparkle:version>2</sparkle:version>
-            <sparkle:shortVersionString>0.2.2</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://excalidrawz.web.app/ExcaliDrawZ%200.2.2.dmg" length="3089997" type="application/octet-stream" sparkle:edSignature="bo0LoWvOKyCYHuofU5TFH/2kM2Sw7WOud4q58GXn/gh6xNcWxUWEX4fsFoJAVw33KZKHvmNdvXbKH5gzxdhNAA=="/>
-            <sparkle:deltas>
-                <enclosure url="https://excalidrawz.web.app/ExcaliDrawZ2-1.delta" sparkle:deltaFrom="1" length="4410" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="1378880" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,en" sparkle:edSignature="yr76UH2utnPsrICi+89n73MENCKoyoeKlaGdxrbyc3gQmZlN6MKC10C672udEYC0yAOooMyXfvbPEXFPhJGkCw=="/>
-            </sparkle:deltas>
-            <sparkle:releaseNotesLink>https://excalidrawz.web.app/ExcaliDrawZ%200.2.2.html</sparkle:releaseNotesLink>
         </item>
     </channel>
 </rss>
