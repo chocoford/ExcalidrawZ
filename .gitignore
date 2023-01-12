@@ -89,6 +89,8 @@ fastlane/test_output
 
 iOSInjectionProject/
 
+.DS_Store
 
-archives/*.dmg
+archives/
+firebase/
 scripts/Sparkle-2.3.1
