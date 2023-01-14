@@ -14,29 +14,25 @@ struct FileRowView: View {
     
     @State private var renameMode: Bool = false
     @State private var newFilename: String = ""
-    @State private var showDeleteAlert: Bool = false
+    @State private var showPermanentlyDeleteAlert: Bool = false
     @State private var hovering = false
     
     @FocusState private var isFocused: Bool
-
-    
     
     var body: some View {
         rowWrapper {
             VStack(alignment: .leading) {
                 HStack(spacing: 0) {
                     if renameMode {
-                        TextField(text: $newFilename) {
-                            
-                        }
-                        .textFieldStyle(.squareBorder)
-                        .contentShape(Rectangle())
-                        .focused($isFocused)
-                        .onChange(of: isFocused) { newValue in
-                            if !isFocused {
-                                renameFile()
+                        TextField(text: $newFilename) {}
+                            .textFieldStyle(.squareBorder)
+                            .contentShape(Rectangle())
+                            .focused($isFocused)
+                            .onChange(of: isFocused) { newValue in
+                                if !isFocused {
+                                    renameFile()
+                                }
                             }
-                        }
                     } else {
                         filename
                     }
@@ -49,19 +45,34 @@ struct FileRowView: View {
                 HStack {
                     Text((fileInfo.updatedAt ?? fileInfo.createdAt ?? .distantPast).formatted())
                         .font(.footnote)
+                        .layoutPriority(1)
                     Spacer()
-
-                    if hovering {
-                        Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
+                    
+                    HStack {
+                        Image("circle.grid.2x3.fill")
                             .resizable()
-                            .frame(width: 10, height: 10)
+                            .aspectRatio(contentMode: .fit)
+                            .frame(height: 12)
+
                             .draggable(FileLocalizable(fileID: fileInfo.id!, groupID: fileInfo.group!.id!)) {
                                 FileRowView(fileInfo: fileInfo)
                                     .frame(width: 200)
                                     .padding(.horizontal, 4)
                                     .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 8))
                             }
+                        
+                        Menu {
+                            listRowContextMenu
+                        } label: {
+                            Image(systemName: "ellipsis.circle.fill")
+                                .resizable()
+                        }
+                        .menuStyle(.borderlessButton)
+                        .menuIndicator(.hidden)
+                        .frame(width: 20)
+                        .padding(.horizontal, 4)
                     }
+                    .opacity(hovering ? 1 : 0)
                 }
             }
         }
@@ -77,15 +88,15 @@ struct FileRowView: View {
         .contextMenu {
             listRowContextMenu
         }
-        .alert("Are you sure to delete file: \(fileInfo.name ?? "")", isPresented: $showDeleteAlert) {
+        .alert("Are you sure to permanently delete the file: \(fileInfo.name ?? "")", isPresented: $showPermanentlyDeleteAlert) {
             Button(role: .cancel) {
-                showDeleteAlert.toggle()
+                showPermanentlyDeleteAlert.toggle()
             } label: {
                 Text("Cancel")
             }
             
             Button(role: .destructive) {
-                deleteFile()
+                store.send(.deleteFile(fileInfo, true))
             } label: {
                 Text("Delete")
             }
@@ -127,7 +138,7 @@ extension FileRowView {
 // MARK: - Context Menu
 extension FileRowView {
     @ViewBuilder private var listRowContextMenu: some View {
-        if fileInfo.group?.groupType != .trash {
+        if !fileInfo.inTrash {
             Button {
                 renameMode.toggle()
             } label: {
@@ -141,9 +152,21 @@ extension FileRowView {
             }
             
             Button(role: .destructive) {
-                showDeleteAlert.toggle()
+                deleteFile()
             } label: {
                 Label("Delete", systemImage: "trash")
+            }
+        } else {
+            Button {
+                store.send(.recoverFile(fileInfo))
+            } label: {
+                Label("Recover", systemImage: "arrowshape.turn.up.backward.fill")
+            }
+            
+            Button {
+                showPermanentlyDeleteAlert.toggle()
+            } label: {
+                Label("Delete Permanently", systemImage: "arrowshape.turn.up.backward.fill")
             }
         }
     }

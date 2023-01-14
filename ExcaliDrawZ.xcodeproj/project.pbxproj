@@ -171,7 +171,6 @@
 				397F98DD295EE18E009BED55 /* AppDelegate.swift */,
 				397F98D5295DC150009BED55 /* UI */,
 				39AD1EF4295B505400DA9657 /* Store */,
-				397F98D8295EDF53009BED55 /* Model */,
 				390B2C772967CF4500AA359C /* Persistence */,
 				397F98CC295CC182009BED55 /* Extensions */,
 				397F98D4295DC131009BED55 /* Utils */,
@@ -274,13 +273,6 @@
 				397F98D1295DC0AC009BED55 /* TestView.swift */,
 			);
 			path = components;
-			sourceTree = "<group>";
-		};
-		397F98D8295EDF53009BED55 /* Model */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Model;
 			sourceTree = "<group>";
 		};
 		39AD1EF4295B505400DA9657 /* Store */ = {

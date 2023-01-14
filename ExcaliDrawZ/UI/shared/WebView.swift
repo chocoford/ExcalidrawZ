@@ -36,6 +36,9 @@ struct WebView {
     @Binding var loading: Bool
     
     @State private var previousFileID: UUID? = nil
+    @State private var lsMonitorTimer: Timer? = nil
+    @State private var lastVersion: Int = 0
+
 }
 
 #if os(macOS)
@@ -49,12 +52,13 @@ extension WebView: NSViewRepresentable {
     
     func updateNSView(_ nsView: WKWebView, context: Context) {
         context.coordinator.parent = self
-        context.coordinator.lsMonitorTimer?.invalidate()
         guard !loading else { return }
+//        Task { @MainActor in
         DispatchQueue.main.async {
             if currentFile == nil || currentFile?.id != previousFileID {
-                self.loadCurrentFile {
-                    context.coordinator.startWatchingLocalStorage()
+                self.lsMonitorTimer?.invalidate()
+                self.loadCurrentFile{
+                    self.startWatchingLocalStorage()
                 }
             }
         }
@@ -131,7 +135,6 @@ extension WebView {
                     self.loading = false
                 }
             }
-            
             callback()
         }
 //        do {
@@ -143,6 +146,79 @@ extension WebView {
 //        } catch {
 //            logger.error("evaluateJavaScript error: \(error)")
 //        }
+    }
+    
+    func startWatchingLocalStorage() {
+        self.lsMonitorTimer?.invalidate()
+        if self.currentFile?.inTrash == true {
+            self.logger.info("InTrash file, skip watching local storage")
+            return;
+        }
+        self.logger.info("Start watching local storage.")
+        let script = "localStorage.getItem('version-files');"
+        self.lsMonitorTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+//            self.logger.info("Timer firing")
+            let currentFileID = self.currentFile?.id
+            self.webView.evaluateJavaScript(script) { response, error in
+                if let error = error {
+                    self.logger.error("\(error)")
+                    return
+                }
+                guard let versionString = response as? String else {
+                    self.logger.error("response is not string: \(String(describing: response))")
+                    return
+                }
+//                self.logger.debug("get version: \(versionString)")
+                guard currentFileID == self.currentFile?.id else {
+                    return
+                }
+                
+                if let version = Int(versionString),
+                   self.lastVersion < version {
+                    if self.lastVersion > 0 {
+                        self.saveCurrentFile()
+                    }
+                    self.lastVersion = version
+                    self.logger.debug("version changed")
+                }
+            }
+        }
+    }
+    
+    /// Save `currentFile` or creating if neccessary.
+    ///
+    /// This function will get the local storage of `excalidraw.com`.
+    /// Then it will set the data got from local storage to `currentFile`.
+    func saveCurrentFile() {
+        let getExcalidrawScript = "localStorage.getItem('excalidraw')"
+        let fileID = self.currentFile?.id
+        self.webView.evaluateJavaScript(getExcalidrawScript) { response, error in
+            if let error = error {
+                dump(error)
+                return
+            }
+            // File has changed. Ignored.
+            guard self.currentFile?.id == fileID else {
+                return
+            }
+            
+            guard let response = response as? String  else { return }
+            do {
+                guard let resData = response.data(using: .utf8) else { throw AppError.fileError(.createError) }
+                if let file = self.currentFile {
+                    // parse current file content
+                    try file.updateElements(with: resData)
+                } else {
+                    // create the file
+                    DispatchQueue.main.async {
+                        self.store.send(.newFile(resData))
+                    }
+                }
+            } catch {
+                dump(error)
+            }
+            self.lastVersion = Int((Date().timeIntervalSince1970 + 2) * 1000)
+        }
     }
     
     @MainActor
@@ -168,76 +244,8 @@ class WebViewCoordinator: NSObject {
     init(_ parent: WebView) {
         self.parent = parent
     }
-    
-    var lastVersion: Int = 0
-    
+        
     var downloads: [WKDownload : (URL, File)] = [:]
-    
-    func startWatchingLocalStorage() {
-        logger.info("Start watching local storage.")
-        let script = "localStorage.getItem('version-files')"
-        lsMonitorTimer?.invalidate()
-        lsMonitorTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            let currentFileID = self.parent.currentFile?.id
-            self.parent.webView.evaluateJavaScript(script) { response, error in
-                if let error = error {
-                    self.logger.error("\(error)")
-                    return
-                }
-
-                guard currentFileID == self.parent.currentFile?.id else {
-                    return
-                }
-                
-                if let versionString = response as? String,
-                   let version = Int(versionString),
-                   self.lastVersion < version {
-                    if self.lastVersion > 0 {
-                        self.saveCurrentFile()
-                    }
-                    self.lastVersion = version
-                    self.logger.debug("version changed")
-                }
-            }
-        }
-    }
-    
-    
-    /// Save `currentFile` or creating if neccessary.
-    ///
-    /// This function will get the local storage of `excalidraw.com`.
-    /// Then it will set the data got from local storage to `currentFile`.
-    func saveCurrentFile() {
-        let getExcalidrawScript = "localStorage.getItem('excalidraw')"
-        let fileID = self.parent.currentFile?.id
-        self.parent.webView.evaluateJavaScript(getExcalidrawScript) { response, error in
-            if let error = error {
-                dump(error)
-                return
-            }
-            // File has changed. Ignored.
-            guard self.parent.currentFile?.id == fileID else {
-                return
-            }
-            
-            guard let response = response as? String  else { return }
-            do {
-                guard let resData = response.data(using: .utf8) else { throw AppError.fileError(.createError) }
-                if let file = self.parent.currentFile {
-                    // parse current file content
-                    try file.updateElements(with: resData)
-                } else {
-                    // create the file
-                    DispatchQueue.main.async {
-                        self.parent.store.send(.newFile(resData))
-                    }
-                }
-            } catch {
-                dump(error)
-            }
-            self.lastVersion = Int((Date().timeIntervalSince1970 + 2) * 1000)
-        }
-    }
 }
 
 extension WebViewCoordinator: WKNavigationDelegate {
@@ -270,11 +278,12 @@ extension WebViewCoordinator: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         logger.info("did finish navigation")
-        Task { @MainActor in
-            parent.loading = false
+//        Task { @MainActor in
+        DispatchQueue.main.async {
+            self.parent.loading = false
             self.parent.hideDropdownButton()
-            parent.loadCurrentFile {
-                self.startWatchingLocalStorage()
+            self.parent.loadCurrentFile {
+                self.parent.startWatchingLocalStorage()
             }
         }
         

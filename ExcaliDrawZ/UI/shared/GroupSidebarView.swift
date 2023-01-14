@@ -11,6 +11,8 @@ struct GroupSidebarView: View {
     @EnvironmentObject var store: AppStore
     
     @FetchRequest(sortDescriptors: [SortDescriptor(\.createdAt)]) private var groups: FetchedResults<Group>
+    @FetchRequest(sortDescriptors: [SortDescriptor(\.deletedAt, order: .reverse)],
+                  predicate: .init(format: "inTrash == true")) private var trashFiles: FetchedResults<File>
     
     @State private var showCreateFolderDialog = false
     @State private var newFolderName = ""
@@ -20,7 +22,7 @@ struct GroupSidebarView: View {
             return .setCurrentGroup($0)
         }
     }
-    
+
     var body: some View {
         content
             .onAppear(perform: getNextFileName)
@@ -29,12 +31,22 @@ struct GroupSidebarView: View {
             }
     }
     
+    private var displayedList: [Group] {
+        groups
+            .filter({ $0.groupType != .trash || $0.groupType == .trash && trashFiles.count > 0 })
+            .sorted(by: { $0.groupType < $1.groupType })
+    }
     
     @ViewBuilder private var content: some View {
-        List(groups.filter({ $0.groupType != .trash || $0.files?.count ?? 0 > 0 }).sorted(by: { $0.groupType < $1.groupType }),
+        List(displayedList,
              selection: selectedGroup) { group in
             GroupRowView(group: group)
         }
+             .onChange(of: trashFiles.count) { trashFilesCount in
+                 if trashFilesCount == 0 && store.state.currentGroup?.groupType == .trash {
+                     store.send(.setCurrentGroup(nil))
+                 }
+             }
 
         HStack {
             Button {

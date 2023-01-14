@@ -3,7 +3,9 @@
     <entity name="File" representedClassName="File" syncable="YES" codeGenerationType="class">
         <attribute name="content" attributeType="Binary"/>
         <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="deletedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="inTrash" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="name" attributeType="String"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="group" maxCount="1" deletionRule="Nullify" destinationEntity="Group" inverseName="files" inverseEntity="Group"/>

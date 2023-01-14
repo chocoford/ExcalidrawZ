@@ -26,7 +26,7 @@ struct AppState {
 }
 
 enum AppAction {
-    case setCurrentGroup(_ groupID: Group?)
+    case setCurrentGroup(_ group: Group?)
     case setCurrentGroupFromLastSelected
     case setCurrentFile(_ file: File?)
     case setCurrentFileToFirst
@@ -37,9 +37,11 @@ enum AppAction {
     case newFile(_ elementsData: Data? = nil)
     case importFile(_ file: URL)
     case renameFile(of: File, newName: String)
-    case deleteFile(_ file: File)
     case duplicateFile(_ file: File)
     case moveFile(_ fileID: UUID, _ group: Group)
+    
+    case deleteFile(_ file: File, _ permanent: Bool = false)
+    case recoverFile(_ file: File)
     
     case saveCoreData
     
@@ -55,11 +57,16 @@ typealias AppStore = Store<AppState, AppAction, AppEnvironment>
 let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, action, environment in
     switch action {
         case .setCurrentGroup(let group):
-            guard group != nil else { break }
-            state.currentGroup = group
+            guard group != nil else {
+                let allGroups = try? environment.persistence.listGroups()
+                state.currentGroup = allGroups?.first(where: {$0.groupType == .default})
+                break
+            }
             do {
+                state.currentGroup = group
                 if let group = group {
-                    state.currentFile = try environment.persistence.listFiles(in: group).first
+                    return Just(.setCurrentFileToFirst)
+                        .eraseToAnyPublisher()
                 } else {
                     throw AppError.stateError(.currentGroupNil)
                 }
@@ -94,7 +101,19 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
         case .setCurrentFileToFirst:
             do {
                 if let group = state.currentGroup {
-                    state.currentFile = try environment.persistence.listFiles(in: group).first
+                    if group.groupType == .trash {
+                        if let file = try environment.persistence.listTrashedFiles().first {
+                            state.currentFile = file
+                        } else {
+                            // no file in trash
+                            return Just(.setCurrentGroup(nil))
+                                .eraseToAnyPublisher()
+                        }
+                    } else {
+                        state.currentFile = try environment.persistence.listFiles(in: group).first {
+                            !$0.inTrash
+                        }
+                    }
                 } else {
                     throw AppError.stateError(.currentGroupNil)
                 }
@@ -165,23 +184,7 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
             
         case .renameFile(let file, let name):
             file.name = name
-            
-        case .deleteFile(let file):
-            // get current group files
-            do {
-                guard let group = state.currentGroup else { throw AppError.stateError(.currentGroupNil)}
-                var files = try environment.persistence.listFiles(in: group)
-                let index = files.firstIndex(of: file) ?? 1
-                guard let trash = try environment.persistence.listGroups().first(where: { $0.groupType == .trash }) else {
-                    throw AppError.fileError(.notFound)
-                }
-                file.group = trash
-                files.remove(at: index)
-                state.currentFile = files.safeSubscribe(at: index - 1)
-            } catch {
-                return Just(.setError(.unexpected(error)))
-                    .eraseToAnyPublisher()
-            }
+            file.updatedAt = .now
             
         case .duplicateFile(let file):
             let newFile = environment.persistence.duplicateFile(file: file)
@@ -204,6 +207,46 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                     .eraseToAnyPublisher()
             }
         
+        case .deleteFile(let file, let permanent):
+            // get current group files
+            do {
+                guard let group = state.currentGroup else { throw AppError.stateError(.currentGroupNil)}
+                var files: [File]
+                if group.groupType != .trash {
+                    files = try environment.persistence.listFiles(in: group)
+                } else {
+                    files = try environment.persistence.listTrashedFiles()
+                }
+                guard let index = files.firstIndex(of: file) else { throw AppError.fileError(.notFound) }
+                if permanent {
+                    environment.persistence.container.viewContext.delete(file)
+                } else {
+                    file.inTrash = true
+                    file.deletedAt = .now
+                }
+                files.remove(at: index)
+                state.currentFile = files.safeSubscribe(at: index - 1)
+            } catch {
+                return Just(.setError(.unexpected(error)))
+                    .eraseToAnyPublisher()
+            }
+            
+        case .recoverFile(let file):
+            do {
+                guard let group = state.currentGroup,
+                      group.groupType == .trash else { throw AppError.stateError(.currentGroupNil)}
+                var files = try environment.persistence.listTrashedFiles()
+                let index = files.firstIndex(of: file) ?? 1
+                file.inTrash = false
+                file.deletedAt = nil
+                file.updatedAt = .now
+                files.remove(at: index)
+                state.currentFile = files.safeSubscribe(at: index - 1)
+            } catch {
+                return Just(.setError(.unexpected(error)))
+                    .eraseToAnyPublisher()
+            }
+            
         case .saveCoreData:
             environment.persistence.save()
             

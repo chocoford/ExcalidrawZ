@@ -12,9 +12,21 @@ struct FileListView: View {
     @FetchRequest var files: FetchedResults<File>
     
     init(group: Group?) {
-        self._files = FetchRequest<File>(sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse),
-                                                           SortDescriptor(\.createdAt, order: .reverse)],
-                                   predicate: group != nil ? NSPredicate(format: "group == %@", group!) : NSPredicate(value: false))
+        let predicate: NSPredicate
+        
+        if let group = group {
+            if group.groupType == .trash {
+                predicate = NSPredicate(format: "inTrash == YES")
+            } else {
+                predicate = NSPredicate(format: "group == %@ AND inTrash == NO", group)
+            }
+        } else {
+            predicate = NSPredicate(value: false)
+        }
+                
+        self._files = FetchRequest<File>(sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse),
+                                                           SortDescriptor(\.updatedAt, order: .reverse)],
+                                   predicate: predicate)
     }
     
     private var selectedFile: Binding<File?> {
@@ -27,11 +39,6 @@ struct FileListView: View {
         List(files, id: \.id, selection: selectedFile) { file in
             FileRowView(fileInfo: file)
         }
-//        .onChange(of: files, perform: { newValue in
-//            if newValue.count == 0 && store.state.currentGroup?.groupType == .trash {
-//                store.send(.setCurrentGroup(<#T##groupID: Group?##Group?#>))
-//            }
-//        })
         .animation(.easeIn, value: files)
     }
 }

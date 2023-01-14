@@ -32,7 +32,12 @@ struct PersistenceController {
             }
         }
         
+        #if DEBUG
+        log()
+        #endif
+        
         prepare()
+        migration()
     }
     
     func prepare() {
@@ -75,8 +80,14 @@ extension PersistenceController {
     }
     func listFiles(in group: Group) throws -> [File] {
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
-        fetchRequest.predicate = NSPredicate(format: "group == %@", group)
-        fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false), .init(key: "createdAt", ascending: false)]
+        fetchRequest.predicate = NSPredicate(format: "group == %@ AND inTrash == NO", group)
+        fetchRequest.sortDescriptors = [.init(key: "createdAt", ascending: false), .init(key: "updatedAt", ascending: false)]
+        return try container.viewContext.fetch(fetchRequest)
+    }
+    func listTrashedFiles() throws -> [File] {
+        let fetchRequest = NSFetchRequest<File>(entityName: "File")
+        fetchRequest.predicate = NSPredicate(format: "inTrash == YES")
+        fetchRequest.sortDescriptors = [.init(key: "deletedAt", ascending: false)]
         return try container.viewContext.fetch(fetchRequest)
     }
     func findGroup(id: UUID) throws -> Group? {
@@ -141,6 +152,36 @@ extension PersistenceController {
 }
 
 
+// MARK: Migration
+extension PersistenceController {
+    func migration() {
+        Task {
+            do {
+                let filesFetch: NSFetchRequest<File> = NSFetchRequest(entityName: "File")
+                let groupsFetch: NSFetchRequest<Group> = NSFetchRequest(entityName: "Group")
+                
+                try await container.viewContext.perform {
+                    let files = try filesFetch.execute()
+                    let groups = try groupsFetch.execute()
+                    
+                    let defaultGroup = groups.first { $0.groupType == .default }
+                    
+                    files.forEach { file in
+                        if file.group?.groupType == .trash {
+                            file.group = defaultGroup
+                            file.inTrash = true
+                            file.deletedAt = .now
+                        }
+                    }
+                }
+                
+            } catch {
+                dump(error, name: "migration failed")
+            }
+        }
+    }
+}
+
 #if DEBUG
 extension PersistenceController {
     // A test configuration for SwiftUI previews
@@ -156,6 +197,25 @@ extension PersistenceController {
 
         return controller
     }()
+    
+    func log() {
+        Task {
+            do {
+                let filesFetch: NSFetchRequest<File> = NSFetchRequest(entityName: "File")
+                let groupsFetch: NSFetchRequest<Group> = NSFetchRequest(entityName: "Group")
+                
+                try await container.viewContext.perform {
+                    let files = try filesFetch.execute()
+                    let groups = try groupsFetch.execute()
+                    dump(groups, name: "groups")
+                    dump(files, name: "files")
+                }
+                
+            } catch {
+                dump(error, name: "migration failed")
+            }
+        }
+    }
 }
 #endif
 

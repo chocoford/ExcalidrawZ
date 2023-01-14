@@ -11,6 +11,7 @@ struct ExcalidrawView: View {
     @EnvironmentObject var store: AppStore
 
     @State private var isLoading = true
+    @State private var showRestoreAlert = false
 
     private var currentFile: Binding<File?> {
         store.binding(for: \.currentFile,
@@ -36,6 +37,9 @@ struct ExcalidrawView: View {
                             Text("Loading...")
                         }
                     }
+                } else if currentFile.wrappedValue?.inTrash == true {
+                    recoverOverlayView
+                        .frame(width: geometry.size.width, height: geometry.size.height)
                 }
             }
             .transition(.opacity)
@@ -46,6 +50,39 @@ struct ExcalidrawView: View {
                 }
             }
         }
+    }
+}
+
+extension ExcalidrawView {
+    @ViewBuilder private var recoverOverlayView: some View {
+        Rectangle()
+            .opacity(0)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                showRestoreAlert.toggle()
+            }
+            .onLongPressGesture(perform: {
+                showRestoreAlert.toggle()
+            })
+            .alert("Recently deleted files can’t be edited.", isPresented: $showRestoreAlert) {
+                Button(role: .cancel) {
+                    showRestoreAlert.toggle()
+                } label: {
+                    Text("Cancel")
+                }
+
+                Button {
+                    if let file = currentFile.wrappedValue {
+                        store.send(.recoverFile(file))
+                    }
+                } label: {
+                    Text("Recover")
+                }
+
+            } message: {
+                Text("To edit this file, you’ll need to recover it.")
+            }
+
     }
 }
 
