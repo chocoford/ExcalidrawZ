@@ -13,6 +13,7 @@ struct GroupRowView: View {
     var group: Group
     
     @State private var alertDeletion = false
+    @State private var alertEmpty = false
     
     var body: some View {
         NavigationLink(value: group, label: {
@@ -28,6 +29,7 @@ struct GroupRowView: View {
         })
         .contextMenu { contextMenuView }
         .deleteAlert(isPresented: $alertDeletion, onDelete: deleteGroup)
+        .emptyAlert(isPresented: $alertEmpty, onEmpty: emptyTrash)
     }
     
 }
@@ -55,6 +57,12 @@ extension GroupRowView {
             } label: {
                 Label("delete", systemImage: "trash")
             }
+        } else if group.groupType == .trash {
+            Button(role: .destructive) {
+                alertEmpty.toggle()
+            } label: {
+                Label("empty", systemImage: "trash")
+            }
         }
     }
 }
@@ -66,7 +74,7 @@ fileprivate extension View {
         self
             .alert("Are you sure you want to delete this folder?", isPresented: isPresented, actions: {
                 Button(role: .cancel) {
-                    
+                    isPresented.wrappedValue.toggle()
                 } label: {
                     Label("Cancel", systemImage: "trash")
                 }
@@ -79,6 +87,24 @@ fileprivate extension View {
                 Text("All files will be deleted.")
             }
     }
+    
+    @ViewBuilder func emptyAlert(isPresented: Binding<Bool>, onEmpty: @escaping () -> Void) -> some View {
+        self
+            .alert("Are you sure you want to empty the trash?", isPresented: isPresented, actions: {
+                Button(role: .cancel) {
+                    isPresented.wrappedValue.toggle()
+                } label: {
+                    Label("Cancel", systemImage: "trash")
+                }
+                Button(role: .destructive) {
+                    onEmpty()
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }) {
+                Text("All files will be permanently deleted.")
+            }
+    }
 }
 
 
@@ -86,6 +112,10 @@ fileprivate extension View {
 extension GroupRowView {
     func deleteGroup() {
         store.send(.deleteGroup(group))
+    }
+    
+    func emptyTrash() {
+        store.send(.emptyTrash)
     }
 }
 

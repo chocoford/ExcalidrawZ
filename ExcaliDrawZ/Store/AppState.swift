@@ -33,6 +33,7 @@ enum AppAction {
     
     case createGroup(_ name: String)
     case deleteGroup(_ group: Group)
+    case emptyTrash
     
     case newFile(_ elementsData: Data? = nil)
     case importFile(_ file: URL)
@@ -151,6 +152,18 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                     .eraseToAnyPublisher()
             }
             
+        case .emptyTrash:
+            do {
+                let files = try environment.persistence.listTrashedFiles()
+                files.forEach { environment.persistence.container.viewContext.delete($0) }
+                if state.currentGroup?.groupType == .trash {
+                    return Just(.setCurrentGroup(nil))
+                        .eraseToAnyPublisher()
+                }
+            } catch {
+                return Just(.setError(.unexpected(error)))
+                    .eraseToAnyPublisher()
+            }
             
         case .newFile(let elementsData):
             do {

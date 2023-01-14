@@ -39,6 +39,14 @@ struct WebView {
     @State private var lsMonitorTimer: Timer? = nil
     @State private var lastVersion: Int = 0
 
+    
+    init(store: AppStore, currentFile: Binding<File?>, loading: Binding<Bool>) {
+        self.store = store
+        self._currentFile = currentFile
+        self._loading = loading
+        
+        logger.debug("init")
+    }
 }
 
 #if os(macOS)
@@ -53,9 +61,10 @@ extension WebView: NSViewRepresentable {
     func updateNSView(_ nsView: WKWebView, context: Context) {
         context.coordinator.parent = self
         guard !loading else { return }
-//        Task { @MainActor in
+        // Fix Bug: Will cause infinity loop: startWatchingLocalStorage -> set lsMonitorTimer -> updateNSView -> startWatchingLocalStorage
+        // (currentFile == nil && self.lsMonitorTimer?.isValid == false) fix this.
         DispatchQueue.main.async {
-            if currentFile == nil || currentFile?.id != previousFileID {
+            if (currentFile == nil && self.lsMonitorTimer?.isValid == false) || currentFile?.id != previousFileID {
                 self.lsMonitorTimer?.invalidate()
                 self.loadCurrentFile{
                     self.startWatchingLocalStorage()
@@ -197,10 +206,6 @@ extension WebView {
                 dump(error)
                 return
             }
-//            guard self.currentFile?.id == fileID else {
-//                logger.info("<saveCurrentFile> File has changed. Ignored.")
-//                return
-//            }
             
             guard let response = response as? String  else { return }
             do {
