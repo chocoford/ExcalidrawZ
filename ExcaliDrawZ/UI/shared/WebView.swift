@@ -120,7 +120,7 @@ extension WebView {
     /// It evaluates `javascript` code that dispatch `DragEvent` to the specific `HTMLElement`.
     @MainActor
     func loadCurrentFile(callback: @escaping () -> Void) {
-        previousFileID = currentFile?.id
+        previousFileID = self.currentFile?.id
         logger.info("loadCurrentFile: \(currentFile?.name ?? "nil")")
         
         let script = getScript(from: currentFile)
@@ -157,8 +157,7 @@ extension WebView {
         self.logger.info("Start watching local storage.")
         let script = "localStorage.getItem('version-files');"
         self.lsMonitorTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-//            self.logger.info("Timer firing")
-            let currentFileID = self.currentFile?.id
+//            let currentFileID = self.currentFile?.id
             self.webView.evaluateJavaScript(script) { response, error in
                 if let error = error {
                     self.logger.error("\(error)")
@@ -168,18 +167,18 @@ extension WebView {
                     self.logger.error("response is not string: \(String(describing: response))")
                     return
                 }
-//                self.logger.debug("get version: \(versionString)")
-                guard currentFileID == self.currentFile?.id else {
-                    return
-                }
+//                guard currentFileID == self.currentFile?.id else {
+//                    self.logger.debug("not current file, discard.")
+//                    return
+//                }
                 
                 if let version = Int(versionString),
                    self.lastVersion < version {
+                    self.logger.debug("version changed")
                     if self.lastVersion > 0 {
                         self.saveCurrentFile()
                     }
                     self.lastVersion = version
-                    self.logger.debug("version changed")
                 }
             }
         }
@@ -190,22 +189,23 @@ extension WebView {
     /// This function will get the local storage of `excalidraw.com`.
     /// Then it will set the data got from local storage to `currentFile`.
     func saveCurrentFile() {
+        logger.info("<saveCurrentFile> saving: \(self.currentFile?.name ?? "nil")")
         let getExcalidrawScript = "localStorage.getItem('excalidraw')"
-        let fileID = self.currentFile?.id
+        let file = self.currentFile
         self.webView.evaluateJavaScript(getExcalidrawScript) { response, error in
             if let error = error {
                 dump(error)
                 return
             }
-            // File has changed. Ignored.
-            guard self.currentFile?.id == fileID else {
-                return
-            }
+//            guard self.currentFile?.id == fileID else {
+//                logger.info("<saveCurrentFile> File has changed. Ignored.")
+//                return
+//            }
             
             guard let response = response as? String  else { return }
             do {
                 guard let resData = response.data(using: .utf8) else { throw AppError.fileError(.createError) }
-                if let file = self.currentFile {
+                if let file = file {
                     // parse current file content
                     try file.updateElements(with: resData)
                 } else {

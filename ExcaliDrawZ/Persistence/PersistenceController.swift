@@ -81,13 +81,14 @@ extension PersistenceController {
     func listFiles(in group: Group) throws -> [File] {
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
         fetchRequest.predicate = NSPredicate(format: "group == %@ AND inTrash == NO", group)
-        fetchRequest.sortDescriptors = [.init(key: "createdAt", ascending: false), .init(key: "updatedAt", ascending: false)]
+        fetchRequest.sortDescriptors = [ .init(key: "updatedAt", ascending: false),
+                                         .init(key: "createdAt", ascending: false)]
         return try container.viewContext.fetch(fetchRequest)
     }
     func listTrashedFiles() throws -> [File] {
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
         fetchRequest.predicate = NSPredicate(format: "inTrash == YES")
-        fetchRequest.sortDescriptors = [.init(key: "deletedAt", ascending: false)]
+        fetchRequest.sortDescriptors = [.init(key: "deletedAt", ascending: false)] 
         return try container.viewContext.fetch(fetchRequest)
     }
     func findGroup(id: UUID) throws -> Group? {
@@ -118,6 +119,7 @@ extension PersistenceController {
         file.id = UUID()
         file.name = "Untitled"
         file.createdAt = .now
+        file.updatedAt = .now
         file.group = group
         file.content = try Data(contentsOf: templateURL)
         return file
@@ -127,6 +129,7 @@ extension PersistenceController {
         let newFile = File(context: container.viewContext)
         newFile.id = UUID()
         newFile.createdAt = .now
+        newFile.updatedAt = .now
         newFile.name = file.name
         newFile.content = file.content
         newFile.group = file.group

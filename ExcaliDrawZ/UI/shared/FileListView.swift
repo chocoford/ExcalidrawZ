@@ -24,8 +24,8 @@ struct FileListView: View {
             predicate = NSPredicate(value: false)
         }
                 
-        self._files = FetchRequest<File>(sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse),
-                                                           SortDescriptor(\.updatedAt, order: .reverse)],
+        self._files = FetchRequest<File>(sortDescriptors: [ SortDescriptor(\.updatedAt, order: .reverse),
+                                                            SortDescriptor(\.createdAt, order: .reverse)],
                                    predicate: predicate)
     }
     
