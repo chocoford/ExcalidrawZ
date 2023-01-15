@@ -61,12 +61,16 @@ extension WebView: NSViewRepresentable {
     func updateNSView(_ nsView: WKWebView, context: Context) {
         context.coordinator.parent = self
         guard !loading else { return }
-        // Fix Bug: Will cause infinity loop: startWatchingLocalStorage -> set lsMonitorTimer -> updateNSView -> startWatchingLocalStorage
-        // (currentFile == nil && self.lsMonitorTimer?.isValid == false) fix this.
+
+        if (currentFile == nil && self.lsMonitorTimer?.isValid == false) || currentFile?.id != previousFileID {
+            self.lsMonitorTimer?.invalidate()
+        }
         DispatchQueue.main.async {
+            // Fix Bug: Will cause infinity loop: startWatchingLocalStorage -> set lsMonitorTimer -> updateNSView -> startWatchingLocalStorage
+            // (currentFile == nil && self.lsMonitorTimer?.isValid == false) fix this.
             if (currentFile == nil && self.lsMonitorTimer?.isValid == false) || currentFile?.id != previousFileID {
                 self.lsMonitorTimer?.invalidate()
-                self.loadCurrentFile{
+                self.loadCurrentFile {
                     self.startWatchingLocalStorage()
                 }
             }
@@ -130,7 +134,7 @@ extension WebView {
     @MainActor
     func loadCurrentFile(callback: @escaping () -> Void) {
         previousFileID = self.currentFile?.id
-        logger.info("loadCurrentFile: \(currentFile?.name ?? "nil")")
+        logger.info("loadCurrentFile: \(currentFile?.name ?? "nil"), timer: \(lsMonitorTimer?.isValid == true ? "valid" : "invalid")")
         
         let script = getScript(from: currentFile)
         
@@ -141,7 +145,9 @@ extension WebView {
             }
             Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
                 DispatchQueue.main.async {
-                    self.loading = false
+                    withAnimation {
+                        self.loading = false
+                    }
                 }
             }
             callback()
@@ -166,7 +172,7 @@ extension WebView {
         self.logger.info("Start watching local storage.")
         let script = "localStorage.getItem('version-files');"
         self.lsMonitorTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-//            let currentFileID = self.currentFile?.id
+            let currentFileID = self.currentFile?.id
             self.webView.evaluateJavaScript(script) { response, error in
                 if let error = error {
                     self.logger.error("\(error)")
@@ -176,10 +182,10 @@ extension WebView {
                     self.logger.error("response is not string: \(String(describing: response))")
                     return
                 }
-//                guard currentFileID == self.currentFile?.id else {
-//                    self.logger.debug("not current file, discard.")
-//                    return
-//                }
+                guard currentFileID == self.currentFile?.id else {
+                    self.logger.debug("not current file, discard.")
+                    return
+                }
                 
                 if let version = Int(versionString),
                    self.lastVersion < version {
@@ -198,9 +204,9 @@ extension WebView {
     /// This function will get the local storage of `excalidraw.com`.
     /// Then it will set the data got from local storage to `currentFile`.
     func saveCurrentFile() {
-        logger.info("<saveCurrentFile> saving: \(self.currentFile?.name ?? "nil")")
-        let getExcalidrawScript = "localStorage.getItem('excalidraw')"
         let file = self.currentFile
+        logger.info("<saveCurrentFile> start saving: \(file?.name ?? "nil")")
+        let getExcalidrawScript = "localStorage.getItem('excalidraw')"
         self.webView.evaluateJavaScript(getExcalidrawScript) { response, error in
             if let error = error {
                 dump(error)
@@ -208,6 +214,7 @@ extension WebView {
             }
             
             guard let response = response as? String  else { return }
+            dump(response)
             do {
                 guard let resData = response.data(using: .utf8) else { throw AppError.fileError(.createError) }
                 if let file = file {

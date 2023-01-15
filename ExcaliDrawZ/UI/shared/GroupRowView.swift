@@ -99,7 +99,7 @@ fileprivate extension View {
                 Button(role: .destructive) {
                     onEmpty()
                 } label: {
-                    Label("Delete", systemImage: "trash")
+                    Label("Empty", systemImage: "trash")
                 }
             }) {
                 Text("All files will be permanently deleted.")

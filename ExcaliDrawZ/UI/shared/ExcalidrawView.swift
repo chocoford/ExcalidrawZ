@@ -26,16 +26,12 @@ struct ExcalidrawView: View {
                 WebView(store: store,
                         currentFile: currentFile,
                         loading: $isLoading)
+                .opacity(isLoading ? 0 : 1)
                 
                 if isLoading {
-                    ZStack {
-                        Rectangle()
-                            .frame(width: geometry.size.width, height: geometry.size.height)
-                            .background(.background)
-                        VStack {
-                            LoadingView(strokeColor: Color.accentColor)
-                            Text("Loading...")
-                        }
+                    VStack {
+                        LoadingView(strokeColor: Color.accentColor)
+                        Text("Loading...")
                     }
                 } else if currentFile.wrappedValue?.inTrash == true {
                     recoverOverlayView
