@@ -11,7 +11,8 @@ enum AppError: LocalizedError {
     case unexpected(_ error: Error?)
     case stateError(_ error: StateError)
     case fileError(_ error: FileError)
-    case dirMonitorError(_ error: DirMonitorError)
+    case groupError(_ error: GroupError)
+//    case dirMonitorError(_ error: DirMonitorError)
     
     var errorDescription: String? {
         switch self {
@@ -21,8 +22,10 @@ enum AppError: LocalizedError {
                 return error.errorDescription
             case .fileError(let error):
                 return error.errorDescription
-            case .dirMonitorError(let error):
+            case .groupError(let error):
                 return error.errorDescription
+//            case .dirMonitorError(let error):
+//                return error.errorDescription
         }
     }
 }
@@ -58,6 +61,20 @@ enum FileError: LocalizedError {
                 return "Create file failed."
             case .alreadyExist:
                 return "File already exists."
+        }
+    }
+}
+
+enum GroupError: LocalizedError {
+    case unexpected(_ error: Error?)
+    case notFound(_ tag: String? = nil)
+    
+    var errorDescription: String? {
+        switch self {
+            case .unexpected(let error):
+                return "Unexpected error: \(error?.localizedDescription ?? "nil")"
+            case .notFound(let tag):
+                return "Group not found(\(tag ?? "unknown"))."
         }
     }
 }

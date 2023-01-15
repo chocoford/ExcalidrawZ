@@ -128,6 +128,7 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
             do {
                 let group = try environment.persistence.createGroup(name: name)
                 state.currentGroup = group
+                environment.persistence.save()
             } catch {
                 return Just(.setError(.fileError(.unexpected(error))))
                     .eraseToAnyPublisher()
@@ -141,12 +142,18 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 guard let trash = groups.first(where: { $0.groupType == .trash }) else {
                     throw AppError.fileError(.notFound)
                 }
+                guard let defaultGroup = try environment.persistence.listGroups().first(where: { $0.groupType == .default }) else {
+                    throw AppError.groupError(.notFound("default"))
+                }
                 files.forEach {
-                    $0.group = trash
+                    $0.inTrash = true
+                    $0.deletedAt = .now
+                    $0.group = defaultGroup
                 }
                 environment.persistence.container.viewContext.delete(group)
                 groups.remove(at: index)
                 state.currentGroup = groups.safeSubscribe(at: index - 1)
+                environment.persistence.save()
             } catch {
                 return Just(.setError(.unexpected(error)))
                     .eraseToAnyPublisher()
@@ -156,6 +163,7 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
             do {
                 let files = try environment.persistence.listTrashedFiles()
                 files.forEach { environment.persistence.container.viewContext.delete($0) }
+                environment.persistence.save()
                 if state.currentGroup?.groupType == .trash {
                     return Just(.setCurrentGroup(nil))
                         .eraseToAnyPublisher()
@@ -171,6 +179,7 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 let file = try environment.persistence.createFile(in: group)
                 if let data = elementsData { try file.updateElements(with: data) }
                 state.currentFile = file
+                environment.persistence.save()
             } catch {
                 return Just(.setError(.unexpected(error)))
                     .eraseToAnyPublisher()
@@ -187,6 +196,7 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 file.content = data
                 
                 state.currentFile = file
+                environment.persistence.save()
             } catch let error as FileError {
                 return Just(AppAction.setError(.fileError(error)))
                     .eraseToAnyPublisher()
@@ -198,15 +208,18 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
         case .renameFile(let file, let name):
             file.name = name
             file.updatedAt = .now
+            environment.persistence.save()
             
         case .duplicateFile(let file):
             let newFile = environment.persistence.duplicateFile(file: file)
             state.currentFile = newFile
+            environment.persistence.save()
             
         case .moveFile(let fileID, let group):
             do {
                 guard let file = try environment.persistence.findFile(id: fileID) else { throw AppError.fileError(.notFound) }
                 file.group = group
+                environment.persistence.save()
                 if state.currentGroup?.groupType == .trash && state.currentGroup?.files?.count == 0 {
                     return Just(.setCurrentGroup(group))
                         .eraseToAnyPublisher()
@@ -215,7 +228,10 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                         .eraseToAnyPublisher()
                 }
                 
-            } catch {
+            } catch let error as AppError {
+                return Just(AppAction.setError(error))
+                    .eraseToAnyPublisher()
+            } catch  {
                 return Just(.setError(.unexpected(error)))
                     .eraseToAnyPublisher()
             }
@@ -239,6 +255,7 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 }
                 files.remove(at: index)
                 state.currentFile = files.safeSubscribe(at: index - 1)
+                environment.persistence.save()
             } catch {
                 return Just(.setError(.unexpected(error)))
                     .eraseToAnyPublisher()
@@ -253,8 +270,21 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 file.inTrash = false
                 file.deletedAt = nil
                 file.updatedAt = .now
+                if file.group == nil {
+                    guard let defaultGroup = try environment.persistence.listGroups().first(where: { $0.groupType == .default }) else {
+                        throw AppError.groupError(.notFound("default"))
+                    }
+                    file.group = defaultGroup
+                }
                 files.remove(at: index)
                 state.currentFile = files.safeSubscribe(at: index - 1)
+                
+                environment.persistence.save()
+                if state.currentFile == nil {
+                    return Just(.setCurrentGroup(file.group))
+                        .eraseToAnyPublisher()
+                }
+                
             } catch {
                 return Just(.setError(.unexpected(error)))
                     .eraseToAnyPublisher()

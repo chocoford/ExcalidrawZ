@@ -52,7 +52,7 @@ final class Store<State, Action, Environment>: ObservableObject {
         }
     }
     
-    func send(_ action: Action, log: Bool = false) {
+    func send(_ action: Action, log: Bool = true) {
         if log { logger.info("send: \(String(describing: action))") }
         /// AnyPublisher<Action, Never>
         let effect = reducer(&state, action)

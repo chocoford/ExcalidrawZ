@@ -98,7 +98,7 @@ extension PersistenceController {
     }
     func findFile(id: UUID) throws -> File? {
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
-        fetchRequest.predicate = NSPredicate(format: "id == %@", id.uuidString)
+        fetchRequest.predicate = NSPredicate(format: "id == %@", id as CVarArg)
         return try container.viewContext.fetch(fetchRequest).first
     }
     

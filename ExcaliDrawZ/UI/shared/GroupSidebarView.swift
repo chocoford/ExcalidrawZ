@@ -12,7 +12,7 @@ struct GroupSidebarView: View {
     
     @FetchRequest(sortDescriptors: [SortDescriptor(\.createdAt)]) private var groups: FetchedResults<Group>
     @FetchRequest(sortDescriptors: [SortDescriptor(\.deletedAt, order: .reverse)],
-                  predicate: .init(format: "inTrash == true")) private var trashFiles: FetchedResults<File>
+                  predicate: .init(format: "inTrash == YES")) private var trashFiles: FetchedResults<File>
     
     @State private var showCreateFolderDialog = false
     @State private var newFolderName = ""

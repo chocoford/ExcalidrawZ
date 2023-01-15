@@ -44,8 +44,6 @@ struct WebView {
         self.store = store
         self._currentFile = currentFile
         self._loading = loading
-        
-        logger.debug("init")
     }
 }
 
@@ -214,7 +212,6 @@ extension WebView {
             }
             
             guard let response = response as? String  else { return }
-            dump(response)
             do {
                 guard let resData = response.data(using: .utf8) else { throw AppError.fileError(.createError) }
                 if let file = file {
