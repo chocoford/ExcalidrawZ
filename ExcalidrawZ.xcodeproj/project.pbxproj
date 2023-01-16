@@ -79,7 +79,7 @@
 		397E4656295838CF003B824B /* ExcalidrawZApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawZApp.swift; sourceTree = "<group>"; };
 		397E4658295838CF003B824B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		397E465A295838D0003B824B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		397E465C295838D0003B824B /* ExcaliDrawZ.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ExcaliDrawZ.entitlements; sourceTree = "<group>"; };
+		397E465C295838D0003B824B /* ExcalidrawZ.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ExcalidrawZ.entitlements; sourceTree = "<group>"; };
 		397E465E295838D0003B824B /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		397E4664295838D0003B824B /* ExcalidrawZTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ExcalidrawZTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		397E4668295838D0003B824B /* ExcalidrawZTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawZTests.swift; sourceTree = "<group>"; };
@@ -176,7 +176,7 @@
 				397F98D4295DC131009BED55 /* Utils */,
 				397E468529599DA0003B824B /* Resources */,
 				397E465A295838D0003B824B /* Assets.xcassets */,
-				397E465C295838D0003B824B /* ExcaliDrawZ.entitlements */,
+				397E465C295838D0003B824B /* ExcalidrawZ.entitlements */,
 				397E465D295838D0003B824B /* Preview Content */,
 			);
 			path = ExcalidrawZ;
