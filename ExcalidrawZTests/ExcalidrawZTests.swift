@@ -1,13 +1,13 @@
 //
-//  ExcaliDrawZTests.swift
-//  ExcaliDrawZTests
+//  ExcalidrawZTests.swift
+//  ExcalidrawZTests
 //
 //  Created by Dove Zachary on 2022/12/25.
 //
 
 import XCTest
 
-final class ExcaliDrawZTests: XCTestCase {
+final class ExcalidrawZTests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

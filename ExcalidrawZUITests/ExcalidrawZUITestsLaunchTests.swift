@@ -1,13 +1,13 @@
 //
-//  ExcaliDrawZUITestsLaunchTests.swift
-//  ExcaliDrawZUITests
+//  ExcalidrawZUITestsLaunchTests.swift
+//  ExcalidrawZUITests
 //
 //  Created by Dove Zachary on 2022/12/25.
 //
 
 import XCTest
 
-final class ExcaliDrawZUITestsLaunchTests: XCTestCase {
+final class ExcalidrawZUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
