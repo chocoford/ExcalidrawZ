@@ -23,13 +23,7 @@ struct ContentView: View {
     
     var body: some View {
         content
-        .alert(isPresented: hasError,
-               error: store.state.error,
-               actions: { error in
-            
-        }, message: { error in
-            
-        })
+            .alert(isPresented: hasError, error: store.state.error) {}
     }
 
     
