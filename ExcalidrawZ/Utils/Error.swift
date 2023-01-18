@@ -12,7 +12,6 @@ enum AppError: LocalizedError {
     case stateError(_ error: StateError)
     case fileError(_ error: FileError)
     case groupError(_ error: GroupError)
-//    case dirMonitorError(_ error: DirMonitorError)
     
     var errorDescription: String? {
         switch self {
@@ -24,8 +23,6 @@ enum AppError: LocalizedError {
                 return error.errorDescription
             case .groupError(let error):
                 return error.errorDescription
-//            case .dirMonitorError(let error):
-//                return error.errorDescription
         }
     }
 }
