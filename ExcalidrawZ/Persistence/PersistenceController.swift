@@ -111,6 +111,7 @@ extension PersistenceController {
             var newName = name
             while results[newName] != nil {
                 newName = "\(name) (\(renameI))"
+                renameI += 1
             }
             results[newName] = try listFiles(in: group)
         }
