@@ -121,10 +121,7 @@ extension ContentView {
             .help("New draw")
 
             Button {
-                let panel = ExcalidrawOpenPanel()
-                panel.allowsMultipleSelection = false
-                panel.canChooseDirectories = false
-                panel.allowedContentTypes = [.init(filenameExtension: "excalidraw")].compactMap{ $0 }
+                let panel = ExcalidrawOpenPanel.importPanel
                 if panel.runModal() == .OK {
                     if let url = panel.url {
                         store.send(.importFile(url))

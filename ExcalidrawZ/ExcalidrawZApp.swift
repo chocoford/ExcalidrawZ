@@ -52,8 +52,53 @@ struct ExcalidrawZApp: App {
                 CheckForUpdatesView(updater: updaterController.updater)
             }
         }
-#elseif os(macOS)
+#endif
+#if os(macOS)
         .defaultSize(width: 900, height: 500)
+        .commands {
+            CommandGroup(after: .importExport) {
+                Button {
+                    let panel = ExcalidrawOpenPanel.importPanel
+                    if panel.runModal() == .OK {
+                        if let url = panel.url {
+                            store.send(.importFile(url))
+                        } else {
+                            store.send(.setError(.fileError(.invalidURL)))
+                        }
+                    }
+                } label: {
+                    Text("Import")
+                }
+                Button {
+                    let panel = ExcalidrawOpenPanel.exportPanel
+                    if panel.runModal() == .OK {
+                        if let url = panel.url {
+                            do {
+                                let allFiles = try PersistenceController.shared.listAllFiles()
+                                let exportURL = url.appending(path: "ExcalidrawZ exported at \(Date.now.formatted(date: .abbreviated, time: .shortened))", directoryHint: .isDirectory)
+                                try FileManager.default.createDirectory(at: exportURL, withIntermediateDirectories: false)
+                                for files in allFiles {
+                                    let dir = exportURL.appending(path: files.key, directoryHint: .isDirectory)
+                                    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: false)
+                                    for file in files.value {
+                                        let filePath = dir.appending(component: file.name ?? "untitled").appendingPathExtension("excalidraw")
+                                        if !FileManager.default.createFile(atPath: filePath.path(percentEncoded: false), contents: file.content) {
+                                            print("export file \(filePath) failed")
+                                        }
+                                    }
+                                }
+                            } catch {
+                                store.send(.setError(.unexpected(error)))
+                            }
+                        } else {
+                            store.send(.setError(.fileError(.invalidURL)))
+                        }
+                    }
+                } label: {
+                    Text("Export All")
+                }
+            }
+        }
 #endif
         .onChange(of: scenePhase) { _ in
             //            store.send(.saveCoreData)

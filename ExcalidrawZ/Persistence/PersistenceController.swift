@@ -102,6 +102,21 @@ extension PersistenceController {
         return try container.viewContext.fetch(fetchRequest).first
     }
     
+    func listAllFiles() throws -> [String : [File]] {
+        let groups = try listGroups()
+        var results: [String : [File]] = [:]
+        for group in groups {
+            guard let name = group.name else { continue }
+            var renameI = 1
+            var newName = name
+            while results[newName] != nil {
+                newName = "\(name) (\(renameI))"
+            }
+            results[newName] = try listFiles(in: group)
+        }
+        return results
+    }
+    
     
     func createGroup(name: String) throws -> Group {
         let group = Group(context: container.viewContext)
