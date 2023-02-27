@@ -4,7 +4,7 @@
 //
 //  Created by Dove Zachary on 2023/1/1.
 //
-
+#if os(macOS)
 import Foundation
 import SwiftUI
 import Sparkle
@@ -17,3 +17,4 @@ final class UpdateChecker: ObservableObject {
             .assign(to: &$canCheckForUpdates)
     }
 }
+#endif

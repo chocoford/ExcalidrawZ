@@ -38,27 +38,29 @@ struct GroupSidebarView: View {
     }
     
     @ViewBuilder private var content: some View {
-        List(displayedList,
-             selection: selectedGroup) { group in
-            GroupRowView(group: group)
-        }
-             .onChange(of: trashFiles.count) { trashFilesCount in
-                 if trashFilesCount == 0 && store.state.currentGroup?.groupType == .trash {
-                     store.send(.setCurrentGroup(nil))
-                 }
-             }
-
-        HStack {
-            Button {
-                showCreateFolderDialog.toggle()
-            } label: {
-                Label("New folder", systemImage: "plus.circle")
+        VStack {
+            List(displayedList,
+                 selection: selectedGroup) { group in
+                GroupRowView(group: group)
             }
-            .buttonStyle(.borderless)
+                 .onChange(of: trashFiles.count) { trashFilesCount in
+                     if trashFilesCount == 0 && store.state.currentGroup?.groupType == .trash {
+                         store.send(.setCurrentGroup(nil))
+                     }
+                 }
             
-            Spacer()
+            HStack {
+                Button {
+                    showCreateFolderDialog.toggle()
+                } label: {
+                    Label("New folder", systemImage: "plus.circle")
+                }
+                .buttonStyle(.borderless)
+                
+                Spacer()
+            }
+            .padding(4)
         }
-        .padding(4)
     }
     
     @ViewBuilder private var createGroupDialogView: some View {

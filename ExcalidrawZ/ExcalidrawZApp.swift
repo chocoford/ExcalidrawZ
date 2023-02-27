@@ -6,7 +6,9 @@
 //
 
 import SwiftUI
+#if os(macOS) && !APP_STORE
 import Sparkle
+#endif
 
 @main
 @MainActor
@@ -20,19 +22,21 @@ struct ExcalidrawZApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 #endif
     
-    @Environment(\.scenePhase) var scenePhase
-    
-    @State private var timer = Timer.publish(every: 30, on: .main, in: .default).autoconnect()
-    
+#if os(macOS) && !APP_STORE
     private let updaterController: SPUStandardUpdaterController
-    
+#endif
     init() {
         // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
         // This is where you can also pass an updater delegate if you need one
+#if os(macOS) && !APP_STORE
         updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+#endif
     }
     
+    @Environment(\.scenePhase) var scenePhase
     
+    @State private var timer = Timer.publish(every: 30, on: .main, in: .default).autoconnect()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -42,14 +46,15 @@ struct ExcalidrawZApp: App {
                     store.send(.saveCoreData, log: false)
                 }
         }
+#if os(macOS) && !APP_STORE
         .commands {
             CommandGroup(after: .appInfo) {
                 CheckForUpdatesView(updater: updaterController.updater)
             }
         }
-        #if os(macOS)
+#elseif os(macOS)
         .defaultSize(width: 900, height: 500)
-        #endif
+#endif
         .onChange(of: scenePhase) { _ in
             //            store.send(.saveCoreData)
         }

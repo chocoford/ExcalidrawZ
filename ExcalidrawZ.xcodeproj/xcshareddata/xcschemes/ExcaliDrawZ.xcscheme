@@ -17,7 +17,7 @@
                BlueprintIdentifier = "397E4652295838CF003B824B"
                BuildableName = "ExcalidrawZ.app"
                BlueprintName = "ExcalidrawZ"
-               ReferencedContainer = "container:ExcaliDrawZ.xcodeproj">
+               ReferencedContainer = "container:ExcalidrawZ.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -28,28 +28,6 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "397E4663295838D0003B824B"
-               BuildableName = "ExcalidrawZTests.xctest"
-               BlueprintName = "ExcalidrawZTests"
-               ReferencedContainer = "container:ExcaliDrawZ.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "397E466D295838D0003B824B"
-               BuildableName = "ExcalidrawZUITests.xctest"
-               BlueprintName = "ExcalidrawZUITests"
-               ReferencedContainer = "container:ExcaliDrawZ.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
@@ -69,7 +47,7 @@
             BlueprintIdentifier = "397E4652295838CF003B824B"
             BuildableName = "ExcalidrawZ.app"
             BlueprintName = "ExcalidrawZ"
-            ReferencedContainer = "container:ExcaliDrawZ.xcodeproj">
+            ReferencedContainer = "container:ExcalidrawZ.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -86,7 +64,7 @@
             BlueprintIdentifier = "397E4652295838CF003B824B"
             BuildableName = "ExcalidrawZ.app"
             BlueprintName = "ExcalidrawZ"
-            ReferencedContainer = "container:ExcaliDrawZ.xcodeproj">
+            ReferencedContainer = "container:ExcalidrawZ.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

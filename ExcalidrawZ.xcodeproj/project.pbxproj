@@ -15,9 +15,10 @@
 		3908EB9929674DF60054A3ED /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB9729674DF60054A3ED /* Model.xcdatamodeld */; };
 		390B2C792967CF5C00AA359C /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B2C782967CF5C00AA359C /* PersistenceController.swift */; };
 		390B2C7B2967EACA00AA359C /* FetchResults+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B2C7A2967EACA00AA359C /* FetchResults+Extension.swift */; };
-		3914876D2960AFD10042927A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 3914876C2960AFD10042927A /* Sparkle */; };
+		3914876D2960AFD10042927A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 3914876C2960AFD10042927A /* Sparkle */; };
 		3914876F2961D6D00042927A /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3914876E2961D6D00042927A /* UpdateChecker.swift */; };
 		391487712961D9AE0042927A /* CheckForUpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391487702961D9AE0042927A /* CheckForUpdatesView.swift */; };
+		3954C93429A92A6500BA7B35 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3954C93329A92A6500BA7B35 /* ChocofordUI */; };
 		397E4657295838CF003B824B /* ExcalidrawZApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4656295838CF003B824B /* ExcalidrawZApp.swift */; };
 		397E4659295838CF003B824B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4658295838CF003B824B /* ContentView.swift */; };
 		397E465B295838D0003B824B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 397E465A295838D0003B824B /* Assets.xcassets */; };
@@ -75,6 +76,7 @@
 		3914876E2961D6D00042927A /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		391487702961D9AE0042927A /* CheckForUpdatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesView.swift; sourceTree = "<group>"; };
 		39148772296316720042927A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		394B14DC29A929D600C3BF6B /* ChocofordUI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = ChocofordUI; path = ../ChocofordUI; sourceTree = "<group>"; };
 		397E4653295838CF003B824B /* ExcalidrawZ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExcalidrawZ.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		397E4656295838CF003B824B /* ExcalidrawZApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawZApp.swift; sourceTree = "<group>"; };
 		397E4658295838CF003B824B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -112,6 +114,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3954C93429A92A6500BA7B35 /* ChocofordUI in Frameworks */,
 				3914876D2960AFD10042927A /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -143,9 +146,18 @@
 			path = Persistence;
 			sourceTree = "<group>";
 		};
+		394B14D929A9285C00C3BF6B /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				394B14DC29A929D600C3BF6B /* ChocofordUI */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
 		397E464A295838CF003B824B = {
 			isa = PBXGroup;
 			children = (
+				394B14D929A9285C00C3BF6B /* Packages */,
 				397E4655295838CF003B824B /* ExcalidrawZ */,
 				397E4667295838D0003B824B /* ExcalidrawZTests */,
 				397E4671295838D0003B824B /* ExcalidrawZUITests */,
@@ -302,6 +314,7 @@
 			name = ExcalidrawZ;
 			packageProductDependencies = (
 				3914876C2960AFD10042927A /* Sparkle */,
+				3954C93329A92A6500BA7B35 /* ChocofordUI */,
 			);
 			productName = ExcaliDrawZ;
 			productReference = 397E4653295838CF003B824B /* ExcalidrawZ.app */;
@@ -831,6 +844,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		3954C93329A92A6500BA7B35 /* ChocofordUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ChocofordUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 

@@ -7,12 +7,12 @@
 
 import SwiftUI
 import Foundation
-
+import ChocofordUI
+import Introspect
 
 struct ContentView: View {
     @EnvironmentObject var store: AppStore
-//    @AppStorage("columnVisibility") var columnVisibility: NavigationSplitViewVisibility = .automatic
-    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var hideContent: Bool = false
     
     private var hasError: Binding<Bool> {
@@ -40,11 +40,43 @@ struct ContentView: View {
     @ViewBuilder private var navigationView: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             GroupSidebarView()
-        } content: {
-            FileListView(group: store.state.currentGroup)
+                .frame(minWidth: 150)
+                .toolbar {
+                    ToolbarItemGroup(placement: .primaryAction) {
+                        Button {
+                            withAnimation {
+                                switch columnVisibility {
+                                    case .all:
+                                        columnVisibility = .detailOnly
+                                    case .detailOnly:
+                                        columnVisibility = .all
+                                    default:
+                                        columnVisibility = .all
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "sidebar.leading")
+                        }
+                        .help("Toggle sidebar")
+                    }
+                }
+            
         } detail: {
-            ExcalidrawView()
+            HStack(spacing: 0) {
+                if columnVisibility != .detailOnly {
+                    ResizableView(.horizontal, edge: .trailing, initialSize: 200, minSize: 200) {
+                        FileListView(group: store.state.currentGroup)
+//                            .visualEffect(material: .sidebar, blendingMode: .withinWindow)
+                    }
+                    .border(.trailing, color: Color(nsColor: .separatorColor))
+                }
+                ExcalidrawView()
+            }
         }
+        .removeSidebarToggle()
+        .navigationSplitViewStyle(.balanced)
+        .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 300)
+        .navigationTitle("")
     }
 }
 
@@ -79,9 +111,15 @@ extension ContentView {
                 .frame(width: 200)
         }
         
-        ToolbarItemGroup(placement: .primaryAction) {
-            Spacer()
-            // import
+        ToolbarItemGroup(placement: .navigation) {
+            // create
+            Button {
+                createNewFile()
+            } label: {
+                Image(systemName: "square.and.pencil")
+            }
+            .help("New draw")
+
             Button {
                 let panel = ExcalidrawOpenPanel()
                 panel.allowsMultipleSelection = false
@@ -97,16 +135,25 @@ extension ContentView {
             } label: {
                 Image(systemName: "square.and.arrow.down")
             }
-            
-            // create
-            Button {
-                createNewFile()
-            } label: {
-                Image(systemName: "square.and.pencil")
-            }
+            .help("Import files")
         }
     }
 #endif
+}
+
+fileprivate extension NavigationSplitView {
+    @ViewBuilder func removeSidebarToggle() -> some View {
+        introspectSplitView(customize: { splitView in
+            let toolbar = splitView.window?.toolbar
+            let toolbarItems = toolbar?.items
+//            let identifiers = toolbarItems?.map { $0.itemIdentifier }
+//            print(identifiers)
+            // "com.apple.SwiftUI.navigationSplitView.toggleSidebar"
+            if let index = toolbarItems?.firstIndex(where: { $0.itemIdentifier.rawValue == "com.apple.SwiftUI.navigationSplitView.toggleSidebar" }) {
+                toolbar?.removeItem(at: index)
+            }
+        })
+    }
 }
 
 

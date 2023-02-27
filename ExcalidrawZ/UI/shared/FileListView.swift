@@ -39,6 +39,7 @@ struct FileListView: View {
         List(files, id: \.id, selection: selectedFile) { file in
             FileRowView(fileInfo: file)
         }
+        .listStyle(.sidebar)
         .animation(.easeIn, value: files)
     }
 }
