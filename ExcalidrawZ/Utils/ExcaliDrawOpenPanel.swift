@@ -14,12 +14,14 @@ class ExcalidrawOpenPanel: NSOpenPanel {
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         panel.allowedContentTypes = [.init(filenameExtension: "excalidraw")].compactMap{ $0 }
+        panel.prompt = "import"
         return panel
     }
     
     static var exportPanel: ExcalidrawOpenPanel {
         let panel = ExcalidrawOpenPanel()
         panel.canChooseDirectories = true
+        panel.prompt = "export"
         return panel
     }
 }

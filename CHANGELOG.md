@@ -1,3 +1,7 @@
+## 0.3.3
+
+* Add backward compability: now app can be run on macOS 12.0 and newer.
+
 ## 0.3.2
 
 * Optimize UI: now user can hide sidebar.

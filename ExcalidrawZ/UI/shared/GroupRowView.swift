@@ -6,27 +6,53 @@
 //
 
 import SwiftUI
+import ChocofordUI
 
 struct GroupRowView: View {
     @EnvironmentObject var store: AppStore
     
     var group: Group
     
+    var selected: Bool {
+        return store.state.currentGroup == group
+    }
+    
     @State private var alertDeletion = false
     @State private var alertEmpty = false
     
     var body: some View {
-        NavigationLink(value: group, label: {
-            Label { Text(group.name ?? "Untitled") } icon: { groupIcon }
-        })
-        .if(group.groupType != .trash, transform: { content in
+        if group.groupType != .trash {
+            if #available(macOS 13.0, *) {
+                content
+                    .dropDestination(for: FileLocalizable.self) { fileInfos, location in
+                        guard let file = fileInfos.first else { return false }
+                        store.send(.moveFile(file.fileID, group))
+                        return true
+                    }
+            } else {
+                content
+            }
+        } else {
             content
-                .dropDestination(for: FileLocalizable.self) { fileInfos, location in
-                    guard let file = fileInfos.first else { return false }
-                    store.send(.moveFile(file.fileID, group))
-                    return true
-                }
-        })
+        }
+    }
+    
+    @ViewBuilder private var content: some View {
+        Button {
+            store.send(.setCurrentGroup(group))
+        } label: {
+            HStack {
+                Label { Text(group.name ?? "Untitled").lineLimit(1) } icon: { groupIcon }
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            selected ? RoundedRectangle(cornerRadius: 4).foregroundColor(Color.accentColor.opacity(0.5)) : nil
+        )
         .contextMenu { contextMenuView }
         .deleteAlert(isPresented: $alertDeletion, onDelete: deleteGroup)
         .emptyAlert(isPresented: $alertEmpty, onEmpty: emptyTrash)

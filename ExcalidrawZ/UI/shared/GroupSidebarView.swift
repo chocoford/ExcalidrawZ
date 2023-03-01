@@ -38,17 +38,21 @@ struct GroupSidebarView: View {
     }
     
     @ViewBuilder private var content: some View {
-        VStack {
-            List(displayedList,
-                 selection: selectedGroup) { group in
-                GroupRowView(group: group)
+        VStack(alignment: .leading) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(displayedList, id: \.id) { group in
+                        GroupRowView(group: group)
+                            .padding(.horizontal, 8)
+                    }
+                    .onChange(of: trashFiles.count) { trashFilesCount in
+                        if trashFilesCount == 0 && store.state.currentGroup?.groupType == .trash {
+                            store.send(.setCurrentGroup(nil))
+                        }
+                    }
+                }
+                .padding(.vertical, 12)
             }
-                 .onChange(of: trashFiles.count) { trashFilesCount in
-                     if trashFilesCount == 0 && store.state.currentGroup?.groupType == .trash {
-                         store.send(.setCurrentGroup(nil))
-                     }
-                 }
-            
             HStack {
                 Button {
                     showCreateFolderDialog.toggle()

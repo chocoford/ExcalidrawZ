@@ -120,6 +120,7 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                         state.currentFile = try environment.persistence.listFiles(in: group).first {
                             !$0.inTrash
                         }
+//                        dump(state)
                     }
                 } else {
                     throw AppError.stateError(.currentGroupNil)

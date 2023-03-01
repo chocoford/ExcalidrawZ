@@ -36,10 +36,16 @@ struct FileListView: View {
     }
     
     var body: some View {
-        List(files, id: \.id, selection: selectedFile) { file in
-            FileRowView(fileInfo: file)
+        ScrollView {
+            VStack(alignment: .leading) {
+                ForEach(files, id: \.id) { file in
+                    FileRowView(fileInfo: file)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 12)
+            .transition(.opacity)
         }
-        .listStyle(.sidebar)
         .animation(.easeIn, value: files)
     }
 }

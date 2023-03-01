@@ -32,25 +32,7 @@ struct TestView: View {
     @State private var selectedItem: Item?
     
     var body: some View {
-        NavigationSplitView(columnVisibility: .constant(.all)) {
-            List(sidebarItems, selection: $selectedItem) { item in
-                Text(item.text)
-            }
-            Button("shuffle") {
-                withAnimation(.easeIn) {
-                    players.shuffle()
-                    sidebarItems.shuffle()
-                }
-            }
-        } content: {
-            List {
-                ForEach(players) { player in
-                    Text(player.score)
-                }
-            }
-        } detail: {
-            Text("Detail")
-        }
+       Text("Hello")
     }
 }
 

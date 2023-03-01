@@ -54,7 +54,7 @@ struct ExcalidrawZApp: App {
         }
 #endif
 #if os(macOS)
-        .defaultSize(width: 900, height: 500)
+//        .defaultSizeCompatible(width: 900, height: 500)
         .commands {
             CommandGroup(after: .importExport) {
                 Button {
@@ -73,17 +73,20 @@ struct ExcalidrawZApp: App {
                     let panel = ExcalidrawOpenPanel.exportPanel
                     if panel.runModal() == .OK {
                         if let url = panel.url {
+                            let filemanager = FileManager.default
                             do {
                                 let allFiles = try PersistenceController.shared.listAllFiles()
-                                let exportURL = url.appending(path: "ExcalidrawZ exported at \(Date.now.formatted(date: .abbreviated, time: .shortened))", directoryHint: .isDirectory)
-                                try FileManager.default.createDirectory(at: exportURL, withIntermediateDirectories: false)
+                                let exportURL = url.appendingPathComponent("ExcalidrawZ exported at \(Date.now.formatted(date: .abbreviated, time: .shortened))", conformingTo: .directory)
+                                try filemanager.createDirectory(at: exportURL, withIntermediateDirectories: false)
                                 for files in allFiles {
-                                    let dir = exportURL.appending(path: files.key, directoryHint: .isDirectory)
-                                    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: false)
+                                    let dir = exportURL.appendingPathComponent(files.key, conformingTo: .directory)
+                                    try filemanager.createDirectory(at: dir, withIntermediateDirectories: false)
                                     for file in files.value {
-                                        let filePath = dir.appending(component: file.name ?? "untitled").appendingPathExtension("excalidraw")
-                                        if !FileManager.default.createFile(atPath: filePath.path(percentEncoded: false), contents: file.content) {
-                                            print("export file \(filePath) failed")
+                                        let filePath = dir.appendingPathComponent(file.name ?? "untitled", conformingTo: .fileURL).appendingPathExtension("excalidraw")
+                                        let path = filePath.absoluteString.replacingOccurrences(of: "file://", with: "").removingPercentEncoding ?? ""//.path(percentEncoded: false) 
+                                        print(path)
+                                        if !filemanager.createFile(atPath: path, contents: file.content) {
+                                            print("export file \(path) failed")
                                         }
                                     }
                                 }
@@ -106,3 +109,17 @@ struct ExcalidrawZApp: App {
     }
 }
 
+//extension Scene {
+//    @SceneBuilder func defaultSizeCompatible(width: CGFloat, height: CGFloat) -> some Scene {
+//        if #available(macOS 13.0, *) {
+//            defaultSize(width: width, height: height)
+//        } else {
+//            // Fallback on earlier versions
+//        }
+////        if #available(macOS 13.0, *) {
+////            defaultSize(width: width, height: height)
+////        } else {
+////            self
+////        }
+//    }
+//}

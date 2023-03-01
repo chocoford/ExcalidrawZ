@@ -12,6 +12,10 @@ struct FileRowView: View {
     @EnvironmentObject var store: AppStore
     var fileInfo: File
     
+    var selected: Bool {
+        return store.state.currentFile == fileInfo
+    }
+    
     @State private var renameMode: Bool = false
     @State private var newFilename: String = ""
     @State private var showPermanentlyDeleteAlert: Bool = false
@@ -33,13 +37,15 @@ struct FileRowView: View {
                                     renameFile()
                                 }
                             }
+                            .onSubmit {
+                                renameFile()
+                            }
                     } else {
                         filename
                     }
                     
                 }
                 .font(.title3)
-                .fontWeight(.medium)
                 .lineLimit(1)
                 .padding(.bottom, 4)
                 HStack {
@@ -49,17 +55,19 @@ struct FileRowView: View {
                     Spacer()
                     
                     HStack {
-                        Image("circle.grid.2x3.fill")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(height: 12)
-
-                            .draggable(FileLocalizable(fileID: fileInfo.id!, groupID: fileInfo.group!.id!)) {
-                                FileRowView(fileInfo: fileInfo)
-                                    .frame(width: 200)
-                                    .padding(.horizontal, 4)
-                                    .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 8))
-                            }
+                        if #available(macOS 13.0, *) {
+                            Image("circle.grid.2x3.fill")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(height: 12)
+                            
+                                .draggable(FileLocalizable(fileID: fileInfo.id!, groupID: fileInfo.group!.id!)) {
+                                    FileRowView(fileInfo: fileInfo)
+                                        .frame(width: 200)
+                                        .padding(.horizontal, 4)
+                                        .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 8))
+                                }
+                        }
                         
                         Menu {
                             listRowContextMenu
@@ -85,6 +93,10 @@ struct FileRowView: View {
             newFilename = fileInfo.name ?? "Untitled"
         }
         .padding(.vertical, 6)
+        .padding(.horizontal, 4)
+        .background(
+            selected ? RoundedRectangle(cornerRadius: 4).foregroundColor(Color.accentColor.opacity(0.5)) : nil
+        )
         .contextMenu {
             listRowContextMenu
         }
@@ -113,12 +125,15 @@ struct FileRowView: View {
     @ViewBuilder
     func rowWrapper<Content: View>(@ViewBuilder content: @escaping () -> Content) -> some View {
         if renameMode {
-                content()
+            content()
         } else {
-            NavigationLink(value: fileInfo) {
+            Button {
+                store.send(.setCurrentFile(fileInfo))
+            } label: {
                 content()
+                    .contentShape(Rectangle())
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
         }
     }
 }

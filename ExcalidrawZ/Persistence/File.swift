@@ -25,6 +25,7 @@ struct FileLocalizable: Codable {
 }
 
 extension FileLocalizable: Transferable {
+    @available(macOS 13.0, *)
     static var transferRepresentation: some TransferRepresentation {
         CodableRepresentation(contentType: .data)
     }
