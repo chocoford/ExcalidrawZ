@@ -18,5 +18,6 @@
 - [x] create groups to store excalidraw files
 - [x] *.excalidraw* file import
 - [x] import&export file
+- [x] export image
 - [ ] iCloud synchronization
 
