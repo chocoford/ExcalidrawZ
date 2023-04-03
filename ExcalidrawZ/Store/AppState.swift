@@ -23,6 +23,8 @@ struct AppState {
     var anyFileNameInEdit: Bool = false
     
     var exportingState: ExportState?
+    
+    var versionState: VersionState = .init()
 
     var hasError: Bool = false
     var error: AppError? = nil

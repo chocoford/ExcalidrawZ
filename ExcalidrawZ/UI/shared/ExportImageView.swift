@@ -81,7 +81,7 @@ struct ExportImageView: View {
             }
         } else if exportState?.done == false || loadingImage {
             VStack {
-                DefaultLoadingView()
+                LoadingView(strokeColor: Color.accentColor)
                 
                 Text("Loading...")
                 
@@ -209,9 +209,11 @@ struct ImageFile: FileDocument {
     }
 }
 
+#if DEBUG
 struct ExportImageView_Previews: PreviewProvider {
     static var previews: some View {
         ExportImageView(isPresent: .constant(true), exportState: nil)
             .environmentObject(AppStore.preview)
     }
 }
+#endif

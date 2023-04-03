@@ -1,3 +1,9 @@
+## 0.3.4
+
+* Add `export image` feature.
+
+  ![image-20230404024927888](assets/CHANGELOG/image-20230404024927888.png)
+
 ## 0.3.3
 
 * Add backward compability: now app can be run on macOS 12.0 and newer.

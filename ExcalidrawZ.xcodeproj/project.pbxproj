@@ -47,6 +47,7 @@
 		39E0577D296C935200304655 /* Group.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E0577C296C935200304655 /* Group.swift */; };
 		39E73D6F29DADCF100098A79 /* ExportImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E73D6E29DADCF100098A79 /* ExportImageView.swift */; };
 		39E73D7129DAFE3E00098A79 /* NSImage+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E73D7029DAFE3E00098A79 /* NSImage+Extension.swift */; };
+		39E73D7329DB3B9800098A79 /* VersionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E73D7229DB3B9800098A79 /* VersionState.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -111,6 +112,7 @@
 		39E0577C296C935200304655 /* Group.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Group.swift; sourceTree = "<group>"; };
 		39E73D6E29DADCF100098A79 /* ExportImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportImageView.swift; sourceTree = "<group>"; };
 		39E73D7029DAFE3E00098A79 /* NSImage+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSImage+Extension.swift"; sourceTree = "<group>"; };
+		39E73D7229DB3B9800098A79 /* VersionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionState.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -297,6 +299,7 @@
 			isa = PBXGroup;
 			children = (
 				39AD1EEC295B504C00DA9657 /* AppState.swift */,
+				39E73D7229DB3B9800098A79 /* VersionState.swift */,
 				39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */,
 			);
 			path = Store;
@@ -457,6 +460,7 @@
 				397F98D0295DA071009BED55 /* Error.swift in Sources */,
 				397E4682295839B7003B824B /* WebView.swift in Sources */,
 				397E4659295838CF003B824B /* ContentView.swift in Sources */,
+				39E73D7329DB3B9800098A79 /* VersionState.swift in Sources */,
 				39AD1EEB295B501600DA9657 /* Store.swift in Sources */,
 				390B2C7B2967EACA00AA359C /* FetchResults+Extension.swift in Sources */,
 				39E0577B296C92DD00304655 /* GroupRowView.swift in Sources */,
@@ -631,7 +635,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 96RJ77RT4T;
@@ -655,7 +659,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 0.3.3;
+				MARKETING_VERSION = 0.3.4;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.ExcalidrawZ-Debug";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -674,7 +678,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 96RJ77RT4T;
@@ -698,7 +702,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 0.3.3;
+				MARKETING_VERSION = 0.3.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.ExcalidrawZ;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

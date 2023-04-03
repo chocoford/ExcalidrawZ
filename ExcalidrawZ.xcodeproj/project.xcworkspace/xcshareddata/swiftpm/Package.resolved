@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle.git",
       "state" : {
-        "revision" : "9d85a02fe7916caa7531847452c4933d331503a5",
-        "version" : "2.3.1"
+        "revision" : "631846cc829f0f0cae327df9bafe5a32b7ddadce",
+        "version" : "2.4.0"
       }
     },
     {
@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/markiv/SwiftUI-Shimmer.git",
       "state" : {
-        "revision" : "965a7cbcbf094cbcf22b9251a2323bdc3432e171",
-        "version" : "1.1.0"
+        "revision" : "17b66b0e7d94d2d3f220bbcb021b5026436f06c7",
+        "version" : "1.3.0"
       }
     },
     {
