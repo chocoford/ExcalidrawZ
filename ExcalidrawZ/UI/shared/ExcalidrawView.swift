@@ -27,7 +27,6 @@ struct ExcalidrawView: View {
                         currentFile: currentFile,
                         loading: $isLoading)
                 .opacity(isLoading ? 0 : 1)
-                
                 if isLoading {
                     VStack {
                         LoadingView(strokeColor: Color.accentColor)

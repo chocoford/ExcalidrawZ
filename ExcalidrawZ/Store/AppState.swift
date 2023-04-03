@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 import CoreData
+import WebKit
 
 struct AppState {
     var groups: [Group] = []
@@ -21,8 +22,16 @@ struct AppState {
     
     var anyFileNameInEdit: Bool = false
     
+    var exportingState: ExportState?
+
     var hasError: Bool = false
     var error: AppError? = nil
+}
+
+struct ExportState {
+    var url: URL?
+    var download: WKDownload?
+    var done: Bool
 }
 
 enum AppAction {
@@ -47,6 +56,9 @@ enum AppAction {
     case saveCoreData
     
     case toggleFileNameEdit
+    
+    // ui
+    case setExportingState(_ state: ExportState?)
     
     // error
     case setHasError(_ hasError: Bool)
@@ -305,6 +317,9 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
             
         case .toggleFileNameEdit:
             state.anyFileNameInEdit.toggle()
+            
+        case .setExportingState(let exportingState):
+            state.exportingState = exportingState
             
         case .setHasError(let hasError):
             state.hasError = hasError

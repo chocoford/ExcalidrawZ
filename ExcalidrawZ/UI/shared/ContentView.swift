@@ -21,6 +21,16 @@ struct ContentView: View {
         }
     }
     
+    var isExportingImage: Binding<Bool> {
+        Binding {
+            store.state.exportingState != nil
+        } set: { val in
+            if !val {
+                store.send(.setExportingState(nil))
+            }
+        }
+    }
+    
     var body: some View {
         content
             .alert(isPresented: hasError, error: store.state.error) {}
@@ -67,7 +77,9 @@ struct ContentView: View {
                 }
                 ExcalidrawView()
                     .toolbar(content: toolbarContent)
-
+                    .sheet(isPresented: isExportingImage) {
+                        ExportImageView(isPresent: isExportingImage, exportState: store.state.exportingState)
+                    }
             }
         }
         .navigationTitle("")
@@ -99,7 +111,6 @@ extension ContentView {
 #else
     @ToolbarContentBuilder
     private func toolbarContent_macOS() -> some ToolbarContent {
-        
         ToolbarItemGroup(placement: .status) {
             Text(store.state.currentFile?.name ?? "Untitled")
                 .frame(width: 200)
@@ -113,6 +124,28 @@ extension ContentView {
                 Image(systemName: "square.and.pencil")
             }
             .help("New draw")
+        }
+
+        ToolbarItemGroup(placement: .automatic) {
+            Spacer()
+            // create
+            Button {
+                store.send(.setExportingState(.init(done: false)))
+                let script = """
+                document.querySelector('.App-menu_top__left').querySelector('button[data-testid="dropdown-menu-button"]').click();
+                setTimeout(() => {
+                    document.querySelector('.App-menu_top__left').querySelector('button[data-testid="image-export-button"]').click();
+                    setTimeout(() => {
+                        document.querySelector('.excalidraw-modal-container').style.display = 'none';
+                        document.querySelector('.excalidraw-modal-container').querySelector('button[aria-label="Export to PNG"]').click();
+                    }, 5)
+                }, 10);
+                """
+                ExcalidrawWebView.shared.evaluateJavaScript(script)
+            } label: {
+                Image(systemName: "camera.on.rectangle")
+            }
+            .help("Take a screenshot.")
         }
     }
 #endif

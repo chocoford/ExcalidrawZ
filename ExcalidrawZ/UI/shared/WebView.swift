@@ -38,7 +38,6 @@ struct WebView {
     @State private var previousFileID: UUID? = nil
     @State private var lsMonitorTimer: Timer? = nil
     @State private var lastVersion: Int = 0
-
     
     init(store: AppStore, currentFile: Binding<File?>, loading: Binding<Bool>) {
         self.store = store
@@ -241,6 +240,11 @@ extension WebView {
         let script = "document.querySelector('.App-menu_top__left').firstElementChild.style.display = 'none';"
         self.webView.evaluateJavaScript(script)
     }
+
+    func hideDialogs() {
+        let script = "document.querySelector('.excalidraw-modal-container').style.display = 'none';"
+        self.webView.evaluateJavaScript(script)
+    }
 }
 
 class WebViewCoordinator: NSObject {
@@ -254,7 +258,7 @@ class WebViewCoordinator: NSObject {
         self.parent = parent
     }
         
-    var downloads: [WKDownload : (URL, File)] = [:]
+    var downloads: [URLRequest : URL] = [:]
 }
 
 extension WebViewCoordinator: WKNavigationDelegate {
@@ -291,6 +295,7 @@ extension WebViewCoordinator: WKNavigationDelegate {
         DispatchQueue.main.async {
             self.parent.loading = false
             self.parent.hideDropdownButton()
+            self.parent.hideDialogs();
             self.parent.loadCurrentFile {
                 self.parent.startWatchingLocalStorage()
             }
@@ -315,7 +320,50 @@ extension WebViewCoordinator: WKNavigationDelegate {
 
 extension WebViewCoordinator: WKDownloadDelegate {
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
-        return nil
+        let fileManager: FileManager = FileManager.default
+        let directory: URL
+        do {
+            if #available(macOS 13.0, *) {
+                directory = try fileManager.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: .applicationSupportDirectory, create: true)
+            } else if let temp = URL(string: NSTemporaryDirectory()) {
+                directory = temp
+                try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+            } else {
+                return nil
+            }
+            
+            let fileExtension = suggestedFilename.components(separatedBy: ".").last ?? "png"
+            let fileName = await self.parent.currentFile?.name?.appending(".\(fileExtension)") ?? suggestedFilename
+            
+            let url = directory.appendingPathComponent(fileName, conformingTo: .image)
+            if fileManager.fileExists(atPath: url.absoluteString) {
+                try fileManager.removeItem(at: url)
+            }
+            
+            if let request = download.originalRequest {
+                self.downloads[request] = url;
+            }
+            print(url.isFileURL) // false
+            DispatchQueue.main.async {
+                self.parent.store.send(.setExportingState(.init(url: url, download: download, done: false)))
+            }
+
+            return url;
+        } catch {
+            logger.error("\(error)")
+            return nil
+        }
+    }
+
+    @MainActor
+    func downloadDidFinish(_ download: WKDownload) {
+        guard let request = download.originalRequest,
+              let url = downloads[request] else { return }
+        logger.info("download did finished: \(url)")
+        if self.parent.store.state.exportingState != nil {
+            self.parent.store.send(.setExportingState(.init(url: url, download: download, done: true)))
+        }
+        downloads.removeValue(forKey: request)
     }
 }
 
