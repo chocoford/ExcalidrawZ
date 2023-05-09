@@ -19,7 +19,7 @@ struct AppState {
             UserDefaults.standard.set(currentGroup?.id?.uuidString, forKey: "selectedGroup")
         }
     }
-    
+        
     var anyFileNameInEdit: Bool = false
     
     var exportingState: ExportState?

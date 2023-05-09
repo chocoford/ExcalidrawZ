@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import ChocofordUI
 
 struct ExcalidrawView: View {
     @EnvironmentObject var store: AppStore
@@ -29,7 +30,7 @@ struct ExcalidrawView: View {
                 .opacity(isLoading ? 0 : 1)
                 if isLoading {
                     VStack {
-                        LoadingView(strokeColor: Color.accentColor)
+                        CircularProgressView()
                         Text("Loading...")
                     }
                 } else if currentFile.wrappedValue?.inTrash == true {
@@ -87,6 +88,21 @@ struct ExcalidrawView_Previews: PreviewProvider {
         ExcalidrawView()
             .environmentObject(AppStore.preview)
             .frame(width: 800, height: 600)
+//        if #available(macOS 13.0, *) {
+//            NavigationSplitView {
+//                
+//            } detail: {
+//                Center {
+//                }
+//                .overlay {
+//                    CircularProgressView()
+//                }
+//            }
+//        } else {
+//            // Fallback on earlier versions
+//            Text("")
+//        }
+
     }
 }
 #endif

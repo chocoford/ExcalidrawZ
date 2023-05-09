@@ -189,6 +189,7 @@ extension WebView {
                     self.logger.debug("version changed")
                     if self.lastVersion > 0 {
                         self.saveCurrentFile()
+                        self.saveTheme()
                     }
                     self.lastVersion = version
                 }
@@ -229,6 +230,41 @@ extension WebView {
         }
     }
     
+    /// `true` if is dark mode.
+    func getIsDark() async -> Bool {
+        let getExcalidrawScript = "localStorage.getItem('excalidraw-theme')"
+        return await withCheckedContinuation { continuation in
+            self.webView.evaluateJavaScript(getExcalidrawScript) { response, error in
+                if let error = error {
+                    dump(error)
+                    continuation.resume(returning: false)
+                    return
+                }
+                guard let theme = response as? String else {
+                    self.logger.error("response is not string: \(String(describing: response))")
+                    continuation.resume(returning: false)
+                    return
+                }
+                continuation.resume(with: .success(theme == "dark"))
+            }
+        }
+    }
+    
+    func saveTheme() {
+        let getExcalidrawScript = "localStorage.getItem('excalidraw-theme')"
+        self.webView.evaluateJavaScript(getExcalidrawScript) { response, error in
+            if let error = error {
+                dump(error)
+                return
+            }
+            guard let theme = response as? String else {
+                self.logger.error("response is not string: \(String(describing: response))")
+                return
+            }
+            UserDefaults.standard.set(theme == "dark", forKey: "isDarkMode")
+        }
+    }
+    
     @MainActor
     func changeCurrentFile(_ file: File?) {
         logger.debug("change current file: \(file?.name ?? "nil")")
@@ -253,7 +289,7 @@ class WebViewCoordinator: NSObject {
     
     var lsMonitorTimer: Timer?
     var downloadCache: [String : Data] = [:]
-    
+        
     init(_ parent: WebView) {
         self.parent = parent
     }
@@ -291,13 +327,19 @@ extension WebViewCoordinator: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         logger.info("did finish navigation")
-//        Task { @MainActor in
-        DispatchQueue.main.async {
-            self.parent.loading = false
-            self.parent.hideDropdownButton()
-            self.parent.hideDialogs();
-            self.parent.loadCurrentFile {
-                self.parent.startWatchingLocalStorage()
+        Task { @MainActor in
+            let isDark = await self.parent.getIsDark()
+            if UserDefaults.standard.bool(forKey: "isDarkMode") && !isDark {
+                webView.evaluateJavaScript("localStorage.setItem(\"excalidraw-theme\", \"dark\")") { (result, error) in
+                    webView.reload()
+                }
+            } else {
+                self.parent.loading = false
+                self.parent.hideDropdownButton()
+                self.parent.hideDialogs();
+                self.parent.loadCurrentFile {
+                    self.parent.startWatchingLocalStorage()
+                }
             }
         }
         

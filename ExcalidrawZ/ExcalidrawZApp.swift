@@ -33,7 +33,7 @@ struct ExcalidrawZApp: App {
 #endif
     }
     
-    @Environment(\.scenePhase) var scenePhase
+    @Environment(\.scenePhase) var scenePhase    
     
     @State private var timer = Timer.publish(every: 30, on: .main, in: .default).autoconnect()
 
