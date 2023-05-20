@@ -30,19 +30,23 @@ struct WebView {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "WebView")
     // must use a static variable
     let webView: WKWebView = ExcalidrawWebView.shared
+    @Environment(\.colorScheme) var colorScheme
     
     @ObservedObject var store: AppStore
     @Binding var currentFile: File?
     @Binding var loading: Bool
+    @Binding var appearance: AppSettingsStore.Appearance
     
     @State private var previousFileID: UUID? = nil
     @State private var lsMonitorTimer: Timer? = nil
     @State private var lastVersion: Int = 0
+    @State private var oldAppearance: AppSettingsStore.Appearance?
     
-    init(store: AppStore, currentFile: Binding<File?>, loading: Binding<Bool>) {
+    init(store: AppStore, currentFile: Binding<File?>, loading: Binding<Bool>, appearance: Binding<AppSettingsStore.Appearance>) {
         self.store = store
         self._currentFile = currentFile
         self._loading = loading
+        self._appearance = appearance
     }
 }
 
@@ -57,7 +61,10 @@ extension WebView: NSViewRepresentable {
     
     func updateNSView(_ nsView: WKWebView, context: Context) {
         context.coordinator.parent = self
-        guard !loading else { return }
+        guard !webView.isLoading else {
+            self.lsMonitorTimer?.invalidate()
+            return
+        }
 
         if (currentFile == nil && self.lsMonitorTimer?.isValid == false) || currentFile?.id != previousFileID {
             self.lsMonitorTimer?.invalidate()
@@ -70,6 +77,11 @@ extension WebView: NSViewRepresentable {
                 self.loadCurrentFile {
                     self.startWatchingLocalStorage()
                 }
+            }
+            if oldAppearance != appearance {
+                oldAppearance = appearance
+                loading = true
+                webView.reload()
             }
         }
     }
@@ -140,11 +152,10 @@ extension WebView {
                 dump(error)
                 return
             }
-            Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
-                DispatchQueue.main.async {
-                    withAnimation {
-                        self.loading = false
-                    }
+            DispatchQueue.main.asyncAfter(deadline: .now().advanced(by: .seconds(1))) {
+                if webView.isLoading { return }
+                withAnimation {
+                    self.loading = false
                 }
             }
             callback()
@@ -189,7 +200,9 @@ extension WebView {
                     self.logger.debug("version changed")
                     if self.lastVersion > 0 {
                         self.saveCurrentFile()
-                        self.saveTheme()
+                        Task {
+                            await self.saveTheme()
+                        }
                     }
                     self.lastVersion = version
                 }
@@ -250,18 +263,33 @@ extension WebView {
         }
     }
     
-    func saveTheme() {
-        let getExcalidrawScript = "localStorage.getItem('excalidraw-theme')"
-        self.webView.evaluateJavaScript(getExcalidrawScript) { response, error in
-            if let error = error {
-                dump(error)
-                return
-            }
-            guard let theme = response as? String else {
-                self.logger.error("response is not string: \(String(describing: response))")
-                return
-            }
-            UserDefaults.standard.set(theme == "dark", forKey: "isDarkMode")
+    func saveTheme() async {
+        let isExcalidrawDark = await getIsDark()
+        let isAppDark = colorScheme == .dark
+        let isSameTheme = isExcalidrawDark && isAppDark || !isExcalidrawDark && !isAppDark
+        if !isSameTheme {
+            appearance = isExcalidrawDark ? .dark : .light
+            self.loading = true
+            /// without reload will lead to wierd blank view.
+            webView.reload()
+        }
+    }
+    
+    func changeColorMode(dark: Bool) async {
+        let isDark = await getIsDark()
+        guard isDark != dark else { return }
+        let script = """
+document.querySelector('.App-menu_top__left').querySelector('button[data-testid="dropdown-menu-button"]').click();
+setTimeout(() => {
+    document.querySelector('.App-menu_top__left').querySelector('button[data-testid="toggle-dark-mode"]').click();
+    setTimeout(() => {
+        document.querySelector('.dropdown-menu').style.display = 'hidden'
+document.querySelector('.App-menu_top__left').querySelector('button[data-testid="dropdown-menu-button"]').click();
+    }, 2)
+}, 10);
+"""
+        webView.evaluateJavaScript(script) { (result, error) in
+            logger.error("\(error)")
         }
     }
     
@@ -328,19 +356,20 @@ extension WebViewCoordinator: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         logger.info("did finish navigation")
         Task { @MainActor in
-            let isDark = await self.parent.getIsDark()
-            if UserDefaults.standard.bool(forKey: "isDarkMode") && !isDark {
-                webView.evaluateJavaScript("localStorage.setItem(\"excalidraw-theme\", \"dark\")") { (result, error) in
-                    webView.reload()
-                }
-            } else {
-                self.parent.loading = false
-                self.parent.hideDropdownButton()
-                self.parent.hideDialogs();
-                self.parent.loadCurrentFile {
-                    self.parent.startWatchingLocalStorage()
-                }
+            let isExcalidrawDark = await self.parent.getIsDark()
+            let isAppDark = parent.appearance == .dark
+            let isSameTheme = isExcalidrawDark && isAppDark || !isExcalidrawDark && !isAppDark
+            if !isSameTheme {
+                await self.parent.changeColorMode(dark: isAppDark)
             }
+            self.parent.hideDropdownButton()
+            self.parent.hideDialogs();
+            self.parent.loadCurrentFile {
+                self.parent.startWatchingLocalStorage()
+            }
+//            DispatchQueue.main.asyncAfter(deadline: .now().advanced(by: .seconds(1))) {
+//                self.parent.loading = false
+//            }
         }
         
     }

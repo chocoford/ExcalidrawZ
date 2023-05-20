@@ -10,6 +10,7 @@ import ChocofordUI
 
 struct ExcalidrawView: View {
     @EnvironmentObject var store: AppStore
+    @EnvironmentObject var appSettings: AppSettingsStore
 
     @State private var isLoading = true
     @State private var showRestoreAlert = false
@@ -26,11 +27,15 @@ struct ExcalidrawView: View {
             ZStack(alignment: .center) {
                 WebView(store: store,
                         currentFile: currentFile,
-                        loading: $isLoading)
+                        loading: $isLoading,
+                        appearance: $appSettings.appearance)
+                .preferredColorScheme(appSettings.appearance.colorScheme)
                 .opacity(isLoading ? 0 : 1)
                 if isLoading {
                     VStack {
-                        CircularProgressView()
+//                        CircularProgressView()
+                        ProgressView()
+                            .progressViewStyle(.circular)
                         Text("Loading...")
                     }
                 } else if currentFile.wrappedValue?.inTrash == true {
@@ -90,13 +95,15 @@ struct ExcalidrawView_Previews: PreviewProvider {
             .frame(width: 800, height: 600)
 //        if #available(macOS 13.0, *) {
 //            NavigationSplitView {
-//                
+//
 //            } detail: {
-//                Center {
-//                }
-//                .overlay {
-//                    CircularProgressView()
-//                }
+//                ProgressView()
+//                    .progressViewStyle(.circular)
+////                Center {
+////                }
+////                .overlay {
+////                    CircularProgressView()
+////                }
 //            }
 //        } else {
 //            // Fallback on earlier versions

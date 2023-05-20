@@ -13,6 +13,5 @@ class VersionState: ObservableObject {
     
     init() {
         version = Bundle.main.infoDictionary!["CFBundleVersion"] as! String
-        
     }
 }
