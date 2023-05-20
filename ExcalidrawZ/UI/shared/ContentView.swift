@@ -36,7 +36,6 @@ struct ContentView: View {
             .alert(isPresented: hasError, error: store.state.error) {}
     }
 
-    
     @ViewBuilder private var content: some View {
         navigationView
         .onAppear {

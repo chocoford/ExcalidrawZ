@@ -35,6 +35,9 @@ struct ExcalidrawZApp: App {
     
     @Environment(\.scenePhase) var scenePhase    
     
+    @StateObject private var appSettings = AppSettingsStore()
+    @StateObject private var updateChecker = UpdateChecker()
+
     @State private var timer = Timer.publish(every: 30, on: .main, in: .default).autoconnect()
 
     var body: some Scene {
@@ -45,11 +48,16 @@ struct ExcalidrawZApp: App {
                 .onReceive(timer) { _ in
                     store.send(.saveCoreData, log: false)
                 }
+                .preferredColorScheme(appSettings.appearance.colorScheme)
+                .environmentObject(appSettings)
+                .onAppear {
+                    updateChecker.assignUpdater(updater: updaterController.updater)
+                }
         }
 #if os(macOS) && !APP_STORE
         .commands {
             CommandGroup(after: .appInfo) {
-                CheckForUpdatesView(updater: updaterController.updater)
+                CheckForUpdatesView(checkForUpdatesViewModel: updateChecker)
             }
         }
 #endif
@@ -105,6 +113,15 @@ struct ExcalidrawZApp: App {
 #endif
         .onChange(of: scenePhase) { _ in
             //            store.send(.saveCoreData)
+        }
+        
+        
+        Settings {
+            SettingsView()
+                .environmentObject(appSettings)
+                .environmentObject(updateChecker)
+                .preferredColorScheme(appSettings.appearance.colorScheme)
+
         }
     }
 }

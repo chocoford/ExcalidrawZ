@@ -18,7 +18,9 @@
 		3914876D2960AFD10042927A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 3914876C2960AFD10042927A /* Sparkle */; };
 		3914876F2961D6D00042927A /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3914876E2961D6D00042927A /* UpdateChecker.swift */; };
 		391487712961D9AE0042927A /* CheckForUpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391487702961D9AE0042927A /* CheckForUpdatesView.swift */; };
-		3954C93429A92A6500BA7B35 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3954C93329A92A6500BA7B35 /* ChocofordUI */; };
+		394963A62A0E0E15000FEB40 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963A52A0E0E15000FEB40 /* SettingsView.swift */; };
+		394963A92A0E1F7B000FEB40 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963A82A0E1F7B000FEB40 /* GeneralSettingsView.swift */; };
+		394963AB2A0E3B50000FEB40 /* AppSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963AA2A0E3B50000FEB40 /* AppSettingsStore.swift */; };
 		397E4657295838CF003B824B /* ExcalidrawZApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4656295838CF003B824B /* ExcalidrawZApp.swift */; };
 		397E4659295838CF003B824B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4658295838CF003B824B /* ContentView.swift */; };
 		397E465B295838D0003B824B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 397E465A295838D0003B824B /* Assets.xcassets */; };
@@ -37,6 +39,8 @@
 		397F98D3295DC121009BED55 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98D1295DC0AC009BED55 /* TestView.swift */; };
 		397F98DE295EE18E009BED55 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98DD295EE18E009BED55 /* AppDelegate.swift */; };
 		397F98E229607D58009BED55 /* ExcaliDrawOpenPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98E129607D58009BED55 /* ExcaliDrawOpenPanel.swift */; };
+		39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */ = {isa = PBXBuildFile; fileRef = 39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */; };
+		39A7BB852A101BA1003887F9 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 39A7BB842A101BA1003887F9 /* ChocofordUI */; };
 		39AD1EE7295AC30400DA9657 /* ExcalidrawView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EE6295AC30400DA9657 /* ExcalidrawView.swift */; };
 		39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
 		39AD1EEB295B501600DA9657 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEA295B501500DA9657 /* Store.swift */; };
@@ -79,7 +83,9 @@
 		3914876E2961D6D00042927A /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		391487702961D9AE0042927A /* CheckForUpdatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesView.swift; sourceTree = "<group>"; };
 		39148772296316720042927A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		394B14DC29A929D600C3BF6B /* ChocofordUI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = ChocofordUI; path = ../ChocofordUI; sourceTree = "<group>"; };
+		394963A52A0E0E15000FEB40 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		394963A82A0E1F7B000FEB40 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
+		394963AA2A0E3B50000FEB40 /* AppSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsStore.swift; sourceTree = "<group>"; };
 		397E4653295838CF003B824B /* ExcalidrawZ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExcalidrawZ.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		397E4656295838CF003B824B /* ExcalidrawZApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawZApp.swift; sourceTree = "<group>"; };
 		397E4658295838CF003B824B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -102,6 +108,7 @@
 		397F98D1295DC0AC009BED55 /* TestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestView.swift; sourceTree = "<group>"; };
 		397F98DD295EE18E009BED55 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		397F98E129607D58009BED55 /* ExcaliDrawOpenPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcaliDrawOpenPanel.swift; sourceTree = "<group>"; };
+		39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = FakeToggleColorMode.js; sourceTree = "<group>"; };
 		39AD1EE6295AC30400DA9657 /* ExcalidrawView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawView.swift; sourceTree = "<group>"; };
 		39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = FakeSaveCommand.js; sourceTree = "<group>"; };
 		39AD1EEA295B501500DA9657 /* Store.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
@@ -120,7 +127,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3954C93429A92A6500BA7B35 /* ChocofordUI in Frameworks */,
+				39A7BB852A101BA1003887F9 /* ChocofordUI in Frameworks */,
 				3914876D2960AFD10042927A /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -152,18 +159,18 @@
 			path = Persistence;
 			sourceTree = "<group>";
 		};
-		394B14D929A9285C00C3BF6B /* Packages */ = {
+		394963A42A0E0DE0000FEB40 /* SettingsView */ = {
 			isa = PBXGroup;
 			children = (
-				394B14DC29A929D600C3BF6B /* ChocofordUI */,
+				394963A52A0E0E15000FEB40 /* SettingsView.swift */,
+				394963A82A0E1F7B000FEB40 /* GeneralSettingsView.swift */,
 			);
-			name = Packages;
+			path = SettingsView;
 			sourceTree = "<group>";
 		};
 		397E464A295838CF003B824B = {
 			isa = PBXGroup;
 			children = (
-				394B14D929A9285C00C3BF6B /* Packages */,
 				397E4655295838CF003B824B /* ExcalidrawZ */,
 				397E4667295838D0003B824B /* ExcalidrawZTests */,
 				397E4671295838D0003B824B /* ExcalidrawZUITests */,
@@ -230,6 +237,7 @@
 			children = (
 				397E468629599DD3003B824B /* FakeDrop.js */,
 				39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */,
+				39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */,
 				397E468E295AAE5D003B824B /* template.excalidraw */,
 				3908EB9729674DF60054A3ED /* Model.xcdatamodeld */,
 			);
@@ -264,6 +272,7 @@
 		397F98D5295DC150009BED55 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				394963A42A0E0DE0000FEB40 /* SettingsView */,
 				397F98D7295DC185009BED55 /* components */,
 				397F98D6295DC162009BED55 /* shared */,
 			);
@@ -301,6 +310,7 @@
 				39AD1EEC295B504C00DA9657 /* AppState.swift */,
 				39E73D7229DB3B9800098A79 /* VersionState.swift */,
 				39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */,
+				394963AA2A0E3B50000FEB40 /* AppSettingsStore.swift */,
 			);
 			path = Store;
 			sourceTree = "<group>";
@@ -323,7 +333,7 @@
 			name = ExcalidrawZ;
 			packageProductDependencies = (
 				3914876C2960AFD10042927A /* Sparkle */,
-				3954C93329A92A6500BA7B35 /* ChocofordUI */,
+				39A7BB842A101BA1003887F9 /* ChocofordUI */,
 			);
 			productName = ExcaliDrawZ;
 			productReference = 397E4653295838CF003B824B /* ExcalidrawZ.app */;
@@ -399,6 +409,7 @@
 			mainGroup = 397E464A295838CF003B824B;
 			packageReferences = (
 				3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */,
+				39A7BB832A101BA1003887F9 /* XCRemoteSwiftPackageReference "ChocofordUI" */,
 			);
 			productRefGroup = 397E4654295838CF003B824B /* Products */;
 			projectDirPath = "";
@@ -420,6 +431,7 @@
 				397E468F295AAE5E003B824B /* template.excalidraw in Resources */,
 				397E465F295838D0003B824B /* Preview Assets.xcassets in Resources */,
 				397E465B295838D0003B824B /* Assets.xcassets in Resources */,
+				39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */,
 				39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -463,6 +475,7 @@
 				39E73D7329DB3B9800098A79 /* VersionState.swift in Sources */,
 				39AD1EEB295B501600DA9657 /* Store.swift in Sources */,
 				390B2C7B2967EACA00AA359C /* FetchResults+Extension.swift in Sources */,
+				394963AB2A0E3B50000FEB40 /* AppSettingsStore.swift in Sources */,
 				39E0577B296C92DD00304655 /* GroupRowView.swift in Sources */,
 				390B2C792967CF5C00AA359C /* PersistenceController.swift in Sources */,
 				39B7B878296C110B005F7E9D /* File.swift in Sources */,
@@ -470,6 +483,8 @@
 				397F98E229607D58009BED55 /* ExcaliDrawOpenPanel.swift in Sources */,
 				397E4657295838CF003B824B /* ExcalidrawZApp.swift in Sources */,
 				39AD1EE7295AC30400DA9657 /* ExcalidrawView.swift in Sources */,
+				394963A62A0E0E15000FEB40 /* SettingsView.swift in Sources */,
+				394963A92A0E1F7B000FEB40 /* GeneralSettingsView.swift in Sources */,
 				397E468D295A02E7003B824B /* LoadingView.swift in Sources */,
 				397F98CE295CC1A5009BED55 /* View+Extension.swift in Sources */,
 				3901E2622965704400E79788 /* FileListView.swift in Sources */,
@@ -857,6 +872,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		39A7BB832A101BA1003887F9 /* XCRemoteSwiftPackageReference "ChocofordUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/chocoford/ChocofordUI.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -865,8 +888,9 @@
 			package = 3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
 		};
-		3954C93329A92A6500BA7B35 /* ChocofordUI */ = {
+		39A7BB842A101BA1003887F9 /* ChocofordUI */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 39A7BB832A101BA1003887F9 /* XCRemoteSwiftPackageReference "ChocofordUI" */;
 			productName = ChocofordUI;
 		};
 /* End XCSwiftPackageProductDependency section */

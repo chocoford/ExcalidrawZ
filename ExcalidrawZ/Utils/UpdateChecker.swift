@@ -10,11 +10,22 @@ import SwiftUI
 import Sparkle
 
 final class UpdateChecker: ObservableObject {
-    @Published var canCheckForUpdates = false
+    var updater: SPUUpdater? = nil
+    @Published var canCheckForUpdates = false {
+        didSet {
+            if canCheckForUpdates != updater?.automaticallyChecksForUpdates {
+                updater?.automaticallyChecksForUpdates = canCheckForUpdates
+            }
+        }
+    }
 
-    init(updater: SPUUpdater) {
+    init() {}
+    
+    func assignUpdater(updater: SPUUpdater) {
+        self.updater = updater
         updater.publisher(for: \.canCheckForUpdates)
             .assign(to: &$canCheckForUpdates)
+        
     }
 }
 #endif
