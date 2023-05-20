@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SDWebImage/SDWebImage.git",
       "state" : {
-        "revision" : "fb50c1d20f24db5322b2f8f379de3618f75fe08e",
-        "version" : "5.15.5"
+        "revision" : "3289629ef6cbf1ad8c3d1dccf0cf09ac97547cd6",
+        "version" : "5.15.7"
       }
     },
     {
@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SDWebImage/SDWebImageSwiftUI.git",
       "state" : {
-        "revision" : "61fefe9c284fd41ddef77d02749e88f00c305196",
-        "version" : "2.2.2"
+        "revision" : "e837c37d45449fbd3b4745c10c5b5274e73edead",
+        "version" : "2.2.3"
       }
     },
     {
@@ -50,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle.git",
       "state" : {
-        "revision" : "631846cc829f0f0cae327df9bafe5a32b7ddadce",
-        "version" : "2.4.0"
+        "revision" : "7907f058bcef1132c9b4af6c049cac598330a5f9",
+        "version" : "2.4.1"
       }
     },
     {
@@ -59,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/stevengharris/SplitView.git",
       "state" : {
-        "revision" : "cee711f5e2f0dbbf5045dff85b45bc222eea9601",
-        "version" : "3.0.0"
+        "revision" : "b43b07b06aefc5a0daf574938e3b55a47390bcc4",
+        "version" : "3.1.3"
       }
     },
     {
@@ -77,8 +77,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/siteline/SwiftUI-Introspect.git",
       "state" : {
-        "revision" : "c18951c747ab62af7c15e17a81bd37d4fd5a9979",
-        "version" : "0.2.3"
+        "revision" : "5b3f3996c7a2a84d5f4ba0e03cd7d584154778f2",
+        "version" : "0.3.1"
       }
     },
     {
@@ -88,6 +88,15 @@
       "state" : {
         "revision" : "17b66b0e7d94d2d3f220bbcb021b5026436f06c7",
         "version" : "1.3.0"
+      }
+    },
+    {
+      "identity" : "swiftuioverlaycontainer",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/fatbobman/SwiftUIOverlayContainer.git",
+      "state" : {
+        "revision" : "d9ff87b16eb8743326dc0a3e901e15a82ed46530",
+        "version" : "2.3.3"
       }
     },
     {
