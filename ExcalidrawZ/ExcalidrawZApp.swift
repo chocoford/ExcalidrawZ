@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
 #if os(macOS) && !APP_STORE
 import Sparkle
 #endif
@@ -13,9 +14,6 @@ import Sparkle
 @main
 @MainActor
 struct ExcalidrawZApp: App {
-    let store = AppStore(state: AppState(),
-                         reducer: appReducer,
-                         environment: AppEnvironment())
 #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 #elseif os(iOS)
@@ -39,20 +37,21 @@ struct ExcalidrawZApp: App {
     @StateObject private var updateChecker = UpdateChecker()
 
     @State private var timer = Timer.publish(every: 30, on: .main, in: .default).autoconnect()
-
+    let store = Store(initialState: AppViewStore.State()) {
+        AppViewStore()
+    }
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(store)
-                .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-                .onReceive(timer) { _ in
-                    store.send(.saveCoreData, log: false)
-                }
-                .preferredColorScheme(appSettings.appearance.colorScheme)
-                .environmentObject(appSettings)
-                .onAppear {
-                    updateChecker.assignUpdater(updater: updaterController.updater)
-                }
+            ContentView(store: self.store)
+            .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
+//            .onReceive(timer) { _ in
+//                store.send(.saveCoreData, log: false)
+//            }
+            .preferredColorScheme(appSettings.appearance.colorScheme)
+            .environmentObject(appSettings)
+            .onAppear {
+                updateChecker.assignUpdater(updater: updaterController.updater)
+            }
         }
 #if os(macOS) && !APP_STORE
         .commands {
@@ -68,11 +67,11 @@ struct ExcalidrawZApp: App {
                 Button {
                     let panel = ExcalidrawOpenPanel.importPanel
                     if panel.runModal() == .OK {
-                        if let url = panel.url {
-                            store.send(.importFile(url))
-                        } else {
-                            store.send(.setError(.fileError(.invalidURL)))
-                        }
+//                        if let url = panel.url {
+//                            store.send(.importFile(url))
+//                        } else {
+//                            store.send(.setError(.fileError(.invalidURL)))
+//                        }
                     }
                 } label: {
                     Text("Import")
@@ -99,10 +98,10 @@ struct ExcalidrawZApp: App {
                                     }
                                 }
                             } catch {
-                                store.send(.setError(.unexpected(error)))
+//                                store.send(.setError(.unexpected(error)))
                             }
                         } else {
-                            store.send(.setError(.fileError(.invalidURL)))
+//                            store.send(.setError(.fileError(.invalidURL)))
                         }
                     }
                 } label: {
@@ -125,18 +124,3 @@ struct ExcalidrawZApp: App {
         }
     }
 }
-
-//extension Scene {
-//    @SceneBuilder func defaultSizeCompatible(width: CGFloat, height: CGFloat) -> some Scene {
-//        if #available(macOS 13.0, *) {
-//            defaultSize(width: width, height: height)
-//        } else {
-//            // Fallback on earlier versions
-//        }
-////        if #available(macOS 13.0, *) {
-////            defaultSize(width: width, height: height)
-////        } else {
-////            self
-////        }
-//    }
-//}

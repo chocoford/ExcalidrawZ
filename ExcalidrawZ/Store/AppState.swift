@@ -4,7 +4,7 @@
 //
 //  Created by Dove Zachary on 2022/11/28.
 //
-
+/*
 import Foundation
 import Combine
 import CoreData
@@ -85,11 +85,8 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 } else {
                     throw AppError.stateError(.currentGroupNil)
                 }
-            } catch let error as AppError {
-                return Just(.setError(error))
-                    .eraseToAnyPublisher()
             } catch {
-                return Just(.setError(.unexpected(error)))
+                return Just(.setError(.init(error)))
                     .eraseToAnyPublisher()
             }
             
@@ -108,11 +105,8 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                         .delay(for: 1.0, scheduler: environment.delayQueue)
                         .eraseToAnyPublisher()
                 }
-            } catch let error as AppError {
-                return Just(.setError(error))
-                    .eraseToAnyPublisher()
             } catch {
-                return Just(.setError(.unexpected(error)))
+                return Just(.setError(.init(error)))
                     .eraseToAnyPublisher()
             }
         case .setCurrentFile(let file):
@@ -139,11 +133,8 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 } else {
                     throw AppError.stateError(.currentGroupNil)
                 }
-            } catch let error as AppError {
-                return Just(.setError(error))
-                    .eraseToAnyPublisher()
             } catch {
-                return Just(.setError(.unexpected(error)))
+                return Just(.setError(.init(error)))
                     .eraseToAnyPublisher()
             }
             
@@ -154,7 +145,7 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 state.currentGroup = group
                 environment.persistence.save()
             } catch {
-                return Just(.setError(.unexpected(error)))
+                return Just(.setError(.init(error)))
                     .eraseToAnyPublisher()
             }
             
@@ -179,7 +170,7 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 state.currentGroup = groups.safeSubscribe(at: index - 1)
                 environment.persistence.save()
             } catch {
-                return Just(.setError(.unexpected(error)))
+                return Just(.setError(.init(error)))
                     .eraseToAnyPublisher()
             }
             
@@ -193,7 +184,7 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                         .eraseToAnyPublisher()
                 }
             } catch {
-                return Just(.setError(.unexpected(error)))
+                return Just(.setError(.init(error)))
                     .eraseToAnyPublisher()
             }
             
@@ -205,7 +196,7 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 state.currentFile = file
                 environment.persistence.save()
             } catch {
-                return Just(.setError(.unexpected(error)))
+                return Just(.setError(.init(error)))
                     .eraseToAnyPublisher()
             }
             
@@ -221,11 +212,8 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 
                 state.currentFile = file
                 environment.persistence.save()
-            } catch let error as AppError {
-                return Just(AppAction.setError(error))
-                    .eraseToAnyPublisher()
             } catch {
-                return Just(AppAction.setError(.unexpected(error)))
+                return Just(AppAction.setError(.init(error)))
                     .eraseToAnyPublisher()
             }
             
@@ -252,11 +240,8 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                         .eraseToAnyPublisher()
                 }
                 
-            } catch let error as AppError {
-                return Just(AppAction.setError(error))
-                    .eraseToAnyPublisher()
-            } catch  {
-                return Just(.setError(.unexpected(error)))
+            } catch {
+                return Just(.setError(.init(error)))
                     .eraseToAnyPublisher()
             }
         
@@ -281,7 +266,7 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 state.currentFile = files.safeSubscribe(at: index - 1)
                 environment.persistence.save()
             } catch {
-                return Just(.setError(.unexpected(error)))
+                return Just(.setError(.init(error)))
                     .eraseToAnyPublisher()
             }
             
@@ -310,7 +295,7 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = Reducer { state, 
                 }
                 
             } catch {
-                return Just(.setError(.unexpected(error)))
+                return Just(.setError(.init(error)))
                     .eraseToAnyPublisher()
             }
             
@@ -352,3 +337,4 @@ extension AppStore {
 }
 
 #endif
+*/

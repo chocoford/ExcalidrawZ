@@ -1,3 +1,9 @@
+## 0.3.5
+
+* Add `Settings`
+  * support changing color scheme
+  * support manually checking updates & enable/disable auto update.
+
 ## 0.3.4
 
 * Add `export image` feature.
