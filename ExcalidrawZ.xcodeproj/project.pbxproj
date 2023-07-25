@@ -23,6 +23,7 @@
 		394963A62A0E0E15000FEB40 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963A52A0E0E15000FEB40 /* SettingsView.swift */; };
 		394963A92A0E1F7B000FEB40 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963A82A0E1F7B000FEB40 /* GeneralSettingsView.swift */; };
 		394963AB2A0E3B50000FEB40 /* AppSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963AA2A0E3B50000FEB40 /* AppSettingsStore.swift */; };
+		395F307F2A7047C50032B576 /* excalidrawCore in Resources */ = {isa = PBXBuildFile; fileRef = 395F307E2A7047C50032B576 /* excalidrawCore */; };
 		3964D8462A5FF64D0039882E /* webViewTools.js in Resources */ = {isa = PBXBuildFile; fileRef = 3964D8452A5FF64D0039882E /* webViewTools.js */; };
 		397E4657295838CF003B824B /* ExcalidrawZApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4656295838CF003B824B /* ExcalidrawZApp.swift */; };
 		397E4659295838CF003B824B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4658295838CF003B824B /* ContentView.swift */; };
@@ -96,6 +97,7 @@
 		394963A52A0E0E15000FEB40 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		394963A82A0E1F7B000FEB40 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 		394963AA2A0E3B50000FEB40 /* AppSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsStore.swift; sourceTree = "<group>"; };
+		395F307E2A7047C50032B576 /* excalidrawCore */ = {isa = PBXFileReference; lastKnownFileType = folder; path = excalidrawCore; sourceTree = "<group>"; };
 		3964D8452A5FF64D0039882E /* webViewTools.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = webViewTools.js; sourceTree = "<group>"; };
 		397E4653295838CF003B824B /* ExcalidrawZ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExcalidrawZ.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		397E4656295838CF003B824B /* ExcalidrawZApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawZApp.swift; sourceTree = "<group>"; };
@@ -269,6 +271,7 @@
 		397E468529599DA0003B824B /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				395F307E2A7047C50032B576 /* excalidrawCore */,
 				397E468629599DD3003B824B /* FakeDrop.js */,
 				39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */,
 				39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */,
@@ -471,6 +474,7 @@
 				397E465F295838D0003B824B /* Preview Assets.xcassets in Resources */,
 				397E465B295838D0003B824B /* Assets.xcassets in Resources */,
 				3964D8462A5FF64D0039882E /* webViewTools.js in Resources */,
+				395F307F2A7047C50032B576 /* excalidrawCore in Resources */,
 				39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */,
 				39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */,
 			);

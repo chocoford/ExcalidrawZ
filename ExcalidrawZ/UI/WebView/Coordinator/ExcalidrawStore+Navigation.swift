@@ -41,6 +41,7 @@ extension ExcalidrawWebView.Coordinator: WKNavigationDelegate {
         _ = self.parent.store.withState { state in
             Task { @MainActor in
                 do {
+                    self.parent.store.send(.delegate(.onFinishLoading))
                     try await self.loadFile(from: state.currentFile)
                 } catch {
                     dump(error)

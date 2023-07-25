@@ -26,11 +26,29 @@ struct GroupRowStore: ReducerProtocol {
         case moveFileToGroup(fileID: File.ID)
         case clearFiles
         case delete
+        
+        case delegate(Delegate)
+        
+        enum Delegate: Equatable {
+            case didSetAsCurrentGroup
+        }
     }
     
     var body: some ReducerProtocol<State, Action> {
         Reduce { state, action in
-            return .none
+            switch action {
+                case .setAsCurrentGroup:
+                    return .send(.delegate(.didSetAsCurrentGroup))
+                case .moveFileToGroup(let fileID):
+                    return .none
+                case .clearFiles:
+                    return .none
+                case .delete:
+                    return .none
+                    
+                case .delegate:
+                    return .none
+            }
         }
     }
 }
@@ -71,12 +89,7 @@ struct GroupRowView: View {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(
-                viewStore.isSelected ? RoundedRectangle(cornerRadius: 4).foregroundColor(Color.accentColor.opacity(0.5)) : nil
-            )
+            .buttonStyle(ListButtonStyle(selected: viewStore.isSelected))
             .contextMenu { contextMenuView }
             .deleteAlert(isPresented: $alertDeletion, onDelete: deleteGroup)
             .emptyAlert(isPresented: $alertEmpty, onEmpty: emptyTrash)
@@ -177,11 +190,20 @@ extension GroupRowView {
 #if DEBUG
 struct GroupRowView_Previews: PreviewProvider {
     static var previews: some View {
-        GroupRowView(
-            store: .init(initialState: .init(group: .preview, isSelected: false)) {
-                GroupRowStore()
-            }
-        )
+        VStack(spacing: 20) {
+            GroupRowView(
+                store: .init(initialState: .init(group: .preview, isSelected: false)) {
+                    GroupRowStore()
+                }
+            )
+            
+            GroupRowView(
+                store: .init(initialState: .init(group: .preview, isSelected: true)) {
+                    GroupRowStore()
+                }
+            )
+        }
+        .padding()
     }
 }
 #endif

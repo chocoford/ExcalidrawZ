@@ -38,6 +38,7 @@ extension ExcalidrawWebView {
                 config.userContentController.addUserScript(userScript)
             }
             config.userContentController.add(self, name: "toggleMessageHandler")
+            
             self.webView = WKWebView(frame: .zero, configuration: config)
             if #available(macOS 13.3, *) {
                 self.webView.isInspectable = true
@@ -47,9 +48,10 @@ extension ExcalidrawWebView {
             self.webView.navigationDelegate = self
             self.webView.uiDelegate = self
             
-            let urlRequest = URLRequest(url: URL(string: "https://excalidraw.com")!)
+            let url = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "excalidrawCore")!
+            print(url, url.deletingLastPathComponent())
             DispatchQueue.main.async {
-                self.webView.load(urlRequest)
+                self.webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
             }
         }
     }

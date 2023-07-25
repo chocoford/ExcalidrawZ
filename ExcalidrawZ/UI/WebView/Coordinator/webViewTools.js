@@ -115,8 +115,6 @@ const watchExcalidrawState = () => {
   }, 2000);
 };
 
-
-
 const sendMessage = ({ event, data }) => {
   console.info("sendMessage", { event, data });
   if (
@@ -189,7 +187,7 @@ const onload = () => {
   hideEls();
 };
 
-window.addEventListener("load", onload);
+window.addEventListener('DOMContentLoaded', onload);
 
 window.excalidrawZHelper = {
   loadFile,
@@ -199,5 +197,3 @@ window.excalidrawZHelper = {
   exportImage,
   getIsDark: () => document.documentElement.classList.contains("dark"),
 };
-
-0;

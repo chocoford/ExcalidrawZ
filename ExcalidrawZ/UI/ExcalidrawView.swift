@@ -12,6 +12,8 @@ import ComposableArchitecture
 struct ExcalidrawContainerStore: ReducerProtocol {
     struct State: Equatable {
         var excalidraw: ExcalidrawStore.State = .init()
+        
+        var isLoading: Bool = true
     }
     
     enum Action: Equatable {
@@ -31,6 +33,7 @@ struct ExcalidrawContainerStore: ReducerProtocol {
                 case .excalidraw(.delegate(let action)):
                     switch action {
                         case .onFinishLoading:
+                            state.isLoading = false
                             return .none
                         case .onBeginExport(let exportState):
                             return .send(.delegate(.onBeginExport(exportState)))
@@ -51,43 +54,33 @@ struct ExcalidrawView: View {
     let store: StoreOf<ExcalidrawContainerStore>
     @EnvironmentObject var appSettings: AppSettingsStore
 
-    @State private var isLoading = true
     @State private var showRestoreAlert = false
 
-//    private var currentFile: Binding<File?> {
-//        store.binding(for: \.currentFile,
-//                      toAction: {
-//            return .setCurrentFile($0)
-//        })
-//    }
-    
     var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .center) {
-                ExcalidrawWebView(
-                    store: self.store.scope(state: \.excalidraw,
-                                            action: ExcalidrawContainerStore.Action.excalidraw)
-                )
-                .preferredColorScheme(appSettings.appearance.colorScheme)
-                .opacity(isLoading ? 0 : 1)
-                if isLoading {
-                    VStack {
-//                        CircularProgressView()
-                        ProgressView()
-                            .progressViewStyle(.circular)
-                        Text("Loading...")
+        WithViewStore(self.store, observe: { $0 }) { viewStore in
+            GeometryReader { geometry in
+                ZStack(alignment: .center) {
+                    ExcalidrawWebView(
+                        store: self.store.scope(
+                            state: \.excalidraw,
+                            action: ExcalidrawContainerStore.Action.excalidraw
+                        )
+                    )
+                    .preferredColorScheme(appSettings.appearance.colorScheme)
+                    .opacity(viewStore.isLoading ? 0 : 1)
+                    if viewStore.isLoading {
+                        VStack {
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                            Text("Loading...")
+                        }
+                        //                } else if currentFile.wrappedValue?.inTrash == true {
+                        //                    recoverOverlayView
+                        //                        .frame(width: geometry.size.width, height: geometry.size.height)
                     }
-//                } else if currentFile.wrappedValue?.inTrash == true {
-//                    recoverOverlayView
-//                        .frame(width: geometry.size.width, height: geometry.size.height)
                 }
-            }
-            .transition(.opacity)
-            .animation(.default, value: isLoading)
-            .onChange(of: isLoading) { newValue in
-                if !newValue {
-//                    store.send(.setCurrentFileToFirst)
-                }
+                .transition(.opacity)
+                .animation(.default, value: viewStore.isLoading)
             }
         }
     }

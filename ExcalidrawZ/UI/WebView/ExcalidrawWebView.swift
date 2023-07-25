@@ -39,7 +39,7 @@ struct ExcalidrawStore: ReducerProtocol {
             switch action {
                 case .setCurrentFile(let file):
                     state.currentFile = file
-                    return .none
+                    return .send(.loadFile(file))
                     
                 case .delegate:
                     return .none

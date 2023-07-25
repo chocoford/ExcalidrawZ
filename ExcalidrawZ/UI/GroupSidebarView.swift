@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import ChocofordEssentials
 import ComposableArchitecture
 
 struct GroupStore: ReducerProtocol {
@@ -23,7 +24,9 @@ struct GroupStore: ReducerProtocol {
         
         /// groups that not deleted.
         var availableGroups: IdentifiedArrayOf<GroupRowStore.State> {
-            self.groups.filter { $0.group.groupType != .trash || $0.group.groupType == .trash } //  && trashFiles.count > 0
+            self.groups.filter {
+                $0.group.groupType != .trash || $0.group.groupType == .trash
+            } //  && trashFiles.count > 0
         }
         
         var currentGroup: Group? {
@@ -42,12 +45,14 @@ struct GroupStore: ReducerProtocol {
     }
     
     enum Action: Equatable {
+        case group(id: GroupRowStore.State.ID, action: GroupRowStore.Action)
+
         case createGroup(name: String)
         
         case fetchGroups
         case setGroups(groups: [Group])
         case setCurrentGroup(group: Group?)
-        case group(id: GroupRowStore.State.ID, action: GroupRowStore.Action)
+        case setCurrentGroupToFirst
         
         case fetchTrashedFiles
         case setTrashedFilesCount(Int)
@@ -55,7 +60,7 @@ struct GroupStore: ReducerProtocol {
         case delegate(Delegate)
         
         enum Delegate: Equatable {
-            case didChooseGroup(Group)
+            case didChooseGroup(Group?)
         }
     }
     
@@ -92,7 +97,16 @@ struct GroupStore: ReducerProtocol {
                     
                 case .setCurrentGroup(let group):
                     state.currentGroup = group
-                    return .none
+                    return .send(.delegate(.didChooseGroup(group)))
+                    
+                case .setCurrentGroupToFirst:
+                    return .send(.setCurrentGroup(group: state.groups.first?.group))
+                    
+                case .group(let id , .delegate(let action)):
+                    switch action {
+                        case .didSetAsCurrentGroup:
+                            return .send(.setCurrentGroup(group: state.groups[id: id]?.group))
+                    }
                     
                 case .group:
                     return .none
@@ -112,7 +126,6 @@ struct GroupStore: ReducerProtocol {
         .forEach(\.groups, action: /Action.group) {
             GroupRowStore()
         }
-        ._printChanges()
     }
 }
 
@@ -132,7 +145,6 @@ struct GroupSidebarView: View {
     
     @ViewBuilder private var content: some View {
         WithViewStore(self.store, observe: {$0}) { viewStore in
-//            let _  = print(viewStore.groups.count)
             VStack(alignment: .leading) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
@@ -150,6 +162,11 @@ struct GroupSidebarView: View {
                         }
                     }
                     .padding(.vertical, 12)
+                    .watchImmediately(of: viewStore.currentGroup) { newValue in
+                        if newValue == nil {
+                            self.store.send(.setCurrentGroupToFirst)
+                        }
+                    }
                 }
                 
                 HStack {

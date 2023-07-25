@@ -38,7 +38,7 @@ struct ExcalidrawZApp: App {
 
     @State private var timer = Timer.publish(every: 30, on: .main, in: .default).autoconnect()
     let store = Store(initialState: AppViewStore.State()) {
-        AppViewStore()
+        AppViewStore()._printChanges()
     }
     var body: some Scene {
         WindowGroup {

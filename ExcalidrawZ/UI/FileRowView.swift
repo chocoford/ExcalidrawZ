@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import ChocofordUI
 import ComposableArchitecture
 
 struct FileRowStore: ReducerProtocol {
@@ -16,16 +17,36 @@ struct FileRowStore: ReducerProtocol {
     }
     
     enum Action: Equatable {
-        case setCurrentFile
+        case setAsCurrentFile
         case renameCurrentFile(_ newName: String)
         case duplicateCurrentFile
         case deleteCurrentFile
         case recoverCurrentFile
+        
+        case delegate(Delegate)
+        
+        enum Delegate: Equatable {
+            case didSetAsCurrentFile
+        }
     }
     
     var body: some ReducerProtocol<State, Action> {
         Reduce { state, action in
-            return .none
+            switch action {
+                case .setAsCurrentFile:
+                    return .send(.delegate(.didSetAsCurrentFile))
+                case .renameCurrentFile(_):
+                    return .none
+                case .duplicateCurrentFile:
+                    return .none
+                case .deleteCurrentFile:
+                    return .none
+                case .recoverCurrentFile:
+                    return .none
+                    
+                case .delegate:
+                    return .none
+            }
         }
     }
 }
@@ -42,103 +63,81 @@ struct FileRowView: View {
     @FocusState private var isFocused: Bool
     
     var body: some View {
-        if renameMode {
-            content()
-        } else {
-            Button {
-                self.store.send(.setCurrentFile)
-            } label: {
-                content()
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-        }
-    }
-    
-    @ViewBuilder
-    private func content() -> some View {
         WithViewStore(self.store, observe: {$0}) { viewStore in
-            VStack(alignment: .leading) {
-                HStack(spacing: 0) {
-                    if renameMode {
-                        TextField(text: $newFilename) {}
-                            .textFieldStyle(.squareBorder)
-                            .contentShape(Rectangle())
-                            .focused($isFocused)
-                            .onChange(of: isFocused) { newValue in
-                                if !isFocused {
+            Button {
+                viewStore.send(.setAsCurrentFile)
+            } label: {
+                VStack(alignment: .leading) {
+                    HStack(spacing: 0) {
+                        if renameMode {
+                            TextField(text: $newFilename) {}
+                                .textFieldStyle(.squareBorder)
+                                .contentShape(Rectangle())
+                                .focused($isFocused)
+                                .onChange(of: isFocused) { newValue in
+                                    if !isFocused {
+                                        renameFile()
+                                    }
+                                }
+                                .onSubmit {
                                     renameFile()
                                 }
-                            }
-                            .onSubmit {
-                                renameFile()
-                            }
-                    } else {
-                        Text(viewStore.file.name ?? "Untitled") + Text(".excalidraw").foregroundColor(.secondary)
-                    }
-                    
-                }
-                .font(.title3)
-                .lineLimit(1)
-                .padding(.bottom, 4)
-                HStack {
-                    Text((viewStore.file.updatedAt ?? viewStore.file.createdAt ?? .distantPast).formatted())
-                        .font(.footnote)
-                        .layoutPriority(1)
-                    Spacer()
-                    
-                    HStack {
-                        if #available(macOS 13.0, *) {
-                            Image("circle.grid.2x3.fill")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(height: 12)
-                            
-                                .draggable(FileLocalizable(fileID: viewStore.file.id!, groupID: viewStore.file.group!.id!)) {
-                                    FileRowView(store: self.store)
-                                        .frame(width: 200)
-                                        .padding(.horizontal, 4)
-                                        .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 8))
-                                }
+                        } else {
+                            Text(viewStore.file.name ?? "Untitled") + Text(".excalidraw").foregroundColor(.secondary)
                         }
                         
-                        Menu {
-                            listRowContextMenu
-                        } label: {
-                            Image(systemName: "ellipsis.circle.fill")
-                                .resizable()
-                        }
-                        .menuStyle(.borderlessButton)
-                        .menuIndicator(.hidden)
-                        .frame(width: 20)
-                        .padding(.horizontal, 4)
                     }
-                    .opacity(hovering ? 1 : 0)
+                    .font(.title3)
+                    .lineLimit(1)
+                    .padding(.bottom, 4)
+                    HStack {
+                        Text((viewStore.file.updatedAt ?? viewStore.file.createdAt ?? .distantPast).formatted())
+                            .font(.footnote)
+                            .layoutPriority(1)
+                        Spacer()
+                        
+                        HStack {
+                            if #available(macOS 13.0, *) {
+                                Image("circle.grid.2x3.fill")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(height: 12)
+                                
+                                    .draggable(FileLocalizable(fileID: viewStore.file.id!, groupID: viewStore.file.group!.id!)) {
+                                        FileRowView(store: self.store)
+                                            .frame(width: 200)
+                                            .padding(.horizontal, 4)
+                                            .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 8))
+                                    }
+                            }
+                            
+                            Menu {
+                                listRowContextMenu
+                            } label: {
+                                Image(systemName: "ellipsis.circle.fill")
+                                    .resizable()
+                            }
+                            .menuStyle(.borderlessButton)
+                            .menuIndicator(.hidden)
+                            .frame(width: 20)
+                            .padding(.horizontal, 4)
+                        }
+                        .opacity(hovering ? 1 : 0)
+                    }
                 }
             }
-            .onHover(perform: { hover in
-                withAnimation {
-                    hovering = hover
-                }
-            })
-            .onAppear {
-                newFilename = viewStore.file.name ?? "Untitled"
-            }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 4)
-            .background(
-                viewStore.isSelected ? RoundedRectangle(cornerRadius: 4).foregroundColor(Color.accentColor.opacity(0.5)) : nil
-            )
-            .contextMenu {
-                listRowContextMenu
-            }
-            .alert("Are you sure to permanently delete the file: \(viewStore.file.name ?? "")", isPresented: $showPermanentlyDeleteAlert) {
+            .buttonStyle(ListButtonStyle(selected: viewStore.isSelected))
+            .onAppear { newFilename = viewStore.file.name ?? "Untitled" }
+            .contextMenu { listRowContextMenu }
+            .alert(
+                "Are you sure to permanently delete the file: \(viewStore.file.name ?? "")",
+                isPresented: $showPermanentlyDeleteAlert
+            ) {
                 Button(role: .cancel) {
                     showPermanentlyDeleteAlert.toggle()
                 } label: {
                     Text("Cancel")
                 }
-                
                 Button(role: .destructive) {
                     store.send(.deleteCurrentFile)
                 } label: {

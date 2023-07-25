@@ -29,6 +29,7 @@ struct AppViewStore: ReducerProtocol {
         case excalidrawContainer(ExcalidrawContainerStore.Action)
         
         case setFilesGroup(Group)
+        case setExcalidrawFile(File)
         
         case exportImageButtonTapped
         
@@ -58,8 +59,23 @@ struct AppViewStore: ReducerProtocol {
                 case .group(.delegate(let action)):
                     switch action {
                         case .didChooseGroup(let group):
-                            return .send(.setFilesGroup(group))
+                            if let group = group {
+                                return .send(.setFilesGroup(group))
+                            } else {
+                                return .none
+                            }
                     }
+                    
+                case .file(.delegate(let action)):
+                    switch action {
+                        case .didSetCurrentFile(let file):
+                            if let file = file {
+                                return .send(.setExcalidrawFile(file))
+                            } else {
+                                return .none
+                            }
+                    }
+                    
                     
                 case .excalidrawContainer(.delegate(let action)):
                     switch action {
@@ -80,8 +96,10 @@ struct AppViewStore: ReducerProtocol {
                     return .send(.excalidrawContainer(.excalidraw(.exportPNGImage)))
                     
                 case .setFilesGroup(let group):
-                    state.fileState.group = group
-                    return .none
+                    return .send(.file(.setGroup(group)))
+                    
+                case .setExcalidrawFile(let file):
+                    return .send(.excalidrawContainer(.excalidraw(.setCurrentFile(file))))
                     
                 case .onAppear:
                     return .run { send in
