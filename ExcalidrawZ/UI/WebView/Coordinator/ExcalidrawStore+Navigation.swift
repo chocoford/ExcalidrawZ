@@ -16,10 +16,33 @@ extension ExcalidrawWebView.Coordinator: WKNavigationDelegate {
         return .allow
     }
     
+    @MainActor
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
-        if let scheme = navigationResponse.response.url?.scheme,
-           scheme == "blob" {
+        if let url = navigationResponse.response.url,
+           url.scheme == "blob" {
             return .download
+//            print(url)
+//            do {
+//                let script = """
+//fetch('\(url.absoluteString)')
+//.then(response => response.blob())
+//.then(blob => blob.arrayBuffer())
+//.then(arrayBuffer => { window.webkit.messageHandlers.excalidrawZ.postMessage({
+//        event: 'blobData',
+//        data: arrayBuffer
+//    });
+//})
+//.catch((error) => {
+//    console.error(error)
+//});
+//0;
+//"""
+//                try await self.webView.evaluateJavaScript(script)
+//            } catch {
+//                self.parent.store.send(.setError(.init(error)))
+//            }
+//            
+//            return .cancel
         }
         if navigationResponse.canShowMIMEType {
             return .allow

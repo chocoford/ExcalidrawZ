@@ -70,10 +70,10 @@ extension NSImage {
         let widthRatio  = size.width / self.width
         let heightRatio = size.height / self.height
         
-        if widthRatio > heightRatio {
-            newSize = NSSize(width: floor(self.width * widthRatio), height: floor(self.height * widthRatio))
+        if self.height * widthRatio <= size.height {
+            newSize = NSSize(width: (self.width * widthRatio), height: (self.height * widthRatio))
         } else {
-            newSize = NSSize(width: floor(self.width * heightRatio), height: floor(self.height * heightRatio))
+            newSize = NSSize(width: (self.width * heightRatio), height: (self.height * heightRatio))
         }
         
         return self.copy(size: newSize)

@@ -67,43 +67,17 @@ struct ExcalidrawZApp: App {
                 Button {
                     let panel = ExcalidrawOpenPanel.importPanel
                     if panel.runModal() == .OK {
-//                        if let url = panel.url {
-//                            store.send(.importFile(url))
-//                        } else {
-//                            store.send(.setError(.fileError(.invalidURL)))
-//                        }
+                        if let url = panel.url {
+                            store.send(.importFile(url))
+                        } else {
+                            store.send(.setError(.fileError(.invalidURL)))
+                        }
                     }
                 } label: {
                     Text("Import")
                 }
                 Button {
-                    let panel = ExcalidrawOpenPanel.exportPanel
-                    if panel.runModal() == .OK {
-                        if let url = panel.url {
-                            let filemanager = FileManager.default
-                            do {
-                                let allFiles = try PersistenceController.shared.listAllFiles()
-                                let exportURL = url.appendingPathComponent("ExcalidrawZ exported at \(Date.now.formatted(date: .abbreviated, time: .shortened))", conformingTo: .directory)
-                                try filemanager.createDirectory(at: exportURL, withIntermediateDirectories: false)
-                                for files in allFiles {
-                                    let dir = exportURL.appendingPathComponent(files.key, conformingTo: .directory)
-                                    try filemanager.createDirectory(at: dir, withIntermediateDirectories: false)
-                                    for file in files.value {
-                                        let filePath = dir.appendingPathComponent(file.name ?? "untitled", conformingTo: .fileURL).appendingPathExtension("excalidraw")
-                                        let path = filePath.absoluteString.replacingOccurrences(of: "file://", with: "").removingPercentEncoding ?? ""//.path(percentEncoded: false) 
-                                        print(path)
-                                        if !filemanager.createFile(atPath: path, contents: file.content) {
-                                            print("export file \(path) failed")
-                                        }
-                                    }
-                                }
-                            } catch {
-//                                store.send(.setError(.unexpected(error)))
-                            }
-                        } else {
-//                            store.send(.setError(.fileError(.invalidURL)))
-                        }
-                    }
+                    try? archiveAllFiles()
                 } label: {
                     Text("Export All")
                 }

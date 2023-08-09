@@ -15,7 +15,8 @@ protocol AnyExcalidrawZMessage: Codable {
 }
 
 extension ExcalidrawWebView.Coordinator: WKScriptMessageHandler {
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+    func userContentController(_ userContentController: WKUserContentController,
+                               didReceive message: WKScriptMessage) {
         do {
             let data = try JSONSerialization.data(withJSONObject: message.body)
             let message = try JSONDecoder().decode(ExcalidrawZMessage.self, from: data)
@@ -25,29 +26,29 @@ extension ExcalidrawWebView.Coordinator: WKScriptMessageHandler {
                     onSaveFileDone(message.data)
                 case .stateChanged(let message):
                     try onStateChanged(message.data)
+                case .blobData(let message):
+                    try self.handleBlobData(message.data)
             }
         } catch {
-            logger.error("\(error)")
+//            logger.error("\(error)")
+            dump(error)
         }
     }
 }
 
 extension ExcalidrawWebView.Coordinator {
     func onSaveFileDone(_ data: String) {
-        
+        print("onSaveFileDone")
     }
     
     func onStateChanged(_ data: StateChangedMessageData) throws {
-        guard let fileData = data.data.data(using: .utf8) else { throw AppError.fileError(.createError) }
-//        if let file = self.parent.currentFile {
-//            // parse current file content
-//            try file.updateElements(with: fileData)
-//        } else {
-//            // create the file
-//            DispatchQueue.main.async {
-////                self.parent.store.send(.newFile(resData))
-//            }
-//        }
+        guard let data = data.data.dataString.data(using: .utf8) else { throw AppError.fileError(.createError) }
+        self.parent.store.send(.updateCurrentFile(data))
+    }
+    
+    func handleBlobData(_ data: Data) throws {
+        let json = try JSONSerialization.jsonObject(with: data)
+        dump(json)
     }
 }
 
@@ -56,11 +57,13 @@ extension ExcalidrawWebView.Coordinator {
     enum ExcalidrawZEventType: String, Codable {
         case onStateChanged
         case saveFileDone
+        case blobData
     }
     
     enum ExcalidrawZMessage: Codable {
         case stateChanged(StateChangedMessage)
         case saveFileDone(SaveFileDoneMessage)
+        case blobData(BlobDataMessage)
         
         enum CodingKeys: String, CodingKey {
             case eventType = "event"
@@ -75,6 +78,8 @@ extension ExcalidrawWebView.Coordinator {
                     self = .stateChanged(try StateChangedMessage(from: decoder))
                 case .saveFileDone:
                     self = .saveFileDone(try SaveFileDoneMessage(from: decoder))
+                case .blobData:
+                    self = .blobData(try BlobDataMessage(from: decoder))
             }
             
         }
@@ -90,7 +95,7 @@ extension ExcalidrawWebView.Coordinator {
     }
     struct StateChangedMessageData: Codable {
         var state: ExcalidrawState
-        var data: String
+        var data: ExcalidrawFileData
     }
     
     struct ExcalidrawState: Codable {
@@ -108,12 +113,12 @@ extension ExcalidrawWebView.Coordinator {
         let exportScale: Int
         let exportEmbedScene, exportWithDarkMode: Bool
 //        let gridSize: JSONNull?
-        let defaultSidebarDockedPreference: Bool
+        let defaultSidebarDockedPreference: Bool?
         let lastPointerDownWith, name: String
 //        let openMenu, openSidebar: JSONNull?
         let previousSelectedElementIDS: IDS
         let scrolledOutside: Bool
-        let scrollX, scrollY: Int
+        let scrollX, scrollY: Double
         let selectedElementIDS, selectedGroupIDS: IDS
         let shouldCacheIgnoreZoom, showStats: Bool
         let viewBackgroundColor: String
@@ -150,13 +155,41 @@ extension ExcalidrawWebView.Coordinator {
 
         // MARK: - Zoom
         struct Zoom: Codable {
-            let value: Int
+            let value: Double
         }
     }
 
+    
+    struct ExcalidrawFileData: Codable, Hashable {
+        var dataString: String
+        var elements: [ExcalidrawElement]
+        var files: ExcalidrawFiles
+    }
+    struct ExcalidrawFiles: Codable, Hashable {
+        let loadedFiles: [LoadedFile]?
+        let erroredFiles: ErroredFiles?
+        // MARK: - ErroredFiles
+        struct ErroredFiles: Codable, Hashable {
+        }
+
+        // MARK: - LoadedFile
+        struct LoadedFile: Codable, Hashable {
+            let mimeType, id, dataURL: String
+            let created, lastRetrieved: Int
+        }
+
+    }
+
+    
+    
 
     struct SaveFileDoneMessage: AnyExcalidrawZMessage {
         var event: String
         var data: String //SaveFileDoneMessageData
+    }
+    
+    struct BlobDataMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: Data
     }
 }

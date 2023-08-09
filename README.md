@@ -9,15 +9,42 @@
 [Excalidraw](https://github.com/excalidraw/excalidraw) is a very useful web app, but the lack of file management can be troublesome and unsettling. We often need to manually save and maintain multiple different Excalidraw files. Therefore, ExcalidrawZ has wrapped it up to automatically save edited files for users and added file grouping functionality. In future versions, iCloud automatic backup will also be added to greatly reduce the insecurity of using a web app.
 
 ## Preview
-<img width="1384" alt="image" src="https://user-images.githubusercontent.com/28218759/212128306-764e9fc1-1998-44e3-a137-c1c9e888ba94.png">
-
-
+![App preview](https://github.com/chocoford/ExcalidrawZ/assets/28218759/8188d209-0fed-469d-b702-37631985c1a3)
 
 ## Features
 
-- [x] create groups to store excalidraw files
-- [x] *.excalidraw* file import
-- [x] import&export file
-- [x] export image
+#### create groups to store excalidraw files
+
+By using the `Create folder` button located in the bottom left corner of the app, you can create new folders to organize your work.
+
+#### `.excalidraw` file import
+
+You can import any file ending with excalidraw into the app through the menu bar.
+
+#### Share
+
+Sharing allows you to make your work output more seamless. ExcalidrawZ supports sharing your work with others through the clipboard, file system, and system sharing menu. Additionally, ExcalidrawZ provides backup for all your files through archiving.
+
+* export image
+* export file
+* archive all files
+
+![export image](https://github.com/chocoford/ExcalidrawZ/assets/28218759/5d49daa4-323b-4145-bcb3-1f7a2cdedd19)
+
+
+
+#### History
+
+Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ensure this, ExcalidrawZ performs a checkpoint record of the file before you loading another file. You can tap the button on the top right of app to view the history. 
+
+![File History](https://github.com/chocoford/ExcalidrawZ/assets/28218759/b4feb7df-4278-4a5c-8c78-c83200efc99b)
+
+## RoadMap
+
 - [ ] iCloud synchronization
 
+
+
+## Develop Tips
+
+* Remove preload of fonts in `index.html`, otherwise fonts will not be loaded.

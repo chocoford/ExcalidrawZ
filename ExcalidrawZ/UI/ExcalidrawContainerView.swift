@@ -14,47 +14,69 @@ struct ExcalidrawContainerStore: ReducerProtocol {
         var excalidraw: ExcalidrawStore.State = .init()
         
         var isLoading: Bool = true
+        var colorScheme: ColorScheme = .light
+        
+        @BindingState var showRestoreAlert: Bool = false
     }
     
-    enum Action: Equatable {
+    enum Action: Equatable, BindableAction {
+        case binding(BindingAction<State>)
         case excalidraw(ExcalidrawStore.Action)
+        
+        case setColorScheme(ColorScheme)
+        case toggleRestoreAlert
+        
         case delegate(Delegate)
         
         enum Delegate: Equatable {
             case recoverFile(File)
-            case onBeginExport(ExportStore.State)
-            case onExportDone
         }
     }
     
     var body: some ReducerProtocol<State, Action> {
+        BindingReducer()
+        Scope(state: \.excalidraw, action: /Action.excalidraw) {
+            ExcalidrawStore()
+        }
+        
         Reduce { state, action in
             switch action {
                 case .excalidraw(.delegate(let action)):
                     switch action {
                         case .onFinishLoading:
                             state.isLoading = false
+                            return .merge(
+                                .send(.excalidraw(.loadCurrentFile)),
+                                .send(.setColorScheme(state.colorScheme))
+                            )
+                            
+                        default:
                             return .none
-                        case .onBeginExport(let exportState):
-                            return .send(.delegate(.onBeginExport(exportState)))
-                        case .onExportDone:
-                            return .send(.delegate(.onExportDone))
                     }
                     
                 case .excalidraw:
                     return .none
-                case .delegate:
+                    
+                case .setColorScheme(let colorScheme):
+                    state.colorScheme = colorScheme
+                    return .send(.excalidraw(.applyColorSceme(colorScheme)))
+                    
+                case .toggleRestoreAlert:
+                    state.showRestoreAlert.toggle()
+                    return .none
+                    
+                case .delegate, .binding:
                     return .none
             }
         }
     }
 }
 
-struct ExcalidrawView: View {
+struct ExcalidrawContainerView: View {
     let store: StoreOf<ExcalidrawContainerStore>
+    @Environment(\.colorScheme) var colorScheme
+    
     @EnvironmentObject var appSettings: AppSettingsStore
-
-    @State private var showRestoreAlert = false
 
     var body: some View {
         WithViewStore(self.store, observe: { $0 }) { viewStore in
@@ -74,40 +96,43 @@ struct ExcalidrawView: View {
                                 .progressViewStyle(.circular)
                             Text("Loading...")
                         }
-                        //                } else if currentFile.wrappedValue?.inTrash == true {
-                        //                    recoverOverlayView
-                        //                        .frame(width: geometry.size.width, height: geometry.size.height)
+                    } else if viewStore.excalidraw.currentFile?.inTrash == true {
+                        recoverOverlayView
+                            .frame(width: geometry.size.width, height: geometry.size.height)
                     }
                 }
                 .transition(.opacity)
                 .animation(.default, value: viewStore.isLoading)
             }
+            .watchImmediately(of: colorScheme) { newVal in
+                viewStore.send(.setColorScheme(newVal))
+            }
         }
     }
 }
 
-extension ExcalidrawView {
+extension ExcalidrawContainerView {
     @ViewBuilder private var recoverOverlayView: some View {
-        WithViewStore(store, observe: {$0.excalidraw.currentFile}) { currentFile in
+        WithViewStore(self.store, observe: {$0}) { viewStore in
             Rectangle()
                 .opacity(0)
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    showRestoreAlert.toggle()
+                    viewStore.send(.toggleRestoreAlert)
                 }
                 .onLongPressGesture(perform: {
-                    showRestoreAlert.toggle()
+                    viewStore.send(.toggleRestoreAlert)
                 })
-                .alert("Recently deleted files can’t be edited.", isPresented: $showRestoreAlert) {
+                .alert("Recently deleted files can’t be edited.", isPresented: viewStore.$showRestoreAlert) {
                     Button(role: .cancel) {
-                        showRestoreAlert.toggle()
+                        viewStore.send(.toggleRestoreAlert)
                     } label: {
                         Text("Cancel")
                     }
                     
                     Button {
-                        if let file = currentFile.state {
-                            store.send(.delegate(.recoverFile(file)))
+                        if let file = viewStore.excalidraw.currentFile {
+                            self.store.send(.delegate(.recoverFile(file)))
                         }
                     } label: {
                         Text("Recover")
@@ -123,7 +148,7 @@ extension ExcalidrawView {
 #if DEBUG
 struct ExcalidrawView_Previews: PreviewProvider {
     static var previews: some View {
-        ExcalidrawView(
+        ExcalidrawContainerView(
             store: .init(initialState: .init()) {
                 ExcalidrawContainerStore()
             }

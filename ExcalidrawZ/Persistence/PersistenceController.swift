@@ -33,7 +33,7 @@ struct PersistenceController {
         }
         
         #if DEBUG
-        log()
+//        log()
         #endif
         
         prepare()
@@ -96,6 +96,11 @@ extension PersistenceController {
         fetchRequest.predicate = NSPredicate(format: "id == %@", id.uuidString)
         return try container.viewContext.fetch(fetchRequest).first
     }
+    func getDefaultGroup() throws -> Group? {
+        let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+        fetchRequest.predicate = NSPredicate(format: "type == %@", "default")
+        return try container.viewContext.fetch(fetchRequest).first
+    }
     func findFile(id: UUID) throws -> File? {
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
         fetchRequest.predicate = NSPredicate(format: "id == %@", id as CVarArg)
@@ -152,9 +157,30 @@ extension PersistenceController {
         return newFile
     }
     
-//    func deleteFile(file: File) {
-//        file.group =
-//    }
+    //MARK: - Checkpoints
+    
+    func getLatestCheckpoint(of file: File) throws -> FileCheckpoint? {
+        let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+        fetchRequest.predicate = NSPredicate(format: "file == %@", file)
+        fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
+        return try container.viewContext.fetch(fetchRequest).first
+    }
+    
+    func getOldestCheckpoint(of file: File) throws -> FileCheckpoint? {
+        let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+        fetchRequest.predicate = NSPredicate(format: "file == %@", file)
+        fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: true)]
+        return try container.viewContext.fetch(fetchRequest).first
+    }
+    
+    func fetchFileCheckpoints(of file: File) throws -> [FileCheckpoint] {
+        let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+        fetchRequest.predicate = NSPredicate(format: "file == %@", file)
+        fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
+        return try container.viewContext.fetch(fetchRequest)
+    }
+    
+    
     
     func save() {
         let context = container.viewContext
@@ -166,6 +192,8 @@ extension PersistenceController {
                 // Show some error here
                 dump(error)
             }
+        } else {
+            print("[Persistance Controller] nothing changed")
         }
     }
 }

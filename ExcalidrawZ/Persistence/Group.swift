@@ -20,6 +20,17 @@ extension Group {
 #endif
 
 extension Group {
+    static let trash = {
+        let group = Group(context: PersistenceController.shared.container.viewContext)
+        group.id = UUID()
+        group.groupType = .trash
+        group.name = "Recently Deleted"
+        group.createdAt = .distantPast
+        return group
+    }()
+}
+
+extension Group {
     enum GroupType: String {
         case `default` = "default"
         case trash = "trash"

@@ -11,18 +11,27 @@ import UniformTypeIdentifiers
 import WebKit
 import ComposableArchitecture
 
-struct ExportStore: ReducerProtocol {
-    struct State: Equatable {
-        var url: URL
-        var download: WKDownload
+struct ExportImageStore: ReducerProtocol {
+    struct State: Equatable, Hashable {
+        var url: URL?
+        var download: WKDownload?
         var done: Bool = false
     }
     
     enum Action: Equatable {
+        case setState(State)
+        case setIsDone
+        
         case dismiss
         case cancelExport
         
         case setError(_ error: FileError)
+        
+        case delegate(Delegate)
+        
+        enum Delegate: Equatable {
+            case onAppear
+        }
     }
     
     @Dependency(\.dismiss) var dismiss
@@ -31,16 +40,27 @@ struct ExportStore: ReducerProtocol {
     var body: some ReducerProtocol<State, Action> {
         Reduce { state, action in
             switch action {
+                case .setState(let targetState):
+                    state = targetState
+                    return .none
+                    
+                case .setIsDone:
+                    state.done = true
+                    return .none
+                    
                 case .dismiss:
                     return .run { send in
                         await dismiss()
                     }
                 case .cancelExport:
-                    state.download.cancel()
+                    state.download?.cancel()
                     return .send(.dismiss)
                     
                 case .setError(let error):
                     errorBus.submit(error)
+                    return .none
+                    
+                case .delegate:
                     return .none
             }
         }
@@ -49,7 +69,7 @@ struct ExportStore: ReducerProtocol {
 
 
 struct ExportImageView: View {
-    let store: StoreOf<ExportStore>
+    let store: StoreOf<ExportImageStore>
     
     @State private var image: NSImage? = nil
     @State private var loadingImage: Bool = false
@@ -57,81 +77,82 @@ struct ExportImageView: View {
     @State private var showShare: Bool = false
     @State private var fileName: String = ""
     @State private var copied: Bool = false
+    @State private var hasError: Bool = false
     
     var body: some View {
         VStack {
-            HStack {
-                Text("Export image...")
-                    .font(.title)
-                Spacer()
-                
-                Button {
-//                    exportState?.download?.cancel()
-                    self.store.send(.dismiss)
-                } label: {
-                    Image(systemName: "xmark")
-                        .padding(8)
+            if #available(macOS 13.0, *) {} else {
+                HStack {
+                    Text("Export image...")
+                        .font(.title)
+                    Spacer()
+                    
+                    Button {
+                        self.store.send(.dismiss)
+                    } label: {
+                        Image(systemName: "xmark")
+                            .padding(8)
+                    }
+                    .buttonStyle(.borderless)
                 }
-                .buttonStyle(.borderless)
+                Divider()
             }
-            Divider()
-            Spacer(minLength: 0)
-            content
-            Spacer(minLength: 0)
+            Center {
+                content
+            }
         }
-//        .onChange(of: exportState?.url, perform: { newValue in
-//            if let url = newValue {
-//                loadingImage = true
-//                DispatchQueue.global().async {
-//                    let image = NSImage(contentsOf: url)?.resizeWhileMaintainingAspectRatioToSize(size: .init(width: 200, height: 100))
-//                    DispatchQueue.main.async {
-//                        self.image = image
-//                        loadingImage = false
-//                    }
-//                }
-//            }
-//            if let component = newValue?.lastPathComponent {
-//                fileName = component
-//            }
-//        })
-//        .onDisappear {
-//            if let url = exportState?.url {
-//                try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
-//            }
-//        }
         .padding()
-        .frame(width: 400, height: 300, alignment: .center)
+        .onAppear {
+            self.store.send(.delegate(.onAppear))
+        }
     }
     
     @ViewBuilder
     private var content: some View {
         WithViewStore(store, observe: {$0}) { store in
-            if let image = image {
-                VStack {
-                    thumbnailView(image, url: store.state.url)
+//            Text("Path not found.")
+//                .foregroundColor(.red)
+//                .italic()
+            VStack {
+                if let image = image, let url = store.state.url {
+                    thumbnailView(image, url: url)
                     fileInfoView
-                    actionsView(store.state.url)
-                }
-            } else if store.state.done == false || loadingImage {
-                VStack {
-                    LoadingView(strokeColor: Color.accentColor)
-                    
+                    actionsView(url)
+                } else if hasError {
+                    Text("Loading image failed.")
+                        .foregroundColor(.red)
+                } else {
+                    ProgressView {
+                    }
                     Text("Loading...")
                     
                     Button {
                         store.send(.cancelExport)
+                        store.send(.dismiss)
                     } label: {
                         Text("Cancel")
                     }
                     .offset(y: 40)
                 }
-            } else {
-                Text("Path not found.")
-                    .foregroundColor(.red)
-                    .italic()
+            }
+            .watchImmediately(of: store.state.url) { url in
+                guard let url = url else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now().advanced(by: .milliseconds(500))) {
+                    guard let image = NSImage(contentsOf: url) else {
+                        hasError = true
+                        return
+                    }
+                    self.image = image.resizeWhileMaintainingAspectRatioToSize(size: .init(width: 200, height: 120))
+                }
+                fileName = url.lastPathComponent.components(separatedBy: ".").first ?? "Untitled"
+            }
+            .onDisappear {
+                if let url = store.url {
+                    try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+                }
+                hasError = false
             }
         }
-        
     }
     
     
@@ -140,11 +161,14 @@ struct ExportImageView: View {
                           sourceURL: url)
         .frame(width: 200, height: 120, alignment: .center)
     }
+    
     @ViewBuilder private var fileInfoView: some View {
         // File name
         TextField("", text: $fileName)
             .padding(.horizontal, 48)
+            .textFieldStyle(.roundedBorder)
     }
+    
     @ViewBuilder
     private func actionsView(_ url: URL) -> some View {
         HStack {
@@ -204,7 +228,6 @@ struct ExportImageView: View {
             }
             self.store.send(.dismiss)
         })
-        .padding()
     }
 }
 
@@ -250,7 +273,7 @@ struct ExportImageView_Previews: PreviewProvider {
                 url: URL(string: "https://testres.trickle.so/upload/avatars/agents/fba0556877814fe6866c97f9813b6ad4_8f2a9057-681a-4a27-96ed-9d0c5696b941.png")!,
                 download: .init()
             )) {
-                ExportStore()
+                ExportImageStore()
             }
         )
     }

@@ -11,47 +11,16 @@ import ComposableArchitecture
 
 extension ExcalidrawWebView.Coordinator: WKDownloadDelegate {
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
-        let fileManager: FileManager = FileManager.default
-        let directory: URL
-        do {
-            if #available(macOS 13.0, *) {
-                directory = try fileManager.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: .applicationSupportDirectory, create: true)
-            } else if let temp = URL(string: NSTemporaryDirectory()) {
-                directory = temp
-                try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-            } else {
+        switch suggestedFilename.components(separatedBy: ".").last {
+            case .some("excalidraw"):
+//                return onDownloadExcalidrawFile(download, decideDestinationUsing: response, suggestedFilename: suggestedFilename)
                 return nil
-            }
-            
-            let fileExtension = suggestedFilename.components(separatedBy: ".").last ?? "png"
-            
-//            self.parent.store.withState{$0}.currentFile
-            
-            let fileName = self.parent.store.withState{$0}.currentFile?.name?.appending(".\(fileExtension)") ?? suggestedFilename
-            
-            let url = directory.appendingPathComponent(fileName, conformingTo: .image)
-            if fileManager.fileExists(atPath: url.absoluteString) {
-                try fileManager.removeItem(at: url)
-            }
-            
-            if let request = download.originalRequest {
-                self.downloads[request] = url;
-            }
-            print(url.isFileURL) // false
-            self.parent.store.send(
-                .delegate(
-                    .onBeginExport(
-                        .init(
-                            url: url, download: download
-                        )
-                    )
-                )
-            )
-
-            return url;
-        } catch {
-            logger.error("\(error)")
-            return nil
+                
+            case .some("png"):
+                return onExportPNG(download, decideDestinationUsing: response, suggestedFilename: suggestedFilename)
+                
+            default:
+                return nil
         }
     }
 
@@ -65,5 +34,53 @@ extension ExcalidrawWebView.Coordinator: WKDownloadDelegate {
 //            self.parent.store.send(.setExportingState(.init(url: url, download: download, done: true)))
 //        }
         downloads.removeValue(forKey: request)
+    }
+    
+    func onDownloadExcalidrawFile(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) -> URL? {
+        let fileManager: FileManager = FileManager.default
+
+        do {
+            guard var directory: URL = try getTempDirectory() else { return nil }
+            directory = directory.appendingPathComponent("file_downloads", conformingTo: .directory)
+            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+            
+            
+        } catch {
+            self.parent.store.send(.setError(.init(error)))
+        }
+        return nil
+    }
+    
+    
+    func onExportPNG(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) -> URL? {
+        let fileManager: FileManager = FileManager.default
+        do {
+            guard let directory: URL = try getTempDirectory() else { return nil }
+            let fileExtension = suggestedFilename.components(separatedBy: ".").last ?? "png"
+            let fileName = self.parent.store.withState{$0}.currentFile?.name?.appending(".\(fileExtension)") ?? suggestedFilename
+            let url = directory.appendingPathComponent(fileName, conformingTo: .image)
+            if fileManager.fileExists(atPath: url.absoluteString) {
+                try fileManager.removeItem(at: url)
+            }
+            
+            if let request = download.originalRequest {
+                self.downloads[request] = url;
+            }
+            
+            self.parent.store.send(
+                .delegate(
+                    .onBeginExport(
+                        .init(
+                            url: url, download: download
+                        )
+                    )
+                )
+            )
+            
+            return url;
+        } catch {
+            self.parent.store.send(.setError(.init(error)))
+            return nil
+        }
     }
 }

@@ -32,12 +32,12 @@ extension ExcalidrawWebView {
         func configWebView() {
             let config = WKWebViewConfiguration()
             config.websiteDataStore = .nonPersistent()
-            if let url = Bundle.main.url(forResource: "webViewTools", withExtension: "js"),
-               let script = try? String(contentsOf: url) {
-                let userScript = WKUserScript(source: script, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-                config.userContentController.addUserScript(userScript)
-            }
-            config.userContentController.add(self, name: "toggleMessageHandler")
+//            if let url = Bundle.main.url(forResource: "webViewTools", withExtension: "js"),
+//               let script = try? String(contentsOf: url) {
+//                let userScript = WKUserScript(source: script, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+//                config.userContentController.addUserScript(userScript)
+//            }
+            config.userContentController.add(self, name: "excalidrawZ")
             
             self.webView = WKWebView(frame: .zero, configuration: config)
             if #available(macOS 13.3, *) {
@@ -47,6 +47,8 @@ extension ExcalidrawWebView {
             
             self.webView.navigationDelegate = self
             self.webView.uiDelegate = self
+            
+//            self.webView.load(.init(url: URL(string: "https://excalidraw.com")!))
             
             let url = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "excalidrawCore")!
             print(url, url.deletingLastPathComponent())
@@ -61,11 +63,11 @@ extension ExcalidrawWebView {
 extension ExcalidrawWebView.Coordinator {
     @MainActor
     func loadFile(from file: File?) async throws {
+        if self.webView.isLoading { return }
         guard let file = file, let data = file.content else { return }
         var buffer = [UInt8].init(repeating: 0, count: data.count)
         data.copyBytes(to: &buffer, count: data.count)
         try await self.webView.evaluateJavaScript("window.excalidrawZHelper.loadFile(\(buffer)); 0;")
-        self.parent.store.send(.setCurrentFile(file))
     }
     
     /// Load current `File`.
@@ -98,9 +100,13 @@ extension ExcalidrawWebView.Coordinator {
     /// `true` if is dark mode.
     @MainActor
     func getIsDark() async throws -> Bool {
+        if self.webView.isLoading { return false }
         let res = try await self.webView.evaluateJavaScript("window.excalidrawZHelper.getIsDark()")
-        print(res)
-        return false
+        if let isDark = res as? Bool {
+            return isDark
+        } else {
+            return false
+        }
     }
     
 //    @MainActor
@@ -118,9 +124,10 @@ extension ExcalidrawWebView.Coordinator {
     
     @MainActor
     func changeColorMode(dark: Bool) async throws {
+        if self.webView.isLoading { return }
         let isDark = try await getIsDark()
         guard isDark != dark else { return }
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleColorTheme(\(dark ? "dark" : "light")); 0;")
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleColorTheme(\"\(dark ? "dark" : "light")\"); 0;")
     }
     
     @MainActor
