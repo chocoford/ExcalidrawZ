@@ -1,3 +1,17 @@
+## 0.4.0
+
+* New sidebar design
+
+*  New `Share` button. You can export image/export file/archive all files. `MacOS 13.0 only`
+
+  <img src="https://github.com/chocoford/ExcalidrawZ/assets/28218759/5d49daa4-323b-4145-bcb3-1f7a2cdedd19" alt="export image" style="zoom:50%;" />
+
+* New file history. Protects your works.
+
+  <img src="https://github.com/chocoford/ExcalidrawZ/assets/28218759/b4feb7df-4278-4a5c-8c78-c83200efc99b" alt="File History" style="zoom:50%;" />
+
+* Bugs fixed.
+
 ## 0.3.5
 
 * Add `Settings`
