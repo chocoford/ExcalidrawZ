@@ -6,6 +6,8 @@
 	<array>
 		<string>Cascadia</string>
 		<string>Virgil</string>
+		<string>Cangnanshoujiti</string>
+		<string>KaiTi</string>
 	</array>
 	<key>CFBundleDocumentTypes</key>
 	<array>

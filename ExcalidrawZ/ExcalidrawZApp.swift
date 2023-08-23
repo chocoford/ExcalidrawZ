@@ -44,9 +44,6 @@ struct ExcalidrawZApp: App {
         WindowGroup {
             ContentView(store: self.store)
             .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-//            .onReceive(timer) { _ in
-//                store.send(.saveCoreData, log: false)
-//            }
             .preferredColorScheme(appSettings.appearance.colorScheme)
             .environmentObject(appSettings)
             .onAppear {

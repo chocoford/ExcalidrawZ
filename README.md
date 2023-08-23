@@ -4,8 +4,10 @@
   </a>
   <h3>Excalidraw app for mac. Powered by pure SwiftUI.</h3>
 </div>
+![GitHub](https://img.shields.io/github/license/chocoford/ExcalidrawZ)[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40Chocoford)](https://twitter.com/dove_zachary)
 
 ## The motivation
+
 [Excalidraw](https://github.com/excalidraw/excalidraw) is a very useful web app, but the lack of file management can be troublesome and unsettling. We often need to manually save and maintain multiple different Excalidraw files. Therefore, ExcalidrawZ has wrapped it up to automatically save edited files for users and added file grouping functionality. In future versions, iCloud automatic backup will also be added to greatly reduce the insecurity of using a web app.
 
 ## Preview

@@ -19,14 +19,13 @@
 		3914876F2961D6D00042927A /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3914876E2961D6D00042927A /* UpdateChecker.swift */; };
 		391487712961D9AE0042927A /* CheckForUpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391487702961D9AE0042927A /* CheckForUpdatesView.swift */; };
 		391585A52A80238B0028D250 /* ShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391585A42A80238B0028D250 /* ShareView.swift */; };
+		392C4A602A9617B1009D1217 /* excalidrawCore in Resources */ = {isa = PBXBuildFile; fileRef = 392C4A5F2A9617B1009D1217 /* excalidrawCore */; };
 		39345AED2A61481A00C3650B /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 39345AEC2A61481A00C3650B /* ChocofordEssentials */; };
 		39345AEF2A61481A00C3650B /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 39345AEE2A61481A00C3650B /* ChocofordUI */; };
-		393804E42A837734001735AD /* excalidrawCore in Resources */ = {isa = PBXBuildFile; fileRef = 393804E32A837734001735AD /* excalidrawCore */; };
 		394804C32A815D1100886972 /* ExportFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394804C22A815D1100886972 /* ExportFileView.swift */; };
 		394963A62A0E0E15000FEB40 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963A52A0E0E15000FEB40 /* SettingsView.swift */; };
 		394963A92A0E1F7B000FEB40 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963A82A0E1F7B000FEB40 /* GeneralSettingsView.swift */; };
 		394963AB2A0E3B50000FEB40 /* AppSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963AA2A0E3B50000FEB40 /* AppSettingsStore.swift */; };
-		3964D8462A5FF64D0039882E /* tools.js in Resources */ = {isa = PBXBuildFile; fileRef = 3964D8452A5FF64D0039882E /* tools.js */; };
 		397E4657295838CF003B824B /* ExcalidrawZApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4656295838CF003B824B /* ExcalidrawZApp.swift */; };
 		397E4659295838CF003B824B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4658295838CF003B824B /* ContentView.swift */; };
 		397E465B295838D0003B824B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 397E465A295838D0003B824B /* Assets.xcassets */; };
@@ -59,8 +58,6 @@
 		39BBE4752A6F078100045BEA /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BBE4742A6F078100045BEA /* AppStore.swift */; };
 		39BF8E8A2A7EADB1002BD9D8 /* FileCheckpointListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BF8E892A7EADB1002BD9D8 /* FileCheckpointListView.swift */; };
 		39BF8E8C2A7EAE33002BD9D8 /* FileCheckpoint+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BF8E8B2A7EAE33002BD9D8 /* FileCheckpoint+Extension.swift */; };
-		39C8957C2A834781008F4C3F /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = 39C8957B2A834781008F4C3F /* index.html */; };
-		39C8957E2A834916008F4C3F /* index.js in Resources */ = {isa = PBXBuildFile; fileRef = 39C8957D2A834916008F4C3F /* index.js */; };
 		39C938E72A5B3D3700E3A57D /* ExcalidrawStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39C938E62A5B3D3700E3A57D /* ExcalidrawStore.swift */; };
 		39C938E92A5B3E7300E3A57D /* ExcalidrawStore+Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39C938E82A5B3E7300E3A57D /* ExcalidrawStore+Navigation.swift */; };
 		39C938EB2A5B3E9B00E3A57D /* ExcalidrawStore+Download.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39C938EA2A5B3E9B00E3A57D /* ExcalidrawStore+Download.swift */; };
@@ -113,12 +110,11 @@
 		391487702961D9AE0042927A /* CheckForUpdatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesView.swift; sourceTree = "<group>"; };
 		39148772296316720042927A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		391585A42A80238B0028D250 /* ShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareView.swift; sourceTree = "<group>"; };
-		393804E32A837734001735AD /* excalidrawCore */ = {isa = PBXFileReference; lastKnownFileType = folder; path = excalidrawCore; sourceTree = "<group>"; };
+		392C4A5F2A9617B1009D1217 /* excalidrawCore */ = {isa = PBXFileReference; lastKnownFileType = folder; path = excalidrawCore; sourceTree = "<group>"; };
 		394804C22A815D1100886972 /* ExportFileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportFileView.swift; sourceTree = "<group>"; };
 		394963A52A0E0E15000FEB40 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		394963A82A0E1F7B000FEB40 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 		394963AA2A0E3B50000FEB40 /* AppSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsStore.swift; sourceTree = "<group>"; };
-		3964D8452A5FF64D0039882E /* tools.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = tools.js; sourceTree = "<group>"; };
 		397E4653295838CF003B824B /* ExcalidrawZ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExcalidrawZ.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		397E4656295838CF003B824B /* ExcalidrawZApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawZApp.swift; sourceTree = "<group>"; };
 		397E4658295838CF003B824B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -154,8 +150,6 @@
 		39BBE4742A6F078100045BEA /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
 		39BF8E892A7EADB1002BD9D8 /* FileCheckpointListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCheckpointListView.swift; sourceTree = "<group>"; };
 		39BF8E8B2A7EAE33002BD9D8 /* FileCheckpoint+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileCheckpoint+Extension.swift"; sourceTree = "<group>"; };
-		39C8957B2A834781008F4C3F /* index.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
-		39C8957D2A834916008F4C3F /* index.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = index.js; sourceTree = "<group>"; };
 		39C938E62A5B3D3700E3A57D /* ExcalidrawStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawStore.swift; sourceTree = "<group>"; };
 		39C938E82A5B3E7300E3A57D /* ExcalidrawStore+Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ExcalidrawStore+Navigation.swift"; sourceTree = "<group>"; };
 		39C938EA2A5B3E9B00E3A57D /* ExcalidrawStore+Download.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ExcalidrawStore+Download.swift"; sourceTree = "<group>"; };
@@ -331,8 +325,7 @@
 		397E468529599DA0003B824B /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				393804E32A837734001735AD /* excalidrawCore */,
-				39C8957F2A8349BB008F4C3F /* excalidraw */,
+				392C4A5F2A9617B1009D1217 /* excalidrawCore */,
 				397E468629599DD3003B824B /* FakeDrop.js */,
 				39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */,
 				39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */,
@@ -403,16 +396,6 @@
 				394963AA2A0E3B50000FEB40 /* AppSettingsStore.swift */,
 			);
 			path = Store;
-			sourceTree = "<group>";
-		};
-		39C8957F2A8349BB008F4C3F /* excalidraw */ = {
-			isa = PBXGroup;
-			children = (
-				3964D8452A5FF64D0039882E /* tools.js */,
-				39C8957B2A834781008F4C3F /* index.html */,
-				39C8957D2A834916008F4C3F /* index.js */,
-			);
-			path = excalidraw;
 			sourceTree = "<group>";
 		};
 		39C938E22A5B3C5900E3A57D /* WebView */ = {
@@ -574,13 +557,10 @@
 				397E468729599DD4003B824B /* FakeDrop.js in Resources */,
 				397E468F295AAE5E003B824B /* template.excalidraw in Resources */,
 				397E465F295838D0003B824B /* Preview Assets.xcassets in Resources */,
-				393804E42A837734001735AD /* excalidrawCore in Resources */,
 				397E465B295838D0003B824B /* Assets.xcassets in Resources */,
-				3964D8462A5FF64D0039882E /* tools.js in Resources */,
 				39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */,
-				39C8957C2A834781008F4C3F /* index.html in Resources */,
-				39C8957E2A834916008F4C3F /* index.js in Resources */,
 				39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */,
+				392C4A602A9617B1009D1217 /* excalidrawCore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
