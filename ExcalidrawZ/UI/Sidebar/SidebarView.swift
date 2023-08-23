@@ -30,6 +30,11 @@ extension SidebarBaseState: Identifiable where State: Identifiable {
 
 
 struct SidebarStore: ReducerProtocol {
+    enum Visibility {
+        case onlyFiles
+        case all
+    }
+    
 //    typealias State = AppBaseState<_State>
     struct State: Equatable {
         var currentFile: File? = nil
@@ -40,6 +45,8 @@ struct SidebarStore: ReducerProtocol {
 
         var group: GroupStore._State = .init()
         var file: FileStore._State = .init()
+        
+        var visibility: Visibility = .all
         
         var groupState: GroupStore.State {
             get {
@@ -85,6 +92,7 @@ struct SidebarStore: ReducerProtocol {
     }
     
     enum Action: Equatable {
+        case toggleVisibility(Visibility)
         case group(GroupStore.Action)
         case file(FileStore.Action)
     }
@@ -100,6 +108,10 @@ struct SidebarStore: ReducerProtocol {
         
         Reduce { state, action in
             switch action {
+                case .toggleVisibility(let visibility):
+                    state.visibility = visibility
+                    return .none
+                    
                 case .file(.fileRow(_, .delegate(let action))):
                     switch action {
                         case .didDeleteFile, .didRecoverFile:
@@ -119,22 +131,25 @@ struct SidebarView: View {
     let store: StoreOf<SidebarStore>
     
     var body: some View {
-        HStack(spacing: 0) {
-            GroupListView(
-                store: self.store.scope(state: \.groupState,
-                                        action: SidebarStore.Action.group)
-            )
-            .frame(minWidth: 150)
-            
-            Divider()
-            
-            FileListView(
-                store: self.store.scope(state: \.fileState,
-                                        action: SidebarStore.Action.file)
-            )
-            .frame(minWidth: 200)
+        WithViewStore(self.store, observe: {$0.visibility}) { visibility in
+            HStack(spacing: 0) {
+                if visibility.state == .all {
+                    GroupListView(
+                        store: self.store.scope(state: \.groupState,
+                                                action: SidebarStore.Action.group)
+                    )
+                    .frame(minWidth: 150)
+                    
+                    Divider()
+                }
+                FileListView(
+                    store: self.store.scope(state: \.fileState,
+                                            action: SidebarStore.Action.file)
+                )
+                .frame(minWidth: 200)
+            }
+            .border(.top, color: .separatorColor)
         }
-        .border(.top, color: .separatorColor)
     }
 }
 

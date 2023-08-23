@@ -31,7 +31,7 @@ struct ExcalidrawZApp: App {
 #endif
     }
     
-    @Environment(\.scenePhase) var scenePhase    
+    @Environment(\.scenePhase) var scenePhase
     
     @StateObject private var appSettings = AppSettingsStore()
     @StateObject private var updateChecker = UpdateChecker()
@@ -43,12 +43,12 @@ struct ExcalidrawZApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView(store: self.store)
-            .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-            .preferredColorScheme(appSettings.appearance.colorScheme)
-            .environmentObject(appSettings)
-            .onAppear {
-                updateChecker.assignUpdater(updater: updaterController.updater)
-            }
+                .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
+                .preferredColorScheme(appSettings.appearance.colorScheme)
+                .environmentObject(appSettings)
+                .onAppear {
+                    updateChecker.assignUpdater(updater: updaterController.updater)
+                }
         }
 #if os(macOS) && !APP_STORE
         .commands {

@@ -236,23 +236,7 @@ struct ContentView: View {
                         action: AppViewStore.Action.sidebar
                     )
                 )
-//                .toolbar {
-//                    ToolbarItem(placement: .primaryAction) {
-//                        if #available(macOS 13.0, *) {
-//                            Button {
-//                                withAnimation {
-//                                    if columnVisibility == .all {
-//                                        columnVisibility = .detailOnly
-//                                    } else {
-//                                        columnVisibility = .all
-//                                    }
-//                                }
-//                            } label: {
-//                                Image(systemName: "sidebar.leading")
-//                            }
-//                        }
-//                    }
-//                }
+                .toolbar(content: navigationToolbar)
             } detail: {
                 HStack(spacing: 0) {
                     ExcalidrawContainerView(store: self.store.scope(
@@ -274,12 +258,10 @@ struct ContentView: View {
                         }
                     }
                 }
-                .toolbar(content: toolbarContent)
             }
+            .removeSidebarToggle()
             .navigationTitle("")
-#if os(macOS)
-            .navigationBarBackButtonHiddenCompatible()
-#endif
+            .toolbar(content: toolbarContent)
         }
     }
 }
@@ -330,8 +312,9 @@ extension ContentView {
         }
 
         ToolbarItemGroup(placement: .automatic) {
+            Spacer()
+
             WithViewStore(self.store, observe: {$0}) { viewStore in
-                Spacer()
                 Popover {
                     FileCheckpointListView(store: self.store.scope(
                         state: \.fileHistory,
@@ -355,6 +338,58 @@ extension ContentView {
         }
     }
 #endif
+    
+    @ToolbarContentBuilder
+    private func navigationToolbar() -> some ToolbarContent {
+        ToolbarItemGroup(placement: .primaryAction) {
+            WithViewStore(self.store, observe: {$0}) { viewStore in
+            HStack(spacing: 0) {
+                Button {
+                    withAnimation {
+                        if columnVisibility == .detailOnly {
+                            columnVisibility = .all
+                        } else {
+                            columnVisibility = .detailOnly
+                        }
+                    }
+                } label: {
+                    Image(systemSymbol: .sidebarLeading)
+                }
+                
+                Menu {
+                    Button {
+                        withAnimation { columnVisibility = .all }
+                        viewStore.send(.sidebar(.toggleVisibility(.all)), animation: .default)
+                    } label: {
+                        if viewStore.sidebar.visibility == .all && columnVisibility != .detailOnly {
+                            Image(systemSymbol: .checkmark)
+                        }
+                        Text("Show folders and files")
+                    }
+                    Button {
+                        withAnimation { columnVisibility = .all }
+                        viewStore.send(.sidebar(.toggleVisibility(.onlyFiles)), animation: .default)
+                    } label: {
+                        if viewStore.sidebar.visibility == .onlyFiles && columnVisibility != .detailOnly {
+                            Image(systemSymbol: .checkmark)
+                        }
+                        Text("Show files only")
+                    }
+                } label: {
+                }
+                .buttonStyle(.borderless)
+            }
+//            Spacer()
+//            
+//            Button {
+//                
+//            } label: {
+//                Image(systemSymbol: .trash)
+//            }
+//            .opacity(columnVisibility == .detailOnly ? 0 : 1)
+        }
+        }
+    }
 }
 
 
