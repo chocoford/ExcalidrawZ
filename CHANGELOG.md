@@ -1,3 +1,8 @@
+## 0.4.1
+
+* Optimize sidebar UI.
+* Support Chinese handwriting font.
+
 ## 0.4.0
 
 * New sidebar design
