@@ -4,7 +4,8 @@
   </a>
   <h3>Excalidraw app for mac. Powered by pure SwiftUI.</h3>
 </div>
-![GitHub](https://img.shields.io/github/license/chocoford/ExcalidrawZ)[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40Chocoford)](https://twitter.com/dove_zachary)
+
+![GitHub](https://img.shields.io/github/license/chocoford/ExcalidrawZ) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40Chocoford)](https://twitter.com/dove_zachary)
 
 ## The motivation
 
