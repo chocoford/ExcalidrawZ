@@ -38,6 +38,7 @@ enum AppError: LocalizedError, Equatable {
     case stateError(_ error: StateError)
     case fileError(_ error: FileError)
     case groupError(_ error: GroupError)
+    case exportError(_ error: ExportError)
     case unexpected(_ error: IdentifiableError)
     
     init(_ error: Error) {
@@ -47,6 +48,9 @@ enum AppError: LocalizedError, Equatable {
                 
             case let error as FileError:
                 self = .fileError(error)
+                
+            case let error as ExportError:
+                self = .exportError(error)
                 
             case let error as GroupError:
                 self = .groupError(error)
@@ -63,6 +67,8 @@ enum AppError: LocalizedError, Equatable {
             case .stateError(let error):
                 return error.errorDescription
             case .fileError(let error):
+                return error.errorDescription
+            case .exportError(let error):
                 return error.errorDescription
             case .groupError(let error):
                 return error.errorDescription
@@ -101,6 +107,17 @@ enum FileError: LocalizedError, Equatable {
                 return "Create file failed."
             case .alreadyExist:
                 return "File already exists."
+        }
+    }
+}
+
+enum ExportError: LocalizedError {
+    case emptyFile
+    
+    var errorDescription: String? {
+        switch self {
+            case .emptyFile:
+                "File is empty."
         }
     }
 }

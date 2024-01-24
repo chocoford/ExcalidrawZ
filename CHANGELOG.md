@@ -1,3 +1,8 @@
+## 0.4.2
+
+* Bug fixed: Export image stuck in loading...
+* Optimization: Auto add export file extension for user.
+
 ## 0.4.1
 
 * Optimize sidebar UI.

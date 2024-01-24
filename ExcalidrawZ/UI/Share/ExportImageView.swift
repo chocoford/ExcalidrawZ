@@ -218,7 +218,7 @@ struct ExportImageView: View {
         .fileExporter(isPresented: $showFileExporter,
                       document: ImageFile(url),
                       contentType: .image,
-                      defaultFilename: fileName,
+                      defaultFilename: fileName + ".png",
                       onCompletion: { result in
             switch result {
                 case .success(let success):

@@ -19,7 +19,7 @@
 		3914876F2961D6D00042927A /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3914876E2961D6D00042927A /* UpdateChecker.swift */; };
 		391487712961D9AE0042927A /* CheckForUpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391487702961D9AE0042927A /* CheckForUpdatesView.swift */; };
 		391585A52A80238B0028D250 /* ShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391585A42A80238B0028D250 /* ShareView.swift */; };
-		392C4A602A9617B1009D1217 /* excalidrawCore in Resources */ = {isa = PBXBuildFile; fileRef = 392C4A5F2A9617B1009D1217 /* excalidrawCore */; };
+		391635EE2B3AA2820047A429 /* excalidrawCore in Resources */ = {isa = PBXBuildFile; fileRef = 391635ED2B3AA2820047A429 /* excalidrawCore */; };
 		39345AED2A61481A00C3650B /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 39345AEC2A61481A00C3650B /* ChocofordEssentials */; };
 		39345AEF2A61481A00C3650B /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 39345AEE2A61481A00C3650B /* ChocofordUI */; };
 		394804C32A815D1100886972 /* ExportFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394804C22A815D1100886972 /* ExportFileView.swift */; };
@@ -110,7 +110,7 @@
 		391487702961D9AE0042927A /* CheckForUpdatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesView.swift; sourceTree = "<group>"; };
 		39148772296316720042927A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		391585A42A80238B0028D250 /* ShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareView.swift; sourceTree = "<group>"; };
-		392C4A5F2A9617B1009D1217 /* excalidrawCore */ = {isa = PBXFileReference; lastKnownFileType = folder; path = excalidrawCore; sourceTree = "<group>"; };
+		391635ED2B3AA2820047A429 /* excalidrawCore */ = {isa = PBXFileReference; lastKnownFileType = folder; path = excalidrawCore; sourceTree = "<group>"; };
 		394804C22A815D1100886972 /* ExportFileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportFileView.swift; sourceTree = "<group>"; };
 		394963A52A0E0E15000FEB40 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		394963A82A0E1F7B000FEB40 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
@@ -325,7 +325,7 @@
 		397E468529599DA0003B824B /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				392C4A5F2A9617B1009D1217 /* excalidrawCore */,
+				391635ED2B3AA2820047A429 /* excalidrawCore */,
 				397E468629599DD3003B824B /* FakeDrop.js */,
 				39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */,
 				39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */,
@@ -556,11 +556,11 @@
 			files = (
 				397E468729599DD4003B824B /* FakeDrop.js in Resources */,
 				397E468F295AAE5E003B824B /* template.excalidraw in Resources */,
+				391635EE2B3AA2820047A429 /* excalidrawCore in Resources */,
 				397E465F295838D0003B824B /* Preview Assets.xcassets in Resources */,
 				397E465B295838D0003B824B /* Assets.xcassets in Resources */,
 				39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */,
 				39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */,
-				392C4A602A9617B1009D1217 /* excalidrawCore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -803,16 +803,16 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
-				DEVELOPMENT_TEAM = 96RJ77RT4T;
+				DEVELOPMENT_TEAM = 3XKM749Y3L;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ExcalidrawZ/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ExcalidrawZ;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_CFBundleDisplayName = "ExcalidrawZ-Debug";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -823,11 +823,11 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 0.4.1;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 0.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.ExcalidrawZ-Debug";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -846,16 +846,16 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
-				DEVELOPMENT_TEAM = 96RJ77RT4T;
+				DEVELOPMENT_TEAM = 3XKM749Y3L;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ExcalidrawZ/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ExcalidrawZ;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -866,11 +866,11 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 0.4.1;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 0.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.ExcalidrawZ;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -889,7 +889,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = EQSKXJ7B7B;
+				DEVELOPMENT_TEAM = 3XKM749Y3L;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
@@ -913,7 +913,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = EQSKXJ7B7B;
+				DEVELOPMENT_TEAM = 3XKM749Y3L;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
@@ -936,7 +936,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = 96RJ77RT4T;
+				DEVELOPMENT_TEAM = 3XKM749Y3L;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
@@ -959,7 +959,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = 96RJ77RT4T;
+				DEVELOPMENT_TEAM = 3XKM749Y3L;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;

@@ -187,7 +187,7 @@ struct ExportFileView: View {
             .fileExporter(isPresented: $showFileExporter,
                           document: TextFile(viewStore.file.content),
                           contentType: .text,
-                          defaultFilename: fileName,
+                          defaultFilename: fileName + ".excalidraw",
                           onCompletion: { result in
                 switch result {
                     case .success:

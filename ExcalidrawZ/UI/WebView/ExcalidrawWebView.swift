@@ -145,6 +145,20 @@ struct ExcalidrawStore: ReducerProtocol {
                 case .exportPNGImage:
                     return .run { [state] send in
                         do {
+                            guard let data = state.currentFile?.content else {
+                                await send(.setError(.fileError(.notFound)))
+                                return
+                            }
+                            let jsonObj = try JSONSerialization.jsonObject(with: data) as! [String : Any]
+                            guard let elementsObj = jsonObj["elements"] else { return }
+                            let elementsData = try JSONSerialization.data(withJSONObject: elementsObj)
+                            
+                            let elements = try JSONDecoder().decode([ExcalidrawElement].self,
+                                                                      from: elementsData)
+                            guard !elements.isEmpty else {
+                                await send(.setError(.exportError(.emptyFile)))
+                                return
+                            }
                             try await state.coordinator?.exportPNG()
                         } catch {
                             await send(.setError(.init(error)))
