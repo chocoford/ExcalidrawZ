@@ -44,7 +44,7 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
 
 #### Steps to Install 
 
-1. Download the latest image file (.dmg) from ![Releases](https://github.com/chocoford/ExcalidrawZ/releases)
+1. Download the latest image file (.dmg) from [Releases](https://github.com/chocoford/ExcalidrawZ/releases)
 2. Click the `.dmg` to install it
 
 ## RoadMap
