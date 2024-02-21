@@ -15,8 +15,8 @@ struct GeneralSettingsView: View {
     @EnvironmentObject var appSettings: AppSettingsStore
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
+        Form {
+            Section {
                 settingCellView("Appearacne") {
                     HStack(spacing: 16) {
                         RadioGroup(selected: $appSettings.appearance) { option, isOn in
@@ -26,19 +26,36 @@ struct GeneralSettingsView: View {
                         }
                     }
                 }
-                
-                settingCellView("Update") {
+                settingCellView("Canvas appearance") {
+                    HStack(spacing: 16) {
+                        RadioGroup(selected: $appSettings.excalidrawAppearance) { option, isOn in
+                            RadioButton(isOn: isOn) {
+                                Text(option.text)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text("Appearance")
+            }
+            
+            
+            Section {
+                Toggle("Check updates automatically", isOn: $updateChecker.canCheckForUpdates)
+            } header: {
+                Text("Update")
+            } footer: {
+                HStack {
+                    Spacer()
                     Button {
                         updateChecker.updater?.checkForUpdates()
                     } label: {
                         Text("Check Updates")
                     }
-                } content: {
-                    Toggle("Check updates automatically", isOn: $updateChecker.canCheckForUpdates)
                 }
             }
-            .padding()
         }
+        .formStyle(.grouped)
     }
     
     @ViewBuilder

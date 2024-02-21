@@ -91,7 +91,6 @@ struct ExcalidrawZApp: App {
                 .environmentObject(appSettings)
                 .environmentObject(updateChecker)
                 .preferredColorScheme(appSettings.appearance.colorScheme)
-
         }
     }
 }

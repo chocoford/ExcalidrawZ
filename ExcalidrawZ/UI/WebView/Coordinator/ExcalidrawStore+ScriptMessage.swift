@@ -15,8 +15,10 @@ protocol AnyExcalidrawZMessage: Codable {
 }
 
 extension ExcalidrawWebView.Coordinator: WKScriptMessageHandler {
-    func userContentController(_ userContentController: WKUserContentController,
-                               didReceive message: WKScriptMessage) {
+    func userContentController(
+        _ userContentController: WKUserContentController,
+        didReceive message: WKScriptMessage
+    ) {
         do {
             let data = try JSONSerialization.data(withJSONObject: message.body)
             let message = try JSONDecoder().decode(ExcalidrawZMessage.self, from: data)
@@ -28,6 +30,8 @@ extension ExcalidrawWebView.Coordinator: WKScriptMessageHandler {
                     try onStateChanged(message.data)
                 case .blobData(let message):
                     try self.handleBlobData(message.data)
+                case .onCopy(let message):
+                    try self.handleCopy(message.data)
             }
         } catch {
 //            logger.error("\(error)")
@@ -50,6 +54,43 @@ extension ExcalidrawWebView.Coordinator {
         let json = try JSONSerialization.jsonObject(with: data)
         dump(json)
     }
+    
+    func handleCopy(_ data: [WebClipboardItem]) throws {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        for item in data {
+            let string = item.data
+            switch item.type {
+                case "text":
+                    let success = pasteboard.setString(string, forType: .string)
+                case "application/json", "application/vnd.excalidraw+json", "application/vnd.excalidrawlib+json":
+                    pasteboard.setString(string, forType: .string)
+                case "image/svg+xml":
+                    pasteboard.setString(string, forType: .html)
+                case "image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "image/x-icon", "image/avif", "image/jfif":
+                    if let data = Data(
+                        base64Encoded: String(string.suffix(
+                            string.count - string.distance(
+                                from: string.startIndex,
+                                to: (string.firstIndex(of: ",") ?? .init(utf16Offset: 0, in: ""))
+                            )
+                        )),
+                        options: [.ignoreUnknownCharacters]
+                    ) {
+                        let success = pasteboard.setData(data, forType: .png)
+                        print(success)
+                    } else {
+                        pasteboard.setString(string, forType: .png)
+                    }
+                case "application/octet-stream":
+                    pasteboard.setString(string, forType: .fileContents)
+                default:
+                    break
+            }
+            
+        }
+        
+    }
 }
 
 
@@ -58,12 +99,14 @@ extension ExcalidrawWebView.Coordinator {
         case onStateChanged
         case saveFileDone
         case blobData
+        case copy
     }
     
     enum ExcalidrawZMessage: Codable {
         case stateChanged(StateChangedMessage)
         case saveFileDone(SaveFileDoneMessage)
         case blobData(BlobDataMessage)
+        case onCopy(CopyMessage)
         
         enum CodingKeys: String, CodingKey {
             case eventType = "event"
@@ -80,6 +123,8 @@ extension ExcalidrawWebView.Coordinator {
                     self = .saveFileDone(try SaveFileDoneMessage(from: decoder))
                 case .blobData:
                     self = .blobData(try BlobDataMessage(from: decoder))
+                case .copy:
+                    self = .onCopy(try CopyMessage(from: decoder))
             }
             
         }
@@ -192,4 +237,16 @@ extension ExcalidrawWebView.Coordinator {
         var event: String
         var data: Data
     }
+    
+    struct CopyMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: [WebClipboardItem]
+    }
+    
+    
+    struct WebClipboardItem: Codable {
+        var type: String
+        var data: String // string or base64
+    }
+    
 }

@@ -67,11 +67,7 @@ struct SettingsView: View {
         if let route = selection {
 #if os(macOS)
             ScrollView {
-                HStack {
-                    detailView(for: route)
-                        .padding(20)
-                    Spacer(minLength: 0)
-                }
+                detailView(for: route)
             }
 #elseif os(iOS)
             detailView(for: route)

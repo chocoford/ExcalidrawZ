@@ -88,7 +88,7 @@ struct ExcalidrawContainerView: View {
                             action: ExcalidrawContainerStore.Action.excalidraw
                         )
                     )
-                    .preferredColorScheme(appSettings.appearance.colorScheme)
+                    .preferredColorScheme(appSettings.excalidrawAppearance.colorScheme)
                     .opacity(viewStore.isLoading ? 0 : 1)
                     if viewStore.isLoading {
                         VStack {
@@ -104,8 +104,17 @@ struct ExcalidrawContainerView: View {
                 .transition(.opacity)
                 .animation(.default, value: viewStore.isLoading)
             }
-            .watchImmediately(of: colorScheme) { newVal in
-                viewStore.send(.setColorScheme(newVal))
+            .watchImmediately(of: appSettings.excalidrawAppearance) { newVal in
+                if newVal == .auto {
+                    viewStore.send(.setColorScheme(colorScheme))
+                } else {
+                    viewStore.send(.setColorScheme(newVal.colorScheme ?? colorScheme))
+                }
+            }
+            .onChange(of: colorScheme) { newVal in
+                if appSettings.excalidrawAppearance == .auto {
+                    viewStore.send(.setColorScheme(newVal))
+                }
             }
         }
     }

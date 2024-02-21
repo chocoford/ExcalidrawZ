@@ -43,6 +43,7 @@ class AppSettingsStore: ObservableObject {
     }
     
     @AppStorage("appearance") var appearance: Appearance = .auto
+    @AppStorage("excalidrawAppearance") var excalidrawAppearance: Appearance = .auto
     
     var appearanceBinding: Binding<ColorScheme?> {
         Binding {

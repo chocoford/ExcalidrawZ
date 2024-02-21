@@ -73,8 +73,8 @@ struct AppViewStore: ReducerProtocol {
                                 await send(.excalidrawContainer(.excalidraw(.setCurrentFile(file))))
                             }
                             
-//                        default:
-//                            return .none
+                            //                        default:
+                            //                            return .none
                     }
                     
                     
@@ -165,7 +165,7 @@ struct AppViewStore: ReducerProtocol {
                     } catch {
                         return .send(.setError(.init(error)))
                     }
-
+                    
                 case .shareButtonTapped:
                     if #available(macOS 13.0, *) {
                         if let file = state.sidebar.currentFile {
@@ -192,7 +192,13 @@ struct AppViewStore: ReducerProtocol {
                     }
                     
                     
-                case .sidebar, .export, .share, .excalidrawContainer, .fileHistory, .setError, .empty:
+                case .sidebar,
+                        .export,
+                        .share,
+                        .excalidrawContainer,
+                        .fileHistory,
+                        .setError,
+                        .empty:
                     return .none
             }
         }
@@ -242,10 +248,10 @@ struct ContentView: View {
                         state: \.excalidrawContainer,
                         action: AppViewStore.Action.excalidrawContainer
                     ))
-                    .sheet(
-                        store: self.store.scope(state: \.$exportState,
-                                                action: AppViewStore.Action.export)
-                    ) {
+                    .sheet(store: self.store.scope(
+                            state: \.$exportState,
+                            action: AppViewStore.Action.export
+                    )) {
                         ExportImageView(store: $0)
                     }
                     .sheet(
