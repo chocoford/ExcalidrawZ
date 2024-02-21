@@ -1,3 +1,9 @@
+## 0.4.3
+
+* Add settings for color scheme of excalidraw webview. 
+* Bug fixed: copy on elements not working 
+* Optimize the UI of `Settings`.
+
 ## 0.4.2
 
 * Bug fixed: Export image stuck in loading...
