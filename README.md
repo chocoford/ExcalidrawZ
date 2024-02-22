@@ -14,6 +14,11 @@
 ## Preview
 ![App preview](https://github.com/chocoford/ExcalidrawZ/assets/28218759/8188d209-0fed-469d-b702-37631985c1a3)
 
+## Installation
+
+1. Download the latest image file (.dmg) from [Releases](https://github.com/chocoford/ExcalidrawZ/releases)
+2. Click the `.dmg` to install it
+
 ## Features
 
 #### create groups to store excalidraw files
@@ -42,16 +47,9 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
 
 ![File History](https://github.com/chocoford/ExcalidrawZ/assets/28218759/b4feb7df-4278-4a5c-8c78-c83200efc99b)
 
-#### Steps to Install 
-
-1. Download the latest image file (.dmg) from [Releases](https://github.com/chocoford/ExcalidrawZ/releases)
-2. Click the `.dmg` to install it
-
 ## RoadMap
 
 - [ ] iCloud synchronization
-
-
 
 ## Develop Tips
 
