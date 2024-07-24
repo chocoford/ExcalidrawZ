@@ -217,6 +217,8 @@ struct ContentView: View {
     @State private var hideContent: Bool = false
     @State private var columnVisibility: NavigationSplitViewVisibilityCompatible = .automatic
     
+    @State private var sidebarVisibility: SidebarStore.Visibility = .all
+    
     var body: some View {
         WithViewStore(self.store, observe: \.errors) { errors in
             content
@@ -232,7 +234,8 @@ struct ContentView: View {
         }
     }
     
-    @ViewBuilder private var content: some View {
+    @MainActor @ViewBuilder
+    private var content: some View {
         WithViewStore(self.store, observe: {$0}) { viewStore in
             NavigationSplitViewCompatible(columnVisibility: $columnVisibility) {
                 SidebarView(
@@ -249,8 +252,8 @@ struct ContentView: View {
                         action: AppViewStore.Action.excalidrawContainer
                     ))
                     .sheet(store: self.store.scope(
-                            state: \.$exportState,
-                            action: AppViewStore.Action.export
+                        state: \.$exportState,
+                        action: AppViewStore.Action.export
                     )) {
                         ExportImageView(store: $0)
                     }
@@ -348,51 +351,70 @@ extension ContentView {
     private func navigationToolbar() -> some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
             WithViewStore(self.store, observe: {$0}) { viewStore in
-            HStack(spacing: 0) {
-                Button {
-                    withAnimation {
-                        if columnVisibility == .detailOnly {
-                            columnVisibility = .all
-                        } else {
-                            columnVisibility = .detailOnly
+                HStack(spacing: 0) {
+                    if #available(macOS 15.0, *) {
+                        // Do not show the toggle..
+                        Menu {
+                            Button {
+                                withAnimation { columnVisibility = .all }
+                                viewStore.send(.sidebar(.toggleVisibility(.all)), animation: .default)
+                            } label: {
+                                if viewStore.sidebar.visibility == .all && columnVisibility != .detailOnly {
+                                    Image(systemSymbol: .checkmark)
+                                }
+                                Text("Show folders and files")
+                            }
+                            Button {
+                                withAnimation { columnVisibility = .all }
+                                viewStore.send(.sidebar(.toggleVisibility(.onlyFiles)), animation: .default)
+                            } label: {
+                                if viewStore.sidebar.visibility == .onlyFiles && columnVisibility != .detailOnly {
+                                    Image(systemSymbol: .checkmark)
+                                }
+                                Text("Show files only")
+                            }
+                        } label: { }
+                            .buttonStyle(.borderless)
+                            .offset(x: -6)
+                    } else {
+                        Button {
+                            withAnimation {
+                                if columnVisibility == .detailOnly {
+                                    columnVisibility = .all
+                                } else {
+                                    columnVisibility = .detailOnly
+                                }
+                            }
+                        } label: {
+                            Image(systemSymbol: .sidebarLeading)
                         }
+                        
+                        Menu {
+                            Button {
+                                withAnimation { columnVisibility = .all }
+                                viewStore.send(.sidebar(.toggleVisibility(.all)), animation: .default)
+                            } label: {
+                                if viewStore.sidebar.visibility == .all && columnVisibility != .detailOnly {
+                                    Image(systemSymbol: .checkmark)
+                                }
+                                Text("Show folders and files")
+                            }
+                            Button {
+                                withAnimation { columnVisibility = .all }
+                                viewStore.send(.sidebar(.toggleVisibility(.onlyFiles)), animation: .default)
+                            } label: {
+                                if viewStore.sidebar.visibility == .onlyFiles && columnVisibility != .detailOnly {
+                                    Image(systemSymbol: .checkmark)
+                                }
+                                Text("Show files only")
+                            }
+                        } label: {
+                        }
+                        .buttonStyle(.borderless)
                     }
-                } label: {
-                    Image(systemSymbol: .sidebarLeading)
+
                 }
-                
-                Menu {
-                    Button {
-                        withAnimation { columnVisibility = .all }
-                        viewStore.send(.sidebar(.toggleVisibility(.all)), animation: .default)
-                    } label: {
-                        if viewStore.sidebar.visibility == .all && columnVisibility != .detailOnly {
-                            Image(systemSymbol: .checkmark)
-                        }
-                        Text("Show folders and files")
-                    }
-                    Button {
-                        withAnimation { columnVisibility = .all }
-                        viewStore.send(.sidebar(.toggleVisibility(.onlyFiles)), animation: .default)
-                    } label: {
-                        if viewStore.sidebar.visibility == .onlyFiles && columnVisibility != .detailOnly {
-                            Image(systemSymbol: .checkmark)
-                        }
-                        Text("Show files only")
-                    }
-                } label: {
-                }
-                .buttonStyle(.borderless)
             }
-//            Spacer()
-//            
-//            Button {
-//                
-//            } label: {
-//                Image(systemSymbol: .trash)
-//            }
-//            .opacity(columnVisibility == .detailOnly ? 0 : 1)
-        }
         }
     }
 }

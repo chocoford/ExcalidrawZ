@@ -1,4 +1,5 @@
 {
+  "originHash" : "c697fc73fe46371644b63636ba62744d7825cb449bedd47a84d238cf419de322",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -19,15 +20,6 @@
       }
     },
     {
-      "identity" : "chocofordkit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/chocoford/ChocofordKit.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "c62563584fa69ccca3c15a51644297a275d62640"
-      }
-    },
-    {
       "identity" : "combine-schedulers",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/combine-schedulers",
@@ -41,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SDWebImage/SDWebImage.git",
       "state" : {
-        "revision" : "0383fd49fe4d9ae43f150f24693550ebe6ef0d14",
-        "version" : "5.18.6"
+        "revision" : "86e9185ef41c4238a93ad8efe61ddeb701e80bbf",
+        "version" : "5.19.5"
       }
     },
     {
@@ -50,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SDWebImage/SDWebImageSwiftUI.git",
       "state" : {
-        "revision" : "aee64ef39b570c44ccf0f884c440fc6494a23c76",
-        "version" : "2.2.5"
+        "revision" : "53573d6dd017e354c0e7d8f1c86b77ef1383c996",
+        "version" : "2.2.7"
       }
     },
     {
@@ -59,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SFSafeSymbols/SFSafeSymbols.git",
       "state" : {
-        "revision" : "7cca2d60925876b5953a2cf7341cd80fbeac983c",
-        "version" : "4.1.1"
+        "revision" : "e2e28f4e56e1769c2ec3c61c9355fc64eb7a535a",
+        "version" : "5.3.0"
       }
     },
     {
@@ -77,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle.git",
       "state" : {
-        "revision" : "1f07f4096e52f19b5e7abaa697b7fc592b7ff57c",
-        "version" : "2.5.1"
+        "revision" : "0ef1ee0220239b3776f433314515fd849025673f",
+        "version" : "2.6.4"
       }
     },
     {
@@ -86,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/stevengharris/SplitView.git",
       "state" : {
-        "revision" : "a21ca4f408909f49353cc92636654b2dfe5a5f19",
-        "version" : "3.4.0"
+        "revision" : "7737a80740919c2fa94a6e64f870d37ef77b9b5f",
+        "version" : "3.5.3"
       }
     },
     {
@@ -113,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections",
       "state" : {
-        "revision" : "a902f1823a7ff3c9ab2fba0f992396b948eda307",
-        "version" : "1.0.5"
+        "revision" : "3d2dc41a01f9e49d84f0a3925fb858bed64f702d",
+        "version" : "1.1.2"
       }
     },
     {
@@ -140,8 +132,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-custom-dump",
       "state" : {
-        "revision" : "4a87bb75be70c983a9548597e8783236feb3401e",
-        "version" : "0.11.1"
+        "revision" : "0a5bff05fe01dcd513932ed338a4efad8268b803",
+        "version" : "0.11.2"
       }
     },
     {
@@ -176,8 +168,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/siteline/SwiftUI-Introspect.git",
       "state" : {
-        "revision" : "121c146fe591b1320238d054ae35c81ffa45f45a",
-        "version" : "0.12.0"
+        "revision" : "807f73ce09a9b9723f12385e592b4e0aaebd3336",
+        "version" : "1.3.0"
       }
     },
     {
@@ -194,8 +186,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/markiv/SwiftUI-Shimmer.git",
       "state" : {
-        "revision" : "1f3a620e4abe890d00008cb2af7023d810b433a7",
-        "version" : "1.4.0"
+        "revision" : "e3aa4226b0fafe345ca1c920f516b6a2f3e0aacc",
+        "version" : "1.5.0"
       }
     },
     {
@@ -203,8 +195,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/fatbobman/SwiftUIOverlayContainer.git",
       "state" : {
-        "revision" : "d9ff87b16eb8743326dc0a3e901e15a82ed46530",
-        "version" : "2.3.3"
+        "revision" : "151b78849bc0b5741c9bc0ce5dfa7816e310d997",
+        "version" : "2.4.0"
+      }
+    },
+    {
+      "identity" : "swiftyalert",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/chocoford/SwiftyAlert.git",
+      "state" : {
+        "branch" : "dev",
+        "revision" : "020d1c9333674561606dacfb7c976f4984058474"
       }
     },
     {
@@ -217,5 +218,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

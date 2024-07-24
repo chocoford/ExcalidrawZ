@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -20,8 +20,8 @@
 		391487712961D9AE0042927A /* CheckForUpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391487702961D9AE0042927A /* CheckForUpdatesView.swift */; };
 		391585A52A80238B0028D250 /* ShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391585A42A80238B0028D250 /* ShareView.swift */; };
 		391635EE2B3AA2820047A429 /* excalidrawCore in Resources */ = {isa = PBXBuildFile; fileRef = 391635ED2B3AA2820047A429 /* excalidrawCore */; };
-		39345AED2A61481A00C3650B /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 39345AEC2A61481A00C3650B /* ChocofordEssentials */; };
-		39345AEF2A61481A00C3650B /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 39345AEE2A61481A00C3650B /* ChocofordUI */; };
+		3930B2F82C512E7B00F14E88 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2F72C512E7B00F14E88 /* ChocofordEssentials */; };
+		3930B2FA2C512E7B00F14E88 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2F92C512E7B00F14E88 /* ChocofordUI */; };
 		394804C32A815D1100886972 /* ExportFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394804C22A815D1100886972 /* ExportFileView.swift */; };
 		394963A62A0E0E15000FEB40 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963A52A0E0E15000FEB40 /* SettingsView.swift */; };
 		394963A92A0E1F7B000FEB40 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963A82A0E1F7B000FEB40 /* GeneralSettingsView.swift */; };
@@ -177,10 +177,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3930B2FA2C512E7B00F14E88 /* ChocofordUI in Frameworks */,
 				3914876D2960AFD10042927A /* Sparkle in Frameworks */,
-				39345AED2A61481A00C3650B /* ChocofordEssentials in Frameworks */,
 				39B033A72A614A7400A5B2B7 /* ComposableArchitecture in Frameworks */,
-				39345AEF2A61481A00C3650B /* ChocofordUI in Frameworks */,
+				3930B2F82C512E7B00F14E88 /* ChocofordEssentials in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -457,9 +457,9 @@
 			name = ExcalidrawZ;
 			packageProductDependencies = (
 				3914876C2960AFD10042927A /* Sparkle */,
-				39345AEC2A61481A00C3650B /* ChocofordEssentials */,
-				39345AEE2A61481A00C3650B /* ChocofordUI */,
 				39B033A62A614A7400A5B2B7 /* ComposableArchitecture */,
+				3930B2F72C512E7B00F14E88 /* ChocofordEssentials */,
+				3930B2F92C512E7B00F14E88 /* ChocofordUI */,
 			);
 			productName = ExcaliDrawZ;
 			productReference = 397E4653295838CF003B824B /* ExcalidrawZ.app */;
@@ -535,8 +535,8 @@
 			mainGroup = 397E464A295838CF003B824B;
 			packageReferences = (
 				3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */,
-				39345AEB2A61481A00C3650B /* XCRemoteSwiftPackageReference "ChocofordKit" */,
 				39B033A52A614A7400A5B2B7 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+				3930B2F62C512E7B00F14E88 /* XCLocalSwiftPackageReference "../ChocofordKit" */,
 			);
 			productRefGroup = 397E4654295838CF003B824B /* Products */;
 			projectDirPath = "";
@@ -1016,6 +1016,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		3930B2F62C512E7B00F14E88 /* XCLocalSwiftPackageReference "../ChocofordKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../ChocofordKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1023,14 +1030,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.0.0;
-			};
-		};
-		39345AEB2A61481A00C3650B /* XCRemoteSwiftPackageReference "ChocofordKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/chocoford/ChocofordKit.git";
-			requirement = {
-				branch = main;
-				kind = branch;
 			};
 		};
 		39B033A52A614A7400A5B2B7 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
@@ -1049,14 +1048,12 @@
 			package = 3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
 		};
-		39345AEC2A61481A00C3650B /* ChocofordEssentials */ = {
+		3930B2F72C512E7B00F14E88 /* ChocofordEssentials */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 39345AEB2A61481A00C3650B /* XCRemoteSwiftPackageReference "ChocofordKit" */;
 			productName = ChocofordEssentials;
 		};
-		39345AEE2A61481A00C3650B /* ChocofordUI */ = {
+		3930B2F92C512E7B00F14E88 /* ChocofordUI */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 39345AEB2A61481A00C3650B /* XCRemoteSwiftPackageReference "ChocofordKit" */;
 			productName = ChocofordUI;
 		};
 		39B033A62A614A7400A5B2B7 /* ComposableArchitecture */ = {
