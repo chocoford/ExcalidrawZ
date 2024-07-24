@@ -84,12 +84,29 @@ navigator.clipboard.writeText = async (string) => {
     });
 }
 """
+            let handleKeyboardScript = """
+const VALID_KEYS = ["h", "v", "r", "d", "o", "a", "l", "p", "t", "e", "q"];
+
+document.addEventListener("keydown", function (event) {
+    if (!event.metaKey && (!isNaN(event.key) || VALID_KEYS.includes(event.key))) {
+        event.preventDefault();
+    }
+});
+"""
             let overideClipboardUsersScript = WKUserScript(
                 source: overideClipboardScript,
                 injectionTime: .atDocumentEnd,
                 forMainFrameOnly: true
             )
+            let handleKeyboardUsersScript = WKUserScript(
+                source: handleKeyboardScript,
+                injectionTime: .atDocumentEnd,
+                forMainFrameOnly: true
+            )
+            
             config.userContentController.addUserScript(overideClipboardUsersScript)
+            config.userContentController.addUserScript(handleKeyboardUsersScript)
+            
             config.userContentController.add(self, name: "excalidrawZ")
             
             self.webView = WKWebView(frame: .zero, configuration: config)
