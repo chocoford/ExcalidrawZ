@@ -85,8 +85,12 @@ navigator.clipboard.writeText = async (string) => {
 }
 """
             let handleKeyboardScript = """
-document.addEventListener("keydown", function(event) {
-    event.preventDefault();
+const VALID_KEYS = ["h", "v", "r", "d", "o", "a", "l", "p", "t", "e", "q"];
+
+document.addEventListener("keydown", function (event) {
+    if (!event.metaKey && (!isNaN(event.key) || VALID_KEYS.includes(event.key))) {
+        event.preventDefault();
+    }
 });
 """
             let overideClipboardUsersScript = WKUserScript(
