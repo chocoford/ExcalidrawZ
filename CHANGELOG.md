@@ -1,3 +1,29 @@
+## 0.4.4
+
+* Remove alert sound when using keyboard. (Special thanks to  [DervexDev](https://github.com/chocoford/ExcalidrawZ/issues?q=is%3Apr+author%3ADervexDev))
+* Fixed the duplicated sidebar toggle bug in macOS 15.
+
+<aside 
+       data-v-0ca053f3="" 
+       aria-label="important" 
+       style="margin: 20px; 
+              text-align: start;
+              display: block;
+              background-color: rgb(255, 251, 242);
+              border-color: rgb(158, 103, 0);
+              box-shadow: rgb(158, 103, 0) 0px 0px 1px 0px inset, rgb(158, 103, 0) 0px 0px 1px 0px;
+              border-radius: 15px;
+              padding: .9411764706rem;
+              boder-style: solid;
+              border-width: 1px;
+              "
+       >
+  <p data-v-0ca053f3="" class="label" style="color: rgb(158, 103, 0); font-size: 17px; font-weight: 600;">Important</p>
+  <p style="margin-top: 6.8px; font-size: 17px; letter-spacing: 0.374px; text-align: start;">
+There is a significant performance drop in macOS 15, and we are developing a new version to accommodate the upcoming macOS 15. This version will be the last minor release in 0.4. Starting with the next version, the minimum required version will be raised to macOS 14.
+  </p>
+</aside>
+
 ## 0.4.3
 
 * Add settings for color scheme of excalidraw webview. 
