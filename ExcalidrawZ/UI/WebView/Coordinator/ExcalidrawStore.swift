@@ -105,7 +105,7 @@ document.addEventListener("keydown", function (event) {
             )
             
             config.userContentController.addUserScript(overideClipboardUsersScript)
-            config.userContentController.addUserScript(handleKeyboardUsersScript)
+//            config.userContentController.addUserScript(handleKeyboardUsersScript)
             
             config.userContentController.add(self, name: "excalidrawZ")
             
