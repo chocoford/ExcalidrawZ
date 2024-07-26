@@ -1,3 +1,7 @@
+## 0.4.5
+
+* Revert update: `Remove alert sound when using keyboard.`
+
 ## 0.4.4
 
 * Remove alert sound when using keyboard. (Special thanks to  [DervexDev](https://github.com/chocoford/ExcalidrawZ/issues?q=is%3Apr+author%3ADervexDev))
