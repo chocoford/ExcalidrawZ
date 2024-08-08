@@ -9,14 +9,13 @@ import SwiftUI
 
 import ChocofordUI
 
-@Observable
-final class AppPreference {
+final class AppPreference: ObservableObject {
     enum SidebarMode: Sendable {
         case all
         case filesOnly
     }
     // Layout
-    var sidebarMode: SidebarMode = .all
+    @Published var sidebarMode: SidebarMode = .all
     
     // Appearence
     enum Appearance: String, RadioGroupCase {
@@ -50,8 +49,8 @@ final class AppPreference {
             }
         }
     }
-    @ObservationIgnored @AppStorage("appearance") var appearance: Appearance = .auto
-    @ObservationIgnored @AppStorage("excalidrawAppearance") var excalidrawAppearance: Appearance = .auto
+    @AppStorage("appearance") var appearance: Appearance = .auto
+    @AppStorage("excalidrawAppearance") var excalidrawAppearance: Appearance = .auto
     
     var appearanceBinding: Binding<ColorScheme?> {
         Binding {
@@ -72,14 +71,86 @@ final class AppPreference {
 }
 
 
-@Observable
-final class DocumentModel {
-    
-}
-
-
 final class FileState: ObservableObject {
+    var stateUpdateQueue: DispatchQueue = DispatchQueue(label: "StateUpdateQueue")
     @Published var currentGroup: Group?
-    @Published var currentFile: File?
+    @Published var currentFile: File? {
+        didSet {
+            recoverWatchUpdate.cancel()
+            shouldIgnoreUpdate = true
+            stateUpdateQueue.asyncAfter(deadline: .now().advanced(by: .milliseconds(1500)), execute: recoverWatchUpdate)
+        }
+    }
     
+    
+    var shouldIgnoreUpdate = false
+    /// Indicate the file is being updated after being set as current file.
+    var didUpdateFile = false
+    var isCreatingFile = false
+    
+    lazy var recoverWatchUpdate = DispatchWorkItem(flags: .assignCurrentContext) {
+        self.shouldIgnoreUpdate = false
+    }
+    
+    func createNewGroup(name: String) throws {
+        let group = try PersistenceController.shared.createGroup(name: name)
+        currentGroup = group
+    }
+    func createNewFile(active: Bool = true) throws {
+        guard let currentGroup else { return }
+        let file = try PersistenceController.shared.createFile(in: currentGroup)
+        currentFile = file
+    }
+    
+    func updateCurrentFileData(data: Data) {
+        guard !shouldIgnoreUpdate || currentFile?.inTrash != true else { return }
+        do {
+            if let file = currentFile {
+                try file.updateElements(with: data, newCheckpoint: !didUpdateFile)
+                didUpdateFile = true
+            } else if !isCreatingFile {
+                
+            }
+        } catch {
+            
+        }
+    }
+    
+    func renameFile(_ file: File, newName: String) {
+        file.name = newName
+    }
+    
+    func moveFile(_ file: File, to group: Group) {
+        file.group = group
+        currentGroup = group
+        currentFile = file
+    }
+    
+    func duplicateFile(_ file: File) {
+        let newFile = PersistenceController.shared.duplicateFile(file: file)
+        currentFile = newFile
+    }
+    
+    func deleteFile(_ file: File) {
+        file.inTrash = true
+        if file == currentFile {
+            currentFile = nil
+        }
+    }
+    
+    func recoverFile(_ file: File) {
+        guard file.inTrash else { return }
+        file.inTrash = false
+        
+        currentGroup = file.group
+        currentFile = file
+    }
+
+    func deleteFilePermanently(_ file: File) {
+        PersistenceController.shared.container.viewContext.delete(file)
+        PersistenceController.shared.save()
+        if file == currentFile {
+            currentFile = nil
+        }
+    }
 }

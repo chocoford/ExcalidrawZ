@@ -11,11 +11,15 @@ import ChocofordEssentials
 import SwiftyAlert
 
 struct ContentView: View {
-    @State private var appPreference = AppPreference()
+    @Environment(\.alertToast) var alertToast
+    @EnvironmentObject var appPreference: AppPreference
+    
     @State private var hideContent: Bool = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
     
     @StateObject private var fileState = FileState()
+    
+    @State private var sharedFile: File?
     
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -25,19 +29,15 @@ struct ContentView: View {
             ExcalidrawContainerView()
         }
         .navigationTitle("")
+        .sheet(item: $sharedFile) {
+            ShareView(sharedFile: $0)
+        }
         .toolbar { toolbarContent() }
-        .environment(appPreference)
         .environmentObject(fileState)
         .swiftyAlert()
         .onAppear {
             
         }
-    }
-}
-
-extension ContentView {
-    func createNewFile() {
-//        self.store.send(.sidebar(.file(.createNewFile)))
     }
 }
 
@@ -61,39 +61,44 @@ extension ContentView {
     @ToolbarContentBuilder
     private func toolbarContent_macOS() -> some ToolbarContent {
         ToolbarItemGroup(placement: .status) {
-//            Text(configuration.fileURL?.deletingPathExtension().lastPathComponent ?? "Untitled")
-//                .frame(width: 200)
+            Text(fileState.currentFile?.name ?? "Untitled")
+                .frame(width: 200)
         }
         
         ToolbarItemGroup(placement: .navigation) {
             // create
             Button {
-                createNewFile()
+                do {
+                    try fileState.createNewFile()
+                } catch {
+                    alertToast(error)
+                }
             } label: {
                 Image(systemName: "square.and.pencil")
             }
             .help("New draw")
-//            .disabled(viewStore.sidebar.currentGroup?.groupType == .trash)
+            .disabled(fileState.currentGroup?.groupType == .trash)
         }
 
         ToolbarItemGroup(placement: .automatic) {
             Spacer()
             
-            Popover {
-                FileCheckpointListView()
-            } label: {
-                Image(systemName: "clock.arrow.circlepath")
+            if let currentFile = fileState.currentFile {
+                Popover {
+                    FileCheckpointListView(file: currentFile)
+                } label: {
+                    Image(systemName: "clock.arrow.circlepath")
+                }
+                .disabled(fileState.currentGroup?.groupType == .trash)
             }
-//            .disabled(viewStore.sidebar.currentGroup?.groupType == .trash)
-            
+
             Button {
-//                self.store.send(.shareButtonTapped)
+                self.sharedFile = fileState.currentFile
             } label: {
                 Image(systemName: "square.and.arrow.up")
             }
             .help("Share")
-//            .disabled(viewStore.sidebar.currentGroup?.groupType == .trash)
-            
+            .disabled(fileState.currentGroup?.groupType == .trash)
 
         }
     }

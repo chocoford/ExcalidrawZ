@@ -10,8 +10,15 @@ import ChocofordUI
 import ChocofordEssentials
 
 struct FileCheckpointListView: View {
-    @FetchRequest(sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)])
+    @FetchRequest
     var fileCheckpoints: FetchedResults<FileCheckpoint>
+    
+    init(file: File) {
+        self._fileCheckpoints = FetchRequest(
+            sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)],
+            predicate: NSPredicate(format: "file == %@", file)
+        )
+    }
     
     var body: some View {
         List {

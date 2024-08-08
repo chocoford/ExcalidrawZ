@@ -14,6 +14,7 @@ import OSLog
 struct ExcalidrawWebView {
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var fileState: FileState
+    @EnvironmentObject var appPreference: AppPreference
 
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "WebView")
     
@@ -33,11 +34,17 @@ extension ExcalidrawWebView: NSViewRepresentable {
     }
     
     func updateNSView(_ nsView: WKWebView, context: Context) {
-        print("[ExcalidrawWebView] updateNSView")
         let webView = context.coordinator.webView
         context.coordinator.parent = self
         guard !webView.isLoading else {
             return
+        }
+        Task {
+            if appPreference.excalidrawAppearance == .auto {
+                try? await context.coordinator.changeColorMode(dark: colorScheme == .dark)
+            } else {
+                try? await context.coordinator.changeColorMode(dark: appPreference.excalidrawAppearance.colorScheme ?? colorScheme == .dark)
+            }
         }
         Task {
             try? await context.coordinator.loadFile(from: fileState.currentFile)

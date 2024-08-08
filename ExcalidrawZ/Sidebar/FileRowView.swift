@@ -73,75 +73,6 @@ struct FileInfo: Equatable {
     }
 }
 
-//struct FileRowStore: ReducerProtocol {
-//    typealias State = SidebarBaseState<_State>
-//    struct _State: Equatable, Identifiable {
-//        var id: UUID { self.file.id }
-//        var file: FileInfo
-//        var isSelected: Bool
-//    }
-//    
-//    enum Action: Equatable {
-//        case setAsCurrentFile
-//        case renameCurrentFile(_ newName: String)
-//        case moveCurrentFile(_ toGroup: Group)
-//        case duplicateCurrentFile
-//        case deleteCurrentFile
-//        case deletePermanentlyCurrentFile
-//        case recoverCurrentFile
-//        
-//        case delegate(Delegate)
-//        
-//        enum Delegate: Equatable {
-//            case willDuplicateFile(File)
-//            
-//            
-//            case didSetAsCurrentFile
-//            case didRenameCurrentFile
-//            case didMoveCurrentFile
-//            case didDeleteFile(File)
-//            case didRecoverFile(File)
-//        }
-//    }
-//    
-//    @Dependency(\.coreData) var coreData
-//    
-//    var body: some ReducerProtocol<State, Action> {
-//        Reduce { state, action in
-//            switch action {
-//                case .setAsCurrentFile:
-////                    state.currentFile = state.file.fileEntity
-//                    return .send(.delegate(.didSetAsCurrentFile))
-//                case .renameCurrentFile(let name):
-//                    state.file.setName(name)
-//                    coreData.provider.save()
-//                    return .send(.delegate(.didRenameCurrentFile))
-//                case .duplicateCurrentFile:
-//                    return .send(.delegate(.willDuplicateFile(state.file.fileEntity)))
-//                case .moveCurrentFile(let group):
-//                    state.file.move(to: group)
-//                    coreData.provider.save()
-//                    return .send(.delegate(.didMoveCurrentFile))
-//                case .deleteCurrentFile:
-//                    state.file.delete()
-//                    coreData.provider.save()
-//                    return .send(.delegate(.didDeleteFile(state.file.fileEntity)))
-//                case .deletePermanentlyCurrentFile:
-//                    coreData.viewContext.delete(state.file.fileEntity)
-//                    coreData.provider.save()
-//                    return .send(.delegate(.didDeleteFile(state.file.fileEntity)))
-//                case .recoverCurrentFile:
-//                    guard state.file.inTrash else { return .none }
-//                    state.file.recover()
-//                    return .send(.delegate(.didRecoverFile(state.file.fileEntity)))
-//                case .delegate:
-//                    return .none
-//            }
-//        }
-//    }
-//}
-//
-
 struct FileRowView: View {
     @EnvironmentObject var fileState: FileState
     
@@ -225,14 +156,14 @@ struct FileRowView: View {
                 Text("Cancel")
             }
             Button(role: .destructive) {
-//                store.send(.deletePermanentlyCurrentFile)
+                fileState.deleteFilePermanently(file)
             } label: {
                 Text("Delete permanently")
             }
         }
         .sheet(isPresented: $renameMode) {
             RenameSheetView(text: file.name ?? "") { newName in
-//                viewStore.send(.renameCurrentFile(newName))
+                fileState.renameFile(file, newName: newName)
             }
             .frame(width: 300)
         }
@@ -250,38 +181,38 @@ struct FileRowView: View {
             }
             
             Button {
-//                self.store.send(.duplicateCurrentFile)
+                fileState.duplicateFile(file)
             } label: {
                 Label("Duplicate", systemImage: "doc.on.doc")
             }
             
             Menu {
-//                let groups: [Group] = groups
-//                    .filter{ $0.groupType != .trash }
-//                    .sorted { a, b in
-//                        a.groupType == .default && b.groupType != .default ||
-//                        a.groupType == b.groupType && b.groupType == .normal && a.createdAt ?? .distantPast < b.createdAt ?? .distantPast
-//                    }
-//                ForEach(groups) { group in
-//                    Button {
-//                        self.store.send(.moveCurrentFile(group))
-//                    } label: {
-//                        Text(group.name ?? "unknown")
-//                    }
-//                    .disabled(group.id == file.group?.id)
-//                }
+                let groups: [Group] = groups
+                    .filter{ $0.groupType != .trash }
+                    .sorted { a, b in
+                        a.groupType == .default && b.groupType != .default ||
+                        a.groupType == b.groupType && b.groupType == .normal && a.createdAt ?? .distantPast < b.createdAt ?? .distantPast
+                    }
+                ForEach(groups) { group in
+                    Button {
+                        fileState.moveFile(file, to: group)
+                    } label: {
+                        Text(group.name ?? "unknown")
+                    }
+                    .disabled(group.id == file.group?.id)
+                }
             } label: {
                 Label("Move to", systemImage: "arrow.up.bin")
             }
             
             Button(role: .destructive) {
-//                store.send(.deleteCurrentFile)
+                fileState.deleteFile(file)
             } label: {
                 Label("Delete", systemImage: "trash")
             }
         } else {
             Button {
-//                store.send(.recoverCurrentFile)
+                fileState.recoverFile(file)
             } label: {
                 Label("Recover", systemImage: "arrowshape.turn.up.backward.fill")
             }

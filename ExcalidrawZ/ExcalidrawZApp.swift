@@ -34,7 +34,7 @@ struct ExcalidrawZApp: App {
     
     @Environment(\.scenePhase) var scenePhase
     
-    @State private var appPrefernece = AppPreference()
+    @StateObject private var appPrefernece = AppPreference()
     @StateObject private var updateChecker = UpdateChecker()
 
     @State private var timer = Timer.publish(every: 30, on: .main, in: .default).autoconnect()
@@ -46,7 +46,7 @@ struct ExcalidrawZApp: App {
                 .swiftyAlert()
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-                .environment(appPrefernece)
+                .environmentObject(appPrefernece)
                 .onAppear {
                     updateChecker.assignUpdater(updater: updaterController.updater)
                 }
@@ -64,13 +64,13 @@ struct ExcalidrawZApp: App {
             CommandGroup(after: .importExport) {
                 Button {
                     let panel = ExcalidrawOpenPanel.importPanel
-//                    if panel.runModal() == .OK {
-//                        if let url = panel.url {
+                    if panel.runModal() == .OK {
+                        if let url = panel.url {
 //                            store.send(.importFile(url))
-//                        } else {
+                        } else {
 //                            store.send(.setError(.fileError(.invalidURL)))
-//                        }
-//                    }
+                        }
+                    }
                 } label: {
                     Text("Import")
                 }
@@ -85,9 +85,9 @@ struct ExcalidrawZApp: App {
         
         Settings {
             SettingsView()
-//                .environment(appSettings)
+                .environmentObject(appPrefernece)
                 .environmentObject(updateChecker)
-//                .preferredColorScheme(appSettings.appearance.colorScheme)
+                .preferredColorScheme(appPrefernece.appearance.colorScheme)
         }
     }
 }

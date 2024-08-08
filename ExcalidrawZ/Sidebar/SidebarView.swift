@@ -10,7 +10,7 @@ import SwiftUI
 import ChocofordUI
 
 struct SidebarView: View {
-    @Environment(AppPreference.self) var appPreference
+    @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var fileState: FileState
     
     @FetchRequest(

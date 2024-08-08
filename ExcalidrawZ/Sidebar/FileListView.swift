@@ -10,6 +10,7 @@ import SwiftUI
 import ChocofordUI
 
 struct FileListView: View {
+    @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
     var groups: FetchedResults<Group>
@@ -21,9 +22,12 @@ struct FileListView: View {
                 SortDescriptor(\.updatedAt, order: .reverse),
                 SortDescriptor(\.createdAt, order: .reverse)
             ],
-            predicate: NSPredicate(
-                format: "group == %@", currentGroup
-            )
+            predicate: currentGroup.groupType == .trash ? NSPredicate(
+                format: "inTrash == YES", currentGroup
+            ) : NSPredicate(
+                format: "group == %@ AND inTrash == NO", currentGroup
+            ),
+            animation: .smooth
         )
     }
     
@@ -32,7 +36,7 @@ struct FileListView: View {
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading) {
+            LazyVStack(alignment: .leading) {
                 ForEach(files) { file in
                     FileRowView(groups: groups, file: file)
                         .transition(.opacity)
@@ -42,22 +46,23 @@ struct FileListView: View {
             .padding(.vertical, 12)
         }
         .watchImmediately(of: fileState.currentGroup) { newValue in
-            if newValue != nil {
-//                self.store.send(.fetchFiles)
+            if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
+                fileState.currentFile = files.first
             }
         }
-//            .watchImmediately(of: viewStore.group) { group in
-//                guard let group = group else { return }
-//                if group.groupType == .trash {
-//                    fileList.nsPredicate = NSPredicate(format: "inTrash == YES")
-//                } else {
-//                    fileList.nsPredicate = NSPredicate(format: "group == %@ AND inTrash == NO", group)
-//                }
-//            }
-//            .watchImmediately(of: fileList) { newValue in
-//                print("fileList did changed")
-//                viewStore.send(.syncFiles(newValue))
-//            }
+        .onChange(of: fileState.currentFile) { oldValue, newValue in
+            if newValue == nil {
+                if let file = files.first {
+                    fileState.currentFile = file
+                } else {
+                    do {
+                        try fileState.createNewFile()
+                    } catch {
+                        alertToast(error)
+                    }
+                }
+            }
+        }
     }
 }
 

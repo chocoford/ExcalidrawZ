@@ -10,6 +10,7 @@ import ChocofordEssentials
 
 
 struct GroupListView: View {
+    @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
     var groups: FetchedResults<Group>
@@ -19,30 +20,43 @@ struct GroupListView: View {
     }
     
     var displayedGroups: [Group] {
-        groups.filter {
-            $0.groupType != .trash || ($0.groupType == .trash && self.trashedFilesCount > 0)
-        }
+        groups
+            .filter {
+                $0.groupType != .trash || ($0.groupType == .trash && self.trashedFilesCount > 0)
+            }
+            .sorted { a, b in
+                a.groupType == .default && b.groupType != .default ||
+                a.groupType == b.groupType && b.groupType == .normal && a.createdAt ?? .distantPast < b.createdAt ?? .distantPast  ||
+                a.groupType != .trash && b.groupType == .trash
+            }
     }
     
-    var trashedFilesCount: Int { 0 }
+    @FetchRequest(
+        sortDescriptors: [],
+        predicate: NSPredicate(format: "inTrash == YES")
+    )
+    private var trashedFiles: FetchedResults<File>
     
+    var trashedFilesCount: Int { trashedFiles.count }
     
     @State private var showCreateFolderDialog = false
-    @State private var newFolderName = ""
     
     
     var body: some View {
         content
             .sheet(isPresented: $showCreateFolderDialog) {
-                CreateGroupSheetView(initialName: newFolderName) { name in
-                    
+                CreateGroupSheetView(groups: groups) { name in
+                    do {
+                        try fileState.createNewGroup(name: name)
+                    } catch {
+                        alertToast(error)
+                    }
                 }
             }
             .onAppear {
                 if fileState.currentGroup == nil {
                     fileState.currentGroup = displayedGroups.first
                 }
-                getNextFileName()
             }
     }
     
@@ -58,18 +72,18 @@ struct GroupListView: View {
                 }
                 .onChange(of: trashedFilesCount) { count in
                     if count == 0 && fileState.currentGroup?.groupType == .trash {
-//                        viewStore.send(.setCurrentGroup(group: nil))
+                        fileState.currentGroup = displayedGroups.first
                     }
                 }
                 .padding(.vertical, 12)
                 .onChange(of: displayedGroups) { newValue in
                     if fileState.currentGroup == nil {
-//                        self.store.send(.setCurrentGroupToFirst)
+                        fileState.currentGroup = displayedGroups.first
                     }
                 }
                 .watchImmediately(of: fileState.currentGroup) { newValue in
                     if newValue == nil {
-//                        self.store.send(.setCurrentGroupToFirst)
+                        fileState.currentGroup = displayedGroups.first
                     }
                 }
             }
@@ -89,31 +103,11 @@ struct GroupListView: View {
     }
 }
 
-
-extension GroupListView {
-    func getNextFileName() {
-//        self.store.withState { state in
-//            let name = "New Folder"
-//            var result = name
-//            var i = 1
-//            while state.state.groupRows.first(where: {$0.group.name == result}) != nil {
-//                result = "\(name) \(i)"
-//                i += 1
-//            }
-//            newFolderName = result
-//        }
-    }
-    
-    func createFolder() {
-//        self.store.send(.createGroup(name: newFolderName))
-        showCreateFolderDialog = false
-    }
-}
-
 struct CreateGroupSheetView: View {
     @Environment(\.dismiss) var dismiss
     
-    var initialName: String
+    var groups: FetchedResults<Group>
+    
     var onCreate: (_ name: String) -> Void
     
     @State private var name: String = ""
@@ -151,7 +145,21 @@ struct CreateGroupSheetView: View {
         }
         .padding()
         .frame(width: 400)
-        .onChange(of: self.initialName) { newValue in self.name = newValue }
+        //        .onChange(of: self.initialName) { newValue in self.name = newValue }
+        .onAppear {
+            self.name = getNextFileName()
+        }
+    }
+    
+    func getNextFileName() -> String {
+        let name = "New Folder"
+        var result = name
+        var i = 1
+        while groups.first(where: {$0.name == result}) != nil {
+            result = "\(name) \(i)"
+            i += 1
+        }
+        return result
     }
 }
 

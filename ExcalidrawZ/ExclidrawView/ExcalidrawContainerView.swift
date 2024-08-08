@@ -8,70 +8,9 @@
 import SwiftUI
 import ChocofordUI
 
-//struct ExcalidrawContainerStore: ReducerProtocol {
-//    struct State: Equatable {
-//        var excalidraw: ExcalidrawStore.State = .init()
-//        
-//        var isLoading: Bool = true
-//        var colorScheme: ColorScheme = .light
-//        
-//        @BindingState var showRestoreAlert: Bool = false
-//    }
-//    
-//    enum Action: Equatable, BindableAction {
-//        case binding(BindingAction<State>)
-//        case excalidraw(ExcalidrawStore.Action)
-//        
-//        case setColorScheme(ColorScheme)
-//        case toggleRestoreAlert
-//        
-//        case delegate(Delegate)
-//        
-//        enum Delegate: Equatable {
-//            case recoverFile(File)
-//        }
-//    }
-//    
-//    var body: some ReducerProtocol<State, Action> {
-//        BindingReducer()
-//        Scope(state: \.excalidraw, action: /Action.excalidraw) {
-//            ExcalidrawStore()
-//        }
-//        
-//        Reduce { state, action in
-//            switch action {
-//                case .excalidraw(.delegate(let action)):
-//                    switch action {
-//                        case .onFinishLoading:
-//                            state.isLoading = false
-//                            return .merge(
-//                                .send(.excalidraw(.loadCurrentFile)),
-//                                .send(.setColorScheme(state.colorScheme))
-//                            )
-//                            
-//                        default:
-//                            return .none
-//                    }
-//                    
-//                case .excalidraw:
-//                    return .none
-//                    
-//                case .setColorScheme(let colorScheme):
-//                    state.colorScheme = colorScheme
-//                    return .send(.excalidraw(.applyColorSceme(colorScheme)))
-//                    
-//                case .toggleRestoreAlert:
-//                    state.showRestoreAlert.toggle()
-//                    return .none
-//                    
-//                case .delegate, .binding:
-//                    return .none
-//            }
-//        }
-//    }
-//}
-
 struct ExcalidrawContainerView: View {
+    @EnvironmentObject var appPreference: AppPreference
+
     @Environment(\.colorScheme) var colorScheme
     
     @EnvironmentObject private var fileState: FileState
@@ -83,7 +22,7 @@ struct ExcalidrawContainerView: View {
         GeometryReader { geometry in
             ZStack(alignment: .center) {
                 ExcalidrawWebView(isLoading: $isLoading)
-                //                    .preferredColorScheme(appSettings.excalidrawAppearance.colorScheme)
+                    .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
                     .opacity(isLoading ? 0 : 1)
                 
                 if isLoading {
@@ -99,18 +38,6 @@ struct ExcalidrawContainerView: View {
             }
             .transition(.opacity)
             .animation(.default, value: isLoading)
-        }
-//        .onChange(of: appSettings.excalidrawAppearance, initial: true) { newVal in
-            //                if newVal == .auto {
-            //                    viewStore.send(.setColorScheme(colorScheme))
-            //                } else {
-            //                    viewStore.send(.setColorScheme(newVal.colorScheme ?? colorScheme))
-            //                }
-//        }
-        .onChange(of: colorScheme) { newVal in
-            //                if appSettings.excalidrawAppearance == .auto {
-            //                    viewStore.send(.setColorScheme(newVal))
-            //                }
         }
     }
     
@@ -131,7 +58,9 @@ struct ExcalidrawContainerView: View {
                 
                 Button {
                     // Recover file
-                    
+                    if let currentFile = fileState.currentFile {
+                        fileState.recoverFile(currentFile)
+                    }
                 } label: {
                     Text("Recover")
                 }
