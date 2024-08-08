@@ -82,7 +82,7 @@ struct ExcalidrawContainerView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .center) {
-                ExcalidrawWebView()
+                ExcalidrawWebView(isLoading: $isLoading)
                 //                    .preferredColorScheme(appSettings.excalidrawAppearance.colorScheme)
                     .opacity(isLoading ? 0 : 1)
                 

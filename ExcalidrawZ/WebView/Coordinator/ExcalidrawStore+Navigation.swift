@@ -61,17 +61,15 @@ extension ExcalidrawWebView.Coordinator: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         logger.info("did finish navigation")
-//        _ = self.parent.store.withState { state in
-//            Task { @MainActor in
-//                do {
-//                    self.parent.store.send(.delegate(.onFinishLoading))
-//                    try await self.loadFile(from: state.currentFile)
-//                } catch {
-//                    dump(error)
-//                }
-//            }
-//        }
-        
+        self.parent.isLoading = false
+        // load file when finishing navigation
+        Task { @MainActor in
+            do {
+                try await self.loadFile(from: parent.fileState.currentFile)
+            } catch {
+                print(error)
+            }
+        }
     }
         
     func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {

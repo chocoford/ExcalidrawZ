@@ -33,11 +33,16 @@ struct GroupListView: View {
     
     var body: some View {
         content
-            .onAppear(perform: getNextFileName)
             .sheet(isPresented: $showCreateFolderDialog) {
                 CreateGroupSheetView(initialName: newFolderName) { name in
                     
                 }
+            }
+            .onAppear {
+                if fileState.currentGroup == nil {
+                    fileState.currentGroup = displayedGroups.first
+                }
+                getNextFileName()
             }
     }
     

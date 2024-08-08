@@ -16,6 +16,8 @@ extension ExcalidrawWebView {
         var parent: ExcalidrawWebView
         var webView: WKWebView = .init()
         
+        var loadedFile: File?
+        
         init(_ parent: ExcalidrawWebView) {
             self.parent = parent
             super.init()
@@ -133,11 +135,13 @@ document.addEventListener("keydown", function (event) {
 extension ExcalidrawWebView.Coordinator {
     @MainActor
     func loadFile(from file: File?) async throws {
+        guard loadedFile != file else { return }
         if self.webView.isLoading { return }
         guard let file = file, let data = file.content else { return }
         var buffer = [UInt8].init(repeating: 0, count: data.count)
         data.copyBytes(to: &buffer, count: data.count)
         try await self.webView.evaluateJavaScript("window.excalidrawZHelper.loadFile(\(buffer)); 0;")
+        self.loadedFile = file
     }
     
     /// Load current `File`.

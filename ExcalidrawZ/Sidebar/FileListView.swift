@@ -14,18 +14,21 @@ struct FileListView: View {
     
     var groups: FetchedResults<Group>
     
-    init(groups: FetchedResults<Group>) {
+    init(groups: FetchedResults<Group>, currentGroup: Group) {
         self.groups = groups
+        self._files = FetchRequest<File>(
+            sortDescriptors: [
+                SortDescriptor(\.updatedAt, order: .reverse),
+                SortDescriptor(\.createdAt, order: .reverse)
+            ],
+            predicate: NSPredicate(
+                format: "group == %@", currentGroup
+            )
+        )
     }
     
-    @FetchRequest(
-        sortDescriptors: [
-            SortDescriptor(\.updatedAt, order: .reverse),
-            SortDescriptor(\.createdAt, order: .reverse)
-        ],
-        animation: .default
-    )
-    var files: FetchedResults<File>
+    @FetchRequest
+    private var files: FetchedResults<File>
     
     var body: some View {
         ScrollView {

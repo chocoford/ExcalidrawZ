@@ -13,10 +13,15 @@ import OSLog
 
 struct ExcalidrawWebView {
     @Environment(\.colorScheme) var colorScheme
+    @EnvironmentObject var fileState: FileState
 
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "WebView")
     
-//    @State private var oldAppearance: AppSettingsStore.Appearance?
+    @Binding var isLoading: Bool
+    
+    init(isLoading: Binding<Bool>) {
+        self._isLoading = isLoading
+    }
 }
 
 #if os(macOS)
@@ -28,10 +33,14 @@ extension ExcalidrawWebView: NSViewRepresentable {
     }
     
     func updateNSView(_ nsView: WKWebView, context: Context) {
+        print("[ExcalidrawWebView] updateNSView")
         let webView = context.coordinator.webView
         context.coordinator.parent = self
         guard !webView.isLoading else {
             return
+        }
+        Task {
+            try? await context.coordinator.loadFile(from: fileState.currentFile)
         }
     }
 

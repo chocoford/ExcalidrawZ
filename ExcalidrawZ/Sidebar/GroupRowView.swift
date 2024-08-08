@@ -45,7 +45,7 @@ struct GroupRowView: View {
     
     var group: Group
     
-    var isSelected: Bool { false }
+    var isSelected: Bool { fileState.currentGroup == group }
 
     var body: some View {
         if group.groupType != .trash {

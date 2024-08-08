@@ -14,7 +14,7 @@ struct SidebarView: View {
     @EnvironmentObject var fileState: FileState
     
     @FetchRequest(
-        sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)]
+        sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)]
     )
     var groups: FetchedResults<Group>
     
@@ -27,7 +27,14 @@ struct SidebarView: View {
                 Divider()
             }
             
-            FileListView(groups: groups)
+            ZStack {
+                if let currentGroup = fileState.currentGroup {
+                    FileListView(groups: groups, currentGroup: currentGroup)
+                } else {
+                    Text("Select a group")
+                        .foregroundStyle(.placeholder)
+                }
+            }
                 .frame(minWidth: 200)
         }
         .border(.top, color: .separatorColor)

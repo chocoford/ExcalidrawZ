@@ -29,6 +29,9 @@ struct ContentView: View {
         .environment(appPreference)
         .environmentObject(fileState)
         .swiftyAlert()
+        .onAppear {
+            
+        }
     }
 }
 
