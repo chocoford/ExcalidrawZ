@@ -6,20 +6,6 @@
 //
 
 import Foundation
-import ComposableArchitecture
-
-//protocol IdentifiableError: Equatable {
-//    associatedtype ID
-//    var id: ID { get set }
-//    var error: Error { get set }
-//}
-//
-//extension IdentifiableError {
-//    init(_ error: Error) where ID == UUID {
-//        self.id = UUID()
-//        
-//    }
-//}
 
 struct IdentifiableError: Equatable {
     static func == (lhs: IdentifiableError, rhs: IdentifiableError) -> Bool {
@@ -152,31 +138,31 @@ enum DirMonitorError: LocalizedError, Equatable {
 }
 
 
-struct ErrorBus {
-    private var continuation: AsyncStream<Error>.Continuation? = nil
-    
-    var errorStream: AsyncStream<Error>!
-    
-    init() {
-        self.errorStream = AsyncStream { continuation in
-            self.continuation = continuation
-        }
-    }
-    
-    func submit(_ error: Error) {
-        self.continuation?.yield(error)
-    }
-}
-
-extension ErrorBus: DependencyKey {
-    static var liveValue: ErrorBus {
-        .init()
-    }
-}
-
-extension DependencyValues {
-    var errorBus: ErrorBus {
-        get { self[ErrorBus.self] }
-        set { self[ErrorBus.self] = newValue }
-    }
-}
+//struct ErrorBus {
+//    private var continuation: AsyncStream<Error>.Continuation? = nil
+//    
+//    var errorStream: AsyncStream<Error>!
+//    
+//    init() {
+//        self.errorStream = AsyncStream { continuation in
+//            self.continuation = continuation
+//        }
+//    }
+//    
+//    func submit(_ error: Error) {
+//        self.continuation?.yield(error)
+//    }
+//}
+//
+//extension ErrorBus: DependencyKey {
+//    static var liveValue: ErrorBus {
+//        .init()
+//    }
+//}
+//
+//extension DependencyValues {
+//    var errorBus: ErrorBus {
+//        get { self[ErrorBus.self] }
+//        set { self[ErrorBus.self] = newValue }
+//    }
+//}

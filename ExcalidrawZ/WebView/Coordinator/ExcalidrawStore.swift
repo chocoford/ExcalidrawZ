@@ -7,11 +7,10 @@
 
 import SwiftUI
 import WebKit
-import ComposableArchitecture
 
 import OSLog
 extension ExcalidrawWebView {
-    class Coordinator: NSObject, ObservableObject {
+    class Coordinator: NSObject {
         let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawWebViewCoordinator")
         
         var parent: ExcalidrawWebView
@@ -84,6 +83,7 @@ navigator.clipboard.writeText = async (string) => {
     });
 }
 """
+            /// Thanks to [DervexDev](https://github.com/DervexDev)
             let handleKeyboardScript = """
 const VALID_KEYS = ["h", "v", "r", "d", "o", "a", "l", "p", "t", "e", "q"];
 

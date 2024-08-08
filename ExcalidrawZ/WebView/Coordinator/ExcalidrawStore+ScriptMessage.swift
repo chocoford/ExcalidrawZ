@@ -47,7 +47,7 @@ extension ExcalidrawWebView.Coordinator {
     
     func onStateChanged(_ data: StateChangedMessageData) throws {
         guard let data = data.data.dataString.data(using: .utf8) else { throw AppError.fileError(.createError) }
-        self.parent.store.send(.updateCurrentFile(data))
+//        self.parent.store.send(.updateCurrentFile(data))
     }
     
     func handleBlobData(_ data: Data) throws {

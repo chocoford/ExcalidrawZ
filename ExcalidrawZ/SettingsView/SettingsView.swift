@@ -107,11 +107,11 @@ extension SettingsView {
 }
 
 #if DEBUG
-struct SettingsView_Previews: PreviewProvider {
-    static var previews: some View {
-        SettingsView()
-            .environmentObject(AppSettingsStore())
-            .environmentObject(UpdateChecker())
-    }
-}
+//struct SettingsView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        SettingsView()
+//            .environmentObject(AppSettingsStore())
+//            .environmentObject(UpdateChecker())
+//    }
+//}
 #endif

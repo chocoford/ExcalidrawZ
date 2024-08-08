@@ -6,7 +6,8 @@
 //
 
 import SwiftUI
-import ComposableArchitecture
+
+import SwiftyAlert
 #if os(macOS) && !APP_STORE
 import Sparkle
 #endif
@@ -33,19 +34,19 @@ struct ExcalidrawZApp: App {
     
     @Environment(\.scenePhase) var scenePhase
     
-    @StateObject private var appSettings = AppSettingsStore()
+    @State private var appPrefernece = AppPreference()
     @StateObject private var updateChecker = UpdateChecker()
 
     @State private var timer = Timer.publish(every: 30, on: .main, in: .default).autoconnect()
-    let store = Store(initialState: AppViewStore.State()) {
-        AppViewStore()._printChanges()
-    }
+    
     var body: some Scene {
+        // Can not use Document group - we should save chekpoints
         WindowGroup {
-            ContentView(store: self.store)
+            RootView()
+                .swiftyAlert()
+                .preferredColorScheme(appPrefernece.appearance.colorScheme)
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-                .preferredColorScheme(appSettings.appearance.colorScheme)
-                .environmentObject(appSettings)
+                .environment(appPrefernece)
                 .onAppear {
                     updateChecker.assignUpdater(updater: updaterController.updater)
                 }
@@ -63,13 +64,13 @@ struct ExcalidrawZApp: App {
             CommandGroup(after: .importExport) {
                 Button {
                     let panel = ExcalidrawOpenPanel.importPanel
-                    if panel.runModal() == .OK {
-                        if let url = panel.url {
-                            store.send(.importFile(url))
-                        } else {
-                            store.send(.setError(.fileError(.invalidURL)))
-                        }
-                    }
+//                    if panel.runModal() == .OK {
+//                        if let url = panel.url {
+//                            store.send(.importFile(url))
+//                        } else {
+//                            store.send(.setError(.fileError(.invalidURL)))
+//                        }
+//                    }
                 } label: {
                     Text("Import")
                 }
@@ -81,16 +82,12 @@ struct ExcalidrawZApp: App {
             }
         }
 #endif
-        .onChange(of: scenePhase) { _ in
-            //            store.send(.saveCoreData)
-        }
-        
         
         Settings {
             SettingsView()
-                .environmentObject(appSettings)
+//                .environment(appSettings)
                 .environmentObject(updateChecker)
-                .preferredColorScheme(appSettings.appearance.colorScheme)
+//                .preferredColorScheme(appSettings.appearance.colorScheme)
         }
     }
 }

@@ -1,15 +1,24 @@
 //
-//  AppSettingsStore.swift
+//  AppStore.swift
 //  ExcalidrawZ
 //
-//  Created by Dove Zachary on 2023/5/12.
+//  Created by Dove Zachary on 2023/7/25.
 //
 
 import SwiftUI
-import ChocofordUI
-import Combine
 
-class AppSettingsStore: ObservableObject {
+import ChocofordUI
+
+@Observable
+final class AppPreference {
+    enum SidebarMode: Sendable {
+        case all
+        case filesOnly
+    }
+    // Layout
+    var sidebarMode: SidebarMode = .all
+    
+    // Appearence
     enum Appearance: String, RadioGroupCase {
         case light
         case dark
@@ -41,9 +50,8 @@ class AppSettingsStore: ObservableObject {
             }
         }
     }
-    
-    @AppStorage("appearance") var appearance: Appearance = .auto
-    @AppStorage("excalidrawAppearance") var excalidrawAppearance: Appearance = .auto
+    @ObservationIgnored @AppStorage("appearance") var appearance: Appearance = .auto
+    @ObservationIgnored @AppStorage("excalidrawAppearance") var excalidrawAppearance: Appearance = .auto
     
     var appearanceBinding: Binding<ColorScheme?> {
         Binding {
@@ -63,3 +71,15 @@ class AppSettingsStore: ObservableObject {
     }
 }
 
+
+@Observable
+final class DocumentModel {
+    
+}
+
+
+final class FileState: ObservableObject {
+    @Published var currentGroup: Group?
+    @Published var currentFile: File?
+    
+}
