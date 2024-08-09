@@ -8,7 +8,7 @@
 import Foundation
 import WebKit
 
-extension ExcalidrawWebView.Coordinator: WKUIDelegate {
+extension ExcalidrawView.Coordinator: WKUIDelegate {
     func webView(_ webView: WKWebView,
                  createWebViewWith configuration: WKWebViewConfiguration,
                  for navigationAction: WKNavigationAction,

@@ -9,16 +9,16 @@ import SwiftUI
 import WebKit
 
 import OSLog
-extension ExcalidrawWebView {
+extension ExcalidrawView {
     class Coordinator: NSObject {
         let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawWebViewCoordinator")
         
-        var parent: ExcalidrawWebView
-        var webView: WKWebView = .init()
+        var parent: ExcalidrawView
+        var webView: ExcalidrawWebView = .init()
         
         var loadedFile: File?
         
-        init(_ parent: ExcalidrawWebView) {
+        init(_ parent: ExcalidrawView) {
             self.parent = parent
             super.init()
             self.configWebView()
@@ -90,8 +90,10 @@ navigator.clipboard.writeText = async (string) => {
 const VALID_KEYS = ["h", "v", "r", "d", "o", "a", "l", "p", "t", "e", "q"];
 
 document.addEventListener("keydown", function (event) {
+    if (event.target.tagName === 'TEXTAREA') return;
     if (!event.metaKey && (!isNaN(event.key) || VALID_KEYS.includes(event.key))) {
         event.preventDefault();
+        event.stopPropagation();
     }
 });
 """
@@ -111,7 +113,7 @@ document.addEventListener("keydown", function (event) {
             
             config.userContentController.add(self, name: "excalidrawZ")
             
-            self.webView = WKWebView(frame: .zero, configuration: config)
+            self.webView = ExcalidrawWebView(frame: .zero, configuration: config)
             if #available(macOS 13.3, *) {
                 self.webView.isInspectable = true
             } else {
@@ -132,7 +134,7 @@ document.addEventListener("keydown", function (event) {
 }
 
 /// Keep stateless
-extension ExcalidrawWebView.Coordinator {
+extension ExcalidrawView.Coordinator {
     @MainActor
     func loadFile(from file: File?) async throws {
         guard loadedFile != file else { return }

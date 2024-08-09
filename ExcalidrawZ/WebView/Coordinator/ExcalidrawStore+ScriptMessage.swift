@@ -14,7 +14,7 @@ protocol AnyExcalidrawZMessage: Codable {
     var data: D { get set }
 }
 
-extension ExcalidrawWebView.Coordinator: WKScriptMessageHandler {
+extension ExcalidrawView.Coordinator: WKScriptMessageHandler {
     func userContentController(
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
@@ -39,7 +39,7 @@ extension ExcalidrawWebView.Coordinator: WKScriptMessageHandler {
     }
 }
 
-extension ExcalidrawWebView.Coordinator {
+extension ExcalidrawView.Coordinator {
     func onSaveFileDone(_ data: String) {
         print("onSaveFileDone")
     }
@@ -95,7 +95,7 @@ extension ExcalidrawWebView.Coordinator {
 }
 
 
-extension ExcalidrawWebView.Coordinator {
+extension ExcalidrawView.Coordinator {
     enum ExcalidrawZEventType: String, Codable {
         case onStateChanged
         case saveFileDone

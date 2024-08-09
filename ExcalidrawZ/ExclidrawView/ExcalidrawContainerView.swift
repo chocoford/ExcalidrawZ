@@ -22,7 +22,7 @@ struct ExcalidrawContainerView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .center) {
-                ExcalidrawWebView(isLoading: $isLoading) {
+                ExcalidrawView(isLoading: $isLoading) {
                     alertToast($0)
                 }
                 .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)

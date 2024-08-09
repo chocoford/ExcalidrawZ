@@ -203,7 +203,7 @@ final class ExportState: ObservableObject {
         case finish
     }
     
-    var excalidrawWebCoordinator: ExcalidrawWebView.Coordinator?
+    var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
     
     @Published var status: Status = .notRequested
     var download: WKDownload?

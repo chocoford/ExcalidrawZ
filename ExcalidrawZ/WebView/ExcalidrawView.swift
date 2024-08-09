@@ -11,7 +11,9 @@ import WebKit
 import Combine
 import OSLog
 
-struct ExcalidrawWebView {
+class ExcalidrawWebView: WKWebView { }
+
+struct ExcalidrawView {
     @Environment(\.colorScheme) var colorScheme
     
     @EnvironmentObject var appPreference: AppPreference
@@ -31,14 +33,13 @@ struct ExcalidrawWebView {
 }
 
 #if os(macOS)
-extension ExcalidrawWebView: NSViewRepresentable {
-    typealias NSViewType = WKWebView
+extension ExcalidrawView: NSViewRepresentable {
 
-    func makeNSView(context: Context) -> WKWebView {
+    func makeNSView(context: Context) -> ExcalidrawWebView {
         return context.coordinator.webView
     }
     
-    func updateNSView(_ nsView: WKWebView, context: Context) {
+    func updateNSView(_ nsView: ExcalidrawWebView, context: Context) {
         let webView = context.coordinator.webView
         context.coordinator.parent = self
         exportState.excalidrawWebCoordinator = context.coordinator

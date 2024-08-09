@@ -8,7 +8,7 @@
 import Foundation
 import WebKit
 
-extension ExcalidrawWebView.Coordinator: WKNavigationDelegate {
+extension ExcalidrawView.Coordinator: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, preferences: WKWebpagePreferences) async -> (WKNavigationActionPolicy, WKWebpagePreferences) {
         return (.allow, preferences)
     }

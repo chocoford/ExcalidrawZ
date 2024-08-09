@@ -9,7 +9,7 @@ import Foundation
 import WebKit
 
 
-extension ExcalidrawWebView.Coordinator: WKDownloadDelegate {
+extension ExcalidrawView.Coordinator: WKDownloadDelegate {
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
         switch suggestedFilename.components(separatedBy: ".").last {
             case .some("excalidraw"):
