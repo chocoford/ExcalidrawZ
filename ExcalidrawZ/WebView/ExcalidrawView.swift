@@ -10,8 +10,31 @@ import SwiftUI
 import WebKit
 import Combine
 import OSLog
+import QuartzCore
 
-class ExcalidrawWebView: WKWebView { }
+class ExcalidrawWebView: WKWebView {
+    var toolbarActionHandler: (Int) -> Void
+    
+    init(
+        frame: CGRect,
+        configuration: WKWebViewConfiguration,
+        toolbarActionHandler: @escaping (Int) -> Void
+    ) {
+        self.toolbarActionHandler = toolbarActionHandler
+        super.init(frame: frame, configuration: configuration)
+    }
+    
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    
+    override func keyDown(with event: NSEvent) {
+        if let char = event.characters,
+           let num = Int(char), num >= 0, num <= 9 {
+            self.toolbarActionHandler(num)
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+}
 
 struct ExcalidrawView {
     @Environment(\.colorScheme) var colorScheme

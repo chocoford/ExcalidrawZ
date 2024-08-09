@@ -1,5 +1,5 @@
 {
-  "originHash" : "69229724b6676543b55c24dec5b683031e820626c348d2d62622647a7a60c131",
+  "originHash" : "69f918f1352bb5083d7f5ded3e0c44225c6759a1846c022f2edd3edd82bd684b",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -26,6 +26,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "9d4dfc2c91fdbaedbb5522201edeb8eebc520ae3"
+      }
+    },
+    {
+      "identity" : "flyingfox",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swhitty/FlyingFox.git",
+      "state" : {
+        "revision" : "b37b5ab2c8545cdcea27909c3441c92ca1a992a1",
+        "version" : "0.15.0"
       }
     },
     {
@@ -80,6 +89,15 @@
       "state" : {
         "revision" : "7737a80740919c2fa94a6e64f870d37ef77b9b5f",
         "version" : "3.5.3"
+      }
+    },
+    {
+      "identity" : "swifter",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/httpswift/swifter.git",
+      "state" : {
+        "revision" : "9483a5d459b45c3ffd059f7b55f9638e268632fd",
+        "version" : "1.5.0"
       }
     },
     {

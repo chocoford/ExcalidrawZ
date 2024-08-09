@@ -34,6 +34,15 @@ struct FileListView: View {
     @FetchRequest
     private var files: FetchedResults<File>
     
+    
+    struct DateGrouppedFiles {
+        var date: Date
+        var files: [File]
+    }
+//    var dateGrouppedFiles: [DateGrouppedFiles] {
+//        
+//    }
+    
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading) {
@@ -42,6 +51,7 @@ struct FileListView: View {
                         .transition(.opacity)
                 }
             }
+            .animation(.smooth, value: files)
             .padding(.horizontal, 8)
             .padding(.vertical, 12)
         }

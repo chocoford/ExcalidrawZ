@@ -40,6 +40,7 @@ struct ExcalidrawZApp: App {
     
     @StateObject private var appPrefernece = AppPreference()
     @StateObject private var updateChecker = UpdateChecker()
+    @State private var server = ExcalidrawServer()
 
     @State private var timer = Timer.publish(every: 30, on: .main, in: .default).autoconnect()
     

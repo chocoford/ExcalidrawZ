@@ -1,0 +1,2 @@
+var s=async(t=[{}])=>(Array.isArray(t)||(t=[t]),new Promise((c,l)=>{const e=document.createElement("input");e.type="file";const p=[...t.map(a=>a.mimeTypes||[]),...t.map(a=>a.extensions||[])].join();e.multiple=t[0].multiple||!1,e.accept=p||"";const n=a=>{typeof i=="function"&&i(),c(a)},i=t[0].legacySetup&&t[0].legacySetup(n,()=>i(l),e);e.addEventListener("change",()=>{n(e.multiple?Array.from(e.files):e.files[0])}),e.click()}));export{s as default};
+//# sourceMappingURL=file-open-7c801643-CD3BRLr1.js.map

@@ -14,7 +14,7 @@ extension ExcalidrawView {
         let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawWebViewCoordinator")
         
         var parent: ExcalidrawView
-        var webView: ExcalidrawWebView = .init()
+        var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in }
         
         var loadedFile: File?
         
@@ -113,7 +113,11 @@ document.addEventListener("keydown", function (event) {
             
             config.userContentController.add(self, name: "excalidrawZ")
             
-            self.webView = ExcalidrawWebView(frame: .zero, configuration: config)
+            self.webView = ExcalidrawWebView(frame: .zero, configuration: config) { num in
+                Task {
+                    try? await self.toggleToolbarAction(key: num)
+                }
+            }
             if #available(macOS 13.3, *) {
                 self.webView.isInspectable = true
             } else {
@@ -122,12 +126,8 @@ document.addEventListener("keydown", function (event) {
             self.webView.navigationDelegate = self
             self.webView.uiDelegate = self
             
-//            self.webView.load(.init(url: URL(string: "https://excalidraw.com")!))
-            
-            let url = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "excalidrawCore")!
-            print(url, url.deletingLastPathComponent())
             DispatchQueue.main.async {
-                self.webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+                self.webView.load(URLRequest(url: URL(string: "http://localhost:8487/index.html")!))
             }
         }
     }
@@ -209,5 +209,11 @@ extension ExcalidrawView.Coordinator {
     @MainActor
     func exportPNG() async throws {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.exportImage(); 0;")
+    }
+    
+    @MainActor
+    func toggleToolbarAction(key: Int) async throws {
+        print(#function)
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction(\(key)); 0;")
     }
 }

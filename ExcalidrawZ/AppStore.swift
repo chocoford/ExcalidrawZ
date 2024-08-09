@@ -7,6 +7,7 @@
 
 import SwiftUI
 import WebKit
+import Combine
 
 import ChocofordUI
 
@@ -73,14 +74,41 @@ final class AppPreference: ObservableObject {
 
 final class FileState: ObservableObject {
     var stateUpdateQueue: DispatchQueue = DispatchQueue(label: "StateUpdateQueue")
-    @Published var currentGroup: Group?
+    
+    var currentGroupPublisherCancellables: [AnyCancellable] = []
+    var currentFilePublisherCancellables: [AnyCancellable] = []
+    
+    @Published var currentGroup: Group? {
+        didSet {
+            currentGroupPublisherCancellables.forEach {$0.cancel()}
+            guard let currentGroup else { return }
+            currentGroupPublisherCancellables = [
+                currentGroup.publisher(for: \.name).sink { [weak self] _ in
+                    self?.objectWillChange.send()
+                }
+            ]
+        }
+    }
     @Published var currentFile: File? {
         didSet {
             recoverWatchUpdate.cancel()
             shouldIgnoreUpdate = true
             stateUpdateQueue.asyncAfter(deadline: .now().advanced(by: .milliseconds(1500)), execute: recoverWatchUpdate)
+            
+            currentFilePublisherCancellables.forEach{$0.cancel()}
+            if let currentFile {
+                currentFilePublisherCancellables = [
+                    currentFile.publisher(for: \.name).sink { [weak self] _ in
+                        self?.objectWillChange.send()
+                    },
+                    currentFile.publisher(for: \.updatedAt).sink { [weak self] _ in
+                        self?.objectWillChange.send()
+                    }
+                ]
+            }
         }
     }
+    
     
     
     var shouldIgnoreUpdate = false
@@ -113,6 +141,7 @@ final class FileState: ObservableObject {
             } else if !isCreatingFile {
                 
             }
+            PersistenceController.shared.save()
         } catch {
             
         }
@@ -134,21 +163,25 @@ final class FileState: ObservableObject {
     
     func renameFile(_ file: File, newName: String) {
         file.name = newName
+        PersistenceController.shared.save()
     }
     
     func renameGroup(_ group: Group, newName: String) {
         group.name = newName
+        PersistenceController.shared.save()
     }
     
     func moveFile(_ file: File, to group: Group) {
         file.group = group
         currentGroup = group
         currentFile = file
+        PersistenceController.shared.save()
     }
     
     func duplicateFile(_ file: File) {
         let newFile = PersistenceController.shared.duplicateFile(file: file)
         currentFile = newFile
+        PersistenceController.shared.save()
     }
     
     func deleteFile(_ file: File) {
@@ -156,6 +189,7 @@ final class FileState: ObservableObject {
         if file == currentFile {
             currentFile = nil
         }
+        PersistenceController.shared.save()
     }
     
     func recoverFile(_ file: File) {
@@ -164,6 +198,7 @@ final class FileState: ObservableObject {
         
         currentGroup = file.group
         currentFile = file
+        PersistenceController.shared.save()
     }
 
     func deleteFilePermanently(_ file: File) {
