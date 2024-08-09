@@ -23,28 +23,27 @@ struct ExportImageView: View {
     @State private var fileName: String = ""
     @State private var copied: Bool = false
     @State private var hasError: Bool = false
-    
+
+    @State private var showBackButton = false
+
     var body: some View {
         VStack {
-            if #available(macOS 13.0, *) {} else {
-                HStack {
-                    Text("Export image...")
-                        .font(.title)
-                    Spacer()
-                    
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .padding(8)
-                    }
-                    .buttonStyle(.borderless)
-                }
-                Divider()
-            }
             Center {
                 content
             }
+            .overlay(alignment: .topLeading) {
+                if showBackButton {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemSymbol: .chevronLeft)
+                    }
+                    .transition(
+                        .offset(x: -10).combined(with: .fade)
+                    )
+                }
+            }
+            .animation(.default, value: showBackButton)
         }
         .padding()
         .onAppear {
@@ -55,6 +54,10 @@ struct ExportImageView: View {
                     alertToast(error)
                 }
             }
+            showBackButton = true
+        }
+        .onDisappear {
+            showBackButton = false
         }
     }
     

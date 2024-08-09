@@ -9,12 +9,17 @@ import SwiftUI
 
 import ChocofordUI
 import SwiftyAlert
+import SFSafeSymbols
 
 struct ShareView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.alertToast) var alertToast
     
     var sharedFile: File
+    
+    init(sharedFile: File) {
+        self.sharedFile = sharedFile
+    }
     
     enum Route: Hashable {
         case exportImage
@@ -26,41 +31,43 @@ struct ShareView: View {
     
     var body: some View {
         NavigationStack(path: $route) {
-            List {
-                squareButton {
-                    route.append(Route.exportImage)
-                } label: {
-                    Label("Export image", systemImage: "photo")
-                        .font(.title3)
-                }
-                squareButton {
-                    route.append(Route.exportFile)
-                } label: {
-                    Label("Export current file", systemImage: "doc")
-                        .font(.title3)
-                }
-                squareButton {
-                    do {
-                        try archiveAllFiles()
-                    } catch {
-                        alertToast(error)
+            VStack(spacing: 20) {
+                Text("Choose an export target.")
+                    .font(.largeTitle)
+
+                
+                HStack(spacing: 14) {
+                    squareButton(title: "Image", icon: .photo) {
+                        route.append(Route.exportImage)
                     }
-                } label: {
-                    Label("Archive files", systemImage: "archivebox")
-                        .font(.title3)
+                    
+                    squareButton(title: "File", icon: .doc) {
+                        route.append(Route.exportFile)
+                    }
+                    
+                    squareButton(title: "Archive", icon: .archivebox) {
+                        do {
+                            try archiveAllFiles()
+                        } catch {
+                            alertToast(error)
+                        }
+                    }
                 }
-            }
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button {
-                        dismiss()
-                    } label: {
+                
+                
+                Button {
+                    dismiss()
+                } label: {
+                    HStack {
+                        Spacer()
                         Text("Dismiss")
+                        Spacer()
                     }
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
             }
-//            .opacity(viewStore.path.count > 0 ? 0 : 1)
-            .navigationTitle("Share")
+//            .navigationTitle("Share")
             .navigationDestination(for: Route.self) { route in
                 switch route {
                     case .exportImage:
@@ -69,38 +76,64 @@ struct ShareView: View {
                         ExportFileView(file: sharedFile)
                 }
             }
+            .padding(.horizontal, 40)
+            .toolbar(.hidden, for: .windowToolbar)
         }
         .frame(width: 400, height: 300)
+        .visualEffect(material: .sidebar)
     }
     
     @MainActor @ViewBuilder
-    private func squareButton<Label: View>(
-        action: @escaping () -> Void,
-        @ViewBuilder label: () -> Label
+    private func squareButton(
+        title: String,
+        icon: SFSymbol,
+        action: @escaping () -> Void
     ) -> some View {
         Button {
             action()
         } label: {
-            HStack {
-                label()
-                Spacer()
+            VStack {
+                Image(systemSymbol: icon)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(.horizontal, 10)
+                Text(title)
             }
-            .frame(width: nil, height: 50)
         }
-        .buttonStyle(ListButtonStyle())
+        .buttonStyle(ExportButtonStyle())
+    }
+}
+
+struct ExportButtonStyle: PrimitiveButtonStyle {
+    
+    @State private var isHovered = false
+    
+    let size: CGFloat = 86
+    
+    func makeBody(configuration: Configuration) -> some View {
+        PrimitiveButtonWrapper {
+            configuration.trigger()
+        } content: { isPressed in
+            configuration.label
+                .padding()
+                .frame(width: size, height: size)
+                .background {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(
+                            isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial)
+                        )
+                        .stroke(.separator, lineWidth: 0.5)
+                        .animation(.default, value: isHovered)
+                }
+                .contentShape(Rectangle())
+                .onHover { isHovered = $0 }
+        }
     }
 }
 
 #if DEBUG
-//#Preview {
-//    if #available(macOS 13.0, *) {
-//        return ShareView(
-//            store: .init(initialState: .init(currentFile: .preview)) {
-//                ShareStore()
-//            })
-//    } else {
-//        // Fallback on earlier versions
-//        return EmptyView()
-//    }
-//}
+#Preview {
+    ShareView(sharedFile: .preview)
+        .environmentObject(ExportState())
+}
 #endif

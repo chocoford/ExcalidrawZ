@@ -64,6 +64,8 @@ struct ExportFileView: View {
     
     @State private var fileContentString: String = ""
     
+    @State private var showBackButton = false
+    
     var body: some View {
         Center {
             if #available(macOS 13.0, *) {
@@ -86,8 +88,26 @@ struct ExportFileView: View {
                 .frame(width: 260)
             actionsView()
         }
+        .overlay(alignment: .topLeading) {
+            if showBackButton {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemSymbol: .chevronLeft)
+                }
+                .transition(
+                    .offset(x: -10).combined(with: .fade)
+                )
+            }
+        }
+        .animation(.default, value: showBackButton)
+        .padding()
         .onAppear {
             saveFileToTemp()
+            showBackButton = true
+        }
+        .onDisappear {
+            showBackButton = false
         }
     }
     
