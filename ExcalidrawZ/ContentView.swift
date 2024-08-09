@@ -18,8 +18,11 @@ struct ContentView: View {
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
     
     @StateObject private var fileState = FileState()
+    @StateObject private var exportState = ExportState()
     
     @State private var sharedFile: File?
+    
+    @State private var window: NSWindow?
     
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -34,7 +37,19 @@ struct ContentView: View {
         }
         .toolbar { toolbarContent() }
         .environmentObject(fileState)
+        .environmentObject(exportState)
         .swiftyAlert()
+        .bindWindow($window)
+        .onReceive(NotificationCenter.default.publisher(for: .shouldHandleImport)) { notification in
+            guard let url = notification.object as? URL else { return }
+            if window?.isKeyWindow == true {
+                do {
+                    try fileState.importFile(url)
+                } catch {
+                    alertToast(error)
+                }
+            }
+        }
         .onAppear {
             
         }

@@ -12,6 +12,10 @@ import SwiftyAlert
 import Sparkle
 #endif
 
+extension Notification.Name {
+    static let shouldHandleImport = Notification.Name("ShouldHandleImport")
+}
+
 @main
 @MainActor
 struct ExcalidrawZApp: App {
@@ -66,9 +70,7 @@ struct ExcalidrawZApp: App {
                     let panel = ExcalidrawOpenPanel.importPanel
                     if panel.runModal() == .OK {
                         if let url = panel.url {
-//                            store.send(.importFile(url))
-                        } else {
-//                            store.send(.setError(.fileError(.invalidURL)))
+                            NotificationCenter.default.post(name: .shouldHandleImport, object: url)
                         }
                     }
                 } label: {

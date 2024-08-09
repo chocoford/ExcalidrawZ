@@ -49,7 +49,12 @@ struct ExcalidrawFileDocument: Transferable {
 }
 
 struct ExportFileView: View {
+    @Environment(\.dismiss) var dismiss
+    @Environment(\.alertToast) var alertToast
+    
     var file: File
+    
+    @State private var fileURL: URL?
     
     @State private var loadingImage: Bool = false
     @State private var showFileExporter = false
@@ -91,21 +96,21 @@ struct ExportFileView: View {
         HStack {
             Spacer()
             Button {
-//                NSPasteboard.general.clearContents()
-//                if let url = viewStore.url,
-//                   let url = (url as NSURL).fileReferenceURL() as NSURL? {
-//                    NSPasteboard.general.writeObjects([url])
-//                    NSPasteboard.general.setString(url.relativeString, forType: .fileURL)
-//                    NSPasteboard.general.setData(viewStore.file.content, forType: .fileContents)
-//                    withAnimation {
-//                        copied = true
-//                    }
-//                    Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { _ in
-//                        withAnimation {
-//                            copied = false
-//                        }
-//                    }
-//                }
+                NSPasteboard.general.clearContents()
+                if let url = fileURL,
+                   let url = (url as NSURL).fileReferenceURL() as NSURL? {
+                    NSPasteboard.general.writeObjects([url])
+                    NSPasteboard.general.setString(url.relativeString, forType: .fileURL)
+                    NSPasteboard.general.setData(file.content, forType: .fileContents)
+                    withAnimation {
+                        copied = true
+                    }
+                    Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { _ in
+                        withAnimation {
+                            copied = false
+                        }
+                    }
+                }
             } label: {
                 if copied {
                     Label("Copied", systemImage: "checkmark")
@@ -142,45 +147,42 @@ struct ExportFileView: View {
             
             Spacer()
         }
-//        .fileExporter(isPresented: $showFileExporter,
-//                      document: TextFile(viewStore.file.content),
-//                      contentType: .text,
-//                      defaultFilename: fileName + ".excalidraw",
-//                      onCompletion: { result in
-//            switch result {
-//                case .success:
-//                    self.store.send(.dismiss)
-//                case .failure(let failure):
-//                    self.store.send(.setError(.unexpected(.init(failure))))
-//            }
-//        })
+        .fileExporter(
+            isPresented: $showFileExporter,
+                      document: TextFile(file.content),
+                      contentType: .text,
+                      defaultFilename: fileName + ".excalidraw",
+                      onCompletion: { result in
+            switch result {
+                case .success:
+                    alertToast(.init(displayMode: .hud, type: .complete(.green), title: "Saved"))
+                case .failure(let failure):
+                    alertToast(failure)
+            }
+        })
     }
     
     
     func saveFileToTemp() {
-//        self.store.withState { state in
-//            // save file to temp folder
-//            do {
-//                let fileManager: FileManager = FileManager.default
-//                guard let directory: URL = try getTempDirectory() else { return }
-//                let fileExtension = "excalidraw"
-//                let filename = (state.file.name ?? "Untitled") + ".\(fileExtension)"
-//                let url = directory.appendingPathComponent(filename, conformingTo: .fileURL)
-//                if fileManager.fileExists(atPath: url.absoluteString) {
-//                    try fileManager.removeItem(at: url)
-//                }
-//                if #available(macOS 13.0, *) {
-//                    fileManager.createFile(atPath: url.path(percentEncoded: false), contents: state.file.content)
-//                } else {
-//                    fileManager.createFile(atPath: url.path, contents: state.file.content)
-//                }
-//                self.store.send(.setURL(url))
-//                
-//            } catch {
-//                self.store.send(.setError(.init(error)))
-//            }
-//        }
-        
+        do {
+            let fileManager: FileManager = FileManager.default
+            guard let directory: URL = try getTempDirectory() else { return }
+            let fileExtension = "excalidraw"
+            let filename = (file.name ?? "Untitled") + ".\(fileExtension)"
+            let url = directory.appendingPathComponent(filename, conformingTo: .fileURL)
+            if fileManager.fileExists(atPath: url.absoluteString) {
+                try fileManager.removeItem(at: url)
+            }
+            if #available(macOS 13.0, *) {
+                fileManager.createFile(atPath: url.path(percentEncoded: false), contents: file.content)
+            } else {
+                fileManager.createFile(atPath: url.path, contents: file.content)
+            }
+            fileURL = url
+//            self.store.send(.setURL(url))
+        } catch {
+            alertToast(error)
+        }
     }
 }
 

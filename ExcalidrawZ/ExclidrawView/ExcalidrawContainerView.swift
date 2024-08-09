@@ -9,6 +9,7 @@ import SwiftUI
 import ChocofordUI
 
 struct ExcalidrawContainerView: View {
+    @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
 
     @Environment(\.colorScheme) var colorScheme
@@ -17,13 +18,15 @@ struct ExcalidrawContainerView: View {
     
     @State private var isLoading = true
     @State private var resotreAlertIsPresented = false
-
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .center) {
-                ExcalidrawWebView(isLoading: $isLoading)
-                    .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
-                    .opacity(isLoading ? 0 : 1)
+                ExcalidrawWebView(isLoading: $isLoading) {
+                    alertToast($0)
+                }
+                .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
+                .opacity(isLoading ? 0 : 1)
                 
                 if isLoading {
                     VStack {

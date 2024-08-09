@@ -61,13 +61,13 @@ struct ShareView: View {
             }
 //            .opacity(viewStore.path.count > 0 ? 0 : 1)
             .navigationTitle("Share")
-        }
-        .navigationDestination(for: Route.self) { route in
-            switch route {
-                case .exportImage:
-                    ExportImageView()
-                case .exportFile:
-                    ExportFileView(file: sharedFile)
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                    case .exportImage:
+                        ExportImageView()
+                    case .exportFile:
+                        ExportFileView(file: sharedFile)
+                }
             }
         }
         .frame(width: 400, height: 300)

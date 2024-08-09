@@ -34,8 +34,7 @@ extension ExcalidrawWebView.Coordinator: WKScriptMessageHandler {
                     try self.handleCopy(message.data)
             }
         } catch {
-//            logger.error("\(error)")
-            dump(error)
+            self.parent.onError(error)
         }
     }
 }

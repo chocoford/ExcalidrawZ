@@ -11,6 +11,10 @@ import UniformTypeIdentifiers
 import WebKit
 
 struct ExportImageView: View {
+    @Environment(\.dismiss) var dismiss
+    @Environment(\.alertToast) var alertToast
+    
+    @EnvironmentObject var exportState: ExportState
     
     @State private var image: NSImage? = nil
     @State private var loadingImage: Bool = false
@@ -29,7 +33,7 @@ struct ExportImageView: View {
                     Spacer()
                     
                     Button {
-//                        self.store.send(.dismiss)
+                        dismiss()
                     } label: {
                         Image(systemName: "xmark")
                             .padding(8)
@@ -44,58 +48,63 @@ struct ExportImageView: View {
         }
         .padding()
         .onAppear {
-//            self.store.send(.delegate(.onAppear))
+            Task {
+                do {
+                    try await exportState.requestExport(type: .image)
+                } catch {
+                    alertToast(error)
+                }
+            }
         }
     }
     
     @ViewBuilder
     private var content: some View {
-        EmptyView()
-//        VStack {
-//            if let image = image, let url = store.state.url {
-//                thumbnailView(image, url: url)
-//                fileInfoView
-//                actionsView(url)
-//            } else if hasError {
-//                Text("Loading image failed.")
-//                    .foregroundColor(.red)
-//            } else {
-//                ProgressView {
-//                }
-//                Text("Loading...")
-//                
-//                Button {
-//                    store.send(.cancelExport)
-//                    store.send(.dismiss)
-//                } label: {
-//                    Text("Cancel")
-//                }
-//                .offset(y: 40)
-//            }
-//        }
-//        .watchImmediately(of: store.state.url) { url in
-//            guard let url = url else { return }
-//            DispatchQueue.main.asyncAfter(deadline: .now().advanced(by: .milliseconds(500))) {
-//                guard let image = NSImage(contentsOf: url) else {
-//                    hasError = true
-//                    return
-//                }
-//                self.image = image.resizeWhileMaintainingAspectRatioToSize(size: .init(width: 200, height: 120))
-//            }
-//            fileName = url.lastPathComponent.components(separatedBy: ".").first ?? "Untitled"
-//        }
-//        .onDisappear {
-//            if let url = store.url {
-//                try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
-//            }
-//            hasError = false
-//        }
+        VStack {
+            if let image = image, let url = exportState.url {
+                thumbnailView(image, url: url)
+                fileInfoView
+                actionsView(url)
+            } else if hasError {
+                Text("Loading image failed.")
+                    .foregroundColor(.red)
+            } else {
+                ProgressView {
+                }
+                Text("Loading...")
+                
+                Button {
+                    dismiss()
+                } label: {
+                    Text("Cancel")
+                }
+                .offset(y: 40)
+            }
+        }
+        .watchImmediately(of: exportState.status) { status in
+            guard status == .finish, let url = exportState.url else { return }
+            guard let image = NSImage(contentsOf: url) else {
+                hasError = true
+                return
+            }
+            self.image = image.resizeWhileMaintainingAspectRatioToSize(size: .init(width: 200, height: 120))
+            fileName = url.lastPathComponent.components(separatedBy: ".").first ?? "Untitled"
+        }
+        .onDisappear {
+            if let url = exportState.url {
+                try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+            }
+            exportState.status = .notRequested
+            hasError = false
+        }
     }
     
     
     @ViewBuilder private func thumbnailView(_ image: NSImage, url: URL) -> some View {
-        DragableImageView(image: image,
-                          sourceURL: url)
+        DragableImageView(
+            image: image,
+            sourceURL: url
+        )
         .frame(width: 200, height: 120, alignment: .center)
     }
     

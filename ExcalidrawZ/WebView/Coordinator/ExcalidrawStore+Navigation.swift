@@ -67,7 +67,7 @@ extension ExcalidrawWebView.Coordinator: WKNavigationDelegate {
             do {
                 try await self.loadFile(from: parent.fileState.currentFile)
             } catch {
-                print(error)
+                self.parent.onError(error)
             }
         }
     }
@@ -83,6 +83,7 @@ extension ExcalidrawWebView.Coordinator: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        logger.error("didFailProvisionalNavigation: \(error)")
+//        logger.error("didFailProvisionalNavigation: \(error)")
+        self.parent.onError(error)
     }
 }

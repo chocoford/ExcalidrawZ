@@ -29,10 +29,7 @@ extension ExcalidrawWebView.Coordinator: WKDownloadDelegate {
         guard let request = download.originalRequest,
               let url = downloads[request] else { return }
         logger.info("download did finished: \(url)")
-//        self.parent.store.send(.delegate(.onExportDone))
-//        if self.parent.store.state.exportingState != nil {
-//            self.parent.store.send(.setExportingState(.init(url: url, download: download, done: true)))
-//        }
+        self.parent.exportState.finishExport(download: download)
         downloads.removeValue(forKey: request)
     }
     
@@ -43,10 +40,8 @@ extension ExcalidrawWebView.Coordinator: WKDownloadDelegate {
             guard var directory: URL = try getTempDirectory() else { return nil }
             directory = directory.appendingPathComponent("file_downloads", conformingTo: .directory)
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-            
-            
         } catch {
-//            self.parent.store.send(.setError(.init(error)))
+            self.parent.onError(error)
         }
         return nil
     }
@@ -57,7 +52,7 @@ extension ExcalidrawWebView.Coordinator: WKDownloadDelegate {
         do {
             guard let directory: URL = try getTempDirectory() else { return nil }
             let fileExtension = suggestedFilename.components(separatedBy: ".").last ?? "png"
-            let fileName = "" // self.parent.store.withState{$0}.currentFile?.name?.appending(".\(fileExtension)") ?? suggestedFilename
+            let fileName = self.parent.fileState.currentFile?.name?.appending(".\(fileExtension)") ?? suggestedFilename
             let url = directory.appendingPathComponent(fileName, conformingTo: .image)
             if fileManager.fileExists(atPath: url.absoluteString) {
                 try fileManager.removeItem(at: url)
@@ -67,19 +62,9 @@ extension ExcalidrawWebView.Coordinator: WKDownloadDelegate {
                 self.downloads[request] = url;
             }
             
-//            self.parent.store.send(
-//                .delegate(
-//                    .onBeginExport(
-//                        .init(
-//                            url: url, download: download
-//                        )
-//                    )
-//                )
-//            )
-            
+            self.parent.exportState.beginExport(url: url, download: download)
             return url;
         } catch {
-//            self.parent.store.send(.setError(.init(error)))
             return nil
         }
     }

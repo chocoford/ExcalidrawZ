@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import WebKit
 
 import ChocofordUI
 
@@ -70,7 +71,6 @@ final class AppPreference: ObservableObject {
     }
 }
 
-
 final class FileState: ObservableObject {
     var stateUpdateQueue: DispatchQueue = DispatchQueue(label: "StateUpdateQueue")
     @Published var currentGroup: Group?
@@ -97,9 +97,11 @@ final class FileState: ObservableObject {
         currentGroup = group
     }
     func createNewFile(active: Bool = true) throws {
-        guard let currentGroup else { return }
+        guard let currentGroup else { throw AppError.stateError(.currentGroupNil) }
         let file = try PersistenceController.shared.createFile(in: currentGroup)
-        currentFile = file
+        if active {
+            currentFile = file
+        }
     }
     
     func updateCurrentFileData(data: Data) {
@@ -116,8 +118,26 @@ final class FileState: ObservableObject {
         }
     }
     
+    func importFile(_ url: URL) throws {
+        guard url.pathExtension == "excalidraw" else { throw AppError.fileError(.invalidURL) }
+        // .uncached fixes the import bug occurs in x86 mac OS
+        let data = try Data(contentsOf: url, options: .uncached)
+        guard let currentGroup else { throw AppError.stateError(.currentGroupNil) }
+        let file = try PersistenceController.shared.createFile(in: currentGroup)
+        file.name = url.deletingPathExtension().lastPathComponent
+        file.content = data
+        PersistenceController.shared.save()
+        DispatchQueue.main.async {
+            self.currentFile = file
+        }
+    }
+    
     func renameFile(_ file: File, newName: String) {
         file.name = newName
+    }
+    
+    func renameGroup(_ group: Group, newName: String) {
+        group.name = newName
     }
     
     func moveFile(_ file: File, to group: Group) {
@@ -151,6 +171,67 @@ final class FileState: ObservableObject {
         PersistenceController.shared.save()
         if file == currentFile {
             currentFile = nil
+        }
+    }
+    
+    func deleteGroup(_ group: Group) throws {
+        if group.groupType == .trash {
+            let files = try PersistenceController.shared.listTrashedFiles()
+            files.forEach { PersistenceController.shared.container.viewContext.delete($0) }
+        } else {
+            guard let defaultGroup = try PersistenceController.shared.getDefaultGroup() else { throw AppError.fileError(.notFound) }
+            let groupFiles: [File] = group.files?.allObjects as? [File] ?? []
+            for file in groupFiles {
+                file.inTrash = true
+                file.deletedAt = .now
+                file.group = defaultGroup
+            }
+            PersistenceController.shared.container.viewContext.delete(group)
+        }
+        PersistenceController.shared.save()
+        
+        if group == currentGroup {
+            currentGroup = nil
+        }
+    }
+}
+
+final class ExportState: ObservableObject {
+    enum Status {
+        case notRequested
+        case loading
+        case finish
+    }
+    
+    var excalidrawWebCoordinator: ExcalidrawWebView.Coordinator?
+    
+    @Published var status: Status = .notRequested
+    var download: WKDownload?
+    var url: URL?
+    
+    
+    enum ExportType {
+        case image, file
+    }
+    func requestExport(type: ExportType) async throws {
+        switch type {
+            case .image:
+                  try await excalidrawWebCoordinator?.exportPNG()
+            case .file:
+                break
+        }
+    }
+    
+    
+    func beginExport(url: URL, download: WKDownload) {
+        self.status = .loading
+        self.url = url
+        self.download = download
+    }
+    
+    func finishExport(download: WKDownload) {
+        if download == self.download {
+            self.status = .finish
         }
     }
 }

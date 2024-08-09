@@ -41,9 +41,17 @@ struct GroupInfo: Equatable {
 }
 
 struct GroupRowView: View {
+    @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
     var group: Group
+    
+    init(group: Group) {
+        self.group = group
+    }
+    
+    @State private var isDeleteConfirmPresented = false
+    @State private var isRenameSheetPresented = false
     
     var isSelected: Bool { fileState.currentGroup == group }
 
@@ -77,19 +85,26 @@ struct GroupRowView: View {
         }
         .buttonStyle(ListButtonStyle(selected: isSelected))
         .contextMenu { contextMenuView }
-//        .confirmationDialog(
-//            self.store.scope(state: \.deleteConfirmation, action: { $0 }),
-//            dismiss: .deleteCancel
-//        )
-//        .confirmationDialog(
-//            self.store.scope(state: \.emptyTrashConfirmation, action: { $0 }),
-//            dismiss: .emptyTrashCancel
-//        )
-//        .sheet(isPresented: viewStore.$isRenameSheetPresent) {
-//            RenameSheetView(text: viewStore.group.name) { newName in
-//                viewStore.send(.renameCurrentGroup(newName))
-//            }
-//        }
+        .confirmationDialog(
+            group.groupType == .trash ? "Are you sure you want to permanently erase the items in the Trash?" :  "Are you sure to delete the folder \(group.name ?? "Untitled")?",
+            isPresented: $isDeleteConfirmPresented
+        ) {
+            Button(group.groupType == .trash ? "Empty Trash" :  "Delete", role: .destructive) {
+                // Handle empty trash action.
+                do {
+                    try fileState.deleteGroup(group)
+                } catch {
+                    alertToast(error)
+                }
+            }
+        } message: {
+            Text("You can’t undo this action.")
+        }
+        .sheet(isPresented: $isRenameSheetPresented) {
+            RenameSheetView(text: group.name ?? "") { newName in
+                fileState.renameGroup(group, newName: newName)
+            }
+        }
     }
     
 }
@@ -116,25 +131,25 @@ extension GroupRowView {
         ZStack {
             if group.groupType == .normal {
                 Button {
-
+                    isRenameSheetPresented.toggle()
                 } label: {
                     Label("rename", systemImage: "pencil.line")
                 }
                 
                 Button(role: .destructive) {
-
+                    isDeleteConfirmPresented.toggle()
                 } label: {
                     Label("delete", systemImage: "trash")
                 }
             } else if group.groupType == .trash {
                 Button(role: .destructive) {
-
+                    isDeleteConfirmPresented.toggle()
                 } label: {
                     Label("empty", systemImage: "trash")
                 }
             } else if group.groupType == .default {
                 Button {
-
+                    isRenameSheetPresented.toggle()
                 } label: {
                     Label("rename", systemImage: "pencil.line")
                 }

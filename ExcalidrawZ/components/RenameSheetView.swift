@@ -51,6 +51,7 @@ struct RenameSheetView: View {
                     Text("OK")
                         .frame(width: 50)
                 }
+                .disabled(text.isEmpty)
             }
         }
         .labelsHidden()
