@@ -1,5 +1,5 @@
 {
-  "originHash" : "69f918f1352bb5083d7f5ded3e0c44225c6759a1846c022f2edd3edd82bd684b",
+  "originHash" : "3a3c6d7efe8211e4015b7ea2e495640513ee66a27fac6e3d081e2577684fc0ca",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -92,15 +92,6 @@
       }
     },
     {
-      "identity" : "swifter",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/httpswift/swifter.git",
-      "state" : {
-        "revision" : "9483a5d459b45c3ffd059f7b55f9638e268632fd",
-        "version" : "1.5.0"
-      }
-    },
-    {
       "identity" : "swiftui-cached-async-image",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lorenzofiamingo/swiftui-cached-async-image.git",
@@ -142,7 +133,7 @@
       "location" : "https://github.com/chocoford/SwiftyAlert.git",
       "state" : {
         "branch" : "dev",
-        "revision" : "020d1c9333674561606dacfb7c976f4984058474"
+        "revision" : "da024f601b628afbdec09f0bb0a476eaea24a9fd"
       }
     }
   ],

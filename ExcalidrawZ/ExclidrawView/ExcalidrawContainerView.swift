@@ -24,6 +24,7 @@ struct ExcalidrawContainerView: View {
             ZStack(alignment: .center) {
                 ExcalidrawView(isLoading: $isLoading) {
                     alertToast($0)
+                    print($0)
                 }
                 .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
                 .opacity(isLoading ? 0 : 1)
@@ -41,6 +42,11 @@ struct ExcalidrawContainerView: View {
             }
             .transition(.opacity)
             .animation(.default, value: isLoading)
+//            .toolbar {
+//                ToolbarItemGroup(placement: .status) {
+//
+//                }
+//            }
         }
     }
     

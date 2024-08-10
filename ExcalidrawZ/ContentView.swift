@@ -31,7 +31,7 @@ struct ContentView: View {
         } detail: {
             ExcalidrawContainerView()
         }
-        .navigationTitle("")
+//        .navigationTitle("")
         .sheet(item: $sharedFile) {
             ShareView(sharedFile: $0)
         }
@@ -76,8 +76,31 @@ extension ContentView {
     @ToolbarContentBuilder
     private func toolbarContent_macOS() -> some ToolbarContent {
         ToolbarItemGroup(placement: .status) {
-            Text(fileState.currentFile?.name ?? "Untitled")
-                .frame(width: 200)
+            Picker(selection: .constant("")) {
+                Image(systemSymbol: .handRaised)
+                
+                ZStack {
+                    Image(systemSymbol: .cursorarrow)
+                        .overlay(alignment: .bottomTrailing) {
+                            Text("1")
+                        }
+                }
+                .drawingGroup()
+                
+                Text("2")
+                Text("3")
+                Text("4")
+            } label: {
+                
+            }
+                .pickerStyle(.segmented)
+//            Button {
+//                
+//            } label: {
+//                Text("Button")
+//            }
+//            Text(fileState.currentFile?.name ?? "Untitled")
+//                .frame(width: 200)
         }
         
         ToolbarItemGroup(placement: .navigation) {

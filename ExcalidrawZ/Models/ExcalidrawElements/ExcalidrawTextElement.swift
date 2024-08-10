@@ -24,7 +24,6 @@ protocol ExcalidrawTextElementBase: ExcalidrawElementBase {
     var fontSize: Double { get }
     var fontFamily: FontFamily { get }
     var text: String { get }
-    var baseline: Double { get }
     var textAlign: TextAlign { get }
     var verticalAlign: VerticalAlign { get }
     var containerId: ExcalidrawGenericElement.ID? { get }
@@ -68,7 +67,6 @@ struct ExcalidrawTextElement: ExcalidrawTextElementBase {
     var fontSize: Double
     var fontFamily: FontFamily
     var text: String
-    var baseline: Double
     var textAlign: TextAlign
     var verticalAlign: VerticalAlign
     var containerId: ExcalidrawGenericElement.ID?

@@ -8,6 +8,7 @@
 import SwiftUI
 import WebKit
 import Combine
+import os.log
 
 import ChocofordUI
 
@@ -73,6 +74,8 @@ final class AppPreference: ObservableObject {
 }
 
 final class FileState: ObservableObject {
+    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "FileState")
+    
     var stateUpdateQueue: DispatchQueue = DispatchQueue(label: "StateUpdateQueue")
     
     var currentGroupPublisherCancellables: [AnyCancellable] = []
@@ -134,6 +137,7 @@ final class FileState: ObservableObject {
     
     func updateCurrentFileData(data: Data) {
         guard !shouldIgnoreUpdate || currentFile?.inTrash != true else { return }
+        logger.info("\(#function) data: \(data)")
         do {
             if let file = currentFile {
                 try file.updateElements(with: data, newCheckpoint: !didUpdateFile)

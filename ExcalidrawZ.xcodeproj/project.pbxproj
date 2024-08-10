@@ -29,7 +29,6 @@
 		394A7FAF2C515CB700D4918B /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394A7FAE2C515CB700D4918B /* RootView.swift */; };
 		394A7FB32C51621A00D4918B /* ExcalidrawFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394A7FB22C51621A00D4918B /* ExcalidrawFile.swift */; };
 		396661302C665D4300F863BC /* excalidraw-latest in Resources */ = {isa = PBXBuildFile; fileRef = 3966612F2C665D3E00F863BC /* excalidraw-latest */; };
-		3966623A2C6667C600F863BC /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = 396662392C6667C600F863BC /* Swifter */; };
 		3966623C2C66686A00F863BC /* ExcalidrawServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3966623B2C66686A00F863BC /* ExcalidrawServer.swift */; };
 		3966623F2C666EC600F863BC /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = 3966623E2C666EC600F863BC /* FlyingFox */; };
 		397E4657295838CF003B824B /* ExcalidrawZApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4656295838CF003B824B /* ExcalidrawZApp.swift */; };
@@ -193,7 +192,6 @@
 				3930B2FA2C512E7B00F14E88 /* ChocofordUI in Frameworks */,
 				3914876D2960AFD10042927A /* Sparkle in Frameworks */,
 				3930B2FF2C51371B00F14E88 /* ChocofordUI in Frameworks */,
-				3966623A2C6667C600F863BC /* Swifter in Frameworks */,
 				3966623F2C666EC600F863BC /* FlyingFox in Frameworks */,
 				3930B2FD2C51371B00F14E88 /* ChocofordEssentials in Frameworks */,
 				3930B2F82C512E7B00F14E88 /* ChocofordEssentials in Frameworks */,
@@ -468,7 +466,6 @@
 				3930B2F92C512E7B00F14E88 /* ChocofordUI */,
 				3930B2FC2C51371B00F14E88 /* ChocofordEssentials */,
 				3930B2FE2C51371B00F14E88 /* ChocofordUI */,
-				396662392C6667C600F863BC /* Swifter */,
 				3966623E2C666EC600F863BC /* FlyingFox */,
 			);
 			productName = ExcaliDrawZ;
@@ -546,7 +543,6 @@
 			packageReferences = (
 				3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */,
 				3930B2FB2C51371B00F14E88 /* XCRemoteSwiftPackageReference "ChocofordKit" */,
-				396662382C6667C600F863BC /* XCRemoteSwiftPackageReference "swifter" */,
 				3966623D2C666EC600F863BC /* XCRemoteSwiftPackageReference "FlyingFox" */,
 			);
 			productRefGroup = 397E4654295838CF003B824B /* Products */;
@@ -1042,14 +1038,6 @@
 				kind = branch;
 			};
 		};
-		396662382C6667C600F863BC /* XCRemoteSwiftPackageReference "swifter" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/httpswift/swifter.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.0;
-			};
-		};
 		3966623D2C666EC600F863BC /* XCRemoteSwiftPackageReference "FlyingFox" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/swhitty/FlyingFox.git";
@@ -1083,11 +1071,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3930B2FB2C51371B00F14E88 /* XCRemoteSwiftPackageReference "ChocofordKit" */;
 			productName = ChocofordUI;
-		};
-		396662392C6667C600F863BC /* Swifter */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 396662382C6667C600F863BC /* XCRemoteSwiftPackageReference "swifter" */;
-			productName = Swifter;
 		};
 		3966623E2C666EC600F863BC /* FlyingFox */ = {
 			isa = XCSwiftPackageProductDependency;

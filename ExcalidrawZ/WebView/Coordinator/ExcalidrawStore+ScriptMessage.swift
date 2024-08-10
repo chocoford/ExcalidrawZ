@@ -32,6 +32,10 @@ extension ExcalidrawView.Coordinator: WKScriptMessageHandler {
                     try self.handleBlobData(message.data)
                 case .onCopy(let message):
                     try self.handleCopy(message.data)
+                case .onFocus:
+                    self.webView.shouldHandleInput = false
+                case .onBlur:
+                    self.webView.shouldHandleInput = true
             }
         } catch {
             self.parent.onError(error)
@@ -101,6 +105,8 @@ extension ExcalidrawView.Coordinator {
         case saveFileDone
         case blobData
         case copy
+        case onFocus
+        case onBlur
     }
     
     enum ExcalidrawZMessage: Codable {
@@ -108,6 +114,8 @@ extension ExcalidrawView.Coordinator {
         case saveFileDone(SaveFileDoneMessage)
         case blobData(BlobDataMessage)
         case onCopy(CopyMessage)
+        case onFocus
+        case onBlur
         
         enum CodingKeys: String, CodingKey {
             case eventType = "event"
@@ -126,6 +134,10 @@ extension ExcalidrawView.Coordinator {
                     self = .blobData(try BlobDataMessage(from: decoder))
                 case .copy:
                     self = .onCopy(try CopyMessage(from: decoder))
+                case .onFocus:
+                    self = .onFocus
+                case .onBlur:
+                    self = .onBlur
             }
             
         }
@@ -166,7 +178,7 @@ extension ExcalidrawView.Coordinator {
         let scrolledOutside: Bool
         let scrollX, scrollY: Double
         let selectedElementIDS, selectedGroupIDS: IDS
-        let shouldCacheIgnoreZoom, showStats: Bool
+        let shouldCacheIgnoreZoom: Bool
         let viewBackgroundColor: String
         let zenModeEnabled: Bool
         let zoom: Zoom
@@ -180,7 +192,7 @@ extension ExcalidrawView.Coordinator {
             case scrolledOutside, scrollX, scrollY
             case selectedElementIDS = "selectedElementIds"
             case selectedGroupIDS = "selectedGroupIds"
-            case shouldCacheIgnoreZoom, showStats, viewBackgroundColor, zenModeEnabled, zoom
+            case shouldCacheIgnoreZoom, viewBackgroundColor, zenModeEnabled, zoom
             
 //            case currentItemStartArrowhead, gridSize, openMenu, openSidebar, selectedLinearElement
 //            case editingGroupID = "editingGroupId"

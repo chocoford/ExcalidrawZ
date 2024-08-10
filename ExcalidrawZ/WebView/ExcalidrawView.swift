@@ -13,6 +13,7 @@ import OSLog
 import QuartzCore
 
 class ExcalidrawWebView: WKWebView {
+    var shouldHandleInput = false
     var toolbarActionHandler: (Int) -> Void
     
     init(
@@ -27,7 +28,8 @@ class ExcalidrawWebView: WKWebView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     
     override func keyDown(with event: NSEvent) {
-        if let char = event.characters,
+        if shouldHandleInput,
+           let char = event.characters,
            let num = Int(char), num >= 0, num <= 9 {
             self.toolbarActionHandler(num)
         } else {
