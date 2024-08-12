@@ -2,13 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>UIAppFonts</key>
-	<array>
-		<string>Cascadia</string>
-		<string>Virgil</string>
-		<string>Cangnanshoujiti</string>
-		<string>KaiTi</string>
-	</array>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -18,6 +11,10 @@
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
 			<string>Default</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.chocoford.excalidrawFile</string>
+			</array>
 		</dict>
 	</array>
 	<key>SUEnableInstallerLauncherService</key>
@@ -26,5 +23,46 @@
 	<string>https://excalidrawz.web.app/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>GVyyXynnnx8V+9I0OUy/rNRJen+ZFzRd6YhJYuaInbw=</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Cascadia</string>
+		<string>Virgil</string>
+		<string>Cangnanshoujiti</string>
+		<string>KaiTi</string>
+	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array/>
+			<key>UTTypeIcons</key>
+			<dict/>
+			<key>UTTypeIdentifier</key>
+			<string>com.chocoford.excalidrawFile</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>excalidraw</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>UTImportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIcons</key>
+			<dict/>
+			<key>UTTypeIdentifier</key>
+			<string>com.chocoford.excalidrawFile</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>excalidraw</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
 </dict>
 </plist>

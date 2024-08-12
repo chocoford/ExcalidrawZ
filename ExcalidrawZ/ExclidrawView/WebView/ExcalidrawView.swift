@@ -44,6 +44,7 @@ struct ExcalidrawView {
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var exportState: ExportState
+    @EnvironmentObject var toolState: ToolState
 
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "WebView")
     
@@ -68,7 +69,7 @@ extension ExcalidrawView: NSViewRepresentable {
         let webView = context.coordinator.webView
         context.coordinator.parent = self
         exportState.excalidrawWebCoordinator = context.coordinator
-        
+        fileState.excalidrawWebCoordinator = context.coordinator
         guard !webView.isLoading else { return }
         Task {
             do {
@@ -86,6 +87,15 @@ extension ExcalidrawView: NSViewRepresentable {
                 try await context.coordinator.loadFile(from: fileState.currentFile)
             } catch {
                 self.onError(error)
+            }
+        }
+        if context.coordinator.lastTool != toolState.activatedTool {
+            Task {
+                do {
+                    try await context.coordinator.toggleToolbarAction(key: toolState.activatedTool?.rawValue ?? 1)
+                } catch {
+                    self.onError(error)
+                }
             }
         }
     }

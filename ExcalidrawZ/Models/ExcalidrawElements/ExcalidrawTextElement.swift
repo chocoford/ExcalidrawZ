@@ -22,7 +22,7 @@ enum VerticalAlign: String, Codable {
 
 protocol ExcalidrawTextElementBase: ExcalidrawElementBase {
     var fontSize: Double { get }
-    var fontFamily: FontFamily { get }
+    var fontFamily: Int { get }
     var text: String { get }
     var textAlign: TextAlign { get }
     var verticalAlign: VerticalAlign { get }
@@ -65,7 +65,7 @@ struct ExcalidrawTextElement: ExcalidrawTextElementBase {
     var customData: [String : AnyCodable]?
     
     var fontSize: Double
-    var fontFamily: FontFamily
+    var fontFamily: Int
     var text: String
     var textAlign: TextAlign
     var verticalAlign: VerticalAlign

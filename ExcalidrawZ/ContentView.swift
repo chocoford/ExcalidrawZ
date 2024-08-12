@@ -19,6 +19,7 @@ struct ContentView: View {
     
     @StateObject private var fileState = FileState()
     @StateObject private var exportState = ExportState()
+    @StateObject private var toolState = ToolState()
     
     @State private var sharedFile: File?
     
@@ -30,14 +31,17 @@ struct ContentView: View {
                 .toolbar(content: navigationToolbar)
         } detail: {
             ExcalidrawContainerView()
+                .navigationTitle("")
         }
-//        .navigationTitle("")
+//        .toolbar(removing: .sidebarToggle) <-- not working
         .sheet(item: $sharedFile) {
             ShareView(sharedFile: $0)
+                .swiftyAlert()
         }
         .toolbar { toolbarContent() }
         .environmentObject(fileState)
         .environmentObject(exportState)
+        .environmentObject(toolState)
         .swiftyAlert()
         .bindWindow($window)
         .onReceive(NotificationCenter.default.publisher(for: .shouldHandleImport)) { notification in
@@ -49,9 +53,6 @@ struct ContentView: View {
                     alertToast(error)
                 }
             }
-        }
-        .onAppear {
-            
         }
     }
 }
@@ -76,46 +77,19 @@ extension ContentView {
     @ToolbarContentBuilder
     private func toolbarContent_macOS() -> some ToolbarContent {
         ToolbarItemGroup(placement: .status) {
-            Picker(selection: .constant("")) {
-                Image(systemSymbol: .handRaised)
-                
-                ZStack {
-                    Image(systemSymbol: .cursorarrow)
-                        .overlay(alignment: .bottomTrailing) {
-                            Text("1")
-                        }
-                }
-                .drawingGroup()
-                
-                Text("2")
-                Text("3")
-                Text("4")
-            } label: {
-                
-            }
-                .pickerStyle(.segmented)
-//            Button {
-//                
-//            } label: {
-//                Text("Button")
-//            }
-//            Text(fileState.currentFile?.name ?? "Untitled")
-//                .frame(width: 200)
+            ExcalidrawToolbar()
         }
         
         ToolbarItemGroup(placement: .navigation) {
-            // create
-            Button {
-                do {
-                    try fileState.createNewFile()
-                } catch {
-                    alertToast(error)
+            if let file = fileState.currentFile {
+                VStack(alignment: .leading) {
+                    Text(file.name ?? "Untitled")
+                        .font(.headline)
+                    Text(file.createdAt?.formatted() ?? "Not modified")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
-            } label: {
-                Image(systemName: "square.and.pencil")
             }
-            .help("New draw")
-            .disabled(fileState.currentGroup?.groupType == .trash)
         }
 
         ToolbarItemGroup(placement: .automatic) {
@@ -145,6 +119,22 @@ extension ContentView {
     @ToolbarContentBuilder
     private func navigationToolbar() -> some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
+            // create
+            Button {
+                do {
+                    try fileState.createNewFile()
+                } catch {
+                    alertToast(error)
+                }
+            } label: {
+                Image(systemName: "square.and.pencil")
+            }
+            .help("New draw")
+            .disabled(fileState.currentGroup?.groupType == .trash)
+        }
+        
+        
+        ToolbarItemGroup(placement: .destructiveAction) {
             HStack(spacing: 0) {
                 if #available(macOS 15.0, *) {
                     // Do not show the toggle..
@@ -206,8 +196,24 @@ extension ContentView {
                     }
                     .buttonStyle(.borderless)
                 }
-                
             }
+        }
+//        ToolbarItemGroup(placement: .confirmationAction) {
+//            Color.blue.frame(width: 10, height: 10)
+//        }
+//        ToolbarItemGroup(placement: .status) {
+//            Color.yellow.frame(width: 10, height: 10)
+//        }
+//        ToolbarItemGroup(placement: .principal) {
+//            Color.green.frame(width: 10, height: 10)
+//        }
+//                
+//        ToolbarItemGroup(placement: .cancellationAction) {
+//            Color.red.frame(width: 10, height: 10)
+//        }
+//        
+        ToolbarItemGroup(placement: .secondaryAction) {
+            Color.clear
         }
     }
 }

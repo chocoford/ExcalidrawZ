@@ -94,9 +94,16 @@ final class FileState: ObservableObject {
     }
     @Published var currentFile: File? {
         didSet {
-            recoverWatchUpdate.cancel()
+            recoverWatchUpdate?.cancel()
+            recoverWatchUpdate = DispatchWorkItem(flags: .assignCurrentContext) {
+                print("recoverWatchUpdate: \(Date.now.timeIntervalSince1970)")
+                self.shouldIgnoreUpdate = false
+                self.didUpdateFile = false
+            }
+            
             shouldIgnoreUpdate = true
-            stateUpdateQueue.asyncAfter(deadline: .now().advanced(by: .milliseconds(1500)), execute: recoverWatchUpdate)
+            print("freeze watchUpdate: \(Date.now.timeIntervalSince1970)")
+            stateUpdateQueue.asyncAfter(deadline: .now().advanced(by: .milliseconds(2500)), execute: recoverWatchUpdate!)
             
             currentFilePublisherCancellables.forEach{$0.cancel()}
             if let currentFile {
@@ -112,22 +119,22 @@ final class FileState: ObservableObject {
         }
     }
     
-    
+    var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
     
     var shouldIgnoreUpdate = false
     /// Indicate the file is being updated after being set as current file.
     var didUpdateFile = false
     var isCreatingFile = false
     
-    lazy var recoverWatchUpdate = DispatchWorkItem(flags: .assignCurrentContext) {
-        self.shouldIgnoreUpdate = false
-    }
+    var recoverWatchUpdate: DispatchWorkItem?
     
     func createNewGroup(name: String) throws {
         let group = try PersistenceController.shared.createGroup(name: name)
         currentGroup = group
     }
-    func createNewFile(active: Bool = true) throws {
+    func createNewFile(
+        active: Bool = true
+    ) throws {
         guard let currentGroup else { throw AppError.stateError(.currentGroupNil) }
         let file = try PersistenceController.shared.createFile(in: currentGroup)
         if active {
@@ -136,7 +143,9 @@ final class FileState: ObservableObject {
     }
     
     func updateCurrentFileData(data: Data) {
-        guard !shouldIgnoreUpdate || currentFile?.inTrash != true else { return }
+        guard !shouldIgnoreUpdate, currentFile?.inTrash != true else {
+            return
+        }
         logger.info("\(#function) data: \(data)")
         do {
             if let file = currentFile {
@@ -274,3 +283,50 @@ final class ExportState: ObservableObject {
         }
     }
 }
+
+
+enum ExcalidrawTool: Int, Hashable {
+    case eraser = 0
+    case cursor = 1
+    case rectangle = 2
+    case diamond
+    case ellipse
+    case arrow
+    case line
+    case freedraw
+    case text
+    case image
+    case laser
+    
+    init?(from tool: ExcalidrawView.Coordinator.SetActiveToolMessage.SetActiveToolMessageData.Tool) {
+        switch tool {
+            case .selection:
+                self = .cursor
+            case .rectangle:
+                self = .rectangle
+            case .diamond:
+                self = .diamond
+            case .ellipse:
+                self = .ellipse
+            case .arrow:
+                self = .arrow
+            case .line:
+                self = .line
+            case .freedraw:
+                self = .freedraw
+            case .text:
+                self = .text
+            case .image:
+                self = .image
+            case .eraser:
+                self = .eraser
+            case .laser:
+                self = .laser
+        }
+    }
+}
+final class ToolState: ObservableObject {
+    @Published var activatedTool: ExcalidrawTool? = .cursor
+}
+
+

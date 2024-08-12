@@ -7,6 +7,7 @@
 
 import SwiftUI
 import ChocofordUI
+import UniformTypeIdentifiers
 
 struct ExcalidrawContainerView: View {
     @Environment(\.alertToast) var alertToast
@@ -18,6 +19,8 @@ struct ExcalidrawContainerView: View {
     
     @State private var isLoading = true
     @State private var resotreAlertIsPresented = false
+    
+    @State private var isDropping: Bool = false
     
     var body: some View {
         GeometryReader { geometry in
@@ -39,15 +42,53 @@ struct ExcalidrawContainerView: View {
                     recoverOverlayView
                         .frame(width: geometry.size.width, height: geometry.size.height)
                 }
+                
+                // This will work
+                ///* but it will conflict with image drop
+//                Color.clear
+//                    .onDrop(of: [.excalidrawFile]) { providers, location in
+//                        let alertToast = alertToast
+//                        let fileState = fileState
+//                        for provider in providers {
+//                            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier) { item, error in
+//                                guard let urlData = item as? Data else { return }
+//                                let url = URL(dataRepresentation: urlData, relativeTo: nil)
+//                                if let error {
+//                                    alertToast(error)
+//                                    return
+//                                }
+//                                if let url {
+//                                    do {
+//                                        try fileState.importFile(url)
+//                                    } catch {
+//                                        alertToast(error)
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        return true
+//                    } dropMask: {
+//                        Center {
+//                            VStack {
+//                                Image(systemSymbol: .docFillBadgePlus)
+//                                    .symbolRenderingMode(.multicolor)
+//                                    .resizable()
+//                                    .scaledToFit()
+//                                    .frame(height: 100)
+//                                Text("Import a excalidraw file")
+//                                    .font(.largeTitle)
+//                                Text("ExcalidrawZ will create a new file for you to store the imported file.")
+//                                    .font(.footnote)
+//                            }
+//                        }
+//                        .background(.ultraThinMaterial)
+//                    }
+                 
             }
             .transition(.opacity)
             .animation(.default, value: isLoading)
-//            .toolbar {
-//                ToolbarItemGroup(placement: .status) {
-//
-//                }
-//            }
         }
+        
     }
     
     @MainActor @ViewBuilder
@@ -80,6 +121,12 @@ struct ExcalidrawContainerView: View {
     }
 }
 
+
+extension UTType {
+    static var excalidrawFile: UTType {
+        UTType(importedAs: "com.chocoford.excalidrawFile")
+    }
+}
 
 #if DEBUG
 struct ExcalidrawView_Previews: PreviewProvider {

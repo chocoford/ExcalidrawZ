@@ -70,6 +70,12 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
 
 ![File History](https://github.com/chocoford/ExcalidrawZ/assets/28218759/b4feb7df-4278-4a5c-8c78-c83200efc99b)
 
+#### Multiple hand-writing fonts supported
+
+- [x] English (Native excalidraw font)
+- [x] 简体中文（杨任东竹书体）
+- [x] 日本語（瀬戸体）
+
 ## RoadMap
 
 - [ ] iCloud synchronization
@@ -77,3 +83,18 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
 ## Develop Tips
 
 * Remove preload of fonts in `index.html`, otherwise fonts will not be loaded.
+
+* ~~Add hook in `excalidraw-app/App.tsx/onChange` to track the activated tool changed.~~
+
+* Hide toolbar in `packages/excalidraw/components/LayerUI.tsx/LayerUI`.
+
+* Add fonts after build.
+
+  * add the codes below to `index.html`.
+    ```html
+    <link rel="preload" href="YRDZST-Regular.ttf" as="font" type="font/ttf" crossorigin="anonymous">
+    <link rel="preload" href="SetoFont.ttf" as="font" type="font/ttf" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts.css" />
+    ```
+
+    

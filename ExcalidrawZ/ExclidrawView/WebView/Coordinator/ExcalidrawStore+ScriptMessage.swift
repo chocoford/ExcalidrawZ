@@ -36,6 +36,10 @@ extension ExcalidrawView.Coordinator: WKScriptMessageHandler {
                     self.webView.shouldHandleInput = false
                 case .onBlur:
                     self.webView.shouldHandleInput = true
+                case .didSetActiveTool(let message):
+                    let tool = ExcalidrawTool(from: message.data.type)
+                    self.lastTool = tool
+                    self.parent.toolState.activatedTool = tool
             }
         } catch {
             self.parent.onError(error)
@@ -107,6 +111,7 @@ extension ExcalidrawView.Coordinator {
         case copy
         case onFocus
         case onBlur
+        case didSetActiveTool
     }
     
     enum ExcalidrawZMessage: Codable {
@@ -116,6 +121,7 @@ extension ExcalidrawView.Coordinator {
         case onCopy(CopyMessage)
         case onFocus
         case onBlur
+        case didSetActiveTool(SetActiveToolMessage)
         
         enum CodingKeys: String, CodingKey {
             case eventType = "event"
@@ -138,6 +144,8 @@ extension ExcalidrawView.Coordinator {
                     self = .onFocus
                 case .onBlur:
                     self = .onBlur
+                case .didSetActiveTool:
+                    self = .didSetActiveTool(try SetActiveToolMessage(from: decoder))
             }
             
         }
@@ -221,23 +229,14 @@ extension ExcalidrawView.Coordinator {
     struct ExcalidrawFileData: Codable, Hashable {
         var dataString: String
         var elements: [ExcalidrawElement]
-        var files: ExcalidrawFiles
-    }
-    struct ExcalidrawFiles: Codable, Hashable {
-        let loadedFiles: [LoadedFile]?
-        let erroredFiles: ErroredFiles?
-        // MARK: - ErroredFiles
-        struct ErroredFiles: Codable, Hashable {
-        }
-
+        var files: [LoadedFile]?
+        
         // MARK: - LoadedFile
         struct LoadedFile: Codable, Hashable {
             let mimeType, id, dataURL: String
             let created, lastRetrieved: Int
         }
-
     }
-
     
     
 
@@ -261,5 +260,27 @@ extension ExcalidrawView.Coordinator {
         var type: String
         var data: String // string or base64
     }
-    
+ 
+    struct SetActiveToolMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: SetActiveToolMessageData
+        
+        struct SetActiveToolMessageData: Codable {
+            var type: Tool
+            
+            enum Tool: String, Codable {
+                case selection
+                case rectangle
+                case diamond
+                case ellipse
+                case arrow
+                case line
+                case freedraw
+                case text
+                case image
+                case eraser
+                case laser
+            }
+        }
+    }
 }

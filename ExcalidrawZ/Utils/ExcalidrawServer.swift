@@ -8,10 +8,13 @@
 import Foundation
 import FlyingFox
 
+import ChocofordUI
+
 class ExcalidrawServer {
     let server = HTTPServer(port: 8487)
 
     init() {
+        if isPreview { return }
         self.start()
     }
     

@@ -9,6 +9,9 @@ import SwiftUI
 import ChocofordUI
  
 struct FileCheckpointRowView: View {
+    @Environment(\.managedObjectContext) var managedObjectContext
+    @EnvironmentObject var fileState: FileState
+    
     var checkpoint: FileCheckpoint
     
     var body: some View {
@@ -19,23 +22,24 @@ struct FileCheckpointRowView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 
                 VStack(spacing: 8) {
-                    (
-                        Text(checkpoint.filename ?? "Untitled")
-                    )
-                    .font(.title)
+                    Text(checkpoint.filename ?? "Untitled")
+                        .font(.title)
                     
                     Text(checkpoint.updatedAt?.formatted() ?? "")
                 }
                 
                 HStack {
-                    Button {
-//                        viewStore.send(.restoreCheckpoint)
+                    AsyncButton { @MainActor in
+                        let file = fileState.currentFile
+                        file?.content = checkpoint.content
+                        file?.name = checkpoint.filename
+                        try await fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
                     } label: {
                         Text("Restore")
                     }
                     
                     Button {
-//                        viewStore.send(.deleteCheckpoint)
+                        managedObjectContext.delete(checkpoint)
                     } label: {
                         Text("Delete")
                     }
