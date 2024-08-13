@@ -93,6 +93,9 @@ struct ExportFileView: View {
                     .padding()
             } else {
                 Image(systemName: "doc.text")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(height: 80)
                     .padding()
             }
             
@@ -212,7 +215,7 @@ struct ExportFileView: View {
             if #available(macOS 13.0, *) {
                 fileManager.createFile(atPath: url.path(percentEncoded: false), contents: file.content)
             } else {
-                fileManager.createFile(atPath: url.path, contents: file.content)
+                fileManager.createFile(atPath: url.standardizedFileURL.path, contents: file.content)
             }
             fileURL = url
 //            self.store.send(.setURL(url))

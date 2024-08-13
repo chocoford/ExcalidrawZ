@@ -73,13 +73,6 @@ extension ExcalidrawView.Coordinator {
         guard loadedFile != file || force else { return }
         if self.webView.isLoading { return }
         guard let file = file, let data = file.content else { return }
-//        print("-------------Load File < \(file.name ?? "") >--------------")
-//        if let data = file.content {
-//            print(try! JSONSerialization.jsonObject(with: data))
-//        } else {
-//            print("...no data")
-//        }
-//        print("---------------------------------------------------------")
         var buffer = [UInt8].init(repeating: 0, count: data.count)
         data.copyBytes(to: &buffer, count: data.count)
         try await self.webView.evaluateJavaScript("window.excalidrawZHelper.loadFile(\(buffer)); 0;")

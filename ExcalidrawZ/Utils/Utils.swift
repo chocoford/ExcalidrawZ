@@ -67,9 +67,8 @@ func getTempDirectory() throws -> URL? {
     var directory: URL? = nil
     if #available(macOS 13.0, *) {
         directory = try fileManager.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: .applicationSupportDirectory, create: true)
-    } else if let temp = URL(string: NSTemporaryDirectory()) {
-        directory = temp
-        try fileManager.createDirectory(at: directory!, withIntermediateDirectories: true)
+    } else {
+        directory = fileManager.temporaryDirectory
     }
     return directory
 }

@@ -48,6 +48,7 @@ extension ExcalidrawView.Coordinator: WKDownloadDelegate {
     
     
     func onExportPNG(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) -> URL? {
+        self.logger.info("on export png.")
         let fileManager: FileManager = FileManager.default
         do {
             guard let directory: URL = try getTempDirectory() else { return nil }
@@ -65,6 +66,7 @@ extension ExcalidrawView.Coordinator: WKDownloadDelegate {
             self.parent.exportState.beginExport(url: url, download: download)
             return url;
         } catch {
+            self.parent.onError(error)
             return nil
         }
     }

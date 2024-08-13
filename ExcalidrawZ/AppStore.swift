@@ -245,6 +245,7 @@ final class FileState: ObservableObject {
 }
 
 final class ExportState: ObservableObject {
+    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExportState")
     enum Status {
         case notRequested
         case loading
@@ -262,9 +263,13 @@ final class ExportState: ObservableObject {
         case image, file
     }
     func requestExport(type: ExportType) async throws {
+        guard let excalidrawWebCoordinator else {
+            struct WebCoordinatorNotReadyError: Error {}
+            throw WebCoordinatorNotReadyError()
+        }
         switch type {
             case .image:
-                  try await excalidrawWebCoordinator?.exportPNG()
+                  try await excalidrawWebCoordinator.exportPNG()
             case .file:
                 break
         }
@@ -272,6 +277,7 @@ final class ExportState: ObservableObject {
     
     
     func beginExport(url: URL, download: WKDownload) {
+        self.logger.info("Begin export <url: \(url)>")
         self.status = .loading
         self.url = url
         self.download = download
@@ -279,6 +285,7 @@ final class ExportState: ObservableObject {
     
     func finishExport(download: WKDownload) {
         if download == self.download {
+            self.logger.info("Finish export")
             self.status = .finish
         }
     }

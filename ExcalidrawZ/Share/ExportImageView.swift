@@ -88,8 +88,7 @@ struct ExportImageView: View {
                 Text("Loading image failed.")
                     .foregroundColor(.red)
             } else {
-                ProgressView {
-                }
+                ProgressView()
                 Text("Loading...")
                 
                 Button {
@@ -101,12 +100,16 @@ struct ExportImageView: View {
             }
         }
         .watchImmediately(of: exportState.status) { status in
-            guard status == .finish, let url = exportState.url else { return }
-            guard let image = NSImage(contentsOf: url) else {
+            guard status == .finish else { return }
+            guard let url = exportState.url else {
                 hasError = true
                 return
             }
-            self.image = image.resizeWhileMaintainingAspectRatioToSize(size: .init(width: 200, height: 120))
+            guard let image = NSImage(contentsOf: url)?.resizeWhileMaintainingAspectRatioToSize(size: .init(width: 200, height: 120)) else {
+                hasError = true
+                return
+            }
+            self.image = image
             fileName = url.lastPathComponent.components(separatedBy: ".").first ?? "Untitled"
         }
         .onDisappear {

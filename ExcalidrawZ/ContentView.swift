@@ -75,11 +75,18 @@ struct ContentViewModern: View {
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            SidebarView()
-                .toolbar(content: sidebarToolbar)
+            if #available(macOS 14.0, *) {
+                SidebarView()
+                    .toolbar(content: sidebarToolbar)
+                    .toolbar(removing: .sidebarToggle)
+            } else {
+                SidebarView()
+                    .toolbar(content: sidebarToolbar)
+            }
         } detail: {
             ExcalidrawContainerView()
         }
+        .removeSettingsSidebarToggle()
     }
     
     @available(macOS 13.0, *)
@@ -103,66 +110,40 @@ struct ContentViewModern: View {
         
         ToolbarItemGroup(placement: .destructiveAction) {
             HStack(spacing: 0) {
-                if #available(macOS 15.0, *) {
-                    // Do not show the toggle..
-                    Menu {
-                        Button {
-                            withAnimation { columnVisibility = .all }
-                            appPreference.sidebarMode = .all
-                        } label: {
-                            if appPreference.sidebarMode == .all && columnVisibility != .detailOnly {
-                                Image(systemSymbol: .checkmark)
-                            }
-                            Text("Show folders and files")
+                Button {
+                    withAnimation {
+                        if columnVisibility == .detailOnly {
+                            columnVisibility = .all
+                        } else {
+                            columnVisibility = .detailOnly
                         }
-                        Button {
-                            withAnimation { columnVisibility = .all }
-                            appPreference.sidebarMode = .filesOnly
-                        } label: {
-                            if appPreference.sidebarMode == .filesOnly && columnVisibility != .detailOnly {
-                                Image(systemSymbol: .checkmark)
-                            }
-                            Text("Show files only")
-                        }
-                    } label: { }
-                        .buttonStyle(.borderless)
-                        .offset(x: -6)
-                } else {
-                    Button {
-                        withAnimation {
-                            if columnVisibility == .detailOnly {
-                                columnVisibility = .all
-                            } else {
-                                columnVisibility = .detailOnly
-                            }
-                        }
-                    } label: {
-                        Image(systemSymbol: .sidebarLeading)
                     }
-                    
-                    Menu {
-                        Button {
-                            withAnimation { columnVisibility = .all }
-                            appPreference.sidebarMode = .all
-                        } label: {
-                            if appPreference.sidebarMode == .all && columnVisibility != .detailOnly {
-                                Image(systemSymbol: .checkmark)
-                            }
-                            Text("Show folders and files")
-                        }
-                        Button {
-                            withAnimation { columnVisibility = .all }
-                            appPreference.sidebarMode = .filesOnly
-                        } label: {
-                            if appPreference.sidebarMode == .filesOnly && columnVisibility != .detailOnly {
-                                Image(systemSymbol: .checkmark)
-                            }
-                            Text("Show files only")
-                        }
-                    } label: {
-                    }
-                    .buttonStyle(.borderless)
+                } label: {
+                    Image(systemSymbol: .sidebarLeading)
                 }
+                
+                Menu {
+                    Button {
+                        withAnimation { columnVisibility = .all }
+                        appPreference.sidebarMode = .all
+                    } label: {
+                        if appPreference.sidebarMode == .all && columnVisibility != .detailOnly {
+                            Image(systemSymbol: .checkmark)
+                        }
+                        Text("Show folders and files")
+                    }
+                    Button {
+                        withAnimation { columnVisibility = .all }
+                        appPreference.sidebarMode = .filesOnly
+                    } label: {
+                        if appPreference.sidebarMode == .filesOnly && columnVisibility != .detailOnly {
+                            Image(systemSymbol: .checkmark)
+                        }
+                        Text("Show files only")
+                    }
+                } label: {
+                }
+                .buttonStyle(.borderless)
             }
         }
 //        ToolbarItemGroup(placement: .confirmationAction) {

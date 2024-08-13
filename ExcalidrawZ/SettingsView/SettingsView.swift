@@ -18,17 +18,28 @@ struct SettingsView: View {
     
     @MainActor @ViewBuilder
     private func content() -> some View {
-        if #available(macOS 13.0, *), false {
+        if #available(macOS 14.0, *) {
             NavigationSplitView(columnVisibility: .constant(.all)) {
                 sidebar
-                    .navigationTitle("App Settings")
+                    .toolbar(removing: .sidebarToggle)
                     .background(
                         List(selection: $selection) {}
                     )
             } detail: {
                 detail(for: selection)
             }
-            .toolbar(.hidden, for: .windowToolbar)
+            .navigationTitle("App Settings")
+        } else if #available(macOS 13.0, *) {
+            NavigationSplitView(columnVisibility: .constant(.all)) {
+                sidebar
+                    .background(
+                        List(selection: $selection) {}
+                    )
+            } detail: {
+                detail(for: selection)
+            }
+            .removeSettingsSidebarToggle()
+            .navigationTitle("App Settings")
         } else {
             HStack {
                 sidebar
