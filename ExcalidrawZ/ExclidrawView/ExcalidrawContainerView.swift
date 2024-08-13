@@ -18,6 +18,7 @@ struct ExcalidrawContainerView: View {
     @EnvironmentObject private var fileState: FileState
     
     @State private var isLoading = true
+    @State private var isLoadingFile = false
     @State private var resotreAlertIsPresented = false
     
     @State private var isDropping: Bool = false
@@ -25,7 +26,7 @@ struct ExcalidrawContainerView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .center) {
-                ExcalidrawView(isLoading: $isLoading) {
+                ExcalidrawView(isLoadingPage: $isLoading, isLoadingFile: $isLoadingFile) {
                     alertToast($0)
                     print($0)
                 }
@@ -41,6 +42,19 @@ struct ExcalidrawContainerView: View {
                 } else if fileState.currentFile?.inTrash == true {
                     recoverOverlayView
                         .frame(width: geometry.size.width, height: geometry.size.height)
+                }
+                
+                if isLoadingFile {
+                    Center {
+                        VStack {
+                            Text("Loading file...")
+                            ProgressView()
+                            
+                            Text("This file is really quite large...")
+                                .font(.footnote)
+                        }
+                    }
+                    .background(.ultraThinMaterial)
                 }
                 
                 // This will work
@@ -87,6 +101,7 @@ struct ExcalidrawContainerView: View {
             }
             .transition(.opacity)
             .animation(.default, value: isLoading)
+            .animation(.default, value: isLoadingFile)
         }
         
     }

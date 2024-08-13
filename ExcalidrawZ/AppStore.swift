@@ -109,10 +109,14 @@ final class FileState: ObservableObject {
             if let currentFile {
                 currentFilePublisherCancellables = [
                     currentFile.publisher(for: \.name).sink { [weak self] _ in
-                        self?.objectWillChange.send()
+                        DispatchQueue.main.async {
+                            self?.objectWillChange.send()
+                        }
                     },
                     currentFile.publisher(for: \.updatedAt).sink { [weak self] _ in
-                        self?.objectWillChange.send()
+                        DispatchQueue.main.async {
+                            self?.objectWillChange.send()
+                        }
                     }
                 ]
             }
@@ -147,15 +151,20 @@ final class FileState: ObservableObject {
             return
         }
         logger.info("\(#function) data: \(data)")
-        do {
-            if let file = currentFile {
-                try file.updateElements(with: data, newCheckpoint: !didUpdateFile)
-                didUpdateFile = true
-            } else if !isCreatingFile {
-                
+        if let file = currentFile {
+            let didUpdateFile = didUpdateFile
+            Task.detached {
+                do {
+                    try file.updateElements(with: data, newCheckpoint: !didUpdateFile)
+                    await MainActor.run {
+                        self.didUpdateFile = true
+                    }
+                    PersistenceController.shared.save()
+                } catch {
+                    
+                }
             }
-            PersistenceController.shared.save()
-        } catch {
+        } else if !isCreatingFile {
             
         }
     }

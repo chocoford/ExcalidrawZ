@@ -57,11 +57,14 @@ struct ExcalidrawView {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "WebView")
     
     @Binding var isLoading: Bool
+    @Binding var isLoadingFile: Bool
     
     var onError: (Error) -> Void
     
-    init(isLoading: Binding<Bool>, onError: @escaping (Error) -> Void) {
-        self._isLoading = isLoading
+    // TODO: isLoadingFile is not used yet.
+    init(isLoadingPage: Binding<Bool>, isLoadingFile: Binding<Bool>, onError: @escaping (Error) -> Void) {
+        self._isLoading = isLoadingPage
+        self._isLoadingFile = isLoadingFile
         self.onError = onError
     }
 }

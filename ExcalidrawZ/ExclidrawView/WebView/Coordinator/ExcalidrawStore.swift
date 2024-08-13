@@ -15,9 +15,8 @@ extension ExcalidrawView {
         
         var parent: ExcalidrawView
         var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in } toolbarActionHandler2: { _ in }
-        
-        var loadedFile: File?
-        
+        lazy var webActor = ExcalidrawWebActor(coordinator: self)
+                
         init(_ parent: ExcalidrawView) {
             self.parent = parent
             super.init()
@@ -66,17 +65,69 @@ extension ExcalidrawView {
     }
 }
 
-/// Keep stateless
-extension ExcalidrawView.Coordinator {
-    @MainActor
+actor ExcalidrawWebActor {
+    var excalidrawCoordinator: ExcalidrawView.Coordinator
+    
+    init(coordinator: ExcalidrawView.Coordinator) {
+        self.excalidrawCoordinator = coordinator
+    }
+    
+    var loadedFile: File?
+    var webView: ExcalidrawWebView { excalidrawCoordinator.webView }
+    
     func loadFile(from file: File?, force: Bool = false) async throws {
+        let webView = webView
         guard loadedFile != file || force else { return }
-        if self.webView.isLoading { return }
         guard let file = file, let data = file.content else { return }
+        self.loadedFile = file
+        let startDate = Date()
+        print("Load file<\(String(describing: file.id)), \(file.content?.count ?? 0)>, force: \(force), Thread: \(Thread().description)")
         var buffer = [UInt8].init(repeating: 0, count: data.count)
         data.copyBytes(to: &buffer, count: data.count)
-        try await self.webView.evaluateJavaScript("window.excalidrawZHelper.loadFile(\(buffer)); 0;")
-        self.loadedFile = file
+        let buf = buffer
+        await MainActor.run {
+            webView.evaluateJavaScript("window.excalidrawZHelper.loadFile(\(buf)); 0;")
+        }
+        print("load file done. time cost", Date.now.timeIntervalSince(startDate))
+    }
+}
+
+/// Keep stateless
+extension ExcalidrawView.Coordinator {
+    
+    func loadFile(from file: File?, force: Bool = false) async throws {
+        guard await !self.webView.isLoading else { return }
+        try await self.webActor.loadFile(from: file, force: force)
+//        try await withThrowingTaskGroup(of: Bool.self) { taskGroup in
+//            taskGroup.addTask {
+//                try await self.webActor.loadFile(from: file, force: force)
+//                return true
+//            }
+//            
+//            taskGroup.addTask {
+//                try await Task.sleep(nanoseconds: UInt64(50 * 1e+6))
+//                if (file?.content?.count ?? 0) > 500000 {
+//                    await MainActor.run {
+//                        print("setting self.parent.isLoadingFile = true")
+//                        self.parent.isLoadingFile = true
+//                    }
+//                }
+//                return false
+//            }
+//            
+//            if try await taskGroup.next() == true {
+//                taskGroup.cancelAll()
+//            } else {
+//                try await taskGroup.waitForAll()
+//            }
+//        }
+//        
+//        if await self.parent.isLoadingFile {
+//            await MainActor.run {
+//                self.parent.isLoadingFile = false
+//            }
+//        }
+        
     }
     
     /// Load current `File`.

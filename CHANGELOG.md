@@ -1,3 +1,20 @@
+## 1.0.0-alpha-2
+
+* Optimize performance
+
+## 1.0.0-alpha-1
+
+* Synchronized the `Excalidraw` core to the latest version.
+* Compatibility extension: Now supports as old as macOS 12.0.
+* Optimized the Share interface UI.
+* Moved the Toolbar to the top sidebar of the application to simplify the canvas.
+* More handwriting fonts supported: English, Chiniese, Jpanese.
+* Multiple bug fixes: 
+  * Issues with archive file when there are file name duplications.
+  * UI errors in the Settings view.
+  * Annoying alert sounds when pressing keys.
+  * Can not add image with toolbar.
+
 ## 0.4.5
 
 * Revert update: `Remove alert sound when using keyboard.`
