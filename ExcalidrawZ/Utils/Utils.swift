@@ -44,11 +44,30 @@ func archiveAllFiles() throws {
                     let dir = exportURL.appendingPathComponent(files.key, conformingTo: .directory)
                     try filemanager.createDirectory(at: dir, withIntermediateDirectories: false)
                     for file in files.value {
-                        let filePath = dir.appendingPathComponent(file.name ?? "untitled", conformingTo: .fileURL).appendingPathExtension("excalidraw")
-                        let path = filePath.absoluteString.replacingOccurrences(of: "file://", with: "").removingPercentEncoding ?? ""//.path(percentEncoded: false)
-                        print(path)
-                        if !filemanager.createFile(atPath: path, contents: file.content) {
-                            print("export file \(path) failed")
+                        var index = 1
+                        var filename = file.name ?? "untitled"
+                        var fileURL: URL = dir.appendingPathComponent(filename, conformingTo: .fileURL).appendingPathExtension("excalidraw")
+                        var retryCount = 0
+                        while filemanager.fileExists(at: fileURL), retryCount < 100 {
+                            if filename.hasSuffix(" (\(index))") {
+                                filename = filename.replacingOccurrences(of: " (\(index))", with: "")
+                                index += 1
+                            }
+                            filename = "\(filename) (\(index))"
+                            fileURL = fileURL
+                                .deletingLastPathComponent()
+                                .appendingPathComponent(filename, conformingTo: .excalidrawFile)
+                            retryCount += 1
+                        }
+                        let filePath: String
+                        if #available(macOS 13.0, *) {
+                            filePath = fileURL.path(percentEncoded: false)
+                        } else {
+                            filePath = fileURL.standardizedFileURL.path
+                        }
+                        print(filePath)
+                        if !filemanager.createFile(atPath: filePath, contents: file.content) {
+                            print("export file \(filePath) failed")
                         }
                     }
                 }
