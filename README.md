@@ -7,6 +7,29 @@
 
 ![GitHub](https://img.shields.io/github/license/chocoford/ExcalidrawZ) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40Chocoford)](https://twitter.com/dove_zachary)
 
+<aside 
+       data-v-0ca053f3="" 
+       aria-label="important" 
+       style="margin: 20px; 
+              text-align: start;
+              display: block;
+              background-color: rgb(255, 251, 242);
+              border-color: rgb(158, 103, 0);
+              box-shadow: rgb(158, 103, 0) 0px 0px 1px 0px inset, rgb(158, 103, 0) 0px 0px 1px 0px;
+              border-radius: 15px;
+              padding: .9411764706rem;
+              boder-style: solid;
+              border-width: 1px;
+              "
+       >
+  <p data-v-0ca053f3="" class="label" style="color: rgb(158, 103, 0); font-size: 17px; font-weight: 600;">Developing...</p>
+  <p style="margin-top: 6.8px; font-size: 17px; letter-spacing: 0.374px; text-align: start;">
+This new version is under development. The TCA framework will be removed.
+  </p>
+</aside>
+
+
+
 ## The motivation
 
 [Excalidraw](https://github.com/excalidraw/excalidraw) is a very useful web app, but the lack of file management can be troublesome and unsettling. We often need to manually save and maintain multiple different Excalidraw files. Therefore, ExcalidrawZ has wrapped it up to automatically save edited files for users and added file grouping functionality. In future versions, iCloud automatic backup will also be added to greatly reduce the insecurity of using a web app.
@@ -47,6 +70,12 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
 
 ![File History](https://github.com/chocoford/ExcalidrawZ/assets/28218759/b4feb7df-4278-4a5c-8c78-c83200efc99b)
 
+#### Multiple hand-writing fonts supported
+
+- [x] English (Native excalidraw font)
+- [x] 简体中文（杨任东竹书体）
+- [x] 日本語（瀬戸体）
+
 ## RoadMap
 
 - [ ] iCloud synchronization
@@ -54,3 +83,18 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
 ## Develop Tips
 
 * Remove preload of fonts in `index.html`, otherwise fonts will not be loaded.
+
+* ~~Add hook in `excalidraw-app/App.tsx/onChange` to track the activated tool changed.~~
+
+* Hide toolbar in `packages/excalidraw/components/LayerUI.tsx/LayerUI`.
+
+* Add fonts after build.
+
+  * add the codes below to `index.html`.
+    ```html
+    <link rel="preload" href="YRDZST-Regular.ttf" as="font" type="font/ttf" crossorigin="anonymous">
+    <link rel="preload" href="SetoFont.ttf" as="font" type="font/ttf" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts.css" />
+    ```
+
+    
