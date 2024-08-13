@@ -44,46 +44,60 @@ struct FileListView: View {
 //    }
     
     var body: some View {
-        if #available(macOS 14.0, *) {
-            content()
-                .watchImmediately(of: fileState.currentGroup) { newValue in
-                    if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
-                        fileState.currentFile = files.first
+        ZStack {
+            if #available(macOS 14.0, *) {
+                content()
+                    .onChange(of: fileState.currentGroup) { _, newValue in
+                        if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
+                            fileState.currentFile = files.first
+                        }
                     }
-                }
-                .onChange(of: fileState.currentFile) { _, newValue in
-                    if newValue == nil {
-                        if let file = files.first {
-                            fileState.currentFile = file
-                        } else {
-                            do {
-                                try fileState.createNewFile()
-                            } catch {
-                                alertToast(error)
+                    .onChange(of: fileState.currentFile) { _, newValue in
+                        if newValue == nil {
+                            if let file = files.first {
+                                fileState.currentFile = file
+                            } else {
+                                do {
+                                    try fileState.createNewFile()
+                                } catch {
+                                    alertToast(error)
+                                }
                             }
                         }
                     }
-                }
-        } else {
-            content()
-                .watchImmediately(of: fileState.currentGroup) { newValue in
-                    if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
-                        fileState.currentFile = files.first
+            } else {
+                content()
+                    .onChange(of: fileState.currentGroup) { newValue in
+                        if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
+                            fileState.currentFile = files.first
+                        }
                     }
-                }
-                .onChange(of: fileState.currentFile) { newValue in
-                    if newValue == nil {
-                        if let file = files.first {
-                            fileState.currentFile = file
-                        } else {
-                            do {
-                                try fileState.createNewFile()
-                            } catch {
-                                alertToast(error)
+                    .onChange(of: fileState.currentFile) { newValue in
+                        if newValue == nil {
+                            if let file = files.first {
+                                fileState.currentFile = file
+                            } else {
+                                do {
+                                    try fileState.createNewFile()
+                                } catch {
+                                    alertToast(error)
+                                }
                             }
                         }
                     }
+            }
+        }
+        .onAppear {
+            guard fileState.currentFile == nil else { return }
+            if files.isEmpty {
+                do {
+                    try fileState.createNewFile()
+                } catch {
+                    alertToast(error)
                 }
+            } else {
+                fileState.currentFile = files.first
+            }
         }
     }
     

@@ -53,6 +53,11 @@ struct GroupListView: View {
                     }
                 }
             }
+            .onChange(of: displayedGroups) { newValue in
+                if fileState.currentGroup == nil {
+                    fileState.currentGroup = newValue.first
+                }
+            }
             .onAppear {
                 if fileState.currentGroup == nil {
                     fileState.currentGroup = displayedGroups.first

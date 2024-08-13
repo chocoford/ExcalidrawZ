@@ -59,7 +59,11 @@ extension ExcalidrawView {
             self.webView.uiDelegate = self
             
             DispatchQueue.main.async {
+#if DEBUG
+                self.webView.load(URLRequest(url: URL(string: "http://localhost:8486/index.html")!))
+#else
                 self.webView.load(URLRequest(url: URL(string: "http://localhost:8487/index.html")!))
+#endif
             }
         }
     }
