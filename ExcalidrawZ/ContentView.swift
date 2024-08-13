@@ -27,32 +27,31 @@ struct ContentView: View {
     var body: some View {
         content()
             .navigationTitle("")
-//        .toolbar(removing: .sidebarToggle) <-- not working
-        .sheet(item: $sharedFile) {
-            if #available(macOS 13.0, *) {
-                ShareView(sharedFile: $0)
-                    .swiftyAlert()
-            } else {
-                ShareViewLagacy(sharedFile: $0)
-                    .swiftyAlert()
-            }
-        }
-        .toolbar { toolbarContent() }
-        .environmentObject(fileState)
-        .environmentObject(exportState)
-        .environmentObject(toolState)
-        .swiftyAlert()
-        .bindWindow($window)
-        .onReceive(NotificationCenter.default.publisher(for: .shouldHandleImport)) { notification in
-            guard let url = notification.object as? URL else { return }
-            if window?.isKeyWindow == true {
-                do {
-                    try fileState.importFile(url)
-                } catch {
-                    alertToast(error)
+            .sheet(item: $sharedFile) {
+                if #available(macOS 13.0, *) {
+                    ShareView(sharedFile: $0)
+                        .swiftyAlert()
+                } else {
+                    ShareViewLagacy(sharedFile: $0)
+                        .swiftyAlert()
                 }
             }
-        }
+            .toolbar { toolbarContent() }
+            .environmentObject(fileState)
+            .environmentObject(exportState)
+            .environmentObject(toolState)
+            .swiftyAlert()
+            .bindWindow($window)
+            .onReceive(NotificationCenter.default.publisher(for: .shouldHandleImport)) { notification in
+                guard let url = notification.object as? URL else { return }
+                if window?.isKeyWindow == true {
+                    do {
+                        try fileState.importFile(url)
+                    } catch {
+                        alertToast(error)
+                    }
+                }
+            }
     }
     
     @MainActor @ViewBuilder
