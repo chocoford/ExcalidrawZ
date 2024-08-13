@@ -31,8 +31,13 @@ struct SidebarView: View {
                 if let currentGroup = fileState.currentGroup {
                     FileListView(groups: groups, currentGroup: currentGroup)
                 } else {
-                    Text("Select a group")
-                        .foregroundStyle(.placeholder)
+                    if #available(macOS 14.0, *) {
+                        Text("Select a group")
+                            .foregroundStyle(.placeholder)
+                    } else {
+                        Text("Select a group")
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
                 .frame(minWidth: 200)

@@ -18,7 +18,7 @@ struct SettingsView: View {
     
     @MainActor @ViewBuilder
     private func content() -> some View {
-        if #available(macOS 13.0, *) {
+        if #available(macOS 13.0, *), false {
             NavigationSplitView(columnVisibility: .constant(.all)) {
                 sidebar
                     .navigationTitle("App Settings")

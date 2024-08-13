@@ -53,6 +53,7 @@ extension ExcalidrawView.Coordinator {
     }
     
     func onStateChanged(_ data: StateChangedMessageData) throws {
+        guard !self.parent.isLoading else { return }
         guard let data = data.data.dataString.data(using: .utf8) else {
             throw AppError.fileError(.createError)
         }

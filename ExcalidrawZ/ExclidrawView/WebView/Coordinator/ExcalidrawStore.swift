@@ -14,7 +14,7 @@ extension ExcalidrawView {
         let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawWebViewCoordinator")
         
         var parent: ExcalidrawView
-        var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in }
+        var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in } toolbarActionHandler2: { _ in }
         
         var loadedFile: File?
         
@@ -45,6 +45,10 @@ extension ExcalidrawView {
             self.webView = ExcalidrawWebView(frame: .zero, configuration: config) { num in
                 Task {
                     try? await self.toggleToolbarAction(key: num)
+                }
+            } toolbarActionHandler2: { char in
+                Task {
+                    try? await self.toggleToolbarAction(key: char)
                 }
             }
             if #available(macOS 13.3, *) {
@@ -151,5 +155,10 @@ extension ExcalidrawView.Coordinator {
     func toggleToolbarAction(key: Int) async throws {
         print(#function)
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction(\(key)); 0;")
+    }
+    @MainActor
+    func toggleToolbarAction(key: Character) async throws {
+        print(#function)
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
     }
 }

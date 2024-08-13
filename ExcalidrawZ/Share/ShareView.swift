@@ -11,6 +11,9 @@ import ChocofordUI
 import SwiftyAlert
 import SFSafeSymbols
 
+
+
+@available(macOS 13.0, *)
 struct ShareView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.alertToast) var alertToast
@@ -28,7 +31,6 @@ struct ShareView: View {
     
     @State private var route: NavigationPath = .init()
     
-    
     var body: some View {
         NavigationStack(path: $route) {
             VStack(spacing: 20) {
@@ -37,15 +39,15 @@ struct ShareView: View {
 
                 
                 HStack(spacing: 14) {
-                    squareButton(title: "Image", icon: .photo) {
+                    SquareButton(title: "Image", icon: .photo) {
                         route.append(Route.exportImage)
                     }
                     
-                    squareButton(title: "File", icon: .doc) {
+                    SquareButton(title: "File", icon: .doc) {
                         route.append(Route.exportFile)
                     }
                     
-                    squareButton(title: "Archive", icon: .archivebox) {
+                    SquareButton(title: "Archive", icon: .archivebox) {
                         do {
                             try archiveAllFiles()
                         } catch {
@@ -67,7 +69,6 @@ struct ShareView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
             }
-//            .navigationTitle("Share")
             .navigationDestination(for: Route.self) { route in
                 switch route {
                     case .exportImage:
@@ -82,13 +83,102 @@ struct ShareView: View {
         .frame(width: 400, height: 300)
         .visualEffect(material: .sidebar)
     }
+}
+
+struct ShareViewLagacy: View {
+    @Environment(\.dismiss) var dismiss
+
+    @Environment(\.alertToast) var alertToast
+
+    var sharedFile: File
+    
+    enum Route: Hashable {
+        case exportImage
+        case exportFile
+    }
+    
+    @State private var route: [Route] = []
+    
+    var body: some View {
+        ZStack {
+            if route.last == .exportImage {
+                ExportImageView {
+                    route.removeLast()
+                }
+                .transition(.fade)
+            } else if route.last == .exportFile {
+                ExportFileView(file: sharedFile) {
+                    route.removeLast()
+                }
+                .transition(.fade)
+            } else {
+                homepage()
+                    .transition(.identity)
+            }
+        }
+        .animation(.default, value: route.last)
+        .padding(.horizontal, 40)
+        .frame(width: 400, height: 300)
+    }
+    
     
     @MainActor @ViewBuilder
-    private func squareButton(
+    private func homepage() -> some View {
+        VStack(spacing: 20) {
+            Text("Choose an export target.")
+                .font(.largeTitle)
+
+            
+            HStack(spacing: 14) {
+                SquareButton(title: "Image", icon: .photo) {
+                    route.append(Route.exportImage)
+                }
+                
+                SquareButton(title: "File", icon: .doc) {
+                    route.append(Route.exportFile)
+                }
+                
+                SquareButton(title: "Archive", icon: .archivebox) {
+                    do {
+                        try archiveAllFiles()
+                    } catch {
+                        alertToast(error)
+                    }
+                }
+            }
+            
+            
+            Button {
+                dismiss()
+            } label: {
+                HStack {
+                    Spacer()
+                    Text("Dismiss")
+                    Spacer()
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+        }
+    }
+}
+
+fileprivate struct SquareButton: View {
+    var title: String
+    var icon: SFSymbol
+    var action: () -> Void
+    
+    init(
         title: String,
         icon: SFSymbol,
         action: @escaping () -> Void
-    ) -> some View {
+    ) {
+        self.title = title
+        self.icon = icon
+        self.action = action
+    }
+    
+    var body: some View {
         Button {
             action()
         } label: {
@@ -104,6 +194,8 @@ struct ShareView: View {
     }
 }
 
+
+
 struct ExportButtonStyle: PrimitiveButtonStyle {
     
     @State private var isHovered = false
@@ -118,12 +210,19 @@ struct ExportButtonStyle: PrimitiveButtonStyle {
                 .padding()
                 .frame(width: size, height: size)
                 .background {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(
-                            isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial)
-                        )
-                        .stroke(.separator, lineWidth: 0.5)
-                        .animation(.default, value: isHovered)
+                    if #available(macOS 14.0, *) {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(
+                                isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial)
+                            )
+                            .stroke(.separator, lineWidth: 0.5)
+                            .animation(.default, value: isHovered)
+                    } else {
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(.separator, lineWidth: 0.5)
+                            .foregroundStyle(isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial))
+                            .animation(.default, value: isHovered)
+                    }
                 }
                 .contentShape(Rectangle())
                 .onHover { isHovered = $0 }
@@ -133,7 +232,12 @@ struct ExportButtonStyle: PrimitiveButtonStyle {
 
 #if DEBUG
 #Preview {
-    ShareView(sharedFile: .preview)
-        .environmentObject(ExportState())
+    if #available(macOS 13.0, *) {
+        ShareView(sharedFile: .preview)
+            .environmentObject(ExportState())
+    } else {
+        ShareViewLagacy(sharedFile: .preview)
+            .environmentObject(ExportState())
+    }
 }
 #endif

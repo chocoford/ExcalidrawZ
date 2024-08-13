@@ -49,10 +49,26 @@ struct ExcalidrawFileDocument: Transferable {
 }
 
 struct ExportFileView: View {
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.dismiss) var mordenDismiss
     @Environment(\.alertToast) var alertToast
     
     var file: File
+    private var _dismissAction: (() -> Void)?
+    
+    init(file: File, dismissAction: (() -> Void)? = nil) {
+        self.file = file
+        if let dismissAction {
+            self._dismissAction = dismissAction
+        }
+    }
+    
+    func dismiss() {
+        if let _dismissAction {
+            _dismissAction()
+        } else {
+            mordenDismiss()
+        }
+    }
     
     @State private var fileURL: URL?
     

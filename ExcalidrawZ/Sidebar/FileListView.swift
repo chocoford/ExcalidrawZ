@@ -44,6 +44,52 @@ struct FileListView: View {
 //    }
     
     var body: some View {
+        if #available(macOS 14.0, *) {
+            content()
+                .watchImmediately(of: fileState.currentGroup) { newValue in
+                    if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
+                        fileState.currentFile = files.first
+                    }
+                }
+                .onChange(of: fileState.currentFile) { _, newValue in
+                    if newValue == nil {
+                        if let file = files.first {
+                            fileState.currentFile = file
+                        } else {
+                            do {
+                                try fileState.createNewFile()
+                            } catch {
+                                alertToast(error)
+                            }
+                        }
+                    }
+                }
+        } else {
+            content()
+                .watchImmediately(of: fileState.currentGroup) { newValue in
+                    if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
+                        fileState.currentFile = files.first
+                    }
+                }
+                .onChange(of: fileState.currentFile) { newValue in
+                    if newValue == nil {
+                        if let file = files.first {
+                            fileState.currentFile = file
+                        } else {
+                            do {
+                                try fileState.createNewFile()
+                            } catch {
+                                alertToast(error)
+                            }
+                        }
+                    }
+                }
+        }
+    }
+    
+    
+    @MainActor @ViewBuilder
+    private func content() -> some View {
         ScrollView {
             LazyVStack(alignment: .leading) {
                 ForEach(files) { file in
@@ -54,24 +100,6 @@ struct FileListView: View {
             .animation(.smooth, value: files)
             .padding(.horizontal, 8)
             .padding(.vertical, 12)
-        }
-        .watchImmediately(of: fileState.currentGroup) { newValue in
-            if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
-                fileState.currentFile = files.first
-            }
-        }
-        .onChange(of: fileState.currentFile) { oldValue, newValue in
-            if newValue == nil {
-                if let file = files.first {
-                    fileState.currentFile = file
-                } else {
-                    do {
-                        try fileState.createNewFile()
-                    } catch {
-                        alertToast(error)
-                    }
-                }
-            }
         }
     }
 }

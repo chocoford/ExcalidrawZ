@@ -14,47 +14,71 @@ struct GeneralSettingsView: View {
     @EnvironmentObject var appPreference: AppPreference
 
     var body: some View {
-        Form {
-            Section {
-                settingCellView("Appearacne") {
-                    HStack(spacing: 16) {
-                        RadioGroup(selected: $appPreference.appearance) { option, isOn in
-                            RadioButton(isOn: isOn) {
-                                Text(option.text)
-                            }
-                        }
-                    }
-                }
-                settingCellView("Canvas appearance") {
-                    HStack(spacing: 16) {
-                        RadioGroup(selected: $appPreference.excalidrawAppearance) { option, isOn in
-                            RadioButton(isOn: isOn) {
-                                Text(option.text)
-                            }
-                        }
-                    }
-                }
-            } header: {
-                Text("Appearance")
+        if #available(macOS 14.0, *) {
+            Form {
+                content()
             }
-            
-            
-            Section {
-                Toggle("Check updates automatically", isOn: $updateChecker.canCheckForUpdates)
-            } header: {
-                Text("Update")
-            } footer: {
-                HStack {
-                    Spacer()
-                    Button {
-                        updateChecker.updater?.checkForUpdates()
-                    } label: {
-                        Text("Check Updates")
+            .formStyle(.grouped)
+        } else {
+            ScrollView {
+                VStack {
+                    content()
+                }
+                .padding()
+            }
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func content() -> some View {
+        Section {
+            settingCellView("App appearacne") {
+                HStack(spacing: 16) {
+                    RadioGroup(selected: $appPreference.appearance) { option, isOn in
+                        RadioButton(isOn: isOn) {
+                            Text(option.text)
+                        }
                     }
+                }
+            }
+            settingCellView("Canvas appearance") {
+                HStack(spacing: 16) {
+                    RadioGroup(selected: $appPreference.excalidrawAppearance) { option, isOn in
+                        RadioButton(isOn: isOn) {
+                            Text(option.text)
+                        }
+                    }
+                }
+            }
+        } header: {
+            if #available(macOS 14.0, *) {
+                Text("Appearance")
+            } else {
+                Text("Appearance")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        
+        
+        Section {
+            Toggle("Check updates automatically", isOn: $updateChecker.canCheckForUpdates)
+        } header: {
+            if #available(macOS 14.0, *) {
+                Text("Update")
+            } else {
+                Text("Update")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        } footer: {
+            HStack {
+                Spacer()
+                Button {
+                    updateChecker.updater?.checkForUpdates()
+                } label: {
+                    Text("Check Updates")
                 }
             }
         }
-        .formStyle(.grouped)
     }
     
     @ViewBuilder

@@ -15,13 +15,16 @@ import QuartzCore
 class ExcalidrawWebView: WKWebView {
     var shouldHandleInput = false
     var toolbarActionHandler: (Int) -> Void
+    var toolbarActionHandler2: (Character) -> Void
     
     init(
         frame: CGRect,
         configuration: WKWebViewConfiguration,
-        toolbarActionHandler: @escaping (Int) -> Void
+        toolbarActionHandler: @escaping (Int) -> Void,
+        toolbarActionHandler2: @escaping (Character) -> Void
     ) {
         self.toolbarActionHandler = toolbarActionHandler
+        self.toolbarActionHandler2 = toolbarActionHandler2
         super.init(frame: frame, configuration: configuration)
     }
     
@@ -29,9 +32,14 @@ class ExcalidrawWebView: WKWebView {
     
     override func keyDown(with event: NSEvent) {
         if shouldHandleInput,
-           let char = event.characters,
-           let num = Int(char), num >= 0, num <= 9 {
-            self.toolbarActionHandler(num)
+           let char = event.characters {
+            if let num = Int(char), num >= 0, num <= 9 {
+                self.toolbarActionHandler(num)
+            } else if ExcalidrawTool.allCases.compactMap({$0.keyEquivalent}).contains(where: {$0 == Character(char)}) {
+                self.toolbarActionHandler2(Character(char))
+            } else {
+                super.keyDown(with: event)
+            }
         } else {
             super.keyDown(with: event)
         }
@@ -92,7 +100,13 @@ extension ExcalidrawView: NSViewRepresentable {
         if context.coordinator.lastTool != toolState.activatedTool {
             Task {
                 do {
-                    try await context.coordinator.toggleToolbarAction(key: toolState.activatedTool?.rawValue ?? 1)
+                    if let rawValue = toolState.activatedTool?.rawValue {
+                        if rawValue < 10 {
+                            try await context.coordinator.toggleToolbarAction(key: rawValue)
+                        } else if let keyEquivalent = toolState.activatedTool?.keyEquivalent {
+                            try await context.coordinator.toggleToolbarAction(key: keyEquivalent)
+                        }
+                    }
                 } catch {
                     self.onError(error)
                 }

@@ -285,7 +285,7 @@ final class ExportState: ObservableObject {
 }
 
 
-enum ExcalidrawTool: Int, Hashable {
+enum ExcalidrawTool: Int, Hashable, CaseIterable {
     case eraser = 0
     case cursor = 1
     case rectangle = 2
@@ -322,6 +322,33 @@ enum ExcalidrawTool: Int, Hashable {
                 self = .eraser
             case .laser:
                 self = .laser
+        }
+    }
+    
+    var keyEquivalent: Character? {
+        switch self {
+            case .eraser:
+                Character("e")
+            case .cursor:
+                Character("v")
+            case .rectangle:
+                Character("r")
+            case .diamond:
+                Character("d")
+            case .ellipse:
+                Character("o")
+            case .arrow:
+                Character("a")
+            case .line:
+                Character("l")
+            case .freedraw:
+                Character("p")
+            case .text:
+                Character("t")
+            case .image:
+                nil
+            case .laser:
+                Character("k")
         }
     }
 }

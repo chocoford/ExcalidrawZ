@@ -11,10 +11,26 @@ import UniformTypeIdentifiers
 import WebKit
 
 struct ExportImageView: View {
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.dismiss) var mordenDismiss
     @Environment(\.alertToast) var alertToast
     
     @EnvironmentObject var exportState: ExportState
+    
+    private var _dismissAction: (() -> Void)?
+    init(dismissAction: (() -> Void)? = nil) {
+        if let dismissAction {
+            self._dismissAction = dismissAction
+        }
+    }
+    
+    func dismiss() {
+        if let _dismissAction {
+            _dismissAction()
+        } else {
+            mordenDismiss()
+        }
+    }
+    
     
     @State private var image: NSImage? = nil
     @State private var loadingImage: Bool = false

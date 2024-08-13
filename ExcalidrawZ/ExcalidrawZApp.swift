@@ -8,6 +8,7 @@
 import SwiftUI
 
 import SwiftyAlert
+import ChocofordUI
 #if os(macOS) && !APP_STORE
 import Sparkle
 #endif
@@ -64,7 +65,7 @@ struct ExcalidrawZApp: App {
         }
 #endif
 #if os(macOS)
-//        .defaultSizeCompatible(width: 900, height: 500)
+        
         .commands {
             CommandGroup(after: .importExport) {
                 Button {
@@ -94,3 +95,6 @@ struct ExcalidrawZApp: App {
         }
     }
 }
+
+
+
