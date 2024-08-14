@@ -158,7 +158,7 @@
 		3908EB9829674DF60054A3ED /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
 		390B2C782967CF5C00AA359C /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		390B2C7A2967EACA00AA359C /* FetchResults+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FetchResults+Extension.swift"; sourceTree = "<group>"; };
-		39148772296316720042927A /* Lagacy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Lagacy-Info.plist"; sourceTree = "<group>"; };
+		39148772296316720042927A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		391585A42A80238B0028D250 /* ShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareView.swift; sourceTree = "<group>"; };
 		394804C22A815D1100886972 /* ExportFileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportFileView.swift; sourceTree = "<group>"; };
 		394963A52A0E0E15000FEB40 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -166,10 +166,10 @@
 		394A7FAE2C515CB700D4918B /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		394A7FB22C51621A00D4918B /* ExcalidrawFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawFile.swift; sourceTree = "<group>"; };
 		3963A0822C6C7EAA00472AE7 /* ExcalidrawZ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExcalidrawZ.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		3963A0832C6C7EAA00472AE7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = /Users/chocoford/Developer/ExcaliDrawZ/ExcalidrawZ/Info.plist; sourceTree = "<absolute>"; };
+		3963A0832C6C7EAA00472AE7 /* AppStore-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "AppStore-Info.plist"; path = "/Users/chocoford/Developer/ExcaliDrawZ/ExcalidrawZ/AppStore-Info.plist"; sourceTree = "<absolute>"; };
 		3966612F2C665D3E00F863BC /* excalidraw-latest */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "excalidraw-latest"; sourceTree = "<group>"; };
 		3966623B2C66686A00F863BC /* ExcalidrawServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawServer.swift; sourceTree = "<group>"; };
-		397E4653295838CF003B824B /* ExcalidrawZ-lagacy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ExcalidrawZ-lagacy.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		397E4653295838CF003B824B /* ExcalidrawZ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExcalidrawZ.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		397E4656295838CF003B824B /* ExcalidrawZApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawZApp.swift; sourceTree = "<group>"; };
 		397E4658295838CF003B824B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		397E465A295838D0003B824B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -229,7 +229,7 @@
 				"WebView/Coordinator/ExcalidrawStore+UI.swift",
 				WebView/ExcalidrawView.swift,
 			);
-			target = 397E4652295838CF003B824B /* ExcalidrawZ-lagacy */;
+			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
 		};
 		3963A0352C6BD6B900472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -237,21 +237,21 @@
 				CheckForUpdatesView.swift,
 				UpdateChecker.swift,
 			);
-			target = 397E4652295838CF003B824B /* ExcalidrawZ-lagacy */;
+			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
 		};
 		3963A08B2C6C87F400472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				FakeMigrate.swift,
 			);
-			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ */;
+			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ-AppStore */;
 		};
 		3963A08C2C6C87F400472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				MigrateToNewVersion.swift,
 			);
-			target = 397E4652295838CF003B824B /* ExcalidrawZ-lagacy */;
+			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
 		};
 		3963A0902C6D05A900472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -265,7 +265,7 @@
 				"WebView/Coordinator/ExcalidrawStore+UI.swift",
 				WebView/ExcalidrawView.swift,
 			);
-			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ */;
+			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ-AppStore */;
 		};
 		3963A09A2C6D05D500472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -273,7 +273,7 @@
 				CheckForUpdatesView.swift,
 				UpdateChecker.swift,
 			);
-			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ */;
+			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ-AppStore */;
 		};
 		3963A09E2C6D05DF00472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -282,7 +282,7 @@
 				SegmentedPickerEnvironment.swift,
 				SegmentedPickerHeroLayer.swift,
 			);
-			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ */;
+			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ-AppStore */;
 		};
 		3966624B2C67BEF000F863BC /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -291,7 +291,7 @@
 				SegmentedPickerEnvironment.swift,
 				SegmentedPickerHeroLayer.swift,
 			);
-			target = 397E4652295838CF003B824B /* ExcalidrawZ-lagacy */;
+			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -402,7 +402,7 @@
 		397E4654295838CF003B824B /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				397E4653295838CF003B824B /* ExcalidrawZ-lagacy.app */,
+				397E4653295838CF003B824B /* ExcalidrawZ.app */,
 				397E4664295838D0003B824B /* ExcalidrawZTests.xctest */,
 				397E466E295838D0003B824B /* ExcalidrawZUITests.xctest */,
 				3963A0822C6C7EAA00472AE7 /* ExcalidrawZ.app */,
@@ -413,8 +413,8 @@
 		397E4655295838CF003B824B /* ExcalidrawZ */ = {
 			isa = PBXGroup;
 			children = (
-				3963A0832C6C7EAA00472AE7 /* Info.plist */,
-				39148772296316720042927A /* Lagacy-Info.plist */,
+				3963A0832C6C7EAA00472AE7 /* AppStore-Info.plist */,
+				39148772296316720042927A /* Info.plist */,
 				397E4656295838CF003B824B /* ExcalidrawZApp.swift */,
 				397F98DD295EE18E009BED55 /* AppDelegate.swift */,
 				394A7FAE2C515CB700D4918B /* RootView.swift */,
@@ -559,9 +559,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		3963A0362C6C7EAA00472AE7 /* ExcalidrawZ */ = {
+		3963A0362C6C7EAA00472AE7 /* ExcalidrawZ-AppStore */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 3963A07F2C6C7EAA00472AE7 /* Build configuration list for PBXNativeTarget "ExcalidrawZ" */;
+			buildConfigurationList = 3963A07F2C6C7EAA00472AE7 /* Build configuration list for PBXNativeTarget "ExcalidrawZ-AppStore" */;
 			buildPhases = (
 				3963A0402C6C7EAA00472AE7 /* Sources */,
 				3963A0702C6C7EAA00472AE7 /* Frameworks */,
@@ -571,7 +571,7 @@
 			);
 			dependencies = (
 			);
-			name = ExcalidrawZ;
+			name = "ExcalidrawZ-AppStore";
 			packageProductDependencies = (
 				3963A0372C6C7EAA00472AE7 /* Sparkle */,
 				3963A0392C6C7EAA00472AE7 /* ChocofordEssentials */,
@@ -584,9 +584,9 @@
 			productReference = 3963A0822C6C7EAA00472AE7 /* ExcalidrawZ.app */;
 			productType = "com.apple.product-type.application";
 		};
-		397E4652295838CF003B824B /* ExcalidrawZ-lagacy */ = {
+		397E4652295838CF003B824B /* ExcalidrawZ */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 397E4678295838D0003B824B /* Build configuration list for PBXNativeTarget "ExcalidrawZ-lagacy" */;
+			buildConfigurationList = 397E4678295838D0003B824B /* Build configuration list for PBXNativeTarget "ExcalidrawZ" */;
 			buildPhases = (
 				397E464F295838CF003B824B /* Sources */,
 				397E4650295838CF003B824B /* Frameworks */,
@@ -596,7 +596,7 @@
 			);
 			dependencies = (
 			);
-			name = "ExcalidrawZ-lagacy";
+			name = ExcalidrawZ;
 			packageProductDependencies = (
 				3914876C2960AFD10042927A /* Sparkle */,
 				3930B2F72C512E7B00F14E88 /* ChocofordEssentials */,
@@ -606,7 +606,7 @@
 				3966623E2C666EC600F863BC /* FlyingFox */,
 			);
 			productName = ExcaliDrawZ;
-			productReference = 397E4653295838CF003B824B /* ExcalidrawZ-lagacy.app */;
+			productReference = 397E4653295838CF003B824B /* ExcalidrawZ.app */;
 			productType = "com.apple.product-type.application";
 		};
 		397E4663295838D0003B824B /* ExcalidrawZTests */ = {
@@ -686,8 +686,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				3963A0362C6C7EAA00472AE7 /* ExcalidrawZ */,
-				397E4652295838CF003B824B /* ExcalidrawZ-lagacy */,
+				3963A0362C6C7EAA00472AE7 /* ExcalidrawZ-AppStore */,
+				397E4652295838CF003B824B /* ExcalidrawZ */,
 				397E4663295838D0003B824B /* ExcalidrawZTests */,
 				397E466D295838D0003B824B /* ExcalidrawZUITests */,
 			);
@@ -870,12 +870,12 @@
 /* Begin PBXTargetDependency section */
 		397E4666295838D0003B824B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 397E4652295838CF003B824B /* ExcalidrawZ-lagacy */;
+			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
 			targetProxy = 397E4665295838D0003B824B /* PBXContainerItemProxy */;
 		};
 		397E4670295838D0003B824B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 397E4652295838CF003B824B /* ExcalidrawZ-lagacy */;
+			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
 			targetProxy = 397E466F295838D0003B824B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -896,7 +896,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ExcalidrawZ/Info.plist;
+				INFOPLIST_FILE = "ExcalidrawZ/AppStore-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "ExcalidrawZ-Debug";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -915,7 +915,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.excalidraw-Debug";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -939,7 +939,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ExcalidrawZ/Info.plist;
+				INFOPLIST_FILE = "ExcalidrawZ/AppStore-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = ExcalidrawZ;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -958,7 +958,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1101,7 +1101,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "ExcalidrawZ/Lagacy-Info.plist";
+				INFOPLIST_FILE = ExcalidrawZ/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "ExcalidrawZ-Debug";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -1120,7 +1120,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = "1.0.0-alpha-3";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.ExcalidrawZ-Debug";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1144,7 +1144,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "ExcalidrawZ/Lagacy-Info.plist";
+				INFOPLIST_FILE = ExcalidrawZ/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ExcalidrawZ;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -1163,7 +1163,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = "1.0.0-alpha-3";
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.ExcalidrawZ;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1265,7 +1265,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		3963A07F2C6C7EAA00472AE7 /* Build configuration list for PBXNativeTarget "ExcalidrawZ" */ = {
+		3963A07F2C6C7EAA00472AE7 /* Build configuration list for PBXNativeTarget "ExcalidrawZ-AppStore" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3963A0802C6C7EAA00472AE7 /* Debug */,
@@ -1283,7 +1283,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		397E4678295838D0003B824B /* Build configuration list for PBXNativeTarget "ExcalidrawZ-lagacy" */ = {
+		397E4678295838D0003B824B /* Build configuration list for PBXNativeTarget "ExcalidrawZ" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				397E4679295838D0003B824B /* Debug */,

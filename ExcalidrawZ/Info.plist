@@ -6,7 +6,7 @@
 	<array>
 		<dict>
 			<key>CFBundleTypeName</key>
-			<string>Excalidraw file</string>
+			<string>excalidraw</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
@@ -17,13 +17,24 @@
 			</array>
 		</dict>
 	</array>
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://excalidrawz.web.app/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>GVyyXynnnx8V+9I0OUy/rNRJen+ZFzRd6YhJYuaInbw=</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Cascadia</string>
+		<string>Virgil</string>
+		<string>Cangnanshoujiti</string>
+		<string>KaiTi</string>
+	</array>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
 			<key>UTTypeConformsTo</key>
-			<array>
-				<string>public.json</string>
-			</array>
+			<array/>
 			<key>UTTypeIcons</key>
 			<dict/>
 			<key>UTTypeIdentifier</key>
@@ -40,10 +51,6 @@
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict>
-			<key>UTTypeConformsTo</key>
-			<array>
-				<string>public.json</string>
-			</array>
 			<key>UTTypeIcons</key>
 			<dict/>
 			<key>UTTypeIdentifier</key>
@@ -57,11 +64,5 @@
 			</dict>
 		</dict>
 	</array>
-	<key>SUEnableInstallerLauncherService</key>
-	<true/>
-	<key>SUFeedURL</key>
-	<string>https://excalidrawz.web.app/appcast.xml</string>
-	<key>SUPublicEDKey</key>
-	<string>GVyyXynnnx8V+9I0OUy/rNRJen+ZFzRd6YhJYuaInbw=</string>
 </dict>
 </plist>
