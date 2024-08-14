@@ -23,7 +23,7 @@ struct MigrateToNewVersionSheetViewModifier: ViewModifier {
                 MigrateToNewVersionSheetView()
             }
             .onAppear {
-                if !appVersion.contains("alhpa"),
+                if !appVersion.contains("alpha"),
                     !appVersion.contains("beta"),
                    Bundle.main.bundleIdentifier == "com.chocoford.ExcalidrawZ" || Bundle.main.bundleIdentifier == "com.chocoford.ExcalidrawZ-Debug" {
                     showMigrateSheet = !UserDefaults.standard.bool(forKey: "PreventShowMigrationSheet")
