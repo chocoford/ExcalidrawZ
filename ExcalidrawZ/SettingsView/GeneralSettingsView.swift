@@ -7,10 +7,14 @@
 
 import SwiftUI
 import ChocofordUI
+#if !APP_STORE
 import Sparkle
+#endif
 
 struct GeneralSettingsView: View {
+#if !APP_STORE
     @EnvironmentObject var updateChecker: UpdateChecker
+#endif
     @EnvironmentObject var appPreference: AppPreference
 
     var body: some View {
@@ -59,7 +63,7 @@ struct GeneralSettingsView: View {
             }
         }
         
-        
+#if !APP_STORE
         Section {
             Toggle("Check updates automatically", isOn: $updateChecker.canCheckForUpdates)
         } header: {
@@ -79,6 +83,7 @@ struct GeneralSettingsView: View {
                 }
             }
         }
+#endif
     }
     
     @ViewBuilder

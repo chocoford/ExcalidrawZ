@@ -7,7 +7,9 @@
 
 import SwiftUI
 import ChocofordUI
+#if !APP_STORE
 import Sparkle
+#endif
 
 struct SettingsView: View {
     @State private var selection: Route? = .general

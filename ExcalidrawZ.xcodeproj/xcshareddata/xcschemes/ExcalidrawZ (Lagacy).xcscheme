@@ -15,9 +15,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "3963A0362C6C7EAA00472AE7"
-               BuildableName = "ExcalidrawZ-AppStore.app"
-               BlueprintName = "ExcalidrawZ-AppStore"
+               BlueprintIdentifier = "3963A0FF2C6D1D4900472AE7"
+               BuildableName = "ExcalidrawZ.app"
+               BlueprintName = "ExcalidrawZ (Lagacy)"
                ReferencedContainer = "container:ExcalidrawZ.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -44,9 +44,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "3963A0362C6C7EAA00472AE7"
-            BuildableName = "ExcalidrawZ-AppStore.app"
-            BlueprintName = "ExcalidrawZ-AppStore"
+            BlueprintIdentifier = "3963A0FF2C6D1D4900472AE7"
+            BuildableName = "ExcalidrawZ.app"
+            BlueprintName = "ExcalidrawZ (Lagacy)"
             ReferencedContainer = "container:ExcalidrawZ.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -61,9 +61,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "3963A0362C6C7EAA00472AE7"
-            BuildableName = "ExcalidrawZ-AppStore.app"
-            BlueprintName = "ExcalidrawZ-AppStore"
+            BlueprintIdentifier = "3963A0FF2C6D1D4900472AE7"
+            BuildableName = "ExcalidrawZ.app"
+            BlueprintName = "ExcalidrawZ (Lagacy)"
             ReferencedContainer = "container:ExcalidrawZ.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

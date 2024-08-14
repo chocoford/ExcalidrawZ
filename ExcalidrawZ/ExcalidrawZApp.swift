@@ -40,7 +40,9 @@ struct ExcalidrawZApp: App {
     @Environment(\.scenePhase) var scenePhase
     
     @StateObject private var appPrefernece = AppPreference()
+#if os(macOS) && !APP_STORE
     @StateObject private var updateChecker = UpdateChecker()
+#endif
     @State private var server = ExcalidrawServer()
 
     @State private var timer = Timer.publish(every: 30, on: .main, in: .default).autoconnect()
@@ -54,7 +56,9 @@ struct ExcalidrawZApp: App {
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
                 .environmentObject(appPrefernece)
                 .onAppear {
+#if os(macOS) && !APP_STORE
                     updateChecker.assignUpdater(updater: updaterController.updater)
+#endif
                 }
         }
 #if os(macOS) && !APP_STORE
@@ -90,7 +94,9 @@ struct ExcalidrawZApp: App {
         Settings {
             SettingsView()
                 .environmentObject(appPrefernece)
+#if !APP_STORE
                 .environmentObject(updateChecker)
+#endif
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
         }
     }
