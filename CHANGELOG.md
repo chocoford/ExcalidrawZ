@@ -1,3 +1,13 @@
+## 1.0.0-alpha-4
+
+* Optimize import functionality 
+* Add `merge with` option for groups.
+* Increase stability of database. (Especially for concurrency operations.)
+
+## 1.0.0-alpha-3
+
+* Optimize first launch experience. 
+
 ## 1.0.0-alpha-2
 
 * Optimize performance
