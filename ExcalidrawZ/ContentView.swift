@@ -322,7 +322,8 @@ extension ContentView {
         ToolbarItemGroup(placement: .automatic) {
             Spacer()
             
-            if Bundle.main.bundleIdentifier == "com.chocoford.ExcalidrawZ" || Bundle.main.bundleIdentifier == "com.chocoford.ExcalidrawZ-Debug" {
+            if !appVersion.contains("alhpa"), !appVersion.contains("beta"),
+               Bundle.main.bundleIdentifier == "com.chocoford.ExcalidrawZ" || Bundle.main.bundleIdentifier == "com.chocoford.ExcalidrawZ-Debug" {
                 Button {
                     isMigrateSheetPresented.toggle()
                 } label: {

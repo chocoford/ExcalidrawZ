@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+import ChocofordEssentials
 import ChocofordUI
 
 struct MigrateToNewVersionSheetViewModifier: ViewModifier {
@@ -22,7 +23,11 @@ struct MigrateToNewVersionSheetViewModifier: ViewModifier {
                 MigrateToNewVersionSheetView()
             }
             .onAppear {
-                showMigrateSheet = !UserDefaults.standard.bool(forKey: "PreventShowMigrationSheet")
+                if !appVersion.contains("alhpa"),
+                    !appVersion.contains("beta"),
+                   Bundle.main.bundleIdentifier == "com.chocoford.ExcalidrawZ" || Bundle.main.bundleIdentifier == "com.chocoford.ExcalidrawZ-Debug" {
+                    showMigrateSheet = !UserDefaults.standard.bool(forKey: "PreventShowMigrationSheet")
+                }
             }
     }
 }
