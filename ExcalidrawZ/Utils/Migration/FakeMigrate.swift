@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct MigrateToNewVersionSheetViewModifier: ViewModifier {
+    
+    init(isPresented: Binding<Bool>) {}
+    
     func body(content: Content) -> some View {
         content
     }

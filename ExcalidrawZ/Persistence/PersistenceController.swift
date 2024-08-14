@@ -21,7 +21,7 @@ struct PersistenceController {
         // If you didn't name your model Main you'll need
         // to change this name below.
         container = NSPersistentContainer(name: "Model")
-
+        container.viewContext.automaticallyMergesChangesFromParent = true
         if inMemory {
             container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
         }
@@ -123,7 +123,7 @@ extension PersistenceController {
         return results
     }
     
-    
+    @MainActor
     func createGroup(name: String) throws -> Group {
         let group = Group(context: container.viewContext)
         group.id = UUID()
@@ -133,6 +133,7 @@ extension PersistenceController {
         return group
     }
     
+    @MainActor
     func createFile(in group: Group) throws -> File {
         guard let templateURL = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else { throw AppError.fileError(.notFound) }
         
@@ -146,6 +147,7 @@ extension PersistenceController {
         return file
     }
     
+    @MainActor
     func duplicateFile(file: File) -> File {
         let newFile = File(context: container.viewContext)
         newFile.id = UUID()
@@ -159,11 +161,11 @@ extension PersistenceController {
     
     //MARK: - Checkpoints
     
-    func getLatestCheckpoint(of file: File) throws -> FileCheckpoint? {
+    func getLatestCheckpoint(of file: File, viewContext: NSManagedObjectContext) throws -> FileCheckpoint? {
         let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
         fetchRequest.predicate = NSPredicate(format: "file == %@", file)
         fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
-        return try container.viewContext.fetch(fetchRequest).first
+        return try viewContext.fetch(fetchRequest).first
     }
     
     func getOldestCheckpoint(of file: File) throws -> FileCheckpoint? {
@@ -173,11 +175,11 @@ extension PersistenceController {
         return try container.viewContext.fetch(fetchRequest).first
     }
     
-    func fetchFileCheckpoints(of file: File) throws -> [FileCheckpoint] {
+    func fetchFileCheckpoints(of file: File, viewContext: NSManagedObjectContext) throws -> [FileCheckpoint] {
         let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
         fetchRequest.predicate = NSPredicate(format: "file == %@", file)
         fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
-        return try container.viewContext.fetch(fetchRequest)
+        return try viewContext.fetch(fetchRequest)
     }
     
     

@@ -23,6 +23,8 @@ struct ContentView: View {
     @State private var sharedFile: File?
     
     @State private var window: NSWindow?
+    
+    @State private var isMigrateSheetPresented = false
         
     var body: some View {
         content()
@@ -37,7 +39,7 @@ struct ContentView: View {
                 }
             }
             .toolbar { toolbarContent() }
-            .modifier(MigrateToNewVersionSheetViewModifier())
+            .modifier(MigrateToNewVersionSheetViewModifier(isPresented: $isMigrateSheetPresented))
             .environmentObject(fileState)
             .environmentObject(exportState)
             .environmentObject(toolState)
@@ -316,6 +318,14 @@ extension ContentView {
 
         ToolbarItemGroup(placement: .automatic) {
             Spacer()
+            
+            if Bundle.main.bundleIdentifier == "com.chocoford.ExcalidrawZ" || Bundle.main.bundleIdentifier == "com.chocoford.ExcalidrawZ-Debug" {
+                Button {
+                    isMigrateSheetPresented.toggle()
+                } label: {
+                    Image(systemSymbol: .sparkles)
+                }
+            }
             
             if let currentFile = fileState.currentFile {
                 Popover {

@@ -44,7 +44,7 @@ struct ExcalidrawZApp: App {
     @State private var server = ExcalidrawServer()
 
     @State private var timer = Timer.publish(every: 30, on: .main, in: .default).autoconnect()
-    
+        
     var body: some Scene {
         // Can not use Document group - we should save chekpoints
         WindowGroup {

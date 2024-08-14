@@ -76,16 +76,15 @@ actor ExcalidrawWebActor {
         self.excalidrawCoordinator = coordinator
     }
     
-    var loadedFile: File?
+    var loadedFileID: File.ID?
     var webView: ExcalidrawWebView { excalidrawCoordinator.webView }
     
-    func loadFile(from file: File?, force: Bool = false) async throws {
+    func loadFile(id: File.ID, data: Data, force: Bool = false) async throws {
         let webView = webView
-        guard loadedFile != file || force else { return }
-        guard let file = file, let data = file.content else { return }
-        self.loadedFile = file
+        guard loadedFileID != id || force else { return }
+        self.loadedFileID = id
         let startDate = Date()
-        print("Load file<\(String(describing: file.id)), \(file.content?.count ?? 0)>, force: \(force), Thread: \(Thread().description)")
+        print("Load file<\(String(describing: id)), \(data.count)>, force: \(force), Thread: \(Thread().description)")
         var buffer = [UInt8].init(repeating: 0, count: data.count)
         data.copyBytes(to: &buffer, count: data.count)
         let buf = buffer
@@ -99,9 +98,18 @@ actor ExcalidrawWebActor {
 /// Keep stateless
 extension ExcalidrawView.Coordinator {
     
-    func loadFile(from file: File?, force: Bool = false) async throws {
-        guard await !self.webView.isLoading else { return }
-        try await self.webActor.loadFile(from: file, force: force)
+    func loadFile(from file: File?, force: Bool = false) {
+        guard !self.parent.isLoading else { return }
+        guard let fileID = file?.id,
+            let data = file?.content else { return }
+        Task.detached {
+            do {
+                try await self.webActor.loadFile(id: fileID, data: data, force: force)
+            } catch {
+                await self.parent.onError(error)
+            }
+        }
+        
 //        try await withThrowingTaskGroup(of: Bool.self) { taskGroup in
 //            taskGroup.addTask {
 //                try await self.webActor.loadFile(from: file, force: force)

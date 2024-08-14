@@ -132,10 +132,13 @@ final class FileState: ObservableObject {
     
     var recoverWatchUpdate: DispatchWorkItem?
     
+    @MainActor
     func createNewGroup(name: String) throws {
         let group = try PersistenceController.shared.createGroup(name: name)
         currentGroup = group
+        PersistenceController.shared.save()
     }
+    @MainActor
     func createNewFile(
         active: Bool = true
     ) throws {
@@ -144,6 +147,7 @@ final class FileState: ObservableObject {
         if active {
             currentFile = file
         }
+        PersistenceController.shared.save()
     }
     
     func updateCurrentFileData(data: Data) {
@@ -153,15 +157,23 @@ final class FileState: ObservableObject {
         logger.info("\(#function) data: \(data)")
         if let file = currentFile {
             let didUpdateFile = didUpdateFile
+            let id = file.objectID
+            let bgContext = PersistenceController.shared.container.newBackgroundContext()
+            
             Task.detached {
                 do {
-                    try file.updateElements(with: data, newCheckpoint: !didUpdateFile)
+                    try await bgContext.perform {
+                        guard let file = bgContext.object(with: id) as? File else { return }
+                        try file.updateElements(with: data, newCheckpoint: !didUpdateFile)
+                        try bgContext.save()
+                    }
+                    
                     await MainActor.run {
                         self.didUpdateFile = true
                     }
-                    PersistenceController.shared.save()
-                } catch {
                     
+                } catch {
+                    print(error)
                 }
             }
         } else if !isCreatingFile {
@@ -169,17 +181,20 @@ final class FileState: ObservableObject {
         }
     }
     
+    
     func importFile(_ url: URL) throws {
         guard url.pathExtension == "excalidraw" else { throw AppError.fileError(.invalidURL) }
         // .uncached fixes the import bug occurs in x86 mac OS
         let data = try Data(contentsOf: url, options: .uncached)
         guard let currentGroup else { throw AppError.stateError(.currentGroupNil) }
-        let file = try PersistenceController.shared.createFile(in: currentGroup)
-        file.name = url.deletingPathExtension().lastPathComponent
-        file.content = data
-        PersistenceController.shared.save()
-        DispatchQueue.main.async {
-            self.currentFile = file
+        Task {
+            try? await MainActor.run {
+                let file = try PersistenceController.shared.createFile(in: currentGroup)
+                file.name = url.deletingPathExtension().lastPathComponent
+                file.content = data
+                PersistenceController.shared.save()
+                self.currentFile = file
+            }
         }
     }
     
@@ -195,11 +210,14 @@ final class FileState: ObservableObject {
     
     func moveFile(_ file: File, to group: Group) {
         file.group = group
-        currentGroup = group
-        currentFile = file
+        if file == currentFile {
+            currentGroup = group
+            currentFile = file
+        }
         PersistenceController.shared.save()
     }
     
+    @MainActor
     func duplicateFile(_ file: File) {
         let newFile = PersistenceController.shared.duplicateFile(file: file)
         currentFile = newFile

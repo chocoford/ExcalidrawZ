@@ -93,13 +93,7 @@ extension ExcalidrawView: NSViewRepresentable {
                 self.onError(error)
             }
         }
-        Task {
-            do {
-                try await context.coordinator.loadFile(from: fileState.currentFile)
-            } catch {
-                self.onError(error)
-            }
-        }
+        context.coordinator.loadFile(from: fileState.currentFile)
         if context.coordinator.lastTool != toolState.activatedTool {
             Task {
                 do {

@@ -34,20 +34,21 @@ extension File {
         let contentData = try JSONSerialization.data(withJSONObject: obj)
         self.content = contentData
         self.updatedAt = .now
-        
+
+        let viewContext = self.managedObjectContext ?? PersistenceController.shared.container.newBackgroundContext()
         if newCheckpoint {
-            let checkpoint = FileCheckpoint(context: PersistenceController.shared.container.viewContext)
+            let checkpoint = FileCheckpoint(context: viewContext)
             checkpoint.id = UUID()
             checkpoint.content = contentData
             checkpoint.filename = self.name
             checkpoint.updatedAt = .now
             self.addToCheckpoints(checkpoint)
             
-            if let checkpoints = try? PersistenceController.shared.fetchFileCheckpoints(of: self),
+            if let checkpoints = try? PersistenceController.shared.fetchFileCheckpoints(of: self, viewContext: viewContext),
                checkpoints.count > 50 {
                 self.removeFromCheckpoints(checkpoints.last!)
             }
-        } else if let checkpoint = try? PersistenceController.shared.getLatestCheckpoint(of: self) {
+        } else if let checkpoint = try? PersistenceController.shared.getLatestCheckpoint(of: self, viewContext: viewContext) {
             // update latest checkpoint
             checkpoint.content = contentData
             checkpoint.filename = self.name

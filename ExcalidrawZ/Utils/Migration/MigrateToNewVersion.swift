@@ -10,7 +10,11 @@ import SwiftUI
 import ChocofordUI
 
 struct MigrateToNewVersionSheetViewModifier: ViewModifier {
-    @State private var showMigrateSheet = false
+    @Binding var showMigrateSheet: Bool
+    
+    init(isPresented: Binding<Bool>) {
+        self._showMigrateSheet = isPresented
+    }
     
     func body(content: Content) -> some View {
         content
