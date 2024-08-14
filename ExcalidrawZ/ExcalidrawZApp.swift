@@ -94,12 +94,6 @@ struct ExcalidrawZApp: App {
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
         }
     }
-    
-    
-    @SceneBuilder
-    private func mainWindowGroup() -> some Scene {
-
-    }
 }
 
 
