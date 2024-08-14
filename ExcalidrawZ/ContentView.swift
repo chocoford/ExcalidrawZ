@@ -326,23 +326,25 @@ extension ContentView {
                 Button {
                     isMigrateSheetPresented.toggle()
                 } label: {
-                    Image(systemSymbol: .sparkles)
+                    Label("Migrate to new ExcalidrawZ", systemSymbol: .sparkles)
                 }
+                .help("Migrate to new ExcalidrawZ")
             }
             
             if let currentFile = fileState.currentFile {
                 Popover {
                     FileCheckpointListView(file: currentFile)
                 } label: {
-                    Image(systemName: "clock.arrow.circlepath")
+                    Label("File history", systemSymbol: .clockArrowCirclepath)
                 }
                 .disabled(fileState.currentGroup?.groupType == .trash)
+                .help("File history")
             }
 
             Button {
                 self.sharedFile = fileState.currentFile
             } label: {
-                Image(systemName: "square.and.arrow.up")
+                Label("Share", systemSymbol: .squareAndArrowUp)
             }
             .help("Share")
             .disabled(fileState.currentGroup?.groupType == .trash)
