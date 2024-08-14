@@ -35,7 +35,7 @@ This new version is under development. The TCA framework will be removed.
 [Excalidraw](https://github.com/excalidraw/excalidraw) is a very useful web app, but the lack of file management can be troublesome and unsettling. We often need to manually save and maintain multiple different Excalidraw files. Therefore, ExcalidrawZ has wrapped it up to automatically save edited files for users and added file grouping functionality. In future versions, iCloud automatic backup will also be added to greatly reduce the insecurity of using a web app.
 
 ## Preview
-![App preview](https://github.com/chocoford/ExcalidrawZ/assets/28218759/8188d209-0fed-469d-b702-37631985c1a3)
+![App overview](assets/README/App%20overview.png)
 
 ## Installation
 
@@ -71,6 +71,8 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
 ![File History](https://github.com/chocoford/ExcalidrawZ/assets/28218759/b4feb7df-4278-4a5c-8c78-c83200efc99b)
 
 #### Multiple hand-writing fonts supported
+
+> If you need more languages support, please do not hesitate to contact me.
 
 - [x] English (Native excalidraw font)
 - [x] 简体中文（杨任东竹书体）

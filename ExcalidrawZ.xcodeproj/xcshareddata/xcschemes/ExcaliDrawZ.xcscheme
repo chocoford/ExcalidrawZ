@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "397E4652295838CF003B824B"
-               BuildableName = "ExcalidrawZ.app"
-               BlueprintName = "ExcalidrawZ"
+               BuildableName = "ExcalidrawZ-lagacy.app"
+               BlueprintName = "ExcalidrawZ-lagacy"
                ReferencedContainer = "container:ExcalidrawZ.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,8 +45,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "397E4652295838CF003B824B"
-            BuildableName = "ExcalidrawZ.app"
-            BlueprintName = "ExcalidrawZ"
+            BuildableName = "ExcalidrawZ-lagacy.app"
+            BlueprintName = "ExcalidrawZ-lagacy"
             ReferencedContainer = "container:ExcalidrawZ.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -68,8 +68,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "397E4652295838CF003B824B"
-            BuildableName = "ExcalidrawZ.app"
-            BlueprintName = "ExcalidrawZ"
+            BuildableName = "ExcalidrawZ-lagacy.app"
+            BlueprintName = "ExcalidrawZ-lagacy"
             ReferencedContainer = "container:ExcalidrawZ.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
