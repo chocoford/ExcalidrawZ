@@ -239,6 +239,20 @@
 			);
 			target = 397E4652295838CF003B824B /* ExcalidrawZ-lagacy */;
 		};
+		3963A08B2C6C87F400472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				FakeMigrate.swift,
+			);
+			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ */;
+		};
+		3963A08C2C6C87F400472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				MigrateToNewVersion.swift,
+			);
+			target = 397E4652295838CF003B824B /* ExcalidrawZ-lagacy */;
+		};
 		3966624B2C67BEF000F863BC /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -253,6 +267,7 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		394A7FB02C515ECB00D4918B /* ExclidrawView */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (394A7FB12C515EE100D4918B /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ExclidrawView; sourceTree = "<group>"; };
 		3963A0342C6BD6B200472AE7 /* Sparkle */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A0352C6BD6B900472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Sparkle; sourceTree = "<group>"; };
+		3963A08A2C6C87EF00472AE7 /* Migration */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A08B2C6C87F400472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 3963A08C2C6C87F400472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Migration; sourceTree = "<group>"; };
 		3966624A2C67BEE900F863BC /* SegmentedPicker */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3966624B2C67BEF000F863BC /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SegmentedPicker; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -454,6 +469,7 @@
 				397F98E129607D58009BED55 /* ExcaliDrawOpenPanel.swift */,
 				3966623B2C66686A00F863BC /* ExcalidrawServer.swift */,
 				3966624A2C67BEE900F863BC /* SegmentedPicker */,
+				3963A08A2C6C87EF00472AE7 /* Migration */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
