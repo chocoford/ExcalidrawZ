@@ -46,10 +46,12 @@ struct GroupListView: View {
         content
             .sheet(isPresented: $showCreateFolderDialog) {
                 CreateGroupSheetView(groups: groups) { name in
-                    do {
-                        try fileState.createNewGroup(name: name)
-                    } catch {
-                        alertToast(error)
+                    Task {
+                        do {
+                            try await fileState.createNewGroup(name: name)
+                        } catch {
+                            alertToast(error)
+                        }
                     }
                 }
             }
@@ -71,7 +73,7 @@ struct GroupListView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(displayedGroups) { group in
-                        GroupRowView(group: group)
+                        GroupRowView(group: group, groups: displayedGroups)
                             .padding(.horizontal, 8)
                     }
                 }

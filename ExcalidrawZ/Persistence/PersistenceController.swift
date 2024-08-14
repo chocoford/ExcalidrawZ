@@ -123,15 +123,13 @@ extension PersistenceController {
         return results
     }
     
-    @MainActor
-    func createGroup(name: String) throws -> Group {
-        let group = Group(context: container.viewContext)
-        group.id = UUID()
-        group.name = name
-        group.createdAt = .now
-        
-        return group
-    }
+//    func createGroup(name: String, context: NSManagedObjectContext) throws -> Group {
+//        let group = Group(context: context)
+//        group.id = UUID()
+//        group.name = name
+//        group.createdAt = .now
+//        return group
+//    }
     
     @MainActor
     func createFile(in group: Group) throws -> File {

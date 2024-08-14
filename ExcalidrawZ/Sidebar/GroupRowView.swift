@@ -44,10 +44,12 @@ struct GroupRowView: View {
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
+    var groups: [Group]
     var group: Group
     
-    init(group: Group) {
+    init(group: Group, groups: [Group]) {
         self.group = group
+        self.groups = groups
     }
     
     @State private var isDeleteConfirmPresented = false
@@ -121,11 +123,8 @@ extension GroupRowView {
                 Image(systemName: group.icon ?? "folder")
         }
     }
-}
-
-
-// MARK: - Context Menu
-extension GroupRowView {
+    
+    // MARK: - Context Menu
     @MainActor @ViewBuilder
     private var contextMenuView: some View {
         ZStack {
@@ -134,6 +133,18 @@ extension GroupRowView {
                     isRenameSheetPresented.toggle()
                 } label: {
                     Label("rename", systemImage: "pencil.line")
+                }
+                
+                Menu {
+                    ForEach(groups.filter{$0 != group}) { group in
+                        Button {
+                            mergeWithGroup(group)
+                        } label: {
+                            Text(group.name ?? "Unknown")
+                        }
+                    }
+                } label: {
+                    Label("merge with", systemSymbol: .rectangleStackBadgePlus)
                 }
                 
                 Button(role: .destructive) {
@@ -156,6 +167,35 @@ extension GroupRowView {
             }
         }
         .labelStyle(.titleAndIcon)
+    }
+    
+    private func mergeWithGroup(_ group: Group) {
+        guard let files = self.group.files?.allObjects as? [File] else { return }
+        fileState.currentGroup = group
+        PersistenceController.shared.container.viewContext.performAndWait {
+            for file in files {
+                file.group = group
+            }
+            do {
+                try PersistenceController.shared.container.viewContext.save()
+            } catch {
+                print(error)
+            }
+        }
+        let groupID = self.group.objectID
+        let bgContext = PersistenceController.shared.container.newBackgroundContext()
+        bgContext.perform {
+            guard let selfGroup = bgContext.object(with: groupID) as? Group else { return }
+            for file in selfGroup.files?.allObjects as? [File] ?? [] {
+                bgContext.delete(file)
+            }
+            bgContext.delete(selfGroup)
+            do {
+                try bgContext.save()
+            } catch {
+                print(error)
+            }
+        }
     }
 }
 

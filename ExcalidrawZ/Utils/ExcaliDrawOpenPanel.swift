@@ -11,9 +11,9 @@ import AppKit
 class ExcalidrawOpenPanel: NSOpenPanel {
     static var importPanel: ExcalidrawOpenPanel {
         let panel = ExcalidrawOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.allowedContentTypes = [.init(filenameExtension: "excalidraw")].compactMap{ $0 }
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = true
+        panel.allowedContentTypes = [.init(filenameExtension: "excalidraw") ?? .excalidrawFile]
         panel.prompt = "import"
         return panel
     }

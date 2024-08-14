@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreData
 
 #if DEBUG
 extension Group {
@@ -28,9 +29,14 @@ extension Group {
         group.createdAt = .distantPast
         return group
     }()
-}
-
-extension Group {
+    
+    convenience init(name: String, context: NSManagedObjectContext) {
+        self.init(context: context)
+        self.id = UUID()
+        self.name = name
+        self.createdAt = .now
+    }
+    
     enum GroupType: String {
         case `default` = "default"
         case trash = "trash"

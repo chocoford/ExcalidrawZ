@@ -91,3 +91,19 @@ func getTempDirectory() throws -> URL? {
     }
     return directory
 }
+
+
+func flatFiles(in directory: URL) throws -> [URL] {
+    let fileManager = FileManager.default
+    var isDirectory = false
+    guard fileManager.fileExists(at: directory, isDirectory: &isDirectory) else {
+        return []
+    }
+    guard isDirectory else { return [directory] }
+    
+    let contents = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [])
+    let files = try contents.flatMap { try flatFiles(in: $0) }
+    
+    print(#function, "files: \(files)")
+    return files
+}

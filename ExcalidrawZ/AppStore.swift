@@ -11,6 +11,7 @@ import Combine
 import os.log
 
 import ChocofordUI
+import UniformTypeIdentifiers
 
 final class AppPreference: ObservableObject {
     enum SidebarMode: Sendable {
@@ -132,16 +133,20 @@ final class FileState: ObservableObject {
     
     var recoverWatchUpdate: DispatchWorkItem?
     
-    @MainActor
-    func createNewGroup(name: String) throws {
-        let group = try PersistenceController.shared.createGroup(name: name)
-        currentGroup = group
-        PersistenceController.shared.save()
+    @discardableResult
+    func createNewGroup(name: String, activate: Bool = true) async throws -> NSManagedObjectID {
+        try await PersistenceController.shared.container.viewContext.perform {
+            let group = Group(name: name, context: PersistenceController.shared.container.viewContext)
+            if activate {
+                self.currentGroup = group
+            }
+            try PersistenceController.shared.container.viewContext.save()
+            return group.objectID
+        }
     }
+    
     @MainActor
-    func createNewFile(
-        active: Bool = true
-    ) throws {
+    func createNewFile(active: Bool = true) throws {
         guard let currentGroup else { throw AppError.stateError(.currentGroupNil) }
         let file = try PersistenceController.shared.createFile(in: currentGroup)
         if active {
@@ -182,20 +187,117 @@ final class FileState: ObservableObject {
     }
     
     
-    func importFile(_ url: URL) throws {
+    func importFile(_ url: URL) async throws {
         guard url.pathExtension == "excalidraw" else { throw AppError.fileError(.invalidURL) }
         // .uncached fixes the import bug occurs in x86 mac OS
         let data = try Data(contentsOf: url, options: .uncached)
-        guard let currentGroup else { throw AppError.stateError(.currentGroupNil) }
-        Task {
-            try? await MainActor.run {
-                let file = try PersistenceController.shared.createFile(in: currentGroup)
-                file.name = url.deletingPathExtension().lastPathComponent
-                file.content = data
-                PersistenceController.shared.save()
-                self.currentFile = file
+        try await MainActor.run {
+            guard let currentGroup else { throw AppError.stateError(.currentGroupNil) }
+            let file = try PersistenceController.shared.createFile(in: currentGroup)
+            file.name = url.deletingPathExtension().lastPathComponent
+            file.content = data
+            PersistenceController.shared.save()
+            self.currentFile = file
+        }
+    }
+    
+    
+    /// Different handle logics according to different combinations of urls.
+    /// * only files: Import to current group.
+    /// * 1 folder:
+    ///     * if has subfolders: Create groups by folders & Group remains files to `Ungrouped`
+    ///     * if only files: import all files to one group with the same name of the ancestor folder.
+    /// * multiple folders: Create groups by folders
+    /// * folders & files: Create groups by folders & Group remains files to `Ungrouped`
+    func importFiles(_ urls: [URL]) async throws {
+        let currentGroupID = currentGroup?.objectID
+        var groupID: NSManagedObjectID?
+        if urls.count == 1, let url = urls.first {
+            if FileManager.default.isDirectory(url) { // a directory
+                let viewContext = PersistenceController.shared.container.newBackgroundContext()
+                try await viewContext.perform {
+                    let contents = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: [])
+                    
+                    if contents.allSatisfy({!FileManager.default.isDirectory($0)}) {
+                        // only files
+                        groupID = try self.importGroupFiles(url: url, viewContext: viewContext)
+                    } else {
+                        // has subfolders
+                        var unknownGroup: Group?
+                        for url in contents {
+                            if FileManager.default.isDirectory(url) {
+                                try self.importGroupFiles(url: url, viewContext: viewContext)
+                            } else if url.pathExtension == UTType.excalidrawFile.preferredFilenameExtension {
+                                if unknownGroup == nil {
+                                    unknownGroup = Group(name: "Ungrouped", context: viewContext)
+                                }
+                                let data = try Data(contentsOf: url, options: .uncached)
+                                let file = File(name: url.deletingPathExtension().lastPathComponent, context: viewContext)
+                                file.content = data
+                                file.group = unknownGroup
+                            }
+                        }
+                    }
+                    try viewContext.save()
+                }
+            } else {
+                // only one excalidraw file
+                try await self.importFile(url)
+            }
+        } else if urls.count > 1 {
+            // folders will be created as group, files will be imported to `default` group.
+            let viewContext = PersistenceController.shared.container.newBackgroundContext()
+            try await viewContext.perform {
+                let fetchRequest = NSFetchRequest<Group>()
+                fetchRequest.predicate = NSPredicate(format: "type == %@", "default")
+                var group: Group?
+                if let currentGroupID, let currentGroup = viewContext.object(with: currentGroupID) as? Group {
+                    group = currentGroup
+                } else if let defaultGroup = try viewContext.fetch(fetchRequest).first {
+                    group = defaultGroup
+                }
+                guard let group else { return }
+                // multiple folders
+                for folderURL in urls.filter({FileManager.default.isDirectory($0)}) {
+                    try self.importGroupFiles(url: folderURL, viewContext: viewContext)
+                }
+                // only files
+                for fileURL in urls.filter({!FileManager.default.isDirectory($0)}) {
+                    let data = try Data(contentsOf: fileURL, options: .uncached)
+                    let file = File(name: fileURL.deletingPathExtension().lastPathComponent, context: viewContext)
+                    file.content = data
+                    file.group = group
+                }
+                try viewContext.save()
+                
+                groupID = group.objectID
             }
         }
+//        await PersistenceController.shared.container.viewContext.perform {
+//            if let groupID, let group = PersistenceController.shared.container.viewContext.object(with: groupID) as? Group {
+//                DispatchQueue.main.async {
+//                    self.currentGroup = group
+//                }
+//            }
+//        }
+    }
+    
+    @discardableResult
+    private func importGroupFiles(url: URL, viewContext: NSManagedObjectContext) throws -> NSManagedObjectID {
+        let groupName = url.lastPathComponent
+        // create group
+        let group = Group(name: groupName, context: viewContext)
+        let urls = try flatFiles(in: url).filter{
+            $0.pathExtension == UTType.excalidrawFile.preferredFilenameExtension
+        }
+        for url in urls {
+            let data = try Data(contentsOf: url, options: .uncached)
+            let file = File(name: url.deletingPathExtension().lastPathComponent, context: viewContext)
+            file.content = data
+            file.group = group
+        }
+        
+        return group.objectID
     }
     
     func renameFile(_ file: File, newName: String) {
@@ -389,5 +491,4 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
 final class ToolState: ObservableObject {
     @Published var activatedTool: ExcalidrawTool? = .cursor
 }
-
 

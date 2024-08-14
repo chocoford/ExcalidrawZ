@@ -65,14 +65,15 @@ struct ExcalidrawZApp: App {
         }
 #endif
 #if os(macOS)
-        
+        .defaultSizeIfAvailable(CGSize(width: 1200, height: 700))
         .commands {
             CommandGroup(after: .importExport) {
                 Button {
                     let panel = ExcalidrawOpenPanel.importPanel
                     if panel.runModal() == .OK {
+                        print("import <\(panel.urls)>")
                         if let url = panel.url {
-                            NotificationCenter.default.post(name: .shouldHandleImport, object: url)
+                            NotificationCenter.default.post(name: .shouldHandleImport, object: panel.urls)
                         }
                     }
                 } label: {
@@ -86,7 +87,6 @@ struct ExcalidrawZApp: App {
             }
         }
 #endif
-        
         Settings {
             SettingsView()
                 .environmentObject(appPrefernece)
@@ -94,7 +94,24 @@ struct ExcalidrawZApp: App {
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
         }
     }
+    
+    
+    @SceneBuilder
+    private func mainWindowGroup() -> some Scene {
+
+    }
 }
 
+
+fileprivate extension Scene {
+    func defaultSizeIfAvailable(_ size: CGSize) -> some Scene {
+        if #available(macOS 13.0, *) {
+            return self.defaultSize(size)
+        }
+        else {
+            return self
+        }
+    }
+}
 
 

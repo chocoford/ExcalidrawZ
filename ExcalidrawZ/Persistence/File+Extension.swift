@@ -9,19 +9,14 @@ import Foundation
 import SwiftUI
 
 extension File {
-//    func emptyFile() throws -> File {
-//        guard let templateURL = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else { throw AppError.fileError(.notFound) }
-//        
-//        let file = File()
-//        file.id = UUID()
-//        file.name = "Untitled"
-//        file.createdAt = .now
-//        file.updatedAt = .now
-//        file.group = group
-//        file.content = try Data(contentsOf: templateURL)
-//        
-//        return file
-//    }
+    
+    convenience init(name: String, context: NSManagedObjectContext) {
+        self.init(context: context)
+        self.id = UUID()
+        self.name = name
+        self.createdAt = .now
+        self.updatedAt = .now
+    }
     
     func updateElements(with fileData: Data, newCheckpoint: Bool = false) throws {
         guard let data = self.content else { return }

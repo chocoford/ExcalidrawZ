@@ -46,12 +46,15 @@ struct ContentView: View {
             .swiftyAlert()
             .bindWindow($window)
             .onReceive(NotificationCenter.default.publisher(for: .shouldHandleImport)) { notification in
-                guard let url = notification.object as? URL else { return }
+                guard let urls = notification.object as? [URL] else { return }
                 if window?.isKeyWindow == true {
-                    do {
-                        try fileState.importFile(url)
-                    } catch {
-                        alertToast(error)
+                    Task.detached {
+                        do {
+                            try await fileState.importFiles(urls)
+                        } catch {
+                            print(error)
+                            await alertToast(error)
+                        }
                     }
                 }
             }

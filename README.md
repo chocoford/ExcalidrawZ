@@ -84,7 +84,7 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
 
 ## Develop Tips
 
-* Remove preload of fonts in `index.html`, otherwise fonts will not be loaded.
+* ~~Remove preload of fonts in `index.html`, otherwise fonts will not be loaded.~~
 
 * ~~Add hook in `excalidraw-app/App.tsx/onChange` to track the activated tool changed.~~
 

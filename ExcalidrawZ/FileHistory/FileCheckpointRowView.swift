@@ -29,11 +29,11 @@ struct FileCheckpointRowView: View {
                 }
                 
                 HStack {
-                    AsyncButton { @MainActor in
+                    Button { @MainActor in
                         let file = fileState.currentFile
                         file?.content = checkpoint.content
                         file?.name = checkpoint.filename
-                        try await fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
+                        fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
                     } label: {
                         Text("Restore")
                     }
