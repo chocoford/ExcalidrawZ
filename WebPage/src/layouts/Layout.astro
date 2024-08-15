@@ -20,11 +20,14 @@ const { title } = Astro.props;
 
 const makeTitle = title
   ? title + " | " + "ExcalidrawZ"
-  : "ExcalidrawZ - An excalidraw client for mac";
+  : "ExcalidrawZ - excalidraw client for mac";
 ---
 
 <!doctype html>
-<html lang="en">
+<html
+  lang="en"
+  style="background-image: linear-gradient(to right top, #9695ff, #9f9eff, #a8a8ff, #b1b1ff, #babaff, #c3beff, #cbc2ff, #d3c6ff, #ddc6ff, #e7c5ff, #f2c5ff, #fcc4ff);"
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -54,9 +57,7 @@ const makeTitle = title
       }}
     />
   </head>
-  <body
-    style="background-image: linear-gradient(to right top, #9695ff, #9f9eff, #a8a8ff, #b1b1ff, #babaff, #c3beff, #cbc2ff, #d3c6ff, #ddc6ff, #e7c5ff, #f2c5ff, #fcc4ff);"
-  >
+  <body>
     <Navbar />
     <slot />
     <Footer />
