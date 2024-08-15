@@ -75,10 +75,7 @@ struct ExcalidrawZApp: App {
                 Button {
                     let panel = ExcalidrawOpenPanel.importPanel
                     if panel.runModal() == .OK {
-                        print("import <\(panel.urls)>")
-                        if let url = panel.url {
-                            NotificationCenter.default.post(name: .shouldHandleImport, object: panel.urls)
-                        }
+                        NotificationCenter.default.post(name: .shouldHandleImport, object: panel.urls)
                     }
                 } label: {
                     Text("Import")

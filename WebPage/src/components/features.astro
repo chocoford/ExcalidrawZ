@@ -1,0 +1,165 @@
+---
+// @ts-ignore
+import { Picture } from "astro:assets";
+import { Icon } from "astro-icon/components";
+import exportSheet from "assets/Export sheet.png";
+import menubar from "assets/Menubar.png";
+import fileHistory from "assets/File history.png";
+
+const features = [
+  {
+    title: "Fully secure with local storage",
+    description:
+      "Ensure total privacy and security with all data stored locally on your device. Your drawings and files are protected from external threats and breaches, offering you peace of mind.",
+    icon: "bx:bx-hdd",
+  },
+  {
+    title: "File histories record",
+    description:
+      "ExcalidrawZ not only secures your current files but also preserves their historical versions. Easily track changes and revert to previous states with our comprehensive version history.",
+    icon: "bx:history",
+  },
+  {
+    title: "Offline accessible",
+    description:
+      "Enjoy the full functionality of ExcalidrawZ without an internet connection. Your work is available anytime, ensuring that your creativity is never interrupted.",
+    icon: "bx:bx-wifi-2",
+  },
+  {
+    title: "Multiple handwriting languages supported",
+    description:
+      "Embrace global inclusivity with support for multiple handwriting languages. Whether you're drafting in English, sketching in Spanish, or noting in Mandarin, ExcalidrawZ has you covered.",
+    icon: "bx:bx-edit-alt",
+  },
+  {
+    title: "Fully compatible with excalidraw files",
+    description:
+      "Experience seamless integration with Excalidraw's ecosystem. Import, edit, and export files with ease, maintaining compatibility and extending your toolkit.",
+    icon: "bx:bxs-file-find",
+  },
+  {
+    title: "Community-driven development",
+    description:
+      "Join a vibrant community of developers and users. ExcalidrawZ thrives on open-source collaboration, continuously evolving with contributions from around the world.",
+    icon: "bx:bxs-user",
+  },
+];
+---
+
+<div class="mt-16 md:mt-0">
+  <h2 class="text-4xl lg:text-5xl font-bold lg:tracking-tight">Features</h2>
+  <p class="text-lg mt-4 text-slate-600">
+    <!-- Astro comes batteries included. It takes the best parts of state-of-the-art
+    tools and adds its own innovations. -->
+  </p>
+</div>
+
+<div class="grid sm:grid-cols-2 md:grid-cols-3 mt-16 gap-16">
+  {
+    features.map((item) => (
+      <div class="flex gap-4 items-start">
+        <div class="mt-1 bg-black rounded-full p-2 w-8 h-8 shrink-0">
+          <Icon class="text-white" name={item.icon} />
+        </div>
+        <div>
+          <h3 class="font-semibold text-lg">{item.title}</h3>{" "}
+          <p class="text-slate-500 mt-2 leading-relaxed">{item.description}</p>
+        </div>
+      </div>
+    ))
+  }
+</div>
+
+<div
+  class="text-xl lg:text-2xl font-bold lg:tracking-tight mt-16 grid-container"
+>
+  <div>
+    <h3>Import</h3>
+    <p class="font-normal text-base text-slate-600">
+      You can import any file ending with excalidraw into the app through the
+      menu bar.
+    </p>
+  </div>
+  <div class="m-10">
+    <Picture
+      src={menubar}
+      alt="ExcalidrawZ menubar"
+      widths={[200, 400, 600]}
+      sizes="(max-width: 800px) 100vw, 420px"
+      loading="lazy"
+      format="png"
+    />
+  </div>
+  <div>
+    <h3>Export</h3>
+    <p class="text-lg mt-4 text-slate-600"></p>
+    <div class="flex">
+      <div class="font-normal text-base text-slate-600">
+        <p>
+          Export allows you to make your work output more seamless. ExcalidrawZ
+          supports exporting your work with others through the clipboard, file
+          system, and system sharing menu. Additionally, ExcalidrawZ provides
+          backup for all your files through archiving.
+        </p>
+        <ul class="mt-4 list-disc pl-10">
+          <li>export image</li>
+          <li>export file</li>
+          <li>archive all files</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="m-10">
+    <Picture
+      src={exportSheet}
+      alt="ExcalidrawZ export sheet"
+      widths={[200, 400, 600]}
+      sizes="(max-width: 800px) 100vw, 420px"
+      width={800}
+      loading="lazy"
+      format="png"
+    />
+  </div>
+  <div>
+    <h3>Hisotry</h3>
+    <p class="text-lg mt-4 text-slate-600"></p>
+  </div>
+  <div class="m-10">
+    <Picture
+      src={fileHistory}
+      alt="ExcalidrawZ file history"
+      widths={[200, 400, 600]}
+      sizes="(max-width: 800px) 100vw, 420px"
+      loading="lazy"
+      format="png"
+    />
+  </div>
+</div>
+
+<style>
+  .grid-container {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2vw; /* 控制网格间距 */
+  }
+
+  /* 桌面端视图：交替排列 */
+  @media (min-width: 600px) {
+    .grid-container {
+      grid-auto-flow: dense; /* 启用密集型自动布局 */
+    }
+    .grid-container > div:nth-child(4n + 4) {
+      grid-column: 1;
+    }
+    .grid-container > div:nth-child(4n + 3) {
+      grid-column: 2;
+    }
+  }
+
+  /* 移动端视图：垂直排列 */
+  @media (max-width: 599px) {
+    .grid-container {
+      grid-template-columns: 1fr; /* 单列布局 */
+    }
+  }
+</style>
