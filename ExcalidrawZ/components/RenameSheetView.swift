@@ -22,7 +22,7 @@ struct RenameSheetView: View {
 
     var body: some View {
         Form {
-            Text("Rename")
+            Text(.localizable(.renameSheetHeadline))
                 .font(.headline)
             
             TextField("", text: $text)
@@ -41,14 +41,14 @@ struct RenameSheetView: View {
                 Button {
                     dismiss()
                 } label: {
-                    Text("Cancel")
+                    Text(.localizable(.renameSheetButtonCancel))
                         .frame(width: 50)
                 }
                 Button {
                     self.onConfirm(text)
                     dismiss()
                 } label: {
-                    Text("OK")
+                    Text(.localizable(.renameSheetButtonConfirm))
                         .frame(width: 50)
                 }
                 .disabled(text.isEmpty)

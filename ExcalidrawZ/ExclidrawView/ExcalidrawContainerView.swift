@@ -37,7 +37,7 @@ struct ExcalidrawContainerView: View {
                     VStack {
                         ProgressView()
                             .progressViewStyle(.circular)
-                        Text("Loading...")
+                        Text(.localizable(.webViewLoadingText))
                     }
                 } else if fileState.currentFile?.inTrash == true {
                     recoverOverlayView
@@ -47,10 +47,10 @@ struct ExcalidrawContainerView: View {
                 if isLoadingFile {
                     Center {
                         VStack {
-                            Text("Loading file...")
+                            Text(.localizable(.containerLoadingFileTitle))
                             ProgressView()
                             
-                            Text("This file is really quite large...")
+                            Text(.localizable(.containerLoadingFileDescription))
                                 .font(.footnote)
                         }
                     }
@@ -114,11 +114,11 @@ struct ExcalidrawContainerView: View {
             .onTapGesture {
                 resotreAlertIsPresented.toggle()
             }
-            .alert("Recently deleted files can’t be edited.", isPresented: $resotreAlertIsPresented) {
+            .alert(.localizable(.deletedFileRecoverAlertTitle), isPresented: $resotreAlertIsPresented) {
                 Button(role: .cancel) {
                     resotreAlertIsPresented.toggle()
                 } label: {
-                    Text("Cancel")
+                    Text(.localizable(.deletedFileRecoverAlertButtonCancel))
                 }
                 
                 Button {
@@ -127,11 +127,11 @@ struct ExcalidrawContainerView: View {
                         fileState.recoverFile(currentFile)
                     }
                 } label: {
-                    Text("Recover")
+                    Text(.localizable(.deletedFileRecoverAlertButtonRecover))
                 }
                 
             } message: {
-                Text("To edit this file, you’ll need to recover it.")
+                Text(.localizable(.deletedFileRecoverAlertMessage))
             }
     }
 }

@@ -147,18 +147,18 @@ struct FileRowView: View {
         .buttonStyle(ListButtonStyle(selected: isSelected))
         .contextMenu { listRowContextMenu }
         .alert(
-            "Are you sure to permanently delete the file: \(file.name ?? "Untitled")",
+            LocalizedStringKey.localizable(.sidebarFileRowDeletePermanentlyAlertTitle(file.name ?? "Untitled")),
             isPresented: $showPermanentlyDeleteAlert
         ) {
             Button(role: .cancel) {
                 showPermanentlyDeleteAlert.toggle()
             } label: {
-                Text("Cancel")
+                Text(.localizable(.sidebarFileRowDeletePermanentlyAlertButtonCancel))
             }
             Button(role: .destructive) {
                 fileState.deleteFilePermanently(file)
             } label: {
-                Text("Delete permanently")
+                Text(.localizable(.sidebarFileRowDeletePermanentlyAlertButtonConfirm))
             }
         }
         .sheet(isPresented: $renameMode) {
@@ -177,13 +177,13 @@ struct FileRowView: View {
             Button {
                 renameMode.toggle()
             } label: {
-                Label("Rename", systemImage: "pencil")
+                Label(.localizable(.sidebarFileRowContextMenuRename), systemSymbol: .pencil)
             }
             
             Button {
                 fileState.duplicateFile(file)
             } label: {
-                Label("Duplicate", systemImage: "doc.on.doc")
+                Label(.localizable(.sidebarFileRowContextMenuDuplicate), systemSymbol: .docOnDoc)
             }
             
             Menu {
@@ -202,25 +202,32 @@ struct FileRowView: View {
                     .disabled(group.id == file.group?.id)
                 }
             } label: {
-                Label("Move to", systemImage: "arrow.up.bin")
+                Label(.localizable(.sidebarFileRowContextMenuMoveTo), systemSymbol: .arrowUpBin)
             }
             
             Button(role: .destructive) {
                 fileState.deleteFile(file)
             } label: {
-                Label("Delete", systemImage: "trash")
+                Label(.localizable(.sidebarFileRowContextMenuDelete), systemSymbol: .trash)
             }
         } else {
             Button {
                 fileState.recoverFile(file)
             } label: {
-                Label("Recover", systemImage: "arrowshape.turn.up.backward.fill")
+                Label(
+                    .localizable(.sidebarFileRowContextMenuRecover),
+                    systemSymbol: .arrowshapeTurnUpBackward
+                )
+                .symbolVariant(.fill)
             }
             
             Button {
                 showPermanentlyDeleteAlert.toggle()
             } label: {
-                Label("Delete Permanently", systemImage: "arrowshape.turn.up.backward.fill")
+                Label(
+                    .localizable(.sidebarFileRowContextMenuDeletePermanently),
+                    systemSymbol: .trash
+                )
             }
         }
     }

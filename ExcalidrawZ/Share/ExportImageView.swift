@@ -85,16 +85,16 @@ struct ExportImageView: View {
                 fileInfoView
                 actionsView(url)
             } else if hasError {
-                Text("Loading image failed.")
+                Text(.localizable(.exportImageLoadingError))
                     .foregroundColor(.red)
             } else {
                 ProgressView()
-                Text("Loading...")
+                Text(.localizable(.exportImageLoading))
                 
                 Button {
                     dismiss()
                 } label: {
-                    Text("Cancel")
+                    Text(.localizable(.exportImageLoadingButtonCancel))
                 }
                 .offset(y: 40)
             }
@@ -156,11 +156,17 @@ struct ExportImageView: View {
                 }
             } label: {
                 if copied {
-                    Label("Copied", systemImage: "checkmark")
+                    Label(.localizable(.exportActionCopied), systemSymbol: .checkmark)
                         .padding(.horizontal, 6)
                 } else {
-                    Label("Copy", systemImage: "clipboard")
-                        .padding(.horizontal, 6)
+                    if #available(macOS 13.0, *) {
+                        Label(.localizable(.exportActionCopy), systemSymbol: .clipboard)
+                            .padding(.horizontal, 6)
+                    } else {
+                        // Fallback on earlier versions
+                        Label(.localizable(.exportActionCopy), systemSymbol: .docOnClipboard)
+                            .padding(.horizontal, 6)
+                    }
                 }
             }
             .disabled(copied)
@@ -168,18 +174,22 @@ struct ExportImageView: View {
             Button {
                 showFileExporter = true
             } label: {
-                Label("Save", systemImage: "square.and.arrow.down")
+                Label(.localizable(.exportActionSave), systemSymbol: .squareAndArrowDown)
                     .padding(.horizontal, 6)
             }
             
             Button {
                 self.showShare = true
             } label: {
-                Label("Share", systemImage: "square.and.arrow.up")
+                Label(.localizable(.exportActionShare), systemSymbol: .squareAndArrowUp)
                     .padding(.horizontal, 6)
             }
-            .background(SharingsPicker(isPresented: $showShare,
-                                       sharingItems: [url]))
+            .background(
+                SharingsPicker(
+                    isPresented: $showShare,
+                    sharingItems: [url]
+                )
+            )
             
             Spacer()
         }

@@ -36,7 +36,7 @@ struct GeneralSettingsView: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
         Section {
-            settingCellView("App appearacne") {
+            settingCellView(.localizable(.settingsAppAppearanceName)) {
                 HStack(spacing: 16) {
                     RadioGroup(selected: $appPreference.appearance) { option, isOn in
                         RadioButton(isOn: isOn) {
@@ -45,7 +45,7 @@ struct GeneralSettingsView: View {
                     }
                 }
             }
-            settingCellView("Canvas appearance") {
+            settingCellView(.localizable(.settingsExcalidrawAppearanceName)) {
                 HStack(spacing: 16) {
                     RadioGroup(selected: $appPreference.excalidrawAppearance) { option, isOn in
                         RadioButton(isOn: isOn) {
@@ -56,21 +56,21 @@ struct GeneralSettingsView: View {
             }
         } header: {
             if #available(macOS 14.0, *) {
-                Text("Appearance")
+                Text(.localizable(.settingsAppAppearanceName))
             } else {
-                Text("Appearance")
+                Text(.localizable(.settingsAppAppearanceName))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         
 #if !APP_STORE
         Section {
-            Toggle("Check updates automatically", isOn: $updateChecker.canCheckForUpdates)
+            Toggle(.localizable(.settingsUpdatesAutoCheckLabel), isOn: $updateChecker.canCheckForUpdates)
         } header: {
             if #available(macOS 14.0, *) {
-                Text("Update")
+                Text(.localizable(.settingsUpdateHeadline))
             } else {
-                Text("Update")
+                Text(.localizable(.settingsUpdateHeadline))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         } footer: {
@@ -79,7 +79,7 @@ struct GeneralSettingsView: View {
                 Button {
                     updateChecker.updater?.checkForUpdates()
                 } label: {
-                    Text("Check Updates")
+                    Text(.localizable(.settingsUpdatesButtonCheck))
                 }
             }
         }
@@ -87,7 +87,7 @@ struct GeneralSettingsView: View {
     }
     
     @ViewBuilder
-    func settingCellView<T: View, V: View>(_ title: String,
+    func settingCellView<T: View, V: View>(_ title: LocalizedStringKey,
                                            @ViewBuilder trailing: @escaping () -> T,
                                            @ViewBuilder content: (() -> V) = { EmptyView() }) -> some View {
         VStack(alignment: .leading, spacing: 4) {

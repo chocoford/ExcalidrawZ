@@ -10,6 +10,9 @@
 		3901E25E29652AD800E79788 /* URL+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3901E25D29652AD800E79788 /* URL+Extension.swift */; };
 		3901E26029656FC500E79788 /* GroupListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3901E25F29656FC500E79788 /* GroupListView.swift */; };
 		3901E2622965704400E79788 /* FileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3901E2612965704400E79788 /* FileListView.swift */; };
+		390716DB2C6F159B002D7834 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 390716DA2C6F159B002D7834 /* Localizable.xcstrings */; };
+		390716DC2C6F159B002D7834 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 390716DA2C6F159B002D7834 /* Localizable.xcstrings */; };
+		390716DD2C6F159C002D7834 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 390716DA2C6F159B002D7834 /* Localizable.xcstrings */; };
 		3908EB942966E7690054A3ED /* Array+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB932966E7690054A3ED /* Array+Extension.swift */; };
 		3908EB96296719170054A3ED /* String+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB95296719170054A3ED /* String+Extension.swift */; };
 		3908EB9929674DF60054A3ED /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB9729674DF60054A3ED /* Model.xcdatamodeld */; };
@@ -212,6 +215,7 @@
 		3901E25D29652AD800E79788 /* URL+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+Extension.swift"; sourceTree = "<group>"; };
 		3901E25F29656FC500E79788 /* GroupListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupListView.swift; sourceTree = "<group>"; };
 		3901E2612965704400E79788 /* FileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileListView.swift; sourceTree = "<group>"; };
+		390716DA2C6F159B002D7834 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		3908EB932966E7690054A3ED /* Array+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Array+Extension.swift"; sourceTree = "<group>"; };
 		3908EB95296719170054A3ED /* String+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extension.swift"; sourceTree = "<group>"; };
 		3908EB9829674DF60054A3ED /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
@@ -495,6 +499,7 @@
 		397E464A295838CF003B824B = {
 			isa = PBXGroup;
 			children = (
+				390716DA2C6F159B002D7834 /* Localizable.xcstrings */,
 				397E4655295838CF003B824B /* ExcalidrawZ */,
 				397E4667295838D0003B824B /* ExcalidrawZTests */,
 				397E4671295838D0003B824B /* ExcalidrawZUITests */,
@@ -675,6 +680,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				390716E22C6F15DE002D7834 /* PBXTargetDependency */,
 			);
 			name = "ExcalidrawZ (AppStore)";
 			packageProductDependencies = (
@@ -699,6 +705,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				390716DF2C6F15C7002D7834 /* PBXTargetDependency */,
 			);
 			name = "ExcalidrawZ (Lagacy)";
 			packageProductDependencies = (
@@ -724,6 +731,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				390716E42C6F15E3002D7834 /* PBXTargetDependency */,
 			);
 			name = ExcalidrawZ;
 			packageProductDependencies = (
@@ -798,18 +806,20 @@
 				};
 			};
 			buildConfigurationList = 397E464E295838CF003B824B /* Build configuration list for PBXProject "ExcalidrawZ" */;
-			compatibilityVersion = "Xcode 14.0";
+			compatibilityVersion = "Xcode 15.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
 			);
 			mainGroup = 397E464A295838CF003B824B;
 			packageReferences = (
 				3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */,
 				3930B2FB2C51371B00F14E88 /* XCRemoteSwiftPackageReference "ChocofordKit" */,
 				3966623D2C666EC600F863BC /* XCRemoteSwiftPackageReference "FlyingFox" */,
+				390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */,
 			);
 			productRefGroup = 397E4654295838CF003B824B /* Products */;
 			projectDirPath = "";
@@ -831,6 +841,7 @@
 			files = (
 				3963A0782C6C7EAA00472AE7 /* excalidraw-latest in Resources */,
 				3963A0792C6C7EAA00472AE7 /* FakeDrop.js in Resources */,
+				390716DB2C6F159B002D7834 /* Localizable.xcstrings in Resources */,
 				3963A07A2C6C7EAA00472AE7 /* template.excalidraw in Resources */,
 				3963A07B2C6C7EAA00472AE7 /* Preview Assets.xcassets in Resources */,
 				3963A07C2C6C7EAA00472AE7 /* Assets.xcassets in Resources */,
@@ -845,6 +856,7 @@
 			files = (
 				3963A1412C6D1D4900472AE7 /* excalidraw-latest in Resources */,
 				3963A1422C6D1D4900472AE7 /* FakeDrop.js in Resources */,
+				390716DD2C6F159C002D7834 /* Localizable.xcstrings in Resources */,
 				3963A1432C6D1D4900472AE7 /* template.excalidraw in Resources */,
 				3963A1442C6D1D4900472AE7 /* Preview Assets.xcassets in Resources */,
 				3963A1452C6D1D4900472AE7 /* Assets.xcassets in Resources */,
@@ -859,6 +871,7 @@
 			files = (
 				396661302C665D4300F863BC /* excalidraw-latest in Resources */,
 				397E468729599DD4003B824B /* FakeDrop.js in Resources */,
+				390716DC2C6F159B002D7834 /* Localizable.xcstrings in Resources */,
 				397E468F295AAE5E003B824B /* template.excalidraw in Resources */,
 				397E465F295838D0003B824B /* Preview Assets.xcassets in Resources */,
 				397E465B295838D0003B824B /* Assets.xcassets in Resources */,
@@ -1066,6 +1079,18 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		390716DF2C6F15C7002D7834 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 390716DE2C6F15C7002D7834 /* XCStringsToolPlugin */;
+		};
+		390716E22C6F15DE002D7834 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 390716E12C6F15DE002D7834 /* XCStringsToolPlugin */;
+		};
+		390716E42C6F15E3002D7834 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 390716E32C6F15E3002D7834 /* XCStringsToolPlugin */;
+		};
 		397E4666295838D0003B824B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
@@ -1110,6 +1135,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.excalidraw-Debug";
@@ -1117,7 +1143,7 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1154,6 +1180,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
@@ -1161,7 +1188,7 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
-				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1215,10 +1242,12 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
 			name = "App Store";
@@ -1254,6 +1283,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
@@ -1261,7 +1291,7 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = APP_STORE;
-				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1298,6 +1328,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
@@ -1305,7 +1336,7 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = APP_STORE;
-				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1387,13 +1418,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = "1.0.0-alpha-4";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.ExcalidrawZ-Debug";
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
-				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1430,13 +1462,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = "1.0.0-alpha-4";
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.ExcalidrawZ;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
-				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1473,6 +1506,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = "1.0.0-alpha-4";
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.ExcalidrawZ;
@@ -1480,7 +1514,7 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = APP_STORE;
-				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1540,11 +1574,13 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
@@ -1597,10 +1633,12 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
 			name = Release;
@@ -1636,13 +1674,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.excalidraw-Debug";
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
-				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1679,13 +1718,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
-				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1847,6 +1887,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/liamnichols/xcstrings-tool-plugin";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.5.2;
+			};
+		};
 		3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sparkle-project/Sparkle.git";
@@ -1914,6 +1962,21 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		390716DE2C6F15C7002D7834 /* XCStringsToolPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */;
+			productName = "plugin:XCStringsToolPlugin";
+		};
+		390716E12C6F15DE002D7834 /* XCStringsToolPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */;
+			productName = "plugin:XCStringsToolPlugin";
+		};
+		390716E32C6F15E3002D7834 /* XCStringsToolPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */;
+			productName = "plugin:XCStringsToolPlugin";
+		};
 		3914876C2960AFD10042927A /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */;

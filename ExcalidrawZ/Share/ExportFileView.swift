@@ -85,14 +85,14 @@ struct ExportFileView: View {
     var body: some View {
         Center {
             if #available(macOS 13.0, *) {
-                Image(systemName: "doc.text")
+                Image(systemSymbol: .docText)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(height: 80)
                     .draggable(ExcalidrawFileDocument(file: file))
                     .padding()
             } else {
-                Image(systemName: "doc.text")
+                Image(systemSymbol: .docText)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(height: 80)
@@ -152,11 +152,17 @@ struct ExportFileView: View {
                 }
             } label: {
                 if copied {
-                    Label("Copied", systemImage: "checkmark")
+                    Label(.localizable(.exportActionCopied), systemSymbol: .checkmark)
                         .padding(.horizontal, 6)
                 } else {
-                    Label("Copy", systemImage: "clipboard")
-                        .padding(.horizontal, 6)
+                    if #available(macOS 13.0, *) {
+                        Label(.localizable(.exportActionCopied), systemSymbol: .clipboard)
+                            .padding(.horizontal, 6)
+                    } else {
+                        // Fallback on earlier versions
+                        Label(.localizable(.exportActionCopied), systemSymbol: .docOnDoc)
+                            .padding(.horizontal, 6)
+                    }
                 }
             }
             .disabled(copied)
@@ -164,7 +170,7 @@ struct ExportFileView: View {
             Button {
                 showFileExporter = true
             } label: {
-                Label("Save", systemImage: "square.and.arrow.down")
+                Label(.localizable(.exportActionSave), systemSymbol: .squareAndArrowDown)
                     .padding(.horizontal, 6)
             }
             

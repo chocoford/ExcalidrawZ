@@ -24,7 +24,7 @@ struct ExcalidrawToolbar: View {
                             }
                         )
                 }
-                .help("Selection - V or 1")
+                .help("\(LocalizedStringKey.localizable(.toolbarSelection)) - V \(LocalizedStringKey.localizable(.toolbarOr)) 1")
                 
                 SegmentedPickerItem(value: ExcalidrawTool.rectangle) {
                     RoundedRectangle(cornerRadius: 3)
@@ -36,7 +36,7 @@ struct ExcalidrawToolbar: View {
                         )
                     
                 }
-                .help("Rectangle — R or 2")
+                .help("\(LocalizedStringKey.localizable(.toolbarRectangle)) — R \(LocalizedStringKey.localizable(.toolbarOr)) 2")
                 
                 SegmentedPickerItem(value: ExcalidrawTool.diamond) {
                     RoundedRectangle(cornerRadius: 3)
@@ -48,7 +48,7 @@ struct ExcalidrawToolbar: View {
                             }
                         )
                 }
-                .help("Diamond — D or 3")
+                .help("\(LocalizedStringKey.localizable(.toolbarDiamond)) — D \(LocalizedStringKey.localizable(.toolbarOr)) 3")
                 
                 SegmentedPickerItem(value: ExcalidrawTool.ellipse) {
                     Circle()
@@ -59,7 +59,7 @@ struct ExcalidrawToolbar: View {
                             }
                         )
                 }
-                .help("Ellipse — O or 4")
+                .help("\(LocalizedStringKey.localizable(.toolbarEllipse)) — O \(LocalizedStringKey.localizable(.toolbarOr)) 4")
                 
                 SegmentedPickerItem(value: ExcalidrawTool.arrow) {
                     Image(systemSymbol: .arrowRight)
@@ -70,7 +70,7 @@ struct ExcalidrawToolbar: View {
                             }
                         )
                 }
-                .help("Arrow — A or 5")
+                .help("\(LocalizedStringKey.localizable(.toolbarArrow)) — A \(LocalizedStringKey.localizable(.toolbarOr)) 5")
                 
                 SegmentedPickerItem(value: ExcalidrawTool.line) {
                     Capsule()
@@ -82,7 +82,7 @@ struct ExcalidrawToolbar: View {
                             }
                         )
                 }
-                .help("Line — L or 6")
+                .help("\(LocalizedStringKey.localizable(.toolbarLine)) — L \(LocalizedStringKey.localizable(.toolbarOr)) 6")
                 
                 SegmentedPickerItem(value: ExcalidrawTool.freedraw) {
                     Image(systemSymbol: .pencil)
@@ -93,7 +93,7 @@ struct ExcalidrawToolbar: View {
                             }
                         )
                 }
-                .help("Draw — P or 7")
+                .help("\(LocalizedStringKey.localizable(.toolbarDraw)) — P \(LocalizedStringKey.localizable(.toolbarOr)) 7")
                 
                 SegmentedPickerItem(value: ExcalidrawTool.text) {
                     Image(systemSymbol: .character)
@@ -104,7 +104,7 @@ struct ExcalidrawToolbar: View {
                             }
                         )
                 }
-                .help("Text — T or 8")
+                .help("\(LocalizedStringKey.localizable(.toolbarText)) — T \(LocalizedStringKey.localizable(.toolbarOr)) 8")
                 
                 SegmentedPickerItem(value: ExcalidrawTool.image) {
                     Image(systemSymbol: .photo)
@@ -115,7 +115,7 @@ struct ExcalidrawToolbar: View {
                             }
                         )
                 }
-                .help("Insert image — 9")
+                .help("\(LocalizedStringKey.localizable(.toolbarInsertImage)) — 9")
                 
                 SegmentedPickerItem(value: ExcalidrawTool.eraser) {
                     if #available(macOS 13.0, *) {
@@ -136,7 +136,7 @@ struct ExcalidrawToolbar: View {
                             )
                     }
                 }
-                .help("Eraser — E or 0")
+                .help("\(LocalizedStringKey.localizable(.toolbarEraser)) — E \(LocalizedStringKey.localizable(.toolbarOr)) 0")
                 
                 SegmentedPickerItem(value: ExcalidrawTool.laser) {
                     Image(systemSymbol: .wandAndRaysInverse)
@@ -147,7 +147,7 @@ struct ExcalidrawToolbar: View {
                             }
                         )
                 }
-                .help("Laser — K")
+                .help("\(LocalizedStringKey.localizable(.toolbarLaser)) — K")
             }
             .background {
                 if #available(macOS 14.0, *) {

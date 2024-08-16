@@ -99,7 +99,7 @@ struct GroupListView: View {
                 Button {
                     showCreateFolderDialog.toggle()
                 } label: {
-                    Label("New folder", systemImage: "plus.circle")
+                    Label(.localizable(.sidebarGroupListNewFolder), systemSymbol: .plusCircle)
                 }
                 .buttonStyle(.borderless)
                 

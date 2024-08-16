@@ -40,10 +40,10 @@ fileprivate struct MigrateToNewVersionSheetView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Migrate to new version")
+            Text(.localizable(.migrationSheetTitle))
                 .font(.largeTitle)
             
-            Text("ExcalidrawZ has reached a new milestone—the official release of version 1.0. The new version has changed the application ID, so you will need to manually download it and migrate your existing files.")
+            Text(.localizable(.migrationSheetBody))
             
             GeometryReader { geometry in
                 let spacing: CGFloat = 10
@@ -54,16 +54,16 @@ fileprivate struct MigrateToNewVersionSheetView: View {
                             .scaledToFit()
                             .frame(height: 30)
                         VStack(spacing: 10) {
-                            Text("Archive all files")
+                            Text(.localizable(.migrationSheetArchiveHeadling))
                                 .font(.headline)
-                            Text("Export all files and import them to the new version of ExcalidrawZ.")
+                            Text(.localizable(.migrationSheetArchiveDescription))
                                 .foregroundStyle(.secondary)
                         }
                         .frame(maxHeight: .infinity, alignment: .top)
                         AsyncButton { @MainActor in
                             try archiveAllFiles()
                         } label: {
-                            Text("Archive")
+                            Text(.localizable(.migrationSheetButtonArchive))
                         }
                     }
                     .padding()
@@ -90,10 +90,10 @@ fileprivate struct MigrateToNewVersionSheetView: View {
                             .scaledToFit()
                             .frame(height: 30)
                         VStack(spacing: 10) {
-                            Text("Download the new ExcalidrawZ")
+                            Text(.localizable(.migrationSheetDownloadHeadline))
                                 .font(.headline)
                             
-                            Text("Two versions of ExcalidrawZ are available: the App Store version and the non-App Store version.")
+                            Text(.localizable(.migrationSheetDownloadDescription))
                                 .foregroundStyle(.secondary)
                         }
                         .frame(maxHeight: .infinity, alignment: .top)
@@ -129,25 +129,25 @@ fileprivate struct MigrateToNewVersionSheetView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
             }
-            Text("You can still continue to use the current app, and your data remains safe, but future updates will not be pushed here.")
+            Text(.localizable(.migrationSheetTips))
                 .padding(.horizontal, 40)
               
             HStack {
                 Toggle(isOn: $notShowAgain) {
-                    Text("Don't show again")
+                    Text(.localizable(.migrationSheetButtonNeverShow))
                 }
                 .opacity(0)
                 Spacer()
                 Button {
                     dismiss()
                 } label: {
-                    Text("Close")
+                    Text(.localizable(.migrationSheetButtonClose))
                 }
                 .controlSize(.large)
                 .buttonStyle(.borderless)
                 Spacer()
                 Toggle(isOn: $notShowAgain) {
-                    Text("Don't show again")
+                    Text(.localizable(.migrationSheetButtonNeverShow))
                 }
             }
             .padding(.horizontal, 20)

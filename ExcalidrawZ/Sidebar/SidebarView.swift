@@ -32,15 +32,15 @@ struct SidebarView: View {
                     FileListView(groups: groups, currentGroup: currentGroup)
                 } else {
                     if #available(macOS 14.0, *) {
-                        Text("Select a group")
+                        Text(.localizable(.sidebarFilesPlaceholder))
                             .foregroundStyle(.placeholder)
                     } else {
-                        Text("Select a group")
+                        Text(.localizable(.sidebarFilesPlaceholder))
                             .foregroundStyle(.secondary)
                     }
                 }
             }
-                .frame(minWidth: 200)
+            .frame(minWidth: 200)
         }
         .border(.top, color: .separatorColor)
     }

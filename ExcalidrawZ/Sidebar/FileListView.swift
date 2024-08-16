@@ -119,12 +119,13 @@ struct FileListView: View {
 }
 
 extension FileListView {
-    @ToolbarContentBuilder private func toolbarContent() -> some ToolbarContent {
+    @ToolbarContentBuilder
+    private func toolbarContent() -> some ToolbarContent {
         ToolbarItemGroup(placement: .principal) {
             Button {
                 
             } label: {
-                Image(systemName: "trash")
+                Image(systemSymbol: .trash)
             }
         }
     }

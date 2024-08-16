@@ -1,5 +1,5 @@
 {
-  "originHash" : "3a3c6d7efe8211e4015b7ea2e495640513ee66a27fac6e3d081e2577684fc0ca",
+  "originHash" : "65f2da390b1a10bb78964f3e75bd99555f5fb0ce6efe1eccbe4f08c2d9b1df65",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -125,6 +125,15 @@
       "state" : {
         "branch" : "dev",
         "revision" : "2822f6f8c9c9a82271f08cd6de74a7574463269d"
+      }
+    },
+    {
+      "identity" : "xcstrings-tool-plugin",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/liamnichols/xcstrings-tool-plugin",
+      "state" : {
+        "revision" : "e99d6ad477aaf87d5808997b09ad0accb420a25e",
+        "version" : "0.5.2"
       }
     }
   ],

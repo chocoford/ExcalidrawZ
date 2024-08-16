@@ -30,7 +30,7 @@ struct SettingsView: View {
             } detail: {
                 detail(for: selection)
             }
-            .navigationTitle("App Settings")
+            .navigationTitle(.localizable(.settingsNavigationTitle))
         } else if #available(macOS 13.0, *) {
             NavigationSplitView(columnVisibility: .constant(.all)) {
                 sidebar
@@ -41,7 +41,7 @@ struct SettingsView: View {
                 detail(for: selection)
             }
             .removeSettingsSidebarToggle()
-            .navigationTitle("App Settings")
+            .navigationTitle(.localizable(.settingsNavigationTitle))
         } else {
             HStack {
                 sidebar
@@ -106,15 +106,18 @@ extension SettingsView {
     enum Route: CaseIterable, Identifiable {
         case general
         
-        var text: String {
+        var text: LocalizedStringKey {
             switch self {
                 case .general:
-                    return "General"
+                    return .localizable(.settingsGeneralName)
             }
         }
         
         var id: String {
-            self.text
+            switch self {
+                case .general:
+                    "general"
+            }
         }
     }
 }

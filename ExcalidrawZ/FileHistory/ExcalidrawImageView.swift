@@ -127,9 +127,10 @@ struct ExcalidrawImageView: View {
         .background(.white, in: RoundedRectangle(cornerRadius: 8))
         .onAppear(perform: decodeData)
         .overlay(alignment: .bottomTrailing) {
-            Image(systemName: "info.circle.fill")
+            Image(systemSymbol: .infoCircle)
+                .symbolVariant(.fill)
                 .foregroundColor(.black)
-                .help("Beta · This is rendered by native canvas.")
+                .help(.localizable(.checkpointsIsBetaTips))
         }
         .padding()
     }

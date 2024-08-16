@@ -106,9 +106,9 @@ struct ContentViewModern: View {
                     alertToast(error)
                 }
             } label: {
-                Image(systemName: "square.and.pencil")
+                Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
             }
-            .help("New draw")
+            .help(.localizable(.createNewFile))
             .disabled(fileState.currentGroup?.groupType == .trash)
         }
         
@@ -135,7 +135,7 @@ struct ContentViewModern: View {
                         if appPreference.sidebarMode == .all && columnVisibility != .detailOnly {
                             Image(systemSymbol: .checkmark)
                         }
-                        Text("Show folders and files")
+                        Text(.localizable(.sidebarShowAll))
                     }
                     Button {
                         withAnimation { columnVisibility = .all }
@@ -144,7 +144,7 @@ struct ContentViewModern: View {
                         if appPreference.sidebarMode == .filesOnly && columnVisibility != .detailOnly {
                             Image(systemSymbol: .checkmark)
                         }
-                        Text("Show files only")
+                        Text(.localizable(.sidebarShowFilesOnly))
                     }
                 } label: {
                 }
@@ -200,9 +200,9 @@ struct ContentViewLagacy: View {
                         alertToast(error)
                     }
                 } label: {
-                    Image(systemName: "square.and.pencil")
+                    Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
                 }
-                .help("New draw")
+                .help(.localizable(.createNewFile))
                 .disabled(fileState.currentGroup?.groupType == .trash)
             }
         }
@@ -312,9 +312,9 @@ extension ContentView {
                         alertToast(error)
                     }
                 } label: {
-                    Image(systemName: "square.and.pencil")
+                    Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
                 }
-                .help("New draw")
+                .help(.localizable(.createNewFile))
                 .disabled(fileState.currentGroup?.groupType == .trash)
             }
         }
@@ -328,27 +328,27 @@ extension ContentView {
                 Button {
                     isMigrateSheetPresented.toggle()
                 } label: {
-                    Label("Migrate to new ExcalidrawZ", systemSymbol: .sparkles)
+                    Label(.localizable(.migration), systemSymbol: .sparkles)
                 }
-                .help("Migrate to new ExcalidrawZ")
+                .help(.localizable(.migration))
             }
             
             if let currentFile = fileState.currentFile {
                 Popover {
                     FileCheckpointListView(file: currentFile)
                 } label: {
-                    Label("File history", systemSymbol: .clockArrowCirclepath)
+                    Label(.localizable(.checkpoints), systemSymbol: .clockArrowCirclepath)
                 }
                 .disabled(fileState.currentGroup?.groupType == .trash)
-                .help("File history")
+                .help(.localizable(.checkpoints))
             }
 
             Button {
                 self.sharedFile = fileState.currentFile
             } label: {
-                Label("Share", systemSymbol: .squareAndArrowUp)
+                Label(.localizable(.export), systemSymbol: .squareAndArrowUp)
             }
-            .help("Share")
+            .help(.localizable(.export))
             .disabled(fileState.currentGroup?.groupType == .trash)
 
         }

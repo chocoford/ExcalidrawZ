@@ -34,20 +34,20 @@ struct ShareView: View {
     var body: some View {
         NavigationStack(path: $route) {
             VStack(spacing: 20) {
-                Text("Choose an export target.")
+                Text(.localizable(.exportSheetHeadline))
                     .font(.largeTitle)
 
                 
                 HStack(spacing: 14) {
-                    SquareButton(title: "Image", icon: .photo) {
+                    SquareButton(title: .localizable(.exportSheetButtonImage), icon: .photo) {
                         route.append(Route.exportImage)
                     }
                     
-                    SquareButton(title: "File", icon: .doc) {
+                    SquareButton(title: .localizable(.exportSheetButtonFile), icon: .doc) {
                         route.append(Route.exportFile)
                     }
                     
-                    SquareButton(title: "Archive", icon: .archivebox) {
+                    SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
                         do {
                             try archiveAllFiles()
                         } catch {
@@ -62,7 +62,7 @@ struct ShareView: View {
                 } label: {
                     HStack {
                         Spacer()
-                        Text("Dismiss")
+                        Text(.localizable(.exportSheetButtonDismiss))
                         Spacer()
                     }
                 }
@@ -125,20 +125,20 @@ struct ShareViewLagacy: View {
     @MainActor @ViewBuilder
     private func homepage() -> some View {
         VStack(spacing: 20) {
-            Text("Choose an export target.")
+            Text(.localizable(.exportSheetHeadline))
                 .font(.largeTitle)
 
             
             HStack(spacing: 14) {
-                SquareButton(title: "Image", icon: .photo) {
+                SquareButton(title: .localizable(.exportSheetButtonImage), icon: .photo) {
                     route.append(Route.exportImage)
                 }
                 
-                SquareButton(title: "File", icon: .doc) {
+                SquareButton(title: .localizable(.exportSheetButtonFile), icon: .doc) {
                     route.append(Route.exportFile)
                 }
                 
-                SquareButton(title: "Archive", icon: .archivebox) {
+                SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
                     do {
                         try archiveAllFiles()
                     } catch {
@@ -164,12 +164,12 @@ struct ShareViewLagacy: View {
 }
 
 fileprivate struct SquareButton: View {
-    var title: String
+    var title: LocalizedStringKey
     var icon: SFSymbol
     var action: () -> Void
     
     init(
-        title: String,
+        title: LocalizedStringKey,
         icon: SFSymbol,
         action: @escaping () -> Void
     ) {

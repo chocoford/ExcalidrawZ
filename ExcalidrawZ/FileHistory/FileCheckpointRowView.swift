@@ -35,13 +35,13 @@ struct FileCheckpointRowView: View {
                         file?.name = checkpoint.filename
                         fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
                     } label: {
-                        Text("Restore")
+                        Text(.localizable(.checkpointButtonRestore))
                     }
                     
                     Button {
                         managedObjectContext.delete(checkpoint)
                     } label: {
-                        Text("Delete")
+                        Text(.localizable(.checkpointButtonDelete))
                     }
                 }
             }

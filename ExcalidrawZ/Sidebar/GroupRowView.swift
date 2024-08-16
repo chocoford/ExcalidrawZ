@@ -88,10 +88,13 @@ struct GroupRowView: View {
         .buttonStyle(ListButtonStyle(selected: isSelected))
         .contextMenu { contextMenuView }
         .confirmationDialog(
-            group.groupType == .trash ? "Are you sure you want to permanently erase the items in the Trash?" :  "Are you sure to delete the folder \(group.name ?? "Untitled")?",
+            group.groupType == .trash ? LocalizedStringKey.localizable(.sidebarGroupRowDeletePermanentlyConfirmTitle) : LocalizedStringKey.localizable(.sidebarGroupRowDeleteConfirmTitle(group.name ?? "Untitled")),
             isPresented: $isDeleteConfirmPresented
         ) {
-            Button(group.groupType == .trash ? "Empty Trash" :  "Delete", role: .destructive) {
+            Button(
+                group.groupType == .trash ? LocalizedStringKey.localizable(.sidebarGroupRowEmptyTrashButton) : LocalizedStringKey.localizable(.sidebarGroupRowDeleteButton),
+                role: .destructive
+            ) {
                 // Handle empty trash action.
                 do {
                     try fileState.deleteGroup(group)
@@ -100,7 +103,7 @@ struct GroupRowView: View {
                 }
             }
         } message: {
-            Text("You can’t undo this action.")
+            Text(.localizable(.sidebarGroupRowDeleteMessage))
         }
         .sheet(isPresented: $isRenameSheetPresented) {
             RenameSheetView(text: group.name ?? "") { newName in
@@ -116,11 +119,11 @@ extension GroupRowView {
     private var groupIcon: some View {
         switch group.groupType {
             case .`default`:
-                Image(systemName: "folder")
+                Image(systemSymbol: .folder)
             case .trash:
-                Image(systemName: "trash")
+                Image(systemSymbol: .trash)
             case .normal:
-                Image(systemName: group.icon ?? "folder")
+                Image(systemSymbol: .init(rawValue: group.icon ?? "folder"))
         }
     }
     
@@ -132,7 +135,12 @@ extension GroupRowView {
                 Button {
                     isRenameSheetPresented.toggle()
                 } label: {
-                    Label("rename", systemImage: "pencil.line")
+                    if #available(macOS 13.0, *) {
+                        Label(.localizable(.sidebarGroupRowContextMenuRename), systemSymbol: .pencilLine)
+                    } else {
+                        // Fallback on earlier versions
+                        Label(.localizable(.sidebarGroupRowContextMenuRename), systemSymbol: .pencil)
+                    }
                 }
                 
                 Menu {
@@ -144,25 +152,30 @@ extension GroupRowView {
                         }
                     }
                 } label: {
-                    Label("merge with", systemSymbol: .rectangleStackBadgePlus)
+                    Label(.localizable(.sidebarGroupRowContextMenuMerge), systemSymbol: .rectangleStackBadgePlus)
                 }
                 
                 Button(role: .destructive) {
                     isDeleteConfirmPresented.toggle()
                 } label: {
-                    Label("delete", systemImage: "trash")
+                    Label(.localizable(.sidebarGroupRowContextMenuDelete), systemSymbol: .trash)
                 }
             } else if group.groupType == .trash {
                 Button(role: .destructive) {
                     isDeleteConfirmPresented.toggle()
                 } label: {
-                    Label("empty", systemImage: "trash")
+                    Label(.localizable(.sidebarGroupRowContextMenuEmptyTrash), systemSymbol: .trash)
                 }
             } else if group.groupType == .default {
                 Button {
                     isRenameSheetPresented.toggle()
                 } label: {
-                    Label("rename", systemImage: "pencil.line")
+                    if #available(macOS 13.0, *) {
+                        Label(.localizable(.sidebarGroupRowContextMenuRename), systemSymbol: .pencilLine)
+                    } else {
+                        // Fallback on earlier versions
+                        Label(.localizable(.sidebarGroupRowContextMenuRename), systemSymbol: .pencil)
+                    }
                 }
             }
         }
@@ -198,48 +211,6 @@ extension GroupRowView {
         }
     }
 }
-
-
-// MARK: - Alert
-fileprivate extension View {
-    @ViewBuilder func deleteAlert(isPresented: Binding<Bool>, onDelete: @escaping () -> Void) -> some View {
-        self
-            .alert("Are you sure you want to delete the folder)?", isPresented: isPresented, actions: {
-                Button(role: .cancel) {
-                    isPresented.wrappedValue.toggle()
-                } label: {
-                    Label("Cancel", systemImage: "trash")
-                }
-                Button(role: .destructive) {
-                    onDelete()
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                }
-            }) {
-                Text("All files will be deleted.")
-            }
-    }
-    
-    @ViewBuilder func emptyAlert(isPresented: Binding<Bool>, onEmpty: @escaping () -> Void) -> some View {
-        self
-            .alert("Are you sure you want to empty the trash?", isPresented: isPresented, actions: {
-                Button(role: .cancel) {
-                    isPresented.wrappedValue.toggle()
-                } label: {
-                    Label("Cancel", systemImage: "trash")
-                }
-                Button(role: .destructive) {
-                    onEmpty()
-                } label: {
-                    Label("Empty", systemImage: "trash")
-                }
-            }) {
-                Text("All files will be permanently deleted.")
-            }
-    }
-}
-
-
 
 
 #if DEBUG
