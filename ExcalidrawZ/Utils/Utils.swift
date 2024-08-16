@@ -45,7 +45,7 @@ func archiveAllFiles() throws {
                     try filemanager.createDirectory(at: dir, withIntermediateDirectories: false)
                     for file in files.value {
                         var index = 1
-                        var filename = file.name ?? "untitled"
+                        var filename = file.name ?? String(localizable: .newFileNamePlaceholder)
                         var fileURL: URL = dir.appendingPathComponent(filename, conformingTo: .fileURL).appendingPathExtension("excalidraw")
                         var retryCount = 0
                         while filemanager.fileExists(at: fileURL), retryCount < 100 {

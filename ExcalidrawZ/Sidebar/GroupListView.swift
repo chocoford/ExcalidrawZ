@@ -121,10 +121,10 @@ struct CreateGroupSheetView: View {
     
     var body: some View {
         VStack(alignment: .leading) {
-            Text("New folder")
+            Text(.localizable(.sidebarGroupListCreateTitle))
                 .fontWeight(.bold)
             HStack {
-                Text("name:")
+                Text(.localizable(.sidebarGroupListCreateGroupName))
                 TextField("", text: $name)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit {
@@ -134,15 +134,15 @@ struct CreateGroupSheetView: View {
                         }
                     }
             }
-            Toggle("Sync to iCloud", isOn: .constant(false))
+            Toggle(.localizable(.sidebarGroupListCreateSyncIcloud), isOn: .constant(false))
                 .disabled(true)
             
             Divider()
             
             HStack {
                 Spacer()
-                Button("cancel") { dismiss() }
-                Button("create") {
+                Button(.localizable(.sidebarGroupListCreateButtonCancel)) { dismiss() }
+                Button(.localizable(.sidebarGroupListCreateButtonCreate)) {
                     onCreate(name)
                     dismiss()
                 }
@@ -159,7 +159,7 @@ struct CreateGroupSheetView: View {
     }
     
     func getNextFileName() -> String {
-        let name = "New Folder"
+        let name = String(localizable: .sidebarGroupListCreateNewGroupNamePlaceholder)
         var result = name
         var i = 1
         while groups.first(where: {$0.name == result}) != nil {

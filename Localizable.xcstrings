@@ -9,6 +9,12 @@
             "state" : "translated",
             "value" : "Delete"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
+          }
         }
       }
     },
@@ -19,6 +25,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Restore"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恢复"
           }
         }
       }
@@ -31,6 +43,12 @@
             "state" : "translated",
             "value" : "File history"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件历史"
+          }
         }
       }
     },
@@ -41,6 +59,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Beta · This is rendered by native canvas."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beta - 由本地画布渲染。"
           }
         }
       }
@@ -53,6 +77,12 @@
             "state" : "translated",
             "value" : "This file is really quite large..."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这个文件真的很大..."
+          }
         }
       }
     },
@@ -63,6 +93,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Loading file..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在加载文件..."
           }
         }
       }
@@ -75,6 +111,12 @@
             "state" : "translated",
             "value" : "New draw"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新文档"
+          }
         }
       }
     },
@@ -85,6 +127,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cancel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
           }
         }
       }
@@ -97,6 +145,12 @@
             "state" : "translated",
             "value" : "Recover"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恢复"
+          }
         }
       }
     },
@@ -107,6 +161,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "To edit this file, you’ll need to recover it."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要编辑该文件，您需要先恢复它。"
           }
         }
       }
@@ -119,6 +179,12 @@
             "state" : "translated",
             "value" : "The file is deleted and it can’t be edited."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件已删除，无法编辑。"
+          }
         }
       }
     },
@@ -129,6 +195,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Export"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出"
           }
         }
       }
@@ -141,6 +213,12 @@
             "state" : "translated",
             "value" : "Copied"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制的"
+          }
         }
       }
     },
@@ -151,6 +229,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拷贝"
           }
         }
       }
@@ -163,6 +247,12 @@
             "state" : "translated",
             "value" : "Save"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存储"
+          }
         }
       }
     },
@@ -173,6 +263,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Share"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共享"
           }
         }
       }
@@ -185,6 +281,12 @@
             "state" : "translated",
             "value" : "Export All"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部导出"
+          }
         }
       }
     },
@@ -195,6 +297,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Loading..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在加载..."
           }
         }
       }
@@ -207,6 +315,12 @@
             "state" : "translated",
             "value" : "Cancel"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
         }
       }
     },
@@ -217,6 +331,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Loading image failed."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载图像失败。"
           }
         }
       }
@@ -229,6 +349,12 @@
             "state" : "translated",
             "value" : "Archive"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "归档"
+          }
         }
       }
     },
@@ -239,6 +365,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dismiss"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
           }
         }
       }
@@ -251,6 +383,12 @@
             "state" : "translated",
             "value" : "File"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件"
+          }
         }
       }
     },
@@ -261,6 +399,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Image"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图像"
           }
         }
       }
@@ -273,6 +417,12 @@
             "state" : "translated",
             "value" : "Choose an export target"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择导出目标"
+          }
         }
       }
     },
@@ -283,6 +433,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Import"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入"
           }
         }
       }
@@ -295,6 +451,12 @@
             "state" : "translated",
             "value" : "Migrate to new ExcalidrawZ"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "迁移到新的 ExcalidrawZ"
+          }
         }
       }
     },
@@ -305,6 +467,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Export all files and import them to the new version of ExcalidrawZ."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出所有文件并将其导入新版 ExcalidrawZ。"
           }
         }
       }
@@ -317,6 +485,12 @@
             "state" : "translated",
             "value" : "Archive all files"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "归档所有文件"
+          }
         }
       }
     },
@@ -327,6 +501,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ExcalidrawZ has reached a new milestone—the official release of version 1.0. The new version has changed the application ID, so you will need to manually download it and migrate your existing files."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ迎来了新的里程碑--1.0版本正式发布。新版本更改了应用程序 ID，因此您需要手动下载并迁移现有文件。"
           }
         }
       }
@@ -339,6 +519,12 @@
             "state" : "translated",
             "value" : "Archive"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "归档"
+          }
         }
       }
     },
@@ -349,6 +535,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Close"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
           }
         }
       }
@@ -361,6 +553,12 @@
             "state" : "translated",
             "value" : "Don't show again"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不要再出现"
+          }
         }
       }
     },
@@ -371,6 +569,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Two versions of ExcalidrawZ are available: the App Store version and the non-App Store version."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ 有两个版本：App Store 版本和非 App Store 版本。"
           }
         }
       }
@@ -383,6 +587,12 @@
             "state" : "translated",
             "value" : "Download the new ExcalidrawZ"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载新版 ExcalidrawZ"
+          }
         }
       }
     },
@@ -393,6 +603,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You can still continue to use the current app, and your data remains safe, but future updates will not be pushed here."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您仍然可以继续使用当前的应用程序，您的数据仍然安全，但未来的更新将不会推送到这里。"
           }
         }
       }
@@ -405,6 +621,29 @@
             "state" : "translated",
             "value" : "Migrate to new version!"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "迁移到新版本！"
+          }
+        }
+      }
+    },
+    "newFileNamePlaceholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Untitled"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未命名"
+          }
         }
       }
     },
@@ -415,6 +654,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cancel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
           }
         }
       }
@@ -427,6 +672,12 @@
             "state" : "translated",
             "value" : "OK"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好"
+          }
         }
       }
     },
@@ -437,6 +688,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rename"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名"
           }
         }
       }
@@ -449,6 +706,12 @@
             "state" : "translated",
             "value" : "App appearacne"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App外观"
+          }
         }
       }
     },
@@ -459,6 +722,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Appearance"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外观"
           }
         }
       }
@@ -471,6 +740,12 @@
             "state" : "translated",
             "value" : "Canvas appearance"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画布外观"
+          }
         }
       }
     },
@@ -481,6 +756,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "General"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通用"
           }
         }
       }
@@ -493,6 +774,12 @@
             "state" : "translated",
             "value" : "App settings"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App设置"
+          }
         }
       }
     },
@@ -503,6 +790,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No selection"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请选择一个选项卡"
           }
         }
       }
@@ -515,6 +808,12 @@
             "state" : "translated",
             "value" : "Update"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新"
+          }
         }
       }
     },
@@ -525,6 +824,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Check updates automatically"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动检查更新"
           }
         }
       }
@@ -537,6 +842,12 @@
             "state" : "translated",
             "value" : "Check Updates"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "检查更新"
+          }
         }
       }
     },
@@ -547,6 +858,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
           }
         }
       }
@@ -559,6 +876,12 @@
             "state" : "translated",
             "value" : "Delete permanently"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "永久删除"
+          }
         }
       }
     },
@@ -569,6 +892,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duplicate"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制"
           }
         }
       }
@@ -581,6 +910,12 @@
             "state" : "translated",
             "value" : "Move to…"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移动到..."
+          }
         }
       }
     },
@@ -591,6 +926,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recover"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恢复"
           }
         }
       }
@@ -603,6 +944,12 @@
             "state" : "translated",
             "value" : "Rename"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新命名"
+          }
         }
       }
     },
@@ -613,6 +960,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cancel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
           }
         }
       }
@@ -625,6 +978,12 @@
             "state" : "translated",
             "value" : "Delete permanently"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "永久删除"
+          }
         }
       }
     },
@@ -635,6 +994,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Are you sure to permanently delete the file: %@ ?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您确定要永久删除文件%@ 吗？"
           }
         }
       }
@@ -647,6 +1012,114 @@
             "state" : "translated",
             "value" : "Select a group"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择一个分组"
+          }
+        }
+      }
+    },
+    "sidebarGroupListCreateButtonCancel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        }
+      }
+    },
+    "sidebarGroupListCreateButtonCreate" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建"
+          }
+        }
+      }
+    },
+    "sidebarGroupListCreateGroupName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "name:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "名称："
+          }
+        }
+      }
+    },
+    "sidebarGroupListCreateNewGroupNamePlaceholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Group"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分组"
+          }
+        }
+      }
+    },
+    "sidebarGroupListCreateSyncIcloud" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync to iCloud"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步至iCloud"
+          }
+        }
+      }
+    },
+    "sidebarGroupListCreateTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a Group"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建分组"
+          }
         }
       }
     },
@@ -657,6 +1130,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New group"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建分组"
           }
         }
       }
@@ -669,6 +1148,12 @@
             "state" : "translated",
             "value" : "Delete"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
+          }
         }
       }
     },
@@ -679,6 +1164,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Empty"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "倾倒"
           }
         }
       }
@@ -691,6 +1182,12 @@
             "state" : "translated",
             "value" : "Merge with..."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "与...融合"
+          }
         }
       }
     },
@@ -701,6 +1198,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rename"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名"
           }
         }
       }
@@ -713,6 +1216,12 @@
             "state" : "translated",
             "value" : "Delete"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
+          }
         }
       }
     },
@@ -723,6 +1232,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Are you sure to delete the folder %@ ?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您确定要删除 %@ 分组吗？"
           }
         }
       }
@@ -735,6 +1250,12 @@
             "state" : "translated",
             "value" : "You can’t undo this action."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您将不能撤销此操作。"
+          }
         }
       }
     },
@@ -745,6 +1266,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Are you sure you want to permanently erase the items in the Trash?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您确定要永久删除回收站中的项目吗？"
           }
         }
       }
@@ -757,6 +1284,12 @@
             "state" : "translated",
             "value" : "Empty Trash"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清倒废纸篓"
+          }
         }
       }
     },
@@ -767,6 +1300,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show folders and files"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示分组和文件"
           }
         }
       }
@@ -779,6 +1318,12 @@
             "state" : "translated",
             "value" : "Show files only"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只显示文件"
+          }
         }
       }
     },
@@ -789,6 +1334,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Arrow"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "箭头"
           }
         }
       }
@@ -801,6 +1352,12 @@
             "state" : "translated",
             "value" : "Diamond"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "菱形"
+          }
         }
       }
     },
@@ -811,6 +1368,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Draw"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "绘制"
           }
         }
       }
@@ -823,6 +1386,12 @@
             "state" : "translated",
             "value" : "Ellipse"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圆形"
+          }
         }
       }
     },
@@ -833,6 +1402,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Eraser"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "橡皮擦"
           }
         }
       }
@@ -845,6 +1420,12 @@
             "state" : "translated",
             "value" : "Insert image"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "插入图片"
+          }
         }
       }
     },
@@ -855,6 +1436,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Laser"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "激光笔"
           }
         }
       }
@@ -867,6 +1454,12 @@
             "state" : "translated",
             "value" : "Line"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "线条"
+          }
         }
       }
     },
@@ -877,6 +1470,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "or"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "或"
           }
         }
       }
@@ -889,6 +1488,12 @@
             "state" : "translated",
             "value" : "Rectangle"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "矩形"
+          }
         }
       }
     },
@@ -899,6 +1504,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Selection"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择"
           }
         }
       }
@@ -911,6 +1522,12 @@
             "state" : "translated",
             "value" : "Text"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文本"
+          }
         }
       }
     },
@@ -922,6 +1539,12 @@
             "state" : "translated",
             "value" : "Check for Updates…"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "检查更新..."
+          }
         }
       }
     },
@@ -932,6 +1555,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Loading…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载中…"
           }
         }
       }

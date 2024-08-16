@@ -29,7 +29,7 @@ struct ExcalidrawFileDocument: Transferable {
             
             let fileExtension = "excalidraw"
             
-            let filename = (file.name ?? "Untitled") + ".\(fileExtension)"
+            let filename = (file.name ?? String(localizable: .newFileNamePlaceholder)) + ".\(fileExtension)"
             let url = directory.appendingPathComponent(filename, conformingTo: .fileURL)
             if fileManager.fileExists(atPath: url.absoluteString) {
                 try fileManager.removeItem(at: url)
@@ -102,7 +102,7 @@ struct ExportFileView: View {
             TextField("", text: $fileName)
                 .textFieldStyle(.roundedBorder)
                 .onAppear {
-                    fileName = file.name ?? "Untitled"
+                    fileName = file.name ?? String(localizable: .newFileNamePlaceholder)
                 }
                 .frame(width: 260)
             actionsView()
@@ -213,7 +213,7 @@ struct ExportFileView: View {
             let fileManager: FileManager = FileManager.default
             guard let directory: URL = try getTempDirectory() else { return }
             let fileExtension = "excalidraw"
-            let filename = (file.name ?? "Untitled") + ".\(fileExtension)"
+            let filename = (file.name ?? String(localizable: .newFileNamePlaceholder)) + ".\(fileExtension)"
             let url = directory.appendingPathComponent(filename, conformingTo: .fileURL)
             if fileManager.fileExists(atPath: url.absoluteString) {
                 try fileManager.removeItem(at: url)

@@ -137,7 +137,7 @@ extension PersistenceController {
         
         let file = File(context: container.viewContext)
         file.id = UUID()
-        file.name = "Untitled"
+        file.name = String(localizable: .newFileNamePlaceholder)
         file.createdAt = .now
         file.updatedAt = .now
         file.group = group

@@ -110,7 +110,7 @@ struct ExportImageView: View {
                 return
             }
             self.image = image
-            fileName = url.lastPathComponent.components(separatedBy: ".").first ?? "Untitled"
+            fileName = url.lastPathComponent.components(separatedBy: ".").first ?? String(localizable: .newFileNamePlaceholder)
         }
         .onDisappear {
             if let url = exportState.url {

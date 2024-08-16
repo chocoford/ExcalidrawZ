@@ -78,12 +78,12 @@ struct ExcalidrawZApp: App {
                         NotificationCenter.default.post(name: .shouldHandleImport, object: panel.urls)
                     }
                 } label: {
-                    Text("Import")
+                    Text(.localizable(.import))
                 }
                 Button {
                     try? archiveAllFiles()
                 } label: {
-                    Text("Export All")
+                    Text(.localizable(.exportAll))
                 }
             }
         }

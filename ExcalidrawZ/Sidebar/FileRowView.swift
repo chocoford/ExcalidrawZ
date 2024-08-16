@@ -43,7 +43,7 @@ struct FileInfo: Equatable {
         self.fileEntity = fileEntity
         
         self.id = self.fileEntity.id ?? UUID()
-        self.name = self.fileEntity.name ?? "Untitled"
+        self.name = self.fileEntity.name ?? String(localizable: .newFileNamePlaceholder)
         self.createdAt = self.fileEntity.createdAt ?? .distantPast
         self.updatedAt = self.fileEntity.updatedAt ?? self.createdAt
         self.deletedAt = self.fileEntity.deletedAt
@@ -147,7 +147,7 @@ struct FileRowView: View {
         .buttonStyle(ListButtonStyle(selected: isSelected))
         .contextMenu { listRowContextMenu }
         .alert(
-            LocalizedStringKey.localizable(.sidebarFileRowDeletePermanentlyAlertTitle(file.name ?? "Untitled")),
+            LocalizedStringKey.localizable(.sidebarFileRowDeletePermanentlyAlertTitle(file.name ?? "")),
             isPresented: $showPermanentlyDeleteAlert
         ) {
             Button(role: .cancel) {

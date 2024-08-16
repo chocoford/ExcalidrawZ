@@ -22,7 +22,7 @@ struct FileCheckpointRowView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 
                 VStack(spacing: 8) {
-                    Text(checkpoint.filename ?? "Untitled")
+                    Text(checkpoint.filename ?? "")
                         .font(.title)
                     
                     Text(checkpoint.updatedAt?.formatted() ?? "")

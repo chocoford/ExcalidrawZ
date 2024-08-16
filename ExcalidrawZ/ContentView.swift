@@ -295,7 +295,7 @@ extension ContentView {
         ToolbarItemGroup(placement: .navigation) {
             if let file = fileState.currentFile {
                 VStack(alignment: .leading) {
-                    Text(file.name ?? "Untitled")
+                    Text(file.name ?? "")
                         .font(.headline)
                     Text(file.createdAt?.formatted() ?? "Not modified")
                         .font(.footnote)
