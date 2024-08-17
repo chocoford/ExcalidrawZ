@@ -1,3 +1,8 @@
+## 1.0.0-alpha-5
+
+* Optimize i18n
+  * add localization for `Chinese-simplified`
+
 ## 1.0.0-alpha-4
 
 * Optimize import functionality 
