@@ -88,6 +88,10 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
 
 * ~~Add hook in `excalidraw-app/App.tsx/onChange` to track the activated tool changed.~~
 
+* The `excalidraw` core is built and uploaded with the `dmg` file. You can download it from [Releases](https://github.com/chocoford/ExcalidrawZ/releases).
+
+  * Or you can build your own core from [`excalidraw`](https://github.com/excalidraw/excalidraw)
+
 * Hide toolbar in `packages/excalidraw/components/LayerUI.tsx/LayerUI`.
 
 * Add fonts after build.
