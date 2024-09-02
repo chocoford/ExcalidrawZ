@@ -25,7 +25,9 @@ struct ContentView: View {
     @State private var window: NSWindow?
     
     @State private var isMigrateSheetPresented = false
-    @State private var isInspectorPresented: Bool = true
+    
+    @State private var isInspectorPresented: Bool = false
+    @State private var isSidebarPresented: Bool = true
 
     var body: some View {
         ZStack {
@@ -38,6 +40,7 @@ struct ContentView: View {
             } else {
                 content()
             }
+            Text("\(isSidebarPresented)")
         }
         .navigationTitle("")
         .sheet(item: $sharedFile) {
@@ -74,7 +77,7 @@ struct ContentView: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
         if #available(macOS 13.0, *) {
-            ContentViewModern()
+            ContentViewModern(isSidebarPrenseted: $isSidebarPresented)
         } else {
             ContentViewLagacy()
         }
@@ -86,6 +89,8 @@ struct ContentViewModern: View {
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var appPreference: AppPreference
+    
+    @Binding var isSidebarPrenseted: Bool
     
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
     
@@ -104,6 +109,13 @@ struct ContentViewModern: View {
             ExcalidrawContainerView()
         }
         .removeSettingsSidebarToggle()
+        .onChange(of: columnVisibility) { newValue in
+            isSidebarPrenseted = newValue != .detailOnly
+            print(
+                "isSidebarPrenseted: \(isSidebarPrenseted), columnVisibility: \(newValue)"
+            )
+
+        }
     }
     
     @available(macOS 13.0, *)
@@ -296,10 +308,16 @@ extension ContentView {
     private func toolbarContent_macOS() -> some ToolbarContent {
         ToolbarItemGroup(placement: .status) {
             if #available(macOS 13.0, *) {
-                ExcalidrawToolbar()
-                    .padding(.vertical, 2)
+                ExcalidrawToolbar(
+                    isInspectorPresented: $isInspectorPresented,
+                    isSidebarPresented: $isSidebarPresented
+                )
+                .padding(.vertical, 2)
             } else {
-                ExcalidrawToolbar()
+                ExcalidrawToolbar(
+                    isInspectorPresented: $isInspectorPresented,
+                    isSidebarPresented: $isSidebarPresented
+                )
             }
         }
         

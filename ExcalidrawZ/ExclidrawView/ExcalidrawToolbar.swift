@@ -6,13 +6,65 @@
 //
 
 import SwiftUI
+import Combine
+
 import SFSafeSymbols
+import ChocofordUI
 
 struct ExcalidrawToolbar: View {
     @EnvironmentObject var toolState: ToolState
     
+    @Binding var isInspectorPresented: Bool
+    @Binding var isSidebarPresented: Bool
+    
+    @State private var window: NSWindow?
+    @State private var windowFrameCancellable: AnyCancellable?
+    @State private var isDense: Bool = false
+    
+    var minWidth: CGFloat {
+        if isInspectorPresented, isSidebarPresented {
+            return 1480
+        } else if isSidebarPresented {
+            return 1300
+        } else if isInspectorPresented {
+            return 1400
+        } else {
+            return 1150
+        }
+    }
+    
     var body: some View {
-
+        ZStack {
+            if isDense {
+                denseContent()
+            } else {
+                content()
+            }
+        }
+        .animation(nil, value: isDense)
+        .bindWindow($window)
+        .onChange(of: window) { newValue in
+            guard let newValue else { return }
+            isDense = newValue.frame.width < minWidth
+            windowFrameCancellable = newValue.publisher(for: \.frame).sink { frame in
+                isDense = newValue.frame.width < self.minWidth
+            }
+        }
+        .onChange(of: isSidebarPresented) { _ in
+            isDense = (window?.frame.width ?? .zero) < minWidth
+        }
+        .onChange(of: isInspectorPresented) { _ in
+            isDense = (window?.frame.width ?? .zero) < minWidth
+        }
+        .onChange(of: toolState.activatedTool) { newValue in
+            if newValue == nil {
+                toolState.activatedTool = .cursor
+            }
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func content() -> some View {
         HStack(spacing: 10) {
             SegmentedPicker(selection: $toolState.activatedTool) {
                 SegmentedPickerItem(value: ExcalidrawTool.cursor) {
@@ -162,6 +214,29 @@ struct ExcalidrawToolbar: View {
             }
         }
     }
+    
+    @MainActor @ViewBuilder
+    private func denseContent() -> some View {
+        HStack {
+            Text("Active tool: ")
+            Picker(selection: $toolState.activatedTool) {
+                Text(.localizable(.toolbarSelection)).tag(ExcalidrawTool.cursor)
+                Text(.localizable(.toolbarRectangle)).tag(ExcalidrawTool.rectangle)
+                Text(.localizable(.toolbarDiamond)).tag(ExcalidrawTool.diamond)
+                Text(.localizable(.toolbarEllipse)).tag(ExcalidrawTool.ellipse)
+                Text(.localizable(.toolbarArrow)).tag(ExcalidrawTool.arrow)
+                Text(.localizable(.toolbarLine)).tag(ExcalidrawTool.line)
+                Text(.localizable(.toolbarDraw)).tag(ExcalidrawTool.freedraw)
+                Text(.localizable(.toolbarText)).tag(ExcalidrawTool.text)
+                Text(.localizable(.toolbarInsertImage)).tag(ExcalidrawTool.image)
+                Text(.localizable(.toolbarEraser)).tag(ExcalidrawTool.eraser)
+            } label: {
+                Text("Active tool")
+            }
+            .pickerStyle(.menu)
+            .fixedSize()
+        }
+    }
 }
 
 struct ExcalidrawToolbarItemModifer: ViewModifier {
@@ -216,6 +291,6 @@ fileprivate struct Cursor: Shape {
 }
 
 #Preview {
-    ExcalidrawToolbar()
+    ExcalidrawToolbar(isInspectorPresented: .constant(false), isSidebarPresented: .constant(false))
         .background(.background)
 }
