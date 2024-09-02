@@ -40,6 +40,7 @@ struct ExcalidrawImageElement: ExcalidrawImageElementBase {
     var versionNonce: Int
     var isDeleted: Bool
     var groupIds: [String]
+    var frameId: String?
     var boundElements: [ExcalidrawBoundElement]?
     var updated: Double
     var link: String?

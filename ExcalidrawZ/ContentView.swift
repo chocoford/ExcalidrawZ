@@ -25,39 +25,50 @@ struct ContentView: View {
     @State private var window: NSWindow?
     
     @State private var isMigrateSheetPresented = false
-        
+    @State private var isInspectorPresented: Bool = true
+
     var body: some View {
-        content()
-            .navigationTitle("")
-            .sheet(item: $sharedFile) {
-                if #available(macOS 13.0, *) {
-                    ShareView(sharedFile: $0)
-                        .swiftyAlert()
-                } else {
-                    ShareViewLagacy(sharedFile: $0)
-                        .swiftyAlert()
-                }
+        ZStack {
+            if #available(macOS 14.0, *) {
+                content()
+                    .inspector(isPresented: $isInspectorPresented) {
+                        LibraryView(isPresented: $isInspectorPresented)
+                            .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
+                    }
+            } else {
+                content()
             }
-            .toolbar { toolbarContent() }
-            .modifier(MigrateToNewVersionSheetViewModifier(isPresented: $isMigrateSheetPresented))
-            .environmentObject(fileState)
-            .environmentObject(exportState)
-            .environmentObject(toolState)
-            .swiftyAlert()
-            .bindWindow($window)
-            .onReceive(NotificationCenter.default.publisher(for: .shouldHandleImport)) { notification in
-                guard let urls = notification.object as? [URL] else { return }
-                if window?.isKeyWindow == true {
-                    Task.detached {
-                        do {
-                            try await fileState.importFiles(urls)
-                        } catch {
-                            print(error)
-                            await alertToast(error)
-                        }
+        }
+        .navigationTitle("")
+        .sheet(item: $sharedFile) {
+            if #available(macOS 13.0, *) {
+                ShareView(sharedFile: $0)
+                    .swiftyAlert()
+            } else {
+                ShareViewLagacy(sharedFile: $0)
+                    .swiftyAlert()
+            }
+        }
+        .toolbar { toolbarContent() }
+        .modifier(MigrateToNewVersionSheetViewModifier(isPresented: $isMigrateSheetPresented))
+        .environmentObject(fileState)
+        .environmentObject(exportState)
+        .environmentObject(toolState)
+        .swiftyAlert()
+        .bindWindow($window)
+        .onReceive(NotificationCenter.default.publisher(for: .shouldHandleImport)) { notification in
+            guard let urls = notification.object as? [URL] else { return }
+            if window?.isKeyWindow == true {
+                Task.detached {
+                    do {
+                        try await fileState.importFiles(urls)
+                    } catch {
+                        print(error)
+                        await alertToast(error)
                     }
                 }
             }
+        }
     }
     
     @MainActor @ViewBuilder
@@ -77,6 +88,7 @@ struct ContentViewModern: View {
     @EnvironmentObject var appPreference: AppPreference
     
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+    
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -111,7 +123,6 @@ struct ContentViewModern: View {
             .help(.localizable(.createNewFile))
             .disabled(fileState.currentGroup?.groupType == .trash)
         }
-        
         
         ToolbarItemGroup(placement: .destructiveAction) {
             HStack(spacing: 0) {
@@ -350,7 +361,6 @@ extension ContentView {
             }
             .help(.localizable(.export))
             .disabled(fileState.currentGroup?.groupType == .trash)
-
         }
     }
 #endif

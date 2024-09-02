@@ -23,6 +23,8 @@ extension ExcalidrawView.Coordinator: WKScriptMessageHandler {
             let data = try JSONSerialization.data(withJSONObject: message.body)
             let message = try JSONDecoder().decode(ExcalidrawZMessage.self, from: data)
             
+//            self.logger.info("[WKScriptMessageHandler] Did receive message: \(String(describing: message))")
+            
             switch message {
                 case .saveFileDone(let message):
                     onSaveFileDone(message.data)
@@ -40,8 +42,13 @@ extension ExcalidrawView.Coordinator: WKScriptMessageHandler {
                     let tool = ExcalidrawTool(from: message.data.type)
                     self.lastTool = tool
                     self.parent.toolState.activatedTool = tool
+                case .getElementsBlob(let blobData):
+                    self.flyingBlobsRequest[blobData.data.id]?(blobData.data.blobData)
+                case .getElementsSVG(let svgData):
+                    self.flyingSVGRequests[svgData.data.id]?(svgData.data.svg)
             }
         } catch {
+            self.logger.error("[WKScriptMessageHandler] Decode received message failed. Raw data:\n\(String(describing: message.body))")
             self.parent.onError(error)
         }
     }
@@ -113,6 +120,8 @@ extension ExcalidrawView.Coordinator {
         case onFocus
         case onBlur
         case didSetActiveTool
+        case getElementsBlob
+        case getElementsSVG
     }
     
     enum ExcalidrawZMessage: Codable {
@@ -123,6 +132,8 @@ extension ExcalidrawView.Coordinator {
         case onFocus
         case onBlur
         case didSetActiveTool(SetActiveToolMessage)
+        case getElementsBlob(ExcalidrawElementsBlobData)
+        case getElementsSVG(ExcalidrawElementsSVGData)
         
         enum CodingKeys: String, CodingKey {
             case eventType = "event"
@@ -131,7 +142,7 @@ extension ExcalidrawView.Coordinator {
         public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             let eventType = try container.decode(ExcalidrawZEventType.self, forKey: .eventType)
-            
+
             switch eventType {
                 case .onStateChanged:
                     self = .stateChanged(try StateChangedMessage(from: decoder))
@@ -147,6 +158,10 @@ extension ExcalidrawView.Coordinator {
                     self = .onBlur
                 case .didSetActiveTool:
                     self = .didSetActiveTool(try SetActiveToolMessage(from: decoder))
+                case .getElementsBlob:
+                    self = .getElementsBlob(try ExcalidrawElementsBlobData(from: decoder))
+                case .getElementsSVG:
+                    self = .getElementsSVG(try ExcalidrawElementsSVGData(from: decoder))
             }
             
         }
@@ -161,7 +176,7 @@ extension ExcalidrawView.Coordinator {
         var data: StateChangedMessageData
     }
     struct StateChangedMessageData: Codable {
-        var state: ExcalidrawState
+        var state: ExcalidrawState?
         var data: ExcalidrawFileData
     }
     
@@ -229,7 +244,7 @@ extension ExcalidrawView.Coordinator {
     
     struct ExcalidrawFileData: Codable, Hashable {
         var dataString: String
-        var elements: [ExcalidrawElement]
+        var elements: [ExcalidrawElement]?
         var files: [LoadedFile]?
         
         // MARK: - LoadedFile
@@ -239,7 +254,25 @@ extension ExcalidrawView.Coordinator {
         }
     }
     
+    struct ExcalidrawElementsBlobData: AnyExcalidrawZMessage {
+        struct BlobData: Codable {
+            var id: String
+            var blobData: String
+        }
+        
+        var event: String
+        var data: BlobData
+    }
     
+    struct ExcalidrawElementsSVGData: AnyExcalidrawZMessage {
+        struct SVGData: Codable {
+            var id: String
+            var svg: String
+        }
+        
+        var event: String
+        var data: SVGData
+    }
 
     struct SaveFileDoneMessage: AnyExcalidrawZMessage {
         var event: String

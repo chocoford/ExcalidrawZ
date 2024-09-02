@@ -60,6 +60,10 @@ enum ExcalidrawElementType: String, Codable {
     case image = "image"
 }
 
+//struct FractionalIndex: Codable {
+//    
+//}
+
 protocol ExcalidrawElementBase: Codable, Identifiable, Hashable {
     var id: String { get }
     var x: Double { get }
@@ -78,8 +82,10 @@ protocol ExcalidrawElementBase: Codable, Identifiable, Hashable {
     var seed: Int { get }
     var version: Int { get }
     var versionNonce: Int { get }
+//    var index: FractionalIndex? { get }
     var isDeleted: Bool { get }
     var groupIds: [String] { get }
+    var frameId: String? { get }
     var boundElements: [ExcalidrawBoundElement]? { get }
     var updated: Double { get }
     var link: String? { get }

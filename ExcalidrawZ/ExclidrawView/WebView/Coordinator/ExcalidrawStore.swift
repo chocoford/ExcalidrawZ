@@ -9,6 +9,9 @@ import SwiftUI
 import WebKit
 
 import OSLog
+
+import SVGView
+
 extension ExcalidrawView {
     class Coordinator: NSObject {
         let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawWebViewCoordinator")
@@ -25,6 +28,8 @@ extension ExcalidrawView {
         
         var downloadCache: [String : Data] = [:]
         var downloads: [URLRequest : URL] = [:]
+        var flyingBlobsRequest: [String : (String) -> Void] = [:]
+        var flyingSVGRequests: [String : (String) -> Void] = [:]
         
         var previousFileID: UUID? = nil
         private var lastVersion: Int = 0
@@ -216,5 +221,55 @@ extension ExcalidrawView.Coordinator {
     func toggleToolbarAction(key: Character) async throws {
         print(#function)
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
+    }
+    
+    func exportElementsToPNG(id: String, elements: [ExcalidrawElement]) async throws -> NSImage {
+        let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified())); 0;"
+        self.logger.debug("\(#function), script:\n\(script)")
+        Task { @MainActor in
+            do {
+                try await webView.evaluateJavaScript(script)
+            } catch {
+                self.logger.error("\(String(describing: error))")
+            }
+        }
+        let dataString: String = await withCheckedContinuation { continuation in
+            self.flyingBlobsRequest[id] = { data in
+                continuation.resume(returning: data)
+                self.flyingBlobsRequest.removeValue(forKey: id)
+            }
+        }
+        guard let data = Data(base64Encoded: dataString),
+              let image = NSImage(data: data) else {
+            struct DecodeImageFailed: Error {}
+            throw DecodeImageFailed()
+        }
+        return image
+        
+    }
+    
+    func exportElementsToSVG(id: String, elements: [ExcalidrawElement]) async throws -> NSImage {
+        let script = try "window.excalidrawZHelper.exportElementsToSvg('\(id)', \(elements.jsonStringified())); 0;"
+        self.logger.debug("\(#function), script:\n\(script)")
+        Task { @MainActor in
+            do {
+                try await webView.evaluateJavaScript(script)
+            } catch {
+                self.logger.error("\(String(describing: error))")
+            }
+        }
+        let dataString: String = await withCheckedContinuation { continuation in
+            self.flyingSVGRequests[id] = { data in
+                continuation.resume(returning: data)
+                self.flyingSVGRequests.removeValue(forKey: id)
+            }
+        }
+        guard let data = Data(base64Encoded: dataString),
+              let image = NSImage(data: data) else {
+            struct DecodeImageFailed: Error {}
+            throw DecodeImageFailed()
+        }
+        return image
+        
     }
 }

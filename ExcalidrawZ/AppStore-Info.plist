@@ -36,6 +36,29 @@
 				</array>
 			</dict>
 		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Excalidraw Library JSON</string>
+			<key>UTTypeIcons</key>
+			<dict/>
+			<key>UTTypeIdentifier</key>
+			<string>com.chocoford.excalidrawlibJSON</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>excalidrawlibjson</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/vnd.excalidrawlib+json</string>
+				</array>
+			</dict>
+		</dict>
 	</array>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
@@ -53,6 +76,19 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>excalidraw</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeIcons</key>
+			<dict/>
+			<key>UTTypeIdentifier</key>
+			<string>com.chocoford.excalidrawlibFile</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>excalidrawlib</string>
 				</array>
 			</dict>
 		</dict>

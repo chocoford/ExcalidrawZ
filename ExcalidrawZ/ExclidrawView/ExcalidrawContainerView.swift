@@ -141,6 +141,9 @@ extension UTType {
     static var excalidrawFile: UTType {
         UTType(importedAs: "com.chocoford.excalidrawFile")
     }
+    static var excalidrawlibFile: UTType {
+        UTType(importedAs: "com.chocoford.excalidrawlibFile")
+    }
 }
 
 #if DEBUG

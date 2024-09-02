@@ -34,11 +34,13 @@ protocol ExcalidrawTextElementBase: ExcalidrawElementBase {
      */
     var lineHeight: Double { get }
 }
-extension ExcalidrawTextElementBase {
-    var type: ExcalidrawElementType { .text }
-}
+//extension ExcalidrawTextElementBase {
+//    var type: ExcalidrawElementType { .text }
+//}
 
 struct ExcalidrawTextElement: ExcalidrawTextElementBase {
+    var type: ExcalidrawElementType
+    
     var id: String
     var x: Double
     var y: Double
@@ -58,6 +60,7 @@ struct ExcalidrawTextElement: ExcalidrawTextElementBase {
     var versionNonce: Int
     var isDeleted: Bool
     var groupIds: [String]
+    var frameId: String?
     var boundElements: [ExcalidrawBoundElement]?
     var updated: Double
     var link: String?

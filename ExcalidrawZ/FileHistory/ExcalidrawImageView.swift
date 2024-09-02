@@ -25,67 +25,69 @@ struct ExcalidrawImageView: View {
             for element in elements {
                 switch element {
                     case .generic(let excalidrawGenericElement):
-                        switch excalidrawGenericElement {
-                            case .selection(let excalidrawSelectionElement):
+                        switch excalidrawGenericElement.type {
+                            case .selection:
                                 break
-                            case .rectangle(let excalidrawRectangleElement):
+                            case .rectangle:
                                 context.stroke(
                                     Path(
                                         roundedRect: CGRect(
-                                            from: excalidrawRectangleElement,
+                                            from: excalidrawGenericElement,
                                             minX: minX,
                                             minY: minY,
                                             widthScaleEffect: widthScaleEffect,
                                             heightScaleEffect: heightScaleEffect
                                         ),
-                                        cornerRadius: excalidrawRectangleElement.roundness?.type == .adaptiveRadius ? 8 : excalidrawRectangleElement.roundness?.value ?? 0
+                                        cornerRadius: excalidrawGenericElement.roundness?.type == .adaptiveRadius ? 8 : excalidrawGenericElement.roundness?.value ?? 0
                                     ),
-                                    with: .color(Color(hexString: excalidrawRectangleElement.strokeColor)),
-                                    lineWidth: excalidrawRectangleElement.strokeWidth
+                                    with: .color(Color(hexString: excalidrawGenericElement.strokeColor)),
+                                    lineWidth: excalidrawGenericElement.strokeWidth
                                 )
-                            case .diamond(let excalidrawDiamondElement):
+                            case .diamond:
                                 context.stroke(
                                     Path { path in
                                         path.move(to: makePointInCanvas(
-                                            point: CGPoint(x: excalidrawDiamondElement.x,
-                                                           y: excalidrawDiamondElement.y + excalidrawDiamondElement.height / 2),
+                                            point: CGPoint(x: excalidrawGenericElement.x,
+                                                           y: excalidrawGenericElement.y + excalidrawGenericElement.height / 2),
                                             canvasSize: size
                                         ))
                                         path.addLine(to: makePointInCanvas(
-                                            point: CGPoint(x: excalidrawDiamondElement.x + excalidrawDiamondElement.width / 2,
-                                                           y: excalidrawDiamondElement.y),
+                                            point: CGPoint(x: excalidrawGenericElement.x + excalidrawGenericElement.width / 2,
+                                                           y: excalidrawGenericElement.y),
                                             canvasSize: size))
                                         path.addLine(to: makePointInCanvas(
-                                            point: CGPoint(x: excalidrawDiamondElement.x + excalidrawDiamondElement.width,
-                                                           y: excalidrawDiamondElement.y + excalidrawDiamondElement.height / 2),
+                                            point: CGPoint(x: excalidrawGenericElement.x + excalidrawGenericElement.width,
+                                                           y: excalidrawGenericElement.y + excalidrawGenericElement.height / 2),
                                             canvasSize: size
                                         ))
                                         
                                         path.addLine(to: makePointInCanvas(
-                                            point: CGPoint(x: excalidrawDiamondElement.x + excalidrawDiamondElement.width / 2,
-                                                           y: excalidrawDiamondElement.y + excalidrawDiamondElement.height),
+                                            point: CGPoint(x: excalidrawGenericElement.x + excalidrawGenericElement.width / 2,
+                                                           y: excalidrawGenericElement.y + excalidrawGenericElement.height),
                                             canvasSize: size
                                         ))
                                         path.closeSubpath()
                                     },
-                                    with: .color(Color(hexString: excalidrawDiamondElement.strokeColor)),
-                                    lineWidth: excalidrawDiamondElement.strokeWidth
+                                    with: .color(Color(hexString: excalidrawGenericElement.strokeColor)),
+                                    lineWidth: excalidrawGenericElement.strokeWidth
                                 )
                                 break
-                            case .ellipse(let excalidrawEllipseElement):
+                            case .ellipse:
                                 context.stroke(
                                     Path(
                                         ellipseIn: CGRect(
-                                            from: excalidrawEllipseElement,
+                                            from: excalidrawGenericElement,
                                             minX: minX,
                                             minY: minY,
                                             widthScaleEffect: widthScaleEffect,
                                             heightScaleEffect: heightScaleEffect
                                         )
                                     ),
-                                    with: .color(Color(hexString: excalidrawEllipseElement.strokeColor)),
-                                    lineWidth: excalidrawEllipseElement.strokeWidth
+                                    with: .color(Color(hexString: excalidrawGenericElement.strokeColor)),
+                                    lineWidth: excalidrawGenericElement.strokeWidth
                                 )
+                            default:
+                                break
                         }
                         break
                     case .text(let excalidrawTextElement):
