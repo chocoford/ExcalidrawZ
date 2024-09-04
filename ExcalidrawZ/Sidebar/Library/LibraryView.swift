@@ -43,94 +43,103 @@ struct LibraryView: View {
     @State private var selectedItems = Set<LibraryItem>()
     
     var body: some View {
-        content()
-            .toolbar {
-                /// This is the key to make sidebar toggle at the right side.
-                ToolbarItem(placement: .status) {
-                    if isPresented {
-                        Text("Library")
-                            .foregroundStyle(.secondary)
-                            .font(.headline)
-                    } else {
-                        Color.clear
-                            .frame(width: 1)
-                    }
-                }
-                
-                ToolbarItem(placement: .automatic) {
-                    if #available(macOS 14.0, *) {
-                        Button {
-                            isPresented.toggle()
-                        } label: {
-                            Label("Library", systemSymbol: .sidebarRight)
-                        }
-                    } else {
-                        Button {
-                            isPresented.toggle()
-                        } label: {
-                            Label("Library", systemSymbol: .sidebarRight)
-                        }
-                        .buttonStyle(.text)
-                    }
-                }
+        ZStack {
+            if #available(macOS 13.0, *) {
+                content()
+                    .toolbar(content: toolbar)
+            } else {
+                content()
             }
-            .sheet(isPresented: $isImportSheetPresented) {
-                ExcalidrawLibraryImportSheetView(libraries: librariesToImport)
-                    .frame(minWidth: 700)
-            }
-            .onDrop(of: [.excalidrawlibFile], isTargeted: $isDropTargeted) { providers in
-                librariesToImport.removeAll()
-                let canDrop = providers.contains(where: {$0.hasItemConformingToTypeIdentifier(UTType.excalidrawlibFile.identifier)})
-                print("canDrop: \(canDrop)")
-                guard canDrop else { return false }
-                Task {
-                    do {
-                        for provider in providers {
-                            let url: URL? = try await withCheckedThrowingContinuation { continuation in
-                                provider.loadFileRepresentation(forTypeIdentifier: UTType.excalidrawlibFile.identifier) { url, error in
-                                    if let error {
-                                        continuation.resume(throwing: error)
-                                        return
-                                    }
-                                    continuation.resume(returning: url)
+        }
+        .sheet(isPresented: $isImportSheetPresented) {
+            ExcalidrawLibraryImportSheetView(libraries: librariesToImport)
+                .frame(minWidth: 700)
+        }
+        .onDrop(of: [.excalidrawlibFile], isTargeted: $isDropTargeted) { providers in
+            librariesToImport.removeAll()
+            let canDrop = providers.contains(where: {$0.hasItemConformingToTypeIdentifier(UTType.excalidrawlibFile.identifier)})
+            print("canDrop: \(canDrop)")
+            guard canDrop else { return false }
+            Task {
+                do {
+                    for provider in providers {
+                        let url: URL? = try await withCheckedThrowingContinuation { continuation in
+                            provider.loadFileRepresentation(forTypeIdentifier: UTType.excalidrawlibFile.identifier) { url, error in
+                                if let error {
+                                    continuation.resume(throwing: error)
+                                    return
                                 }
+                                continuation.resume(returning: url)
                             }
-                            guard url != nil else { continue }
-                            let data = try Data(contentsOf: url!)
-                            var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data)
-                            library.name = url!.deletingPathExtension().lastPathComponent
-                            librariesToImport.append(library)
                         }
-                        if !librariesToImport.isEmpty {
-                            isImportSheetPresented = true
-                        }
-                    } catch {
-                        alertToast(error)
+                        guard url != nil else { continue }
+                        let data = try Data(contentsOf: url!)
+                        var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data)
+                        library.name = url!.deletingPathExtension().lastPathComponent
+                        librariesToImport.append(library)
                     }
-                }
-                return true
-            }
-            .fileImporterWithAlert(
-                isPresented: $isFileImpoterPresented,
-                allowedContentTypes: [.excalidrawlibFile],
-                allowsMultipleSelection: true
-            ) { urls in
-                for url in urls {
-                    _ = url.startAccessingSecurityScopedResource()
-                    let data = try Data(contentsOf: url)
-                    var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data)
-                    library.name = url.deletingPathExtension().lastPathComponent
-                    self.librariesToImport.append(library)
-                    url.stopAccessingSecurityScopedResource()
-                }
-                isImportSheetPresented.toggle()
-            }
-            .onChange(of: isImportSheetPresented) { newValue in
-                if !newValue {
-                    librariesToImport.removeAll()
+                    if !librariesToImport.isEmpty {
+                        isImportSheetPresented = true
+                    }
+                } catch {
+                    alertToast(error)
                 }
             }
-            .environmentObject(viewModel)
+            return true
+        }
+        .fileImporterWithAlert(
+            isPresented: $isFileImpoterPresented,
+            allowedContentTypes: [.excalidrawlibFile],
+            allowsMultipleSelection: true
+        ) { urls in
+            for url in urls {
+                _ = url.startAccessingSecurityScopedResource()
+                let data = try Data(contentsOf: url)
+                var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data)
+                library.name = url.deletingPathExtension().lastPathComponent
+                self.librariesToImport.append(library)
+                url.stopAccessingSecurityScopedResource()
+            }
+            isImportSheetPresented.toggle()
+        }
+        .onChange(of: isImportSheetPresented) { newValue in
+            if !newValue {
+                librariesToImport.removeAll()
+            }
+        }
+        .environmentObject(viewModel)
+    }
+    
+    @MainActor @ToolbarContentBuilder
+    private func toolbar() -> some ToolbarContent {
+        /// This is the key to make sidebar toggle at the right side.
+        ToolbarItem(placement: .status) {
+            if isPresented {
+                Text("Library")
+                    .foregroundStyle(.secondary)
+                    .font(.headline)
+            } else {
+                Color.clear
+                    .frame(width: 1)
+            }
+        }
+        
+        ToolbarItem(placement: .automatic) {
+            if #available(macOS 14.0, *) {
+                Button {
+                    isPresented.toggle()
+                } label: {
+                    Label("Library", systemSymbol: .sidebarRight)
+                }
+            } else {
+                Button {
+                    isPresented.toggle()
+                } label: {
+                    Label("Library", systemSymbol: .sidebarRight)
+                }
+                .buttonStyle(.text)
+            }
+        }
     }
     
     @MainActor @ViewBuilder

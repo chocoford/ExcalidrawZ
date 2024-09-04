@@ -36,7 +36,6 @@ struct ContentView: View {
                     .inspector(isPresented: $isInspectorPresented) {
                         LibraryView(isPresented: $isInspectorPresented)
                             .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
-                            .swiftyAlert()
                     }
             } else {
                 content()
@@ -79,7 +78,7 @@ struct ContentView: View {
         if #available(macOS 13.0, *) {
             ContentViewModern(isSidebarPrenseted: $isSidebarPresented)
         } else {
-            ContentViewLagacy()
+            ContentViewLagacy(isInspectorPresented: $isInspectorPresented)
         }
     }
 }
@@ -118,7 +117,6 @@ struct ContentViewModern: View {
         }
     }
     
-    @available(macOS 13.0, *)
     @ToolbarContentBuilder
     private func sidebarToolbar() -> some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
@@ -199,91 +197,54 @@ struct ContentViewLagacy: View {
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
+    @Binding var isInspectorPresented: Bool
+    @State private var isSidebarPresented: Bool = true
+    
     var body: some View {
-        HSplitView {
-            SidebarView()
-                .frame(maxWidth: 500)
+        ZStack {
             ExcalidrawContainerView()
                 .layoutPriority(1)
+            
+            HStack {
+                if isSidebarPresented {
+                    SidebarView()
+                        .frame(width: 340)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .background {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.regularMaterial)
+                                .shadow(radius: 4)
+                        }
+                        .transition(.move(edge: .leading))
+                }
+                Spacer()
+                
+                if isInspectorPresented {
+                    LibraryView(isPresented: $isInspectorPresented)
+                        .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
+                        .background {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.regularMaterial)
+                                .shadow(radius: 4)
+                        }
+                        .transition(.move(edge: .trailing))
+                }
+            }
+            .animation(.easeOut, value: isSidebarPresented)
+            .animation(.easeOut, value: isInspectorPresented)
+            .padding(.top, 10)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 40)
         }
         .toolbar {
-            sidebarToolbar()
-        }
-    }
-    
-    @ToolbarContentBuilder
-    private func sidebarToolbar() -> some ToolbarContent {
-        ToolbarItemGroup(placement: .destructiveAction) {
-            if #available(macOS 13.0, *) {
-                // create
+            ToolbarItem(placement: .navigation) {
                 Button {
-                    do {
-                        try fileState.createNewFile()
-                    } catch {
-                        alertToast(error)
-                    }
+                    isSidebarPresented.toggle()
                 } label: {
-                    Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
+                    Label("Sidebar", systemSymbol: .sidebarLeft)
                 }
-                .help(.localizable(.createNewFile))
-                .disabled(fileState.currentGroup?.groupType == .trash)
             }
         }
-        
-        
-        ToolbarItemGroup(placement: .destructiveAction) {
-//            Color.purple.frame(width: 10, height: 10)
-//            HStack(spacing: 0) {
-//                Button {
-////                    withAnimation {
-////                        if columnVisibility == .detailOnly {
-////                            columnVisibility = .all
-////                        } else {
-////                            columnVisibility = .detailOnly
-////                        }
-////                    }
-//                } label: {
-//                    Image(systemSymbol: .sidebarLeading)
-//                }
-//                
-//                Menu {
-//                    Button {
-////                        withAnimation { columnVisibility = .all }
-////                        appPreference.sidebarMode = .all
-//                    } label: {
-////                        if appPreference.sidebarMode == .all && columnVisibility != .detailOnly {
-////                            Image(systemSymbol: .checkmark)
-////                        }
-//                        Text("Show folders and files")
-//                    }
-//                    Button {
-////                        withAnimation { columnVisibility = .all }
-////                        appPreference.sidebarMode = .filesOnly
-//                    } label: {
-////                        if appPreference.sidebarMode == .filesOnly && columnVisibility != .detailOnly {
-////                            Image(systemSymbol: .checkmark)
-////                        }
-//                        Text("Show files only")
-//                    }
-//                } label: {
-//                }
-//                .buttonStyle(.borderless)
-//            }
-        }
-//        ToolbarItemGroup(placement: .confirmationAction) {
-//            Color.blue.frame(width: 10, height: 10)
-//        }
-//        ToolbarItemGroup(placement: .status) {
-//            Color.yellow.frame(width: 10, height: 10)
-//        }
-//        ToolbarItemGroup(placement: .principal) {
-//            Color.green.frame(width: 10, height: 10)
-//        }
-//
-//        ToolbarItemGroup(placement: .cancellationAction) {
-//            Color.red.frame(width: 10, height: 10)
-//        }
-
     }
 }
 
@@ -379,6 +340,14 @@ extension ContentView {
             }
             .help(.localizable(.export))
             .disabled(fileState.currentGroup?.groupType == .trash)
+            
+            if #available(macOS 13.0, *) { } else {
+                Button {
+                    isInspectorPresented.toggle()
+                } label: {
+                    Label("Library", systemSymbol: .sidebarRight)
+                }
+            }
         }
     }
 #endif
