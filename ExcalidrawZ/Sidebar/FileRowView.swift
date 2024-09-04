@@ -145,7 +145,9 @@ struct FileRowView: View {
         }
         .onHover{ isHovered = $0 }
         .buttonStyle(ListButtonStyle(selected: isSelected))
-        .contextMenu { listRowContextMenu }
+        .contextMenu {
+            listRowContextMenu.labelStyle(.titleAndIcon)
+        }
         .alert(
             LocalizedStringKey.localizable(.sidebarFileRowDeletePermanentlyAlertTitle(file.name ?? "")),
             isPresented: $showPermanentlyDeleteAlert
@@ -185,24 +187,26 @@ struct FileRowView: View {
             } label: {
                 Label(.localizable(.sidebarFileRowContextMenuDuplicate), systemSymbol: .docOnDoc)
             }
-            
-            Menu {
-                let groups: [Group] = groups
-                    .filter{ $0.groupType != .trash }
-                    .sorted { a, b in
-                        a.groupType == .default && b.groupType != .default ||
-                        a.groupType == b.groupType && b.groupType == .normal && a.createdAt ?? .distantPast < b.createdAt ?? .distantPast
+             
+            if groups.filter({ $0.groupType != .trash }).count > 1 {
+                Menu {
+                    let groups: [Group] = groups
+                        .filter{ $0.groupType != .trash }
+                        .sorted { a, b in
+                            a.groupType == .default && b.groupType != .default ||
+                            a.groupType == b.groupType && b.groupType == .normal && a.createdAt ?? .distantPast < b.createdAt ?? .distantPast
+                        }
+                    ForEach(groups) { group in
+                        Button {
+                            fileState.moveFile(file, to: group)
+                        } label: {
+                            Text(group.name ?? "unknown")
+                        }
+                        .disabled(group.id == file.group?.id)
                     }
-                ForEach(groups) { group in
-                    Button {
-                        fileState.moveFile(file, to: group)
-                    } label: {
-                        Text(group.name ?? "unknown")
-                    }
-                    .disabled(group.id == file.group?.id)
+                } label: {
+                    Label(.localizable(.sidebarFileRowContextMenuMoveTo), systemSymbol: .trayAndArrowUp)
                 }
-            } label: {
-                Label(.localizable(.sidebarFileRowContextMenuMoveTo), systemSymbol: .arrowUpBin)
             }
             
             Button(role: .destructive) {
@@ -210,6 +214,7 @@ struct FileRowView: View {
             } label: {
                 Label(.localizable(.sidebarFileRowContextMenuDelete), systemSymbol: .trash)
             }
+            
         } else {
             Button {
                 fileState.recoverFile(file)
