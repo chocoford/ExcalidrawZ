@@ -9,15 +9,6 @@ import SwiftUI
 
 import ChocofordUI
 
-//struct ExcalidrawElementsTranferable: Transferable {
-//    var elements: [ExcalidrawElement]
-//    
-//    static var transferRepresentation: some TransferRepresentation {
-//        
-//    }
-//}
-
-
 struct LibraryItemView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
@@ -28,20 +19,17 @@ struct LibraryItemView: View {
     var size: CGFloat = 80
     var inSelectionMode: Bool
     var libraries: FetchedResults<Library>
-//    var onDelete: (_ context: NSManagedObjectContext) -> Void
     
     init(
         item: LibraryItem,
         size: CGFloat = 80,
         inSelectionMode: Bool,
         libraries: FetchedResults<Library>
-//        onDelete: @escaping (_ context: NSManagedObjectContext) -> Void
     ) {
         self.item = item
         self.size = size
         self.inSelectionMode = inSelectionMode
         self.libraries = libraries
-//        self.onDelete = onDelete
     }
     
     @State private var isDeleteConfirmPresented = false
@@ -72,17 +60,14 @@ struct LibraryItemView: View {
             return itemProvider
         }
         .contextMenu { contextMenu() }
-        .confirmationDialog("Warning", isPresented: $isDeleteConfirmPresented) {
+        .confirmationDialog("Are you sure to remove the library item.", isPresented: $isDeleteConfirmPresented) {
             AsyncButton(role: .destructive) {
                 try await deleteLibraryItem()
             } label: {
                 Label("Remove", systemSymbol: .trash)
             }
         } message: {
-            VStack {
-                LibraryItemContentView(item: item, size: 30)
-                Text("Are you sure to remove the library item.")
-            }
+            Text("You can’t undo this action.")
         }
     }
     
