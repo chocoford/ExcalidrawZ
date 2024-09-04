@@ -14,8 +14,6 @@ import ChocofordUI
 import SVGView
 import UniformTypeIdentifiers
 
-
-
 struct LibraryView: View {
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var exportState: ExportState
@@ -153,7 +151,6 @@ struct LibraryView: View {
             }
         }
     }
-
     
     @MainActor @ViewBuilder
     private func emptyPlaceholder() -> some View {
@@ -242,52 +239,58 @@ struct LibraryView: View {
                                 Label("Remove", systemSymbol: .trash)
                             }
                             .labelStyle(.iconOnly)
+                            .disabled(selectedItems.isEmpty)
                         }
-                        Menu {
-                            SwiftUI.Group {
-                                if inSelectionMode {
-                                    Menu {
-                                        ForEach(libraries.filter({$0.name != nil})) { library in
-                                            Button {
-                                                moveSelectionsToLibrary(library)
+                        
+                        if !inSelectionMode || libraries.count > 1 {
+                            Menu {
+                                SwiftUI.Group {
+                                    if inSelectionMode {
+                                        if libraries.count > 1 {
+                                            Menu {
+                                                ForEach(libraries.filter({$0.name != nil})) { library in
+                                                    Button {
+                                                        moveSelectionsToLibrary(library)
+                                                    } label: {
+                                                        Text(library.name ?? "Untitled")
+                                                    }
+                                                }
                                             } label: {
-                                                Text(library.name ?? "Untitled")
+                                                Label("Move to", systemSymbol: .trayAndArrowUp)
                                             }
                                         }
-                                    } label: {
-                                        Label("Move to", systemSymbol: .trayAndArrowUp)
-                                    }
-                                } else {
-                                    importButton()
-                                    
-                                    Button {
-                                        isFileExporterPresented.toggle()
-                                    } label: {
-                                        Label("Export", systemSymbol: .squareAndArrowUp)
-                                    }
-                                    
-                                    Divider()
-                                    
-                                    Link(destination: URL(string: "https://libraries.excalidraw.com")!) {
-                                        Label("Excalidraw Libraries", systemSymbol: .link)
-                                    }
-                                    
-                                    Divider()
-                                    
-                                    Button(role: .destructive) {
-                                        isRemoveAllConfirmationPresented.toggle()
-                                    } label: {
-                                        Label("Remove all", systemSymbol: .trash)
+                                    } else {
+                                        importButton()
+                                        
+                                        Button {
+                                            isFileExporterPresented.toggle()
+                                        } label: {
+                                            Label("Export", systemSymbol: .squareAndArrowUp)
+                                        }
+                                        
+                                        Divider()
+                                        
+                                        Link(destination: URL(string: "https://libraries.excalidraw.com")!) {
+                                            Label("Excalidraw Libraries", systemSymbol: .link)
+                                        }
+                                        
+                                        Divider()
+                                        
+                                        Button(role: .destructive) {
+                                            isRemoveAllConfirmationPresented.toggle()
+                                        } label: {
+                                            Label("Remove all", systemSymbol: .trash)
+                                        }
                                     }
                                 }
+                                .labelStyle(.titleAndIcon)
+                            } label: {
+                                Label("More", systemSymbol: .ellipsis)
+                                    .labelStyle(.iconOnly)
                             }
-                            .labelStyle(.titleAndIcon)
-                        } label: {
-                            Label("More", systemSymbol: .ellipsis)
-                                .labelStyle(.iconOnly)
+                            .fixedSize()
+                            .menuIndicator(.hidden)
                         }
-                        .fixedSize()
-                        .menuIndicator(.hidden)
                     }
                     .buttonStyle(.borderless)
                 }

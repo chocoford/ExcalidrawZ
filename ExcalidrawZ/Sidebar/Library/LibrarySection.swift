@@ -60,8 +60,9 @@ struct LibrarySectionContent: View {
                 }
             }
         } label: {
-            LibrarySectionHeader(allLibraries: allLibraries, library: library)
+            LibrarySectionHeader(allLibraries: allLibraries, library: library, inSelectionMode: selections != nil)
         }
+        .animation(.default, value: selections != nil)
     }
 }
 

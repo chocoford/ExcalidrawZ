@@ -90,16 +90,18 @@ struct LibraryItemView: View {
     private func contextMenu() -> some View {
         if !inSelectionMode {
             SwiftUI.Group {
-                Menu {
-                    ForEach(libraries.filter({$0.name != nil && $0 != self.item.library})) { library in
-                        Button {
-                            moveToLibrary(library)
-                        } label: {
-                            Text(library.name ?? "Untitled")
+                if libraries.count > 1 {
+                    Menu {
+                        ForEach(libraries.filter({$0.name != nil && $0 != self.item.library})) { library in
+                            Button {
+                                moveToLibrary(library)
+                            } label: {
+                                Text(library.name ?? "Untitled")
+                            }
                         }
+                    } label: {
+                        Label("Move to", systemSymbol: .trayAndArrowUp)
                     }
-                } label: {
-                    Label("Move to", systemSymbol: .trayAndArrowUp)
                 }
                 
                 Divider()

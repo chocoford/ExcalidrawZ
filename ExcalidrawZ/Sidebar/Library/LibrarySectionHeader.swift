@@ -15,6 +15,7 @@ struct LibrarySectionHeader: View {
 
     var allLibraries: FetchedResults<Library>
     var library: Library
+    var inSelectionMode: Bool
     
     @State private var isEditLibrarySheetPresented: Bool = false
     @State private var isRemoveLibraryConfimationPresented: Bool = false
@@ -84,15 +85,18 @@ struct LibrarySectionHeader: View {
         }
     }
     
+    @MainActor @ViewBuilder
     private func menuButton() -> some View {
-        Menu {
-            menuContent(library: library)
-        } label: {
-            Label("Options", systemSymbol: .ellipsis)
-                .labelStyle(.iconOnly)
+        if !inSelectionMode {
+            Menu {
+                menuContent(library: library)
+            } label: {
+                Label("Options", systemSymbol: .ellipsis)
+                    .labelStyle(.iconOnly)
+            }
+            .fixedSize()
+            .menuIndicator(.hidden)
         }
-        .fixedSize()
-        .menuIndicator(.hidden)
     }
     
     @MainActor @ViewBuilder
@@ -104,18 +108,19 @@ struct LibrarySectionHeader: View {
                 Label("Rename", systemSymbol: .squareAndPencil)
             }
             
-            Menu {
-                ForEach(allLibraries.filter{$0 != library && $0.name != nil}) { library in
-                    Button {
-                        mergeWithLibrary(library)
-                    } label: {
-                        Text(library.name ?? "Unknown")
+            if allLibraries.count > 1 {
+                Menu {
+                    ForEach(allLibraries.filter{$0 != library && $0.name != nil}) { library in
+                        Button {
+                            mergeWithLibrary(library)
+                        } label: {
+                            Text(library.name ?? "Unknown")
+                        }
                     }
+                } label: {
+                    Label(.localizable(.sidebarGroupRowContextMenuMerge), systemSymbol: .rectangleStackBadgePlus)
                 }
-            } label: {
-                Label(.localizable(.sidebarGroupRowContextMenuMerge), systemSymbol: .rectangleStackBadgePlus)
             }
-            
             Divider()
             
             Button {
