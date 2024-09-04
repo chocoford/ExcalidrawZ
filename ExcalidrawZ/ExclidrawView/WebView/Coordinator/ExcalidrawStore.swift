@@ -28,6 +28,8 @@ extension ExcalidrawView {
         
         var downloadCache: [String : Data] = [:]
         var downloads: [URLRequest : URL] = [:]
+        
+        let blobRequestQueue = DispatchQueue(label: "BlobRequestQueue", qos: .background)
         var flyingBlobsRequest: [String : (String) -> Void] = [:]
         var flyingSVGRequests: [String : (String) -> Void] = [:]
         
@@ -41,8 +43,19 @@ extension ExcalidrawView {
             config.websiteDataStore = .nonPersistent()
             
             let userContentController = WKUserContentController()
-                        
             userContentController.add(self, name: "excalidrawZ")
+            
+            do {
+                let consoleHandlerScript = try WKUserScript(
+                    source: String(contentsOf: Bundle.main.url(forResource: "overwrite_console", withExtension: "js")!, encoding: .utf8),
+                    injectionTime: .atDocumentStart,
+                    forMainFrameOnly: false
+                )
+                userContentController.addUserScript(consoleHandlerScript)
+                userContentController.add(self, name: "consoleHandler")
+            } catch {
+                logger.error("Config consoleHandler failed: \(error)")
+            }
             
             config.userContentController = userContentController
             
@@ -102,9 +115,8 @@ actor ExcalidrawWebActor {
 
 /// Keep stateless
 extension ExcalidrawView.Coordinator {
-    
     func loadFile(from file: File?, force: Bool = false) {
-        guard !self.parent.isLoading else { return }
+        guard !self.parent.isLoading, !self.webView.isLoading else { return }
         guard let fileID = file?.id,
             let data = file?.content else { return }
         Task.detached {
@@ -114,37 +126,6 @@ extension ExcalidrawView.Coordinator {
                 await self.parent.onError(error)
             }
         }
-        
-//        try await withThrowingTaskGroup(of: Bool.self) { taskGroup in
-//            taskGroup.addTask {
-//                try await self.webActor.loadFile(from: file, force: force)
-//                return true
-//            }
-//            
-//            taskGroup.addTask {
-//                try await Task.sleep(nanoseconds: UInt64(50 * 1e+6))
-//                if (file?.content?.count ?? 0) > 500000 {
-//                    await MainActor.run {
-//                        print("setting self.parent.isLoadingFile = true")
-//                        self.parent.isLoadingFile = true
-//                    }
-//                }
-//                return false
-//            }
-//            
-//            if try await taskGroup.next() == true {
-//                taskGroup.cancelAll()
-//            } else {
-//                try await taskGroup.waitForAll()
-//            }
-//        }
-//        
-//        if await self.parent.isLoadingFile {
-//            await MainActor.run {
-//                self.parent.isLoadingFile = false
-//            }
-//        }
-        
     }
     
     /// Load current `File`.
@@ -223,7 +204,8 @@ extension ExcalidrawView.Coordinator {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
     }
     
-    func exportElementsToPNG(id: String, elements: [ExcalidrawElement]) async throws -> NSImage {
+    func exportElementsToPNG(elements: [ExcalidrawElement]) async throws -> NSImage {
+        let id = UUID().uuidString
         let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified())); 0;"
         self.logger.debug("\(#function), script:\n\(script)")
         Task { @MainActor in
@@ -234,9 +216,11 @@ extension ExcalidrawView.Coordinator {
             }
         }
         let dataString: String = await withCheckedContinuation { continuation in
-            self.flyingBlobsRequest[id] = { data in
-                continuation.resume(returning: data)
-                self.flyingBlobsRequest.removeValue(forKey: id)
+            blobRequestQueue.async {
+                self.flyingBlobsRequest[id] = { data in
+                    continuation.resume(returning: data)
+                    self.flyingBlobsRequest.removeValue(forKey: id)
+                }
             }
         }
         guard let data = Data(base64Encoded: dataString),

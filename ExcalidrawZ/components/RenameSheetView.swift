@@ -10,14 +10,12 @@ import SwiftUI
 struct RenameSheetView: View {
     @Environment(\.dismiss) var dismiss
     
-    var oldName: String
     var onConfirm: (String) -> Void
     @State private var text: String = ""
 
     init(text: String = "", onConfirm: @escaping (String) -> Void) {
-        self.oldName = text
+        self._text = State(initialValue: text)
         self.onConfirm = onConfirm
-        
     }
 
     var body: some View {
@@ -56,9 +54,6 @@ struct RenameSheetView: View {
         }
         .labelsHidden()
         .padding()
-        .onAppear {
-            self.text = self.oldName
-        }
     }
 }
 

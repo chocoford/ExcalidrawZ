@@ -26,6 +26,10 @@ extension ExcalidrawView.Coordinator: WKScriptMessageHandler {
 //            self.logger.info("[WKScriptMessageHandler] Did receive message: \(String(describing: message))")
             
             switch message {
+                case .onload:
+                    // prevent color schmee change flash
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { self.parent.isLoading = false }
+                    logger.info("onload")
                 case .saveFileDone(let message):
                     onSaveFileDone(message.data)
                 case .stateChanged(let message):
@@ -46,6 +50,9 @@ extension ExcalidrawView.Coordinator: WKScriptMessageHandler {
                     self.flyingBlobsRequest[blobData.data.id]?(blobData.data.blobData)
                 case .getElementsSVG(let svgData):
                     self.flyingSVGRequests[svgData.data.id]?(svgData.data.svg)
+                    
+                case .log(let logMessage):
+                    self.onWebLog(message: logMessage)
             }
         } catch {
             self.logger.error("[WKScriptMessageHandler] Decode received message failed. Raw data:\n\(String(describing: message.body))")
@@ -108,11 +115,37 @@ extension ExcalidrawView.Coordinator {
         }
         
     }
+    
+    
+    func onWebLog(message: LogMessage) {
+        let method = message.method
+        let message = message.args.joined(separator: " ")
+        switch method {
+            case "log":
+//                self.logger.log("\(message)")
+                break
+            case "warn":
+                self.logger.warning("\(message)")
+            case "error":
+                self.logger.error("\(message)")
+            case "debug":
+                self.logger.debug("\(message)")
+            case "info":
+//                self.logger.info("\(message)")
+                break
+            case "trace":
+                self.logger.trace("\(message)")
+            default:
+                self.logger.log("Unhandled log: \(message)")
+        }
+    }
 }
 
 
 extension ExcalidrawView.Coordinator {
     enum ExcalidrawZEventType: String, Codable {
+        case onload
+        
         case onStateChanged
         case saveFileDone
         case blobData
@@ -122,9 +155,12 @@ extension ExcalidrawView.Coordinator {
         case didSetActiveTool
         case getElementsBlob
         case getElementsSVG
+        
+        case log
     }
     
     enum ExcalidrawZMessage: Codable {
+        case onload
         case stateChanged(StateChangedMessage)
         case saveFileDone(SaveFileDoneMessage)
         case blobData(BlobDataMessage)
@@ -135,6 +171,8 @@ extension ExcalidrawView.Coordinator {
         case getElementsBlob(ExcalidrawElementsBlobData)
         case getElementsSVG(ExcalidrawElementsSVGData)
         
+        case log(LogMessage)
+        
         enum CodingKeys: String, CodingKey {
             case eventType = "event"
         }
@@ -144,6 +182,8 @@ extension ExcalidrawView.Coordinator {
             let eventType = try container.decode(ExcalidrawZEventType.self, forKey: .eventType)
 
             switch eventType {
+                case .onload:
+                    self = .onload
                 case .onStateChanged:
                     self = .stateChanged(try StateChangedMessage(from: decoder))
                 case .saveFileDone:
@@ -162,6 +202,8 @@ extension ExcalidrawView.Coordinator {
                     self = .getElementsBlob(try ExcalidrawElementsBlobData(from: decoder))
                 case .getElementsSVG:
                     self = .getElementsSVG(try ExcalidrawElementsSVGData(from: decoder))
+                case .log:
+                    self = .log(try LogMessage(from: decoder))
             }
             
         }
@@ -316,5 +358,13 @@ extension ExcalidrawView.Coordinator {
                 case laser
             }
         }
+    }
+    
+    
+    // Log
+    struct LogMessage: Codable {
+        var event: String
+        var method: String
+        var args: [String]
     }
 }

@@ -1,0 +1,129 @@
+//
+//  ExcalidrawLibraryModel.swift
+//  ExcalidrawZ
+//
+//  Created by Dove Zachary on 2024/9/4.
+//
+
+import Foundation
+
+
+
+
+struct ExcalidrawLibrary: Codable, Hashable {
+    var id: UUID = UUID()
+    var name: String?
+    var type: String
+    var version: Int
+    var source: String
+    var libraryItems: [Item]
+    
+    enum CodingKeys: String, CodingKey {
+        case type, version, source, libraryItems
+    }
+    
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = UUID()
+        self.name = nil
+        self.type = try container.decode(String.self, forKey: .type)
+        self.version = try container.decode(Int.self, forKey: .version)
+        self.source = try container.decode(String.self, forKey: .source)
+        self.libraryItems = try container.decode([Item].self, forKey: .libraryItems)
+    }
+    
+    init(id: UUID = UUID(), name: String? = nil, type: String, version: Int, source: String, libraryItems: [Item]) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.version = version
+        self.source = source
+        self.libraryItems = libraryItems
+    }
+    
+    init(library: Library) {
+        self.init(
+            type: library.type ?? "excalidrawlib",
+            version: Int(library.version),
+            source: library.source ?? "https://excalidraw.com",
+            libraryItems: (library.items?.allObjects as? [LibraryItem])?.map { item in
+                ExcalidrawLibrary.Item(
+                    id: item.id ?? UUID().uuidString,
+                    status: .init(rawValue: item.status ?? "published") ?? .published,
+                    createdAt: item.createdAt ?? .distantPast,
+                    name: item.name ?? "Untitled",
+                    elements: (try? JSONDecoder().decode([ExcalidrawElement].self, from: item.elements ?? Data())) ?? []
+                )
+            } ?? []
+        )
+    }
+    
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(self.type, forKey: .type)
+        try container.encode(self.version, forKey: .version)
+        try container.encode(self.source, forKey: .source)
+        try container.encode(self.libraryItems, forKey: .libraryItems)
+    }
+    
+    struct Item: Codable, Hashable {
+        enum Status: String, Codable {
+            case published = "published"
+        }
+        
+        var id: String
+        var status: Status
+        var createdAt: Date
+        var name: String
+        var elements: [ExcalidrawElement]
+        
+        enum CodingKeys: String, CodingKey {
+            case id, status, name, elements
+            case createdAt = "created"
+        }
+        
+        init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            
+            self.id = try container.decode(String.self, forKey: .id)
+            self.status = try container.decode(Status.self, forKey: .status)
+            let ts = try container.decode(Int.self, forKey: .createdAt)
+            self.createdAt = Date(timeIntervalSince1970: Double(ts) / 1000)
+            self.name = try container.decode(String.self, forKey: .name)
+            self.elements = try container.decode([ExcalidrawElement].self, forKey: .elements)
+        }
+        
+        init(id: String, status: Status, createdAt: Date, name: String, elements: [ExcalidrawElement]) {
+            self.id = id
+            self.status = status
+            self.createdAt = createdAt
+            self.name = name
+            self.elements = elements
+        }
+        
+        func encode(to encoder: any Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(self.id, forKey: .id)
+            try container.encode(self.status, forKey: .status)
+            try container.encode(Int(self.createdAt.timeIntervalSince1970 * 1000), forKey: .createdAt)
+            try container.encode(self.name, forKey: .name)
+            try container.encode(self.elements, forKey: .elements)
+        }
+        
+    }
+    
+    #if DEBUG
+    static var preview: ExcalidrawLibrary {
+        do {
+            return try JSONDecoder().decode(
+                ExcalidrawLibrary.self,
+                from: Data(
+                    contentsOf: Bundle.main.url(forResource: "oracle-cloud-infrastructure-icons", withExtension: "excalidrawlib")!
+                )
+            )
+        } catch {
+            fatalError(error.localizedDescription)
+        }
+    }
+    #endif
+}

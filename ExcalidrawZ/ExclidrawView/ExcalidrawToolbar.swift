@@ -56,7 +56,7 @@ struct ExcalidrawToolbar: View {
         .onChange(of: isInspectorPresented) { _ in
             isDense = (window?.frame.width ?? .zero) < minWidth
         }
-        .onChange(of: toolState.activatedTool) { newValue in
+        .onChange(of: toolState.activatedTool, debounce: 0.05) { newValue in
             if newValue == nil {
                 toolState.activatedTool = .cursor
             }
@@ -218,7 +218,6 @@ struct ExcalidrawToolbar: View {
     @MainActor @ViewBuilder
     private func denseContent() -> some View {
         HStack {
-            Text("Active tool: ")
             Picker(selection: $toolState.activatedTool) {
                 Text(.localizable(.toolbarSelection)).tag(ExcalidrawTool.cursor)
                 Text(.localizable(.toolbarRectangle)).tag(ExcalidrawTool.rectangle)
@@ -291,6 +290,9 @@ fileprivate struct Cursor: Shape {
 }
 
 #Preview {
-    ExcalidrawToolbar(isInspectorPresented: .constant(false), isSidebarPresented: .constant(false))
-        .background(.background)
+    ExcalidrawToolbar(
+        isInspectorPresented: .constant(false),
+        isSidebarPresented: .constant(false)
+    )
+    .background(.background)
 }

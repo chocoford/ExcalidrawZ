@@ -61,6 +61,9 @@ struct ExcalidrawView {
     
     var onError: (Error) -> Void
     
+//    @State private var cancellables: [AnyCancellable] = []
+//    @State private var canLoadFile = false
+    
     // TODO: isLoadingFile is not used yet.
     init(isLoadingPage: Binding<Bool>, isLoadingFile: Binding<Bool>, onError: @escaping (Error) -> Void) {
         self._isLoading = isLoadingPage
@@ -73,6 +76,17 @@ struct ExcalidrawView {
 extension ExcalidrawView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> ExcalidrawWebView {
+//        cancellables = [
+//            context.coordinator.webView.publisher(for: \.isLoading).sink {
+//                if !$0 {
+//                    DispatchQueue.main.async/*After(deadline: .now() + 2)*/ {
+//                        canLoadFile = true
+//                        print("can load file")
+//                    }
+//                }
+//            }
+//        ]
+//        
         return context.coordinator.webView
     }
     
@@ -81,7 +95,7 @@ extension ExcalidrawView: NSViewRepresentable {
         context.coordinator.parent = self
         exportState.excalidrawWebCoordinator = context.coordinator
         fileState.excalidrawWebCoordinator = context.coordinator
-        guard !webView.isLoading else { return }
+        guard !webView.isLoading, !isLoading else { return }
         Task {
             do {
                 if appPreference.excalidrawAppearance == .auto {
@@ -93,7 +107,9 @@ extension ExcalidrawView: NSViewRepresentable {
                 self.onError(error)
             }
         }
-        context.coordinator.loadFile(from: fileState.currentFile)
+//        if canLoadFile {
+            context.coordinator.loadFile(from: fileState.currentFile)
+//        }
         if context.coordinator.lastTool != toolState.activatedTool {
             Task {
                 do {

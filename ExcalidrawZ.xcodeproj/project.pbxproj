@@ -22,8 +22,6 @@
 		391585A52A80238B0028D250 /* ShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391585A42A80238B0028D250 /* ShareView.swift */; };
 		3930B2F82C512E7B00F14E88 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2F72C512E7B00F14E88 /* ChocofordEssentials */; };
 		3930B2FA2C512E7B00F14E88 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2F92C512E7B00F14E88 /* ChocofordUI */; };
-		3930B2FD2C51371B00F14E88 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2FC2C51371B00F14E88 /* ChocofordEssentials */; };
-		3930B2FF2C51371B00F14E88 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2FE2C51371B00F14E88 /* ChocofordUI */; };
 		394804C32A815D1100886972 /* ExportFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394804C22A815D1100886972 /* ExportFileView.swift */; };
 		394963A62A0E0E15000FEB40 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963A52A0E0E15000FEB40 /* SettingsView.swift */; };
 		394963A92A0E1F7B000FEB40 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963A82A0E1F7B000FEB40 /* GeneralSettingsView.swift */; };
@@ -157,6 +155,15 @@
 		397152D42C85D00E00A65ADF /* SVGView in Frameworks */ = {isa = PBXBuildFile; productRef = 397152D32C85D00E00A65ADF /* SVGView */; };
 		397152D72C85D05D00A65ADF /* SVGView in Frameworks */ = {isa = PBXBuildFile; productRef = 397152D62C85D05D00A65ADF /* SVGView */; };
 		397152D92C85D06A00A65ADF /* SVGView in Frameworks */ = {isa = PBXBuildFile; productRef = 397152D82C85D06A00A65ADF /* SVGView */; };
+		397152E92C86DD2900A65ADF /* Library+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397152E82C86DD2900A65ADF /* Library+Persistence.swift */; };
+		397152EA2C86DD2900A65ADF /* Library+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397152E82C86DD2900A65ADF /* Library+Persistence.swift */; };
+		397152EB2C86DD2900A65ADF /* Library+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397152E82C86DD2900A65ADF /* Library+Persistence.swift */; };
+		397152EE2C86E18F00A65ADF /* LibraryItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397152ED2C86E18F00A65ADF /* LibraryItem+Persistence.swift */; };
+		397152EF2C86E18F00A65ADF /* LibraryItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397152ED2C86E18F00A65ADF /* LibraryItem+Persistence.swift */; };
+		397152F02C86E18F00A65ADF /* LibraryItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397152ED2C86E18F00A65ADF /* LibraryItem+Persistence.swift */; };
+		3976C4D62C8789F60037D3AF /* overwrite_console.js in Resources */ = {isa = PBXBuildFile; fileRef = 3976C4D52C8789F60037D3AF /* overwrite_console.js */; };
+		3976C4D72C8789F60037D3AF /* overwrite_console.js in Resources */ = {isa = PBXBuildFile; fileRef = 3976C4D52C8789F60037D3AF /* overwrite_console.js */; };
+		3976C4D82C8789F60037D3AF /* overwrite_console.js in Resources */ = {isa = PBXBuildFile; fileRef = 3976C4D52C8789F60037D3AF /* overwrite_console.js */; };
 		397E4657295838CF003B824B /* ExcalidrawZApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4656295838CF003B824B /* ExcalidrawZApp.swift */; };
 		397E4659295838CF003B824B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4658295838CF003B824B /* ContentView.swift */; };
 		397E465B295838D0003B824B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 397E465A295838D0003B824B /* Assets.xcassets */; };
@@ -241,6 +248,9 @@
 		3966612F2C665D3E00F863BC /* excalidraw-latest */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "excalidraw-latest"; sourceTree = "<group>"; };
 		3966623B2C66686A00F863BC /* ExcalidrawServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawServer.swift; sourceTree = "<group>"; };
 		397152CC2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib */ = {isa = PBXFileReference; lastKnownFileType = text; path = "oracle-cloud-infrastructure-icons.excalidrawlib"; sourceTree = "<group>"; };
+		397152E82C86DD2900A65ADF /* Library+Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Library+Persistence.swift"; sourceTree = "<group>"; };
+		397152ED2C86E18F00A65ADF /* LibraryItem+Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LibraryItem+Persistence.swift"; sourceTree = "<group>"; };
+		3976C4D52C8789F60037D3AF /* overwrite_console.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = overwrite_console.js; sourceTree = "<group>"; };
 		397E4653295838CF003B824B /* ExcalidrawZ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExcalidrawZ.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		397E4656295838CF003B824B /* ExcalidrawZApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawZApp.swift; sourceTree = "<group>"; };
 		397E4658295838CF003B824B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -353,24 +363,39 @@
 		398FC1D42C84EECF00C96977 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				LibraryImportSheetView.swift,
 				LibraryItemView.swift,
+				LibraryModel.swift,
+				LibrarySection.swift,
+				LibrarySectionHeader.swift,
 				LibraryView.swift,
+				LibraryViewModel.swift,
 			);
 			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
 		};
 		398FC1D82C84F4FA00C96977 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				LibraryImportSheetView.swift,
 				LibraryItemView.swift,
+				LibraryModel.swift,
+				LibrarySection.swift,
+				LibrarySectionHeader.swift,
 				LibraryView.swift,
+				LibraryViewModel.swift,
 			);
 			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ (AppStore) */;
 		};
 		398FC1D92C84F4FA00C96977 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				LibraryImportSheetView.swift,
 				LibraryItemView.swift,
+				LibraryModel.swift,
+				LibrarySection.swift,
+				LibrarySectionHeader.swift,
 				LibraryView.swift,
+				LibraryViewModel.swift,
 			);
 			target = 3963A0FF2C6D1D4900472AE7 /* ExcalidrawZ (Lagacy) */;
 		};
@@ -463,10 +488,8 @@
 			files = (
 				3930B2FA2C512E7B00F14E88 /* ChocofordUI in Frameworks */,
 				3914876D2960AFD10042927A /* Sparkle in Frameworks */,
-				3930B2FF2C51371B00F14E88 /* ChocofordUI in Frameworks */,
 				3966623F2C666EC600F863BC /* FlyingFox in Frameworks */,
 				397152D72C85D05D00A65ADF /* SVGView in Frameworks */,
-				3930B2FD2C51371B00F14E88 /* ChocofordEssentials in Frameworks */,
 				3930B2F82C512E7B00F14E88 /* ChocofordEssentials in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -496,6 +519,8 @@
 				39B7B877296C110B005F7E9D /* File+Extension.swift */,
 				39E0577C296C935200304655 /* Group.swift */,
 				39BF8E8B2A7EAE33002BD9D8 /* FileCheckpoint+Extension.swift */,
+				397152E82C86DD2900A65ADF /* Library+Persistence.swift */,
+				397152ED2C86E18F00A65ADF /* LibraryItem+Persistence.swift */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";
@@ -630,6 +655,7 @@
 				397E468E295AAE5D003B824B /* template.excalidraw */,
 				3908EB9729674DF60054A3ED /* Model.xcdatamodeld */,
 				3966612F2C665D3E00F863BC /* excalidraw-latest */,
+				3976C4D52C8789F60037D3AF /* overwrite_console.js */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -785,8 +811,6 @@
 				3914876C2960AFD10042927A /* Sparkle */,
 				3930B2F72C512E7B00F14E88 /* ChocofordEssentials */,
 				3930B2F92C512E7B00F14E88 /* ChocofordUI */,
-				3930B2FC2C51371B00F14E88 /* ChocofordEssentials */,
-				3930B2FE2C51371B00F14E88 /* ChocofordUI */,
 				3966623E2C666EC600F863BC /* FlyingFox */,
 				397152D62C85D05D00A65ADF /* SVGView */,
 			);
@@ -865,10 +889,10 @@
 			mainGroup = 397E464A295838CF003B824B;
 			packageReferences = (
 				3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */,
-				3930B2FB2C51371B00F14E88 /* XCRemoteSwiftPackageReference "ChocofordKit" */,
 				3966623D2C666EC600F863BC /* XCRemoteSwiftPackageReference "FlyingFox" */,
 				390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */,
 				397152D22C85D00E00A65ADF /* XCRemoteSwiftPackageReference "SVGView" */,
+				3976C4DB2C8822320037D3AF /* XCLocalSwiftPackageReference "../ChocofordKit" */,
 			);
 			productRefGroup = 397E4654295838CF003B824B /* Products */;
 			projectDirPath = "";
@@ -896,6 +920,7 @@
 				3963A07C2C6C7EAA00472AE7 /* Assets.xcassets in Resources */,
 				3963A07D2C6C7EAA00472AE7 /* FakeToggleColorMode.js in Resources */,
 				397152CF2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib in Resources */,
+				3976C4D72C8789F60037D3AF /* overwrite_console.js in Resources */,
 				3963A07E2C6C7EAA00472AE7 /* FakeSaveCommand.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -912,6 +937,7 @@
 				3963A1452C6D1D4900472AE7 /* Assets.xcassets in Resources */,
 				3963A1462C6D1D4900472AE7 /* FakeToggleColorMode.js in Resources */,
 				397152CE2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib in Resources */,
+				3976C4D82C8789F60037D3AF /* overwrite_console.js in Resources */,
 				3963A1472C6D1D4900472AE7 /* FakeSaveCommand.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -928,6 +954,7 @@
 				397E465B295838D0003B824B /* Assets.xcassets in Resources */,
 				39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */,
 				397152CD2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib in Resources */,
+				3976C4D62C8789F60037D3AF /* overwrite_console.js in Resources */,
 				39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -962,11 +989,13 @@
 				3963A0472C6C7EAA00472AE7 /* Model.xcdatamodeld in Sources */,
 				3963A0482C6C7EAA00472AE7 /* FileCheckpointListView.swift in Sources */,
 				3963A0492C6C7EAA00472AE7 /* GroupListView.swift in Sources */,
+				397152EA2C86DD2900A65ADF /* Library+Persistence.swift in Sources */,
 				3963A04A2C6C7EAA00472AE7 /* FileCheckpointRowView.swift in Sources */,
 				3963A04B2C6C7EAA00472AE7 /* AppStore.swift in Sources */,
 				3963A04C2C6C7EAA00472AE7 /* ExportFileView.swift in Sources */,
 				3963A04D2C6C7EAA00472AE7 /* String+Extension.swift in Sources */,
 				3963A04E2C6C7EAA00472AE7 /* Group.swift in Sources */,
+				397152EE2C86E18F00A65ADF /* LibraryItem+Persistence.swift in Sources */,
 				3963A04F2C6C7EAA00472AE7 /* ExportImageView.swift in Sources */,
 				3963A0502C6C7EAA00472AE7 /* Array+Extension.swift in Sources */,
 				3963A0512C6C7EAA00472AE7 /* Utils.swift in Sources */,
@@ -1018,6 +1047,7 @@
 				3963A1122C6D1D4900472AE7 /* GroupListView.swift in Sources */,
 				3963A1132C6D1D4900472AE7 /* FileCheckpointRowView.swift in Sources */,
 				3963A1142C6D1D4900472AE7 /* AppStore.swift in Sources */,
+				397152EF2C86E18F00A65ADF /* LibraryItem+Persistence.swift in Sources */,
 				3963A1152C6D1D4900472AE7 /* ExportFileView.swift in Sources */,
 				3963A1162C6D1D4900472AE7 /* String+Extension.swift in Sources */,
 				3963A1172C6D1D4900472AE7 /* Group.swift in Sources */,
@@ -1048,6 +1078,7 @@
 				3963A1302C6D1D4900472AE7 /* GeneralSettingsView.swift in Sources */,
 				3963A1312C6D1D4900472AE7 /* LoadingView.swift in Sources */,
 				3963A1322C6D1D4900472AE7 /* View+Extension.swift in Sources */,
+				397152E92C86DD2900A65ADF /* Library+Persistence.swift in Sources */,
 				3963A1332C6D1D4900472AE7 /* CoreDataClient.swift in Sources */,
 				3963A1342C6D1D4900472AE7 /* FileListView.swift in Sources */,
 				3963A1352C6D1D4900472AE7 /* AppDelegate.swift in Sources */,
@@ -1073,6 +1104,7 @@
 				39DCA1542A7FAC9200B1DDA0 /* FileCheckpointRowView.swift in Sources */,
 				39BBE4752A6F078100045BEA /* AppStore.swift in Sources */,
 				394804C32A815D1100886972 /* ExportFileView.swift in Sources */,
+				397152F02C86E18F00A65ADF /* LibraryItem+Persistence.swift in Sources */,
 				3908EB96296719170054A3ED /* String+Extension.swift in Sources */,
 				39E0577D296C935200304655 /* Group.swift in Sources */,
 				39E73D6F29DADCF100098A79 /* ExportImageView.swift in Sources */,
@@ -1102,6 +1134,7 @@
 				394963A92A0E1F7B000FEB40 /* GeneralSettingsView.swift in Sources */,
 				397E468D295A02E7003B824B /* LoadingView.swift in Sources */,
 				397F98CE295CC1A5009BED55 /* View+Extension.swift in Sources */,
+				397152EB2C86DD2900A65ADF /* Library+Persistence.swift in Sources */,
 				39B033A92A61A74B00A5B2B7 /* CoreDataClient.swift in Sources */,
 				3901E2622965704400E79788 /* FileListView.swift in Sources */,
 				397F98DE295EE18E009BED55 /* AppDelegate.swift in Sources */,
@@ -1938,6 +1971,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		3976C4DB2C8822320037D3AF /* XCLocalSwiftPackageReference "../ChocofordKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../ChocofordKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1953,14 +1993,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.0.0;
-			};
-		};
-		3930B2FB2C51371B00F14E88 /* XCRemoteSwiftPackageReference "ChocofordKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/chocoford/ChocofordKit.git";
-			requirement = {
-				branch = main;
-				kind = branch;
 			};
 		};
 		3963A03C2C6C7EAA00472AE7 /* XCRemoteSwiftPackageReference "ChocofordKit" */ = {
@@ -2048,16 +2080,6 @@
 		};
 		3930B2F92C512E7B00F14E88 /* ChocofordUI */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = ChocofordUI;
-		};
-		3930B2FC2C51371B00F14E88 /* ChocofordEssentials */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 3930B2FB2C51371B00F14E88 /* XCRemoteSwiftPackageReference "ChocofordKit" */;
-			productName = ChocofordEssentials;
-		};
-		3930B2FE2C51371B00F14E88 /* ChocofordUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 3930B2FB2C51371B00F14E88 /* XCRemoteSwiftPackageReference "ChocofordKit" */;
 			productName = ChocofordUI;
 		};
 		3963A0392C6C7EAA00472AE7 /* ChocofordEssentials */ = {

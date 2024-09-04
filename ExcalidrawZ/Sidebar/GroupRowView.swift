@@ -74,8 +74,8 @@ struct GroupRowView: View {
         }
     }
     
-    @MainActor
-    @ViewBuilder private var content: some View {
+    @MainActor @ViewBuilder
+    private var content: some View {
         Button {
             fileState.currentGroup = group
         } label: {

@@ -9,7 +9,6 @@ import Foundation
 import SwiftUI
 
 extension File {
-    
     convenience init(name: String, context: NSManagedObjectContext) {
         self.init(context: context)
         self.id = UUID()

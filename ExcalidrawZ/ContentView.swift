@@ -36,11 +36,11 @@ struct ContentView: View {
                     .inspector(isPresented: $isInspectorPresented) {
                         LibraryView(isPresented: $isInspectorPresented)
                             .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
+                            .swiftyAlert()
                     }
             } else {
                 content()
             }
-            Text("\(isSidebarPresented)")
         }
         .navigationTitle("")
         .sheet(item: $sharedFile) {
