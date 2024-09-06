@@ -28,6 +28,7 @@ struct ContentView: View {
     
     @State private var isInspectorPresented: Bool = false
     @State private var isSidebarPresented: Bool = true
+    @State private var isExcalidrawToolbarDense: Bool = false
 
     var body: some View {
         ZStack {
@@ -78,7 +79,10 @@ struct ContentView: View {
         if #available(macOS 13.0, *) {
             ContentViewModern(isSidebarPrenseted: $isSidebarPresented)
         } else {
-            ContentViewLagacy(isInspectorPresented: $isInspectorPresented)
+            ContentViewLagacy(
+                isSidebarPresented: $isSidebarPresented,
+                isInspectorPresented: $isInspectorPresented
+            )
         }
     }
 }
@@ -110,10 +114,6 @@ struct ContentViewModern: View {
         .removeSettingsSidebarToggle()
         .onChange(of: columnVisibility) { newValue in
             isSidebarPrenseted = newValue != .detailOnly
-            print(
-                "isSidebarPrenseted: \(isSidebarPrenseted), columnVisibility: \(newValue)"
-            )
-
         }
     }
     
@@ -197,8 +197,8 @@ struct ContentViewLagacy: View {
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
+    @Binding var isSidebarPresented: Bool
     @Binding var isInspectorPresented: Bool
-    @State private var isSidebarPresented: Bool = true
     
     var body: some View {
         ZStack {
@@ -236,15 +236,6 @@ struct ContentViewLagacy: View {
             .padding(.horizontal, 10)
             .padding(.bottom, 40)
         }
-        .toolbar {
-            ToolbarItem(placement: .navigation) {
-                Button {
-                    isSidebarPresented.toggle()
-                } label: {
-                    Label("Sidebar", systemSymbol: .sidebarLeft)
-                }
-            }
-        }
     }
 }
 
@@ -271,18 +262,29 @@ extension ContentView {
             if #available(macOS 13.0, *) {
                 ExcalidrawToolbar(
                     isInspectorPresented: $isInspectorPresented,
-                    isSidebarPresented: $isSidebarPresented
+                    isSidebarPresented: $isSidebarPresented,
+                    isDense: $isExcalidrawToolbarDense
                 )
                 .padding(.vertical, 2)
             } else {
                 ExcalidrawToolbar(
-                    isInspectorPresented: $isInspectorPresented,
-                    isSidebarPresented: $isSidebarPresented
+                    isInspectorPresented: .constant(false),
+                    isSidebarPresented: .constant(false),
+                    isDense: $isExcalidrawToolbarDense
                 )
+                .offset(y: isExcalidrawToolbarDense ? 0 : 6)
             }
         }
         
         ToolbarItemGroup(placement: .navigation) {
+            if #available(macOS 13.0, *) { } else {
+                Button {
+                    isSidebarPresented.toggle()
+                } label: {
+                    Label("Sidebar", systemSymbol: .sidebarLeft)
+                }
+            }
+            
             if let file = fileState.currentFile {
                 VStack(alignment: .leading) {
                     Text(file.name ?? "")

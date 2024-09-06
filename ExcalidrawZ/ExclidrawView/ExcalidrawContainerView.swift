@@ -139,10 +139,16 @@ struct ExcalidrawContainerView: View {
 
 extension UTType {
     static var excalidrawFile: UTType {
-        UTType(importedAs: "com.chocoford.excalidrawFile")
+        UTType(importedAs: "com.chocoford.excalidrawFile", conformingTo: .json)
     }
     static var excalidrawlibFile: UTType {
-        UTType(importedAs: "com.chocoford.excalidrawlibFile")
+        UTType(importedAs: "com.chocoford.excalidrawlibFile", conformingTo: .json)
+    }
+//    static var excalidrawlibJSON: UTType {
+//        UTType(importedAs: "com.chocoford.excalidrawlibJSON", conformingTo: .json)
+//    }
+    static var excalidrawlibJSON: UTType {
+        UTType(exportedAs: "com.chocoford.excalidrawlibJSON", conformingTo: .json)
     }
 }
 

@@ -95,17 +95,9 @@ final class FileState: ObservableObject {
     }
     @Published var currentFile: File? {
         didSet {
-            recoverWatchUpdate?.cancel()
-            recoverWatchUpdate = DispatchWorkItem(flags: .assignCurrentContext) {
-                print("recoverWatchUpdate: \(Date.now.timeIntervalSince1970)")
-                self.shouldIgnoreUpdate = false
-                self.didUpdateFile = false
-            }
-            
-            shouldIgnoreUpdate = true
             print("freeze watchUpdate: \(Date.now.timeIntervalSince1970)")
-            stateUpdateQueue.asyncAfter(deadline: .now().advanced(by: .milliseconds(2500)), execute: recoverWatchUpdate!)
-            
+            shouldIgnoreUpdate = true
+            recoverWatchUpdate()
             currentFilePublisherCancellables.forEach{$0.cancel()}
             if let currentFile {
                 currentFilePublisherCancellables = [
@@ -126,12 +118,26 @@ final class FileState: ObservableObject {
     
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
     
-    var shouldIgnoreUpdate = false
+    var shouldIgnoreUpdate = true
     /// Indicate the file is being updated after being set as current file.
     var didUpdateFile = false
     var isCreatingFile = false
     
-    var recoverWatchUpdate: DispatchWorkItem?
+    var recoverWatchUpdateWorkItem: DispatchWorkItem?
+    
+    private func recoverWatchUpdate() {
+        recoverWatchUpdateWorkItem?.cancel()
+        recoverWatchUpdateWorkItem = DispatchWorkItem(flags: .assignCurrentContext) {
+            if self.excalidrawWebCoordinator?.parent.isLoading == true {
+                self.recoverWatchUpdate()
+                return
+            }
+            print("recoverWatchUpdateWorkItem: \(Date.now.timeIntervalSince1970)")
+            self.shouldIgnoreUpdate = false
+            self.didUpdateFile = false
+        }
+        stateUpdateQueue.asyncAfter(deadline: .now().advanced(by: .milliseconds(2500)), execute: recoverWatchUpdateWorkItem!)
+    }
     
     @discardableResult
     func createNewGroup(name: String, activate: Bool = true) async throws -> NSManagedObjectID {

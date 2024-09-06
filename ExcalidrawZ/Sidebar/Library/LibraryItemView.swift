@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 import ChocofordUI
 
@@ -43,61 +44,70 @@ struct LibraryItemView: View {
         .onDrag {
             let itemProvider = NSItemProvider()
             itemProvider.registerDataRepresentation(
-                forTypeIdentifier: "com.chocoford.excalidrawlibJSON",
-                visibility: .all
+                forTypeIdentifier: UTType.excalidrawlibJSON.identifier,
+                visibility: .ownProcess
             ) { completion in
                 do {
                     let item = item.excalidrawLibrary
                     let data = try item.jsonStringified().data(using: .utf8)
                     completion(data, nil)
                 } catch {
-                    print(error)
+                    alertToast(error)
                     completion(nil, error)
                 }
+                
                 return Progress(totalUnitCount: 100)
             }
-            
             return itemProvider
         }
-        .contextMenu { contextMenu() }
-        .confirmationDialog("Are you sure to remove the library item.", isPresented: $isDeleteConfirmPresented) {
+        .contextMenu { contextMenu().labelStyle(.titleAndIcon) }
+        .confirmationDialog(.localizable(.librariesRemoveItemConfirmationTitle), isPresented: $isDeleteConfirmPresented) {
             AsyncButton(role: .destructive) {
                 try await deleteLibraryItem()
             } label: {
-                Label("Remove", systemSymbol: .trash)
+                Label(.localizable(.librariesRemoveItemConfirmationConfirm), systemSymbol: .trash)
             }
         } message: {
-            Text("You can’t undo this action.")
+            Text(.localizable(.generalCannotUndoMessage))
         }
     }
     
     @MainActor @ViewBuilder
     private func contextMenu() -> some View {
         if !inSelectionMode {
-            SwiftUI.Group {
-                if libraries.count > 1 {
-                    Menu {
-                        ForEach(libraries.filter({$0.name != nil && $0 != self.item.library})) { library in
-                            Button {
-                                moveToLibrary(library)
-                            } label: {
-                                Text(library.name ?? "Untitled")
-                            }
-                        }
-                    } label: {
-                        Label("Move to", systemSymbol: .trayAndArrowUp)
+            Button {
+                Task {
+                    do {
+                        try await libraryViewModel.excalidrawWebCoordinator?.loadLibraryItem(item: item.excalidrawLibrary)
+                    } catch {
+                        alertToast(error)
                     }
                 }
-                
-                Divider()
-                Button(role: .destructive) {
-                    isDeleteConfirmPresented.toggle()
+            } label: {
+                Label(.localizable(.librariesButtonItemAddToCanvas), systemSymbol: .plusSquare)
+            }
+
+            if libraries.count > 1 {
+                Menu {
+                    ForEach(libraries.filter({$0.name != nil && $0 != self.item.library})) { library in
+                        Button {
+                            moveToLibrary(library)
+                        } label: {
+                            Text(library.name ?? "Untitled")
+                        }
+                    }
                 } label: {
-                    Label("Remove", systemSymbol: .trash)
-                        .foregroundStyle(.red)
+                    Label(.localizable(.generalMoveTo), systemSymbol: .trayAndArrowUp)
                 }
             }
-            .labelStyle(.titleAndIcon)
+            
+            Divider()
+            Button(role: .destructive) {
+                isDeleteConfirmPresented.toggle()
+            } label: {
+                Label(.localizable(.librariesItemRemove), systemSymbol: .trash)
+                    .foregroundStyle(.red)
+            }
         }
     }
     

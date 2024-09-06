@@ -73,8 +73,17 @@ struct LibraryView: View {
                             }
                         }
                         guard url != nil else { continue }
-                        let data = try Data(contentsOf: url!)
-                        var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data)
+                        let data: Data? = try await withCheckedThrowingContinuation { continuation in
+                            provider.loadDataRepresentation(forTypeIdentifier: UTType.excalidrawlibFile.identifier) { url, error in
+                                if let error {
+                                    continuation.resume(throwing: error)
+                                    return
+                                }
+                                continuation.resume(returning: url)
+                            }
+                        }
+                        guard data != nil else { continue }
+                        var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data!)
                         library.name = url!.deletingPathExtension().lastPathComponent
                         librariesToImport.append(library)
                     }
@@ -108,6 +117,9 @@ struct LibraryView: View {
             }
         }
         .environmentObject(viewModel)
+        .onAppear {
+            viewModel.excalidrawWebCoordinator = exportState.excalidrawWebCoordinator
+        }
     }
     
     @MainActor @ToolbarContentBuilder
@@ -115,7 +127,7 @@ struct LibraryView: View {
         /// This is the key to make sidebar toggle at the right side.
         ToolbarItem(placement: .status) {
             if isPresented {
-                Text("Library")
+                Text(.localizable(.librariesTitle))
                     .foregroundStyle(.secondary)
                     .font(.headline)
             } else {
@@ -125,19 +137,10 @@ struct LibraryView: View {
         }
         
         ToolbarItem(placement: .automatic) {
-            if #available(macOS 14.0, *) {
-                Button {
-                    isPresented.toggle()
-                } label: {
-                    Label("Library", systemSymbol: .sidebarRight)
-                }
-            } else {
-                Button {
-                    isPresented.toggle()
-                } label: {
-                    Label("Library", systemSymbol: .sidebarRight)
-                }
-                .buttonStyle(.text)
+            Button {
+                isPresented.toggle()
+            } label: {
+                Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
             }
         }
     }
@@ -171,10 +174,10 @@ struct LibraryView: View {
                 .frame(height: 40)
                 .foregroundStyle(.secondary)
             VStack(spacing: 10) {
-                Text("No items...")
+                Text(.localizable(.librariesNoItemsTitle))
                     .foregroundStyle(.secondary)
                     .font(.title)
-                Text("You can drag or import `.excalidrawlib` files and get started.")
+                Text(.localizable(.librariesNoItemsDescription))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -184,7 +187,7 @@ struct LibraryView: View {
                 importButton()
                     .controlSize(.large)
                 Link(destination: URL(string: "https://libraries.excalidraw.com")!) {
-                    Text("Go to Excalidraw Libraries")
+                    Text(.localizable(.librariesNoItemsGoToExcalidrawLibraries))
                         .font(.callout)
                 }
             }
@@ -221,7 +224,7 @@ struct LibraryView: View {
                         Button {
                             inSelectionMode.toggle()
                         } label: {
-                            Text(inSelectionMode ? "Cancel" : "Select")
+                            Text(.localizable(inSelectionMode ? .librariesButtonSelectCancel : .librariesButtonSelect))
                         }
                         .buttonStyle(.borderless)
                     }
@@ -230,10 +233,10 @@ struct LibraryView: View {
             Color.clear
                 .overlay(alignment: .center) {
                     if inSelectionMode {
-                        Text("\(selectedItems.count) selected")
+                        Text(.localizable(.librariesItemsSelected(selectedItems.count)))
                             .foregroundStyle(.secondary)
                     } else {
-                        Text("^[\(libraries.reduce(0, {$0 + ($1.items?.count ?? 0)})) item](inflect: true)")
+                        Text(.localizable(.librariesItemsCount(libraries.reduce(0, {$0 + ($1.items?.count ?? 0)}))))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -245,85 +248,46 @@ struct LibraryView: View {
                             Button(role: .destructive) {
                                 isRemoveSelectionsConfirmationPresented.toggle()
                             } label: {
-                                Label("Remove", systemSymbol: .trash)
+                                Label(.localizable(.librariesButtonRemoveSelections), systemSymbol: .trash)
                             }
                             .labelStyle(.iconOnly)
                             .disabled(selectedItems.isEmpty)
+                            .buttonStyle(.borderless)
                         }
                         
                         if !inSelectionMode || libraries.count > 1 {
-                            Menu {
-                                SwiftUI.Group {
-                                    if inSelectionMode {
-                                        if libraries.count > 1 {
-                                            Menu {
-                                                ForEach(libraries.filter({$0.name != nil})) { library in
-                                                    Button {
-                                                        moveSelectionsToLibrary(library)
-                                                    } label: {
-                                                        Text(library.name ?? "Untitled")
-                                                    }
-                                                }
-                                            } label: {
-                                                Label("Move to", systemSymbol: .trayAndArrowUp)
-                                            }
-                                        }
-                                    } else {
-                                        importButton()
-                                        
-                                        Button {
-                                            isFileExporterPresented.toggle()
-                                        } label: {
-                                            Label("Export", systemSymbol: .squareAndArrowUp)
-                                        }
-                                        
-                                        Divider()
-                                        
-                                        Link(destination: URL(string: "https://libraries.excalidraw.com")!) {
-                                            Label("Excalidraw Libraries", systemSymbol: .link)
-                                        }
-                                        
-                                        Divider()
-                                        
-                                        Button(role: .destructive) {
-                                            isRemoveAllConfirmationPresented.toggle()
-                                        } label: {
-                                            Label("Remove all", systemSymbol: .trash)
-                                        }
-                                    }
-                                }
-                                .labelStyle(.titleAndIcon)
-                            } label: {
-                                Label("More", systemSymbol: .ellipsis)
-                                    .labelStyle(.iconOnly)
+                            if #available(macOS 13.0, *) {
+                                bottomBarMenu()
+                                    .menuStyle(.button)
+                                    .buttonStyle(.borderless)
+                            } else {
+                                bottomBarMenu()
+                                    .menuStyle(.borderlessButton)
                             }
-                            .fixedSize()
-                            .menuIndicator(.hidden)
                         }
                     }
-                    .buttonStyle(.borderless)
                 }
         }
-        .confirmationDialog("Are you sure to remove all items?", isPresented: $isRemoveAllConfirmationPresented) {
+        .confirmationDialog(.localizable(.librariesRemoveAllConfirmationTitle), isPresented: $isRemoveAllConfirmationPresented) {
             Button(role: .destructive) {
                 removeAllItems()
             } label: {
-                Label("Remove", systemSymbol: .trash)
+                Label(.localizable(.librariesRemoveAllConfirmationConfirm), systemSymbol: .trash)
             }
         } message: {
-            Text("You can’t undo this action.")
+            Text(.localizable(.generalCannotUndoMessage))
         }
         .confirmationDialog(
-            "Are you sure to remove ^[\(selectedItems.count) item](inflect: true)?",
+            .localizable(.librariesRemoveSelectionsConfirmationTitle(selectedItems.count)),
             isPresented: $isRemoveSelectionsConfirmationPresented
         ) {
             Button(role: .destructive) {
                 removeSelectedItems()
             } label: {
-                Label("Remove", systemSymbol: .trash)
+                Label(.localizable(.librariesRemoveSelectionsConfirmationConfirm), systemSymbol: .trash)
             }
         } message: {
-            Text("You can’t undo this action.")
+            Text(.localizable(.generalCannotUndoMessage))
         }
         .fileExporter(
             isPresented: $isFileExporterPresented,
@@ -342,11 +306,65 @@ struct LibraryView: View {
     }
     
     @MainActor @ViewBuilder
+    private func bottomBarMenu() -> some View {
+        Menu {
+            bottomBarMenuItems()
+                .labelStyle(.titleAndIcon)
+        } label: {
+            Label(.localizable(.librariesButtonLibraryOptions), systemSymbol: .ellipsis)
+                .labelStyle(.iconOnly)
+        }
+        .fixedSize()
+        .menuIndicator(.hidden)
+    }
+    
+    @MainActor @ViewBuilder
+    private func bottomBarMenuItems() -> some View {
+        if inSelectionMode {
+            if libraries.count > 1 {
+                Menu {
+                    ForEach(libraries.filter({$0.name != nil})) { library in
+                        Button {
+                            moveSelectionsToLibrary(library)
+                        } label: {
+                            Text(library.name ?? "Untitled")
+                        }
+                    }
+                } label: {
+                    Label(.localizable(.generalMoveTo), systemSymbol: .trayAndArrowUp)
+                }
+            }
+        } else {
+            importButton()
+            
+            Button {
+                isFileExporterPresented.toggle()
+            } label: {
+                Label(.localizable(.librariesButtonExportAll), systemSymbol: .squareAndArrowUp)
+            }
+            
+            Divider()
+            
+            Link(destination: URL(string: "https://libraries.excalidraw.com")!) {
+                Label(.localizable(.librariesNoItemsGoToExcalidrawLibraries), systemSymbol: .link)
+            }
+            
+            Divider()
+            
+            Button(role: .destructive) {
+                isRemoveAllConfirmationPresented.toggle()
+            } label: {
+                Label(.localizable(.librariesButtonRemoveAll), systemSymbol: .trash)
+            }
+        }
+    }
+    
+    @MainActor @ViewBuilder
     private func importButton() -> some View {
         Button {
             isFileImpoterPresented.toggle()
         } label: {
-            Label("Import", systemSymbol: .squareAndArrowDown)
+            Label(.localizable(.librariesButtonImport), systemSymbol: .squareAndArrowDown)
         }
     }
     

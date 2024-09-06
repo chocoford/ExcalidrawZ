@@ -16,10 +16,11 @@ struct ExcalidrawToolbar: View {
     
     @Binding var isInspectorPresented: Bool
     @Binding var isSidebarPresented: Bool
+    @Binding var isDense: Bool
     
     @State private var window: NSWindow?
     @State private var windowFrameCancellable: AnyCancellable?
-    @State private var isDense: Bool = false
+    
     
     var minWidth: CGFloat {
         if isInspectorPresented, isSidebarPresented {
@@ -292,7 +293,8 @@ fileprivate struct Cursor: Shape {
 #Preview {
     ExcalidrawToolbar(
         isInspectorPresented: .constant(false),
-        isSidebarPresented: .constant(false)
+        isSidebarPresented: .constant(false),
+        isDense: .constant(false)
     )
     .background(.background)
 }

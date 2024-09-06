@@ -18,4 +18,23 @@ extension Library {
         self.version = 2
         self.items = []
     }
+    
+    static func getPersonalLibrary(context: NSManagedObjectContext) throws -> Library {
+        let personalLibraryName = String(localizable: .librariesPersonalLibraryName)
+        let fetchRequest = NSFetchRequest<Library>(entityName: "Library")
+        fetchRequest.predicate = NSPredicate(
+            format: "name = %@",
+            personalLibraryName
+        )
+        fetchRequest.fetchLimit = 1
+        let results = try context.fetch(fetchRequest)
+        
+        if let library = results.first {
+            return library
+        } else {
+            let library = Library(name: personalLibraryName, context: context)
+            try context.save()
+            return library
+        }
+    }
 }

@@ -38,6 +38,9 @@ extension ExcalidrawView {
         
         internal var lastTool: ExcalidrawTool?
         
+        internal var isOnloaded = false
+        internal var isNavigationDone = false
+        
         func configWebView() {
             let config = WKWebViewConfiguration()
             config.websiteDataStore = .nonPersistent()
@@ -117,6 +120,7 @@ actor ExcalidrawWebActor {
 extension ExcalidrawView.Coordinator {
     func loadFile(from file: File?, force: Bool = false) {
         guard !self.parent.isLoading, !self.webView.isLoading else { return }
+//        self.logger.info("[ExcalidrawView.Coordinator] loadFile...")
         guard let fileID = file?.id,
             let data = file?.content else { return }
         Task.detached {
@@ -186,6 +190,12 @@ extension ExcalidrawView.Coordinator {
         let isDark = try await getIsDark()
         guard isDark != dark else { return }
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleColorTheme(\"\(dark ? "dark" : "light")\"); 0;")
+    }
+    
+    
+    @MainActor
+    func loadLibraryItem(item: ExcalidrawLibrary) async throws {
+        try await self.webView.evaluateJavaScript("window.excalidrawZHelper.loadLibraryItem(\(item.jsonStringified())); 0;")
     }
     
     @MainActor

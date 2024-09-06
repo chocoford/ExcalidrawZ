@@ -18,14 +18,14 @@ struct ExcalidrawLibraryImportSheetView: View {
     var body: some View {
         VStack(spacing: 10) {
             HStack(alignment: .lastTextBaseline) {
-                Toggle("Select All", isOn: .constant(false))
+                Toggle("", isOn: .constant(false))
                     .opacity(0)
                 Spacer()
-                Text("Import libraries")
+                Text(.localizable(.librariesImportTitle))
                     .font(.largeTitle)
                 Spacer()
                 Toggle(
-                    "Select All",
+                    .localizable(.librariesImportSelectAll),
                     isOn: Binding {
                         libraries.allSatisfy({$0.libraryItems.allSatisfy({selectedItems.contains($0)})})
                     } set: { isOn in
@@ -112,14 +112,14 @@ struct ExcalidrawLibraryImportSheetView: View {
                             VStack(spacing: 0) {
                                 HStack {
                                     Text(library.name ?? "Untitled")
-                                    Text("^[\(library.libraryItems.count) item](inflect: true)")
+                                    Text(.localizable(.librariesImportLibraryItemsCount(library.libraryItems.count)))
                                         .foregroundStyle(.secondary)
                                         .font(.footnote)
                                     
                                     Spacer()
                                     
                                     Toggle(
-                                        "Select All Items",
+                                        .localizable(.librariesImportLibrarySelectAll),
                                         isOn: Binding {
                                             library.libraryItems.allSatisfy{ selectedItems.contains($0) }
                                         } set: { isOn in
@@ -155,7 +155,7 @@ struct ExcalidrawLibraryImportSheetView: View {
             
             HStack {
                 if !selectedItems.isEmpty {
-                    Text("\(selectedItems.count) selected.")
+                    Text(.localizable(.librariesImportSelectionsCount(selectedItems.count)))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -165,7 +165,7 @@ struct ExcalidrawLibraryImportSheetView: View {
                 Button {
                     dismiss()
                 } label: {
-                    Text("Cancel")
+                    Text(.localizable(.librariesImportButtonCancel))
                         .frame(width: 80)
                 }
                 .buttonStyle(.borderless)
@@ -173,7 +173,7 @@ struct ExcalidrawLibraryImportSheetView: View {
                 Button {
                     importSelectedLibraries()
                 } label: {
-                    Text("Import")
+                    Text(.localizable(.librariesImportButtonImport))
                         .frame(width: 80)
                 }
                 .buttonStyle(.borderedProminent)

@@ -190,6 +190,8 @@
 		39BBE4752A6F078100045BEA /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BBE4742A6F078100045BEA /* AppStore.swift */; };
 		39BF8E8A2A7EADB1002BD9D8 /* FileCheckpointListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BF8E892A7EADB1002BD9D8 /* FileCheckpointListView.swift */; };
 		39BF8E8C2A7EAE33002BD9D8 /* FileCheckpoint+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BF8E8B2A7EAE33002BD9D8 /* FileCheckpoint+Extension.swift */; };
+		39D1D76D2C8993D6001922EC /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 39D1D76C2C8993D6001922EC /* ChocofordEssentials */; };
+		39D1D76F2C8993D6001922EC /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 39D1D76E2C8993D6001922EC /* ChocofordUI */; };
 		39DCA1442A7EC7DA00B1DDA0 /* ExcalidrawElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1432A7EC7DA00B1DDA0 /* ExcalidrawElement.swift */; };
 		39DCA1462A7ECA8E00B1DDA0 /* ExcalidrawElementBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1452A7ECA8E00B1DDA0 /* ExcalidrawElementBase.swift */; };
 		39DCA1492A7ECB0600B1DDA0 /* ExcalidrawGenricElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1482A7ECB0600B1DDA0 /* ExcalidrawGenricElement.swift */; };
@@ -486,11 +488,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				39D1D76F2C8993D6001922EC /* ChocofordUI in Frameworks */,
 				3930B2FA2C512E7B00F14E88 /* ChocofordUI in Frameworks */,
 				3914876D2960AFD10042927A /* Sparkle in Frameworks */,
 				3966623F2C666EC600F863BC /* FlyingFox in Frameworks */,
 				397152D72C85D05D00A65ADF /* SVGView in Frameworks */,
 				3930B2F82C512E7B00F14E88 /* ChocofordEssentials in Frameworks */,
+				39D1D76D2C8993D6001922EC /* ChocofordEssentials in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -813,6 +817,8 @@
 				3930B2F92C512E7B00F14E88 /* ChocofordUI */,
 				3966623E2C666EC600F863BC /* FlyingFox */,
 				397152D62C85D05D00A65ADF /* SVGView */,
+				39D1D76C2C8993D6001922EC /* ChocofordEssentials */,
+				39D1D76E2C8993D6001922EC /* ChocofordUI */,
 			);
 			productName = ExcaliDrawZ;
 			productReference = 397E4653295838CF003B824B /* ExcalidrawZ.app */;
@@ -892,7 +898,7 @@
 				3966623D2C666EC600F863BC /* XCRemoteSwiftPackageReference "FlyingFox" */,
 				390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */,
 				397152D22C85D00E00A65ADF /* XCRemoteSwiftPackageReference "SVGView" */,
-				3976C4DB2C8822320037D3AF /* XCLocalSwiftPackageReference "../ChocofordKit" */,
+				39D1D76B2C8993D6001922EC /* XCRemoteSwiftPackageReference "ChocofordKit" */,
 			);
 			productRefGroup = 397E4654295838CF003B824B /* Products */;
 			projectDirPath = "";
@@ -1480,7 +1486,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 24;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 3XKM749Y3L;
@@ -1505,7 +1511,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = "1.0.0-alpha-5";
+				MARKETING_VERSION = "1.0.0-alpha-6";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.ExcalidrawZ-Debug";
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -1524,7 +1530,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 24;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 3XKM749Y3L;
@@ -1532,7 +1538,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "ExcalidrawZ/Lagacy-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "ExcalidrawZ-Debug";
+				INFOPLIST_KEY_CFBundleDisplayName = ExcalidrawZ;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -1549,7 +1555,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = "1.0.0-alpha-5";
+				MARKETING_VERSION = "1.0.0-alpha-6";
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.ExcalidrawZ;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -1568,7 +1574,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 24;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 3XKM749Y3L;
@@ -1576,7 +1582,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "ExcalidrawZ/Lagacy-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "ExcalidrawZ-Debug";
+				INFOPLIST_KEY_CFBundleDisplayName = ExcalidrawZ;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -1593,7 +1599,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = "1.0.0-alpha-5";
+				MARKETING_VERSION = "1.0.0-alpha-6";
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.ExcalidrawZ;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -1971,13 +1977,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		3976C4DB2C8822320037D3AF /* XCLocalSwiftPackageReference "../ChocofordKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../ChocofordKit;
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCRemoteSwiftPackageReference section */
 		390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -2049,6 +2048,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.0.6;
+			};
+		};
+		39D1D76B2C8993D6001922EC /* XCRemoteSwiftPackageReference "ChocofordKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/chocoford/ChocofordKit.git";
+			requirement = {
+				branch = main;
+				kind = branch;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -2152,6 +2159,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 397152D22C85D00E00A65ADF /* XCRemoteSwiftPackageReference "SVGView" */;
 			productName = SVGView;
+		};
+		39D1D76C2C8993D6001922EC /* ChocofordEssentials */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 39D1D76B2C8993D6001922EC /* XCRemoteSwiftPackageReference "ChocofordKit" */;
+			productName = ChocofordEssentials;
+		};
+		39D1D76E2C8993D6001922EC /* ChocofordUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 39D1D76B2C8993D6001922EC /* XCRemoteSwiftPackageReference "ChocofordKit" */;
+			productName = ChocofordUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 

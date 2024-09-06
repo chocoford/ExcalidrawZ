@@ -7,9 +7,6 @@
 
 import Foundation
 
-
-
-
 struct ExcalidrawLibrary: Codable, Hashable {
     var id: UUID = UUID()
     var name: String?
@@ -69,6 +66,7 @@ struct ExcalidrawLibrary: Codable, Hashable {
     struct Item: Codable, Hashable {
         enum Status: String, Codable {
             case published = "published"
+            case unpublished = "unpublished"
         }
         
         var id: String
@@ -89,7 +87,7 @@ struct ExcalidrawLibrary: Codable, Hashable {
             self.status = try container.decode(Status.self, forKey: .status)
             let ts = try container.decode(Int.self, forKey: .createdAt)
             self.createdAt = Date(timeIntervalSince1970: Double(ts) / 1000)
-            self.name = try container.decode(String.self, forKey: .name)
+            self.name = try container.decodeIfPresent(String.self, forKey: .name) ?? StringLiteralType(localizable: .generalUntitled)
             self.elements = try container.decode([ExcalidrawElement].self, forKey: .elements)
         }
         

@@ -62,7 +62,16 @@ extension ExcalidrawView.Coordinator: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         logger.info("did finish navigation")
         // Can not do this here. DOM maybe not loaded.
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.parent.isLoading = false }
+        // Add: This may occur before or after `onload`.
+        
+        self.isNavigationDone = true
+        if self.isOnloaded {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                self.parent.isLoading = false
+            }
+        }
+        
+//
     }
         
     func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {

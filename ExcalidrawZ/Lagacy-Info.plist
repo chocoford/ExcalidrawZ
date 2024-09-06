@@ -35,6 +35,8 @@
 		<dict>
 			<key>UTTypeConformsTo</key>
 			<array/>
+			<key>UTTypeDescription</key>
+			<string>Excalidraw File</string>
 			<key>UTTypeIcons</key>
 			<dict/>
 			<key>UTTypeIdentifier</key>
@@ -50,7 +52,7 @@
 		<dict>
 			<key>UTTypeConformsTo</key>
 			<array>
-				<string>public.data</string>
+				<string>public.json</string>
 			</array>
 			<key>UTTypeDescription</key>
 			<string>Excalidraw Library JSON</string>
@@ -74,6 +76,12 @@
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Excalidraw File</string>
 			<key>UTTypeIcons</key>
 			<dict/>
 			<key>UTTypeIdentifier</key>

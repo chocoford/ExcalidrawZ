@@ -10,6 +10,7 @@ import SwiftUI
 class LibraryViewModel: ObservableObject {
     @Published private(set) var libraryViewID: String = UUID().uuidString
     
+    var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
     
     public func forceLibraryViewUpdate() {
         self.libraryViewID = UUID().uuidString

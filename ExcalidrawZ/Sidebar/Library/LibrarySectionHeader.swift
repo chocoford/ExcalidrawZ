@@ -9,6 +9,7 @@ import SwiftUI
 import CoreData
 
 import SFSafeSymbols
+import SwiftyAlert
 
 struct LibrarySectionHeader: View {
     @Environment(\.alertToast) var alertToast
@@ -39,7 +40,7 @@ struct LibrarySectionHeader: View {
                     .contentShape(Rectangle())
             } else {
                 menuButton()
-                    .buttonStyle(.borderless)
+                    .menuStyle(.borderlessButton)
                     .contentShape(Rectangle())
             }
         }
@@ -47,16 +48,16 @@ struct LibrarySectionHeader: View {
             menuContent(library: library)
         }
         .confirmationDialog(
-            "Are you sure to remove all items of the library",
+            .localizable(.librariesRemoveLibraryAllItemsConfirmationTitle),
             isPresented: $isRemoveLibraryConfimationPresented
         ) {
             Button(role: .destructive) {
                 removeLibrary()
             } label: {
-                Label("Remove", systemSymbol: .trash)
+                Label(.localizable(.librariesRemoveLibraryConfirmationConfirm), systemSymbol: .trash)
             }
         } message: {
-            Text("You can’t undo this action.")
+            Text(.localizable(.generalCannotUndoMessage))
         }
         .sheet(isPresented: $isEditLibrarySheetPresented) {
             RenameSheetView(text: library.name ?? "Untitled") { newName in
@@ -90,8 +91,9 @@ struct LibrarySectionHeader: View {
         if !inSelectionMode {
             Menu {
                 menuContent(library: library)
+                    .labelStyle(.titleAndIcon)
             } label: {
-                Label("Options", systemSymbol: .ellipsis)
+                Label(.localizable(.librariesButtonLibraryOptions), systemSymbol: .ellipsis)
                     .labelStyle(.iconOnly)
             }
             .fixedSize()
@@ -101,43 +103,40 @@ struct LibrarySectionHeader: View {
     
     @MainActor @ViewBuilder
     private func menuContent(library: Library) -> some View {
-        SwiftUI.Group {
-            Button {
-                isEditLibrarySheetPresented.toggle()
-            } label: {
-                Label("Rename", systemSymbol: .squareAndPencil)
-            }
-            
-            if allLibraries.count > 1 {
-                Menu {
-                    ForEach(allLibraries.filter{$0 != library && $0.name != nil}) { library in
-                        Button {
-                            mergeWithLibrary(library)
-                        } label: {
-                            Text(library.name ?? "Unknown")
-                        }
+        Button {
+            isEditLibrarySheetPresented.toggle()
+        } label: {
+            Label(.localizable(.librariesButtonRenameLibrary), systemSymbol: .squareAndPencil)
+        }
+        
+        if allLibraries.count > 1 {
+            Menu {
+                ForEach(allLibraries.filter{$0 != library && $0.name != nil}) { library in
+                    Button {
+                        mergeWithLibrary(library)
+                    } label: {
+                        Text(library.name ?? "Unknown")
                     }
-                } label: {
-                    Label(.localizable(.sidebarGroupRowContextMenuMerge), systemSymbol: .rectangleStackBadgePlus)
                 }
-            }
-            Divider()
-            
-            Button {
-                isFileExporterPresented.toggle()
             } label: {
-                Label("Export", systemSymbol: .squareAndArrowUp)
-            }
-            
-            Divider()
-            
-            Button {
-                isRemoveLibraryConfimationPresented = true
-            } label: {
-                Label("Remove all", systemSymbol: .trash)
+                Label(.localizable(.sidebarGroupRowContextMenuMerge), systemSymbol: .rectangleStackBadgePlus)
             }
         }
-        .labelStyle(.titleAndIcon)
+        Divider()
+        
+        Button {
+            isFileExporterPresented.toggle()
+        } label: {
+            Label(.localizable(.librariesButtonExportLibrary), systemSymbol: .squareAndArrowUp)
+        }
+        
+        Divider()
+        
+        Button {
+            isRemoveLibraryConfimationPresented = true
+        } label: {
+            Label(.localizable(.librariesButtonRemoveLibrary), systemSymbol: .trash)
+        }
     }
     
     private func mergeWithLibrary(_ targetLibrary: Library) {

@@ -27,13 +27,24 @@ extension ExcalidrawView.Coordinator: WKScriptMessageHandler {
             
             switch message {
                 case .onload:
-                    // prevent color schmee change flash
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { self.parent.isLoading = false }
+                    self.isOnloaded = true
+                    if self.isNavigationDone {
+                        // prevent color schmee change flash
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            self.parent.isLoading = false
+                        }
+                    }
                     logger.info("onload")
                 case .saveFileDone(let message):
                     onSaveFileDone(message.data)
                 case .stateChanged(let message):
-                    try onStateChanged(message.data)
+                    Task {
+                        do {
+                            try await onStateChanged(message.data)
+                        } catch {
+                            self.parent.onError(error)
+                        }
+                    }
                 case .blobData(let message):
                     try self.handleBlobData(message.data)
                 case .onCopy(let message):
@@ -50,7 +61,8 @@ extension ExcalidrawView.Coordinator: WKScriptMessageHandler {
                     self.flyingBlobsRequest[blobData.data.id]?(blobData.data.blobData)
                 case .getElementsSVG(let svgData):
                     self.flyingSVGRequests[svgData.data.id]?(svgData.data.svg)
-                    
+                case .addLibrary(let message):
+                    self.addLibrary(item: message.data)
                 case .log(let logMessage):
                     self.onWebLog(message: logMessage)
             }
@@ -66,12 +78,17 @@ extension ExcalidrawView.Coordinator {
         print("onSaveFileDone")
     }
     
-    func onStateChanged(_ data: StateChangedMessageData) throws {
-        guard !self.parent.isLoading else { return }
+    func onStateChanged(_ data: StateChangedMessageData) async throws {
+        guard !(await self.parent.isLoading) else { return }
+        guard await self.webActor.loadedFileID == self.parent.fileState.currentFile?.id else {
+            return
+        }
         guard let data = data.data.dataString.data(using: .utf8) else {
             throw AppError.fileError(.createError)
         }
-        self.parent.fileState.updateCurrentFileData(data: data)
+        await MainActor.run {
+            self.parent.fileState.updateCurrentFileData(data: data)
+        }
     }
     
     func handleBlobData(_ data: Data) throws {
@@ -119,7 +136,13 @@ extension ExcalidrawView.Coordinator {
     
     func onWebLog(message: LogMessage) {
         let method = message.method
-        let message = message.args.joined(separator: " ")
+        let message = message.args.map{
+            if let arg = $0 {
+                return arg
+            } else {
+                return "null"
+            }
+        }.joined(separator: " ")
         switch method {
             case "log":
 //                self.logger.log("\(message)")
@@ -139,6 +162,31 @@ extension ExcalidrawView.Coordinator {
                 self.logger.log("Unhandled log: \(message)")
         }
     }
+    
+    func addLibrary(item: ExcalidrawLibrary.Item) {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        let onError = self.parent.onError
+        Task.detached {
+            do {
+                try await context.perform {
+                    let library = try Library.getPersonalLibrary(context: context)
+                    
+                    let libraryItem = LibraryItem(context: context)
+                    libraryItem.id = item.id
+                    libraryItem.status = item.status.rawValue
+                    libraryItem.name = item.name
+                    libraryItem.createdAt = item.createdAt
+                    libraryItem.elements = try JSONEncoder().encode(item.elements)
+                    libraryItem.library = library
+                    
+                    try context.save()
+                }
+            } catch {
+                onError(error)
+            }
+        }
+        
+    }
 }
 
 
@@ -155,6 +203,7 @@ extension ExcalidrawView.Coordinator {
         case didSetActiveTool
         case getElementsBlob
         case getElementsSVG
+        case addLibrary
         
         case log
     }
@@ -170,6 +219,7 @@ extension ExcalidrawView.Coordinator {
         case didSetActiveTool(SetActiveToolMessage)
         case getElementsBlob(ExcalidrawElementsBlobData)
         case getElementsSVG(ExcalidrawElementsSVGData)
+        case addLibrary(AddLibraryItemMessage)
         
         case log(LogMessage)
         
@@ -202,6 +252,9 @@ extension ExcalidrawView.Coordinator {
                     self = .getElementsBlob(try ExcalidrawElementsBlobData(from: decoder))
                 case .getElementsSVG:
                     self = .getElementsSVG(try ExcalidrawElementsSVGData(from: decoder))
+                case .addLibrary:
+                    self = .addLibrary(try AddLibraryItemMessage(from: decoder))
+                    
                 case .log:
                     self = .log(try LogMessage(from: decoder))
             }
@@ -360,11 +413,16 @@ extension ExcalidrawView.Coordinator {
         }
     }
     
+    struct AddLibraryItemMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: ExcalidrawLibrary.Item
+    }
+    
     
     // Log
     struct LogMessage: Codable {
         var event: String
         var method: String
-        var args: [String]
+        var args: [String?]
     }
 }
