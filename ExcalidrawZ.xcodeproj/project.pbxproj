@@ -455,6 +455,7 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		392CF8EA2C8EF1A700CC81B9 /* ci_scripts */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ci_scripts; sourceTree = "<group>"; };
 		394A7FB02C515ECB00D4918B /* ExclidrawView */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A0902C6D05A900472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 394A7FB12C515EE100D4918B /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39B803262C6D2B0900308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ExclidrawView; sourceTree = "<group>"; };
 		3963A0342C6BD6B200472AE7 /* Sparkle */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A0352C6BD6B900472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39B8031D2C6D2AFE00308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Sparkle; sourceTree = "<group>"; };
 		3963A08A2C6C87EF00472AE7 /* Migration */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A08B2C6C87F400472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39B8032F2C6D2B3300308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39B8032D2C6D2B1A00308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Migration; sourceTree = "<group>"; };
@@ -581,6 +582,7 @@
 		397E464A295838CF003B824B = {
 			isa = PBXGroup;
 			children = (
+				392CF8EA2C8EF1A700CC81B9 /* ci_scripts */,
 				390716DA2C6F159B002D7834 /* Localizable.xcstrings */,
 				397E4655295838CF003B824B /* ExcalidrawZ */,
 				397E4667295838D0003B824B /* ExcalidrawZTests */,
