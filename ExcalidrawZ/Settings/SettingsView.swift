@@ -24,9 +24,6 @@ struct SettingsView: View {
             NavigationSplitView(columnVisibility: .constant(.all)) {
                 sidebar
                     .toolbar(removing: .sidebarToggle)
-                    .background(
-                        List(selection: $selection) {}
-                    )
             } detail: {
                 detail(for: selection)
             }
@@ -67,11 +64,15 @@ struct SettingsView: View {
                     } label: {
                         Text(route.text)
                     }
-                    .buttonStyle(ListButtonStyle(showIndicator: true,
-                                                 selected: selection == route))
+                    .buttonStyle(
+                        ListButtonStyle(
+                            showIndicator: true,
+                            selected: selection == route
+                        )
+                    )
                 }
             }
-            .padding()
+            .padding(10)
         }
     }
     
@@ -98,6 +99,9 @@ struct SettingsView: View {
         switch route {
             case .general:
                 GeneralSettingsView()
+                
+            case .about:
+                AboutView()
         }
     }
 }
@@ -105,11 +109,15 @@ struct SettingsView: View {
 extension SettingsView {
     enum Route: CaseIterable, Identifiable {
         case general
+        case about
         
         var text: LocalizedStringKey {
             switch self {
                 case .general:
                     return .localizable(.settingsGeneralName)
+                    
+                case .about:
+                    return .localizable(.settingsAboutName)
             }
         }
         
@@ -117,6 +125,9 @@ extension SettingsView {
             switch self {
                 case .general:
                     "general"
+                    
+                case .about:
+                    "about"
             }
         }
     }

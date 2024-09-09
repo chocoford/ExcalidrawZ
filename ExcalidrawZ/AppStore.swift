@@ -18,9 +18,55 @@ final class AppPreference: ObservableObject {
         case all
         case filesOnly
     }
+    enum LayoutStyle: Int, Sendable, RadioGroupCase, Hashable {
+        case sidebar
+        case floatingBar
+        
+        var id: Int { rawValue }
+        
+        func imageName(_ name: String) -> String {
+            switch self {
+                case .sidebar:
+                    "Layout-\(name)-Modern"
+                case .floatingBar:
+                    "Layout-\(name)-Floating"
+            }
+        }
+        
+        var availability: Bool {
+            switch self {
+                case .sidebar:
+                    if #available(macOS 13.0, *) {
+                        return true
+                    } else {
+                        return false
+                    }
+                case .floatingBar:
+                    return true
+            }
+        }
+    }
     // Layout
     @Published var sidebarMode: SidebarMode = .all
+//    @AppStorage("sidebarLayout")
+    @Published
+    var sidebarLayout: LayoutStyle = {
+        if #available(macOS 13.0, *) {
+            return .sidebar
+        } else {
+            return .floatingBar
+        }
+    }()
     
+//    @AppStorage("inspectorLayout")
+    @Published
+    var inspectorLayout: LayoutStyle = {
+        if #available(macOS 14.0, *) {
+            return .sidebar
+        } else {
+            return .floatingBar
+        }
+    }()
     // Appearence
     enum Appearance: String, RadioGroupCase {
         case light

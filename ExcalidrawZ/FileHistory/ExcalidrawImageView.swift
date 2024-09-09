@@ -141,7 +141,7 @@ struct ExcalidrawImageView: View {
         guard let data = self.data else { return }
         do {
             let jsonObj = try JSONSerialization.jsonObject(with: data) as! [String : Any]
-            guard let elementsObj = jsonObj["elements"] else { return }
+            guard let elementsObj = jsonObj["elements"], JSONSerialization.isValidJSONObject(elementsObj) else { return }
             let elementsData = try JSONSerialization.data(withJSONObject: elementsObj)
             
             let elements = try JSONDecoder().decode([ExcalidrawElement].self,

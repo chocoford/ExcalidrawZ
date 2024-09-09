@@ -12,6 +12,7 @@ import Sparkle
 #endif
 
 struct GeneralSettingsView: View {
+    @Environment(\.colorScheme) var colorScheme
 #if !APP_STORE
     @EnvironmentObject var updateChecker: UpdateChecker
 #endif
@@ -63,6 +64,55 @@ struct GeneralSettingsView: View {
             }
         }
         
+#if DEBUG
+        Section {
+            let containerShape = RoundedRectangle(cornerRadius: 8)
+            HStack(alignment: .top, spacing: 20) {
+                Text("Sidebar").font(.headline).foregroundStyle(.secondary)
+                Spacer()
+                RadioGroup(selected: $appPreference.sidebarLayout) { option, isOn in
+                    Image(option.imageName("Sidebar"))
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 120)
+                        .clipShape(containerShape)
+                        .padding(2)
+                        .overlay {
+                            if isOn.wrappedValue {
+                                containerShape.stroke(Color.accentColor.opacity(0.5), lineWidth: 4)
+                            }
+                        }
+                        .onTapGesture {
+                            isOn.wrappedValue = true
+                        }
+                }
+            }
+            
+            HStack(alignment: .top, spacing: 20) {
+                Text("Inspector").font(.headline).foregroundStyle(.secondary)
+                Spacer()
+                RadioGroup(selected: $appPreference.inspectorLayout) { option, isOn in
+                    Image(option.imageName("Inspector"))
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 120)
+                        .clipShape(containerShape)
+                        .padding(2)
+                        .overlay {
+                            if isOn.wrappedValue {
+                                containerShape.stroke(Color.accentColor.opacity(0.5), lineWidth: 4)
+                            }
+                        }
+                        .onTapGesture {
+                            isOn.wrappedValue = true
+                        }
+                }
+            }
+        } header: {
+            Text("Layout")
+        }
+#endif
+        
 #if !APP_STORE
         Section {
             Toggle(.localizable(.settingsUpdatesAutoCheckLabel), isOn: $updateChecker.canCheckForUpdates)
@@ -104,11 +154,9 @@ struct GeneralSettingsView: View {
 }
 
 #if DEBUG
-//struct GeneralSettingsView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        GeneralSettingsView()
-//            .environmentObject(AppSettingsStore())
-//            .environmentObject(UpdateChecker())
-//    }
-//}
+#Preview {
+    GeneralSettingsView()
+        .environmentObject(AppPreference())
+        .environmentObject(UpdateChecker())
+}
 #endif

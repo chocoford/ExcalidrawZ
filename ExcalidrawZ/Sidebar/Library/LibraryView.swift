@@ -16,6 +16,7 @@ import UniformTypeIdentifiers
 
 struct LibraryView: View {
     @Environment(\.alertToast) var alertToast
+    @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var exportState: ExportState
     
     @Binding var isPresented: Bool
@@ -44,11 +45,14 @@ struct LibraryView: View {
     
     var body: some View {
         ZStack {
-            if #available(macOS 13.0, *) {
+            if #available(macOS 13.0, *), appPreference.inspectorLayout == .sidebar {
                 content()
                     .toolbar(content: toolbar)
             } else {
-                content()
+                VStack(spacing: 0) {
+                    Divider()
+                    content()
+                }
             }
         }
         .sheet(isPresented: $isImportSheetPresented) {

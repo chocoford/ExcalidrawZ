@@ -38,13 +38,7 @@ extension ExcalidrawView.Coordinator: WKScriptMessageHandler {
                 case .saveFileDone(let message):
                     onSaveFileDone(message.data)
                 case .stateChanged(let message):
-                    Task {
-                        do {
-                            try await onStateChanged(message.data)
-                        } catch {
-                            self.parent.onError(error)
-                        }
-                    }
+                    onStateChanged(message.data)
                 case .blobData(let message):
                     try self.handleBlobData(message.data)
                 case .onCopy(let message):
@@ -78,16 +72,24 @@ extension ExcalidrawView.Coordinator {
         print("onSaveFileDone")
     }
     
-    func onStateChanged(_ data: StateChangedMessageData) async throws {
-        guard !(await self.parent.isLoading) else { return }
-        guard await self.webActor.loadedFileID == self.parent.fileState.currentFile?.id else {
-            return
-        }
-        guard let data = data.data.dataString.data(using: .utf8) else {
-            throw AppError.fileError(.createError)
-        }
-        await MainActor.run {
-            self.parent.fileState.updateCurrentFileData(data: data)
+    func onStateChanged(_ data: StateChangedMessageData) {
+        guard !(self.parent.isLoading) else { return }
+        let currentFileID = self.parent.fileState.currentFile?.id
+        let onError = self.parent.onError
+        Task {
+            guard await self.webActor.loadedFileID == currentFileID else {
+                return
+            }
+            do {
+                guard let data = data.data.dataString.data(using: .utf8) else {
+                    throw AppError.fileError(.createError)
+                }
+                await MainActor.run {
+                    self.parent.fileState.updateCurrentFileData(data: data)
+                }
+            } catch {
+                onError(error)
+            }
         }
     }
     
@@ -188,7 +190,6 @@ extension ExcalidrawView.Coordinator {
         
     }
 }
-
 
 extension ExcalidrawView.Coordinator {
     enum ExcalidrawZEventType: String, Codable {
