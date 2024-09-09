@@ -23,6 +23,8 @@
 		392CF4C02C8CD14600CC81B9 /* AboutChocofordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 392CF4BF2C8CD14600CC81B9 /* AboutChocofordView.swift */; };
 		392CF4C12C8CD14600CC81B9 /* AboutChocofordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 392CF4BF2C8CD14600CC81B9 /* AboutChocofordView.swift */; };
 		392CF4C22C8CD14600CC81B9 /* AboutChocofordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 392CF4BF2C8CD14600CC81B9 /* AboutChocofordView.swift */; };
+		392CF7E12C8EE65000CC81B9 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 392CF7E02C8EE65000CC81B9 /* ChocofordEssentials */; };
+		392CF7E32C8EE65000CC81B9 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 392CF7E22C8EE65000CC81B9 /* ChocofordUI */; };
 		3930B2F82C512E7B00F14E88 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2F72C512E7B00F14E88 /* ChocofordEssentials */; };
 		3930B2FA2C512E7B00F14E88 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2F92C512E7B00F14E88 /* ChocofordUI */; };
 		394804C32A815D1100886972 /* ExportFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394804C22A815D1100886972 /* ExportFileView.swift */; };
@@ -494,9 +496,11 @@
 			files = (
 				39E9C5A72C8CB2E600BC1C07 /* ChocofordUI in Frameworks */,
 				3930B2FA2C512E7B00F14E88 /* ChocofordUI in Frameworks */,
+				392CF7E32C8EE65000CC81B9 /* ChocofordUI in Frameworks */,
 				3914876D2960AFD10042927A /* Sparkle in Frameworks */,
 				3966623F2C666EC600F863BC /* FlyingFox in Frameworks */,
 				397152D72C85D05D00A65ADF /* SVGView in Frameworks */,
+				392CF7E12C8EE65000CC81B9 /* ChocofordEssentials in Frameworks */,
 				3930B2F82C512E7B00F14E88 /* ChocofordEssentials in Frameworks */,
 				39E9C5A52C8CB2E600BC1C07 /* ChocofordEssentials in Frameworks */,
 			);
@@ -824,6 +828,8 @@
 				397152D62C85D05D00A65ADF /* SVGView */,
 				39E9C5A42C8CB2E600BC1C07 /* ChocofordEssentials */,
 				39E9C5A62C8CB2E600BC1C07 /* ChocofordUI */,
+				392CF7E02C8EE65000CC81B9 /* ChocofordEssentials */,
+				392CF7E22C8EE65000CC81B9 /* ChocofordUI */,
 			);
 			productName = ExcaliDrawZ;
 			productReference = 397E4653295838CF003B824B /* ExcalidrawZ.app */;
@@ -903,7 +909,7 @@
 				3966623D2C666EC600F863BC /* XCRemoteSwiftPackageReference "FlyingFox" */,
 				390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */,
 				397152D22C85D00E00A65ADF /* XCRemoteSwiftPackageReference "SVGView" */,
-				39E9C5A32C8CB2E600BC1C07 /* XCLocalSwiftPackageReference "../ChocofordKit" */,
+				392CF7DF2C8EE65000CC81B9 /* XCRemoteSwiftPackageReference "ChocofordKit" */,
 			);
 			productRefGroup = 397E4654295838CF003B824B /* Products */;
 			projectDirPath = "";
@@ -1985,13 +1991,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		39E9C5A32C8CB2E600BC1C07 /* XCLocalSwiftPackageReference "../ChocofordKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../ChocofordKit;
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCRemoteSwiftPackageReference section */
 		390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -2007,6 +2006,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.0.0;
+			};
+		};
+		392CF7DF2C8EE65000CC81B9 /* XCRemoteSwiftPackageReference "ChocofordKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/chocoford/ChocofordKit.git";
+			requirement = {
+				branch = main;
+				kind = branch;
 			};
 		};
 		3963A03C2C6C7EAA00472AE7 /* XCRemoteSwiftPackageReference "ChocofordKit" */ = {
@@ -2087,6 +2094,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		392CF7E02C8EE65000CC81B9 /* ChocofordEssentials */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 392CF7DF2C8EE65000CC81B9 /* XCRemoteSwiftPackageReference "ChocofordKit" */;
+			productName = ChocofordEssentials;
+		};
+		392CF7E22C8EE65000CC81B9 /* ChocofordUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 392CF7DF2C8EE65000CC81B9 /* XCRemoteSwiftPackageReference "ChocofordKit" */;
+			productName = ChocofordUI;
 		};
 		3930B2F72C512E7B00F14E88 /* ChocofordEssentials */ = {
 			isa = XCSwiftPackageProductDependency;
