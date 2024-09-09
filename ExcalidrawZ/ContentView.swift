@@ -32,7 +32,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            if #available(macOS 14.0, *) {
+            if #available(macOS 14.0, *), appPreference.inspectorLayout == .sidebar {
                 content()
                     .inspector(isPresented: $isInspectorPresented) {
                         LibraryView(isPresented: $isInspectorPresented)
@@ -40,8 +40,29 @@ struct ContentView: View {
                     }
             } else {
                 content()
+                if appPreference.inspectorLayout == .floatingBar {
+                    HStack {
+                        Spacer()
+                        if isInspectorPresented {
+                            LibraryView(isPresented: $isInspectorPresented)
+                                .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .background {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(.regularMaterial)
+                                        .shadow(radius: 4)
+                                }
+                                .transition(.move(edge: .trailing))
+                        }
+                    }
+                    .animation(.easeOut, value: isInspectorPresented)
+                    .padding(.top, 10)
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 40)
+                }
             }
         }
+        .toolbar { toolbarContent() }
         .navigationTitle("")
         .sheet(item: $sharedFile) {
             if #available(macOS 13.0, *) {
@@ -52,7 +73,6 @@ struct ContentView: View {
                     .swiftyAlert()
             }
         }
-        .toolbar { toolbarContent() }
         .modifier(MigrateToNewVersionSheetViewModifier(isPresented: $isMigrateSheetPresented))
         .environmentObject(fileState)
         .environmentObject(exportState)
@@ -76,7 +96,7 @@ struct ContentView: View {
     
     @MainActor @ViewBuilder
     private func content() -> some View {
-        if #available(macOS 13.0, *) {
+        if #available(macOS 13.0, *), appPreference.sidebarLayout == .sidebar {
             ContentViewModern(isSidebarPrenseted: $isSidebarPresented)
         } else {
             ContentViewLagacy(
@@ -218,17 +238,6 @@ struct ContentViewLagacy: View {
                         .transition(.move(edge: .leading))
                 }
                 Spacer()
-                
-                if isInspectorPresented {
-                    LibraryView(isPresented: $isInspectorPresented)
-                        .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
-                        .background {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(.regularMaterial)
-                                .shadow(radius: 4)
-                        }
-                        .transition(.move(edge: .trailing))
-                }
             }
             .animation(.easeOut, value: isSidebarPresented)
             .animation(.easeOut, value: isInspectorPresented)
@@ -261,8 +270,8 @@ extension ContentView {
         ToolbarItemGroup(placement: .status) {
             if #available(macOS 13.0, *) {
                 ExcalidrawToolbar(
-                    isInspectorPresented: $isInspectorPresented,
-                    isSidebarPresented: $isSidebarPresented,
+                    isInspectorPresented: appPreference.inspectorLayout == .sidebar ? $isInspectorPresented : .constant(false),
+                    isSidebarPresented: appPreference.sidebarLayout == .sidebar ? $isSidebarPresented : .constant(false),
                     isDense: $isExcalidrawToolbarDense
                 )
                 .padding(.vertical, 2)
@@ -277,7 +286,7 @@ extension ContentView {
         }
         
         ToolbarItemGroup(placement: .navigation) {
-            if #available(macOS 13.0, *) { } else {
+            if #available(macOS 13.0, *), appPreference.sidebarLayout == .sidebar { } else {
                 Button {
                     isSidebarPresented.toggle()
                 } label: {
@@ -343,7 +352,7 @@ extension ContentView {
             .help(.localizable(.export))
             .disabled(fileState.currentGroup?.groupType == .trash)
             
-            if #available(macOS 13.0, *) { } else {
+            if #available(macOS 13.0, *), appPreference.inspectorLayout == .sidebar { } else {
                 Button {
                     isInspectorPresented.toggle()
                 } label: {
