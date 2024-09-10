@@ -23,10 +23,6 @@
 		392CF4C02C8CD14600CC81B9 /* AboutChocofordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 392CF4BF2C8CD14600CC81B9 /* AboutChocofordView.swift */; };
 		392CF4C12C8CD14600CC81B9 /* AboutChocofordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 392CF4BF2C8CD14600CC81B9 /* AboutChocofordView.swift */; };
 		392CF4C22C8CD14600CC81B9 /* AboutChocofordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 392CF4BF2C8CD14600CC81B9 /* AboutChocofordView.swift */; };
-		392CF7E12C8EE65000CC81B9 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 392CF7E02C8EE65000CC81B9 /* ChocofordEssentials */; };
-		392CF7E32C8EE65000CC81B9 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 392CF7E22C8EE65000CC81B9 /* ChocofordUI */; };
-		3930B2F82C512E7B00F14E88 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2F72C512E7B00F14E88 /* ChocofordEssentials */; };
-		3930B2FA2C512E7B00F14E88 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2F92C512E7B00F14E88 /* ChocofordUI */; };
 		394804C32A815D1100886972 /* ExportFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394804C22A815D1100886972 /* ExportFileView.swift */; };
 		394963A62A0E0E15000FEB40 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963A52A0E0E15000FEB40 /* SettingsView.swift */; };
 		394963A92A0E1F7B000FEB40 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963A82A0E1F7B000FEB40 /* GeneralSettingsView.swift */; };
@@ -79,9 +75,7 @@
 		3963A06E2C6C7EAA00472AE7 /* AppEnviornment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */; };
 		3963A06F2C6C7EAA00472AE7 /* RenameSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39F5968F2A7AAA1700E2F937 /* RenameSheetView.swift */; };
 		3963A0712C6C7EAA00472AE7 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03A2C6C7EAA00472AE7 /* ChocofordUI */; };
-		3963A0732C6C7EAA00472AE7 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03D2C6C7EAA00472AE7 /* ChocofordUI */; };
 		3963A0742C6C7EAA00472AE7 /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03E2C6C7EAA00472AE7 /* FlyingFox */; };
-		3963A0752C6C7EAA00472AE7 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03B2C6C7EAA00472AE7 /* ChocofordEssentials */; };
 		3963A0762C6C7EAA00472AE7 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A0392C6C7EAA00472AE7 /* ChocofordEssentials */; };
 		3963A0782C6C7EAA00472AE7 /* excalidraw-latest in Resources */ = {isa = PBXBuildFile; fileRef = 3966612F2C665D3E00F863BC /* excalidraw-latest */; };
 		3963A0792C6C7EAA00472AE7 /* FakeDrop.js in Resources */ = {isa = PBXBuildFile; fileRef = 397E468629599DD3003B824B /* FakeDrop.js */; };
@@ -138,10 +132,8 @@
 		3963A1382C6D1D4900472AE7 /* RenameSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39F5968F2A7AAA1700E2F937 /* RenameSheetView.swift */; };
 		3963A13A2C6D1D4900472AE7 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A1032C6D1D4900472AE7 /* ChocofordUI */; };
 		3963A13B2C6D1D4900472AE7 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 3963A1002C6D1D4900472AE7 /* Sparkle */; };
-		3963A13C2C6D1D4900472AE7 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A1062C6D1D4900472AE7 /* ChocofordUI */; };
 		3963A13D2C6D1D4900472AE7 /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A1072C6D1D4900472AE7 /* FlyingFox */; };
 		3963A13E2C6D1D4900472AE7 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A1042C6D1D4900472AE7 /* ChocofordEssentials */; };
-		3963A13F2C6D1D4900472AE7 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A1022C6D1D4900472AE7 /* ChocofordEssentials */; };
 		3963A1412C6D1D4900472AE7 /* excalidraw-latest in Resources */ = {isa = PBXBuildFile; fileRef = 3966612F2C665D3E00F863BC /* excalidraw-latest */; };
 		3963A1422C6D1D4900472AE7 /* FakeDrop.js in Resources */ = {isa = PBXBuildFile; fileRef = 397E468629599DD3003B824B /* FakeDrop.js */; };
 		3963A1432C6D1D4900472AE7 /* template.excalidraw in Resources */ = {isa = PBXBuildFile; fileRef = 397E468E295AAE5D003B824B /* template.excalidraw */; };
@@ -470,9 +462,7 @@
 			files = (
 				397152D92C85D06A00A65ADF /* SVGView in Frameworks */,
 				3963A0712C6C7EAA00472AE7 /* ChocofordUI in Frameworks */,
-				3963A0732C6C7EAA00472AE7 /* ChocofordUI in Frameworks */,
 				3963A0742C6C7EAA00472AE7 /* FlyingFox in Frameworks */,
-				3963A0752C6C7EAA00472AE7 /* ChocofordEssentials in Frameworks */,
 				3963A0762C6C7EAA00472AE7 /* ChocofordEssentials in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -483,11 +473,9 @@
 			files = (
 				3963A13A2C6D1D4900472AE7 /* ChocofordUI in Frameworks */,
 				3963A13B2C6D1D4900472AE7 /* Sparkle in Frameworks */,
-				3963A13C2C6D1D4900472AE7 /* ChocofordUI in Frameworks */,
 				3963A13D2C6D1D4900472AE7 /* FlyingFox in Frameworks */,
 				397152D42C85D00E00A65ADF /* SVGView in Frameworks */,
 				3963A13E2C6D1D4900472AE7 /* ChocofordEssentials in Frameworks */,
-				3963A13F2C6D1D4900472AE7 /* ChocofordEssentials in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -496,13 +484,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				39E9C5A72C8CB2E600BC1C07 /* ChocofordUI in Frameworks */,
-				3930B2FA2C512E7B00F14E88 /* ChocofordUI in Frameworks */,
-				392CF7E32C8EE65000CC81B9 /* ChocofordUI in Frameworks */,
 				3914876D2960AFD10042927A /* Sparkle in Frameworks */,
 				3966623F2C666EC600F863BC /* FlyingFox in Frameworks */,
 				397152D72C85D05D00A65ADF /* SVGView in Frameworks */,
-				392CF7E12C8EE65000CC81B9 /* ChocofordEssentials in Frameworks */,
-				3930B2F82C512E7B00F14E88 /* ChocofordEssentials in Frameworks */,
 				39E9C5A52C8CB2E600BC1C07 /* ChocofordEssentials in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
