@@ -463,8 +463,6 @@ struct LibraryView: View {
     
 }
 
-
-
 struct ExcalidrawlibFile: FileDocument {
     enum ExcalidrawlibFileError: Error {
         case initFailed
