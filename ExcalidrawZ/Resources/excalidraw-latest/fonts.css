@@ -1,0 +1,13 @@
+@font-face {
+  font-family: "YRDZST";
+  src: url("YRDZST-Regular.ttf");
+  font-display: swap;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "SetoFont";
+  src: url("SetoFont.ttf");
+  font-display: swap;
+  font-weight: 400;
+}
