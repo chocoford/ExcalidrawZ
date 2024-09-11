@@ -47,15 +47,16 @@ struct LibraryItemView: View {
                 forTypeIdentifier: UTType.excalidrawlibJSON.identifier,
                 visibility: .ownProcess
             ) { completion in
-                do {
-                    let item = item.excalidrawLibrary
-                    let data = try item.jsonStringified().data(using: .utf8)
-                    completion(data, nil)
-                } catch {
-                    alertToast(error)
-                    completion(nil, error)
+                viewContext.perform {
+                    do {
+                        let item = item.excalidrawLibrary
+                        let data = try item.jsonStringified().data(using: .utf8)
+                        completion(data, nil)
+                    } catch {
+                        alertToast(error)
+                        completion(nil, error)
+                    }
                 }
-                
                 return Progress(totalUnitCount: 100)
             }
             return itemProvider

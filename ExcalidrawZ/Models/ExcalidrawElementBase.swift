@@ -52,6 +52,7 @@ enum ExcalidrawElementType: String, Codable {
     case arrow = "arrow"
     case ellipse = "ellipse"
     case freedraw = "freedraw"
+    case draw = "draw" // lagacy v1
     case line = "line"
     case rectangle = "rectangle"
     case text = "text"
@@ -87,9 +88,9 @@ protocol ExcalidrawElementBase: Codable, Identifiable, Hashable {
     var groupIds: [String] { get }
     var frameId: String? { get }
     var boundElements: [ExcalidrawBoundElement]? { get }
-    var updated: Double { get }
+    var updated: Double? { get } // not available in v1
     var link: String? { get }
-    var locked: Bool { get }
+    var locked: Bool? { get } // not available in v1
     var customData: [String: AnyCodable]? { get }
     
     var type: ExcalidrawElementType { get }
