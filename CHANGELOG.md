@@ -1,3 +1,8 @@
+## 1.0.0-beta-1
+
+* Fix compatibility with older versions of the Libraries.
+* Optimize multithreaded performance.
+
 ## 1.0.0-alpha-5
 
 * Optimize i18n

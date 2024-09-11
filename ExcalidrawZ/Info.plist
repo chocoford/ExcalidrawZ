@@ -22,7 +22,7 @@
 	<key>SUEnableInstallerLauncherService</key>
 	<true/>
 	<key>SUFeedURL</key>
-	<string>https://excalidrawz-new.web.app/appcast.xml</string>
+	<string>https://excalidrawz-new.web.app/downloads/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>GVyyXynnnx8V+9I0OUy/rNRJen+ZFzRd6YhJYuaInbw=</string>
 	<key>UIAppFonts</key>

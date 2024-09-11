@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "CFBundleName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excalidraw (Lagacy)"
+          }
+        }
+      }
+    },
     "checkpointButtonDelete" : {
       "extractionState" : "manual",
       "localizations" : {

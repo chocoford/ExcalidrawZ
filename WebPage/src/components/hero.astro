@@ -27,17 +27,18 @@ import { Icon } from "astro-icon/components";
     <p class="text-lg mt-4 text-slate-600 max-w-xl">
       Keep your files locally and safely.
     </p>
-    <div class="mt-6 flex flex-col sm:flex-row gap-3">
-      <a
-        href=""
-        rel="noopepriner"
-      >
+    <div class="mt-6 flex flex-col sm:flex-row gap-3 items-end">
+      <a href="" rel="noopepriner">
         <Icon
           height={60}
           width={160}
           name="Download_on_the_App_Store_Badge_US-UK"
         />
       </a>
+      <span class="text-gray-500 text-sm">or</span>
+      <a href="/downloads/latest" class="text-blue-500 underline text-sm"
+        >Download Directly</a
+      >
     </div>
   </div>
 </main>

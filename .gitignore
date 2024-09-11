@@ -91,7 +91,7 @@ iOSInjectionProject/
 
 .DS_Store
 
-archives/
+archives*
 firebase*
 scripts/Sparkle*
 ExcalidrawZ/Resources/excalidrawCore
