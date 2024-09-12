@@ -212,7 +212,6 @@ struct ContentViewModern: View {
     }
 }
 
-
 struct ContentViewLagacy: View {
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
@@ -362,8 +361,6 @@ extension ContentView {
         }
     }
 #endif
-    
-
 }
 
 

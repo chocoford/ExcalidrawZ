@@ -1,3 +1,38 @@
+## 1.0.0
+
+#### New Features
+
+* Excalidraw Libraries supprt
+  * Support for importing `.excalidrawlib` files:
+    - Import via drag-and-drop.
+    - Import via the "Import" button.
+    - Import via the "Add to Library" option from the context menu.
+  * Support for exporting to `.excalidrawlib` files.
+  - Library management operations:
+    - Rename items.
+    - Merge items.
+    - Remove items.
+    - Perform operations on multiple selected items.
+* Compatibility extension: Now supports as old as macOS 12.0.
+* Add Localization for `Chinese-simplified`
+* Add `merge with` option for groups.
+* Synchronized the `Excalidraw` core to the latest version.
+* Optimized the Share interface UI.
+* Moved the Toolbar to the top sidebar of the application to simplify the canvas.
+* More handwriting fonts supported: `English`, `Chiniese`, `Jpanese`.
+
+#### Optimization
+
+* Increase stability of database. (Especially for concurrency operations.)
+* Optimize multithreaded performance.
+
+#### Bugs Fixed
+
+* Issues with archive file when there are file name duplications.
+* UI errors in the Settings view.
+* Annoying alert sounds when pressing keys.
+* Can not add image with toolbar.
+
 ## 1.0.0-beta-1
 
 * Fix compatibility with older versions of the Libraries.
