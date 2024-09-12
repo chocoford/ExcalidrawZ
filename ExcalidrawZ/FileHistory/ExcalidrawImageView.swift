@@ -121,6 +121,8 @@ struct ExcalidrawImageView: View {
                         }, with: .color(.black))
                     case .freeDraw(let excalidrawFreeDrawElement):
                         break
+                    case .draw(let excalidrawDrawElement):
+                        break
                     case .image(let excalidrawImageElement):
                         break
                 }

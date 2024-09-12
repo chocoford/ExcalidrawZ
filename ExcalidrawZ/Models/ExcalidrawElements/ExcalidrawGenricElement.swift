@@ -31,9 +31,9 @@ struct ExcalidrawGenericElement: ExcalidrawElementBase {
     var groupIds: [String]
     var frameId: String?
     var boundElements: [ExcalidrawBoundElement]?
-    var updated: Double
+    var updated: Double? // not available in v1
     var link: String?
-    var locked: Bool
+    var locked: Bool? // not available in v1
     var customData: [String : AnyCodable]?
 }
 
@@ -182,9 +182,9 @@ struct ExcalidrawSelectionElement: ExcalidrawSelectionElementBase {
     var groupIds: [String]
     var frameId: String?
     var boundElements: [ExcalidrawBoundElement]?
-    var updated: Double
+    var updated: Double? // not available in v1
     var link: String?
-    var locked: Bool
+    var locked: Bool? // not available in v1
     var customData: [String : AnyCodable]?
 }
 
@@ -216,9 +216,9 @@ struct ExcalidrawRectangleElement: ExcalidrawRectangleElementBase {
     var groupIds: [String]
     var frameId: String?
     var boundElements: [ExcalidrawBoundElement]?
-    var updated: Double
+    var updated: Double? // not available in v1
     var link: String?
-    var locked: Bool
+    var locked: Bool? // not available in v1
     var customData: [String : AnyCodable]?
 }
 
@@ -249,9 +249,9 @@ struct ExcalidrawDiamondElement: ExcalidrawDiamondElementBase {
     var groupIds: [String]
     var frameId: String?
     var boundElements: [ExcalidrawBoundElement]?
-    var updated: Double
+    var updated: Double? // not available in v1
     var link: String?
-    var locked: Bool
+    var locked: Bool? // not available in v1
     var customData: [String : AnyCodable]?
 }
 
@@ -282,8 +282,8 @@ struct ExcalidrawEllipseElement: ExcalidrawEllipseElementBase {
     var groupIds: [String]
     var frameId: String?
     var boundElements: [ExcalidrawBoundElement]?
-    var updated: Double
+    var updated: Double? // not available in v1
     var link: String?
-    var locked: Bool
+    var locked: Bool? // not available in v1
     var customData: [String : AnyCodable]?
 }

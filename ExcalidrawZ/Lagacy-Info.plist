@@ -17,6 +17,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>SUEnableInstallerLauncherService</key>
 	<true/>
 	<key>SUFeedURL</key>

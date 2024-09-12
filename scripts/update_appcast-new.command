@@ -6,14 +6,21 @@ export https_proxy=http://127.0.0.1:62559 http_proxy=http://127.0.0.1:62559 all_
 cd $SCRIPT_DIR
 
 # generate appcast.xml
-./Sparkle-2.6.4/bin/generate_appcast ../archives
+./Sparkle-2.6.4/bin/generate_appcast ../archives-new
 
 # copy all files to public
-rm ../firebase-new/public/ExcalidrawZ*
-rm ../firebase-new/public/ExcaliDrawZ*
-rm ../firebase-new/public/appcast.xml
-cp ../archives-new/* ../firebase-new/public
-cp -r ../assets ../firebase-new/public
+rm ../firebase-new/public/downloads/ExcalidrawZ*
+rm ../firebase-new/public/downloads/ExcaliDrawZ*
+rm ../firebase-new/public/downloads/appcast.xml
+cp ../archives-new/* ../firebase-new/public/downloads
+
+# cd ../firebase-new/public/downloads
+latest_url=$(swift ./find_latest_url.swift)
+node adjust_config.js $latest_url
+# [ -L "./ExcalidrawZ-latest" ] && rm "./ExcalidrawZ-latest"
+# ln -s ./$latest_url ./ExcalidrawZ-latest
 
 # deploy firebase
-cd ../firebase-new && firebase deploy
+cd ../firebase-new
+
+firebase deploy

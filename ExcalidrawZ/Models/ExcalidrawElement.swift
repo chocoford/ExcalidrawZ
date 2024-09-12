@@ -12,6 +12,7 @@ enum ExcalidrawElement: Codable, Hashable {
     case text(ExcalidrawTextElement)
     case linear(ExcalidrawLinearElement)
     case freeDraw(ExcalidrawFreeDrawElement)
+    case draw(ExcalidrawDrawElement) // lagacy - only existed in v1
     case image(ExcalidrawImageElement)
     
     enum CodingKeys: String, CodingKey {
@@ -31,6 +32,8 @@ enum ExcalidrawElement: Codable, Hashable {
                 self = .linear(try ExcalidrawLinearElement(from: decoder))
             case .freedraw:
                 self = .freeDraw(try ExcalidrawFreeDrawElement(from: decoder))
+            case .draw:
+                self = .draw(try ExcalidrawDrawElement(from: decoder))
             case .image:
                 self = .image(try ExcalidrawImageElement(from: decoder))
                 
@@ -55,6 +58,8 @@ enum ExcalidrawElement: Codable, Hashable {
                 try excalidrawLinearElement.encode(to: encoder)
             case .freeDraw(let excalidrawFreeDrawElement):
                 try excalidrawFreeDrawElement.encode(to: encoder)
+            case .draw(let excalidrawDrawElement):
+                try excalidrawDrawElement.encode(to: encoder)
             case .image(let excalidrawImageElement):
                 try excalidrawImageElement.encode(to: encoder)
         }
@@ -73,6 +78,8 @@ extension ExcalidrawElement: Identifiable {
                 excalidrawLinearElement.id
             case .freeDraw(let excalidrawFreeDrawElement):
                 excalidrawFreeDrawElement.id
+            case .draw(let excalidrawDrawElement):
+                excalidrawDrawElement.id
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.id
         }
@@ -90,6 +97,8 @@ extension ExcalidrawElement {
                 excalidrawLinearElement.x
             case .freeDraw(let excalidrawFreeDrawElement):
                 excalidrawFreeDrawElement.x
+            case .draw(let excalidrawDrawElement):
+                excalidrawDrawElement.x
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.x
         }
@@ -105,6 +114,8 @@ extension ExcalidrawElement {
                 excalidrawLinearElement.y
             case .freeDraw(let excalidrawFreeDrawElement):
                 excalidrawFreeDrawElement.y
+            case .draw(let excalidrawDrawElement):
+                excalidrawDrawElement.y
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.y
         }
@@ -120,6 +131,8 @@ extension ExcalidrawElement {
                 excalidrawLinearElement.width
             case .freeDraw(let excalidrawFreeDrawElement):
                 excalidrawFreeDrawElement.width
+            case .draw(let excalidrawDrawElement):
+                excalidrawDrawElement.width
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.width
         }
@@ -135,6 +148,8 @@ extension ExcalidrawElement {
                 excalidrawLinearElement.height
             case .freeDraw(let excalidrawFreeDrawElement):
                 excalidrawFreeDrawElement.height
+            case .draw(let excalidrawDrawElement):
+                excalidrawDrawElement.height
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.height
         }

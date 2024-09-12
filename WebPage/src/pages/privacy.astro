@@ -1,0 +1,54 @@
+---
+import Layout from "@layouts/Layout.astro";
+import Container from "@components/container.astro";
+import Sectionhead from "@components/sectionhead.astro";
+import PricingCard from "@components/pricing.astro";
+---
+
+<Layout title="Pricing">
+  <Container>
+    <Sectionhead>
+      <Fragment slot="title">Privacy Policy</Fragment>
+      <Fragment slot="desc">
+        <div class="flex flex-col items-start gap-4 overflow-hidden">
+          <p class="text-xl font-semibold">Introduction</p>
+          <p class="text-left">
+            Welcome to the ExcalidrawZ! We are committed to respecting your
+            privacy and ensuring that your personal information is protected.
+            This Privacy Policy explains how we handle and secure your personal
+            information when you use our app.
+          </p>
+          <p class="text-xl font-semibold">Information Collection and Use</p>
+          <p class="text-left">
+            ExcalidrawZ does not collect or use any personal data. Our app
+            is designed to function without requiring any personal information
+            from the users.
+          </p>
+          <p class="text-xl font-semibold">Third-Party Services</p>
+          <p class="text-left">
+            We do not employ third-party services that have access to your
+            personal information.
+          </p>
+
+          <p class="text-xl font-semibold">Data Security</p>
+          <p class="text-left">
+            We are committed to ensuring that your information is secure. Since
+            our app does not collect personal information, no data is stored or
+            processed by us.
+          </p>
+
+          <p class="text-xl font-semibold">Changes to This Privacy Policy</p>
+          <p class="text-left">
+            We may update our Privacy Policy from time to time. We will notify
+            you of any changes by posting the new Privacy Policy on this page.
+            You are advised to review this Privacy Policy periodically for any
+            changes.
+          </p>
+        </div>
+      </Fragment>
+
+      <div class="grid md:grid-cols-3 gap-10 mx-auto max-w-screen-lg mt-12">
+      </div>
+    </Sectionhead>
+  </Container>
+</Layout>

@@ -66,9 +66,9 @@ struct ExcalidrawLinearElement: ExcalidrawLinearElementBase {
     var groupIds: [String]
     var frameId: String?
     var boundElements: [ExcalidrawBoundElement]?
-    var updated: Double
+    var updated: Double? // not available in v1
     var link: String?
-    var locked: Bool
+    var locked: Bool? // not available in v1
     var customData: [String : AnyCodable]?
     var type: ExcalidrawElementType
 

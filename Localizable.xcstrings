@@ -1159,6 +1159,57 @@
         }
       }
     },
+    "migrationAttentionContent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never download a new version of ExcalidrawZ without exporting your files first, or you will lose your existing data."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果你没有将所有文件导出，永远不要下载新版ExcalidrawZ，否则你的已有数据将会丢失。"
+          }
+        }
+      }
+    },
+    "migrationAttentionTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attention"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意"
+          }
+        }
+      }
+    },
+    "migrationDownloadTooltip" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please archive first"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先导出文件"
+          }
+        }
+      }
+    },
     "migrationSheetArchiveDescription" : {
       "extractionState" : "manual",
       "localizations" : {

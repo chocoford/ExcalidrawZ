@@ -38,12 +38,27 @@ fileprivate struct MigrateToNewVersionSheetView: View {
     
     @AppStorage("PreventShowMigrationSheet") var notShowAgain = false
     
+    @State private var didArchive: Bool = false
+    
     var body: some View {
         VStack(spacing: 20) {
             Text(.localizable(.migrationSheetTitle))
                 .font(.largeTitle)
             
             Text(.localizable(.migrationSheetBody))
+            
+            VStack {
+                Text("❗️❗️❗️\(String(localizable: .migrationAttentionTitle))❗️❗️❗️").font(.headline)
+                Text(.localizable(.migrationAttentionContent))
+            }
+            .padding(.vertical)
+            .padding(.horizontal, 40)
+            .background {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(hexString: "#f57c00"))
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color(hexString: "#ffb74d"))
+            }
             
             GeometryReader { geometry in
                 let spacing: CGFloat = 10
@@ -62,6 +77,7 @@ fileprivate struct MigrateToNewVersionSheetView: View {
                         .frame(maxHeight: .infinity, alignment: .top)
                         AsyncButton { @MainActor in
                             try archiveAllFiles()
+                            didArchive = true
                         } label: {
                             Text(.localizable(.migrationSheetButtonArchive))
                         }
@@ -98,12 +114,15 @@ fileprivate struct MigrateToNewVersionSheetView: View {
                         }
                         .frame(maxHeight: .infinity, alignment: .top)
                         HStack {
-                            Link(destination: URL(string: "https://github.com/chocoford/ExcalidrawZ?tab=readme-ov-file")!) {
-                                Text("Non-AppStore")
+                            Link(destination: URL(string: "https://excalidrawz.chocoford.com")!) {
+                                Text("Download")
                             }
-                            Link(destination: URL(string: "https://github.com/chocoford/ExcalidrawZ?tab=readme-ov-file")!) {
-                                Text("AppStore")
+                            .disabled(!didArchive)
+                            .if(!didArchive) { content in
+                                content
+                                    .popoverHelp(.localizable(.migrationDownloadTooltip))
                             }
+                                
                         }
                     }
                     .padding()
@@ -154,7 +173,7 @@ fileprivate struct MigrateToNewVersionSheetView: View {
         }
         .multilineTextAlignment(.center)
         .padding()
-        .frame(width: 600, height: 450)
+        .frame(width: 600, height: 500)
         .modifier(MigrateToNewVersionSheetBackgroundModifier())
         .bindWindow($window)
         .onAppear {
