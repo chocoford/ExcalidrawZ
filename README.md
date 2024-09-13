@@ -7,40 +7,24 @@
 
 ![GitHub](https://img.shields.io/github/license/chocoford/ExcalidrawZ) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40Chocoford)](https://twitter.com/dove_zachary)
 
-<aside 
-       data-v-0ca053f3="" 
-       aria-label="important" 
-       style="margin: 20px; 
-              text-align: start;
-              display: block;
-              background-color: rgb(255, 251, 242);
-              border-color: rgb(158, 103, 0);
-              box-shadow: rgb(158, 103, 0) 0px 0px 1px 0px inset, rgb(158, 103, 0) 0px 0px 1px 0px;
-              border-radius: 15px;
-              padding: .9411764706rem;
-              boder-style: solid;
-              border-width: 1px;
-              "
-       >
-  <p data-v-0ca053f3="" class="label" style="color: rgb(158, 103, 0); font-size: 17px; font-weight: 600;">Developing...</p>
-  <p style="margin-top: 6.8px; font-size: 17px; letter-spacing: 0.374px; text-align: start;">
-This new version is under development. The TCA framework will be removed.
-  </p>
-</aside>
 
-
-
-## The motivation
 
 [Excalidraw](https://github.com/excalidraw/excalidraw) is a very useful web app, but the lack of file management can be troublesome and unsettling. We often need to manually save and maintain multiple different Excalidraw files. Therefore, ExcalidrawZ has wrapped it up to automatically save edited files for users and added file grouping functionality. In future versions, iCloud automatic backup will also be added to greatly reduce the insecurity of using a web app.
 
-## Preview
-![App overview](assets/README/App%20overview.png)
+## Download
 
-## Installation
+> [!WARNING]
+> ### If you have already installed an older version of ExcalidrawZ, please export your files before downloading the official latest version. Otherwise you will lose your existing data.
+
+[![Download Link - App Store](assets/README/Download_on_the_App_Store_Badge_US-UK.svg)](https://apps.apple.com/app/excalidrawz/id6636493997) 
+
+**Non-App Store version**
 
 1. Download the latest image file (.dmg) from [Releases](https://github.com/chocoford/ExcalidrawZ/releases)
 2. Click the `.dmg` to install it
+
+## Preview
+![App overview](assets/README/App%20overview.png)
 
 ## Features
 
