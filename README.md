@@ -7,6 +7,17 @@
 
 ![GitHub](https://img.shields.io/github/license/chocoford/ExcalidrawZ) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40Chocoford)](https://twitter.com/dove_zachary)
 
+> [!WARNING]
+> **If you have already installed an older version of ExcalidrawZ, please export your files before downloading the official latest version.**
+
+## Download
+
+[![Download Link - App Store](assets/README/Download_on_the_App_Store_Badge_US-UK.svg)](https://apps.apple.com/app/excalidrawz/id6636493997) 
+
+**Non-App Store version**
+
+1. Download the latest image file (.dmg) from [Releases](https://github.com/chocoford/ExcalidrawZ/releases)
+2. Click the `.dmg` to install it
 
 ## The motivation
 
@@ -14,11 +25,6 @@
 
 ## Preview
 ![App overview](assets/README/App%20overview.png)
-
-## Installation
-
-1. Download the latest image file (.dmg) from [Releases](https://github.com/chocoford/ExcalidrawZ/releases)
-2. Click the `.dmg` to install it
 
 ## Features
 
