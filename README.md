@@ -14,7 +14,7 @@
 ## Download
 
 > [!WARNING]
-> If you have already installed an older version of ExcalidrawZ, please export your files before downloading the official latest version.
+> ### If you have already installed an older version of ExcalidrawZ, please export your files before downloading the official latest version.
 
 [![Download Link - App Store](assets/README/Download_on_the_App_Store_Badge_US-UK.svg)](https://apps.apple.com/app/excalidrawz/id6636493997) 
 
