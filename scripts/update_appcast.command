@@ -10,7 +10,6 @@ cd $SCRIPT_DIR
 
 # copy all files to public
 rm ../firebase/public/ExcalidrawZ*
-rm ../firebase/public/ExcaliDrawZ*
 rm ../firebase/public/appcast.xml
 cp ../archives/* ../firebase/public
 cp -r ../assets ../firebase/public
