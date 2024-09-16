@@ -1,3 +1,7 @@
+## 1.0.1
+
+Fix the annoying sound.
+
 ## 1.0.0
 
 #### New Features

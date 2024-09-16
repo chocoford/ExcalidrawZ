@@ -86,11 +86,12 @@ extension ExcalidrawView: NSViewRepresentable {
 //                }
 //            }
 //        ]
-//        
+//        context.coordinator.webView.window?.makeFirstResponder(nil)
         return context.coordinator.webView
     }
     
     func updateNSView(_ nsView: ExcalidrawWebView, context: Context) {
+
         let webView = context.coordinator.webView
         context.coordinator.parent = self
         exportState.excalidrawWebCoordinator = context.coordinator

@@ -49,7 +49,16 @@ const menuitems = [
             class="text-slate-500"></span>
         </a>
         <div class="block lg:hidden">
-          <MenuIcon class="w-4 h-4 text-gray-800" />
+          <!-- <MenuIcon class="w-4 h-4 text-gray-800" /> -->
+            <a
+              rel="noopener"
+              aria-label="Github Repo"
+              href="https://github.com/chocoford/ExcalidrawZ"
+              class="flex gap-1 items-center justify-center"
+              target="_blank"
+            >
+              <Icon class="text-black w-6 h-6" name="bx:bxl-github" />
+            </a>
         </div>
       </div>
       <MenuItems class="hidden w-full lg:w-auto mt-2 lg:flex lg:mt-0">
@@ -84,10 +93,6 @@ const menuitems = [
             ))
           }
         </ul>
-        <div class="lg:hidden flex items-center mt-3 gap-4">
-          <Link href="#" style="muted" block size="md">Log in</Link>
-          <Link href="#" size="md" block>Sign up</Link>
-        </div>
       </MenuItems>
     </Astronav>
     <div>
