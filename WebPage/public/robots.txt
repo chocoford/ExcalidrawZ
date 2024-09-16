@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: http://astroship.web3templates.com/sitemap-index.xml
+Sitemap: https://excalidrawz.chocoford.com/sitemap-index.xml
