@@ -161,6 +161,7 @@ final class FileState: ObservableObject {
             }
         }
     }
+//    @Published var currentFileID: UUID?
     
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
     
@@ -238,13 +239,61 @@ final class FileState: ObservableObject {
         }
     }
     
+    func updateCurrentFile(with excalidrawFile: ExcalidrawFile) {
+        guard !shouldIgnoreUpdate, currentFile?.inTrash != true else {
+            return
+        }
+        logger.info("\(#function) file: \(String(describing: excalidrawFile))")
+        if let file = self.currentFile {
+            let didUpdateFile = didUpdateFile
+            let id = file.objectID
+            let bgContext = PersistenceController.shared.container.newBackgroundContext()
+            
+            Task.detached {
+                do {
+                    try await bgContext.perform {
+                        guard let file = bgContext.object(with: id) as? File else { return }
+                        try file.updateElements(
+                            with: JSONEncoder().encode(excalidrawFile),
+                            newCheckpoint: !didUpdateFile
+                        )
+                        try bgContext.save()
+                    }
+                    
+                    await MainActor.run {
+                        self.didUpdateFile = true
+                    }
+                    
+                } catch {
+                    print(error)
+                }
+            }
+        } else if !isCreatingFile {
+            
+        }
+    }
     
-    func importFile(_ url: URL) async throws {
+    
+    func importFile(_ url: URL, toDefaultGroup: Bool = false) async throws {
         guard url.pathExtension == "excalidraw" else { throw AppError.fileError(.invalidURL) }
         // .uncached fixes the import bug occurs in x86 mac OS
         let data = try Data(contentsOf: url, options: .uncached)
+        
+        var targetGroup: Group?
+        if toDefaultGroup {
+            let viewContext = PersistenceController.shared.container.viewContext
+            let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+            fetchRequest.predicate = NSPredicate(format: "type == %@", "default")
+            fetchRequest.fetchLimit = 1
+            try await viewContext.perform {
+                let result = (try viewContext.fetch(fetchRequest).first) as Group?
+                targetGroup = result
+            }
+        }
+        
+        let group = targetGroup
         try await MainActor.run {
-            guard let currentGroup else { throw AppError.stateError(.currentGroupNil) }
+            guard let currentGroup = group ?? self.currentGroup else { throw AppError.stateError(.currentGroupNil) }
             let file = try PersistenceController.shared.createFile(in: currentGroup)
             file.name = url.deletingPathExtension().lastPathComponent
             file.content = data

@@ -56,6 +56,7 @@ extension ExcalidrawView {
                 )
                 userContentController.addUserScript(consoleHandlerScript)
                 userContentController.add(self, name: "consoleHandler")
+                logger.info("Enable console handler.")
             } catch {
                 logger.error("Config consoleHandler failed: \(error)")
             }
@@ -120,9 +121,9 @@ actor ExcalidrawWebActor {
 extension ExcalidrawView.Coordinator {
     func loadFile(from file: File?, force: Bool = false) {
         guard !self.parent.isLoading, !self.webView.isLoading else { return }
-//        self.logger.info("[ExcalidrawView.Coordinator] loadFile...")
         guard let fileID = file?.id,
             let data = file?.content else { return }
+//        self.logger.info("[ExcalidrawView.Coordinator] loading Coredata file...")
         Task.detached {
             do {
                 try await self.webActor.loadFile(id: fileID, data: data, force: force)
@@ -132,23 +133,19 @@ extension ExcalidrawView.Coordinator {
         }
     }
     
-    /// Load current `File`.
-    ///
-    /// This function will simulate the *file drop* operation to `excalidraw.com`.
-    /// It evaluates `javascript` code that dispatch `DragEvent` to the specific `HTMLElement`.
-//    @MainActor
-//    func loadCurrentFile() async {
-//        self.previousFileID = state.currentFile.id
-//        logger.info("loadCurrentFile: \(state.currentFile.name ?? "nil")")
-//        
-//        do {
-//            try? await self.loadFile(from: state.currentFile)
-//            try await Task.sleep(nanoseconds: 1 * 10^6)
-//            self.parent.store.send(.delegate(.onFinishLoading))
-//        } catch {
-//            dump(error)
-//        }
-//    }
+    func loadFile(from file: ExcalidrawFile?, force: Bool = false) {
+        guard !self.parent.isLoading, !self.webView.isLoading else { return }
+        guard let file = file,
+              let data = try? JSONEncoder().encode(file) else { return }
+//        self.logger.info("[ExcalidrawView.Coordinator] loading excalidraw file...")
+        Task.detached {
+            do {
+                try await self.webActor.loadFile(id: file.id, data: data, force: force)
+            } catch {
+                await self.parent.onError(error)
+            }
+        }
+    }
     
     /// Save `currentFile` or creating if neccessary.
     ///

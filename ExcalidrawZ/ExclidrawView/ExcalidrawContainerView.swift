@@ -26,9 +26,24 @@ struct ExcalidrawContainerView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .center) {
-                ExcalidrawView(isLoadingPage: $isLoading, isLoadingFile: $isLoadingFile) {
-                    alertToast($0)
-                    print($0)
+                ExcalidrawView(
+                    file: Binding {
+                        if let file = fileState.currentFile {
+                            return (try? ExcalidrawFile(from: file)) ?? ExcalidrawFile()
+                        } else {
+                            return ExcalidrawFile()
+                        }
+                    } set: { file in
+                        guard file.id == fileState.currentFile?.id else {
+                            return
+                        }
+                        fileState.updateCurrentFile(with: file)
+                    },
+                    isLoadingPage: $isLoading,
+                    isLoadingFile: $isLoadingFile
+                ) { error in
+                    alertToast(error)
+                    print(error)
                 }
                 .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
                 .opacity(isLoading ? 0 : 1)
@@ -103,7 +118,6 @@ struct ExcalidrawContainerView: View {
             .animation(.default, value: isLoading)
             .animation(.default, value: isLoadingFile)
         }
-        
     }
     
     @MainActor @ViewBuilder

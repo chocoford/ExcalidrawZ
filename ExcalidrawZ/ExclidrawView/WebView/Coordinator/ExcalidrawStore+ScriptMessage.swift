@@ -74,21 +74,18 @@ extension ExcalidrawView.Coordinator {
     
     func onStateChanged(_ data: StateChangedMessageData) {
         guard !(self.parent.isLoading) else { return }
-        let currentFileID = self.parent.fileState.currentFile?.id
+        let currentFileID = self.parent.file.id
         let onError = self.parent.onError
         Task {
             guard await self.webActor.loadedFileID == currentFileID else {
                 return
             }
-            do {
-                guard let data = data.data.dataString.data(using: .utf8) else {
-                    throw AppError.fileError(.createError)
+            await MainActor.run {
+                do {
+                    try self.parent.file.update(data: data.data)
+                } catch {
+                    onError(error)
                 }
-                await MainActor.run {
-                    self.parent.fileState.updateCurrentFileData(data: data)
-                }
-            } catch {
-                onError(error)
             }
         }
     }
@@ -150,16 +147,16 @@ extension ExcalidrawView.Coordinator {
 //                self.logger.log("\(message)")
                 break
             case "warn":
-                self.logger.warning("\(message)")
+                self.logger.warning("Receive warning from web:\n\(message)")
             case "error":
-                self.logger.error("\(message)")
+                self.logger.error("Receive warning from error:\n\(message)")
             case "debug":
-                self.logger.debug("\(message)")
+                self.logger.debug("Receive warning from debug:\n\(message)")
             case "info":
 //                self.logger.info("\(message)")
                 break
             case "trace":
-                self.logger.trace("\(message)")
+                self.logger.trace("Receive warning from trace:\n\(message)")
             default:
                 self.logger.log("Unhandled log: \(message)")
         }
@@ -339,15 +336,10 @@ extension ExcalidrawView.Coordinator {
 
     
     struct ExcalidrawFileData: Codable, Hashable {
+        // The JSON.stringify of `elements` & `files`
         var dataString: String
         var elements: [ExcalidrawElement]?
-        var files: [LoadedFile]?
-        
-        // MARK: - LoadedFile
-        struct LoadedFile: Codable, Hashable {
-            let mimeType, id, dataURL: String
-            let created, lastRetrieved: Int
-        }
+        var files: [String : ExcalidrawFile.ResourceFile]
     }
     
     struct ExcalidrawElementsBlobData: AnyExcalidrawZMessage {
@@ -425,5 +417,32 @@ extension ExcalidrawView.Coordinator {
         var event: String
         var method: String
         var args: [String?]
+    }
+}
+
+
+extension ExcalidrawFile {
+    mutating func update(data: ExcalidrawView.Coordinator.ExcalidrawFileData) throws {
+        guard let content = self.content else {
+            struct EmptyContentError: LocalizedError {
+                var errorDescription: String? { "Invalid excalidraw file." }
+            }
+            throw EmptyContentError()
+        }
+        
+        var contentObject = try JSONSerialization.jsonObject(with: content) as! [String : Any]
+        guard let dataData = data.dataString.data(using: .utf8),
+              let fileDataJson = try JSONSerialization.jsonObject(with: dataData) as? [String : Any] else {
+            struct InvalidPayloadError: LocalizedError {
+                var errorDescription: String? { "Invalid update payload." }
+            }
+            throw InvalidPayloadError()
+        }
+        contentObject["elements"] = fileDataJson["elements"]
+        contentObject["files"] = fileDataJson["files"]
+        
+        self.content = try JSONSerialization.data(withJSONObject: contentObject)
+        self.elements = data.elements ?? []
+        self.files = data.files
     }
 }

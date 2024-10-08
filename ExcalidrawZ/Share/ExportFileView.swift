@@ -10,9 +10,8 @@ import ChocofordUI
 import UniformTypeIdentifiers
 
 @available(macOS 13.0, *)
-struct ExcalidrawFileDocument: Transferable {
+struct ExcalidrawFileTransferable: Transferable {
     var file: File
-    
     init(file: File) {
         self.file = file
     }
@@ -89,7 +88,7 @@ struct ExportFileView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(height: 80)
-                    .draggable(ExcalidrawFileDocument(file: file))
+                    .draggable(ExcalidrawFileTransferable(file: file))
                     .padding()
             } else {
                 Image(systemSymbol: .docText)

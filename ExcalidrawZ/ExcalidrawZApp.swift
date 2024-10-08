@@ -15,11 +15,14 @@ import Sparkle
 
 extension Notification.Name {
     static let shouldHandleImport = Notification.Name("ShouldHandleImport")
+    static let didImportToExcalidrawZ = Notification.Name("DidImportToExcalidrawZ")
 }
+
 
 @main
 @MainActor
-struct ExcalidrawZApp: App {
+@available(macOS 13.0, *)
+struct ExcalidrawZApp_Modern: App {
 #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 #elseif os(iOS)
@@ -33,7 +36,11 @@ struct ExcalidrawZApp: App {
         // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
         // This is where you can also pass an updater delegate if you need one
 #if os(macOS) && !APP_STORE
-        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+        updaterController = SPUStandardUpdaterController(
+            startingUpdater: true,
+            updaterDelegate: nil,
+            userDriverDelegate: nil
+        )
 #endif
     }
     
@@ -48,7 +55,6 @@ struct ExcalidrawZApp: App {
     @State private var timer = Timer.publish(every: 30, on: .main, in: .default).autoconnect()
         
     var body: some Scene {
-        // Can not use Document group - we should save chekpoints
         WindowGroup {
             RootView()
                 .swiftyAlert()
@@ -61,6 +67,7 @@ struct ExcalidrawZApp: App {
 #endif
                 }
         }
+        .handlesExternalEvents(matching: Set(arrayLiteral: "MainWindowGroup"))
 #if os(macOS) && !APP_STORE
         .commands {
             CommandGroup(after: .appInfo) {
@@ -88,6 +95,13 @@ struct ExcalidrawZApp: App {
             }
         }
 #endif
+        
+        DocumentGroup(newDocument: ExcalidrawFile()) { config in
+            SingleEditorView(config: config)
+                .swiftyAlert()
+                .environmentObject(appPrefernece)
+        }
+        
         Settings {
             SettingsView()
                 .environmentObject(appPrefernece)
@@ -99,7 +113,6 @@ struct ExcalidrawZApp: App {
     }
 }
 
-
 fileprivate extension Scene {
     func defaultSizeIfAvailable(_ size: CGSize) -> some Scene {
         if #available(macOS 13.0, *) {
@@ -110,5 +123,3 @@ fileprivate extension Scene {
         }
     }
 }
-
-
