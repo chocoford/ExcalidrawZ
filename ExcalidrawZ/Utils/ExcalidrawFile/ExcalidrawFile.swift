@@ -83,17 +83,7 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
         try container.encode(self.type, forKey: .type)
     }
     
-    init(from persistenceFile: File) throws {
-        guard let data = persistenceFile.content else {
-            struct EmptyContentError: Error {}
-            throw EmptyContentError()
-        }
-        let file = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
-        self = file
-        self.id = persistenceFile.id ?? UUID()
-        self.content = persistenceFile.content
-    }
-    
+
     init() {
         let url = Bundle.main.url(forResource: "template", withExtension: "excalidraw")!
         self = try! JSONDecoder().decode(ExcalidrawFile.self, from: Data(contentsOf: url))

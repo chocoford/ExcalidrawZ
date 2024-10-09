@@ -167,10 +167,8 @@ extension UTType {
 }
 
 #if DEBUG
-struct ExcalidrawView_Previews: PreviewProvider {
-    static var previews: some View {
-        ExcalidrawContainerView()
-            .frame(width: 800, height: 600)
-    }
+#Preview {
+    ExcalidrawContainerView()
+        .frame(width: 800, height: 600)
 }
 #endif

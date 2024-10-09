@@ -1,124 +1,15 @@
 //
-//  AppStore.swift
+//  FileState.swift
 //  ExcalidrawZ
 //
-//  Created by Dove Zachary on 2023/7/25.
+//  Created by Dove Zachary on 2024/10/8.
 //
 
 import SwiftUI
 import WebKit
 import Combine
 import os.log
-
-import ChocofordUI
 import UniformTypeIdentifiers
-
-final class AppPreference: ObservableObject {
-    enum SidebarMode: Sendable {
-        case all
-        case filesOnly
-    }
-    enum LayoutStyle: Int, Sendable, RadioGroupCase, Hashable {
-        case sidebar
-        case floatingBar
-        
-        var id: Int { rawValue }
-        
-        func imageName(_ name: String) -> String {
-            switch self {
-                case .sidebar:
-                    "Layout-\(name)-Modern"
-                case .floatingBar:
-                    "Layout-\(name)-Floating"
-            }
-        }
-        
-        var availability: Bool {
-            switch self {
-                case .sidebar:
-                    if #available(macOS 13.0, *) {
-                        return true
-                    } else {
-                        return false
-                    }
-                case .floatingBar:
-                    return true
-            }
-        }
-    }
-    // Layout
-    @Published var sidebarMode: SidebarMode = .all
-//    @AppStorage("sidebarLayout")
-    @Published
-    var sidebarLayout: LayoutStyle = {
-        if #available(macOS 13.0, *) {
-            return .sidebar
-        } else {
-            return .floatingBar
-        }
-    }()
-    
-//    @AppStorage("inspectorLayout")
-    @Published
-    var inspectorLayout: LayoutStyle = {
-        if #available(macOS 14.0, *) {
-            return .sidebar
-        } else {
-            return .floatingBar
-        }
-    }()
-    // Appearence
-    enum Appearance: String, RadioGroupCase {
-        case light
-        case dark
-        case auto
-        
-        var text: String {
-            switch self {
-                case .light:
-                    return "light"
-                case .dark:
-                    return "dark"
-                case .auto:
-                    return "auto"
-            }
-        }
-        
-        var id: String {
-            self.text
-        }
-        
-        var colorScheme: ColorScheme? {
-            switch self {
-                case .light:
-                    return .light
-                case .dark:
-                    return .dark
-                case .auto:
-                    return nil
-            }
-        }
-    }
-    @AppStorage("appearance") var appearance: Appearance = .auto
-    @AppStorage("excalidrawAppearance") var excalidrawAppearance: Appearance = .auto
-    
-    var appearanceBinding: Binding<ColorScheme?> {
-        Binding {
-            self.appearance.colorScheme
-        } set: { val in
-            switch val {
-                case .light:
-                    self.appearance = .light
-                case .dark:
-                    self.appearance = .dark
-                case .none:
-                    self.appearance = .auto
-                case .some(_):
-                    self.appearance = .light
-            }
-        }
-    }
-}
 
 final class FileState: ObservableObject {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "FileState")
@@ -175,7 +66,7 @@ final class FileState: ObservableObject {
     private func recoverWatchUpdate() {
         recoverWatchUpdateWorkItem?.cancel()
         recoverWatchUpdateWorkItem = DispatchWorkItem(flags: .assignCurrentContext) {
-            if self.excalidrawWebCoordinator?.parent.isLoading == true {
+            if self.excalidrawWebCoordinator?.isLoading == true {
                 self.recoverWatchUpdate()
                 return
             }
@@ -473,123 +364,3 @@ final class FileState: ObservableObject {
         }
     }
 }
-
-final class ExportState: ObservableObject {
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExportState")
-    enum Status {
-        case notRequested
-        case loading
-        case finish
-    }
-    
-    var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
-    
-    @Published var status: Status = .notRequested
-    var download: WKDownload?
-    var url: URL?
-    
-    
-    enum ExportType {
-        case image, file
-    }
-    func requestExport(type: ExportType) async throws {
-        guard let excalidrawWebCoordinator else {
-            struct WebCoordinatorNotReadyError: Error {}
-            throw WebCoordinatorNotReadyError()
-        }
-        switch type {
-            case .image:
-                  try await excalidrawWebCoordinator.exportPNG()
-            case .file:
-                break
-        }
-    }
-    
-    
-    func beginExport(url: URL, download: WKDownload) {
-        self.logger.info("Begin export <url: \(url)>")
-        self.status = .loading
-        self.url = url
-        self.download = download
-    }
-    
-    func finishExport(download: WKDownload) {
-        if download == self.download {
-            self.logger.info("Finish export")
-            self.status = .finish
-        }
-    }
-}
-
-
-enum ExcalidrawTool: Int, Hashable, CaseIterable {
-    case eraser = 0
-    case cursor = 1
-    case rectangle = 2
-    case diamond
-    case ellipse
-    case arrow
-    case line
-    case freedraw
-    case text
-    case image
-    case laser
-    
-    init?(from tool: ExcalidrawView.Coordinator.SetActiveToolMessage.SetActiveToolMessageData.Tool) {
-        switch tool {
-            case .selection:
-                self = .cursor
-            case .rectangle:
-                self = .rectangle
-            case .diamond:
-                self = .diamond
-            case .ellipse:
-                self = .ellipse
-            case .arrow:
-                self = .arrow
-            case .line:
-                self = .line
-            case .freedraw:
-                self = .freedraw
-            case .text:
-                self = .text
-            case .image:
-                self = .image
-            case .eraser:
-                self = .eraser
-            case .laser:
-                self = .laser
-        }
-    }
-    
-    var keyEquivalent: Character? {
-        switch self {
-            case .eraser:
-                Character("e")
-            case .cursor:
-                Character("v")
-            case .rectangle:
-                Character("r")
-            case .diamond:
-                Character("d")
-            case .ellipse:
-                Character("o")
-            case .arrow:
-                Character("a")
-            case .line:
-                Character("l")
-            case .freedraw:
-                Character("p")
-            case .text:
-                Character("t")
-            case .image:
-                nil
-            case .laser:
-                Character("k")
-        }
-    }
-}
-final class ToolState: ObservableObject {
-    @Published var activatedTool: ExcalidrawTool? = .cursor
-}
-

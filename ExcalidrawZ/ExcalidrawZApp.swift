@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import ServiceManagement
 
 import SwiftyAlert
 import ChocofordUI
@@ -43,6 +44,8 @@ struct ExcalidrawZApp_Modern: App {
         )
 #endif
     }
+    // Can not run agent in a sandboxed app.
+    // let service = SMAppService.agent(plistName: "com.chocoford.excalidraw.ExcalidrawServer.agent.plist")
     
     @Environment(\.scenePhase) var scenePhase
     
@@ -50,9 +53,7 @@ struct ExcalidrawZApp_Modern: App {
 #if os(macOS) && !APP_STORE
     @StateObject private var updateChecker = UpdateChecker()
 #endif
-    @State private var server = ExcalidrawServer()
-
-    @State private var timer = Timer.publish(every: 30, on: .main, in: .default).autoconnect()
+    let server = ExcalidrawServer()
         
     var body: some Scene {
         WindowGroup {

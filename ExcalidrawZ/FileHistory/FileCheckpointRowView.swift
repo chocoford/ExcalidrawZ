@@ -9,6 +9,8 @@ import SwiftUI
 import ChocofordUI
  
 struct FileCheckpointRowView: View {
+    @Environment(\.colorScheme) var colorScheme
+    
     @Environment(\.managedObjectContext) var managedObjectContext
     @EnvironmentObject var fileState: FileState
     
@@ -17,9 +19,21 @@ struct FileCheckpointRowView: View {
     var body: some View {
         Popover(arrowEdge: .trailing) {
             VStack(spacing: 12) {
-                ExcalidrawImageView(data: checkpoint.content)
-                    .frame(width: 400, height: 300)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                //                ExcalidrawImageView(data: checkpoint.content)
+                ZStack {
+                    if let data = checkpoint.content,
+                       let file = try? JSONDecoder().decode(ExcalidrawFile.self, from: data) {
+                        ExcalidrawRenderer(file: file)
+                    } else {
+                        if colorScheme == .light {
+                            Color.white
+                        } else {
+                            Color.black
+                        }
+                    }
+                }
+                .frame(width: 400, height: 300)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
                 
                 VStack(spacing: 8) {
                     Text(checkpoint.filename ?? "")

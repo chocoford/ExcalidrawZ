@@ -9,11 +9,17 @@ import Foundation
 import WebKit
 
 
-extension ExcalidrawView.Coordinator: WKDownloadDelegate {
+extension ExcalidrawCore: WKDownloadDelegate {
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
         switch suggestedFilename.components(separatedBy: ".").last {
             case .some("excalidraw"):
-//                return onDownloadExcalidrawFile(download, decideDestinationUsing: response, suggestedFilename: suggestedFilename)
+                /*
+                return onDownloadExcalidrawFile(
+                    download,
+                    decideDestinationUsing: response,
+                    suggestedFilename: suggestedFilename
+                )
+                 */
                 return nil
                 
             case .some("png"):
@@ -29,10 +35,11 @@ extension ExcalidrawView.Coordinator: WKDownloadDelegate {
         guard let request = download.originalRequest,
               let url = downloads[request] else { return }
         logger.info("download did finished: \(url)")
-        self.parent.exportState.finishExport(download: download)
+        self.parent?.exportState.finishExport(download: download)
         downloads.removeValue(forKey: request)
     }
-    
+
+    /*
     func onDownloadExcalidrawFile(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) -> URL? {
         let fileManager: FileManager = FileManager.default
 
@@ -45,7 +52,7 @@ extension ExcalidrawView.Coordinator: WKDownloadDelegate {
         }
         return nil
     }
-    
+    */
     
     func onExportPNG(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) -> URL? {
         self.logger.info("on export png.")
@@ -53,7 +60,7 @@ extension ExcalidrawView.Coordinator: WKDownloadDelegate {
         do {
             guard let directory: URL = try getTempDirectory() else { return nil }
             let fileExtension = suggestedFilename.components(separatedBy: ".").last ?? "png"
-            let fileName = self.parent.fileState.currentFile?.name?.appending(".\(fileExtension)") ?? suggestedFilename
+            let fileName = self.parent?.fileState.currentFile?.name?.appending(".\(fileExtension)") ?? suggestedFilename
             let url = directory.appendingPathComponent(fileName, conformingTo: .image)
             if fileManager.fileExists(atPath: url.absoluteString) {
                 try fileManager.removeItem(at: url)
@@ -63,10 +70,10 @@ extension ExcalidrawView.Coordinator: WKDownloadDelegate {
                 self.downloads[request] = url;
             }
             
-            self.parent.exportState.beginExport(url: url, download: download)
+            self.parent?.exportState.beginExport(url: url, download: download)
             return url;
         } catch {
-            self.parent.onError(error)
+            self.parent?.onError(error)
             return nil
         }
     }

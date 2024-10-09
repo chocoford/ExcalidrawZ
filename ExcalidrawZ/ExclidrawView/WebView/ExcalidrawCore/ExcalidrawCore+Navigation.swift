@@ -8,7 +8,7 @@
 import Foundation
 import WebKit
 
-extension ExcalidrawView.Coordinator: WKNavigationDelegate {
+extension ExcalidrawCore: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, preferences: WKWebpagePreferences) async -> (WKNavigationActionPolicy, WKWebpagePreferences) {
         return (.allow, preferences)
     }
@@ -59,19 +59,14 @@ extension ExcalidrawView.Coordinator: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
     }
     
+    
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         logger.info("did finish navigation")
         // Can not do this here. DOM maybe not loaded.
         // Add: This may occur before or after `onload`.
-        
-        self.isNavigationDone = true
-        if self.isOnloaded {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                self.parent.isLoading = false
-            }
+        DispatchQueue.main.async {
+            self.isNavigating = false
         }
-        
-//
     }
         
     func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {
@@ -82,10 +77,14 @@ extension ExcalidrawView.Coordinator: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        print(#function)
+        DispatchQueue.main.async {
+            self.isNavigating = true
+            self.isDocumentLoaded = false
+        }
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-//        logger.error("didFailProvisionalNavigation: \(error)")
-        self.parent.onError(error)
+        self.publishError(error)
     }
 }

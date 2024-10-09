@@ -14,7 +14,7 @@ protocol AnyExcalidrawZMessage: Codable {
     var data: D { get set }
 }
 
-extension ExcalidrawView.Coordinator: WKScriptMessageHandler {
+extension ExcalidrawCore: WKScriptMessageHandler {
     func userContentController(
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
@@ -27,12 +27,8 @@ extension ExcalidrawView.Coordinator: WKScriptMessageHandler {
             
             switch message {
                 case .onload:
-                    self.isOnloaded = true
-                    if self.isNavigationDone {
-                        // prevent color schmee change flash
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            self.parent.isLoading = false
-                        }
+                    DispatchQueue.main.async {
+                        self.isDocumentLoaded = true
                     }
                     logger.info("onload")
                 case .saveFileDone(let message):
@@ -50,7 +46,7 @@ extension ExcalidrawView.Coordinator: WKScriptMessageHandler {
                 case .didSetActiveTool(let message):
                     let tool = ExcalidrawTool(from: message.data.type)
                     self.lastTool = tool
-                    self.parent.toolState.activatedTool = tool
+                    self.parent?.toolState.activatedTool = tool
                 case .getElementsBlob(let blobData):
                     self.flyingBlobsRequest[blobData.data.id]?(blobData.data.blobData)
                 case .getElementsSVG(let svgData):
@@ -62,27 +58,27 @@ extension ExcalidrawView.Coordinator: WKScriptMessageHandler {
             }
         } catch {
             self.logger.error("[WKScriptMessageHandler] Decode received message failed. Raw data:\n\(String(describing: message.body))")
-            self.parent.onError(error)
+            self.publishError(error)
         }
     }
 }
 
-extension ExcalidrawView.Coordinator {
+extension ExcalidrawCore {
     func onSaveFileDone(_ data: String) {
         print("onSaveFileDone")
     }
     
     func onStateChanged(_ data: StateChangedMessageData) {
-        guard !(self.parent.isLoading) else { return }
-        let currentFileID = self.parent.file.id
-        let onError = self.parent.onError
+        guard !(self.isLoading) else { return }
+        let currentFileID = self.parent?.file.id
+        let onError = self.publishError
         Task {
             guard await self.webActor.loadedFileID == currentFileID else {
                 return
             }
             await MainActor.run {
                 do {
-                    try self.parent.file.update(data: data.data)
+                    try self.parent?.file.update(data: data.data)
                 } catch {
                     onError(error)
                 }
@@ -164,7 +160,7 @@ extension ExcalidrawView.Coordinator {
     
     func addLibrary(item: ExcalidrawLibrary.Item) {
         let context = PersistenceController.shared.container.newBackgroundContext()
-        let onError = self.parent.onError
+        let onError = self.publishError
         Task.detached {
             do {
                 try await context.perform {
@@ -188,7 +184,7 @@ extension ExcalidrawView.Coordinator {
     }
 }
 
-extension ExcalidrawView.Coordinator {
+extension ExcalidrawCore {
     enum ExcalidrawZEventType: String, Codable {
         case onload
         

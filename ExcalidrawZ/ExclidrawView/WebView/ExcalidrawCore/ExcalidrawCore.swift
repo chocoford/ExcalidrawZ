@@ -7,142 +7,125 @@
 
 import SwiftUI
 import WebKit
-
 import OSLog
+import Combine
 
 import SVGView
 
-extension ExcalidrawView {
-    class Coordinator: NSObject {
-        let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawWebViewCoordinator")
+class ExcalidrawCore: NSObject, ObservableObject {
+    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawCore")
+    
+    var toLocal: Bool
+    var parent: ExcalidrawView?
+    lazy var errorStream: AsyncStream<Error> = {
+        AsyncStream { continuation in
+            publishError = {
+                continuation.yield($0)
+            }
+        }
+    }()
+    internal var publishError: (_ error: Error) -> Void
+    var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in } toolbarActionHandler2: { _ in }
+    lazy var webActor = ExcalidrawWebActor(coordinator: self)
+    
+    init(toLocal: Bool = true, _ parent: ExcalidrawView?) {
+        self.toLocal = toLocal
+        self.parent = parent
+        self.publishError = { error in }
+        super.init()
+        self.configWebView()
         
-        var parent: ExcalidrawView
-        var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in } toolbarActionHandler2: { _ in }
-        lazy var webActor = ExcalidrawWebActor(coordinator: self)
-                
-        init(_ parent: ExcalidrawView) {
-            self.parent = parent
-            super.init()
-            self.configWebView()
+        Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
+            .map { isNavigating, isDocumentLoaded in
+                isNavigating || !isDocumentLoaded
+            }
+            .assign(to: &$isLoading)
+    }
+    
+    @Published var isNavigating = true
+    @Published var isDocumentLoaded = false
+    @Published private(set) var isLoading: Bool = false // { isNavigating || !isDocumentLoaded }
+    
+    var downloadCache: [String : Data] = [:]
+    var downloads: [URLRequest : URL] = [:]
+    
+    let blobRequestQueue = DispatchQueue(label: "BlobRequestQueue", qos: .background)
+    var flyingBlobsRequest: [String : (String) -> Void] = [:]
+    var flyingSVGRequests: [String : (String) -> Void] = [:]
+    
+    var previousFileID: UUID? = nil
+    private var lastVersion: Int = 0
+    
+    internal var lastTool: ExcalidrawTool?
+    
+    func configWebView() {
+        let config = WKWebViewConfiguration()
+        config.websiteDataStore = .nonPersistent()
+        
+        let userContentController = WKUserContentController()
+        userContentController.add(self, name: "excalidrawZ")
+        
+        do {
+            let consoleHandlerScript = try WKUserScript(
+                source: String(
+                    contentsOf: Bundle.main.url(forResource: "overwrite_console", withExtension: "js")!,
+                    encoding: .utf8
+                ),
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: false
+            )
+            userContentController.addUserScript(consoleHandlerScript)
+            userContentController.add(self, name: "consoleHandler")
+            logger.info("Enable console handler.")
+        } catch {
+            logger.error("Config consoleHandler failed: \(error)")
         }
         
-        var downloadCache: [String : Data] = [:]
-        var downloads: [URLRequest : URL] = [:]
+        config.userContentController = userContentController
         
-        let blobRequestQueue = DispatchQueue(label: "BlobRequestQueue", qos: .background)
-        var flyingBlobsRequest: [String : (String) -> Void] = [:]
-        var flyingSVGRequests: [String : (String) -> Void] = [:]
-        
-        var previousFileID: UUID? = nil
-        private var lastVersion: Int = 0
-        
-        internal var lastTool: ExcalidrawTool?
-        
-        internal var isOnloaded = false
-        internal var isNavigationDone = false
-        
-        func configWebView() {
-            let config = WKWebViewConfiguration()
-            config.websiteDataStore = .nonPersistent()
-            
-            let userContentController = WKUserContentController()
-            userContentController.add(self, name: "excalidrawZ")
-            
-            do {
-                let consoleHandlerScript = try WKUserScript(
-                    source: String(contentsOf: Bundle.main.url(forResource: "overwrite_console", withExtension: "js")!, encoding: .utf8),
-                    injectionTime: .atDocumentStart,
-                    forMainFrameOnly: false
-                )
-                userContentController.addUserScript(consoleHandlerScript)
-                userContentController.add(self, name: "consoleHandler")
-                logger.info("Enable console handler.")
-            } catch {
-                logger.error("Config consoleHandler failed: \(error)")
+        self.webView = ExcalidrawWebView(frame: .zero, configuration: config) { num in
+            Task {
+                try? await self.toggleToolbarAction(key: num)
             }
-            
-            config.userContentController = userContentController
-            
-            self.webView = ExcalidrawWebView(frame: .zero, configuration: config) { num in
-                Task {
-                    try? await self.toggleToolbarAction(key: num)
-                }
-            } toolbarActionHandler2: { char in
-                Task {
-                    try? await self.toggleToolbarAction(key: char)
-                }
+        } toolbarActionHandler2: { char in
+            Task {
+                try? await self.toggleToolbarAction(key: char)
             }
-            if #available(macOS 13.3, *) {
-                self.webView.isInspectable = true
-            } else {
-            }
-            
-            self.webView.navigationDelegate = self
-            self.webView.uiDelegate = self
-            
-            DispatchQueue.main.async {
+        }
+        if #available(macOS 13.3, *) {
+            self.webView.isInspectable = true
+        } else {
+        }
+        
+        self.webView.navigationDelegate = self
+        self.webView.uiDelegate = self
+        
+        DispatchQueue.main.async {
+            if self.toLocal {
 #if DEBUG
                 self.webView.load(URLRequest(url: URL(string: "http://localhost:8486/index.html")!))
 #else
                 self.webView.load(URLRequest(url: URL(string: "http://localhost:8487/index.html")!))
 #endif
+            } else {
+                self.webView.load(URLRequest(url: URL(string: "https://excalidraw.com")!))
             }
         }
     }
-}
-
-actor ExcalidrawWebActor {
-    var excalidrawCoordinator: ExcalidrawView.Coordinator
-    
-    init(coordinator: ExcalidrawView.Coordinator) {
-        self.excalidrawCoordinator = coordinator
-    }
-    
-    var loadedFileID: File.ID?
-    var webView: ExcalidrawWebView { excalidrawCoordinator.webView }
-    
-    func loadFile(id: File.ID, data: Data, force: Bool = false) async throws {
-        let webView = webView
-        guard loadedFileID != id || force else { return }
-        self.loadedFileID = id
-        let startDate = Date()
-        print("Load file<\(String(describing: id)), \(data.count)>, force: \(force), Thread: \(Thread().description)")
-        var buffer = [UInt8].init(repeating: 0, count: data.count)
-        data.copyBytes(to: &buffer, count: data.count)
-        let buf = buffer
-        await MainActor.run {
-            webView.evaluateJavaScript("window.excalidrawZHelper.loadFile(\(buf)); 0;")
-        }
-        print("load file done. time cost", Date.now.timeIntervalSince(startDate))
-    }
+ 
 }
 
 /// Keep stateless
-extension ExcalidrawView.Coordinator {
-    func loadFile(from file: File?, force: Bool = false) {
-        guard !self.parent.isLoading, !self.webView.isLoading else { return }
-        guard let fileID = file?.id,
-            let data = file?.content else { return }
-//        self.logger.info("[ExcalidrawView.Coordinator] loading Coredata file...")
-        Task.detached {
-            do {
-                try await self.webActor.loadFile(id: fileID, data: data, force: force)
-            } catch {
-                await self.parent.onError(error)
-            }
-        }
-    }
-    
+extension ExcalidrawCore {
     func loadFile(from file: ExcalidrawFile?, force: Bool = false) {
-        guard !self.parent.isLoading, !self.webView.isLoading else { return }
+        guard !self.isLoading, !self.webView.isLoading else { return }
         guard let file = file,
               let data = try? JSONEncoder().encode(file) else { return }
-//        self.logger.info("[ExcalidrawView.Coordinator] loading excalidraw file...")
         Task.detached {
             do {
                 try await self.webActor.loadFile(id: file.id, data: data, force: force)
             } catch {
-                await self.parent.onError(error)
+                self.publishError(error)
             }
         }
     }

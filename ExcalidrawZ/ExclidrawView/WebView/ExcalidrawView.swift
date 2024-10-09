@@ -59,6 +59,7 @@ struct ExcalidrawView {
         category: "WebView"
     )
     
+    var isToLocal:Bool
     @Binding var file: ExcalidrawFile
     @Binding var isLoading: Bool
     @Binding var isLoadingFile: Bool
@@ -67,16 +68,20 @@ struct ExcalidrawView {
     
     // TODO: isLoadingFile is not used yet.
     init(
+        isToLocal: Bool = true,
         file: Binding<ExcalidrawFile>,
         isLoadingPage: Binding<Bool>,
         isLoadingFile: Binding<Bool>,
         onError: @escaping (Error) -> Void
     ) {
+        self.isToLocal = isToLocal
         self._file = file
         self._isLoading = isLoadingPage
         self._isLoadingFile = isLoadingFile
         self.onError = onError
     }
+    
+    @State private var cancellables = Set<AnyCancellable>()
 }
 
 #if os(macOS)
@@ -84,6 +89,22 @@ extension ExcalidrawView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> ExcalidrawWebView {
         print("[ExcalidrawView] making NSView")
+        
+        DispatchQueue.main.async {
+            cancellables.insert(
+                context.coordinator.$isLoading.sink { newValue in
+                    DispatchQueue.main.async {
+//                        logger.debug("isLoading -> \(newValue)")
+                        self.isLoading = newValue
+                    }
+                }
+            )
+            Task {
+                for await error in context.coordinator.errorStream {
+                    self.onError(error)
+                }
+            }
+        }
         return context.coordinator.webView
     }
     
@@ -122,8 +143,11 @@ extension ExcalidrawView: NSViewRepresentable {
         }
     }
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+    func makeCoordinator() -> ExcalidrawCore {
+        ExcalidrawCore(
+            toLocal: isToLocal,
+            self
+        )
     }
 }
 
