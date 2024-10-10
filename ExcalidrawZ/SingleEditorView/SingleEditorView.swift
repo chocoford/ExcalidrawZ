@@ -85,6 +85,9 @@ struct SingleEditorView: View {
         .environmentObject(exportState)
         .environmentObject(toolState)
         .bindWindow($window)
+        .onAppear {
+            print("files count: \(self.fileDocument.files.count)")
+        }
     }
     
     private func importToExcalidrawZ() {

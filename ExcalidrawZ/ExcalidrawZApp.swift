@@ -19,7 +19,6 @@ extension Notification.Name {
     static let didImportToExcalidrawZ = Notification.Name("DidImportToExcalidrawZ")
 }
 
-
 @main
 @MainActor
 @available(macOS 13.0, *)

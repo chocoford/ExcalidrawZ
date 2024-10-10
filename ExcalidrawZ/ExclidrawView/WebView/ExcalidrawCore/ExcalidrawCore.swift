@@ -120,7 +120,7 @@ extension ExcalidrawCore {
     func loadFile(from file: ExcalidrawFile?, force: Bool = false) {
         guard !self.isLoading, !self.webView.isLoading else { return }
         guard let file = file,
-              let data = try? JSONEncoder().encode(file) else { return }
+              let data = file.content else { return }
         Task.detached {
             do {
                 try await self.webActor.loadFile(id: file.id, data: data, force: force)

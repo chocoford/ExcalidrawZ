@@ -56,8 +56,7 @@ class PreviewViewController: NSViewController, QLPreviewingController {
 
         // Quick Look will display a loading spinner until this returns.
         do {
-            let data = try Data(contentsOf: url, options: .uncached)
-            let file = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
+            let file = try ExcalidrawFile(contentsOf: url)
             self.state.file = file
         } catch {
             self.state.error = error
