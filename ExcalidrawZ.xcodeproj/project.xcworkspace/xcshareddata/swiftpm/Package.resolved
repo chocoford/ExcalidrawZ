@@ -1,5 +1,5 @@
 {
-  "originHash" : "8588e9102c0903ecef47033c12dd7d6ca4b3be9acf431558731c098c78ab32a3",
+  "originHash" : "96bc7142b45f8dfb801217ed2fa323a851777dc7ebdd5495b8b72a3d2a5624b3",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -134,6 +134,15 @@
       "state" : {
         "revision" : "e99d6ad477aaf87d5808997b09ad0accb420a25e",
         "version" : "0.5.2"
+      }
+    },
+    {
+      "identity" : "zlib",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mezhevikin/Zlib.git",
+      "state" : {
+        "revision" : "a9ac189e6252dff3367314a6ca7fac6cee8a42b3",
+        "version" : "0.0.2"
       }
     }
   ],

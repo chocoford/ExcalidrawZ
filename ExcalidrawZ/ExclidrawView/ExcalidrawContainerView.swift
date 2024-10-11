@@ -164,6 +164,13 @@ extension UTType {
     static var excalidrawlibJSON: UTType {
         UTType(exportedAs: "com.chocoford.excalidrawlibJSON", conformingTo: .json)
     }
+    
+    static var excalidrawPNG: UTType {
+        UTType(importedAs: "com.chocoford.excalidrawPNG", conformingTo: .png)
+    }
+    static var excalidrawSVG: UTType {
+        UTType(importedAs: "com.chocoford.excalidrawSVG", conformingTo: .svg)
+    }
 }
 
 #if DEBUG

@@ -16,6 +16,30 @@
 				<string>com.chocoford.excalidrawFile</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>excalidraw png</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Default</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.chocoford.excalidrawPNG</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>excalidraw svg</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Default</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.chocoford.excalidrawSVG</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
@@ -116,6 +140,52 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>excalidrawlib</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.png</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Excalidraw PNG</string>
+			<key>UTTypeIcons</key>
+			<dict/>
+			<key>UTTypeIdentifier</key>
+			<string>com.chocoford.excalidrawPNG</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>excalidraw.png</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>image/png</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.svg-image</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Excalidraw SVG</string>
+			<key>UTTypeIcons</key>
+			<dict/>
+			<key>UTTypeIdentifier</key>
+			<string>com.chocoford.excalidrawSVG</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>excalidraw.svg</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>image/svg+xml</string>
 				</array>
 			</dict>
 		</dict>

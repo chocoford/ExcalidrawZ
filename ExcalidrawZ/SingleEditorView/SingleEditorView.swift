@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 import ChocofordUI
 
@@ -16,6 +17,19 @@ struct SingleEditorView: View {
     
     @Binding var fileDocument: ExcalidrawFile
     var fileURL: URL?
+    
+    var fileType: UTType {
+        guard let url = fileURL else { return .excalidrawFile }
+        let lastPathComponent = url.lastPathComponent
+        
+        if lastPathComponent.hasSuffix(".excalidraw.png") {
+            return .excalidrawPNG
+        } else if lastPathComponent.hasSuffix(".excalidraw.svg") {
+            return .excalidrawSVG
+        } else {
+            return UTType(filenameExtension: url.pathExtension) ?? .excalidrawFile
+        }
+    }
     
     init(config: FileDocumentConfiguration<ExcalidrawFile>) {
         self._fileDocument = config.$document
@@ -37,6 +51,7 @@ struct SingleEditorView: View {
         ZStack {
             ExcalidrawView(
                 file: $fileDocument,
+                savingType: fileType,
                 isLoadingPage: $isLoading,
                 isLoadingFile: $isLoadingFile
             ) { error in
@@ -87,6 +102,7 @@ struct SingleEditorView: View {
         .bindWindow($window)
         .onAppear {
             print("files count: \(self.fileDocument.files.count)")
+            print(fileType)
         }
     }
     

@@ -103,7 +103,7 @@ final class FileState: ObservableObject {
         guard !shouldIgnoreUpdate, currentFile?.inTrash != true else {
             return
         }
-        logger.info("\(#function) data: \(data)")
+//        logger.info("\(#function) data: \(data)")
         if let file = currentFile {
             let didUpdateFile = didUpdateFile
             let id = file.objectID
@@ -134,7 +134,7 @@ final class FileState: ObservableObject {
         guard !shouldIgnoreUpdate, currentFile?.inTrash != true else {
             return
         }
-        logger.info("\(#function) file: \(String(describing: excalidrawFile))")
+//        logger.info("\(#function) file: \(String(describing: excalidrawFile))")
         if let file = self.currentFile {
             let didUpdateFile = didUpdateFile
             let id = file.objectID

@@ -15,7 +15,6 @@ import SVGView
 class ExcalidrawCore: NSObject, ObservableObject {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawCore")
     
-    var toLocal: Bool
     var parent: ExcalidrawView?
     lazy var errorStream: AsyncStream<Error> = {
         AsyncStream { continuation in
@@ -28,8 +27,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in } toolbarActionHandler2: { _ in }
     lazy var webActor = ExcalidrawWebActor(coordinator: self)
     
-    init(toLocal: Bool = true, _ parent: ExcalidrawView?) {
-        self.toLocal = toLocal
+    init(_ parent: ExcalidrawView?) {
         self.parent = parent
         self.publishError = { error in }
         super.init()
@@ -101,18 +99,13 @@ class ExcalidrawCore: NSObject, ObservableObject {
         self.webView.uiDelegate = self
         
         DispatchQueue.main.async {
-            if self.toLocal {
 #if DEBUG
-                self.webView.load(URLRequest(url: URL(string: "http://localhost:8486/index.html")!))
+            self.webView.load(URLRequest(url: URL(string: "http://localhost:8486/index.html")!))
 #else
-                self.webView.load(URLRequest(url: URL(string: "http://localhost:8487/index.html")!))
+            self.webView.load(URLRequest(url: URL(string: "http://localhost:8487/index.html")!))
 #endif
-            } else {
-                self.webView.load(URLRequest(url: URL(string: "https://excalidraw.com")!))
-            }
         }
     }
- 
 }
 
 /// Keep stateless
@@ -194,9 +187,9 @@ extension ExcalidrawCore {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
     }
     
-    func exportElementsToPNG(elements: [ExcalidrawElement]) async throws -> NSImage {
+    func exportElementsToPNGData(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> Data {
         let id = UUID().uuidString
-        let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified())); 0;"
+        let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified()), \(embedScene)); 0;"
         self.logger.debug("\(#function), script:\n\(script)")
         Task { @MainActor in
             do {
@@ -213,18 +206,27 @@ extension ExcalidrawCore {
                 }
             }
         }
-        guard let data = Data(base64Encoded: dataString),
-              let image = NSImage(data: data) else {
+        guard let data = Data(base64Encoded: dataString) else {
+            struct DecodeImageFailed: Error {}
+            throw DecodeImageFailed()
+        }
+        return data
+    }
+    
+    func exportElementsToPNG(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> NSImage {
+        let data = try await self.exportElementsToPNGData(elements: elements, embedScene: embedScene)
+        guard let image = NSImage(data: data) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
         }
         return image
-        
     }
     
-    func exportElementsToSVG(id: String, elements: [ExcalidrawElement]) async throws -> NSImage {
-        let script = try "window.excalidrawZHelper.exportElementsToSvg('\(id)', \(elements.jsonStringified())); 0;"
-        self.logger.debug("\(#function), script:\n\(script)")
+    
+    func exportElementsToSVGData(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> Data {
+        let id = UUID().uuidString
+        let script = try "window.excalidrawZHelper.exportElementsToSvg('\(id)', \(elements.jsonStringified()), \(embedScene)); 0;"
+        self.logger.debug("\(#function)")
         Task { @MainActor in
             do {
                 try await webView.evaluateJavaScript(script)
@@ -232,14 +234,34 @@ extension ExcalidrawCore {
                 self.logger.error("\(String(describing: error))")
             }
         }
-        let dataString: String = await withCheckedContinuation { continuation in
-            self.flyingSVGRequests[id] = { data in
-                continuation.resume(returning: data)
+        let svg: String = await withCheckedContinuation { continuation in
+            self.flyingSVGRequests[id] = { svg in
+                continuation.resume(returning: svg)
                 self.flyingSVGRequests.removeValue(forKey: id)
             }
         }
-        guard let data = Data(base64Encoded: dataString),
-              let image = NSImage(data: data) else {
+        var miniizedSvg = svg.trimmingCharacters(in: .whitespacesAndNewlines)
+        let pattern = "<defs[^>]*>.*?</defs>"
+        do {
+            let regex = try NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators])
+            let range = NSRange(location: 0, length: svg.utf16.count)
+            miniizedSvg = regex.stringByReplacingMatches(in: svg, options: [], range: range, withTemplate: "")
+        } catch {
+            print("Invalid regex: \(error.localizedDescription)")
+        }
+        
+        
+        guard let data = miniizedSvg.data(using: .utf8) else {
+            struct DecodeImageFailed: Error {}
+            throw DecodeImageFailed()
+        }
+        print(data.count.formatted(.byteCount(style: .file)))
+        return data
+        
+    }
+    func exportElementsToSVG(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> NSImage {
+        let data = try await exportElementsToSVGData(elements: elements, embedScene: embedScene)
+        guard let image = NSImage(data: data) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
         }

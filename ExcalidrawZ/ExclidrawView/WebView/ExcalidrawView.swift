@@ -11,6 +11,7 @@ import WebKit
 import Combine
 import OSLog
 import QuartzCore
+import UniformTypeIdentifiers
 
 class ExcalidrawWebView: WKWebView {
     var shouldHandleInput = false
@@ -59,23 +60,24 @@ struct ExcalidrawView {
         category: "WebView"
     )
     
-    var isToLocal:Bool
     @Binding var file: ExcalidrawFile
     @Binding var isLoading: Bool
     @Binding var isLoadingFile: Bool
+    
+    var savingType: UTType
     
     var onError: (Error) -> Void
     
     // TODO: isLoadingFile is not used yet.
     init(
-        isToLocal: Bool = true,
         file: Binding<ExcalidrawFile>,
+        savingType: UTType = .excalidrawFile,
         isLoadingPage: Binding<Bool>,
         isLoadingFile: Binding<Bool>,
         onError: @escaping (Error) -> Void
     ) {
-        self.isToLocal = isToLocal
         self._file = file
+        self.savingType = savingType
         self._isLoading = isLoadingPage
         self._isLoadingFile = isLoadingFile
         self.onError = onError
@@ -94,7 +96,6 @@ extension ExcalidrawView: NSViewRepresentable {
             cancellables.insert(
                 context.coordinator.$isLoading.sink { newValue in
                     DispatchQueue.main.async {
-//                        logger.debug("isLoading -> \(newValue)")
                         self.isLoading = newValue
                     }
                 }
@@ -145,7 +146,6 @@ extension ExcalidrawView: NSViewRepresentable {
 
     func makeCoordinator() -> ExcalidrawCore {
         ExcalidrawCore(
-            toLocal: isToLocal,
             self
         )
     }

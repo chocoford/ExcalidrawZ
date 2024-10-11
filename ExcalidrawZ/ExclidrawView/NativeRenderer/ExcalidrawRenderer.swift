@@ -37,7 +37,7 @@ struct ExcalidrawRenderer: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
         if frame != .zero {
-            Color(excalidrawString: file.appState.viewBackgroundColor)
+            Color(excalidrawString: file.appState.viewBackgroundColor ?? "transparent")
                 .overlay {
                     canvasView()
                         .aspectRatio(frame.width / frame.height, contentMode: .fit)

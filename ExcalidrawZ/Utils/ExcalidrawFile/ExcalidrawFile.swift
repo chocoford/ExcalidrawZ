@@ -18,12 +18,13 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
     var appState: AppState
     var type: String
     
+    // MARK: Additional info (would not be encoded)
     /// The file content encoded to data.
     var content: Data?
     
     struct AppState: Codable, Hashable, Sendable {
         var gridSize: Int?
-        var viewBackgroundColor: String
+        var viewBackgroundColor: String?
     }
     struct ResourceFile: Codable, Hashable, Sendable {
         var mimeType: String
@@ -68,8 +69,6 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
         self.elements = try container.decode([ExcalidrawElement].self, forKey: .elements)
         self.appState = try container.decode(ExcalidrawFile.AppState.self, forKey: .appState)
         self.type = try container.decode(String.self, forKey: .type)
-        
-//        self.content = try JSONEncoder().encode(self)
     }
     
     func encode(to encoder: any Encoder) throws {
@@ -88,30 +87,14 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
     
     init(contentsOf url: URL) throws {
         let data = try Data(contentsOf: url, options: .uncached)
-        self = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
-        self.content = data
-    }
-}
-
-extension ExcalidrawFile: FileDocument {
-    static var readableContentTypes: [UTType] = [.text]
-
-    init(configuration: ReadConfiguration) throws {
-        guard let data = configuration.file.regularFileContents else {
-            struct GetFileContentError: LocalizedError {
-                var errorDescription: String? { "Get file contents failed." }
-            }
-            throw GetFileContentError()
-        }
-        self = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
-        self.content = data
+        try self.init(data: data)
     }
     
-    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        return FileWrapper(regularFileWithContents: content ?? Data())
+    init(data: Data) throws {
+        self = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
+        self.content = data
     }
 }
-
 
 #if DEBUG
 extension ExcalidrawFile {

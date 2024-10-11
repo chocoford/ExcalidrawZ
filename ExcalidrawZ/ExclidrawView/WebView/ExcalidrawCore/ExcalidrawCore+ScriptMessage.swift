@@ -73,15 +73,35 @@ extension ExcalidrawCore {
         let currentFileID = self.parent?.file.id
         let onError = self.publishError
         Task {
-            guard await self.webActor.loadedFileID == currentFileID else {
-                return
-            }
-            await MainActor.run {
-                do {
-                    try self.parent?.file.update(data: data.data)
-                } catch {
-                    onError(error)
+            do {
+                guard await self.webActor.loadedFileID == currentFileID else {
+                    return
                 }
+                await MainActor.run {
+                    do {
+                        try self.parent?.file.update(data: data.data)
+                    } catch {
+                        onError(error)
+                    }
+                }
+                if let elements = data.data.elements {
+                    switch self.parent?.savingType {
+                        case .excalidrawPNG:
+                            let data = try await self.exportElementsToPNGData(elements: elements, embedScene: true)
+                            await MainActor.run {
+                                self.parent?.file.content = data
+                            }
+                        case .excalidrawSVG:
+                            let data = try await self.exportElementsToSVGData(elements: elements, embedScene: true)
+                            await MainActor.run {
+                                self.parent?.file.content = data
+                            }
+                        default:
+                            break
+                    }
+                }
+            } catch {
+                onError(error)
             }
         }
     }
@@ -123,11 +143,9 @@ extension ExcalidrawCore {
                 default:
                     break
             }
-            
         }
         
     }
-    
     
     func onWebLog(message: LogMessage) {
         let method = message.method
@@ -140,7 +158,7 @@ extension ExcalidrawCore {
         }.joined(separator: " ")
         switch method {
             case "log":
-//                self.logger.log("\(message)")
+                //                self.logger.log("\(message)")
                 break
             case "warn":
                 self.logger.warning("Receive warning from web:\n\(message)")
@@ -149,7 +167,7 @@ extension ExcalidrawCore {
             case "debug":
                 self.logger.debug("Receive warning from debug:\n\(message)")
             case "info":
-//                self.logger.info("\(message)")
+                //                self.logger.info("\(message)")
                 break
             case "trace":
                 self.logger.trace("Receive warning from trace:\n\(message)")
