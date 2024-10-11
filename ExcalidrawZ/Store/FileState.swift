@@ -166,9 +166,43 @@ final class FileState: ObservableObject {
     
     
     func importFile(_ url: URL, toDefaultGroup: Bool = false) async throws {
-        guard url.pathExtension == "excalidraw" else { throw AppError.fileError(.invalidURL) }
-        // .uncached fixes the import bug occurs in x86 mac OS
-        let data = try Data(contentsOf: url, options: .uncached)
+        let fileType: UTType = {
+            let lastPathComponent = url.lastPathComponent
+            
+            if lastPathComponent.hasSuffix(".excalidraw.png") {
+                return .excalidrawPNG
+            } else if lastPathComponent.hasSuffix(".excalidraw.svg") {
+                return .excalidrawSVG
+            } else {
+                return UTType(filenameExtension: url.pathExtension) ?? .excalidrawFile
+            }
+        }()
+        let data: Data
+        switch fileType {
+            case .excalidrawFile:
+                // .uncached fixes the import bug occurs in x86 mac OS
+                data = try Data(contentsOf: url, options: .uncached)
+            case .excalidrawPNG:
+                // .uncached fixes the import bug occurs in x86 mac OS
+                let fileData = try Data(contentsOf: url, options: .uncached)
+                if let excalidrawFile = ExcalidrawPNGDecoder().decode(from: fileData) {
+                    data = try JSONEncoder().encode(excalidrawFile)
+                } else {
+                    data = try Data(contentsOf: url, options: .uncached)
+                }
+            case .excalidrawSVG:
+                // .uncached fixes the import bug occurs in x86 mac OS
+                let fileData = try Data(contentsOf: url, options: .uncached)
+                if let excalidrawFile = ExcalidrawSVGDecoder().decode(from: fileData) {
+                    data = try JSONEncoder().encode(excalidrawFile)
+                } else {
+                    data = try Data(contentsOf: url, options: .uncached)
+                }
+            default:
+                throw AppError.fileError(.invalidURL)
+        }
+
+        _ = try ExcalidrawFile(data: data)
         
         var targetGroup: Group?
         if toDefaultGroup {
@@ -186,7 +220,20 @@ final class FileState: ObservableObject {
         try await MainActor.run {
             guard let currentGroup = group ?? self.currentGroup else { throw AppError.stateError(.currentGroupNil) }
             let file = try PersistenceController.shared.createFile(in: currentGroup)
-            file.name = url.deletingPathExtension().lastPathComponent
+            switch fileType {
+                case .excalidrawFile:
+                    file.name = url.deletingPathExtension().lastPathComponent
+                case .excalidrawPNG, .excalidrawSVG:
+                    let lastPathComponent = url.deletingPathExtension().lastPathComponent
+                    if let index = lastPathComponent.lastIndex(of: ".") {
+                        file.name = String(lastPathComponent.prefix(upTo: index))
+                    } else {
+                        file.name = lastPathComponent
+                    }
+                default:
+                    break
+            }
+            
             file.content = data
             PersistenceController.shared.save()
             self.currentFile = file
