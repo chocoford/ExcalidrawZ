@@ -21,6 +21,7 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
     // MARK: Additional info (would not be encoded)
     /// The file content encoded to data.
     var content: Data?
+    var name: String?
     
     struct AppState: Codable, Hashable, Sendable {
         var gridSize: Int?

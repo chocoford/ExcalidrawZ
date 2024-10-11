@@ -65,18 +65,19 @@ extension NSImage {
     ///
     ///  - returns: The resized copy of the given image.
     func resizeWhileMaintainingAspectRatioToSize(size: NSSize) -> NSImage? {
-        let newSize: NSSize
+        let widthRatio = size.width / self.size.width
+        let heightRatio = size.height / self.size.height
+        let scaleFactor = min(widthRatio, heightRatio) // Use the smaller ratio to fit within the size
+
+        let newSize = NSSize(width: self.size.width * scaleFactor, height: self.size.height * scaleFactor)
+
+        let resizedImage = NSImage(size: newSize)
+
+        resizedImage.lockFocus()
+        self.draw(in: NSRect(origin: .zero, size: newSize), from: NSRect(origin: .zero, size: self.size), operation: .copy, fraction: 1.0)
+        resizedImage.unlockFocus()
         
-        let widthRatio  = size.width / self.width
-        let heightRatio = size.height / self.height
-        
-        if self.height * widthRatio <= size.height {
-            newSize = NSSize(width: (self.width * widthRatio), height: (self.height * widthRatio))
-        } else {
-            newSize = NSSize(width: (self.width * heightRatio), height: (self.height * heightRatio))
-        }
-        
-        return self.copy(size: newSize)
+        return resizedImage
     }
     
     ///  Copies and crops an image to the supplied size.

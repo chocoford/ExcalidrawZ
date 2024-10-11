@@ -176,6 +176,14 @@ extension ExcalidrawCore {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.exportImage(); 0;")
     }
     
+    func exportPNGData() async throws -> Data? {
+        guard let file = await self.parent?.file else {
+            return nil
+        }
+        let imageData = try await self.exportElementsToPNGData(elements: file.elements)
+        return imageData //NSImage(data: imageData)
+    }
+    
     @MainActor
     func toggleToolbarAction(key: Int) async throws {
         print(#function)

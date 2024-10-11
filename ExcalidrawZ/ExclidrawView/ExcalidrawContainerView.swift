@@ -10,6 +10,7 @@ import ChocofordUI
 import UniformTypeIdentifiers
 
 struct ExcalidrawContainerView: View {
+    @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
 
@@ -18,7 +19,7 @@ struct ExcalidrawContainerView: View {
     @EnvironmentObject private var fileState: FileState
     
     @State private var isLoading = true
-    @State private var isLoadingFile = false
+    @State private var isProgressViewPresented = true
     @State private var resotreAlertIsPresented = false
     
     @State private var isDropping: Bool = false
@@ -29,7 +30,7 @@ struct ExcalidrawContainerView: View {
                 ExcalidrawView(
                     file: Binding {
                         if let file = fileState.currentFile {
-                            return (try? ExcalidrawFile(from: file)) ?? ExcalidrawFile()
+                            return (try? ExcalidrawFile(from: file.objectID, context: viewContext)) ?? ExcalidrawFile()
                         } else {
                             return ExcalidrawFile()
                         }
@@ -39,16 +40,18 @@ struct ExcalidrawContainerView: View {
                         }
                         fileState.updateCurrentFile(with: file)
                     },
-                    isLoadingPage: $isLoading,
-                    isLoadingFile: $isLoadingFile
+                    isLoadingPage: $isLoading
                 ) { error in
                     alertToast(error)
                     print(error)
                 }
                 .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
-                .opacity(isLoading ? 0 : 1)
+                .opacity(isProgressViewPresented ? 0 : 1)
+                .onChange(of: isLoading, debounce: 1) { newVal in
+                    isProgressViewPresented = newVal
+                }
                 
-                if isLoading {
+                if isProgressViewPresented {
                     VStack {
                         ProgressView()
                             .progressViewStyle(.circular)
@@ -59,18 +62,18 @@ struct ExcalidrawContainerView: View {
                         .frame(width: geometry.size.width, height: geometry.size.height)
                 }
                 
-                if isLoadingFile {
-                    Center {
-                        VStack {
-                            Text(.localizable(.containerLoadingFileTitle))
-                            ProgressView()
-                            
-                            Text(.localizable(.containerLoadingFileDescription))
-                                .font(.footnote)
-                        }
-                    }
-                    .background(.ultraThinMaterial)
-                }
+//                if isLoadingFile {
+//                    Center {
+//                        VStack {
+//                            Text(.localizable(.containerLoadingFileTitle))
+//                            ProgressView()
+//                            
+//                            Text(.localizable(.containerLoadingFileDescription))
+//                                .font(.footnote)
+//                        }
+//                    }
+//                    .background(.ultraThinMaterial)
+//                }
                 
                 // This will work
                 ///* but it will conflict with image drop
@@ -115,8 +118,8 @@ struct ExcalidrawContainerView: View {
                  
             }
             .transition(.opacity)
-            .animation(.default, value: isLoading)
-            .animation(.default, value: isLoadingFile)
+            .animation(.default, value: isProgressViewPresented)
+//            .animation(.default, value: isLoadingFile)
         }
     }
     

@@ -9,8 +9,10 @@ import SwiftUI
 import ChocofordUI
 import UniformTypeIdentifiers
 
-@available(macOS 13.0, *)
-struct ExcalidrawFileTransferable: Transferable {
+@available(*, deprecated, message: "Use ExcalidrawFile instead")
+struct ExcalidrawFileTransferable {}
+/*
+: Transferable {
     var file: File
     init(file: File) {
         self.file = file
@@ -46,8 +48,9 @@ struct ExcalidrawFileTransferable: Transferable {
         }
     }
 }
-
+*/
 struct ExportFileView: View {
+    @Environment(\.managedObjectContext) var viewContext
     @Environment(\.dismiss) var mordenDismiss
     @Environment(\.alertToast) var alertToast
     
@@ -83,15 +86,15 @@ struct ExportFileView: View {
     
     var body: some View {
         Center {
-            if #available(macOS 13.0, *) {
-                Image(systemSymbol: .docText)
+            if #available(macOS 13.0, *), let file = try? ExcalidrawFile(from: file.objectID, context: viewContext) {
+                Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(height: 80)
-                    .draggable(ExcalidrawFileTransferable(file: file))
+                    .draggable(file)
                     .padding()
             } else {
-                Image(systemSymbol: .docText)
+                Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(height: 80)
@@ -155,11 +158,11 @@ struct ExportFileView: View {
                         .padding(.horizontal, 6)
                 } else {
                     if #available(macOS 13.0, *) {
-                        Label(.localizable(.exportActionCopied), systemSymbol: .clipboard)
+                        Label(.localizable(.exportActionCopy), systemSymbol: .clipboard)
                             .padding(.horizontal, 6)
                     } else {
                         // Fallback on earlier versions
-                        Label(.localizable(.exportActionCopied), systemSymbol: .docOnDoc)
+                        Label(.localizable(.exportActionCopy), systemSymbol: .docOnDoc)
                             .padding(.horizontal, 6)
                     }
                 }
@@ -210,7 +213,7 @@ struct ExportFileView: View {
     func saveFileToTemp() {
         do {
             let fileManager: FileManager = FileManager.default
-            guard let directory: URL = try getTempDirectory() else { return }
+            let directory: URL = try getTempDirectory()
             let fileExtension = "excalidraw"
             let filename = (file.name ?? String(localizable: .newFileNamePlaceholder)) + ".\(fileExtension)"
             let url = directory.appendingPathComponent(filename, conformingTo: .fileURL)

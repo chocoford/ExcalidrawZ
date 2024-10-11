@@ -81,11 +81,16 @@ func archiveAllFiles() throws {
 }
 
 
-func getTempDirectory() throws -> URL? {
+func getTempDirectory() throws -> URL {
     let fileManager: FileManager = FileManager.default
-    var directory: URL? = nil
+    let directory: URL
     if #available(macOS 13.0, *) {
-        directory = try fileManager.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: .applicationSupportDirectory, create: true)
+        directory = try fileManager.url(
+            for: .itemReplacementDirectory,
+            in: .userDomainMask,
+            appropriateFor: .applicationSupportDirectory,
+            create: true
+        )
     } else {
         directory = fileManager.temporaryDirectory
     }

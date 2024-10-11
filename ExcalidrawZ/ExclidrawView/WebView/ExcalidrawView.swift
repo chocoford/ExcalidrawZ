@@ -62,7 +62,6 @@ struct ExcalidrawView {
     
     @Binding var file: ExcalidrawFile
     @Binding var isLoading: Bool
-    @Binding var isLoadingFile: Bool
     
     var savingType: UTType
     
@@ -73,13 +72,13 @@ struct ExcalidrawView {
         file: Binding<ExcalidrawFile>,
         savingType: UTType = .excalidrawFile,
         isLoadingPage: Binding<Bool>,
-        isLoadingFile: Binding<Bool>,
+        isLoadingFile: Binding<Bool>? = nil,
         onError: @escaping (Error) -> Void
     ) {
         self._file = file
         self.savingType = savingType
         self._isLoading = isLoadingPage
-        self._isLoadingFile = isLoadingFile
+//        self._isLoadingFile = isLoadingFile
         self.onError = onError
     }
     

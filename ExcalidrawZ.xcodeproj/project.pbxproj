@@ -1430,7 +1430,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 3XKM749Y3L;
@@ -1475,7 +1475,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 3XKM749Y3L;
@@ -1578,7 +1578,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 3XKM749Y3L;

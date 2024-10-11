@@ -41,7 +41,7 @@ struct SingleEditorView: View {
     @StateObject private var toolState = ToolState()
     
     @State private var isLoading = true
-    @State private var isLoadingFile = false
+    @State private var isProgressViewPresented = true
     
     @State private var window: NSWindow?
     
@@ -90,26 +90,30 @@ struct SingleEditorView: View {
     
     @MainActor @ViewBuilder
     private func content() -> some View {
-        ExcalidrawView(
-            file: $fileDocument,
-            savingType: fileType,
-            isLoadingPage: $isLoading,
-            isLoadingFile: $isLoadingFile
-        ) { error in
-            alertToast(error)
-            print(error)
-        }
-        .toolbar(content: toolbar)
-        .opacity(isLoading ? 0 : 1)
-        .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
-        
-        if isLoading {
-            VStack {
-                ProgressView()
-                    .progressViewStyle(.circular)
-                Text(.localizable(.webViewLoadingText))
+        ZStack {
+            ExcalidrawView(
+                file: $fileDocument,
+                savingType: fileType,
+                isLoadingPage: $isLoading
+            ) { error in
+                alertToast(error)
+                print(error)
+            }
+            .toolbar(content: toolbar)
+            .opacity(isProgressViewPresented ? 0 : 1)
+            .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
+            .onChange(of: isLoading, debounce: 1) { newVal in
+                isProgressViewPresented = newVal
+            }
+            if isProgressViewPresented {
+                VStack {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                    Text(.localizable(.webViewLoadingText))
+                }
             }
         }
+        .animation(.default, value: isProgressViewPresented)
     }
     
     @MainActor @ToolbarContentBuilder

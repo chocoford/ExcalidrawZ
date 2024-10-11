@@ -42,6 +42,7 @@ struct ShareView: View {
                     SquareButton(title: .localizable(.exportSheetButtonImage), icon: .photo) {
                         route.append(Route.exportImage)
                     }
+                    .disabled((try? ExcalidrawFile(from: sharedFile).elements.isEmpty) != false)
                     
                     SquareButton(title: .localizable(.exportSheetButtonFile), icon: .doc) {
                         route.append(Route.exportFile)
@@ -164,6 +165,8 @@ struct ShareViewLagacy: View {
 }
 
 fileprivate struct SquareButton: View {
+    @Environment(\.isEnabled) var isEnabled
+    
     var title: LocalizedStringKey
     var icon: SFSymbol
     var action: () -> Void
@@ -197,6 +200,7 @@ fileprivate struct SquareButton: View {
 
 
 struct ExportButtonStyle: PrimitiveButtonStyle {
+    @Environment(\.isEnabled) var isEnabled
     
     @State private var isHovered = false
     
@@ -207,22 +211,22 @@ struct ExportButtonStyle: PrimitiveButtonStyle {
             configuration.trigger()
         } content: { isPressed in
             configuration.label
+                .foregroundStyle(isEnabled ? .primary : .secondary)
                 .padding()
                 .frame(width: size, height: size)
                 .background {
-                    if #available(macOS 14.0, *) {
+                    ZStack {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(
-                                isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial)
+                                isEnabled ?
+                                (
+                                    isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial)
+                                ) : AnyShapeStyle(Color.clear)
                             )
-                            .stroke(.separator, lineWidth: 0.5)
-                            .animation(.default, value: isHovered)
-                    } else {
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(.separator, lineWidth: 0.5)
-                            .foregroundStyle(isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial))
-                            .animation(.default, value: isHovered)
                     }
+                    .animation(.default, value: isHovered)
                 }
                 .contentShape(Rectangle())
                 .onHover { isHovered = $0 }

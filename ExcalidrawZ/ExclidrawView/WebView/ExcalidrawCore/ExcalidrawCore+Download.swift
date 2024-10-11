@@ -58,7 +58,7 @@ extension ExcalidrawCore: WKDownloadDelegate {
         self.logger.info("on export png.")
         let fileManager: FileManager = FileManager.default
         do {
-            guard let directory: URL = try getTempDirectory() else { return nil }
+            let directory: URL = try getTempDirectory()
             let fileExtension = suggestedFilename.components(separatedBy: ".").last ?? "png"
             let fileName = self.parent?.fileState.currentFile?.name?.appending(".\(fileExtension)") ?? suggestedFilename
             let url = directory.appendingPathComponent(fileName, conformingTo: .image)
