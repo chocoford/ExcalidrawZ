@@ -744,6 +744,7 @@
 				397E465A295838D0003B824B /* Assets.xcassets */,
 				390716DA2C6F159B002D7834 /* Localizable.xcstrings */,
 				3990F82B2CA9C55100C94983 /* Store.storekit */,
+				3908EB9729674DF60054A3ED /* Model.xcdatamodeld */,
 				397E465C295838D0003B824B /* ExcalidrawZ.entitlements */,
 				397E465D295838D0003B824B /* Preview Content */,
 			);
@@ -784,7 +785,6 @@
 				39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */,
 				39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */,
 				397E468E295AAE5D003B824B /* template.excalidraw */,
-				3908EB9729674DF60054A3ED /* Model.xcdatamodeld */,
 				3966612F2C665D3E00F863BC /* excalidraw-latest */,
 				3976C4D52C8789F60037D3AF /* overwrite_console.js */,
 			);

@@ -16,73 +16,98 @@ struct FileCheckpointRowView: View {
     
     var checkpoint: FileCheckpoint
     
+    @State private var file: ExcalidrawFile?
+    
     var body: some View {
         Popover(arrowEdge: .trailing) {
-            VStack(spacing: 12) {
-                //                ExcalidrawImageView(data: checkpoint.content)
-                ZStack {
-                    if let data = checkpoint.content,
-                       let file = try? JSONDecoder().decode(ExcalidrawFile.self, from: data) {
-                        ExcalidrawRenderer(file: file)
-                    } else {
-                        if colorScheme == .light {
-                            Color.white
-                        } else {
-                            Color.black
-                        }
-                    }
-                }
-                .frame(width: 400, height: 300)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                
-                VStack(spacing: 8) {
-                    Text(checkpoint.filename ?? "")
-                        .font(.title)
-                    
-                    Text(checkpoint.updatedAt?.formatted() ?? "")
-                }
-                
-                HStack {
-                    Button { @MainActor in
-                        let file = fileState.currentFile
-                        file?.content = checkpoint.content
-                        file?.name = checkpoint.filename
-                        fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
-                    } label: {
-                        Text(.localizable(.checkpointButtonRestore))
-                    }
-                    
-                    Button {
-                        managedObjectContext.delete(checkpoint)
-                    } label: {
-                        Text(.localizable(.checkpointButtonDelete))
-                    }
-                }
-            }
-            .padding(40)
-            
+            popoverContent()
         } label: {
-            HStack {
-                Text(checkpoint.filename ?? "")
-                    .font(.headline)
-                Spacer()
-                Text(checkpoint.updatedAt?.formatted() ?? "")
+            VStack(alignment: .leading) {
+                HStack {
+                    Text(checkpoint.filename ?? "")
+                        .font(.headline)
+                    Spacer()
+                    Text(checkpoint.updatedAt?.formatted() ?? "")
+                        .font(.headline)
+                        .fontWeight(.regular)
+                        .foregroundStyle(.secondary)
+                }
+                
+                HStack(spacing: 0) {
+                    if let file {
+                        Text("^[\(file.elements.count) elements](inflect: true)")
+                    }
+                    Text(" · ")
+                    if let content = checkpoint.content {
+                        Text("\(content.count.formatted(.byteCount(style: .file)))")
+                    }
+                }
+                .font(.footnote)
+                .foregroundStyle(.secondary)
             }
             .lineLimit(1)
             .padding(.horizontal, 4)
             .padding(.vertical, 8)
         }
         .buttonStyle(ListButtonStyle())
+        .watchImmediately(of: checkpoint) { newValue in
+            guard let content = newValue.content else { return }
+            file = try? JSONDecoder().decode(ExcalidrawFile.self, from: content)
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func popoverContent() -> some View {
+        VStack(spacing: 12) {
+            ZStack {
+                if let data = checkpoint.content,
+                   let file = try? JSONDecoder().decode(ExcalidrawFile.self, from: data),
+                   !file.elements.isEmpty {
+                    ExcalidrawRenderer(file: file)
+                } else {
+                    if colorScheme == .light {
+                        Color.white
+                    } else {
+                        Color.black
+                    }
+                }
+            }
+            .frame(width: 400, height: 300)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            
+            VStack(spacing: 8) {
+                Text(checkpoint.filename ?? "")
+                    .font(.title)
+                
+                Text(checkpoint.updatedAt?.formatted() ?? "")
+            }
+            
+            HStack {
+                Button { @MainActor in
+                    let file = fileState.currentFile
+                    file?.content = checkpoint.content
+                    file?.name = checkpoint.filename
+                    fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
+                } label: {
+                    Text(.localizable(.checkpointButtonRestore))
+                }
+                
+                Button {
+                    managedObjectContext.delete(checkpoint)
+                } label: {
+                    Text(.localizable(.checkpointButtonDelete))
+                }
+            }
+        }
+        .padding(40)
+        
     }
 }
 
 
 #if DEBUG
-//#Preview {
-//    FileCheckpointRowView(
-//        store: .init(initialState: .init(checkpoint: .preview)) {
-//            FileCheckpointRowStore()
-//        }
-//    )
-//}
+#Preview {
+    FileCheckpointRowView(checkpoint: .preview)
+        .environmentObject(FileState())
+}
 #endif
