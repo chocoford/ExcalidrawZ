@@ -25,7 +25,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         PersistenceController.shared.save()
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            if NSApp.windows.filter({$0.canBecomeMain}).isEmpty {
+                NSApp.terminate(nil)
+            }
+        }
+        return false
     }
     
     func application(_ sender: NSApplication, openFile filename: String) -> Bool {
@@ -42,7 +47,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         print(#function)
     }
 }
-
 
 
 #elseif os(iOS)

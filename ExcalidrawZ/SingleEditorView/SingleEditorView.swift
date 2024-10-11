@@ -82,6 +82,24 @@ struct SingleEditorView: View {
         .environmentObject(exportState)
         .environmentObject(toolState)
         .bindWindow($window)
+        .onChange(of: window) { newValue in
+            if let window = newValue {
+                let origin = window.frame.origin
+                let originalSize = window.frame.size
+                let newSize = CGSize(width: 1200, height: 650)
+                window.setFrame(
+                    NSRect(
+                        origin: CGPoint(
+                            x: origin.x - (newSize.width - originalSize.width) / 2,
+                            y: origin.y - (newSize.height - originalSize.height) / 2
+                        ),
+                        size: newSize
+                    ),
+                    display: true,
+                    animate: true
+                )
+            }
+        }
         .onAppear {
             print("files count: \(self.fileDocument.files.count)")
             print(fileType)

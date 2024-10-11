@@ -27,10 +27,6 @@ struct FileCheckpointRowView: View {
                     Text(checkpoint.filename ?? "")
                         .font(.headline)
                     Spacer()
-                    Text(checkpoint.updatedAt?.formatted() ?? "")
-                        .font(.headline)
-                        .fontWeight(.regular)
-                        .foregroundStyle(.secondary)
                 }
                 
                 HStack(spacing: 0) {
@@ -41,6 +37,8 @@ struct FileCheckpointRowView: View {
                     if let content = checkpoint.content {
                         Text("\(content.count.formatted(.byteCount(style: .file)))")
                     }
+                    Text(" · ")
+                    Text(checkpoint.updatedAt?.formatted() ?? "")
                 }
                 .font(.footnote)
                 .foregroundStyle(.secondary)
