@@ -46,54 +46,36 @@ struct SingleEditorView: View {
     @State private var window: NSWindow?
     
     @State private var isExcalidrawToolbarDense: Bool = false
-    
+    @State private var isInspectorPresented: Bool = false
+
     var body: some View {
         ZStack {
-            ExcalidrawView(
-                file: $fileDocument,
-                savingType: fileType,
-                isLoadingPage: $isLoading,
-                isLoadingFile: $isLoadingFile
-            ) { error in
-                alertToast(error)
-                print(error)
-            }
-            .opacity(isLoading ? 0 : 1)
-            .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
-            
-            if isLoading {
-                VStack {
-                    ProgressView()
-                        .progressViewStyle(.circular)
-                    Text(.localizable(.webViewLoadingText))
+            if #available(macOS 14.0, *), appPreference.inspectorLayout == .sidebar {
+                content()
+                    .inspector(isPresented: $isInspectorPresented) {
+                        LibraryView(isPresented: $isInspectorPresented)
+                            .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
+                    }
+            } else {
+                content()
+                HStack {
+                    Spacer()
+                    if isInspectorPresented {
+                        LibraryView(isPresented: $isInspectorPresented)
+                            .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .background {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(.regularMaterial)
+                                    .shadow(radius: 4)
+                            }
+                            .transition(.move(edge: .trailing))
+                    }
                 }
-            }
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .status) {
-                if #available(macOS 13.0, *) {
-                    ExcalidrawToolbar(
-                        isInspectorPresented: .constant(false),
-                        isSidebarPresented: .constant(false),
-                        isDense: $isExcalidrawToolbarDense
-                    )
-                    .padding(.vertical, 2)
-                } else {
-                    ExcalidrawToolbar(
-                        isInspectorPresented: .constant(false),
-                        isSidebarPresented: .constant(false),
-                        isDense: $isExcalidrawToolbarDense
-                    )
-                    .offset(y: isExcalidrawToolbarDense ? 0 : 6)
-                }
-            }
-            
-            ToolbarItem(placement: .automatic) {
-                Button {
-                    importToExcalidrawZ()
-                } label: {
-                    Text("Import to ExcalidrawZ")
-                }
+                .animation(.easeOut, value: isInspectorPresented)
+                .padding(.top, 10)
+                .padding(.horizontal, 10)
+                .padding(.bottom, 40)
             }
         }
         .environmentObject(fileState)
@@ -105,6 +87,68 @@ struct SingleEditorView: View {
             print(fileType)
         }
     }
+    
+    @MainActor @ViewBuilder
+    private func content() -> some View {
+        ExcalidrawView(
+            file: $fileDocument,
+            savingType: fileType,
+            isLoadingPage: $isLoading,
+            isLoadingFile: $isLoadingFile
+        ) { error in
+            alertToast(error)
+            print(error)
+        }
+        .toolbar(content: toolbar)
+        .opacity(isLoading ? 0 : 1)
+        .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
+        
+        if isLoading {
+            VStack {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                Text(.localizable(.webViewLoadingText))
+            }
+        }
+    }
+    
+    @MainActor @ToolbarContentBuilder
+    private func toolbar() -> some ToolbarContent {
+        ToolbarItemGroup(placement: .status) {
+            if #available(macOS 13.0, *) {
+                ExcalidrawToolbar(
+                    isInspectorPresented: .constant(false),
+                    isSidebarPresented: .constant(false),
+                    isDense: $isExcalidrawToolbarDense
+                )
+                .padding(.vertical, 2)
+            } else {
+                ExcalidrawToolbar(
+                    isInspectorPresented: .constant(false),
+                    isSidebarPresented: .constant(false),
+                    isDense: $isExcalidrawToolbarDense
+                )
+                .offset(y: isExcalidrawToolbarDense ? 0 : 6)
+            }
+        }
+        
+        ToolbarItemGroup(placement: .automatic) {
+            Button {
+                importToExcalidrawZ()
+            } label: {
+                Text("Import to ExcalidrawZ")
+            }
+            
+            if #available(macOS 13.0, *), appPreference.inspectorLayout == .sidebar { } else {
+                Button {
+                    isInspectorPresented.toggle()
+                } label: {
+                    Label("Library", systemSymbol: .sidebarRight)
+                }
+            }
+        }
+    }
+    
     
     private func importToExcalidrawZ() {
         guard let fileURL,

@@ -98,9 +98,12 @@ struct ExcalidrawZApp_Modern: App {
         
         DocumentGroup(newDocument: ExcalidrawFile()) { config in
             SingleEditorView(config: config)
+                .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
                 .swiftyAlert()
                 .environmentObject(appPrefernece)
+                
         }
+        
         
         Settings {
             SettingsView()

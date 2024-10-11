@@ -249,13 +249,11 @@ extension ExcalidrawCore {
         } catch {
             print("Invalid regex: \(error.localizedDescription)")
         }
-        
-        
+
         guard let data = miniizedSvg.data(using: .utf8) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
         }
-        print(data.count.formatted(.byteCount(style: .file)))
         return data
         
     }

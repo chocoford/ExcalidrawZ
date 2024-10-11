@@ -28,7 +28,9 @@ extension ExcalidrawFile: FileDocument {
                 return
             }
         } else if configuration.contentType == .svg {
-            if let file = ExcalidrawSVGDecoder().decode(from: data) {
+            if isValidJSON(data) {
+                print("is fake svg, is actually a json")
+            } else if let file = ExcalidrawSVGDecoder().decode(from: data) {
                print("is valid svg")
                self = file
                return
