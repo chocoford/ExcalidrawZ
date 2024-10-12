@@ -5,6 +5,10 @@
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>excalidraw</string>
+			</array>
 			<key>CFBundleTypeName</key>
 			<string>excalidraw</string>
 			<key>CFBundleTypeRole</key>
@@ -17,6 +21,10 @@
 			</array>
 		</dict>
 		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>excalidraw.png</string>
+			</array>
 			<key>CFBundleTypeName</key>
 			<string>excalidraw png</string>
 			<key>CFBundleTypeRole</key>
@@ -29,6 +37,10 @@
 			</array>
 		</dict>
 		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>excalidraw.svg</string>
+			</array>
 			<key>CFBundleTypeName</key>
 			<string>excalidraw svg</string>
 			<key>CFBundleTypeRole</key>
