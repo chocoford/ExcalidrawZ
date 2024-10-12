@@ -26,13 +26,14 @@
 				<string>excalidraw.png</string>
 			</array>
 			<key>CFBundleTypeName</key>
-			<string>excalidraw png</string>
+			<string>excalidraw PNG</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
 			<string>Default</string>
 			<key>LSItemContentTypes</key>
 			<array>
+				<string>public.png</string>
 				<string>com.chocoford.excalidrawPNG</string>
 			</array>
 		</dict>
@@ -42,13 +43,14 @@
 				<string>excalidraw.svg</string>
 			</array>
 			<key>CFBundleTypeName</key>
-			<string>excalidraw svg</string>
+			<string>excalidraw SVG</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
 			<string>Default</string>
 			<key>LSItemContentTypes</key>
 			<array>
+				<string>public.svg-image</string>
 				<string>com.chocoford.excalidrawSVG</string>
 			</array>
 		</dict>

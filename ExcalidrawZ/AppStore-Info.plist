@@ -38,6 +38,10 @@
 			</array>
 		</dict>
 		<dict>
+			<key>CFBundleTypeMIMETypes</key>
+			<array>
+				<string></string>
+			</array>
 			<key>CFBundleTypeExtensions</key>
 			<array>
 				<string>excalidraw.svg</string>
