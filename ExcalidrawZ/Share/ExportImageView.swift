@@ -253,7 +253,7 @@ struct ExportImageView: View {
         .fileExporter(
             isPresented: $showFileExporter,
             document: ImageFile(url),
-            contentType: exportType,
+            contentType: exportType,// == .excalidrawPNG ? .png : exportType == .excalidrawSVG ? .svg : exportType,
             defaultFilename: fileName
         ) { result in
             switch result {
@@ -275,7 +275,8 @@ struct ExportImageView: View {
                         embedScene: false
                     )
                     await MainActor.run {
-                        self.image = NSImage(data: imageData.data)?.resizeWhileMaintainingAspectRatioToSize(size: .init(width: 200, height: 120))
+                        self.image = NSImage(data: imageData.data)?
+                            .resizeWhileMaintainingAspectRatioToSize(size: .init(width: 200, height: 120))
                         self.exportedImageData = imageData
                         self.fileName = imageData.name
                     }
@@ -315,20 +316,59 @@ struct ImageFile: FileDocument {
     
     // this initializer loads data that has been saved previously
     init(configuration: ReadConfiguration) throws {
-        
-//        if let data = configuration.file.regularFileContents, let img = NSImage(data: data) {
-//            image = img
-//        } else {
         throw ImageFileError.initFailed
-//        }
     }
 
     // this will be called when the system wants to write our data to disk
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        let fileWrapper = try FileWrapper(url: url)
-//        fileWrapper.filename = fileName
-//        fileWrapper.fileAttributes[FileAttributeKey.type.rawValue] = "png"
+//        print("contentType:" , configuration.contentType)
+//        print("url:" , url)
+        let fileWrapper = try FileWrapper(regularFileWithContents: Data(contentsOf: url))
+//        print(fileWrapper, fileWrapper.filename, fileWrapper.preferredFilename)
         return fileWrapper
+    }
+    
+    
+}
+//print(url, fileWrapper.filename)
+//        if let filename = fileWrapper.filename,
+//           configuration.contentType == .excalidrawPNG || configuration.contentType == .excalidrawSVG {
+//            let newFilename = String(
+//                filename.prefix(filename.count - (configuration.contentType.preferredFilenameExtension?.count ?? 1) - 1)
+//            )
+//            fileWrapper.filename = newFilename
+//            fileWrapper.preferredFilename = newFilename
+//            print(newFilename, fileWrapper.fileAttributes)
+//        }
+// no permission
+class ExcalidrawFileWrapper: FileWrapper {
+    var isImage: Bool
+    
+    init(url: URL, isImage: Bool, options: FileWrapper.ReadingOptions = []) throws {
+        self.isImage = isImage
+        try super.init(url: url, options: options)
+    }
+    
+    required init?(coder inCoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func write(to url: URL, options: FileWrapper.WritingOptions = [], originalContentsURL: URL?) throws {
+        print(#function, url)
+        var lastComponent = url.lastPathComponent
+        let pattern = "(\\.excalidraw)(?=.*\\.excalidraw)"
+        if let regex = try? NSRegularExpression(pattern: pattern) {
+            let range = NSRange(location: 0, length: lastComponent.utf16.count)
+            // 替换掉中间的 ".excalidraw"
+            lastComponent = regex.stringByReplacingMatches(in: lastComponent, options: [], range: range, withTemplate: "")
+        }
+        let newURL = url.deletingLastPathComponent().appendingPathComponent(lastComponent, conformingTo: .fileURL)
+        print(newURL)
+        try super.write(
+            to: newURL,
+            options: options,
+            originalContentsURL: originalContentsURL
+        )
     }
 }
 

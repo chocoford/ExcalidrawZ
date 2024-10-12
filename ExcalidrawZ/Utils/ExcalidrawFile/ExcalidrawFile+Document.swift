@@ -9,7 +9,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 extension ExcalidrawFile: FileDocument {
-    static var readableContentTypes: [UTType] = [.text, .png, .svg]
+    static var readableContentTypes: [UTType] = [.text, .png, .svg, .excalidrawFile, .excalidrawPNG, .excalidrawSVG]
+    static var writableContentTypes: [UTType] = [.excalidrawFile, .excalidrawPNG, .excalidrawSVG]
 
     init(configuration: ReadConfiguration) throws {
         guard let data = configuration.file.regularFileContents else {

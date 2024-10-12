@@ -169,10 +169,10 @@ extension UTType {
     }
     
     static var excalidrawPNG: UTType {
-        UTType(importedAs: "com.chocoford.excalidrawPNG", conformingTo: .png)
+        UTType(exportedAs: "com.chocoford.excalidrawPNG", conformingTo: .png)
     }
     static var excalidrawSVG: UTType {
-        UTType(importedAs: "com.chocoford.excalidrawSVG", conformingTo: .svg)
+        UTType(exportedAs: "com.chocoford.excalidrawSVG", conformingTo: .svg)
     }
 }
 

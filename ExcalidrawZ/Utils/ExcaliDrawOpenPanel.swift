@@ -13,7 +13,12 @@ class ExcalidrawOpenPanel: NSOpenPanel {
         let panel = ExcalidrawOpenPanel()
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = true
-        panel.allowedContentTypes = [.init(filenameExtension: "excalidraw") ?? .excalidrawFile]
+        panel.allowedContentTypes = [
+            .init(filenameExtension: "excalidraw") ?? .excalidrawFile,
+            .excalidrawPNG,
+            .excalidrawSVG,
+            .png, .svg
+        ]
         panel.prompt = "import"
         return panel
     }

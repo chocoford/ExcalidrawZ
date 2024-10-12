@@ -80,12 +80,12 @@ extension ExcalidrawCore {
 
                 let elements = data.data.elements
                 switch self.parent?.savingType {
-                    case .excalidrawPNG:
+                    case .excalidrawPNG, .png:
                         let data = try await self.exportElementsToPNGData(elements: elements ?? [], embedScene: true)
                         await MainActor.run {
                             self.parent?.file.content = data
                         }
-                    case .excalidrawSVG:
+                    case .excalidrawSVG, .svg:
                         let data = try await self.exportElementsToSVGData(elements: elements ?? [], embedScene: true)
                         await MainActor.run {
                             self.parent?.file.content = data

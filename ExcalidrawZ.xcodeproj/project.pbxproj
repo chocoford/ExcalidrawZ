@@ -136,9 +136,6 @@
 		396661302C665D4300F863BC /* excalidraw-latest in Resources */ = {isa = PBXBuildFile; fileRef = 3966612F2C665D3E00F863BC /* excalidraw-latest */; };
 		3966623C2C66686A00F863BC /* ExcalidrawServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3966623B2C66686A00F863BC /* ExcalidrawServer.swift */; };
 		3966623F2C666EC600F863BC /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = 3966623E2C666EC600F863BC /* FlyingFox */; };
-		397152CD2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib in Resources */ = {isa = PBXBuildFile; fileRef = 397152CC2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib */; };
-		397152CE2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib in Resources */ = {isa = PBXBuildFile; fileRef = 397152CC2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib */; };
-		397152CF2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib in Resources */ = {isa = PBXBuildFile; fileRef = 397152CC2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib */; };
 		397152D42C85D00E00A65ADF /* SVGView in Frameworks */ = {isa = PBXBuildFile; productRef = 397152D32C85D00E00A65ADF /* SVGView */; };
 		397152D72C85D05D00A65ADF /* SVGView in Frameworks */ = {isa = PBXBuildFile; productRef = 397152D62C85D05D00A65ADF /* SVGView */; };
 		397152D92C85D06A00A65ADF /* SVGView in Frameworks */ = {isa = PBXBuildFile; productRef = 397152D82C85D06A00A65ADF /* SVGView */; };
@@ -188,9 +185,6 @@
 		3987A5D02CB63FB00054D7D5 /* overwrite_console.js in Resources */ = {isa = PBXBuildFile; fileRef = 3976C4D52C8789F60037D3AF /* overwrite_console.js */; };
 		3987A5D52CB640590054D7D5 /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = 3987A5D42CB640590054D7D5 /* FlyingFox */; };
 		3987A5D72CB640650054D7D5 /* FlyingSocks in Frameworks */ = {isa = PBXBuildFile; productRef = 3987A5D62CB640650054D7D5 /* FlyingSocks */; };
-		3987A60E2CB68C630054D7D5 /* Groundwater UI.excalidraw in Resources */ = {isa = PBXBuildFile; fileRef = 3987A60D2CB68C630054D7D5 /* Groundwater UI.excalidraw */; };
-		3987A60F2CB68C630054D7D5 /* Groundwater UI.excalidraw in Resources */ = {isa = PBXBuildFile; fileRef = 3987A60D2CB68C630054D7D5 /* Groundwater UI.excalidraw */; };
-		3987A6102CB68C630054D7D5 /* Groundwater UI.excalidraw in Resources */ = {isa = PBXBuildFile; fileRef = 3987A60D2CB68C630054D7D5 /* Groundwater UI.excalidraw */; };
 		3990F82C2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F82D2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F82E2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
@@ -312,7 +306,6 @@
 		3963A14D2C6D1D4900472AE7 /* Lagacy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Lagacy-Info.plist"; path = "/Users/chocoford/Developer/ExcaliDrawZ/ExcalidrawZ/Lagacy-Info.plist"; sourceTree = "<absolute>"; };
 		3966612F2C665D3E00F863BC /* excalidraw-latest */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "excalidraw-latest"; sourceTree = "<group>"; };
 		3966623B2C66686A00F863BC /* ExcalidrawServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawServer.swift; sourceTree = "<group>"; };
-		397152CC2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib */ = {isa = PBXFileReference; lastKnownFileType = text; path = "oracle-cloud-infrastructure-icons.excalidrawlib"; sourceTree = "<group>"; };
 		397152E82C86DD2900A65ADF /* Library+Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Library+Persistence.swift"; sourceTree = "<group>"; };
 		397152ED2C86E18F00A65ADF /* LibraryItem+Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LibraryItem+Persistence.swift"; sourceTree = "<group>"; };
 		3976C4D52C8789F60037D3AF /* overwrite_console.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = overwrite_console.js; sourceTree = "<group>"; };
@@ -339,7 +332,6 @@
 		3987A55E2CB556860054D7D5 /* FileState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileState.swift; sourceTree = "<group>"; };
 		3987A5622CB556BC0054D7D5 /* AppPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreference.swift; sourceTree = "<group>"; };
 		3987A5662CB557160054D7D5 /* ToolState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolState.swift; sourceTree = "<group>"; };
-		3987A60D2CB68C630054D7D5 /* Groundwater UI.excalidraw */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Groundwater UI.excalidraw"; sourceTree = "<group>"; };
 		3990F82B2CA9C55100C94983 /* Store.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Store.storekit; sourceTree = "<group>"; };
 		3990F8352CACF4C500C94983 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		39A6EADA2A7EC19000ADC726 /* ExcalidrawImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawImageView.swift; sourceTree = "<group>"; };
@@ -755,8 +747,6 @@
 			isa = PBXGroup;
 			children = (
 				397E465E295838D0003B824B /* Preview Assets.xcassets */,
-				3987A60D2CB68C630054D7D5 /* Groundwater UI.excalidraw */,
-				397152CC2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib */,
 			);
 			path = "Preview Content";
 			sourceTree = "<group>";
@@ -1110,11 +1100,9 @@
 				3963A07B2C6C7EAA00472AE7 /* Preview Assets.xcassets in Resources */,
 				3963A07C2C6C7EAA00472AE7 /* Assets.xcassets in Resources */,
 				3963A07D2C6C7EAA00472AE7 /* FakeToggleColorMode.js in Resources */,
-				397152CF2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib in Resources */,
 				3990F82E2CA9C55100C94983 /* Store.storekit in Resources */,
 				3976C4D72C8789F60037D3AF /* overwrite_console.js in Resources */,
 				3963A07E2C6C7EAA00472AE7 /* FakeSaveCommand.js in Resources */,
-				3987A60F2CB68C630054D7D5 /* Groundwater UI.excalidraw in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1129,11 +1117,9 @@
 				3963A1442C6D1D4900472AE7 /* Preview Assets.xcassets in Resources */,
 				3963A1452C6D1D4900472AE7 /* Assets.xcassets in Resources */,
 				3963A1462C6D1D4900472AE7 /* FakeToggleColorMode.js in Resources */,
-				397152CE2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib in Resources */,
 				3990F82C2CA9C55100C94983 /* Store.storekit in Resources */,
 				3976C4D82C8789F60037D3AF /* overwrite_console.js in Resources */,
 				3963A1472C6D1D4900472AE7 /* FakeSaveCommand.js in Resources */,
-				3987A6102CB68C630054D7D5 /* Groundwater UI.excalidraw in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1148,11 +1134,9 @@
 				397E465F295838D0003B824B /* Preview Assets.xcassets in Resources */,
 				397E465B295838D0003B824B /* Assets.xcassets in Resources */,
 				39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */,
-				397152CD2C85ACC400A65ADF /* oracle-cloud-infrastructure-icons.excalidrawlib in Resources */,
 				3990F82D2CA9C55100C94983 /* Store.storekit in Resources */,
 				3976C4D62C8789F60037D3AF /* overwrite_console.js in Resources */,
 				39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */,
-				3987A60E2CB68C630054D7D5 /* Groundwater UI.excalidraw in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

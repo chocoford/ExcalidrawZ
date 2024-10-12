@@ -5,32 +5,32 @@
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>excalidraw</string>
+			</array>
 			<key>CFBundleTypeName</key>
 			<string>Excalidraw file</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
 			<string>Default</string>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>excalidraw</string>
-			</array>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>com.chocoford.excalidrawFile</string>
 			</array>
 		</dict>
 		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>excalidraw.png</string>
+			</array>
 			<key>CFBundleTypeName</key>
 			<string>excalidraw PNG</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
 			<string>Default</string>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>excalidraw.png</string>
-			</array>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>public.png</string>
@@ -38,16 +38,16 @@
 			</array>
 		</dict>
 		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>excalidraw.svg</string>
+			</array>
 			<key>CFBundleTypeName</key>
 			<string>excalidraw SVG</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
 			<string>Default</string>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>excalidraw.svg</string>
-			</array>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>public.svg-image</string>
@@ -91,6 +91,10 @@
 				<array>
 					<string>excalidraw</string>
 				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/vnd.excalidraw+json</string>
+				</array>
 			</dict>
 		</dict>
 		<dict>
@@ -113,6 +117,52 @@
 				<key>public.mime-type</key>
 				<array>
 					<string>application/vnd.excalidrawlib+json</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.image</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Excalidraw PNG</string>
+			<key>UTTypeIcons</key>
+			<dict/>
+			<key>UTTypeIdentifier</key>
+			<string>com.chocoford.excalidrawPNG</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>excalidraw.png</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>image/png</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.image</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Excalidraw SVG</string>
+			<key>UTTypeIcons</key>
+			<dict/>
+			<key>UTTypeIdentifier</key>
+			<string>com.chocoford.excalidrawSVG</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>excalidraw.png</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>image/png</string>
 				</array>
 			</dict>
 		</dict>

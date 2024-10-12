@@ -11,44 +11,6 @@ import UniformTypeIdentifiers
 
 @available(*, deprecated, message: "Use ExcalidrawFile instead")
 struct ExcalidrawFileTransferable {}
-/*
-: Transferable {
-    var file: File
-    init(file: File) {
-        self.file = file
-    }
-    
-    func fileURL() -> Data {
-        do {
-            let fileManager: FileManager = FileManager.default
-            let directory: URL = try fileManager.url(
-                for: .itemReplacementDirectory,
-                in: .userDomainMask,
-                appropriateFor: .applicationSupportDirectory,
-                create: true
-            )
-            
-            let fileExtension = "excalidraw"
-            
-            let filename = (file.name ?? String(localizable: .newFileNamePlaceholder)) + ".\(fileExtension)"
-            let url = directory.appendingPathComponent(filename, conformingTo: .fileURL)
-            if fileManager.fileExists(atPath: url.absoluteString) {
-                try fileManager.removeItem(at: url)
-            }
-            fileManager.createFile(atPath: url.path(), contents: file.content)
-            return url.dataRepresentation
-        } catch {
-            return Data()
-        }
-    }
-    
-    static var transferRepresentation: some TransferRepresentation {
-        DataRepresentation(exportedContentType: .fileURL) { file in
-            file.fileURL()
-        }
-    }
-}
-*/
 struct ExportFileView: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.dismiss) var mordenDismiss
@@ -81,8 +43,11 @@ struct ExportFileView: View {
     @State private var copied: Bool = false
     
     @State private var fileContentString: String = ""
+    @State private var fileDocument: ExcalidrawFile?
     
     @State private var showBackButton = false
+    
+    
     
     var body: some View {
         Center {
@@ -100,13 +65,6 @@ struct ExportFileView: View {
                     .frame(height: 80)
                     .padding()
             }
-            
-            TextField("", text: $fileName)
-                .textFieldStyle(.roundedBorder)
-                .onAppear {
-                    fileName = file.name ?? String(localizable: .newFileNamePlaceholder)
-                }
-                .frame(width: 260)
             actionsView()
         }
         .overlay(alignment: .topLeading) {
@@ -126,6 +84,10 @@ struct ExportFileView: View {
         .onAppear {
             saveFileToTemp()
             showBackButton = true
+            fileName = file.name ?? String(localizable: .newFileNamePlaceholder)
+            if let data = file.content {
+                fileDocument = try? ExcalidrawFile(data: data)
+            }
         }
         .onDisappear {
             showBackButton = false
@@ -170,43 +132,50 @@ struct ExportFileView: View {
             .disabled(copied)
             
             Button {
-                showFileExporter = true
+//                if fileDocument != nil {
+                    showFileExporter = true
+//                }
             } label: {
                 Label(.localizable(.exportActionSave), systemSymbol: .squareAndArrowDown)
                     .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
             }
             
-//            if #available(macOS 13.0, *),
-//               let url = viewStore.url {
-//                ShareLink("Share", item: url)
-//            } else {
-//                Button {
-//                    self.showShare = true
-//                } label: {
-//                    Label("Share", systemImage: "square.and.arrow.up")
-//                        .padding(.horizontal, 6)
-//                }
-//                .background(SharingsPicker(
-//                    isPresented: $showShare,
-//                    sharingItems: viewStore.url != nil ? [viewStore.url!] : []
-//                ))
-//            }
+            if #available(macOS 13.0, *),
+               let url = fileURL {
+                ShareLink(item: url) {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 1)
+                }
+            } else {
+                Button {
+                    self.showShare = true
+                } label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                        .padding(.horizontal, 6)
+                }
+                .background(SharingsPicker(
+                    isPresented: $showShare,
+                    sharingItems: fileURL != nil ? [fileURL!] : []
+                ))
+            }
             
             Spacer()
         }
         .fileExporter(
             isPresented: $showFileExporter,
-                      document: TextFile(file.content),
-                      contentType: .text,
-                      defaultFilename: fileName + ".excalidraw",
-                      onCompletion: { result in
+            document: fileDocument,
+            contentType: .excalidrawFile,
+            defaultFilename: fileName
+        ) { result in
             switch result {
                 case .success:
                     alertToast(.init(displayMode: .hud, type: .complete(.green), title: "Saved"))
                 case .failure(let failure):
                     alertToast(failure)
             }
-        })
+        }
     }
     
     
@@ -226,41 +195,9 @@ struct ExportFileView: View {
                 fileManager.createFile(atPath: url.standardizedFileURL.path, contents: file.content)
             }
             fileURL = url
-//            self.store.send(.setURL(url))
         } catch {
             alertToast(error)
         }
-    }
-}
-
-struct TextFile: FileDocument {
-    enum TextFileError: Error {
-        case initFailed
-        case makeFileWrapperFailed
-    }
-    
-    static var readableContentTypes = [UTType.text]
-
-    // by default our document is empty
-    var data: Data?
-    
-    init(_ data: Data?) {
-        self.data = data
-    }
-    
-    // this initializer loads data that has been saved previously
-    init(configuration: ReadConfiguration) throws {
-        guard let data = configuration.file.regularFileContents else {
-            throw TextFileError.initFailed
-        }
-        self.data = data
-    }
-
-    // this will be called when the system wants to write our data to disk
-    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        guard let data = self.data else { throw TextFileError.makeFileWrapperFailed }
-        let fileWrapper = FileWrapper(regularFileWithContents: data)
-        return fileWrapper
     }
 }
 
