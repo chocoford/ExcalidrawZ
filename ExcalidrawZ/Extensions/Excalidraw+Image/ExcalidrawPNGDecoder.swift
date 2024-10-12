@@ -25,6 +25,8 @@ class ExcalidrawPNGDecoder: ExcalidrawImageDecoder {
     
 
     func decode(from imageData: Data) -> ExcalidrawFile? {
+        guard !self.isValidJSON(imageData) else { return nil }
+        
         guard let textChunk = findTextChunk(from: imageData) else {
             return nil
         }

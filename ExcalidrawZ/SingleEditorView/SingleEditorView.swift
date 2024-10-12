@@ -17,6 +17,7 @@ struct SingleEditorView: View {
     
     @Binding var fileDocument: ExcalidrawFile
     var fileURL: URL?
+    var shouldAdjustWindowSize: Bool
     
     var fileType: UTType {
         guard let url = fileURL else { return .excalidrawFile }
@@ -31,9 +32,12 @@ struct SingleEditorView: View {
         }
     }
     
-    init(config: FileDocumentConfiguration<ExcalidrawFile>) {
+    
+    
+    init(config: FileDocumentConfiguration<ExcalidrawFile>, shouldAdjustWindowSize: Bool) {
         self._fileDocument = config.$document
         self.fileURL = config.fileURL
+        self.shouldAdjustWindowSize = shouldAdjustWindowSize
      }
     
     @StateObject private var fileState = FileState()
@@ -83,7 +87,7 @@ struct SingleEditorView: View {
         .environmentObject(toolState)
         .bindWindow($window)
         .onChange(of: window) { newValue in
-            if let window = newValue {
+            if let window = newValue, shouldAdjustWindowSize {
                 let origin = window.frame.origin
                 let originalSize = window.frame.size
                 let newSize = CGSize(width: 1200, height: 650)

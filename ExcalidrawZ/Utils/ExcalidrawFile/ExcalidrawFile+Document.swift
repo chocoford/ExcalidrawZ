@@ -10,7 +10,7 @@ import UniformTypeIdentifiers
 
 extension ExcalidrawFile: FileDocument {
     static var readableContentTypes: [UTType] = [.text, .png, .svg, .excalidrawFile, .excalidrawPNG, .excalidrawSVG]
-    static var writableContentTypes: [UTType] = [.excalidrawFile, .excalidrawPNG, .excalidrawSVG]
+    static var writableContentTypes: [UTType] = [.excalidrawFile, .excalidrawPNG, .excalidrawSVG, .png, .svg,]
 
     init(configuration: ReadConfiguration) throws {
         guard let data = configuration.file.regularFileContents else {
@@ -19,25 +19,17 @@ extension ExcalidrawFile: FileDocument {
             }
             throw GetFileContentError()
         }
-        print(configuration.contentType)
         if configuration.contentType == .png {
-            if isValidJSON(data) {
-                print("is fake png, is actually a json")
-            } else if let file = ExcalidrawPNGDecoder().decode(from: data) {
-                print("is valid png")
+            if let file = ExcalidrawPNGDecoder().decode(from: data) {
                 self = file
                 return
             }
         } else if configuration.contentType == .svg {
-            if isValidJSON(data) {
-                print("is fake svg, is actually a json")
-            } else if let file = ExcalidrawSVGDecoder().decode(from: data) {
-               print("is valid svg")
+            if let file = ExcalidrawSVGDecoder().decode(from: data) {
                self = file
                return
            }
         }
-        print("fallthrough text")
         self = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
         self.content = data
     }

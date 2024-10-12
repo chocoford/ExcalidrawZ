@@ -21,8 +21,7 @@ extension Notification.Name {
 
 @main
 @MainActor
-@available(macOS 13.0, *)
-struct ExcalidrawZApp_Modern: App {
+struct ExcalidrawZApp: App {
 #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 #elseif os(iOS)
@@ -96,14 +95,7 @@ struct ExcalidrawZApp_Modern: App {
         }
 #endif
         
-        DocumentGroup(newDocument: ExcalidrawFile()) { config in
-            SingleEditorView(config: config)
-                .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-                .swiftyAlert()
-                .environmentObject(appPrefernece)
-                
-        }
-        
+        documentGroup()
         
         Settings {
             SettingsView()
@@ -112,6 +104,28 @@ struct ExcalidrawZApp_Modern: App {
                 .environmentObject(updateChecker)
 #endif
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
+        }
+    }
+    
+    
+    @MainActor
+    private func documentGroup() -> some Scene {
+        if #available(macOS 13.0, *) {
+            return DocumentGroup(newDocument: ExcalidrawFile()) { config in
+                SingleEditorView(config: config, shouldAdjustWindowSize: false)
+                    .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
+                    .swiftyAlert()
+                    .environmentObject(appPrefernece)
+            }
+            .defaultSize(width: 1200, height: 600)
+        } else {
+            return DocumentGroup(newDocument: ExcalidrawFile()) { config in
+                SingleEditorView(config: config, shouldAdjustWindowSize: true)
+                    .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
+                    .swiftyAlert()
+                    .environmentObject(appPrefernece)
+                
+            }
         }
     }
 }

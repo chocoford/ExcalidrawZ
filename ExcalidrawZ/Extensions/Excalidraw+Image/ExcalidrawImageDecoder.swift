@@ -137,4 +137,20 @@ class ExcalidrawImageDecoder {
         
         return decoded
     }
+    
+    internal func isValidJSON(_ data: Data) -> Bool {
+        guard let string = String(data: data, encoding: .utf8) else {
+            return false
+        }
+        guard string.hasPrefix("[") || string.hasPrefix("{") else {
+            return false
+        }
+        do {
+            _ = try JSONSerialization.jsonObject(with: data, options: [])
+            return true
+        } catch {
+            return false
+        }
+    }
+
 }

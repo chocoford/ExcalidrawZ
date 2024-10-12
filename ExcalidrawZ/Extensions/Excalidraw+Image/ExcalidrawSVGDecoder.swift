@@ -10,6 +10,7 @@ import Foundation
 class ExcalidrawSVGDecoder: ExcalidrawImageDecoder {
     
     func decode(from data: Data) -> ExcalidrawFile? {
+        guard !self.isValidJSON(data) else { return nil }
         guard let svg = String(data: data, encoding: .utf8) else {
             return nil
         }
