@@ -175,7 +175,6 @@ struct SingleEditorView: View {
         }
     }
     
-    
     private func importToExcalidrawZ() {
         guard let fileURL,
               let url = URL(string: "excalidrawz://MainWindowGroup") else {

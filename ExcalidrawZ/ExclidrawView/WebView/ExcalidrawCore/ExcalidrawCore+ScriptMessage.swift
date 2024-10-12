@@ -437,6 +437,7 @@ extension ExcalidrawCore {
 
 extension ExcalidrawFile {
     mutating func update(data: ExcalidrawView.Coordinator.ExcalidrawFileData) throws {
+//        print("[ExcalidrawFile] update...")
         guard let content = self.content else {
             struct EmptyContentError: LocalizedError {
                 var errorDescription: String? { "Invalid excalidraw file." }
