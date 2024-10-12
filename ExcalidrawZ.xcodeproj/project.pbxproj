@@ -1414,7 +1414,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 3XKM749Y3L;
@@ -1459,7 +1459,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 3XKM749Y3L;
@@ -1562,7 +1562,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				DEVELOPMENT_TEAM = 3XKM749Y3L;
@@ -2142,7 +2142,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.excalidraw-Debug.QuickLookPreviewExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2173,7 +2173,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw.QuickLookPreviewExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2203,7 +2203,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw.QuickLookPreviewExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
