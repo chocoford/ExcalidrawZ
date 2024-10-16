@@ -36,6 +36,7 @@ final class ExportState: ObservableObject {
     enum ExportType {
         case image, file
     }
+    
     func requestExport(type: ExportType) async throws {
         guard let excalidrawWebCoordinator else {
             struct WebCoordinatorNotReadyError: Error {}
@@ -62,8 +63,6 @@ final class ExportState: ObservableObject {
             self.status = .finish
         }
     }
-    
-
     
     enum ImageType {
         case png

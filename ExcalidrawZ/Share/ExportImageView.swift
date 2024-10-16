@@ -138,7 +138,6 @@ struct ExportImageView: View {
         .frame(width: 200, height: 120, alignment: .center)
     }
     
-
     @MainActor @ViewBuilder
     private var fileInfoView: some View {
         VStack {
@@ -265,7 +264,6 @@ struct ExportImageView: View {
         }
     }
     
-    
     private func exportImageData(initial: Bool = false) {
         Task.detached {
             do {
@@ -321,8 +319,8 @@ struct ImageFile: FileDocument {
 
     // this will be called when the system wants to write our data to disk
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-//        print("contentType:" , configuration.contentType)
-//        print("url:" , url)
+        print("contentType:" , configuration.contentType)
+        print("url:" , url)
         let fileWrapper = try FileWrapper(regularFileWithContents: Data(contentsOf: url))
 //        print(fileWrapper, fileWrapper.filename, fileWrapper.preferredFilename)
         return fileWrapper

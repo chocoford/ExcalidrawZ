@@ -44,7 +44,7 @@ Sharing allows you to make your work output more seamless. ExcalidrawZ supports 
 * export file
 * archive all files
 
-![export image](https://github.com/chocoford/ExcalidrawZ/assets/28218759/5d49daa4-323b-4145-bcb3-1f7a2cdedd19)
+![Export editable image](assets/README/Export%20editable%20image.gif)
 
 
 
@@ -52,7 +52,7 @@ Sharing allows you to make your work output more seamless. ExcalidrawZ supports 
 
 Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ensure this, ExcalidrawZ performs a checkpoint record of the file before you loading another file. You can tap the button on the top right of app to view the history. 
 
-![File History](https://github.com/chocoford/ExcalidrawZ/assets/28218759/b4feb7df-4278-4a5c-8c78-c83200efc99b)
+![File History](assets/README/File%20History.gif)
 
 #### Multiple hand-writing fonts supported
 
