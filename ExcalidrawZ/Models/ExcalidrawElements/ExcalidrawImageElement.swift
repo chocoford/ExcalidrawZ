@@ -21,6 +21,8 @@ extension ExcalidrawImageElementBase {
 }
  
 struct ExcalidrawImageElement: ExcalidrawImageElementBase {
+    var type: ExcalidrawElementType
+    
     var id: String
     var x: Double
     var y: Double

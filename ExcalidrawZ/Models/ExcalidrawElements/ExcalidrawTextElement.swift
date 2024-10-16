@@ -27,12 +27,12 @@ protocol ExcalidrawTextElementBase: ExcalidrawElementBase {
     var textAlign: TextAlign { get }
     var verticalAlign: VerticalAlign { get }
     var containerId: ExcalidrawGenericElement.ID? { get }
-    var originalText: String { get }
+    var originalText: String? { get }
     /**
      * Unitless line height (aligned to W3C). To get line height in px, multiply
      * with font size (using `getLineHeightInPx` helper).
      */
-    var lineHeight: Double { get }
+    var lineHeight: Double? { get }
 }
 //extension ExcalidrawTextElementBase {
 //    var type: ExcalidrawElementType { .text }
@@ -73,6 +73,6 @@ struct ExcalidrawTextElement: ExcalidrawTextElementBase {
     var textAlign: TextAlign
     var verticalAlign: VerticalAlign
     var containerId: ExcalidrawGenericElement.ID?
-    var originalText: String
-    var lineHeight: Double
+    var originalText: String?
+    var lineHeight: Double?
 }

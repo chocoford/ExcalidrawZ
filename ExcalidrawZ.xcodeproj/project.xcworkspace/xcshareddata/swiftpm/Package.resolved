@@ -1,5 +1,5 @@
 {
-  "originHash" : "c09167803a556f187ff599b44d3fd10ab2e2736a96c76cc2c597acad9c5f24d1",
+  "originHash" : "9adbad06e0d5e2793e33a4fe6c844ebf0766e4d8eb87bb93feb1407ce2fba05b",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -16,7 +16,7 @@
       "location" : "https://github.com/chocoford/ChocofordKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "39a8bf5f9a813ca3981e437b6ae61902d461e4f2"
+        "revision" : "615863452fb51249b9d7f733c5dccd2ac5256402"
       }
     },
     {
@@ -133,7 +133,7 @@
       "location" : "https://github.com/chocoford/SwiftyAlert.git",
       "state" : {
         "branch" : "dev",
-        "revision" : "2822f6f8c9c9a82271f08cd6de74a7574463269d"
+        "revision" : "593eac6fe95b7765f012040c3d6685ca7c4176d8"
       }
     },
     {
@@ -143,6 +143,15 @@
       "state" : {
         "revision" : "e99d6ad477aaf87d5808997b09ad0accb420a25e",
         "version" : "0.5.2"
+      }
+    },
+    {
+      "identity" : "zlib",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mezhevikin/Zlib.git",
+      "state" : {
+        "revision" : "a9ac189e6252dff3367314a6ca7fac6cee8a42b3",
+        "version" : "0.0.2"
       }
     }
   ],

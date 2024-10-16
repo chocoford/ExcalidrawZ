@@ -97,7 +97,7 @@ struct ContentView: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
         if #available(macOS 13.0, *), appPreference.sidebarLayout == .sidebar {
-            ContentViewModern(isSidebarPrenseted: $isSidebarPresented)
+            ContentViewModern(isSidebarPresented: $isSidebarPresented)
         } else {
             ContentViewLagacy(
                 isSidebarPresented: $isSidebarPresented,
@@ -113,7 +113,7 @@ struct ContentViewModern: View {
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var appPreference: AppPreference
     
-    @Binding var isSidebarPrenseted: Bool
+    @Binding var isSidebarPresented: Bool
     
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
     
@@ -133,7 +133,7 @@ struct ContentViewModern: View {
         }
         .removeSettingsSidebarToggle()
         .onChange(of: columnVisibility) { newValue in
-            isSidebarPrenseted = newValue != .detailOnly
+            isSidebarPresented = newValue != .detailOnly
         }
     }
     
@@ -363,15 +363,10 @@ extension ContentView {
 #endif
 }
 
-
-
-
 #if DEBUG
 //struct ContentView_Previews: PreviewProvider {
 //    static var previews: some View {
 //        ContentView()
 //    }
 //}
-
-
 #endif

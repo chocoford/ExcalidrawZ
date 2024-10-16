@@ -1,3 +1,15 @@
+## 1.1.0
+
+#### New Features
+
+* Add support for editing `.excalidraw` file directly.
+* Add support for exporting, importing and editing  `.excalidraw.png` or `.excalidraw.svg` file directly.
+* Support quick look for `.excalidraw` file.
+
+#### Bugs fixed
+
+* Fix the bug of failed to import old version library files.
+
 ## 1.0.1
 
 Fix the annoying sound.

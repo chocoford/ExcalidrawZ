@@ -39,33 +39,36 @@ class ExcalidrawServer {
     #else
     let server = HTTPServer(port: 8487, logger: ExcalidrawServerLogger())
     #endif
-    init() {
+    init(autoStart: Bool = true) {
         if isPreview { return }
-        self.start()
+        if autoStart {
+            Task {
+                try? await self.start()
+            }
+        }
     }
     
     deinit {
-        self.stop()
-    }
-    
-    func start() {
-        Task {
-            await server.appendRoute(
-                "GET /*",
-                to: .directory(
-                    for: .main,
-                    subPath: "excalidraw-latest",
-                    serverPath: ""
-                )
-            )
-            try? await server.start()
-        }
-    }
-    
-    
-    func stop() {
+        let server = self.server
         Task {
             await server.stop()
         }
+    }
+    
+    func start() async throws {
+        await server.appendRoute(
+            "GET /*",
+            to: .directory(
+                for: .main,
+                subPath: "excalidraw-latest",
+                serverPath: ""
+            )
+        )
+        try await server.start()
+    }
+    
+    
+    func stop() async {
+        await server.stop()
     }
 }

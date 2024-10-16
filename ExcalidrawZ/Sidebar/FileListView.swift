@@ -87,6 +87,12 @@ struct FileListView: View {
                     }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .didImportToExcalidrawZ)) { notification in
+            guard let fileID = notification.object as? UUID else { return }
+            if let file = files.first(where: {$0.id == fileID}) {
+                fileState.currentFile = file
+            }
+        }
         .onAppear {
             guard fileState.currentFile == nil else { return }
             if files.isEmpty {

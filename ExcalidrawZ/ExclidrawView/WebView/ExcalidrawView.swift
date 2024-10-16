@@ -11,6 +11,7 @@ import WebKit
 import Combine
 import OSLog
 import QuartzCore
+import UniformTypeIdentifiers
 
 class ExcalidrawWebView: WKWebView {
     var shouldHandleInput = false
@@ -54,44 +55,60 @@ struct ExcalidrawView {
     @EnvironmentObject var exportState: ExportState
     @EnvironmentObject var toolState: ToolState
 
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "WebView")
+    let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier!,
+        category: "WebView"
+    )
     
+    @Binding var file: ExcalidrawFile
     @Binding var isLoading: Bool
-    @Binding var isLoadingFile: Bool
+    
+    var savingType: UTType
     
     var onError: (Error) -> Void
     
-//    @State private var cancellables: [AnyCancellable] = []
-//    @State private var canLoadFile = false
-    
     // TODO: isLoadingFile is not used yet.
-    init(isLoadingPage: Binding<Bool>, isLoadingFile: Binding<Bool>, onError: @escaping (Error) -> Void) {
+    init(
+        file: Binding<ExcalidrawFile>,
+        savingType: UTType = .excalidrawFile,
+        isLoadingPage: Binding<Bool>,
+        isLoadingFile: Binding<Bool>? = nil,
+        onError: @escaping (Error) -> Void
+    ) {
+        self._file = file
+        self.savingType = savingType
         self._isLoading = isLoadingPage
-        self._isLoadingFile = isLoadingFile
+//        self._isLoadingFile = isLoadingFile
         self.onError = onError
     }
+    
+    @State private var cancellables = Set<AnyCancellable>()
 }
 
 #if os(macOS)
 extension ExcalidrawView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> ExcalidrawWebView {
-//        cancellables = [
-//            context.coordinator.webView.publisher(for: \.isLoading).sink {
-//                if !$0 {
-//                    DispatchQueue.main.async/*After(deadline: .now() + 2)*/ {
-//                        canLoadFile = true
-//                        print("can load file")
-//                    }
-//                }
-//            }
-//        ]
-//        context.coordinator.webView.window?.makeFirstResponder(nil)
+        print("[ExcalidrawView] making NSView")
+        
+        DispatchQueue.main.async {
+            cancellables.insert(
+                context.coordinator.$isLoading.sink { newValue in
+                    DispatchQueue.main.async {
+                        self.isLoading = newValue
+                    }
+                }
+            )
+            Task {
+                for await error in context.coordinator.errorStream {
+                    self.onError(error)
+                }
+            }
+        }
         return context.coordinator.webView
     }
     
     func updateNSView(_ nsView: ExcalidrawWebView, context: Context) {
-
         let webView = context.coordinator.webView
         context.coordinator.parent = self
         exportState.excalidrawWebCoordinator = context.coordinator
@@ -108,7 +125,7 @@ extension ExcalidrawView: NSViewRepresentable {
                 self.onError(error)
             }
         }
-        context.coordinator.loadFile(from: fileState.currentFile)
+        context.coordinator.loadFile(from: file)
         if context.coordinator.lastTool != toolState.activatedTool {
             Task {
                 do {
@@ -126,8 +143,10 @@ extension ExcalidrawView: NSViewRepresentable {
         }
     }
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+    func makeCoordinator() -> ExcalidrawCore {
+        ExcalidrawCore(
+            self
+        )
     }
 }
 

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import ServiceManagement
 
 import SwiftyAlert
 import ChocofordUI
@@ -15,6 +16,7 @@ import Sparkle
 
 extension Notification.Name {
     static let shouldHandleImport = Notification.Name("ShouldHandleImport")
+    static let didImportToExcalidrawZ = Notification.Name("DidImportToExcalidrawZ")
 }
 
 @main
@@ -33,9 +35,15 @@ struct ExcalidrawZApp: App {
         // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
         // This is where you can also pass an updater delegate if you need one
 #if os(macOS) && !APP_STORE
-        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+        updaterController = SPUStandardUpdaterController(
+            startingUpdater: true,
+            updaterDelegate: nil,
+            userDriverDelegate: nil
+        )
 #endif
     }
+    // Can not run agent in a sandboxed app.
+    // let service = SMAppService.agent(plistName: "com.chocoford.excalidraw.ExcalidrawServer.agent.plist")
     
     @Environment(\.scenePhase) var scenePhase
     
@@ -43,12 +51,9 @@ struct ExcalidrawZApp: App {
 #if os(macOS) && !APP_STORE
     @StateObject private var updateChecker = UpdateChecker()
 #endif
-    @State private var server = ExcalidrawServer()
-
-    @State private var timer = Timer.publish(every: 30, on: .main, in: .default).autoconnect()
+    let server = ExcalidrawServer()
         
     var body: some Scene {
-        // Can not use Document group - we should save chekpoints
         WindowGroup {
             RootView()
                 .swiftyAlert()
@@ -61,6 +66,7 @@ struct ExcalidrawZApp: App {
 #endif
                 }
         }
+        .handlesExternalEvents(matching: Set(arrayLiteral: "MainWindowGroup"))
 #if os(macOS) && !APP_STORE
         .commands {
             CommandGroup(after: .appInfo) {
@@ -88,6 +94,9 @@ struct ExcalidrawZApp: App {
             }
         }
 #endif
+        
+        documentGroup()
+        
         Settings {
             SettingsView()
                 .environmentObject(appPrefernece)
@@ -97,8 +106,29 @@ struct ExcalidrawZApp: App {
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
         }
     }
+    
+    
+    @MainActor
+    private func documentGroup() -> some Scene {
+        if #available(macOS 13.0, *) {
+            return DocumentGroup(newDocument: ExcalidrawFile()) { config in
+                SingleEditorView(config: config, shouldAdjustWindowSize: false)
+                    .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
+                    .swiftyAlert()
+                    .environmentObject(appPrefernece)
+            }
+            .defaultSize(width: 1200, height: 600)
+        } else {
+            return DocumentGroup(newDocument: ExcalidrawFile()) { config in
+                SingleEditorView(config: config, shouldAdjustWindowSize: true)
+                    .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
+                    .swiftyAlert()
+                    .environmentObject(appPrefernece)
+                
+            }
+        }
+    }
 }
-
 
 fileprivate extension Scene {
     func defaultSizeIfAvailable(_ size: CGSize) -> some Scene {
@@ -110,5 +140,3 @@ fileprivate extension Scene {
         }
     }
 }
-
-

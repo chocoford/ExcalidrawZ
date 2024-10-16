@@ -10,6 +10,7 @@ import ChocofordUI
 import UniformTypeIdentifiers
 
 struct ExcalidrawContainerView: View {
+    @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
 
@@ -18,7 +19,7 @@ struct ExcalidrawContainerView: View {
     @EnvironmentObject private var fileState: FileState
     
     @State private var isLoading = true
-    @State private var isLoadingFile = false
+    @State private var isProgressViewPresented = true
     @State private var resotreAlertIsPresented = false
     
     @State private var isDropping: Bool = false
@@ -26,14 +27,31 @@ struct ExcalidrawContainerView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .center) {
-                ExcalidrawView(isLoadingPage: $isLoading, isLoadingFile: $isLoadingFile) {
-                    alertToast($0)
-                    print($0)
+                ExcalidrawView(
+                    file: Binding {
+                        if let file = fileState.currentFile {
+                            return (try? ExcalidrawFile(from: file.objectID, context: viewContext)) ?? ExcalidrawFile()
+                        } else {
+                            return ExcalidrawFile()
+                        }
+                    } set: { file in
+                        guard file.id == fileState.currentFile?.id else {
+                            return
+                        }
+                        fileState.updateCurrentFile(with: file)
+                    },
+                    isLoadingPage: $isLoading
+                ) { error in
+                    alertToast(error)
+                    print(error)
                 }
                 .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
-                .opacity(isLoading ? 0 : 1)
+                .opacity(isProgressViewPresented ? 0 : 1)
+                .onChange(of: isLoading, debounce: 1) { newVal in
+                    isProgressViewPresented = newVal
+                }
                 
-                if isLoading {
+                if isProgressViewPresented {
                     VStack {
                         ProgressView()
                             .progressViewStyle(.circular)
@@ -44,18 +62,18 @@ struct ExcalidrawContainerView: View {
                         .frame(width: geometry.size.width, height: geometry.size.height)
                 }
                 
-                if isLoadingFile {
-                    Center {
-                        VStack {
-                            Text(.localizable(.containerLoadingFileTitle))
-                            ProgressView()
-                            
-                            Text(.localizable(.containerLoadingFileDescription))
-                                .font(.footnote)
-                        }
-                    }
-                    .background(.ultraThinMaterial)
-                }
+//                if isLoadingFile {
+//                    Center {
+//                        VStack {
+//                            Text(.localizable(.containerLoadingFileTitle))
+//                            ProgressView()
+//                            
+//                            Text(.localizable(.containerLoadingFileDescription))
+//                                .font(.footnote)
+//                        }
+//                    }
+//                    .background(.ultraThinMaterial)
+//                }
                 
                 // This will work
                 ///* but it will conflict with image drop
@@ -100,10 +118,9 @@ struct ExcalidrawContainerView: View {
                  
             }
             .transition(.opacity)
-            .animation(.default, value: isLoading)
-            .animation(.default, value: isLoadingFile)
+            .animation(.default, value: isProgressViewPresented)
+//            .animation(.default, value: isLoadingFile)
         }
-        
     }
     
     @MainActor @ViewBuilder
@@ -137,26 +154,9 @@ struct ExcalidrawContainerView: View {
 }
 
 
-extension UTType {
-    static var excalidrawFile: UTType {
-        UTType(importedAs: "com.chocoford.excalidrawFile", conformingTo: .json)
-    }
-    static var excalidrawlibFile: UTType {
-        UTType(importedAs: "com.chocoford.excalidrawlibFile", conformingTo: .json)
-    }
-//    static var excalidrawlibJSON: UTType {
-//        UTType(importedAs: "com.chocoford.excalidrawlibJSON", conformingTo: .json)
-//    }
-    static var excalidrawlibJSON: UTType {
-        UTType(exportedAs: "com.chocoford.excalidrawlibJSON", conformingTo: .json)
-    }
-}
-
 #if DEBUG
-struct ExcalidrawView_Previews: PreviewProvider {
-    static var previews: some View {
-        ExcalidrawContainerView()
-            .frame(width: 800, height: 600)
-    }
+#Preview {
+    ExcalidrawContainerView()
+        .frame(width: 800, height: 600)
 }
 #endif
