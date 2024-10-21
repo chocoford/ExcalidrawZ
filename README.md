@@ -63,6 +63,17 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
 - [x] 简体中文（杨任东竹书体）
 - [x] 日本語（瀬戸体）
 
+
+#### Multiple excalidraw file format support
+ExcalidrawZ now support editing of `.excalidraw`, `.excalidraw.png`, and `.excalidraw.svg` files (directly in the file system), as well as importing them into the main program.
+
+https://github.com/user-attachments/assets/486f13c4-e0ce-4e59-a21d-bc6be5d91a81
+
+ExcalidrawZ also supports maintaining editability when exporting images. The image files will end with `.excalidraw.png` or `.excalidraw.svg`, and ExcalidrawZ will be able to edit these types of files directly.
+
+https://github.com/user-attachments/assets/09323b30-29f0-4522-8190-46f7ef6a9dd3
+
+
 ## RoadMap
 
 - [ ] iCloud synchronization
