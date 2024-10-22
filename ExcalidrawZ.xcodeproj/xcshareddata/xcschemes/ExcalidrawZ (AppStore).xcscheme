@@ -49,9 +49,6 @@
             ReferencedContainer = "container:ExcalidrawZ.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <StoreKitConfigurationFileReference
-         identifier = "../../ExcalidrawZ/Store.storekit">
-      </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "App Store"
