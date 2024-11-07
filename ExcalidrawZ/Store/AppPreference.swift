@@ -118,4 +118,6 @@ final class AppPreference: ObservableObject {
             }
         }
     }
+    
+    var autoInvertImage = true
 }

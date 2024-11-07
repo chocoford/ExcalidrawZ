@@ -113,6 +113,17 @@ struct GeneralSettingsView: View {
         }
 #endif
         
+        Section {
+            Toggle("Prevent image from auto invert.", isOn: $appPreference.autoInvertImage)
+        } header: {
+            if #available(macOS 14.0, *) {
+                Text("Excalidraw Settings")
+            } else {
+                Text("Excalidraw Settings")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        
 #if !APP_STORE
         Section {
             Toggle(.localizable(.settingsUpdatesAutoCheckLabel), isOn: $updateChecker.canCheckForUpdates)
@@ -136,7 +147,7 @@ struct GeneralSettingsView: View {
 #endif
     }
     
-    @ViewBuilder
+    @MainActor @ViewBuilder
     func settingCellView<T: View, V: View>(_ title: LocalizedStringKey,
                                            @ViewBuilder trailing: @escaping () -> T,
                                            @ViewBuilder content: (() -> V) = { EmptyView() }) -> some View {
