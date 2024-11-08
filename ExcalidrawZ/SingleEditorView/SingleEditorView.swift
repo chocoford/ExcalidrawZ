@@ -10,6 +10,7 @@ import UniformTypeIdentifiers
 
 import ChocofordUI
 
+#if os(macOS)
 struct SingleEditorView: View {
     @Environment(\.alertToast) var alertToast
     
@@ -46,8 +47,11 @@ struct SingleEditorView: View {
     
     @State private var isLoading = true
     @State private var isProgressViewPresented = true
-    
+#if canImport(AppKit)
     @State private var window: NSWindow?
+#elseif canImport(UIKit)
+    @State private var window: UIWindow?
+#endif
     
     @State private var isExcalidrawToolbarDense: Bool = false
     @State private var isInspectorPresented: Bool = false
@@ -205,7 +209,7 @@ struct SingleEditorView: View {
         }
     }
 }
-
+#endif
 //#Preview {
 //    SingleEditorView(file: .constant(.preview))
 //}

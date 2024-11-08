@@ -31,7 +31,7 @@ struct SidebarView: View {
                 if let currentGroup = fileState.currentGroup {
                     FileListView(groups: groups, currentGroup: currentGroup)
                 } else {
-                    if #available(macOS 14.0, *) {
+                    if #available(macOS 14.0, iOS 17.0, *) {
                         Text(.localizable(.sidebarFilesPlaceholder))
                             .foregroundStyle(.placeholder)
                     } else {

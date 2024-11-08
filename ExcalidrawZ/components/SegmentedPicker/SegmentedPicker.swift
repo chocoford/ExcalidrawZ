@@ -162,7 +162,7 @@ internal struct SegmentedPickerView: View {
             }
         }
         .background {
-            if #available(macOS 14.0, *) {
+            if #available(macOS 14.0, iOS 17.0, *) {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.regularMaterial)
                     .stroke(.separator, lineWidth: 0.5)

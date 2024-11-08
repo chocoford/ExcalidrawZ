@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import CoreData
 
 extension File {
     convenience init(name: String, context: NSManagedObjectContext) {

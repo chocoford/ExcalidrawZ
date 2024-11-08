@@ -30,7 +30,7 @@ func loadResource<T: Decodable>(_ filename: String) -> T {
 }
 
 
-
+#if canImport(AppKit)
 func archiveAllFiles() throws {
     let panel = ExcalidrawOpenPanel.exportPanel
     if panel.runModal() == .OK {
@@ -79,7 +79,7 @@ func archiveAllFiles() throws {
         }
     }
 }
-
+#endif
 
 func getTempDirectory() throws -> URL {
     let fileManager: FileManager = FileManager.default

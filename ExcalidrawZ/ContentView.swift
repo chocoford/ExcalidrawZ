@@ -22,7 +22,11 @@ struct ContentView: View {
     
     @State private var sharedFile: File?
     
+#if canImport(AppKit)
     @State private var window: NSWindow?
+#elseif canImport(UIKit)
+    @State private var window: UIWindow?
+#endif
     
     @State private var isMigrateSheetPresented = false
     
@@ -32,7 +36,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            if #available(macOS 14.0, *), appPreference.inspectorLayout == .sidebar {
+            if #available(macOS 14.0, iOS 17.0, *), appPreference.inspectorLayout == .sidebar {
                 content()
                     .inspector(isPresented: $isInspectorPresented) {
                         LibraryView(isPresented: $isInspectorPresented)
@@ -65,7 +69,7 @@ struct ContentView: View {
         .toolbar { toolbarContent() }
         .navigationTitle("")
         .sheet(item: $sharedFile) {
-            if #available(macOS 13.0, *) {
+            if #available(macOS 13.0, iOS 16.0, *) {
                 ShareView(sharedFile: $0)
                     .swiftyAlert()
             } else {
@@ -120,7 +124,7 @@ struct ContentViewModern: View {
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            if #available(macOS 14.0, *) {
+            if #available(macOS 14.0, iOS 17.0, *) {
                 SidebarView()
                     .toolbar(content: sidebarToolbar)
                     .toolbar(removing: .sidebarToggle)
@@ -131,7 +135,9 @@ struct ContentViewModern: View {
         } detail: {
             ExcalidrawContainerView()
         }
+#if os(macOS)
         .removeSettingsSidebarToggle()
+#endif
         .onChange(of: columnVisibility) { newValue in
             isSidebarPresented = newValue != .detailOnly
         }
@@ -258,16 +264,16 @@ extension ContentView {
 #endif
     }
     
-#if os(iOS)
+//#if os(iOS)
     @ToolbarContentBuilder
     private func toolbarContent_iOS() -> some ToolbarContent {
-        
+        toolbarContent_macOS()
     }
-#else
+//#else
     @ToolbarContentBuilder
     private func toolbarContent_macOS() -> some ToolbarContent {
         ToolbarItemGroup(placement: .status) {
-            if #available(macOS 13.0, *) {
+            if #available(macOS 13.0, iOS 16.0, *) {
                 ExcalidrawToolbar(
                     isInspectorPresented: appPreference.inspectorLayout == .sidebar ? $isInspectorPresented : .constant(false),
                     isSidebarPresented: appPreference.sidebarLayout == .sidebar ? $isSidebarPresented : .constant(false),
@@ -285,7 +291,7 @@ extension ContentView {
         }
         
         ToolbarItemGroup(placement: .navigation) {
-            if #available(macOS 13.0, *), appPreference.sidebarLayout == .sidebar { } else {
+            if #available(macOS 13.0, iOS 16.0, *), appPreference.sidebarLayout == .sidebar { } else {
                 Button {
                     isSidebarPresented.toggle()
                 } label: {
@@ -303,7 +309,7 @@ extension ContentView {
                 }
             }
             
-            if #available(macOS 13.0, *) { } else {
+            if #available(macOS 13.0, iOS 16.0, *) { } else {
                 // create
                 Button {
                     do {
@@ -351,7 +357,7 @@ extension ContentView {
             .help(.localizable(.export))
             .disabled(fileState.currentGroup?.groupType == .trash)
             
-            if #available(macOS 13.0, *), appPreference.inspectorLayout == .sidebar { } else {
+            if #available(macOS 13.0, iOS 16.0, *), appPreference.inspectorLayout == .sidebar { } else {
                 Button {
                     isInspectorPresented.toggle()
                 } label: {
@@ -360,7 +366,7 @@ extension ContentView {
             }
         }
     }
-#endif
+//#endif
 }
 
 #if DEBUG

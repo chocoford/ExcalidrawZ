@@ -13,6 +13,12 @@ import Combine
 import SVGView
 
 class ExcalidrawCore: NSObject, ObservableObject {
+#if canImport(AppKit)
+    typealias PlatformImage = NSImage
+#elseif canImport(UIKit)
+    typealias PlatformImage = UIImage
+#endif
+    
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawCore")
     
     var parent: ExcalidrawView?
@@ -90,7 +96,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
                 try? await self.toggleToolbarAction(key: char)
             }
         }
-        if #available(macOS 13.3, *) {
+        if #available(macOS 13.3, iOS 16.4, *) {
             self.webView.isInspectable = true
         } else {
         }
@@ -221,9 +227,9 @@ extension ExcalidrawCore {
         return data
     }
     
-    func exportElementsToPNG(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> NSImage {
+    func exportElementsToPNG(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> PlatformImage {
         let data = try await self.exportElementsToPNGData(elements: elements, embedScene: embedScene)
-        guard let image = NSImage(data: data) else {
+        guard let image = PlatformImage(data: data) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
         }
@@ -265,9 +271,9 @@ extension ExcalidrawCore {
         return data
         
     }
-    func exportElementsToSVG(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> NSImage {
+    func exportElementsToSVG(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> PlatformImage {
         let data = try await exportElementsToSVGData(elements: elements, embedScene: embedScene)
-        guard let image = NSImage(data: data) else {
+        guard let image = PlatformImage(data: data) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
         }

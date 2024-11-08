@@ -10,6 +10,7 @@ import WebKit
 import Combine
 import os.log
 import UniformTypeIdentifiers
+import CoreData
 
 final class FileState: ObservableObject {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "FileState")

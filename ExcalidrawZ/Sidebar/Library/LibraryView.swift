@@ -501,7 +501,7 @@ struct ExcalidrawlibFile: FileDocument {
 
 struct LibraryPreviewView: View {
     var body: some View {
-        if #available(macOS 14.0, *) {
+        if #available(macOS 14.0, iOS 17.0, *) {
             NavigationSplitView {
                 
             } detail: {

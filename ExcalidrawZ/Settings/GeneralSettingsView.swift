@@ -7,13 +7,13 @@
 
 import SwiftUI
 import ChocofordUI
-#if !APP_STORE
+#if os(macOS) && !APP_STORE
 import Sparkle
 #endif
 
 struct GeneralSettingsView: View {
     @Environment(\.colorScheme) var colorScheme
-#if !APP_STORE
+#if os(macOS) && !APP_STORE
     @EnvironmentObject var updateChecker: UpdateChecker
 #endif
     @EnvironmentObject var appPreference: AppPreference
@@ -124,7 +124,7 @@ struct GeneralSettingsView: View {
             }
         }
         
-#if !APP_STORE
+#if os(macOS) && !APP_STORE
         Section {
             Toggle(.localizable(.settingsUpdatesAutoCheckLabel), isOn: $updateChecker.canCheckForUpdates)
         } header: {
@@ -168,6 +168,8 @@ struct GeneralSettingsView: View {
 #Preview {
     GeneralSettingsView()
         .environmentObject(AppPreference())
+#if os(macOS) && !APP_STORE
         .environmentObject(UpdateChecker())
+#endif
 }
 #endif

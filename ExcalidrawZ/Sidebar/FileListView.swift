@@ -45,7 +45,7 @@ struct FileListView: View {
     
     var body: some View {
         ZStack {
-            if #available(macOS 14.0, *) {
+            if #available(macOS 14.0, iOS 17.0, *) {
                 content()
                     .onChange(of: fileState.currentGroup) { _, newValue in
                         if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {

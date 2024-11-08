@@ -151,8 +151,11 @@ struct LibraryItemView: View {
         }
     }
 }
-
+#if os(macOS)
 let excalidrawLibItemsCache: NSCache = NSCache<NSString, NSImage>()
+#else
+let excalidrawLibItemsCache: NSCache = NSCache<NSString, UIImage>()
+#endif
 
 struct LibraryItemContentView: View {
     @Environment(\.colorScheme) var colorScheme
@@ -191,14 +194,14 @@ struct LibraryItemContentView: View {
             Task.detached {
                 do {
                     let image: Image
-                    if let nsImage = excalidrawLibItemsCache.object(forKey: NSString(string: item.libraryItems[0].id)) {
-                        image = Image(nsImage: nsImage)
+                    if let platformImage = excalidrawLibItemsCache.object(forKey: NSString(string: item.libraryItems[0].id)) {
+                        image = Image(platformImage: platformImage)
                     } else {
                         let nsImage = try await webCoordinator.exportElementsToPNG(
                             elements: item.libraryItems[0].elements
                         )
                         excalidrawLibItemsCache.setObject(nsImage, forKey: NSString(string: item.libraryItems[0].id))
-                        image = Image(nsImage: nsImage)
+                        image = Image(platformImage: nsImage)
                     }
                     await MainActor.run {
                         self.image = image

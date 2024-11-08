@@ -51,6 +51,7 @@ struct ExportFileView: View {
     
     var body: some View {
         Center {
+#if canImport(AppKit)
             if #available(macOS 13.0, *), let file = try? ExcalidrawFile(from: file.objectID, context: viewContext) {
                 Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
                     .resizable()
@@ -65,6 +66,13 @@ struct ExportFileView: View {
                     .frame(height: 80)
                     .padding()
             }
+#else
+            Image(systemSymbol: .docText)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(height: 80)
+                .padding()
+#endif
             actionsView()
         }
         .overlay(alignment: .topLeading) {
@@ -99,12 +107,19 @@ struct ExportFileView: View {
         HStack {
             Spacer()
             Button {
+#if canImport(AppKit)
                 NSPasteboard.general.clearContents()
+#endif
+
                 if let url = fileURL,
                    let url = (url as NSURL).fileReferenceURL() as NSURL? {
+#if canImport(AppKit)
                     NSPasteboard.general.writeObjects([url])
                     NSPasteboard.general.setString(url.relativeString, forType: .fileURL)
                     NSPasteboard.general.setData(file.content, forType: .fileContents)
+#elseif canImport(UIKit)
+                    UIPasteboard.general.setObjects([url])
+#endif
                     withAnimation {
                         copied = true
                     }

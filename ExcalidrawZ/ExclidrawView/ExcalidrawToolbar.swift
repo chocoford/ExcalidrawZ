@@ -18,7 +18,11 @@ struct ExcalidrawToolbar: View {
     @Binding var isSidebarPresented: Bool
     @Binding var isDense: Bool
     
+#if canImport(AppKit)
     @State private var window: NSWindow?
+#elseif canImport(UIKit)
+    @State private var window: UIWindow?
+#endif
     @State private var windowFrameCancellable: AnyCancellable?
     
     
@@ -204,7 +208,7 @@ struct ExcalidrawToolbar: View {
                 .help("\(String(localizable: .toolbarLaser)) — K")
             }
             .background {
-                if #available(macOS 14.0, *) {
+                if #available(macOS 14.0, iOS 17.0, *) {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(.regularMaterial)
                         .stroke(.separator, lineWidth: 0.5)

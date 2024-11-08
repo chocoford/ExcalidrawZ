@@ -18,6 +18,9 @@
 		3908EB9929674DF60054A3ED /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB9729674DF60054A3ED /* Model.xcdatamodeld */; };
 		390B2C792967CF5C00AA359C /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B2C782967CF5C00AA359C /* PersistenceController.swift */; };
 		390B2C7B2967EACA00AA359C /* FetchResults+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B2C7A2967EACA00AA359C /* FetchResults+Extension.swift */; };
+		390E1F3F2CDDE7D400DEB779 /* UIImage+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390E1F3E2CDDE7D400DEB779 /* UIImage+Extension.swift */; };
+		390E1F402CDDE7D400DEB779 /* UIImage+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390E1F3E2CDDE7D400DEB779 /* UIImage+Extension.swift */; };
+		390E1F412CDDE7D400DEB779 /* UIImage+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390E1F3E2CDDE7D400DEB779 /* UIImage+Extension.swift */; };
 		3914876D2960AFD10042927A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 3914876C2960AFD10042927A /* Sparkle */; };
 		391585A52A80238B0028D250 /* ShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391585A42A80238B0028D250 /* ShareView.swift */; };
 		3929AB792CA5E4B800C7CCE8 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3929AB782CA5E4B800C7CCE8 /* ChocofordEssentials */; };
@@ -163,8 +166,8 @@
 		397F98D0295DA071009BED55 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98CF295DA071009BED55 /* Error.swift */; };
 		397F98DE295EE18E009BED55 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98DD295EE18E009BED55 /* AppDelegate.swift */; };
 		397F98E229607D58009BED55 /* ExcaliDrawOpenPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98E129607D58009BED55 /* ExcaliDrawOpenPanel.swift */; };
-		3987A5152CB54B200054D7D5 /* QuickLookPreviewExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3987A5072CB54B200054D7D5 /* QuickLookPreviewExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		3987A51C2CB54B840054D7D5 /* QuickLookPreviewExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3987A5072CB54B200054D7D5 /* QuickLookPreviewExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3987A5152CB54B200054D7D5 /* QuickLookPreviewExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3987A5072CB54B200054D7D5 /* QuickLookPreviewExtension.appex */; platformFilters = (macos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3987A51C2CB54B840054D7D5 /* QuickLookPreviewExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3987A5072CB54B200054D7D5 /* QuickLookPreviewExtension.appex */; platformFilters = (macos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3987A5322CB550000054D7D5 /* ExcalidrawFreeDrawElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA14E2A7ED68B00B1DDA0 /* ExcalidrawFreeDrawElement.swift */; };
 		3987A5332CB550000054D7D5 /* ExcalidrawElementBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1452A7ECA8E00B1DDA0 /* ExcalidrawElementBase.swift */; };
 		3987A5342CB550000054D7D5 /* ExcalidrawGenricElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1482A7ECB0600B1DDA0 /* ExcalidrawGenricElement.swift */; };
@@ -296,6 +299,7 @@
 		3908EB9829674DF60054A3ED /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
 		390B2C782967CF5C00AA359C /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		390B2C7A2967EACA00AA359C /* FetchResults+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FetchResults+Extension.swift"; sourceTree = "<group>"; };
+		390E1F3E2CDDE7D400DEB779 /* UIImage+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIImage+Extension.swift"; sourceTree = "<group>"; };
 		39148772296316720042927A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		391585A42A80238B0028D250 /* ShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareView.swift; sourceTree = "<group>"; };
 		3915C9AB2CB54A6800B860E7 /* QuickLookUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLookUI.framework; path = System/Library/Frameworks/QuickLookUI.framework; sourceTree = SDKROOT; };
@@ -790,6 +794,7 @@
 		397F98CC295CC182009BED55 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				390E1F3E2CDDE7D400DEB779 /* UIImage+Extension.swift */,
 				39E73D7029DAFE3E00098A79 /* NSImage+Extension.swift */,
 				3908EB95296719170054A3ED /* String+Extension.swift */,
 				3901E25D29652AD800E79788 /* URL+Extension.swift */,
@@ -1203,6 +1208,7 @@
 				3963A0552C6C7EAA00472AE7 /* ExcalidrawElement.swift in Sources */,
 				3963A0562C6C7EAA00472AE7 /* ContentView.swift in Sources */,
 				3963A0572C6C7EAA00472AE7 /* VersionState.swift in Sources */,
+				390E1F402CDDE7D400DEB779 /* UIImage+Extension.swift in Sources */,
 				3963A0582C6C7EAA00472AE7 /* FetchResults+Extension.swift in Sources */,
 				3963A0592C6C7EAA00472AE7 /* ExcalidrawGenricElement.swift in Sources */,
 				3963A05A2C6C7EAA00472AE7 /* ExcalidrawTextElement.swift in Sources */,
@@ -1248,6 +1254,7 @@
 				3963A1152C6D1D4900472AE7 /* ExportFileView.swift in Sources */,
 				3963A1162C6D1D4900472AE7 /* String+Extension.swift in Sources */,
 				3963A1172C6D1D4900472AE7 /* Group.swift in Sources */,
+				390E1F412CDDE7D400DEB779 /* UIImage+Extension.swift in Sources */,
 				3963A1182C6D1D4900472AE7 /* ExportImageView.swift in Sources */,
 				3963A1192C6D1D4900472AE7 /* Array+Extension.swift in Sources */,
 				3963A11A2C6D1D4900472AE7 /* Utils.swift in Sources */,
@@ -1304,6 +1311,7 @@
 				397152F02C86E18F00A65ADF /* LibraryItem+Persistence.swift in Sources */,
 				3908EB96296719170054A3ED /* String+Extension.swift in Sources */,
 				39E0577D296C935200304655 /* Group.swift in Sources */,
+				390E1F3F2CDDE7D400DEB779 /* UIImage+Extension.swift in Sources */,
 				39E73D6F29DADCF100098A79 /* ExportImageView.swift in Sources */,
 				3908EB942966E7690054A3ED /* Array+Extension.swift in Sources */,
 				397E468929599E85003B824B /* Utils.swift in Sources */,
@@ -1400,11 +1408,17 @@
 		};
 		3987A5142CB54B200054D7D5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilters = (
+				macos,
+			);
 			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
 			targetProxy = 3987A5132CB54B200054D7D5 /* PBXContainerItemProxy */;
 		};
 		3987A51E2CB54B840054D7D5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilters = (
+				macos,
+			);
 			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
 			targetProxy = 3987A51D2CB54B840054D7D5 /* PBXContainerItemProxy */;
 		};
@@ -2137,7 +2151,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = 3XKM749Y3L;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -2168,7 +2182,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = 3XKM749Y3L;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -2198,7 +2212,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = 3XKM749Y3L;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;

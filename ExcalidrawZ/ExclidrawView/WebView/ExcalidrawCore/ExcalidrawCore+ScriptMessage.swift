@@ -112,6 +112,7 @@ extension ExcalidrawCore {
     }
     
     func handleCopy(_ data: [WebClipboardItem]) throws {
+#if canImport(AppKit)
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         for item in data {
@@ -144,7 +145,39 @@ extension ExcalidrawCore {
                     break
             }
         }
-        
+#elseif canImport(UIKit)
+        let pasteboard = UIPasteboard.general
+//        for item in data {
+//            let string = item.data
+//            switch item.type {
+//                case "text":
+//                    let success = pasteboard.set(string, forType: .string)
+//                case "application/json", "application/vnd.excalidraw+json", "application/vnd.excalidrawlib+json":
+//                    pasteboard.setString(string, forType: .string)
+//                case "image/svg+xml":
+//                    pasteboard.setString(string, forType: .html)
+//                case "image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "image/x-icon", "image/avif", "image/jfif":
+//                    if let data = Data(
+//                        base64Encoded: String(string.suffix(
+//                            string.count - string.distance(
+//                                from: string.startIndex,
+//                                to: (string.firstIndex(of: ",") ?? .init(utf16Offset: 0, in: ""))
+//                            )
+//                        )),
+//                        options: [.ignoreUnknownCharacters]
+//                    ) {
+//                        let success = pasteboard.setData(data, forType: .png)
+//                        print(success)
+//                    } else {
+//                        pasteboard.setString(string, forType: .png)
+//                    }
+//                case "application/octet-stream":
+//                    pasteboard.setString(string, forType: .fileContents)
+//                default:
+//                    break
+//            }
+//        }
+#endif
     }
     
     func onWebLog(message: LogMessage) {

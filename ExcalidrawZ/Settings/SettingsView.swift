@@ -7,7 +7,7 @@
 
 import SwiftUI
 import ChocofordUI
-#if !APP_STORE
+#if os(macOS) && !APP_STORE
 import Sparkle
 #endif
 
@@ -20,7 +20,7 @@ struct SettingsView: View {
     
     @MainActor @ViewBuilder
     private func content() -> some View {
-        if #available(macOS 14.0, *) {
+        if #available(macOS 14.0, iOS 17.0, *) {
             NavigationSplitView(columnVisibility: .constant(.all)) {
                 sidebar
                     .toolbar(removing: .sidebarToggle)
@@ -37,12 +37,16 @@ struct SettingsView: View {
             } detail: {
                 detail(for: selection)
             }
+#if os(macOS)
             .removeSettingsSidebarToggle()
+#endif
             .navigationTitle(.localizable(.settingsNavigationTitle))
         } else {
             HStack {
                 sidebar
+#if os(macOS)
                     .visualEffect(material: .sidebar)
+#endif
                     .frame(width: 200)
                 detail(for: selection)
             }

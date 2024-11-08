@@ -13,7 +13,7 @@ import SFSafeSymbols
 
 
 
-@available(macOS 13.0, *)
+@available(macOS 13.0, iOS 16.0, *)
 struct ShareView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.alertToast) var alertToast
@@ -48,6 +48,7 @@ struct ShareView: View {
                         route.append(Route.exportFile)
                     }
                     
+#if os(macOS)
                     SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
                         do {
                             try archiveAllFiles()
@@ -55,6 +56,7 @@ struct ShareView: View {
                             alertToast(error)
                         }
                     }
+#endif
                 }
                 
                 
@@ -79,10 +81,14 @@ struct ShareView: View {
                 }
             }
             .padding(.horizontal, 40)
+#if os(macOS)
             .toolbar(.hidden, for: .windowToolbar)
+#endif
         }
         .frame(width: 400, height: 300)
+#if os(macOS)
         .visualEffect(material: .sidebar)
+#endif
     }
 }
 
@@ -139,6 +145,7 @@ struct ShareViewLagacy: View {
                     route.append(Route.exportFile)
                 }
                 
+#if os(macOS)
                 SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
                     do {
                         try archiveAllFiles()
@@ -146,6 +153,7 @@ struct ShareViewLagacy: View {
                         alertToast(error)
                     }
                 }
+#endif
             }
             
             
@@ -223,8 +231,13 @@ struct ExportButtonStyle: PrimitiveButtonStyle {
                                     isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial)
                                 ) : AnyShapeStyle(Color.clear)
                             )
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(.separator, lineWidth: 0.5)
+                        if #available(macOS 10.15, iOS 17.0, *) {
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.separator, lineWidth: 0.5)
+                        } else {
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.gray, lineWidth: 0.5)
+                        }
                     }
                     .animation(.default, value: isHovered)
                 }

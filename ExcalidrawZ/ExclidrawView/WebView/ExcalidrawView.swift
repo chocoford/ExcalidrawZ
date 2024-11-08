@@ -31,6 +31,7 @@ class ExcalidrawWebView: WKWebView {
     
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     
+#if os(macOS)
     override func keyDown(with event: NSEvent) {
         if shouldHandleInput,
            let char = event.characters {
@@ -45,6 +46,7 @@ class ExcalidrawWebView: WKWebView {
             super.keyDown(with: event)
         }
     }
+#endif
 }
 
 struct ExcalidrawView {
@@ -151,5 +153,33 @@ extension ExcalidrawView: NSViewRepresentable {
 }
 
 #elseif os(iOS)
-
+extension ExcalidrawView: UIViewRepresentable {
+    func makeUIView(context: Context) -> ExcalidrawWebView {
+        DispatchQueue.main.async {
+            cancellables.insert(
+                context.coordinator.$isLoading.sink { newValue in
+                    DispatchQueue.main.async {
+                        self.isLoading = newValue
+                    }
+                }
+            )
+            Task {
+                for await error in context.coordinator.errorStream {
+                    self.onError(error)
+                }
+            }
+        }
+        return context.coordinator.webView
+    }
+    
+    func updateUIView(_ uiView: ExcalidrawWebView, context: Context) {
+        
+    }
+    
+    func makeCoordinator() -> ExcalidrawCore {
+        ExcalidrawCore(
+            self
+        )
+    }
+}
 #endif
