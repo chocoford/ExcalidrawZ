@@ -122,9 +122,12 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
         try self.init(data: data)
     }
     
-    init(data: Data) throws {
+    init(data: Data, id: UUID? = nil) throws {
         self = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
         self.content = data
+        if let id {
+            self.id = id
+        }
     }
 }
 

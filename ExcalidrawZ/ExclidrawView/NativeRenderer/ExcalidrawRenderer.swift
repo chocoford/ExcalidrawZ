@@ -11,7 +11,7 @@ import ChocofordUI
 
 struct ExcalidrawRenderer: View {
     @Environment(\.colorScheme) var colorScheme
-    
+        
     var file: ExcalidrawFile
     var elements: [ExcalidrawElement] {
         file.elements
@@ -192,16 +192,13 @@ struct ExcalidrawRenderer: View {
                     case .draw(let excalidrawDrawElement):
                         break
                     case .image(let excalidrawImageElement):
-                        if let fileID = excalidrawImageElement.fileId,
-                           let base64String = file.files[fileID]?.dataURL,
-                           let commaIndex = base64String.firstIndex(of: ",") {
-                            if let data = Data(base64Encoded: String(base64String.suffix(from: base64String.index(after: commaIndex)))),
-                               let image = Image(data: data) {
-                                context.draw(
-                                    context.resolve(image),
-                                    in: transformedRect
-                                )
-                            }
+                        if let fileID = excalidrawImageElement.fileId {
+                            renderExcalidrawImage(
+                                context: context,
+                                fileID: fileID,
+                                file: file,
+                                rect: transformedRect
+                            )
                         }
                 }
             }

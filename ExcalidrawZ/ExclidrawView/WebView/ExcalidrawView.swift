@@ -123,6 +123,16 @@ extension ExcalidrawView: NSViewRepresentable {
             } catch {
                 self.onError(error)
             }
+            do {
+                if appPreference.autoInvertImage,
+                    appPreference.excalidrawAppearance == .dark || colorScheme == .dark && appPreference.excalidrawAppearance == .auto {
+                    try await context.coordinator.toggleInvertImageSwitch(autoInvert: true)
+                } else {
+                    try await context.coordinator.toggleInvertImageSwitch(autoInvert: false)
+                }
+            } catch {
+                self.onError(error)
+            }
         }
         context.coordinator.loadFile(from: file)
         if context.coordinator.lastTool != toolState.activatedTool {

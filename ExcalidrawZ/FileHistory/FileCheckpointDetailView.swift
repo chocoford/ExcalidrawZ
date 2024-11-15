@@ -22,7 +22,7 @@ struct FileCheckpointDetailView: View {
         VStack(spacing: 12) {
             ZStack {
                 if let data = checkpoint.content,
-                   let file = try? JSONDecoder().decode(ExcalidrawFile.self, from: data),
+                   var file = try? ExcalidrawFile(data: data, id: checkpoint.file?.id),
                    !file.elements.isEmpty {
                     ExcalidrawRenderer(file: file)
                 } else {
