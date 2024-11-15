@@ -33,7 +33,7 @@ final class FileState: ObservableObject {
     }
     @Published var currentFile: File? {
         didSet {
-            print("freeze watchUpdate: \(Date.now.timeIntervalSince1970)")
+            print("freeze watchUpdate: \(Date.now.formatted(date: .omitted, time: .complete))")
             shouldIgnoreUpdate = true
             recoverWatchUpdate()
             currentFilePublisherCancellables.forEach{$0.cancel()}
@@ -50,10 +50,10 @@ final class FileState: ObservableObject {
                         }
                     }
                 ]
+//                excalidrawWebCoordinator?.loadFile(from: currentFile)
             }
         }
     }
-//    @Published var currentFileID: UUID?
     
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
     
@@ -104,7 +104,6 @@ final class FileState: ObservableObject {
         guard !shouldIgnoreUpdate, currentFile?.inTrash != true else {
             return
         }
-//        logger.info("\(#function) data: \(data)")
         if let file = currentFile {
             let didUpdateFile = didUpdateFile
             let id = file.objectID
@@ -135,7 +134,6 @@ final class FileState: ObservableObject {
         guard !shouldIgnoreUpdate, currentFile?.inTrash != true else {
             return
         }
-//        logger.info("\(#function) file: \(String(describing: excalidrawFile))")
         if let file = self.currentFile {
             let didUpdateFile = didUpdateFile
             let id = file.objectID
@@ -144,11 +142,26 @@ final class FileState: ObservableObject {
             Task.detached {
                 do {
                     try await bgContext.perform {
-                        guard let file = bgContext.object(with: id) as? File else { return }
+                        guard let file = bgContext.object(with: id) as? File,
+                              let content = excalidrawFile.content else { return }
                         try file.updateElements(
-                            with: JSONEncoder().encode(excalidrawFile),
+                            with: content,
                             newCheckpoint: !didUpdateFile
                         )
+                    
+                        let newMedias = excalidrawFile.files.filter { (id, _) in
+                            file.medias?.contains(where: {
+                                ($0 as? MediaItem)?.id == id
+                            }) != true
+                        }
+                        
+                        // also update medias
+                        for (_, resource) in newMedias {
+                            let mediaItem = MediaItem(resource: resource, context: bgContext)
+                            mediaItem.file = file
+                            bgContext.insert(mediaItem)
+                        }
+                        
                         try bgContext.save()
                     }
                     

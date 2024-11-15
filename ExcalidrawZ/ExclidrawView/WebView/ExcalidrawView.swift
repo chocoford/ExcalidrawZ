@@ -80,7 +80,6 @@ struct ExcalidrawView {
         self._file = file
         self.savingType = savingType
         self._isLoading = isLoadingPage
-//        self._isLoadingFile = isLoadingFile
         self.onError = onError
     }
     
@@ -91,8 +90,6 @@ struct ExcalidrawView {
 extension ExcalidrawView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> ExcalidrawWebView {
-        print("[ExcalidrawView] making NSView")
-        
         DispatchQueue.main.async {
             cancellables.insert(
                 context.coordinator.$isLoading.sink { newValue in
@@ -146,12 +143,9 @@ extension ExcalidrawView: NSViewRepresentable {
     }
 
     func makeCoordinator() -> ExcalidrawCore {
-        ExcalidrawCore(
-            self
-        )
+        ExcalidrawCore(self)
     }
 }
-
 #elseif os(iOS)
 extension ExcalidrawView: UIViewRepresentable {
     func makeUIView(context: Context) -> ExcalidrawWebView {

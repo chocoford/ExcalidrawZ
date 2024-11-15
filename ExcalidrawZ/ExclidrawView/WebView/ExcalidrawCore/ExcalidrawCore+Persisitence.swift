@@ -12,7 +12,6 @@ extension ExcalidrawCore {
         guard !self.isLoading, !self.webView.isLoading else { return }
         guard let fileID = file?.id,
             let data = file?.content else { return }
-//        self.logger.info("[ExcalidrawView.Coordinator] loading Coredata file...")
         Task.detached {
             do {
                 try await self.webActor.loadFile(id: fileID, data: data, force: force)

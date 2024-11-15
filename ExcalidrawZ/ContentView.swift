@@ -357,6 +357,13 @@ extension ContentView {
             .help(.localizable(.export))
             .disabled(fileState.currentGroup?.groupType == .trash)
             
+            SettingsButton(useDefaultLabel: true) {
+                
+            } label: {
+                Label("Settings", systemSymbol: .gear)
+                    .labelStyle(.iconOnly)
+            }
+
             if #available(macOS 13.0, iOS 16.0, *), appPreference.inspectorLayout == .sidebar { } else {
                 Button {
                     isInspectorPresented.toggle()

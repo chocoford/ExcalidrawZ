@@ -53,6 +53,8 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     self.flyingSVGRequests[svgData.data.id]?(svgData.data.svg)
                 case .addLibrary(let message):
                     self.addLibrary(item: message.data)
+                case .getAllMedias(let data):
+                    self.flyingAllMediasRequests[data.data.id]?(data.data.files)
                 case .log(let logMessage):
                     self.onWebLog(message: logMessage)
             }
@@ -99,7 +101,6 @@ extension ExcalidrawCore {
                             }
                         }
                 }
-//                }
             } catch {
                 onError(error)
             }
@@ -184,14 +185,19 @@ extension ExcalidrawCore {
         let method = message.method
         let message = message.args.map{
             if let arg = $0 {
-                return arg
+                let maxLength = 100
+                if arg.count > maxLength {
+                    return arg.prefix(maxLength - 3) + "..."
+                } else {
+                    return arg
+                }
             } else {
                 return "null"
             }
         }.joined(separator: " ")
         switch method {
             case "log":
-                //                self.logger.log("\(message)")
+                self.logger.log("Receive log from web:\n\(message)")
                 break
             case "warn":
                 self.logger.warning("Receive warning from web:\n\(message)")
@@ -200,7 +206,7 @@ extension ExcalidrawCore {
             case "debug":
                 self.logger.debug("Receive warning from debug:\n\(message)")
             case "info":
-                //                self.logger.info("\(message)")
+                self.logger.info("Receive info from web:\n\(message)")
                 break
             case "trace":
                 self.logger.trace("Receive warning from trace:\n\(message)")
@@ -233,6 +239,7 @@ extension ExcalidrawCore {
         }
         
     }
+    
 }
 
 extension ExcalidrawCore {
@@ -249,6 +256,7 @@ extension ExcalidrawCore {
         case getElementsBlob
         case getElementsSVG
         case addLibrary
+        case getAllMedias
         
         case log
     }
@@ -265,6 +273,7 @@ extension ExcalidrawCore {
         case getElementsBlob(ExcalidrawElementsBlobData)
         case getElementsSVG(ExcalidrawElementsSVGData)
         case addLibrary(AddLibraryItemMessage)
+        case getAllMedias(GetAllMediasMessage)
         
         case log(LogMessage)
         
@@ -299,7 +308,8 @@ extension ExcalidrawCore {
                     self = .getElementsSVG(try ExcalidrawElementsSVGData(from: decoder))
                 case .addLibrary:
                     self = .addLibrary(try AddLibraryItemMessage(from: decoder))
-                    
+                case .getAllMedias:
+                    self = .getAllMedias(try GetAllMediasMessage(from: decoder))
                 case .log:
                     self = .log(try LogMessage(from: decoder))
             }
@@ -319,7 +329,7 @@ extension ExcalidrawCore {
         var state: ExcalidrawState?
         var data: ExcalidrawFileData
     }
-    
+
     struct ExcalidrawState: Codable {
         let showWelcomeScreen: Bool
         let theme, currentChartType, currentItemBackgroundColor, currentItemEndArrowhead: String
@@ -381,14 +391,13 @@ extension ExcalidrawCore {
         }
     }
 
-    
     struct ExcalidrawFileData: Codable, Hashable {
         // The JSON.stringify of `elements` & `files`
         var dataString: String
         var elements: [ExcalidrawElement]?
         var files: [String : ExcalidrawFile.ResourceFile]
     }
-    
+
     struct ExcalidrawElementsBlobData: AnyExcalidrawZMessage {
         struct BlobData: Codable {
             var id: String
@@ -398,7 +407,7 @@ extension ExcalidrawCore {
         var event: String
         var data: BlobData
     }
-    
+
     struct ExcalidrawElementsSVGData: AnyExcalidrawZMessage {
         struct SVGData: Codable {
             var id: String
@@ -413,23 +422,22 @@ extension ExcalidrawCore {
         var event: String
         var data: String //SaveFileDoneMessageData
     }
-    
+
     struct BlobDataMessage: AnyExcalidrawZMessage {
         var event: String
         var data: Data
     }
-    
+
     struct CopyMessage: AnyExcalidrawZMessage {
         var event: String
         var data: [WebClipboardItem]
     }
-    
-    
+
     struct WebClipboardItem: Codable {
         var type: String
         var data: String // string or base64
     }
- 
+
     struct SetActiveToolMessage: AnyExcalidrawZMessage {
         var event: String
         var data: SetActiveToolMessageData
@@ -452,13 +460,23 @@ extension ExcalidrawCore {
             }
         }
     }
-    
+
     struct AddLibraryItemMessage: AnyExcalidrawZMessage {
         var event: String
         var data: ExcalidrawLibrary.Item
     }
-    
-    
+
+    struct GetAllMediasMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: MediasData
+        
+        struct MediasData: Codable {
+            var id: String
+            var files: [ExcalidrawFile.ResourceFile]
+        }
+        
+    }
+
     // Log
     struct LogMessage: Codable {
         var event: String
@@ -470,7 +488,6 @@ extension ExcalidrawCore {
 
 extension ExcalidrawFile {
     mutating func update(data: ExcalidrawView.Coordinator.ExcalidrawFileData) throws {
-//        print("[ExcalidrawFile] update...")
         guard let content = self.content else {
             struct EmptyContentError: LocalizedError {
                 var errorDescription: String? { "Invalid excalidraw file." }

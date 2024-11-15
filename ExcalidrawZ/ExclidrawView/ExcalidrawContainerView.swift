@@ -24,22 +24,34 @@ struct ExcalidrawContainerView: View {
     
     @State private var isDropping: Bool = false
     
+    var fileBinding: Binding<ExcalidrawFile> {
+        Binding {
+            if let file = fileState.currentFile {
+                do {
+                    let excalidrawFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
+                    
+                    return excalidrawFile
+                } catch {
+                    alertToast(error)
+                    print(error)
+                    return ExcalidrawFile()
+                }
+            } else {
+                return ExcalidrawFile()
+            }
+        } set: { file in
+            guard file.id == fileState.currentFile?.id else {
+                return
+            }
+            fileState.updateCurrentFile(with: file)
+        }
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .center) {
                 ExcalidrawView(
-                    file: Binding {
-                        if let file = fileState.currentFile {
-                            return (try? ExcalidrawFile(from: file.objectID, context: viewContext)) ?? ExcalidrawFile()
-                        } else {
-                            return ExcalidrawFile()
-                        }
-                    } set: { file in
-                        guard file.id == fileState.currentFile?.id else {
-                            return
-                        }
-                        fileState.updateCurrentFile(with: file)
-                    },
+                    file: fileBinding,
                     isLoadingPage: $isLoading
                 ) { error in
                     alertToast(error)
@@ -150,6 +162,26 @@ struct ExcalidrawContainerView: View {
             } message: {
                 Text(.localizable(.deletedFileRecoverAlertMessage))
             }
+    }
+    
+    private func loadMedias() {
+        print("Start insert medias to IndexedDB.")
+        Task {
+            do {
+                let context = viewContext
+
+                let allMediasFetch = NSFetchRequest<MediaItem>(entityName: "MediaItem")
+                
+                let allMedias = try context.fetch(allMediasFetch)
+                try await fileState.excalidrawWebCoordinator?.insertMediaFiles(
+                    allMedias.compactMap{
+                        .init(mediaItem: $0)
+                    }
+                )
+            } catch {
+                alertToast(error)
+            }
+        }
     }
 }
 

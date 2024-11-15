@@ -8,6 +8,8 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+import CoreData
+
 struct ExcalidrawFile: Codable, Hashable, Sendable {
     var id = UUID()
     
@@ -30,9 +32,37 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
     struct ResourceFile: Codable, Hashable, Sendable {
         var mimeType: String
         var id: String
-        var created: Int
+        var createdAt: Date
         var dataURL: String
-        var lastRetrieved: Int
+        var lastRetrievedAt: Date
+        
+        enum CodingKeys: String, CodingKey {
+            case mimeType
+            case id
+            case createdAt = "created"
+            case dataURL
+            case lastRetrievedAt = "lastRetrieved"
+        }
+        
+        init(from decoder: any Decoder) throws {
+            let container: KeyedDecodingContainer<CodingKeys> = try decoder.container(keyedBy: CodingKeys.self)
+            self.mimeType = try container.decode(String.self, forKey: ExcalidrawFile.ResourceFile.CodingKeys.mimeType)
+            self.id = try container.decode(String.self, forKey: .id)
+            let created = try container.decode(Int.self, forKey: .createdAt)
+            self.createdAt = Date(timeIntervalSince1970: TimeInterval(created))
+            self.dataURL = try container.decode(String.self, forKey: .dataURL)
+            let lastRetrieved = try container.decode(Int.self, forKey: .lastRetrievedAt)
+            self.lastRetrievedAt = Date(timeIntervalSince1970: TimeInterval(lastRetrieved))
+        }
+        
+        func encode(to encoder: any Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(self.mimeType, forKey: .mimeType)
+            try container.encode(self.id, forKey: .id)
+            try container.encode(Int(self.createdAt.timeIntervalSince1970 * 1000), forKey: .createdAt)
+            try container.encode(self.dataURL, forKey: .dataURL)
+            try container.encode(Int(self.lastRetrievedAt.timeIntervalSince1970 * 1000), forKey: .lastRetrievedAt)
+        }
     }
     
     init(
@@ -65,7 +95,8 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.source = try container.decode(String.self, forKey: .source)
-        self.files = try container.decode([String : ExcalidrawFile.ResourceFile].self, forKey: .files)
+        // maybe empty if from core data
+        self.files = try container.decodeIfPresent([String : ExcalidrawFile.ResourceFile].self, forKey: .files) ?? [:]
         self.version = try container.decode(Int.self, forKey: .version)
         self.elements = try container.decode([ExcalidrawElement].self, forKey: .elements)
         self.appState = try container.decode(ExcalidrawFile.AppState.self, forKey: .appState)
