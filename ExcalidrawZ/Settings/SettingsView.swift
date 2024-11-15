@@ -104,6 +104,9 @@ struct SettingsView: View {
             case .medias:
                 MediasSettingsView()
                 
+            case .backups:
+                BackupsSettingsView()
+                
             case .about:
                 AboutView()
         }
@@ -115,6 +118,7 @@ extension SettingsView {
         case general
 //        case fileHistory
         case medias
+        case backups
         
         case about
         
@@ -127,6 +131,9 @@ extension SettingsView {
 //                    return "File history"
                 case .medias:
                     return "Media files"
+                    
+                case .backups:
+                    return "Backups"
                     
                 case .about:
                     return .localizable(.settingsAboutName)
@@ -141,6 +148,8 @@ extension SettingsView {
 //                    "fileHistory"
                 case .medias:
                     "medias"
+                case .backups:
+                    "backups"
                 case .about:
                     "about"
             }

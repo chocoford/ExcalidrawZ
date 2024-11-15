@@ -30,6 +30,14 @@ struct MediasSettingsView: View {
                     }
                 }
                 .padding(10)
+                .frame(minHeight: 400, alignment: .top)
+                .background {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selection = nil
+                        }
+                }
             }
             .frame(width: 200)
             .visualEffect(material: .sidebar)
@@ -77,12 +85,35 @@ struct MediasSettingsView: View {
                         .padding(.horizontal, 100)
                     }
                 } else {
-                    Text("Select a image.")
+                    placeholderView()
                 }
             }
             .padding()
             .frame(maxWidth: .infinity)
         }
+    }
+    
+    @MainActor @ViewBuilder
+    private func placeholderView() -> some View {
+        VStack {
+            Text("Media files").font(.largeTitle)
+            VStack(alignment: .leading) {
+                Text("This section contains all the media files used by your Excalidraw documents, intended for display purposes only.")
+            }
+            .padding()
+            .background {
+                let roundedRectangle = RoundedRectangle(cornerRadius: 8)
+                ZStack {
+                    roundedRectangle.fill(.regularMaterial)
+                    if #available(macOS 13.0, iOS 16.0, *) {
+                        roundedRectangle.stroke(.separator)
+                    } else {
+                        roundedRectangle.stroke(.secondary)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: 400)
     }
     
     @MainActor @ViewBuilder

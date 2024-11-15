@@ -25,9 +25,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         PersistenceController.shared.save()
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            if NSApp.windows.filter({$0.canBecomeMain}).isEmpty {
-                NSApp.terminate(nil)
+        DispatchQueue.main.async {
+            do {
+                try backupFiles()
+            } catch {
+                print(error)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                if NSApp.windows.filter({$0.canBecomeMain}).isEmpty {
+                    NSApp.terminate(nil)
+                }
             }
         }
         return false
