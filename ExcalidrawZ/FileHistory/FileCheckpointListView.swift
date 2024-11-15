@@ -13,20 +13,25 @@ struct FileCheckpointListView: View {
     @FetchRequest
     var fileCheckpoints: FetchedResults<FileCheckpoint>
     
-    init(file: File) {
+//    @Binding var selection: FileCheckpoint?
+    
+    init(file: File/*, selection: Binding<FileCheckpoint?>*/) {
         self._fileCheckpoints = FetchRequest(
             sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)],
             predicate: NSPredicate(format: "file == %@", file)
         )
+//        self._selection = selection
     }
     
     var body: some View {
         List {
-            ForEach(fileCheckpoints) {
-                FileCheckpointRowView(checkpoint: $0)
+            ForEach(fileCheckpoints) { checkpoint in
+                FileCheckpointRowView(checkpoint: checkpoint)
+//                    .onTapGesture {
+//                        selection = checkpoint
+//                    }
             }
         }
-        .listStyle(.plain)
     }
 }
 

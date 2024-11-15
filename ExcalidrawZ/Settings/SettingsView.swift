@@ -83,13 +83,7 @@ struct SettingsView: View {
     @ViewBuilder
     private func detail(for selection: Route?) -> some View {
         if let route = selection {
-#if os(macOS)
-            ScrollView {
-                detailView(for: route)
-            }
-#elseif os(iOS)
             detailView(for: route)
-#endif
         } else {
             ZStack {
                 Color.clear
@@ -104,6 +98,12 @@ struct SettingsView: View {
             case .general:
                 GeneralSettingsView()
                 
+//            case .fileHistory:
+//                FileHistorySettingsView()
+                
+            case .medias:
+                MediasSettingsView()
+                
             case .about:
                 AboutView()
         }
@@ -113,12 +113,20 @@ struct SettingsView: View {
 extension SettingsView {
     enum Route: CaseIterable, Identifiable {
         case general
+//        case fileHistory
+        case medias
+        
         case about
         
         var text: LocalizedStringKey {
             switch self {
                 case .general:
                     return .localizable(.settingsGeneralName)
+                    
+//                case .fileHistory:
+//                    return "File history"
+                case .medias:
+                    return "Media files"
                     
                 case .about:
                     return .localizable(.settingsAboutName)
@@ -129,7 +137,10 @@ extension SettingsView {
             switch self {
                 case .general:
                     "general"
-                    
+//                case .fileHistory:
+//                    "fileHistory"
+                case .medias:
+                    "medias"
                 case .about:
                     "about"
             }

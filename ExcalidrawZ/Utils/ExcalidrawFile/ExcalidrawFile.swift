@@ -49,7 +49,7 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
             self.mimeType = try container.decode(String.self, forKey: ExcalidrawFile.ResourceFile.CodingKeys.mimeType)
             self.id = try container.decode(String.self, forKey: .id)
             let created = try container.decode(Int.self, forKey: .createdAt)
-            self.createdAt = Date(timeIntervalSince1970: TimeInterval(created))
+            self.createdAt = Date(timeIntervalSince1970: TimeInterval(created) / 1000)
             self.dataURL = try container.decode(String.self, forKey: .dataURL)
             let lastRetrieved = try container.decode(Int.self, forKey: .lastRetrievedAt)
             self.lastRetrievedAt = Date(timeIntervalSince1970: TimeInterval(lastRetrieved))

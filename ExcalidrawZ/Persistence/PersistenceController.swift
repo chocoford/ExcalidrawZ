@@ -238,24 +238,26 @@ extension PersistenceController {
                     let files = try filesFetch.execute()
                     let checkpoints = try checkpointsFetch.execute()
                     
+                    var insertedMediaID = Set<String>()
+                    
                     print("Need migrate \(files.count) files")
                     for file in files {
-                        guard let data = file.content else { continue }
                         do {
-                            var excalidrawFile = try ExcalidrawFile(from: file)
+                            let excalidrawFile = try ExcalidrawFile(from: file)
                             if excalidrawFile.files.isEmpty { continue }
                             print("migrating \(excalidrawFile.files.count) files of \(excalidrawFile.name ?? "Untitled")")
-                            for (_, media) in excalidrawFile.files {
+                            for (id, media) in excalidrawFile.files {
+                                if insertedMediaID.contains(id) { continue }
                                 let mediaItem = MediaItem(resource: media, context: context)
                                 mediaItem.file = file
                                 container.viewContext.insert(mediaItem)
+                                insertedMediaID.insert(id)
                             }
                             if let content = file.content,
                                var jsonObj = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
                                 jsonObj.removeValue(forKey: "files")
                                 file.content = try JSONSerialization.data(withJSONObject: jsonObj)
                             }
-                            
                         } catch {
                             continue
                         }
@@ -267,7 +269,8 @@ extension PersistenceController {
                             let excalidrawFile = try ExcalidrawFile(data: data)
                             if excalidrawFile.files.isEmpty { continue }
                             print("migrating \(excalidrawFile.files.count) files of checkpoint<\(checkpoint.file?.name ?? "Untitled")>")
-                            for (_, media) in excalidrawFile.files {
+                            for (id, media) in excalidrawFile.files {
+                                if insertedMediaID.contains(id) { continue }
                                 let mediaItem = MediaItem(resource: media, context: context)
                                 mediaItem.file = checkpoint.file
                                 container.viewContext.insert(mediaItem)
@@ -281,6 +284,8 @@ extension PersistenceController {
                             continue
                         }
                     }
+                    
+
                 }
                 print("🎉🎉🎉 Migration medias done. Time cost: \(-start.timeIntervalSinceNow) s")
             } catch {

@@ -198,6 +198,15 @@
 		39B141402CE5E2F800D3EEDA /* MediaItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */; };
 		39B141412CE5E2F900D3EEDA /* MediaItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */; };
 		39B141422CE5E2F900D3EEDA /* MediaItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */; };
+		39B141892CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141882CE7183200D3EEDA /* FileHistorySettingsView.swift */; };
+		39B1418A2CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141882CE7183200D3EEDA /* FileHistorySettingsView.swift */; };
+		39B1418B2CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141882CE7183200D3EEDA /* FileHistorySettingsView.swift */; };
+		39B1418D2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1418C2CE7186C00D3EEDA /* MediasSettingsView.swift */; };
+		39B1418E2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1418C2CE7186C00D3EEDA /* MediasSettingsView.swift */; };
+		39B1418F2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1418C2CE7186C00D3EEDA /* MediasSettingsView.swift */; };
+		39B141912CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141902CE7198500D3EEDA /* FileCheckpointDetailView.swift */; };
+		39B141922CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141902CE7198500D3EEDA /* FileCheckpointDetailView.swift */; };
+		39B141932CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141902CE7198500D3EEDA /* FileCheckpointDetailView.swift */; };
 		39B7B878296C110B005F7E9D /* File+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B7B877296C110B005F7E9D /* File+Persistence.swift */; };
 		39BBE4752A6F078100045BEA /* ExportState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BBE4742A6F078100045BEA /* ExportState.swift */; };
 		39BE12EE2CB7DD8C006781D5 /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39BE12ED2CB7DD8C006781D5 /* Zlib */; };
@@ -349,6 +358,9 @@
 		39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = FakeSaveCommand.js; sourceTree = "<group>"; };
 		39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppEnviornment.swift; sourceTree = "<group>"; };
 		39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MediaItem+Persistence.swift"; sourceTree = "<group>"; };
+		39B141882CE7183200D3EEDA /* FileHistorySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileHistorySettingsView.swift; sourceTree = "<group>"; };
+		39B1418C2CE7186C00D3EEDA /* MediasSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediasSettingsView.swift; sourceTree = "<group>"; };
+		39B141902CE7198500D3EEDA /* FileCheckpointDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCheckpointDetailView.swift; sourceTree = "<group>"; };
 		39B7B877296C110B005F7E9D /* File+Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "File+Persistence.swift"; sourceTree = "<group>"; };
 		39BBE4742A6F078100045BEA /* ExportState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportState.swift; sourceTree = "<group>"; };
 		39BF8E892A7EADB1002BD9D8 /* FileCheckpointListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCheckpointListView.swift; sourceTree = "<group>"; };
@@ -671,6 +683,8 @@
 			children = (
 				394963A52A0E0E15000FEB40 /* SettingsView.swift */,
 				394963A82A0E1F7B000FEB40 /* GeneralSettingsView.swift */,
+				39B141882CE7183200D3EEDA /* FileHistorySettingsView.swift */,
+				39B1418C2CE7186C00D3EEDA /* MediasSettingsView.swift */,
 				39E9C59D2C8CA78100BC1C07 /* AboutView.swift */,
 			);
 			path = Settings;
@@ -874,6 +888,7 @@
 				39A6EADA2A7EC19000ADC726 /* ExcalidrawImageView.swift */,
 				39BF8E892A7EADB1002BD9D8 /* FileCheckpointListView.swift */,
 				39DCA1532A7FAC9200B1DDA0 /* FileCheckpointRowView.swift */,
+				39B141902CE7198500D3EEDA /* FileCheckpointDetailView.swift */,
 			);
 			path = FileHistory;
 			sourceTree = "<group>";
@@ -1214,9 +1229,11 @@
 				3963A0552C6C7EAA00472AE7 /* ExcalidrawElement.swift in Sources */,
 				3963A0562C6C7EAA00472AE7 /* ContentView.swift in Sources */,
 				3963A0572C6C7EAA00472AE7 /* VersionState.swift in Sources */,
+				39B1418D2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */,
 				390E1F402CDDE7D400DEB779 /* UIImage+Extension.swift in Sources */,
 				3963A0582C6C7EAA00472AE7 /* FetchResults+Extension.swift in Sources */,
 				3963A0592C6C7EAA00472AE7 /* ExcalidrawGenricElement.swift in Sources */,
+				39B141892CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */,
 				3963A05A2C6C7EAA00472AE7 /* ExcalidrawTextElement.swift in Sources */,
 				3987A5692CB557160054D7D5 /* ToolState.swift in Sources */,
 				3963A05B2C6C7EAA00472AE7 /* ExcalidrawImageView.swift in Sources */,
@@ -1230,6 +1247,7 @@
 				3963A0632C6C7EAA00472AE7 /* ExcaliDrawOpenPanel.swift in Sources */,
 				3963A0642C6C7EAA00472AE7 /* ExcalidrawFreeDrawElement.swift in Sources */,
 				3963A0652C6C7EAA00472AE7 /* ExcalidrawZApp.swift in Sources */,
+				39B141932CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */,
 				3987A5642CB556BC0054D7D5 /* AppPreference.swift in Sources */,
 				3987A55F2CB556860054D7D5 /* FileState.swift in Sources */,
 				3963A0662C6C7EAA00472AE7 /* SettingsView.swift in Sources */,
@@ -1283,10 +1301,13 @@
 				3963A1272C6D1D4900472AE7 /* SidebarView.swift in Sources */,
 				3963A1282C6D1D4900472AE7 /* ExcalidrawLinearElement.swift in Sources */,
 				3963A1292C6D1D4900472AE7 /* File+Persistence.swift in Sources */,
+				39B141912CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */,
+				39B1418A2CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */,
 				3963A12A2C6D1D4900472AE7 /* ShareView.swift in Sources */,
 				3963A12B2C6D1D4900472AE7 /* ExcalidrawServer.swift in Sources */,
 				3963A12C2C6D1D4900472AE7 /* ExcaliDrawOpenPanel.swift in Sources */,
 				3963A12D2C6D1D4900472AE7 /* ExcalidrawFreeDrawElement.swift in Sources */,
+				39B1418F2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */,
 				3963A12E2C6D1D4900472AE7 /* ExcalidrawZApp.swift in Sources */,
 				3963A12F2C6D1D4900472AE7 /* SettingsView.swift in Sources */,
 				3963A1302C6D1D4900472AE7 /* GeneralSettingsView.swift in Sources */,
@@ -1341,9 +1362,12 @@
 				39EE68A82A76AC7200344799 /* SidebarView.swift in Sources */,
 				39DCA14D2A7ED2D200B1DDA0 /* ExcalidrawLinearElement.swift in Sources */,
 				39B7B878296C110B005F7E9D /* File+Persistence.swift in Sources */,
+				39B141922CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */,
+				39B1418B2CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */,
 				391585A52A80238B0028D250 /* ShareView.swift in Sources */,
 				3966623C2C66686A00F863BC /* ExcalidrawServer.swift in Sources */,
 				397F98E229607D58009BED55 /* ExcaliDrawOpenPanel.swift in Sources */,
+				39B1418E2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */,
 				39DCA14F2A7ED68B00B1DDA0 /* ExcalidrawFreeDrawElement.swift in Sources */,
 				397E4657295838CF003B824B /* ExcalidrawZApp.swift in Sources */,
 				394963A62A0E0E15000FEB40 /* SettingsView.swift in Sources */,
