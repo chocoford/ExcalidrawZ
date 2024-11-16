@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23211.1" systemVersion="24A5331b" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23507" systemVersion="24B83" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="File" representedClassName="File" syncable="YES" codeGenerationType="class">
         <attribute name="content" attributeType="Binary"/>
         <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
@@ -10,6 +10,7 @@
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="checkpoints" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="FileCheckpoint" inverseName="file" inverseEntity="FileCheckpoint"/>
         <relationship name="group" maxCount="1" deletionRule="Nullify" destinationEntity="Group" inverseName="files" inverseEntity="Group"/>
+        <relationship name="medias" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="MediaItem" inverseName="file" inverseEntity="MediaItem"/>
     </entity>
     <entity name="FileCheckpoint" representedClassName="FileCheckpoint" syncable="YES" codeGenerationType="class">
         <attribute name="content" optional="YES" attributeType="Binary"/>
@@ -44,5 +45,13 @@
         <attribute name="rank" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="status" optional="YES" attributeType="String"/>
         <relationship name="library" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Library" inverseName="items" inverseEntity="Library"/>
+    </entity>
+    <entity name="MediaItem" representedClassName="MediaItem" syncable="YES" codeGenerationType="class">
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="dataURL" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="String"/>
+        <attribute name="lastRetrievedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="mimeType" optional="YES" attributeType="String"/>
+        <relationship name="file" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="File" inverseName="medias" inverseEntity="File"/>
     </entity>
 </model>

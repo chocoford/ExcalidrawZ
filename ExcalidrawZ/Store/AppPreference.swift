@@ -118,6 +118,6 @@ final class AppPreference: ObservableObject {
             }
         }
     }
-    
-    var autoInvertImage = true
+    /// Invert the inverted image in dark mode.
+    @AppStorage("autoInvertImage") var autoInvertImage = true
 }

@@ -93,8 +93,11 @@ struct ExportFileView: View {
             saveFileToTemp()
             showBackButton = true
             fileName = file.name ?? String(localizable: .newFileNamePlaceholder)
-            if let data = file.content {
-                fileDocument = try? ExcalidrawFile(data: data)
+            do {
+                fileDocument = try ExcalidrawFile(from: file)
+                try fileDocument?.syncFiles(context: viewContext)
+            } catch {
+                alertToast(error)
             }
         }
         .onDisappear {
@@ -147,9 +150,7 @@ struct ExportFileView: View {
             .disabled(copied)
             
             Button {
-//                if fileDocument != nil {
-                    showFileExporter = true
-//                }
+                showFileExporter = true
             } label: {
                 Label(.localizable(.exportActionSave), systemSymbol: .squareAndArrowDown)
                     .padding(.horizontal, 6)
@@ -204,10 +205,22 @@ struct ExportFileView: View {
             if fileManager.fileExists(atPath: url.absoluteString) {
                 try fileManager.removeItem(at: url)
             }
+            
+            var file = try ExcalidrawFile(from: file)
+            try file.syncFiles(context: viewContext)
+            guard let fileData = file.content else {
+                struct NoContentError: LocalizedError {
+                    var errorDescription: String? {
+                        "The file has no data."
+                    }
+                }
+                throw NoContentError()
+            }
+
             if #available(macOS 13.0, *) {
-                fileManager.createFile(atPath: url.path(percentEncoded: false), contents: file.content)
+                fileManager.createFile(atPath: url.path(percentEncoded: false), contents: fileData)
             } else {
-                fileManager.createFile(atPath: url.standardizedFileURL.path, contents: file.content)
+                fileManager.createFile(atPath: url.standardizedFileURL.path, contents: fileData)
             }
             fileURL = url
         } catch {
@@ -215,13 +228,3 @@ struct ExportFileView: View {
         }
     }
 }
-
-#if DEBUG
-//#Preview {
-//    ExportFileView(
-//        store: .init(initialState: .init(file: .preview)) {
-//            ExportFileStore()
-//        }
-//    )
-//}
-#endif

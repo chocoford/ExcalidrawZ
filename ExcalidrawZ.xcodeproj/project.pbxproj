@@ -54,12 +54,11 @@
 		3963A0582C6C7EAA00472AE7 /* FetchResults+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B2C7A2967EACA00AA359C /* FetchResults+Extension.swift */; };
 		3963A0592C6C7EAA00472AE7 /* ExcalidrawGenricElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1482A7ECB0600B1DDA0 /* ExcalidrawGenricElement.swift */; };
 		3963A05A2C6C7EAA00472AE7 /* ExcalidrawTextElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA14A2A7ED07B00B1DDA0 /* ExcalidrawTextElement.swift */; };
-		3963A05B2C6C7EAA00472AE7 /* ExcalidrawImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A6EADA2A7EC19000ADC726 /* ExcalidrawImageView.swift */; };
 		3963A05C2C6C7EAA00472AE7 /* GroupRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E0577A296C92DD00304655 /* GroupRowView.swift */; };
 		3963A05D2C6C7EAA00472AE7 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B2C782967CF5C00AA359C /* PersistenceController.swift */; };
 		3963A05E2C6C7EAA00472AE7 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39EE68A72A76AC7200344799 /* SidebarView.swift */; };
 		3963A05F2C6C7EAA00472AE7 /* ExcalidrawLinearElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA14C2A7ED2D200B1DDA0 /* ExcalidrawLinearElement.swift */; };
-		3963A0602C6C7EAA00472AE7 /* File+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B7B877296C110B005F7E9D /* File+Extension.swift */; };
+		3963A0602C6C7EAA00472AE7 /* File+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B7B877296C110B005F7E9D /* File+Persistence.swift */; };
 		3963A0612C6C7EAA00472AE7 /* ShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391585A42A80238B0028D250 /* ShareView.swift */; };
 		3963A0622C6C7EAA00472AE7 /* ExcalidrawServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3966623B2C66686A00F863BC /* ExcalidrawServer.swift */; };
 		3963A0632C6C7EAA00472AE7 /* ExcaliDrawOpenPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98E129607D58009BED55 /* ExcaliDrawOpenPanel.swift */; };
@@ -107,12 +106,11 @@
 		3963A1212C6D1D4900472AE7 /* FetchResults+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B2C7A2967EACA00AA359C /* FetchResults+Extension.swift */; };
 		3963A1222C6D1D4900472AE7 /* ExcalidrawGenricElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1482A7ECB0600B1DDA0 /* ExcalidrawGenricElement.swift */; };
 		3963A1232C6D1D4900472AE7 /* ExcalidrawTextElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA14A2A7ED07B00B1DDA0 /* ExcalidrawTextElement.swift */; };
-		3963A1242C6D1D4900472AE7 /* ExcalidrawImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A6EADA2A7EC19000ADC726 /* ExcalidrawImageView.swift */; };
 		3963A1252C6D1D4900472AE7 /* GroupRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E0577A296C92DD00304655 /* GroupRowView.swift */; };
 		3963A1262C6D1D4900472AE7 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B2C782967CF5C00AA359C /* PersistenceController.swift */; };
 		3963A1272C6D1D4900472AE7 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39EE68A72A76AC7200344799 /* SidebarView.swift */; };
 		3963A1282C6D1D4900472AE7 /* ExcalidrawLinearElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA14C2A7ED2D200B1DDA0 /* ExcalidrawLinearElement.swift */; };
-		3963A1292C6D1D4900472AE7 /* File+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B7B877296C110B005F7E9D /* File+Extension.swift */; };
+		3963A1292C6D1D4900472AE7 /* File+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B7B877296C110B005F7E9D /* File+Persistence.swift */; };
 		3963A12A2C6D1D4900472AE7 /* ShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391585A42A80238B0028D250 /* ShareView.swift */; };
 		3963A12B2C6D1D4900472AE7 /* ExcalidrawServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3966623B2C66686A00F863BC /* ExcalidrawServer.swift */; };
 		3963A12C2C6D1D4900472AE7 /* ExcaliDrawOpenPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98E129607D58009BED55 /* ExcaliDrawOpenPanel.swift */; };
@@ -191,11 +189,25 @@
 		3990F82D2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F82E2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F8362CACF4C500C94983 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3990F8352CACF4C500C94983 /* StoreKit.framework */; };
-		39A6EADB2A7EC19000ADC726 /* ExcalidrawImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A6EADA2A7EC19000ADC726 /* ExcalidrawImageView.swift */; };
 		39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */ = {isa = PBXBuildFile; fileRef = 39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */; };
 		39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
 		39AD1EF2295B504C00DA9657 /* AppEnviornment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */; };
-		39B7B878296C110B005F7E9D /* File+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B7B877296C110B005F7E9D /* File+Extension.swift */; };
+		39B141402CE5E2F800D3EEDA /* MediaItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */; };
+		39B141412CE5E2F900D3EEDA /* MediaItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */; };
+		39B141422CE5E2F900D3EEDA /* MediaItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */; };
+		39B141892CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141882CE7183200D3EEDA /* FileHistorySettingsView.swift */; };
+		39B1418A2CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141882CE7183200D3EEDA /* FileHistorySettingsView.swift */; };
+		39B1418B2CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141882CE7183200D3EEDA /* FileHistorySettingsView.swift */; };
+		39B1418D2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1418C2CE7186C00D3EEDA /* MediasSettingsView.swift */; };
+		39B1418E2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1418C2CE7186C00D3EEDA /* MediasSettingsView.swift */; };
+		39B1418F2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1418C2CE7186C00D3EEDA /* MediasSettingsView.swift */; };
+		39B141912CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141902CE7198500D3EEDA /* FileCheckpointDetailView.swift */; };
+		39B141922CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141902CE7198500D3EEDA /* FileCheckpointDetailView.swift */; };
+		39B141932CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141902CE7198500D3EEDA /* FileCheckpointDetailView.swift */; };
+		39B141B72CE736BA00D3EEDA /* BackupsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141B62CE736BA00D3EEDA /* BackupsSettingsView.swift */; };
+		39B141B82CE736BA00D3EEDA /* BackupsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141B62CE736BA00D3EEDA /* BackupsSettingsView.swift */; };
+		39B141B92CE736BA00D3EEDA /* BackupsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141B62CE736BA00D3EEDA /* BackupsSettingsView.swift */; };
+		39B7B878296C110B005F7E9D /* File+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B7B877296C110B005F7E9D /* File+Persistence.swift */; };
 		39BBE4752A6F078100045BEA /* ExportState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BBE4742A6F078100045BEA /* ExportState.swift */; };
 		39BE12EE2CB7DD8C006781D5 /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39BE12ED2CB7DD8C006781D5 /* Zlib */; };
 		39BE12F12CB7DD97006781D5 /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39BE12F02CB7DD97006781D5 /* Zlib */; };
@@ -341,11 +353,15 @@
 		3987A5662CB557160054D7D5 /* ToolState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolState.swift; sourceTree = "<group>"; };
 		3990F82B2CA9C55100C94983 /* Store.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Store.storekit; sourceTree = "<group>"; };
 		3990F8352CACF4C500C94983 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
-		39A6EADA2A7EC19000ADC726 /* ExcalidrawImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawImageView.swift; sourceTree = "<group>"; };
 		39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = FakeToggleColorMode.js; sourceTree = "<group>"; };
 		39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = FakeSaveCommand.js; sourceTree = "<group>"; };
 		39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppEnviornment.swift; sourceTree = "<group>"; };
-		39B7B877296C110B005F7E9D /* File+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "File+Extension.swift"; sourceTree = "<group>"; };
+		39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MediaItem+Persistence.swift"; sourceTree = "<group>"; };
+		39B141882CE7183200D3EEDA /* FileHistorySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileHistorySettingsView.swift; sourceTree = "<group>"; };
+		39B1418C2CE7186C00D3EEDA /* MediasSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediasSettingsView.swift; sourceTree = "<group>"; };
+		39B141902CE7198500D3EEDA /* FileCheckpointDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCheckpointDetailView.swift; sourceTree = "<group>"; };
+		39B141B62CE736BA00D3EEDA /* BackupsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupsSettingsView.swift; sourceTree = "<group>"; };
+		39B7B877296C110B005F7E9D /* File+Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "File+Persistence.swift"; sourceTree = "<group>"; };
 		39BBE4742A6F078100045BEA /* ExportState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportState.swift; sourceTree = "<group>"; };
 		39BF8E892A7EADB1002BD9D8 /* FileCheckpointListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCheckpointListView.swift; sourceTree = "<group>"; };
 		39BF8E8B2A7EAE33002BD9D8 /* FileCheckpoint+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileCheckpoint+Extension.swift"; sourceTree = "<group>"; };
@@ -373,6 +389,7 @@
 			membershipExceptions = (
 				ExcalidrawContainerView.swift,
 				ExcalidrawToolbar.swift,
+				NativeRenderer/ExcalidrawImageRenderer_CoreData.swift,
 				NativeRenderer/ExcalidrawRenderer.swift,
 				WebView/ExcalidrawCore/ExcalidrawCore.swift,
 				"WebView/ExcalidrawCore/ExcalidrawCore+Download.swift",
@@ -405,6 +422,7 @@
 			membershipExceptions = (
 				ExcalidrawContainerView.swift,
 				ExcalidrawToolbar.swift,
+				NativeRenderer/ExcalidrawImageRenderer_CoreData.swift,
 				NativeRenderer/ExcalidrawRenderer.swift,
 				WebView/ExcalidrawCore/ExcalidrawCore.swift,
 				"WebView/ExcalidrawCore/ExcalidrawCore+Download.swift",
@@ -445,6 +463,7 @@
 		3987A5282CB54F2F0054D7D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				NativeRenderer/ExcalidrawImageRenderer_File.swift,
 				NativeRenderer/ExcalidrawRenderer.swift,
 			);
 			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
@@ -511,6 +530,7 @@
 			membershipExceptions = (
 				ExcalidrawContainerView.swift,
 				ExcalidrawToolbar.swift,
+				NativeRenderer/ExcalidrawImageRenderer_CoreData.swift,
 				NativeRenderer/ExcalidrawRenderer.swift,
 				WebView/ExcalidrawCore/ExcalidrawCore.swift,
 				"WebView/ExcalidrawCore/ExcalidrawCore+Download.swift",
@@ -642,11 +662,12 @@
 			isa = PBXGroup;
 			children = (
 				390B2C782967CF5C00AA359C /* PersistenceController.swift */,
-				39B7B877296C110B005F7E9D /* File+Extension.swift */,
 				39E0577C296C935200304655 /* Group.swift */,
+				39B7B877296C110B005F7E9D /* File+Persistence.swift */,
 				39BF8E8B2A7EAE33002BD9D8 /* FileCheckpoint+Extension.swift */,
 				397152E82C86DD2900A65ADF /* Library+Persistence.swift */,
 				397152ED2C86E18F00A65ADF /* LibraryItem+Persistence.swift */,
+				39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";
@@ -666,6 +687,9 @@
 			children = (
 				394963A52A0E0E15000FEB40 /* SettingsView.swift */,
 				394963A82A0E1F7B000FEB40 /* GeneralSettingsView.swift */,
+				39B141882CE7183200D3EEDA /* FileHistorySettingsView.swift */,
+				39B1418C2CE7186C00D3EEDA /* MediasSettingsView.swift */,
+				39B141B62CE736BA00D3EEDA /* BackupsSettingsView.swift */,
 				39E9C59D2C8CA78100BC1C07 /* AboutView.swift */,
 			);
 			path = Settings;
@@ -866,9 +890,9 @@
 		39DCA1522A7FAC7500B1DDA0 /* FileHistory */ = {
 			isa = PBXGroup;
 			children = (
-				39A6EADA2A7EC19000ADC726 /* ExcalidrawImageView.swift */,
 				39BF8E892A7EADB1002BD9D8 /* FileCheckpointListView.swift */,
 				39DCA1532A7FAC9200B1DDA0 /* FileCheckpointRowView.swift */,
+				39B141902CE7198500D3EEDA /* FileCheckpointDetailView.swift */,
 			);
 			path = FileHistory;
 			sourceTree = "<group>";
@@ -1052,7 +1076,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 1610;
 				TargetAttributes = {
 					397E4652295838CF003B824B = {
 						CreatedOnToolsVersion = 14.2;
@@ -1198,6 +1222,7 @@
 				3963A04C2C6C7EAA00472AE7 /* ExportFileView.swift in Sources */,
 				3963A04D2C6C7EAA00472AE7 /* String+Extension.swift in Sources */,
 				3963A04E2C6C7EAA00472AE7 /* Group.swift in Sources */,
+				39B141402CE5E2F800D3EEDA /* MediaItem+Persistence.swift in Sources */,
 				397152EE2C86E18F00A65ADF /* LibraryItem+Persistence.swift in Sources */,
 				3963A04F2C6C7EAA00472AE7 /* ExportImageView.swift in Sources */,
 				3963A0502C6C7EAA00472AE7 /* Array+Extension.swift in Sources */,
@@ -1208,22 +1233,25 @@
 				3963A0552C6C7EAA00472AE7 /* ExcalidrawElement.swift in Sources */,
 				3963A0562C6C7EAA00472AE7 /* ContentView.swift in Sources */,
 				3963A0572C6C7EAA00472AE7 /* VersionState.swift in Sources */,
+				39B1418D2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */,
 				390E1F402CDDE7D400DEB779 /* UIImage+Extension.swift in Sources */,
 				3963A0582C6C7EAA00472AE7 /* FetchResults+Extension.swift in Sources */,
+				39B141B82CE736BA00D3EEDA /* BackupsSettingsView.swift in Sources */,
 				3963A0592C6C7EAA00472AE7 /* ExcalidrawGenricElement.swift in Sources */,
+				39B141892CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */,
 				3963A05A2C6C7EAA00472AE7 /* ExcalidrawTextElement.swift in Sources */,
 				3987A5692CB557160054D7D5 /* ToolState.swift in Sources */,
-				3963A05B2C6C7EAA00472AE7 /* ExcalidrawImageView.swift in Sources */,
 				3963A05C2C6C7EAA00472AE7 /* GroupRowView.swift in Sources */,
 				3963A05D2C6C7EAA00472AE7 /* PersistenceController.swift in Sources */,
 				3963A05E2C6C7EAA00472AE7 /* SidebarView.swift in Sources */,
 				3963A05F2C6C7EAA00472AE7 /* ExcalidrawLinearElement.swift in Sources */,
-				3963A0602C6C7EAA00472AE7 /* File+Extension.swift in Sources */,
+				3963A0602C6C7EAA00472AE7 /* File+Persistence.swift in Sources */,
 				3963A0612C6C7EAA00472AE7 /* ShareView.swift in Sources */,
 				3963A0622C6C7EAA00472AE7 /* ExcalidrawServer.swift in Sources */,
 				3963A0632C6C7EAA00472AE7 /* ExcaliDrawOpenPanel.swift in Sources */,
 				3963A0642C6C7EAA00472AE7 /* ExcalidrawFreeDrawElement.swift in Sources */,
 				3963A0652C6C7EAA00472AE7 /* ExcalidrawZApp.swift in Sources */,
+				39B141932CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */,
 				3987A5642CB556BC0054D7D5 /* AppPreference.swift in Sources */,
 				3987A55F2CB556860054D7D5 /* FileState.swift in Sources */,
 				3963A0662C6C7EAA00472AE7 /* SettingsView.swift in Sources */,
@@ -1245,6 +1273,7 @@
 				3963A10D2C6D1D4900472AE7 /* URL+Extension.swift in Sources */,
 				3963A10E2C6D1D4900472AE7 /* FileRowView.swift in Sources */,
 				3963A10F2C6D1D4900472AE7 /* RootView.swift in Sources */,
+				39B141412CE5E2F900D3EEDA /* MediaItem+Persistence.swift in Sources */,
 				3963A1102C6D1D4900472AE7 /* Model.xcdatamodeld in Sources */,
 				3963A1112C6D1D4900472AE7 /* FileCheckpointListView.swift in Sources */,
 				3963A1122C6D1D4900472AE7 /* GroupListView.swift in Sources */,
@@ -1270,16 +1299,19 @@
 				3963A1222C6D1D4900472AE7 /* ExcalidrawGenricElement.swift in Sources */,
 				3963A1232C6D1D4900472AE7 /* ExcalidrawTextElement.swift in Sources */,
 				3987A5652CB556BC0054D7D5 /* AppPreference.swift in Sources */,
-				3963A1242C6D1D4900472AE7 /* ExcalidrawImageView.swift in Sources */,
 				3963A1252C6D1D4900472AE7 /* GroupRowView.swift in Sources */,
+				39B141B92CE736BA00D3EEDA /* BackupsSettingsView.swift in Sources */,
 				3963A1262C6D1D4900472AE7 /* PersistenceController.swift in Sources */,
 				3963A1272C6D1D4900472AE7 /* SidebarView.swift in Sources */,
 				3963A1282C6D1D4900472AE7 /* ExcalidrawLinearElement.swift in Sources */,
-				3963A1292C6D1D4900472AE7 /* File+Extension.swift in Sources */,
+				3963A1292C6D1D4900472AE7 /* File+Persistence.swift in Sources */,
+				39B141912CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */,
+				39B1418A2CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */,
 				3963A12A2C6D1D4900472AE7 /* ShareView.swift in Sources */,
 				3963A12B2C6D1D4900472AE7 /* ExcalidrawServer.swift in Sources */,
 				3963A12C2C6D1D4900472AE7 /* ExcaliDrawOpenPanel.swift in Sources */,
 				3963A12D2C6D1D4900472AE7 /* ExcalidrawFreeDrawElement.swift in Sources */,
+				39B1418F2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */,
 				3963A12E2C6D1D4900472AE7 /* ExcalidrawZApp.swift in Sources */,
 				3963A12F2C6D1D4900472AE7 /* SettingsView.swift in Sources */,
 				3963A1302C6D1D4900472AE7 /* GeneralSettingsView.swift in Sources */,
@@ -1302,6 +1334,7 @@
 				3901E25E29652AD800E79788 /* URL+Extension.swift in Sources */,
 				397F98CB295CBC01009BED55 /* FileRowView.swift in Sources */,
 				394A7FAF2C515CB700D4918B /* RootView.swift in Sources */,
+				39B141422CE5E2F900D3EEDA /* MediaItem+Persistence.swift in Sources */,
 				3908EB9929674DF60054A3ED /* Model.xcdatamodeld in Sources */,
 				39BF8E8A2A7EADB1002BD9D8 /* FileCheckpointListView.swift in Sources */,
 				3901E26029656FC500E79788 /* GroupListView.swift in Sources */,
@@ -1327,15 +1360,18 @@
 				39DCA1492A7ECB0600B1DDA0 /* ExcalidrawGenricElement.swift in Sources */,
 				39DCA14B2A7ED07B00B1DDA0 /* ExcalidrawTextElement.swift in Sources */,
 				3987A5632CB556BC0054D7D5 /* AppPreference.swift in Sources */,
-				39A6EADB2A7EC19000ADC726 /* ExcalidrawImageView.swift in Sources */,
+				39B141B72CE736BA00D3EEDA /* BackupsSettingsView.swift in Sources */,
 				39E0577B296C92DD00304655 /* GroupRowView.swift in Sources */,
 				390B2C792967CF5C00AA359C /* PersistenceController.swift in Sources */,
 				39EE68A82A76AC7200344799 /* SidebarView.swift in Sources */,
 				39DCA14D2A7ED2D200B1DDA0 /* ExcalidrawLinearElement.swift in Sources */,
-				39B7B878296C110B005F7E9D /* File+Extension.swift in Sources */,
+				39B7B878296C110B005F7E9D /* File+Persistence.swift in Sources */,
+				39B141922CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */,
+				39B1418B2CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */,
 				391585A52A80238B0028D250 /* ShareView.swift in Sources */,
 				3966623C2C66686A00F863BC /* ExcalidrawServer.swift in Sources */,
 				397F98E229607D58009BED55 /* ExcaliDrawOpenPanel.swift in Sources */,
+				39B1418E2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */,
 				39DCA14F2A7ED68B00B1DDA0 /* ExcalidrawFreeDrawElement.swift in Sources */,
 				397E4657295838CF003B824B /* ExcalidrawZApp.swift in Sources */,
 				394963A62A0E0E15000FEB40 /* SettingsView.swift in Sources */,
@@ -1524,6 +1560,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -1850,6 +1887,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -1915,6 +1953,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";

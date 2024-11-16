@@ -202,12 +202,14 @@ extension PersistenceController {
 // MARK: Migration
 extension PersistenceController {
     func migration() {
+        let context = container.viewContext
         Task {
+            // Make all old trashed file to 'source from default group'
             do {
                 let filesFetch: NSFetchRequest<File> = NSFetchRequest(entityName: "File")
                 let groupsFetch: NSFetchRequest<Group> = NSFetchRequest(entityName: "Group")
                 
-                try await container.viewContext.perform {
+                try await context.perform {
                     let files = try filesFetch.execute()
                     let groups = try groupsFetch.execute()
                     
@@ -224,6 +226,70 @@ extension PersistenceController {
                 
             } catch {
                 dump(error, name: "migration failed")
+            }
+            
+            do {
+                let start = Date()
+                print("🕘🕘🕘 Begin migrate medias. ")
+                let filesFetch: NSFetchRequest<File> = NSFetchRequest(entityName: "File")
+                let checkpointsFetch: NSFetchRequest<FileCheckpoint> = NSFetchRequest(entityName: "FileCheckpoint")
+                
+                try await context.perform {
+                    let files = try filesFetch.execute()
+                    let checkpoints = try checkpointsFetch.execute()
+                    
+                    var insertedMediaID = Set<String>()
+                    
+                    print("Need migrate \(files.count) files")
+                    for file in files {
+                        do {
+                            let excalidrawFile = try ExcalidrawFile(from: file)
+                            if excalidrawFile.files.isEmpty { continue }
+                            print("migrating \(excalidrawFile.files.count) files of \(excalidrawFile.name ?? "Untitled")")
+                            for (id, media) in excalidrawFile.files {
+                                if insertedMediaID.contains(id) { continue }
+                                let mediaItem = MediaItem(resource: media, context: context)
+                                mediaItem.file = file
+                                container.viewContext.insert(mediaItem)
+                                insertedMediaID.insert(id)
+                            }
+                            if let content = file.content,
+                               var jsonObj = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
+                                jsonObj.removeValue(forKey: "files")
+                                file.content = try JSONSerialization.data(withJSONObject: jsonObj)
+                            }
+                        } catch {
+                            continue
+                        }
+                    }
+                    print("Need migrate \(checkpoints.count) checkpoints")
+                    for checkpoint in checkpoints {
+                        guard let data = checkpoint.content else { continue }
+                        do {
+                            let excalidrawFile = try ExcalidrawFile(data: data)
+                            if excalidrawFile.files.isEmpty { continue }
+                            print("migrating \(excalidrawFile.files.count) files of checkpoint<\(checkpoint.file?.name ?? "Untitled")>")
+                            for (id, media) in excalidrawFile.files {
+                                if insertedMediaID.contains(id) { continue }
+                                let mediaItem = MediaItem(resource: media, context: context)
+                                mediaItem.file = checkpoint.file
+                                container.viewContext.insert(mediaItem)
+                            }
+                            if let content = checkpoint.content,
+                               var jsonObj = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
+                                jsonObj.removeValue(forKey: "files")
+                                checkpoint.content = try JSONSerialization.data(withJSONObject: jsonObj)
+                            }
+                        } catch {
+                            continue
+                        }
+                    }
+                    
+
+                }
+                print("🎉🎉🎉 Migration medias done. Time cost: \(-start.timeIntervalSinceNow) s")
+            } catch {
+                print(error)
             }
         }
     }

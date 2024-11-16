@@ -102,11 +102,13 @@ struct ExcalidrawZApp: App {
 
         Settings {
             SettingsView()
+                .swiftyAlert()
+                .preferredColorScheme(appPrefernece.appearance.colorScheme)
+                .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
                 .environmentObject(appPrefernece)
 #if !APP_STORE
                 .environmentObject(updateChecker)
 #endif
-                .preferredColorScheme(appPrefernece.appearance.colorScheme)
         }
 #endif
     }

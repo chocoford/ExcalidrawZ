@@ -68,10 +68,6 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
 
 ## Develop Tips
 
-* ~~Remove preload of fonts in `index.html`, otherwise fonts will not be loaded.~~
-
-* ~~Add hook in `excalidraw-app/App.tsx/onChange` to track the activated tool changed.~~
-
 * The `excalidraw` core is built and uploaded with the `dmg` file. You can download it from [Releases](https://github.com/chocoford/ExcalidrawZ/releases).
 
   * Or you can build your own core from [`excalidraw`](https://github.com/excalidraw/excalidraw)
@@ -87,4 +83,6 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
     <link rel="stylesheet" href="fonts.css" />
     ```
 
-    
+
+* The Renderer is in `packages/excalidraw/renderer/renderElement.ts`
+  * Prevent image invert: modify at line 432

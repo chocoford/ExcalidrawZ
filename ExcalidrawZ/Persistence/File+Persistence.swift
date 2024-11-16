@@ -25,7 +25,7 @@ extension File {
             return
         }
         obj["elements"] = fileDataJson["elements"]
-        obj["files"] = fileDataJson["files"]
+        obj.removeValue(forKey: "files")
         let contentData = try JSONSerialization.data(withJSONObject: obj)
         self.content = contentData
         self.updatedAt = .now

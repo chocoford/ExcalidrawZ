@@ -324,21 +324,19 @@ extension ContentView {
                 .disabled(fileState.currentGroup?.groupType == .trash)
             }
         }
-
-        ToolbarItemGroup(placement: .automatic) {
-            Spacer()
-            
-            if !appVersion.contains("alpha"),
-               !appVersion.contains("beta"),
-               Bundle.main.bundleIdentifier == "com.chocoford.ExcalidrawZ" || Bundle.main.bundleIdentifier == "com.chocoford.ExcalidrawZ-Debug" {
-                Button {
-                    isMigrateSheetPresented.toggle()
-                } label: {
-                    Label(.localizable(.migration), systemSymbol: .sparkles)
-                }
-                .help(.localizable(.migration))
+        
+        ToolbarItemGroup(placement: .cancellationAction) {
+            SettingsButton(useDefaultLabel: true) {
+                
+            } label: {
+                Label("Settings", systemSymbol: .gear)
+                    .labelStyle(.iconOnly)
             }
-            
+        }
+        
+        
+        ToolbarItemGroup(placement: .automatic) {
+//            Spacer()
             if let currentFile = fileState.currentFile {
                 Popover {
                     FileCheckpointListView(file: currentFile)
@@ -356,7 +354,8 @@ extension ContentView {
             }
             .help(.localizable(.export))
             .disabled(fileState.currentGroup?.groupType == .trash)
-            
+
+
             if #available(macOS 13.0, iOS 16.0, *), appPreference.inspectorLayout == .sidebar { } else {
                 Button {
                     isInspectorPresented.toggle()
