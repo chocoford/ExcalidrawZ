@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23507" systemVersion="24B83" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="File" representedClassName="File" syncable="YES" codeGenerationType="class">
-        <attribute name="content" attributeType="Binary"/>
+        <attribute name="content" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="deletedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
@@ -13,7 +13,7 @@
         <relationship name="medias" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="MediaItem" inverseName="file" inverseEntity="MediaItem"/>
     </entity>
     <entity name="FileCheckpoint" representedClassName="FileCheckpoint" syncable="YES" codeGenerationType="class">
-        <attribute name="content" optional="YES" attributeType="Binary"/>
+        <attribute name="content" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="filename" optional="YES" attributeType="String"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>

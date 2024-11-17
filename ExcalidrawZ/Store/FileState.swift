@@ -213,7 +213,6 @@ final class FileState: ObservableObject {
             let file = File(name: excalidrawFile.name ?? "Untitled", context: viewContext)
             file.content = try excalidrawFile.contentWithoutFiles()
             file.group = group
-            PersistenceController.shared.save()
             
             let mediaItems = try viewContext.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
             let mediaItemsNeedImport = excalidrawFile.files.values.filter{ item in !mediaItems.contains(where: {$0.id == item.id})}
@@ -222,7 +221,8 @@ final class FileState: ObservableObject {
                 mediaItem.file = file
                 viewContext.insert(mediaItem)
             }
-            
+            PersistenceController.shared.save()
+
             DispatchQueue.main.async {
                 Task {
                     try? await self.excalidrawWebCoordinator?.insertMediaFiles(mediaItemsNeedImport)
