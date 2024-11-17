@@ -207,6 +207,7 @@
 		39B141B72CE736BA00D3EEDA /* BackupsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141B62CE736BA00D3EEDA /* BackupsSettingsView.swift */; };
 		39B141B82CE736BA00D3EEDA /* BackupsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141B62CE736BA00D3EEDA /* BackupsSettingsView.swift */; };
 		39B141B92CE736BA00D3EEDA /* BackupsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141B62CE736BA00D3EEDA /* BackupsSettingsView.swift */; };
+		39B142EA2CE9D2A100D3EEDA /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39B142E92CE9D2A100D3EEDA /* Zlib */; };
 		39B7B878296C110B005F7E9D /* File+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B7B877296C110B005F7E9D /* File+Persistence.swift */; };
 		39BBE4752A6F078100045BEA /* ExportState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BBE4742A6F078100045BEA /* ExportState.swift */; };
 		39BE12EE2CB7DD8C006781D5 /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39BE12ED2CB7DD8C006781D5 /* Zlib */; };
@@ -517,6 +518,15 @@
 			);
 			target = 3963A0FF2C6D1D4900472AE7 /* ExcalidrawZ (Lagacy) */;
 		};
+		39B142E42CE9D25C00D3EEDA /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				ExcalidrawImageDecoder.swift,
+				ExcalidrawPNGDecoder.swift,
+				ExcalidrawSVGDecoder.swift,
+			);
+			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
+		};
 		39B8031D2C6D2AFE00308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -578,7 +588,7 @@
 		3987A53F2CB550740054D7D5 /* ExcalidrawFile */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3987A61C2CB6DEC20054D7D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ExcalidrawFile; sourceTree = "<group>"; };
 		398FC1D02C84EEC200C96977 /* Library */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (398FC1D82C84F4FA00C96977 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 398FC1D42C84EECF00C96977 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 398FC1D92C84F4FA00C96977 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Library; sourceTree = "<group>"; };
 		3990F83A2CAE537400C94983 /* SingleEditorView */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SingleEditorView; sourceTree = "<group>"; };
-		39BE12DF2CB79DE0006781D5 /* Excalidraw+Image */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Excalidraw+Image"; sourceTree = "<group>"; };
+		39BE12DF2CB79DE0006781D5 /* Excalidraw+Image */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (39B142E42CE9D25C00D3EEDA /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = "Excalidraw+Image"; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -648,6 +658,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				39B142EA2CE9D2A100D3EEDA /* Zlib in Frameworks */,
 				39E556FB2CC806C50009F051 /* ChocofordUI in Frameworks */,
 				3987A5D72CB640650054D7D5 /* FlyingSocks in Frameworks */,
 				3987A5D52CB640590054D7D5 /* FlyingFox in Frameworks */,
@@ -1063,6 +1074,7 @@
 				3987A5D62CB640650054D7D5 /* FlyingSocks */,
 				39E556F82CC806C50009F051 /* ChocofordEssentials */,
 				39E556FA2CC806C50009F051 /* ChocofordUI */,
+				39B142E92CE9D2A100D3EEDA /* Zlib */,
 			);
 			productName = QuickLookPreviewExtension;
 			productReference = 3987A5072CB54B200054D7D5 /* QuickLookPreviewExtension.appex */;
@@ -2563,6 +2575,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3966623D2C666EC600F863BC /* XCRemoteSwiftPackageReference "FlyingFox" */;
 			productName = FlyingSocks;
+		};
+		39B142E92CE9D2A100D3EEDA /* Zlib */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 39BE12EC2CB7DD8C006781D5 /* XCRemoteSwiftPackageReference "Zlib" */;
+			productName = Zlib;
 		};
 		39BE12ED2CB7DD8C006781D5 /* Zlib */ = {
 			isa = XCSwiftPackageProductDependency;

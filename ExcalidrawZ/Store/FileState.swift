@@ -178,48 +178,15 @@ final class FileState: ObservableObject {
         }
     }
     
-    
-    func importFile(_ url: URL, toDefaultGroup: Bool = false) async throws {
-        let fileType: UTType = {
-            let lastPathComponent = url.lastPathComponent
-            
-            if lastPathComponent.hasSuffix(".excalidraw.png") {
-                return .excalidrawPNG
-            } else if lastPathComponent.hasSuffix(".excalidraw.svg") {
-                return .excalidrawSVG
-            } else {
-                return UTType(filenameExtension: url.pathExtension) ?? .excalidrawFile
-            }
-        }()
-        let data: Data
-        switch fileType {
-            case .excalidrawFile:
-                // .uncached fixes the import bug occurs in x86 mac OS
-                data = try Data(contentsOf: url, options: .uncached)
-            case .excalidrawPNG:
-                // .uncached fixes the import bug occurs in x86 mac OS
-                let fileData = try Data(contentsOf: url, options: .uncached)
-                if let excalidrawFile = ExcalidrawPNGDecoder().decode(from: fileData) {
-                    data = try JSONEncoder().encode(excalidrawFile)
-                } else {
-                    data = try Data(contentsOf: url, options: .uncached)
-                }
-            case .excalidrawSVG:
-                // .uncached fixes the import bug occurs in x86 mac OS
-                let fileData = try Data(contentsOf: url, options: .uncached)
-                if let excalidrawFile = ExcalidrawSVGDecoder().decode(from: fileData) {
-                    data = try JSONEncoder().encode(excalidrawFile)
-                } else {
-                    data = try Data(contentsOf: url, options: .uncached)
-                }
-            default:
-                throw AppError.fileError(.invalidURL)
-        }
-
-        _ = try ExcalidrawFile(data: data)
-        
-        var targetGroup: Group?
-        if toDefaultGroup {
+    enum ImportGroupType: Hashable {
+        case current
+        case `default`
+        case custom(Group.ID)
+    }
+    func importFile(_ url: URL, to targetGroupType: ImportGroupType = .current) async throws {
+        let excalidrawFile = try ExcalidrawFile(contentsOf: url)
+                var targetGroup: Group?
+        if targetGroupType == .default {
             let viewContext = PersistenceController.shared.container.viewContext
             let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
             fetchRequest.predicate = NSPredicate(format: "type == %@", "default")
@@ -228,32 +195,42 @@ final class FileState: ObservableObject {
                 let result = (try viewContext.fetch(fetchRequest).first) as Group?
                 targetGroup = result
             }
+        } else if case .custom(let id) = targetGroupType, let id {
+            let viewContext = PersistenceController.shared.container.viewContext
+            let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+            fetchRequest.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+            fetchRequest.fetchLimit = 1
+            try await viewContext.perform {
+                let result = (try viewContext.fetch(fetchRequest).first) as Group?
+                targetGroup = result
+            }
         }
         
         let group = targetGroup
-        try await MainActor.run {
-            guard let currentGroup = group ?? self.currentGroup else { throw AppError.stateError(.currentGroupNil) }
-            let file = try PersistenceController.shared.createFile(in: currentGroup)
-            switch fileType {
-                case .excalidrawFile:
-                    file.name = url.deletingPathExtension().lastPathComponent
-                case .excalidrawPNG, .excalidrawSVG:
-                    let lastPathComponent = url.deletingPathExtension().lastPathComponent
-                    if let index = lastPathComponent.lastIndex(of: ".") {
-                        file.name = String(lastPathComponent.prefix(upTo: index))
-                    } else {
-                        file.name = lastPathComponent
-                    }
-                default:
-                    break
+        let viewContext = PersistenceController.shared.container.viewContext
+        try await viewContext.perform {
+            guard let group = group ?? self.currentGroup else { throw AppError.stateError(.currentGroupNil) }
+            let file = File(name: excalidrawFile.name ?? "Untitled", context: viewContext)
+            file.content = try excalidrawFile.contentWithoutFiles()
+            file.group = group
+            PersistenceController.shared.save()
+            
+            let mediaItems = try viewContext.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
+            let mediaItemsNeedImport = excalidrawFile.files.values.filter{ item in !mediaItems.contains(where: {$0.id == item.id})}
+            mediaItemsNeedImport.forEach { item in
+                let mediaItem = MediaItem(resource: item, context: viewContext)
+                mediaItem.file = file
+                viewContext.insert(mediaItem)
             }
             
-            file.content = data
-            PersistenceController.shared.save()
-            self.currentFile = file
+            DispatchQueue.main.async {
+                Task {
+                    try? await self.excalidrawWebCoordinator?.insertMediaFiles(mediaItemsNeedImport)
+                }
+                self.currentFile = file
+            }
         }
     }
-    
     
     /// Different handle logics according to different combinations of urls.
     /// * only files: Import to current group.
@@ -340,14 +317,35 @@ final class FileState: ObservableObject {
         let groupName = url.lastPathComponent
         // create group
         let group = Group(name: groupName, context: viewContext)
-        let urls = try flatFiles(in: url).filter{
+        let urls = try flatFiles(in: url).filter {
             $0.pathExtension == UTType.excalidrawFile.preferredFilenameExtension
         }
+        
+        // Import medias
+        let allMediaItems = try viewContext.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
+        var insertedMediaID = Set<String>()
+        
         for url in urls {
-            let data = try Data(contentsOf: url, options: .uncached)
-            let file = File(name: url.deletingPathExtension().lastPathComponent, context: viewContext)
-            file.content = data
+            let excalidrawFile = try ExcalidrawFile(contentsOf: url)
+
+            let file = File(name: excalidrawFile.name ?? "Untitled", context: viewContext)
+            file.content = try excalidrawFile.contentWithoutFiles()
             file.group = group
+            
+            // Import medias
+            let mediasToImport = excalidrawFile.files.values.filter { item in
+                !insertedMediaID.contains(item.id) &&
+                !allMediaItems.contains(where: {$0.id == item.id})
+            }
+            mediasToImport.forEach { item in
+                let mediaItem = MediaItem(resource: item, context: viewContext)
+                mediaItem.file = file
+                viewContext.insert(mediaItem)
+                insertedMediaID.insert(item.id)
+            }
+            Task {
+                try? await self.excalidrawWebCoordinator?.insertMediaFiles(mediasToImport)
+            }
         }
         
         return group.objectID

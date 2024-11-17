@@ -233,10 +233,31 @@ extension PersistenceController {
                 print("🕘🕘🕘 Begin migrate medias. ")
                 let filesFetch: NSFetchRequest<File> = NSFetchRequest(entityName: "File")
                 let checkpointsFetch: NSFetchRequest<FileCheckpoint> = NSFetchRequest(entityName: "FileCheckpoint")
-                
+
                 try await context.perform {
                     let files = try filesFetch.execute()
                     let checkpoints = try checkpointsFetch.execute()
+                    
+                    let needBackup: Bool = {
+                        let excalidrawFiles = files.compactMap {
+                            try? ExcalidrawFile(from: $0)
+                        } + checkpoints.compactMap {
+                            try? ExcalidrawFile(from: $0)
+                        }
+                        return excalidrawFiles.contains(where: {!$0.files.isEmpty})
+                    }()
+                    
+                    if needBackup {
+                        do {
+                            try backupFiles()
+//                            let backupsDir = try getBackupsDir()
+//                            let backupDir = backupsDir.appendingPathComponent("Backup-Before-Media-Migration", conformingTo: .directory)
+//                            try FileManager.default.createDirectory(at: backupDir, withIntermediateDirectories: false)
+//                            try archiveAllFiles(to: backupDir)
+                        } catch {
+                            print(error)
+                        }
+                    }
                     
                     var insertedMediaID = Set<String>()
                     
@@ -248,16 +269,18 @@ extension PersistenceController {
                             print("migrating \(excalidrawFile.files.count) files of \(excalidrawFile.name ?? "Untitled")")
                             for (id, media) in excalidrawFile.files {
                                 if insertedMediaID.contains(id) { continue }
+                                
                                 let mediaItem = MediaItem(resource: media, context: context)
                                 mediaItem.file = file
                                 container.viewContext.insert(mediaItem)
                                 insertedMediaID.insert(id)
                             }
-                            if let content = file.content,
-                               var jsonObj = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
-                                jsonObj.removeValue(forKey: "files")
-                                file.content = try JSONSerialization.data(withJSONObject: jsonObj)
-                            }
+                            file.content = try excalidrawFile.contentWithoutFiles()
+//                            if let content = file.content,
+//                               var jsonObj = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
+//                                jsonObj.removeValue(forKey: "files")
+//                                file.content = try JSONSerialization.data(withJSONObject: jsonObj)
+//                            }
                         } catch {
                             continue
                         }
@@ -275,19 +298,21 @@ extension PersistenceController {
                                 mediaItem.file = checkpoint.file
                                 container.viewContext.insert(mediaItem)
                             }
-                            if let content = checkpoint.content,
-                               var jsonObj = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
-                                jsonObj.removeValue(forKey: "files")
-                                checkpoint.content = try JSONSerialization.data(withJSONObject: jsonObj)
-                            }
+                            checkpoint.content = try excalidrawFile.contentWithoutFiles()
+//                            if let content = checkpoint.content,
+//                               var jsonObj = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
+//                                jsonObj.removeValue(forKey: "files")
+//                                checkpoint.content = try JSONSerialization.data(withJSONObject: jsonObj)
+//                            }
                         } catch {
                             continue
                         }
                     }
                     
-
                 }
                 print("🎉🎉🎉 Migration medias done. Time cost: \(-start.timeIntervalSinceNow) s")
+                
+
             } catch {
                 print(error)
             }

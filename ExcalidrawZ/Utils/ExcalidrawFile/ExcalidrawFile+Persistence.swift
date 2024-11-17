@@ -9,9 +9,7 @@ import Foundation
 import CoreData
 
 extension ExcalidrawFile {
-    init(
-        from persistenceFile: File
-    ) throws {
+    init( from persistenceFile: File) throws {
         guard let data = persistenceFile.content else {
             struct EmptyContentError: Error {}
             throw EmptyContentError()
@@ -42,6 +40,18 @@ extension ExcalidrawFile {
         self.name = persistenceFile.name
     }
     
+    
+    init(from checkpoint: FileCheckpoint) throws {
+        guard let data = checkpoint.content else {
+            struct EmptyContentError: Error {}
+            throw EmptyContentError()
+        }
+        let file = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
+        self = file
+        self.id = checkpoint.file?.id ?? UUID()
+        self.content = checkpoint.content
+        self.name = checkpoint.file?.name
+    }
     
     mutating func syncFiles(context: NSManagedObjectContext) throws {
         let mediasFetchRequest = NSFetchRequest<MediaItem>(entityName: "MediaItem")

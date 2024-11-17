@@ -112,14 +112,62 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
         try container.encode(self.appState, forKey: .appState)
         try container.encode(self.type, forKey: .type)
     }
-
+    
     init() {
         try! self.init(contentsOf: Bundle.main.url(forResource: "template", withExtension: "excalidraw")!)
     }
     
     init(contentsOf url: URL) throws {
-        let data = try Data(contentsOf: url, options: .uncached)
+        let fileType: UTType = {
+            let lastPathComponent = url.lastPathComponent
+            
+            if lastPathComponent.hasSuffix(".excalidraw.png") {
+                return .excalidrawPNG
+            } else if lastPathComponent.hasSuffix(".excalidraw.svg") {
+                return .excalidrawSVG
+            } else {
+                return UTType(filenameExtension: url.pathExtension) ?? .excalidrawFile
+            }
+        }()
+        let data: Data
+        switch fileType {
+            case .excalidrawFile:
+                // .uncached fixes the import bug occurs in x86 mac OS
+                data = try Data(contentsOf: url, options: .uncached)
+            case .excalidrawPNG:
+                // .uncached fixes the import bug occurs in x86 mac OS
+                let fileData = try Data(contentsOf: url, options: .uncached)
+                if let excalidrawFile = ExcalidrawPNGDecoder().decode(from: fileData) {
+                    data = try JSONEncoder().encode(excalidrawFile)
+                } else {
+                    data = try Data(contentsOf: url, options: .uncached)
+                }
+            case .excalidrawSVG:
+                // .uncached fixes the import bug occurs in x86 mac OS
+                let fileData = try Data(contentsOf: url, options: .uncached)
+                if let excalidrawFile = ExcalidrawSVGDecoder().decode(from: fileData) {
+                    data = try JSONEncoder().encode(excalidrawFile)
+                } else {
+                    data = try Data(contentsOf: url, options: .uncached)
+                }
+            default:
+                struct UnrecognizedURLError: Error {}
+                throw UnrecognizedURLError()
+        }
         try self.init(data: data)
+        switch fileType {
+            case .excalidrawFile:
+                self.name = url.deletingPathExtension().lastPathComponent
+            case .excalidrawPNG, .excalidrawSVG:
+                let lastPathComponent = url.deletingPathExtension().lastPathComponent
+                if let index = lastPathComponent.lastIndex(of: ".") {
+                    self.name = String(lastPathComponent.prefix(upTo: index))
+                } else {
+                    self.name = lastPathComponent
+                }
+            default:
+                break
+        }
     }
     
     init(data: Data, id: UUID? = nil) throws {
@@ -128,6 +176,13 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
         if let id {
             self.id = id
         }
+    }
+    
+    func contentWithoutFiles() throws -> Data? {
+        guard let content,
+              var jsonObj = try JSONSerialization.jsonObject(with: content) as? [String : Any] else { return nil }
+        jsonObj.removeValue(forKey: "files")
+        return try JSONSerialization.data(withJSONObject: jsonObj)
     }
 }
 

@@ -53,6 +53,9 @@ func getBackupsDir() throws -> URL {
     let filemanager = FileManager.default
     let supportDir = try filemanager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
     let backupsDir = supportDir.appendingPathComponent("backups", conformingTo: .directory)
+    if !filemanager.fileExists(at: backupsDir) {
+        try filemanager.createDirectory(at: backupsDir, withIntermediateDirectories: true)
+    }
     return backupsDir
 }
 

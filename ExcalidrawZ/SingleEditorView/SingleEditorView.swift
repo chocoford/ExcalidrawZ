@@ -191,7 +191,7 @@ struct SingleEditorView: View {
             do {
                 // NOT GOOD
                 try await Task.sleep(nanoseconds: UInt64(1e+6 * 400))
-                try await fileState.importFile(fileURL, toDefaultGroup: true)
+                try await fileState.importFile(fileURL, to: .default)
                 await MainActor.run {
                     if let mainWindow {
                         mainWindow.makeKeyAndOrderFront(nil)
