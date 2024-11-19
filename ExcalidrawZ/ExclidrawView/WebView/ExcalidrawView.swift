@@ -27,11 +27,21 @@ class ExcalidrawWebView: WKWebView {
         self.toolbarActionHandler = toolbarActionHandler
         self.toolbarActionHandler2 = toolbarActionHandler2
         super.init(frame: frame, configuration: configuration)
+#if canImport(UIKit)
+        self.scrollView.isScrollEnabled = false
+#endif
     }
     
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+#if canImport(UIKit)
+    override var safeAreaInsets: UIEdgeInsets {
+//        .init(top: 0, left: 0, bottom: -40, right: 0)
+        .zero
+    }
+#endif
     
-#if os(macOS)
+    
+#if canImport(AppKit)
     override func keyDown(with event: NSEvent) {
         if shouldHandleInput,
            let char = event.characters {
@@ -51,6 +61,7 @@ class ExcalidrawWebView: WKWebView {
 
 struct ExcalidrawView {
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var fileState: FileState
@@ -112,6 +123,7 @@ extension ExcalidrawView: NSViewRepresentable {
         context.coordinator.parent = self
         exportState.excalidrawWebCoordinator = context.coordinator
         fileState.excalidrawWebCoordinator = context.coordinator
+        toolState.excalidrawWebCoordinator = context.coordinator
         guard !webView.isLoading, !isLoading else { return }
         Task {
             do {
@@ -144,6 +156,7 @@ extension ExcalidrawView: NSViewRepresentable {
                         } else if let keyEquivalent = toolState.activatedTool?.keyEquivalent {
                             try await context.coordinator.toggleToolbarAction(key: keyEquivalent)
                         }
+                        context.coordinator.lastTool = toolState.activatedTool
                     }
                 } catch {
                     self.onError(error)
@@ -164,6 +177,11 @@ extension ExcalidrawView: UIViewRepresentable {
                 context.coordinator.$isLoading.sink { newValue in
                     DispatchQueue.main.async {
                         self.isLoading = newValue
+                        if !newValue, horizontalSizeClass == .compact {
+                            Task { @MainActor in
+                                try? await context.coordinator.toggleToolbarAction(key: "h")
+                            }
+                        }
                     }
                 }
             )
@@ -177,7 +195,53 @@ extension ExcalidrawView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: ExcalidrawWebView, context: Context) {
+        let webView = context.coordinator.webView
+        context.coordinator.parent = self
+        exportState.excalidrawWebCoordinator = context.coordinator
+        fileState.excalidrawWebCoordinator = context.coordinator
+        toolState.excalidrawWebCoordinator = context.coordinator
+        guard !webView.isLoading, !isLoading else { return }
+        Task {
+            do {
+                if appPreference.excalidrawAppearance == .auto {
+                    try await context.coordinator.changeColorMode(dark: colorScheme == .dark)
+                } else {
+                    try await context.coordinator.changeColorMode(dark: appPreference.excalidrawAppearance.colorScheme ?? colorScheme == .dark)
+                }
+            } catch {
+                self.onError(error)
+            }
+            do {
+                if appPreference.autoInvertImage,
+                    appPreference.excalidrawAppearance == .dark || colorScheme == .dark && appPreference.excalidrawAppearance == .auto {
+                    try await context.coordinator.toggleInvertImageSwitch(autoInvert: true)
+                } else {
+                    try await context.coordinator.toggleInvertImageSwitch(autoInvert: false)
+                }
+            } catch {
+                self.onError(error)
+            }
+        }
+        context.coordinator.loadFile(from: file)
         
+        
+        if !toolState.inDragMode,
+           context.coordinator.lastTool != toolState.activatedTool {
+            Task {
+                do {
+                    if let rawValue = toolState.activatedTool?.rawValue {
+                        if rawValue < 10 {
+                            try await context.coordinator.toggleToolbarAction(key: rawValue)
+                        } else if let keyEquivalent = toolState.activatedTool?.keyEquivalent {
+                            try await context.coordinator.toggleToolbarAction(key: keyEquivalent)
+                        }
+                        context.coordinator.lastTool = toolState.activatedTool
+                    }
+                } catch {
+                    self.onError(error)
+                }
+            }
+        }
     }
     
     func makeCoordinator() -> ExcalidrawCore {

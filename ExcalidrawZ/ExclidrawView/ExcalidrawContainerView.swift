@@ -6,13 +6,16 @@
 //
 
 import SwiftUI
-import ChocofordUI
+import CoreData
 import UniformTypeIdentifiers
+
+import ChocofordUI
 
 struct ExcalidrawContainerView: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
+    @EnvironmentObject var layoutState: LayoutState
 
     @Environment(\.colorScheme) var colorScheme
     
@@ -20,7 +23,6 @@ struct ExcalidrawContainerView: View {
     
     @State private var isLoading = true
     @State private var isProgressViewPresented = true
-    @State private var resotreAlertIsPresented = false
     
     @State private var isDropping: Bool = false
     
@@ -57,10 +59,12 @@ struct ExcalidrawContainerView: View {
                     alertToast(error)
                     print(error)
                 }
+//                .ignoresSafeArea(edges: .bottom)
                 .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
                 .opacity(isProgressViewPresented ? 0 : 1)
                 .onChange(of: isLoading, debounce: 1) { newVal in
                     isProgressViewPresented = newVal
+                    
                 }
                 
                 if isProgressViewPresented {
@@ -141,11 +145,14 @@ struct ExcalidrawContainerView: View {
             .opacity(0)
             .contentShape(Rectangle())
             .onTapGesture {
-                resotreAlertIsPresented.toggle()
+                layoutState.isResotreAlertIsPresented.toggle()
             }
-            .alert(.localizable(.deletedFileRecoverAlertTitle), isPresented: $resotreAlertIsPresented) {
+            .alert(
+                .localizable(.deletedFileRecoverAlertTitle),
+                isPresented: $layoutState.isResotreAlertIsPresented
+            ) {
                 Button(role: .cancel) {
-                    resotreAlertIsPresented.toggle()
+                    layoutState.isResotreAlertIsPresented.toggle()
                 } label: {
                     Text(.localizable(.deletedFileRecoverAlertButtonCancel))
                 }
@@ -158,7 +165,6 @@ struct ExcalidrawContainerView: View {
                 } label: {
                     Text(.localizable(.deletedFileRecoverAlertButtonRecover))
                 }
-                
             } message: {
                 Text(.localizable(.deletedFileRecoverAlertMessage))
             }

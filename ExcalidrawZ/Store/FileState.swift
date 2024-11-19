@@ -354,11 +354,13 @@ final class FileState: ObservableObject {
     func renameFile(_ file: File, newName: String) {
         file.name = newName
         PersistenceController.shared.save()
+        self.objectWillChange.send()
     }
     
     func renameGroup(_ group: Group, newName: String) {
         group.name = newName
         PersistenceController.shared.save()
+        self.objectWillChange.send()
     }
     
     func moveFile(_ file: File, to group: Group) {

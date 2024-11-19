@@ -17,6 +17,7 @@ struct ExportImageView: View {
     typealias PlatformImage = UIImage
 #endif
     @Environment(\.dismiss) var mordenDismiss
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     
     @EnvironmentObject var exportState: ExportState
@@ -66,6 +67,7 @@ struct ExportImageView: View {
             Center {
                 content
             }
+#if os(macOS)
             .overlay(alignment: .topLeading) {
                 if showBackButton {
                     Button {
@@ -79,8 +81,9 @@ struct ExportImageView: View {
                 }
             }
             .animation(.default, value: showBackButton)
+#endif
         }
-        .padding()
+        .padding(horizontalSizeClass == .compact ? 0 : 20)
         .onChange(of: keepEditable) { newValue in
             exportImageData()
         }
@@ -143,9 +146,12 @@ struct ExportImageView: View {
         .scaledToFit()
         .frame(width: 200, height: 120, alignment: .center)
 #else
-        Image(uiImage: image)
-            .scaledToFit()
-            .frame(width: 200, height: 120, alignment: .center)
+        Color.clear
+            .overlay {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+            }
 #endif
 
     }
@@ -179,6 +185,8 @@ struct ExportImageView: View {
                 Spacer()
                 Toggle("Keep editable", isOn: $keepEditable)
                     .toggleStyle(.checkboxStyle)
+                    .controlSize(horizontalSizeClass == .compact ? .mini : .regular)
+                    .font(horizontalSizeClass == .compact ? .footnote : .body)
             }
         }
         .animation(.default, value: keepEditable)

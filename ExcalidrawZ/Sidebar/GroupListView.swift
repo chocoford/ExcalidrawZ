@@ -10,6 +10,7 @@ import ChocofordEssentials
 
 
 struct GroupListView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
@@ -45,14 +46,14 @@ struct GroupListView: View {
     var body: some View {
         content
             .sheet(isPresented: $showCreateFolderDialog) {
-                CreateGroupSheetView(groups: groups) { name in
-                    Task {
-                        do {
-                            try await fileState.createNewGroup(name: name)
-                        } catch {
-                            alertToast(error)
-                        }
-                    }
+                if horizontalSizeClass == .compact {
+                    createFolderSheetView()
+#if os(iOS)
+                        .presentationDetents([.height(180)])
+                        .presentationDragIndicator(.visible)
+#endif
+                } else {
+                    createFolderSheetView()
                 }
             }
             .onChange(of: displayedGroups) { newValue in
@@ -94,7 +95,7 @@ struct GroupListView: View {
                     }
                 }
             }
-            
+            .clipped()
             HStack {
                 Button {
                     showCreateFolderDialog.toggle()
@@ -106,6 +107,22 @@ struct GroupListView: View {
                 Spacer()
             }
             .padding(4)
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func createFolderSheetView() -> some View {
+        CreateGroupSheetView(groups: groups) { name in
+            Task {
+                do {
+                    try await fileState.createNewGroup(name: name)
+                    if horizontalSizeClass == .compact {
+                        try fileState.createNewFile(active: false)
+                    }
+                } catch {
+                    alertToast(error)
+                }
+            }
         }
     }
 }
@@ -127,12 +144,13 @@ struct CreateGroupSheetView: View {
                 Text(.localizable(.sidebarGroupListCreateGroupName))
                 TextField("", text: $name)
                     .textFieldStyle(.roundedBorder)
-                    .onSubmit {
-                        if !name.isEmpty {
-                            onCreate(name)
-                            dismiss()
-                        }
-                    }
+                    .submitLabel(.done)
+//                    .onSubmit {
+//                        if !name.isEmpty {
+//                            onCreate(name)
+//                            dismiss()
+//                        }
+//                    }
             }
             Toggle(.localizable(.sidebarGroupListCreateSyncIcloud), isOn: .constant(false))
                 .disabled(true)

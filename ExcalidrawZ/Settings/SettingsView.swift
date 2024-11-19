@@ -12,28 +12,39 @@ import Sparkle
 #endif
 
 struct SettingsView: View {
-    @State private var selection: Route? = .general
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    
+    @State private var selection: Route?
 
     var body: some View {
         content()
+            .task {
+                if horizontalSizeClass == .regular {
+                    selection = .general
+                }
+            }
     }
     
     @MainActor @ViewBuilder
     private func content() -> some View {
         if #available(macOS 14.0, iOS 17.0, *) {
-            NavigationSplitView(columnVisibility: .constant(.all)) {
+            NavigationSplitView {
                 sidebar
+#if os(macOS)
                     .toolbar(removing: .sidebarToggle)
+#endif
             } detail: {
                 detail(for: selection)
             }
             .navigationTitle(.localizable(.settingsNavigationTitle))
         } else if #available(macOS 13.0, *) {
-            NavigationSplitView(columnVisibility: .constant(.all)) {
+            NavigationSplitView {
                 sidebar
+#if os(macOS)
                     .background(
                         List(selection: $selection) {}
                     )
+#endif
             } detail: {
                 detail(for: selection)
             }
@@ -60,6 +71,7 @@ struct SettingsView: View {
     
     @ViewBuilder
     private var sidebar: some View {
+#if os(macOS)
         ScrollView {
             VStack {
                 ForEach(Route.allCases) { route in
@@ -78,6 +90,28 @@ struct SettingsView: View {
             }
             .padding(10)
         }
+#elseif os(iOS)
+        List(selection: $selection) {
+            ForEach(Route.allCases) { route in
+                NavigationLink(value: route) {
+                    Text(route.text)
+                }
+            }
+//            ForEach(Route.allCases) { route in
+//                Button {
+//                    selection = route
+//                } label: {
+//                    Text(route.text)
+//                }
+//                .buttonStyle(
+//                    ListButtonStyle(
+//                        showIndicator: true,
+//                        selected: selection == route
+//                    )
+//                )
+//            }
+        }
+#endif
     }
     
     @ViewBuilder

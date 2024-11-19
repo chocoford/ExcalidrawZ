@@ -18,9 +18,8 @@ struct LibraryView: View {
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var exportState: ExportState
-    
-    @Binding var isPresented: Bool
-    
+    @EnvironmentObject var layoutState: LayoutState
+        
     @FetchRequest(sortDescriptors: [SortDescriptor(\.id)], animation: .smooth)
     var libraries: FetchedResults<Library>
     
@@ -130,7 +129,7 @@ struct LibraryView: View {
     private func toolbar() -> some ToolbarContent {
         /// This is the key to make sidebar toggle at the right side.
         ToolbarItem(placement: .status) {
-            if isPresented {
+            if layoutState.isInspectorPresented {
                 Text(.localizable(.librariesTitle))
                     .foregroundStyle(.secondary)
                     .font(.headline)
@@ -142,7 +141,7 @@ struct LibraryView: View {
         
         ToolbarItem(placement: .automatic) {
             Button {
-                isPresented.toggle()
+                layoutState.isInspectorPresented.toggle()
             } label: {
                 Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
             }
@@ -508,7 +507,7 @@ struct LibraryPreviewView: View {
                 
             }
             .inspector(isPresented: .constant(true)) {
-                LibraryView(isPresented: .constant(true))
+                LibraryView()
             }
         } else {
             Color.clear

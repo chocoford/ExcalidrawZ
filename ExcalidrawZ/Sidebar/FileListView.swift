@@ -10,58 +10,72 @@ import SwiftUI
 import ChocofordUI
 
 struct FileListView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
-    var groups: FetchedResults<Group>
+
+    @FetchRequest
+    private var files: FetchedResults<File>
     
-    init(groups: FetchedResults<Group>, currentGroup: Group) {
-        self.groups = groups
+    init(currentGroupID: Group.ID, groupType: Group.GroupType?) {
         self._files = FetchRequest<File>(
             sortDescriptors: [
                 SortDescriptor(\.updatedAt, order: .reverse),
                 SortDescriptor(\.createdAt, order: .reverse)
             ],
-            predicate: currentGroup.groupType == .trash ? NSPredicate(
-                format: "inTrash == YES", currentGroup
+            predicate: groupType == .trash ? NSPredicate(
+                format: "inTrash == YES"
             ) : NSPredicate(
-                format: "group == %@ AND inTrash == NO", currentGroup
+                format: "group.id == %@ AND inTrash == NO", (currentGroupID ?? UUID()) as CVarArg
             ),
             animation: .smooth
         )
     }
     
-    @FetchRequest
-    private var files: FetchedResults<File>
-    
+
     
     struct DateGrouppedFiles {
         var date: Date
         var files: [File]
     }
-//    var dateGrouppedFiles: [DateGrouppedFiles] {
-//        
-//    }
+    
+    @State private var isFirstAppear = true
     
     var body: some View {
         ZStack {
             if #available(macOS 14.0, iOS 17.0, *) {
                 content()
-                    .onChange(of: fileState.currentGroup) { _, newValue in
+                    .onChange(of: fileState.currentGroup) { oldValue, newValue in
                         if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
+                            if horizontalSizeClass == .compact {
+                                // do not set file at iphone.
+                                return
+                            }
                             fileState.currentFile = files.first
                         }
                     }
                     .onChange(of: fileState.currentFile) { _, newValue in
                         if newValue == nil {
                             if let file = files.first {
-                                fileState.currentFile = file
+                                if horizontalSizeClass == .regular {
+                                    fileState.currentFile = file
+                                }
                             } else {
                                 do {
                                     try fileState.createNewFile()
                                 } catch {
                                     alertToast(error)
                                 }
+                            }
+                        }
+                    }
+                    .onChange(of: files) { _, newValue in
+                        if newValue.isEmpty, horizontalSizeClass == .compact {
+                            do {
+                                try fileState.createNewFile(active: false)
+                            } catch {
+                                alertToast(error)
                             }
                         }
                     }
@@ -69,13 +83,18 @@ struct FileListView: View {
                 content()
                     .onChange(of: fileState.currentGroup) { newValue in
                         if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
+                            if horizontalSizeClass == .compact {
+                                return
+                            }
                             fileState.currentFile = files.first
                         }
                     }
                     .onChange(of: fileState.currentFile) { newValue in
                         if newValue == nil {
                             if let file = files.first {
-                                fileState.currentFile = file
+                                if horizontalSizeClass == .regular {
+                                    fileState.currentFile = file
+                                }
                             } else {
                                 do {
                                     try fileState.createNewFile()
@@ -85,6 +104,16 @@ struct FileListView: View {
                             }
                         }
                     }
+                
+                .onChange(of: files) { newValue in
+                    if newValue.isEmpty, horizontalSizeClass == .compact {
+                        do {
+                            try fileState.createNewFile(active: false)
+                        } catch {
+                            alertToast(error)
+                        }
+                    }
+                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .didImportToExcalidrawZ)) { notification in
@@ -94,6 +123,7 @@ struct FileListView: View {
             }
         }
         .onAppear {
+            defer { isFirstAppear = false }
             guard fileState.currentFile == nil else { return }
             if files.isEmpty {
                 do {
@@ -101,7 +131,7 @@ struct FileListView: View {
                 } catch {
                     alertToast(error)
                 }
-            } else {
+            } else if horizontalSizeClass == .regular || isFirstAppear {
                 fileState.currentFile = files.first
             }
         }
@@ -113,11 +143,12 @@ struct FileListView: View {
         ScrollView {
             LazyVStack(alignment: .leading) {
                 ForEach(files) { file in
-                    FileRowView(groups: groups, file: file)
+                    FileRowView(file: file)
                         .transition(.opacity)
                 }
             }
-            .animation(.smooth, value: files)
+            // ⬇️ cause `com.apple.SwiftUI.AsyncRenderer (22): EXC_BREAKPOINT` on iOS
+            // .animation(.smooth, value: files)
             .padding(.horizontal, 8)
             .padding(.vertical, 12)
         }

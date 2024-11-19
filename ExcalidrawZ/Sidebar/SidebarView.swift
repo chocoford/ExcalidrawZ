@@ -20,16 +20,30 @@ struct SidebarView: View {
     
     
     var body: some View {
+        twoColumnSidebar()
+    }
+    
+    
+    @MainActor @ViewBuilder
+    private func twoColumnSidebar() -> some View {
         HStack(spacing: 0) {
             if appPreference.sidebarMode == .all {
                 GroupListView(groups: groups)
+#if os(macOS)
                     .frame(minWidth: 150)
+#endif
                 Divider()
+                    .ignoresSafeArea(edges: .bottom)
             }
             
             ZStack {
                 if let currentGroup = fileState.currentGroup {
-                    FileListView(groups: groups, currentGroup: currentGroup)
+//                    Text(currentGroup.name ?? "123123")
+                    FileListView(
+//                        groups: groups,
+                        currentGroupID: currentGroup.id,
+                        groupType: currentGroup.groupType
+                    )
                 } else {
                     if #available(macOS 14.0, iOS 17.0, *) {
                         Text(.localizable(.sidebarFilesPlaceholder))
@@ -40,9 +54,21 @@ struct SidebarView: View {
                     }
                 }
             }
+#if os(macOS)
             .frame(minWidth: 200)
+#endif
         }
         .border(.top, color: .separatorColor)
+        .background {
+            List(selection: $fileState.currentFile) {}
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func singleColumnSidebar() -> some View {
+        List(selection: $fileState.currentFile) {
+            
+        }
     }
 }
 

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct RenameSheetView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.dismiss) var dismiss
     
     var onConfirm: (String) -> Void
@@ -19,41 +20,48 @@ struct RenameSheetView: View {
     }
 
     var body: some View {
-        Form {
-            Text(.localizable(.renameSheetHeadline))
-                .font(.headline)
-            
-            TextField("", text: $text)
-                .textFieldStyle(.roundedBorder)
-                .onSubmit {
-                    if !text.isEmpty {
-                        onConfirm(text)
-                        dismiss()
-                    }
-                }
-            
-            Divider()
-            
-            HStack {
-                Spacer()
-                Button {
-                    dismiss()
-                } label: {
-                    Text(.localizable(.renameSheetButtonCancel))
-                        .frame(width: 50)
-                }
-                Button {
-                    self.onConfirm(text)
-                    dismiss()
-                } label: {
-                    Text(.localizable(.renameSheetButtonConfirm))
-                        .frame(width: 50)
-                }
-                .disabled(text.isEmpty)
+        if horizontalSizeClass == .compact {
+            VStack {
+                content()
             }
+            .padding()
+        } else {
+            Form {
+                content()
+            }
+            .labelsHidden()
+            .padding()
         }
-        .labelsHidden()
-        .padding()
+    }
+    
+    @MainActor @ViewBuilder
+    private func content() -> some View {
+        Text(.localizable(.renameSheetHeadline))
+            .font(.headline)
+        
+        TextField("", text: $text)
+            .textFieldStyle(.roundedBorder)
+            .submitLabel(.done)
+
+        Divider()
+
+        HStack {
+            Spacer()
+            Button {
+                dismiss()
+            } label: {
+                Text(.localizable(.renameSheetButtonCancel))
+                    .frame(width: 50)
+            }
+            Button {
+                self.onConfirm(text)
+                dismiss()
+            } label: {
+                Text(.localizable(.renameSheetButtonConfirm))
+                    .frame(width: 50)
+            }
+            .disabled(text.isEmpty)
+        }
     }
 }
 

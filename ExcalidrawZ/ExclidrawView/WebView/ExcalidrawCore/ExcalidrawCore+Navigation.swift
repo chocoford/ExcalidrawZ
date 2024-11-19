@@ -7,6 +7,7 @@
 
 import Foundation
 import WebKit
+import CoreData
 
 extension ExcalidrawCore: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, preferences: WKWebpagePreferences) async -> (WKNavigationActionPolicy, WKWebpagePreferences) {

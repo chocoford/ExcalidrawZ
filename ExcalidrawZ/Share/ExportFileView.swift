@@ -12,6 +12,7 @@ import UniformTypeIdentifiers
 @available(*, deprecated, message: "Use ExcalidrawFile instead")
 struct ExcalidrawFileTransferable {}
 struct ExportFileView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.dismiss) var mordenDismiss
     @Environment(\.alertToast) var alertToast
@@ -75,6 +76,7 @@ struct ExportFileView: View {
 #endif
             actionsView()
         }
+#if os(macOS)
         .overlay(alignment: .topLeading) {
             if showBackButton {
                 Button {
@@ -88,7 +90,8 @@ struct ExportFileView: View {
             }
         }
         .animation(.default, value: showBackButton)
-        .padding()
+#endif
+        .padding(horizontalSizeClass == .compact ? 0 : 20)
         .onAppear {
             saveFileToTemp()
             showBackButton = true

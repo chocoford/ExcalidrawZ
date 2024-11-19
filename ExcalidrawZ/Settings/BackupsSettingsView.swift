@@ -9,6 +9,7 @@ import SwiftUI
 
 import ChocofordUI
 
+#if os(macOS)
 struct BackupsSettingsView: View {
     @Environment(\.alertToast) var alertToast
     
@@ -145,7 +146,7 @@ struct BackupsSettingsView: View {
                 let roundedRectangle = RoundedRectangle(cornerRadius: 8)
                 ZStack {
                     roundedRectangle.fill(.regularMaterial)
-                    if #available(macOS 13.0, iOS 16.0, *) {
+                    if #available(macOS 13.0, iOS 17.0, *) {
                         roundedRectangle.stroke(.separator)
                     } else {
                         roundedRectangle.stroke(.secondary)
@@ -248,7 +249,13 @@ struct BackupsSettingsView: View {
         }
     }
 }
-
+#elseif os(iOS)
+struct BackupsSettingsView: View {
+    var body: some View {
+        Text("Backup is only available on macOS.")
+    }
+}
+#endif
 #Preview {
     BackupsSettingsView()
 }

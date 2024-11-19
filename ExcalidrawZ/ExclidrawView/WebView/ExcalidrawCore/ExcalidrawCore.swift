@@ -57,6 +57,8 @@ class ExcalidrawCore: NSObject, ObservableObject {
     var flyingBlobsRequest: [String : (String) -> Void] = [:]
     var flyingSVGRequests: [String : (String) -> Void] = [:]
     var flyingAllMediasRequests: [String : ([ExcalidrawFile.ResourceFile]) -> Void] = [:]
+    @Published var canUndo = false
+    @Published var canRedo = false
     
     var previousFileID: UUID? = nil
     private var lastVersion: Int = 0
@@ -207,15 +209,30 @@ extension ExcalidrawCore {
     
     @MainActor
     func toggleToolbarAction(key: Int) async throws {
-        print(#function)
+        print(#function, key)
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction(\(key)); 0;")
     }
     @MainActor
     func toggleToolbarAction(key: Character) async throws {
-        print(#function)
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
+        print(#function, key)
+        if key == "\u{1B}" {
+            try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Escape'); 0;")
+        } else {
+            try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
+        }
     }
-    
+//    @MainActor
+//    func toggleToolbarAction(key: KeyEquivalent) async throws {
+//        print(#function, key)
+//        
+//        switch key {
+//            case .escape:
+//                try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Escape'); 0;")
+//            default:
+//                break
+//        }
+//    }
+//    
     func exportElementsToPNGData(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> Data {
         let id = UUID().uuidString
         let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified()), \(embedScene)); 0;"
@@ -327,6 +344,15 @@ extension ExcalidrawCore {
         print("insertMediaFiles: \(files.count)")
         let jsonStringified = try files.jsonStringified()
         try await webView.evaluateJavaScript("window.excalidrawZHelper.insertMedias('\(jsonStringified)'); 0;")
+    }
+    
+    @MainActor
+    func performUndo() async throws {
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.undo(); 0;")
+    }
+    @MainActor
+    func performRedo() async throws {
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.redo(); 0;")
     }
     
     @MainActor

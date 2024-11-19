@@ -11,10 +11,43 @@ import ChocofordUI
 import SwiftyAlert
 import SFSafeSymbols
 
+struct ShareViewModifier: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Binding var sharedFile: File?
+    
+    func body(content: Content) -> some View {
+        content
+            .sheet(item: $sharedFile) { file in
+                if horizontalSizeClass == .compact {
+                    self.content(file)
+#if os(iOS)
+                        .presentationDetents([.fraction(0.4)])
+                        .presentationDragIndicator(.visible)
+#endif
+                } else {
+                    self.content(file)
+                }
+            }
+    }
+    
+    
+    @MainActor @ViewBuilder
+    private func content(_ file: File) -> some View {
+        if #available(macOS 13.0, iOS 16.0, *) {
+            ShareView(sharedFile: file)
+                .swiftyAlert()
+        } else {
+            ShareViewLagacy(sharedFile: file)
+                .swiftyAlert()
+        }
+    }
+}
 
 
 @available(macOS 13.0, iOS 16.0, *)
 struct ShareView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     @Environment(\.dismiss) var dismiss
     @Environment(\.alertToast) var alertToast
     
@@ -33,10 +66,9 @@ struct ShareView: View {
     
     var body: some View {
         NavigationStack(path: $route) {
-            VStack(spacing: 20) {
+            VStack(spacing: horizontalSizeClass == .compact ? 10 : 20) {
                 Text(.localizable(.exportSheetHeadline))
-                    .font(.largeTitle)
-
+                    .font(horizontalSizeClass == .compact ? .headline : .largeTitle)
                 
                 HStack(spacing: 14) {
                     SquareButton(title: .localizable(.exportSheetButtonImage), icon: .photo) {
@@ -58,19 +90,20 @@ struct ShareView: View {
                     }
 #endif
                 }
-                
-                
-                Button {
-                    dismiss()
-                } label: {
-                    HStack {
-                        Spacer()
-                        Text(.localizable(.exportSheetButtonDismiss))
-                        Spacer()
+
+                if horizontalSizeClass == .regular {
+                    Button {
+                        dismiss()
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text(.localizable(.exportSheetButtonDismiss))
+                            Spacer()
+                        }
                     }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
             }
             .navigationDestination(for: Route.self) { route in
                 switch route {
@@ -85,8 +118,8 @@ struct ShareView: View {
             .toolbar(.hidden, for: .windowToolbar)
 #endif
         }
-        .frame(width: 400, height: 300)
 #if os(macOS)
+        .frame(width: 400, height: 300)
         .visualEffect(material: .sidebar)
 #endif
     }

@@ -44,9 +44,15 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                 case .onBlur:
                     self.webView.shouldHandleInput = true
                 case .didSetActiveTool(let message):
-                    let tool = ExcalidrawTool(from: message.data.type)
-                    self.lastTool = tool
-                    self.parent?.toolState.activatedTool = tool
+                    guard !self.isLoading else { return }
+                    if message.data.type == .hand {
+                        self.parent?.toolState.inDragMode = true
+                    } else {
+                        let tool = ExcalidrawTool(from: message.data.type)
+                        self.lastTool = tool
+                        self.parent?.toolState.activatedTool = tool
+                        self.parent?.toolState.inDragMode = false
+                    }
                 case .getElementsBlob(let blobData):
                     self.flyingBlobsRequest[blobData.data.id]?(blobData.data.blobData)
                 case .getElementsSVG(let svgData):
@@ -55,6 +61,14 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     self.addLibrary(item: message.data)
                 case .getAllMedias(let data):
                     self.flyingAllMediasRequests[data.data.id]?(data.data.files)
+                case .historyStateChanged(let message):
+                    switch message.data.type {
+                        case .redo:
+                            self.canRedo = !message.data.disabled
+                        case .undo:
+                            self.canUndo = !message.data.disabled
+                    }
+                    
                 case .log(let logMessage):
                     self.onWebLog(message: logMessage)
             }
@@ -257,6 +271,7 @@ extension ExcalidrawCore {
         case getElementsSVG
         case addLibrary
         case getAllMedias
+        case historyStateChanged
         
         case log
     }
@@ -274,6 +289,7 @@ extension ExcalidrawCore {
         case getElementsSVG(ExcalidrawElementsSVGData)
         case addLibrary(AddLibraryItemMessage)
         case getAllMedias(GetAllMediasMessage)
+        case historyStateChanged(HistoryStateChangedMessage)
         
         case log(LogMessage)
         
@@ -310,6 +326,9 @@ extension ExcalidrawCore {
                     self = .addLibrary(try AddLibraryItemMessage(from: decoder))
                 case .getAllMedias:
                     self = .getAllMedias(try GetAllMediasMessage(from: decoder))
+                case .historyStateChanged:
+                    self = .historyStateChanged(try HistoryStateChangedMessage(from: decoder))
+                    
                 case .log:
                     self = .log(try LogMessage(from: decoder))
             }
@@ -457,6 +476,8 @@ extension ExcalidrawCore {
                 case image
                 case eraser
                 case laser
+                
+                case hand
             }
         }
     }
@@ -477,6 +498,20 @@ extension ExcalidrawCore {
         
     }
 
+    struct HistoryStateChangedMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: HistoryStateChangedData
+     
+        struct HistoryStateChangedData: Codable {
+            var type: HistoryStateChangeType
+            var disabled: Bool
+            
+            enum HistoryStateChangeType: String, Codable {
+                case undo, redo
+            }
+        }
+    }
+    
     // Log
     struct LogMessage: Codable {
         var event: String

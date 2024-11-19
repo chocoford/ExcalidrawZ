@@ -247,6 +247,7 @@ extension PersistenceController {
                         return excalidrawFiles.contains(where: {!$0.files.isEmpty})
                     }()
                     
+#if os(macOS)
                     if needBackup {
                         do {
                             try backupFiles()
@@ -258,7 +259,7 @@ extension PersistenceController {
                             print(error)
                         }
                     }
-                    
+#endif
                     var insertedMediaID = Set<String>()
                     
                     print("Need migrate \(files.count) files")
