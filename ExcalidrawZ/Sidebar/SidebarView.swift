@@ -24,18 +24,6 @@ struct SidebarView: View {
     
     var body: some View {
         twoColumnSidebar()
-            .onReceive(
-                NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification)
-            ) { notification in
-                if let userInfo = notification.userInfo {
-                    if let event = userInfo["event"] as? NSPersistentCloudKitContainer.Event {
-                        print("NSPersistentCloudKitContainer.eventChangedNotification: \(event.type), succeeded: \(event.succeeded)")
-                        if event.type == .import, event.succeeded {
-                            mergeDefaultGroupAndTrashIfNeeded()
-                        }
-                    }
-                }
-            }
     }
     
     
@@ -81,51 +69,6 @@ struct SidebarView: View {
     private func singleColumnSidebar() -> some View {
         List(selection: $fileState.currentFile) {
             
-        }
-    }
-    
-    private func mergeDefaultGroupAndTrashIfNeeded() {
-        let container = PersistenceController.shared.container
-        Task {
-            do {
-                let context = container.viewContext//.newBackgroundContext()
-                try await context.perform {
-                    let groups = try context.fetch(NSFetchRequest<Group>(entityName: "Group"))
-                    
-                    let defaultGroups = groups.filter({$0.groupType == .default})
-                    
-                    // Merge default groups
-                    if defaultGroups.count > 1 {
-                        let theEearlisetGroup = defaultGroups.sorted(by: {
-                            ($0.createdAt ?? .distantFuture) < ($1.createdAt ?? .distantFuture)
-                        }).first!
-                        
-                        try defaultGroups.forEach { group in
-                            if group != theEearlisetGroup {
-                                let defaultGroupFilesfetchRequest = NSFetchRequest<File>(entityName: "File")
-                                defaultGroupFilesfetchRequest.predicate = NSPredicate(format: "group == %@", group)
-                                let defaultGroupFiles = try context.fetch(defaultGroupFilesfetchRequest)
-                                defaultGroupFiles.forEach { file in
-                                    file.group = theEearlisetGroup
-                                }
-                                context.delete(group)
-                            }
-                        }
-                        
-                        DispatchQueue.main.async {
-                            fileState.currentGroup = theEearlisetGroup
-                        }
-                    }
-                    
-                    let trashGroups = groups.filter({$0.groupType == .trash})
-                    trashGroups.dropFirst().forEach { trash in
-                        context.delete(trash)
-                    }
-                }
-                try context.save()
-            } catch {
-                alertToast(error)
-            }
         }
     }
 }

@@ -98,8 +98,17 @@ struct ContentView: View {
                     // On macOS, event.type will be `setup` only when first launched.
                     // On iOS, event.type will be `setup` every time it has been launched.
                     print("NSPersistentCloudKitContainer.eventChangedNotification: \(event.type), succeeded: \(event.succeeded)")
-                    if event.type == .import, isFirstImporting == true {
+                    if event.type == .import, event.succeeded, isFirstImporting == true {
                         isFirstImporting = false
+                        
+//                        let context = PersistenceController.shared.container.newBackgroundContext()
+                        Task {
+                            do {
+                                try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: managedObjectContext)
+                            } catch {
+                                alertToast(error)
+                            }
+                        }
                     }
                 }
             }
