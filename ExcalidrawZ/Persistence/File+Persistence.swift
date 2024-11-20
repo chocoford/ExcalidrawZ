@@ -18,6 +18,7 @@ extension File {
         self.updatedAt = .now
     }
     
+    /// Return if has changed.
     func updateElements(with fileData: Data, newCheckpoint: Bool = false) throws {
         guard let data = self.content else { return }
         var obj = try JSONSerialization.jsonObject(with: data) as! [String : Any]
@@ -27,6 +28,11 @@ extension File {
         obj["elements"] = fileDataJson["elements"]
         obj.removeValue(forKey: "files")
         let contentData = try JSONSerialization.data(withJSONObject: obj)
+//        print("[updateElements]", contentData, self.content, contentData == self.content)
+//        if contentData == self.content {
+//            return false
+//        }
+        
         self.content = contentData
         self.updatedAt = .now
 
@@ -49,6 +55,8 @@ extension File {
             checkpoint.filename = self.name
             checkpoint.updatedAt = .now
         }
+        
+//        return true
     }
 }
 

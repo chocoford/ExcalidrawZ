@@ -20,14 +20,31 @@ struct PersistenceController {
     init(inMemory: Bool = false) {
         // If you didn't name your model Main you'll need
         // to change this name below.
-        container = NSPersistentContainer(name: "Model")
+        container = NSPersistentCloudKitContainer(name: "Model")
         container.viewContext.automaticallyMergesChangesFromParent = true
+        /// Core Data 预设了四种合并冲突策略，分别为：
+        /// * NSMergeByPropertyStoreTrumpMergePolicy
+        /// 逐属性比较，如果持久化数据和内存数据都改变且冲突，持久化数据胜出
+        /// * NSMergeByPropertyObjectTrumpMergePolicy
+        /// 逐属性比较，如果持久化数据和内存数据都改变且冲突，内存数据胜出
+        /// * NSOverwriteMergePolicy
+        /// 内存数据永远胜出
+        /// * NSRollbackMergePolicy
+        /// 持久化数据永远胜出
+        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        do {
+              try container.viewContext.setQueryGenerationFrom(.current)
+        } catch {
+             fatalError("Failed to pin viewContext to the current generation:\(error)")
+        }
+        
         if inMemory {
             container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
         }
 
         container.loadPersistentStores { description, error in
             if let error = error {
+                print(error)
                 fatalError("Error: \(error.localizedDescription)")
             }
         }
@@ -132,14 +149,17 @@ extension PersistenceController {
 //    }
     
     @MainActor
-    func createFile(in group: Group) throws -> File {
+    func createFile(in groupID: NSManagedObjectID, context: NSManagedObjectContext) throws -> File {
         guard let templateURL = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else { throw AppError.fileError(.notFound) }
         
-        let file = File(context: container.viewContext)
+        let file = File(context: context)
         file.id = UUID()
         file.name = String(localizable: .newFileNamePlaceholder)
         file.createdAt = .now
         file.updatedAt = .now
+        guard let group = context.object(with: groupID) as? Group else {
+            throw AppError.groupError(.notFound(groupID.description))
+        }
         file.group = group
         file.content = try Data(contentsOf: templateURL)
         return file

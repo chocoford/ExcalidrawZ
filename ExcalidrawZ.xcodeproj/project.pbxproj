@@ -255,6 +255,30 @@
 		39B143662CEAF84700D3EEDA /* SingleEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143642CEAF84700D3EEDA /* SingleEditorView.swift */; };
 		39B143672CEAF84700D3EEDA /* SingleEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143642CEAF84700D3EEDA /* SingleEditorView.swift */; };
 		39B143682CEAF84700D3EEDA /* SingleEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143642CEAF84700D3EEDA /* SingleEditorView.swift */; };
+		39B144BF2CED04F200D3EEDA /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BD2CED04F200D3EEDA /* LibraryViewModel.swift */; };
+		39B144C02CED04F200D3EEDA /* LibrarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BA2CED04F200D3EEDA /* LibrarySection.swift */; };
+		39B144C12CED04F200D3EEDA /* LibraryModel+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B92CED04F200D3EEDA /* LibraryModel+Persistence.swift */; };
+		39B144C22CED04F200D3EEDA /* LibraryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B82CED04F200D3EEDA /* LibraryModel.swift */; };
+		39B144C32CED04F200D3EEDA /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BC2CED04F200D3EEDA /* LibraryView.swift */; };
+		39B144C42CED04F200D3EEDA /* LibrarySectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BB2CED04F200D3EEDA /* LibrarySectionHeader.swift */; };
+		39B144C52CED04F200D3EEDA /* LibraryImportSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B62CED04F200D3EEDA /* LibraryImportSheetView.swift */; };
+		39B144C62CED04F200D3EEDA /* LibraryItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B72CED04F200D3EEDA /* LibraryItemView.swift */; };
+		39B144C72CED04F200D3EEDA /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BD2CED04F200D3EEDA /* LibraryViewModel.swift */; };
+		39B144C82CED04F200D3EEDA /* LibrarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BA2CED04F200D3EEDA /* LibrarySection.swift */; };
+		39B144C92CED04F200D3EEDA /* LibraryModel+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B92CED04F200D3EEDA /* LibraryModel+Persistence.swift */; };
+		39B144CA2CED04F200D3EEDA /* LibraryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B82CED04F200D3EEDA /* LibraryModel.swift */; };
+		39B144CB2CED04F200D3EEDA /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BC2CED04F200D3EEDA /* LibraryView.swift */; };
+		39B144CC2CED04F200D3EEDA /* LibrarySectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BB2CED04F200D3EEDA /* LibrarySectionHeader.swift */; };
+		39B144CD2CED04F200D3EEDA /* LibraryImportSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B62CED04F200D3EEDA /* LibraryImportSheetView.swift */; };
+		39B144CE2CED04F200D3EEDA /* LibraryItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B72CED04F200D3EEDA /* LibraryItemView.swift */; };
+		39B144CF2CED04F200D3EEDA /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BD2CED04F200D3EEDA /* LibraryViewModel.swift */; };
+		39B144D02CED04F200D3EEDA /* LibrarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BA2CED04F200D3EEDA /* LibrarySection.swift */; };
+		39B144D12CED04F200D3EEDA /* LibraryModel+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B92CED04F200D3EEDA /* LibraryModel+Persistence.swift */; };
+		39B144D22CED04F200D3EEDA /* LibraryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B82CED04F200D3EEDA /* LibraryModel.swift */; };
+		39B144D32CED04F200D3EEDA /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BC2CED04F200D3EEDA /* LibraryView.swift */; };
+		39B144D42CED04F200D3EEDA /* LibrarySectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BB2CED04F200D3EEDA /* LibrarySectionHeader.swift */; };
+		39B144D52CED04F200D3EEDA /* LibraryImportSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B62CED04F200D3EEDA /* LibraryImportSheetView.swift */; };
+		39B144D62CED04F200D3EEDA /* LibraryItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B72CED04F200D3EEDA /* LibraryItemView.swift */; };
 		39B7B878296C110B005F7E9D /* File+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B7B877296C110B005F7E9D /* File+Persistence.swift */; };
 		39BBE4752A6F078100045BEA /* ExportState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BBE4742A6F078100045BEA /* ExportState.swift */; };
 		39BE12EE2CB7DD8C006781D5 /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39BE12ED2CB7DD8C006781D5 /* Zlib */; };
@@ -425,6 +449,14 @@
 		39B143592CEA5EA200D3EEDA /* ContainerToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContainerToolbar.swift; sourceTree = "<group>"; };
 		39B1435D2CEA5FB700D3EEDA /* LayoutState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutState.swift; sourceTree = "<group>"; };
 		39B143642CEAF84700D3EEDA /* SingleEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleEditorView.swift; sourceTree = "<group>"; };
+		39B144B62CED04F200D3EEDA /* LibraryImportSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryImportSheetView.swift; sourceTree = "<group>"; };
+		39B144B72CED04F200D3EEDA /* LibraryItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryItemView.swift; sourceTree = "<group>"; };
+		39B144B82CED04F200D3EEDA /* LibraryModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryModel.swift; sourceTree = "<group>"; };
+		39B144B92CED04F200D3EEDA /* LibraryModel+Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LibraryModel+Persistence.swift"; sourceTree = "<group>"; };
+		39B144BA2CED04F200D3EEDA /* LibrarySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySection.swift; sourceTree = "<group>"; };
+		39B144BB2CED04F200D3EEDA /* LibrarySectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySectionHeader.swift; sourceTree = "<group>"; };
+		39B144BC2CED04F200D3EEDA /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		39B144BD2CED04F200D3EEDA /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
 		39B7B877296C110B005F7E9D /* File+Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "File+Persistence.swift"; sourceTree = "<group>"; };
 		39BBE4742A6F078100045BEA /* ExportState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportState.swift; sourceTree = "<group>"; };
 		39BF8E892A7EADB1002BD9D8 /* FileCheckpointListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCheckpointListView.swift; sourceTree = "<group>"; };
@@ -495,48 +527,6 @@
 			);
 			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
 		};
-		398FC1D42C84EECF00C96977 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				LibraryImportSheetView.swift,
-				LibraryItemView.swift,
-				LibraryModel.swift,
-				"LibraryModel+Persistence.swift",
-				LibrarySection.swift,
-				LibrarySectionHeader.swift,
-				LibraryView.swift,
-				LibraryViewModel.swift,
-			);
-			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
-		};
-		398FC1D82C84F4FA00C96977 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				LibraryImportSheetView.swift,
-				LibraryItemView.swift,
-				LibraryModel.swift,
-				"LibraryModel+Persistence.swift",
-				LibrarySection.swift,
-				LibrarySectionHeader.swift,
-				LibraryView.swift,
-				LibraryViewModel.swift,
-			);
-			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ (AppStore) */;
-		};
-		398FC1D92C84F4FA00C96977 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				LibraryImportSheetView.swift,
-				LibraryItemView.swift,
-				LibraryModel.swift,
-				"LibraryModel+Persistence.swift",
-				LibrarySection.swift,
-				LibrarySectionHeader.swift,
-				LibraryView.swift,
-				LibraryViewModel.swift,
-			);
-			target = 3963A0FF2C6D1D4900472AE7 /* ExcalidrawZ (Lagacy) */;
-		};
 		39B142E42CE9D25C00D3EEDA /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -586,7 +576,6 @@
 		3966624A2C67BEE900F863BC /* SegmentedPicker */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A09E2C6D05DF00472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 3966624B2C67BEF000F863BC /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39B8032C2C6D2B1A00308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SegmentedPicker; sourceTree = "<group>"; };
 		3987A5092CB54B200054D7D5 /* QuickLookPreviewExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3987A51A2CB54B200054D7D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = QuickLookPreviewExtension; sourceTree = "<group>"; };
 		3987A53F2CB550740054D7D5 /* ExcalidrawFile */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3987A61C2CB6DEC20054D7D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ExcalidrawFile; sourceTree = "<group>"; };
-		398FC1D02C84EEC200C96977 /* Library */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (398FC1D82C84F4FA00C96977 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 398FC1D42C84EECF00C96977 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 398FC1D92C84F4FA00C96977 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Library; sourceTree = "<group>"; };
 		39BE12DF2CB79DE0006781D5 /* Excalidraw+Image */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (39B142E42CE9D25C00D3EEDA /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = "Excalidraw+Image"; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -708,7 +697,7 @@
 		395F30802A70E6D30032B576 /* Sidebar */ = {
 			isa = PBXGroup;
 			children = (
-				398FC1D02C84EEC200C96977 /* Library */,
+				39B144BE2CED04F200D3EEDA /* Library */,
 				39EE68A72A76AC7200344799 /* SidebarView.swift */,
 				3901E25F29656FC500E79788 /* GroupListView.swift */,
 				39E0577A296C92DD00304655 /* GroupRowView.swift */,
@@ -935,6 +924,21 @@
 				39B143642CEAF84700D3EEDA /* SingleEditorView.swift */,
 			);
 			path = SingleEditorView;
+			sourceTree = "<group>";
+		};
+		39B144BE2CED04F200D3EEDA /* Library */ = {
+			isa = PBXGroup;
+			children = (
+				39B144B62CED04F200D3EEDA /* LibraryImportSheetView.swift */,
+				39B144B72CED04F200D3EEDA /* LibraryItemView.swift */,
+				39B144B82CED04F200D3EEDA /* LibraryModel.swift */,
+				39B144B92CED04F200D3EEDA /* LibraryModel+Persistence.swift */,
+				39B144BA2CED04F200D3EEDA /* LibrarySection.swift */,
+				39B144BB2CED04F200D3EEDA /* LibrarySectionHeader.swift */,
+				39B144BC2CED04F200D3EEDA /* LibraryView.swift */,
+				39B144BD2CED04F200D3EEDA /* LibraryViewModel.swift */,
+			);
+			path = Library;
 			sourceTree = "<group>";
 		};
 		39DCA1422A7EC7BC00B1DDA0 /* Models */ = {
@@ -1281,6 +1285,14 @@
 				3963A0432C6C7EAA00472AE7 /* NSImage+Extension.swift in Sources */,
 				3963A0442C6C7EAA00472AE7 /* URL+Extension.swift in Sources */,
 				3963A0452C6C7EAA00472AE7 /* FileRowView.swift in Sources */,
+				39B144BF2CED04F200D3EEDA /* LibraryViewModel.swift in Sources */,
+				39B144C02CED04F200D3EEDA /* LibrarySection.swift in Sources */,
+				39B144C12CED04F200D3EEDA /* LibraryModel+Persistence.swift in Sources */,
+				39B144C22CED04F200D3EEDA /* LibraryModel.swift in Sources */,
+				39B144C32CED04F200D3EEDA /* LibraryView.swift in Sources */,
+				39B144C42CED04F200D3EEDA /* LibrarySectionHeader.swift in Sources */,
+				39B144C52CED04F200D3EEDA /* LibraryImportSheetView.swift in Sources */,
+				39B144C62CED04F200D3EEDA /* LibraryItemView.swift in Sources */,
 				39E9C59F2C8CA78100BC1C07 /* AboutView.swift in Sources */,
 				3963A0462C6C7EAA00472AE7 /* RootView.swift in Sources */,
 				3963A0472C6C7EAA00472AE7 /* Model.xcdatamodeld in Sources */,
@@ -1381,6 +1393,14 @@
 				3963A11F2C6D1D4900472AE7 /* ContentView.swift in Sources */,
 				3963A1202C6D1D4900472AE7 /* VersionState.swift in Sources */,
 				3963A1212C6D1D4900472AE7 /* FetchResults+Extension.swift in Sources */,
+				39B144CF2CED04F200D3EEDA /* LibraryViewModel.swift in Sources */,
+				39B144D02CED04F200D3EEDA /* LibrarySection.swift in Sources */,
+				39B144D12CED04F200D3EEDA /* LibraryModel+Persistence.swift in Sources */,
+				39B144D22CED04F200D3EEDA /* LibraryModel.swift in Sources */,
+				39B144D32CED04F200D3EEDA /* LibraryView.swift in Sources */,
+				39B144D42CED04F200D3EEDA /* LibrarySectionHeader.swift in Sources */,
+				39B144D52CED04F200D3EEDA /* LibraryImportSheetView.swift in Sources */,
+				39B144D62CED04F200D3EEDA /* LibraryItemView.swift in Sources */,
 				3963A1222C6D1D4900472AE7 /* ExcalidrawGenricElement.swift in Sources */,
 				3963A1232C6D1D4900472AE7 /* ExcalidrawTextElement.swift in Sources */,
 				3987A5652CB556BC0054D7D5 /* AppPreference.swift in Sources */,
@@ -1456,6 +1476,14 @@
 				3987A5682CB557160054D7D5 /* ToolState.swift in Sources */,
 				397E4659295838CF003B824B /* ContentView.swift in Sources */,
 				39E73D7329DB3B9800098A79 /* VersionState.swift in Sources */,
+				39B144C72CED04F200D3EEDA /* LibraryViewModel.swift in Sources */,
+				39B144C82CED04F200D3EEDA /* LibrarySection.swift in Sources */,
+				39B144C92CED04F200D3EEDA /* LibraryModel+Persistence.swift in Sources */,
+				39B144CA2CED04F200D3EEDA /* LibraryModel.swift in Sources */,
+				39B144CB2CED04F200D3EEDA /* LibraryView.swift in Sources */,
+				39B144CC2CED04F200D3EEDA /* LibrarySectionHeader.swift in Sources */,
+				39B144CD2CED04F200D3EEDA /* LibraryImportSheetView.swift in Sources */,
+				39B144CE2CED04F200D3EEDA /* LibraryItemView.swift in Sources */,
 				390B2C7B2967EACA00AA359C /* FetchResults+Extension.swift in Sources */,
 				39DCA1492A7ECB0600B1DDA0 /* ExcalidrawGenricElement.swift in Sources */,
 				39DCA14B2A7ED07B00B1DDA0 /* ExcalidrawTextElement.swift in Sources */,
@@ -1600,6 +1628,7 @@
 				INFOPLIST_FILE = "ExcalidrawZ/AppStore-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "ExcalidrawZ-Debug";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSCameraUsageDescription = "ExcalidrawZ wants to use your camera for excalidraw image input.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -1645,6 +1674,7 @@
 				INFOPLIST_FILE = "ExcalidrawZ/AppStore-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = ExcalidrawZ;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSCameraUsageDescription = "ExcalidrawZ wants to use your camera for excalidraw image input.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -1749,6 +1779,7 @@
 				INFOPLIST_FILE = "ExcalidrawZ/AppStore-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = ExcalidrawZ;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSCameraUsageDescription = "ExcalidrawZ wants to use your camera for excalidraw image input.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

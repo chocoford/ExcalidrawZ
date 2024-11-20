@@ -11,7 +11,8 @@ import ChocofordUI
 
 struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 //    @Environment(\.dismiss) var dismiss
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
     
     @EnvironmentObject var appPreference: AppPreference
@@ -20,17 +21,26 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
     @EnvironmentObject var toolState: ToolState
 
     @State private var sharedFile: File?
-    @State private var isFileHistoryPresented = false
     
     func body(content: Content) -> some View {
         ZStack {
-            if horizontalSizeClass == .compact {
+            if containerHorizontalSizeClass == .compact {
                 content
 #if os(iOS)
                     .navigationBarBackButtonHidden()
 #endif
             } else {
-                content
+                if #available(iOS 18.0, *) {
+                    content
+#if os(iOS)
+                        .toolbarVisibility(.hidden, for: .bottomBar)
+#endif
+                } else {
+                    content
+#if os(iOS)
+                        .toolbar(.hidden, for: .bottomBar)
+#endif
+                }
             }
         }
         .toolbar(content: toolbarContent)
@@ -40,7 +50,6 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
         .navigationBarTitleDisplayMode(.inline) // <- fix principal toolbar
 #endif
         .modifier(ShareViewModifier(sharedFile: $sharedFile))
-        .modifier(FileHistoryModifier(isPresented: $isFileHistoryPresented))
     }
     
     @ToolbarContentBuilder
@@ -70,7 +79,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             }
         }
 #elseif os(iOS)
-        ToolbarItemGroup(placement: horizontalSizeClass == .regular ? .principal : .bottomBar) {
+        ToolbarItemGroup(placement: containerHorizontalSizeClass == .regular ? .principal : .bottomBar) {
             ExcalidrawToolbar()
         }
 #endif
@@ -78,7 +87,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
         ToolbarItemGroup(placement: .navigation) {
             if #available(macOS 13.0, iOS 16.0, *), appPreference.sidebarLayout == .sidebar {
                 
-            } else if horizontalSizeClass == .regular {
+            } else if containerHorizontalSizeClass == .regular {
                 Button {
                     layoutState.isSidebarPresented.toggle()
                 } label: {
@@ -94,7 +103,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                 // create
                 Button {
                     do {
-                        try fileState.createNewFile()
+                        try fileState.createNewFile(context: managedObjectContext)
                     } catch {
                         alertToast(error)
                     }
@@ -108,7 +117,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
         
 #if os(iOS)
         ToolbarItemGroup(placement: .topBarLeading) {
-            if horizontalSizeClass == .compact {
+            if containerHorizontalSizeClass == .compact {
                 Button {
                     fileState.currentFile = nil
                 } label: {
@@ -134,16 +143,9 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 #endif
         
         ToolbarItemGroup(placement: .confirmationAction) {
-            if let currentFile = fileState.currentFile {
-                Button {
-                    isFileHistoryPresented.toggle()
-                } label: {
-                    Label(.localizable(.checkpoints), systemSymbol: .clockArrowCirclepath)
-                }
-                .disabled(fileState.currentGroup?.groupType == .trash)
-                .help(.localizable(.checkpoints))
-            }
-
+            
+            FileHistoryButton()
+            
             Button {
                 self.sharedFile = fileState.currentFile
             } label: {
@@ -153,7 +155,17 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             .disabled(fileState.currentGroup?.groupType == .trash)
 
 
-            if #available(macOS 13.0, iOS 16.0, *), appPreference.inspectorLayout == .sidebar { } else {
+            if #available(macOS 13.0, iOS 16.0, *), appPreference.inspectorLayout == .sidebar {
+#if os(iOS)
+                if !layoutState.isInspectorPresented {
+                    Button {
+                        layoutState.isInspectorPresented.toggle()
+                    } label: {
+                        Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
+                    }
+                }
+#endif
+            } else {
                 Button {
                     layoutState.isInspectorPresented.toggle()
                 } label: {

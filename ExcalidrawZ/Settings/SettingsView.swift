@@ -12,14 +12,14 @@ import Sparkle
 #endif
 
 struct SettingsView: View {
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     
     @State private var selection: Route?
 
     var body: some View {
         content()
             .task {
-                if horizontalSizeClass == .regular {
+                if containerHorizontalSizeClass == .regular {
                     selection = .general
                 }
             }

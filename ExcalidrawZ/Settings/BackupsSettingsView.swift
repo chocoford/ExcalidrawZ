@@ -195,8 +195,12 @@ struct BackupsSettingsView: View {
             
             let backupDirs: [URL] = try FileManager.default.contentsOfDirectory(
                 at: backupsDir,
-                includingPropertiesForKeys: [.nameKey, .isDirectoryKey]
-            ).filter({ (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true })
+                includingPropertiesForKeys: [.nameKey, .isDirectoryKey, .creationDateKey]
+            )
+                .filter({ (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true })
+                .sorted(by: {
+                    ((try? $0.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? .distantPast) > ((try? $1.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? .distantPast)
+                })
                         
             self.backups = backupDirs
             

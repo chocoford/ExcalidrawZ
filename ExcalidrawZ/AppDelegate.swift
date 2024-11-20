@@ -15,12 +15,6 @@ extension Notification.Name {
 #if os(macOS)
 import AppKit
 class AppDelegate: NSObject, NSApplicationDelegate {
-//    @Environment(\.openWindow) private var openWindow
-
-//    func applicationDidFinishLaunching(_ notification: Notification) {
-//        
-//    }
-//    
     func applicationWillTerminate(_ notification: Notification) {
         PersistenceController.shared.save()
     }

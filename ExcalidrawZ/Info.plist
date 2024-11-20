@@ -267,5 +267,7 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>ExcalidrawZ wants to use your camera for excalidraw image input.</string>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 </dict>
 </plist>

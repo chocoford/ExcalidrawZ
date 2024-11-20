@@ -75,7 +75,9 @@ struct FileInfo: Equatable {
 }
 
 struct FileRowView: View {
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.alertToast) private var alertToast
     @EnvironmentObject var fileState: FileState
     
     
@@ -140,22 +142,9 @@ struct FileRowView: View {
                 Text(.localizable(.sidebarFileRowDeletePermanentlyAlertButtonConfirm))
             }
         }
-        .sheet(isPresented: $renameMode) {
-            if horizontalSizeClass == .compact {
-                RenameSheetView(text: file.name ?? "") { newName in
-                    fileState.renameFile(file, newName: newName)
-                }
-#if canImport(UIKit)
-                .presentationDetents([.height(180)])
-                .presentationDragIndicator(.visible)
-#endif
-            } else {
-                RenameSheetView(text: file.name ?? "") { newName in
-                    fileState.renameFile(file, newName: newName)
-                }
-                .frame(width: 300)
-            }
-        }
+        .modifier(RenameSheetViewModifier(isPresented: $renameMode, name: file.name ?? "") {
+            fileState.renameFile(file, newName: $0)
+        })
     }
     
     // Context Menu
@@ -169,7 +158,14 @@ struct FileRowView: View {
             }
             
             Button {
-                fileState.duplicateFile(file)
+                do {
+                    let newFile = try fileState.duplicateFile(file, context: managedObjectContext)
+                    if containerHorizontalSizeClass == .regular {
+                        fileState.currentFile = newFile
+                    }
+                } catch {
+                    alertToast(error)
+                }
             } label: {
                 Label(.localizable(.sidebarFileRowContextMenuDuplicate), systemSymbol: .docOnDoc)
             }

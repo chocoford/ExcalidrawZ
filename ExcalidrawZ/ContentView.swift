@@ -6,11 +6,14 @@
 //
 
 import SwiftUI
+import CoreData
+
 import ChocofordUI
 import ChocofordEssentials
 import SwiftyAlert
 
 struct ContentView: View {
+    @Environment(\.managedObjectContext) private var managedObjectContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
@@ -28,35 +31,43 @@ struct ContentView: View {
     @State private var window: UIWindow?
 #endif
     
+    @State private var isFirstImporting: Bool?
+    
     var body: some View {
         ZStack {
-            if #available(macOS 14.0, iOS 17.0, *), appPreference.inspectorLayout == .sidebar {
-                content()
-                    .inspector(isPresented: $layoutState.isInspectorPresented) {
-                        LibraryView()
-                            .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
-                    }
+            if isFirstImporting == nil {
+                Color.clear
+            } else if isFirstImporting == true {
+                welcomeView()
             } else {
-                content()
-                if appPreference.inspectorLayout == .floatingBar {
-                    HStack {
-                        Spacer()
-                        if layoutState.isInspectorPresented {
+                if #available(macOS 14.0, iOS 17.0, *), appPreference.inspectorLayout == .sidebar {
+                    content()
+                        .inspector(isPresented: $layoutState.isInspectorPresented) {
                             LibraryView()
-                                .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .background {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(.regularMaterial)
-                                        .shadow(radius: 4)
-                                }
-                                .transition(.move(edge: .trailing))
+                                .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
                         }
+                } else {
+                    content()
+                    if appPreference.inspectorLayout == .floatingBar {
+                        HStack {
+                            Spacer()
+                            if layoutState.isInspectorPresented {
+                                LibraryView()
+                                    .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .background {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(.regularMaterial)
+                                            .shadow(radius: 4)
+                                    }
+                                    .transition(.move(edge: .trailing))
+                            }
+                        }
+                        .animation(.easeOut, value: layoutState.isInspectorPresented)
+                        .padding(.top, 10)
+                        .padding(.horizontal, 10)
+                        .padding(.bottom, 40)
                     }
-                    .animation(.easeOut, value: layoutState.isInspectorPresented)
-                    .padding(.top, 10)
-                    .padding(.horizontal, 10)
-                    .padding(.bottom, 40)
                 }
             }
         }
@@ -66,6 +77,7 @@ struct ContentView: View {
         .environmentObject(toolState)
         .environmentObject(layoutState)
         .swiftyAlert()
+        .containerSizeClassInjection()
         .bindWindow($window)
         .onReceive(NotificationCenter.default.publisher(for: .shouldHandleImport)) { notification in
             guard let urls = notification.object as? [URL] else { return }
@@ -80,6 +92,27 @@ struct ContentView: View {
                 }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification)) { notification in
+            if let userInfo = notification.userInfo {
+                if let event = userInfo["event"] as? NSPersistentCloudKitContainer.Event {
+                    // On macOS, event.type will be `setup` only when first launched.
+                    // On iOS, event.type will be `setup` every time it has been launched.
+                    print("NSPersistentCloudKitContainer.eventChangedNotification: \(event.type), succeeded: \(event.succeeded)")
+                    if event.type == .import, isFirstImporting == true {
+                        isFirstImporting = false
+                    }
+                }
+            }
+        }
+        // Check if it is first launch by checking the files count.
+        .task {
+            do {
+                let isEmpty = try managedObjectContext.fetch(NSFetchRequest<File>(entityName: "File")).isEmpty
+                isFirstImporting = isEmpty
+            } catch {
+                alertToast(error)
+            }
+        }
     }
     
     @MainActor @ViewBuilder
@@ -90,10 +123,25 @@ struct ContentView: View {
             ContentViewLagacy()
         }
     }
+    
+    @MainActor @ViewBuilder
+    private func welcomeView() -> some View {
+        ProgressView {
+            VStack {
+                if isFirstImporting == true {
+                    Text("Welcome to ExcalidrawZ").font(.title)
+                    Text("We are synchronizing your data, please wait...")
+                } else {
+                    Text("Syncing data...")
+                }
+            }
+        }
+    }
 }
 
 @available(macOS 13.0, *)
 struct ContentViewModern: View {
+    @Environment(\.managedObjectContext) private var managedObjectContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
@@ -146,7 +194,7 @@ struct ContentViewModern: View {
             // create
             Button {
                 do {
-                    try fileState.createNewFile()
+                    try fileState.createNewFile(context: managedObjectContext)
                 } catch {
                     alertToast(error)
                 }

@@ -10,6 +10,7 @@ import SwiftUI
 struct FileCheckpointDetailView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.managedObjectContext) var managedObjectContext
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var fileState: FileState
 
     var checkpoint: FileCheckpoint
@@ -49,12 +50,14 @@ struct FileCheckpointDetailView: View {
                     file?.content = checkpoint.content
                     file?.name = checkpoint.filename
                     fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
+                    fileState.didUpdateFile = false
                 } label: {
                     Text(.localizable(.checkpointButtonRestore))
                 }
                 
                 Button {
                     managedObjectContext.delete(checkpoint)
+                    dismiss()
                 } label: {
                     Text(.localizable(.checkpointButtonDelete))
                 }

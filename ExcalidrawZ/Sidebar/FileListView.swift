@@ -6,11 +6,14 @@
 //
 
 import SwiftUI
+import CoreData
 
 import ChocofordUI
 
 struct FileListView: View {
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.uiSizeClass) private var uiSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
@@ -48,7 +51,7 @@ struct FileListView: View {
                 content()
                     .onChange(of: fileState.currentGroup) { oldValue, newValue in
                         if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
-                            if horizontalSizeClass == .compact {
+                            if containerHorizontalSizeClass == .compact {
                                 // do not set file at iphone.
                                 return
                             }
@@ -58,12 +61,12 @@ struct FileListView: View {
                     .onChange(of: fileState.currentFile) { _, newValue in
                         if newValue == nil {
                             if let file = files.first {
-                                if horizontalSizeClass == .regular {
+                                if containerHorizontalSizeClass == .regular {
                                     fileState.currentFile = file
                                 }
                             } else {
                                 do {
-                                    try fileState.createNewFile()
+                                    try fileState.createNewFile(active: true, context: managedObjectContext)
                                 } catch {
                                     alertToast(error)
                                 }
@@ -71,19 +74,22 @@ struct FileListView: View {
                         }
                     }
                     .onChange(of: files) { _, newValue in
-                        if newValue.isEmpty, horizontalSizeClass == .compact {
+                        if newValue.isEmpty, containerHorizontalSizeClass == .compact {
                             do {
-                                try fileState.createNewFile(active: false)
+                                try fileState.createNewFile(active: false, context: managedObjectContext)
                             } catch {
                                 alertToast(error)
                             }
+                        } else if !newValue.contains(where: {$0.id == fileState.currentFile?.id}),
+                                  containerHorizontalSizeClass == .regular {
+                            fileState.currentFile = newValue.first
                         }
                     }
             } else {
                 content()
                     .onChange(of: fileState.currentGroup) { newValue in
                         if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
-                            if horizontalSizeClass == .compact {
+                            if containerHorizontalSizeClass == .compact {
                                 return
                             }
                             fileState.currentFile = files.first
@@ -92,12 +98,12 @@ struct FileListView: View {
                     .onChange(of: fileState.currentFile) { newValue in
                         if newValue == nil {
                             if let file = files.first {
-                                if horizontalSizeClass == .regular {
+                                if containerHorizontalSizeClass == .regular {
                                     fileState.currentFile = file
                                 }
                             } else {
                                 do {
-                                    try fileState.createNewFile()
+                                    try fileState.createNewFile(active: true, context: managedObjectContext)
                                 } catch {
                                     alertToast(error)
                                 }
@@ -106,12 +112,15 @@ struct FileListView: View {
                     }
                 
                 .onChange(of: files) { newValue in
-                    if newValue.isEmpty, horizontalSizeClass == .compact {
+                    if newValue.isEmpty, containerHorizontalSizeClass == .compact {
                         do {
-                            try fileState.createNewFile(active: false)
+                            try fileState.createNewFile(active: false, context: managedObjectContext)
                         } catch {
                             alertToast(error)
                         }
+                    } else if !newValue.contains(where: {$0.id == fileState.currentFile?.id}),
+                              containerHorizontalSizeClass == .regular {
+                        fileState.currentFile = newValue.first
                     }
                 }
             }
@@ -127,11 +136,11 @@ struct FileListView: View {
             guard fileState.currentFile == nil else { return }
             if files.isEmpty {
                 do {
-                    try fileState.createNewFile()
+                    try fileState.createNewFile(context: managedObjectContext)
                 } catch {
                     alertToast(error)
                 }
-            } else if horizontalSizeClass == .regular || isFirstAppear {
+            } else if containerHorizontalSizeClass == .regular || isFirstAppear {
                 fileState.currentFile = files.first
             }
         }

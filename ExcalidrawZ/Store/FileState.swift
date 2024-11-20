@@ -79,25 +79,35 @@ final class FileState: ObservableObject {
     }
     
     @discardableResult
-    func createNewGroup(name: String, activate: Bool = true) async throws -> NSManagedObjectID {
-        try await PersistenceController.shared.container.viewContext.perform {
-            let group = Group(name: name, context: PersistenceController.shared.container.viewContext)
+    func createNewGroup(name: String, activate: Bool = true, context: NSManagedObjectContext) async throws -> NSManagedObjectID {
+        try await context.perform {
+            let group = Group(name: name, context: context)
+            try context.save()
             if activate {
-                self.currentGroup = group
+                DispatchQueue.main.async {
+                    self.currentGroup = group
+                }
             }
-            try PersistenceController.shared.container.viewContext.save()
             return group.objectID
         }
     }
     
-    @MainActor
-    func createNewFile(active: Bool = true) throws {
+    func createNewFile(active: Bool = true, context: NSManagedObjectContext) throws {
         guard let currentGroup else { throw AppError.stateError(.currentGroupNil) }
-        let file = try PersistenceController.shared.createFile(in: currentGroup)
+        let file = File(name: String(localizable: .newFileNamePlaceholder), context: context)
+        guard let group = context.object(with: currentGroup.objectID) as? Group else {
+            throw AppError.groupError(.notFound(currentGroup.objectID.description))
+        }
+        file.group = group
+        
+        guard let templateURL = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else {
+            throw AppError.fileError(.notFound)
+        }
+        file.content = try Data(contentsOf: templateURL)
         if active {
             currentFile = file
         }
-        PersistenceController.shared.save()
+        try context.save()
     }
     
     func updateCurrentFileData(data: Data) {
@@ -144,11 +154,11 @@ final class FileState: ObservableObject {
                     try await bgContext.perform {
                         guard let file = bgContext.object(with: id) as? File,
                               let content = excalidrawFile.content else { return }
+                        
                         try file.updateElements(
                             with: content,
                             newCheckpoint: !didUpdateFile
                         )
-                    
                         let newMedias = excalidrawFile.files.filter { (id, _) in
                             file.medias?.contains(where: {
                                 ($0 as? MediaItem)?.id == id
@@ -350,7 +360,7 @@ final class FileState: ObservableObject {
         
         return group.objectID
     }
-    
+    @MainActor
     func renameFile(_ file: File, newName: String) {
         file.name = newName
         PersistenceController.shared.save()
@@ -372,11 +382,18 @@ final class FileState: ObservableObject {
         PersistenceController.shared.save()
     }
     
-    @MainActor
-    func duplicateFile(_ file: File) {
-        let newFile = PersistenceController.shared.duplicateFile(file: file)
-        currentFile = newFile
-        PersistenceController.shared.save()
+    @discardableResult
+    func duplicateFile(_ file: File, context: NSManagedObjectContext) throws -> File {
+        let newFile = File(context: context)
+        newFile.id = UUID()
+        newFile.createdAt = .now
+        newFile.updatedAt = .now
+        newFile.name = file.name
+        newFile.content = file.content
+        newFile.group = file.group
+        try context.save()
+        
+        return newFile
     }
     
     func deleteFile(_ file: File) {

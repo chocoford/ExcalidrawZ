@@ -9,34 +9,37 @@ import SwiftUI
 import ChocofordUI
 import ChocofordEssentials
 
-struct FileHistoryModifier: ViewModifier {
+struct FileHistoryButton: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject var fileState: FileState
-    @Binding var isPresented: Bool
     
-    init(isPresented: Binding<Bool>) {
-        self._isPresented = isPresented
-    }
-    
-    func body(content: Content) -> some View {
-        content
+    @State private var isPresented = false
+
+    var body: some View {
+        Button {
+            isPresented.toggle()
+        } label: {
+            Label(.localizable(.checkpoints), systemSymbol: .clockArrowCirclepath)
+        }
+        .disabled(fileState.currentGroup?.groupType == .trash)
+        .help(.localizable(.checkpoints))
 #if os(macOS)
-            .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-                if let file = fileState.currentFile {
+        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
+            if let file = fileState.currentFile {
+                FileCheckpointListView(file: file)
+            }
+        }
+#elseif os(iOS)
+        .sheet(isPresented: $isPresented) {
+            if let file = fileState.currentFile {
+                if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
+                    FileCheckpointListView(file: file)
+                        .presentationCompactAdaptation(.popover)
+                } else {
                     FileCheckpointListView(file: file)
                 }
             }
-#elseif os(iOS)
-            .sheet(isPresented: $isPresented) {
-                if let file = fileState.currentFile {
-                    if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
-                        FileCheckpointListView(file: file)
-                            .presentationCompactAdaptation(.popover)
-                    } else {
-                        FileCheckpointListView(file: file)
-                    }
-                }
-            }
+        }
 #endif
     }
 }

@@ -36,54 +36,64 @@ struct LibraryItemView: View {
     @State private var isDeleteConfirmPresented = false
 
     var body: some View {
+#if os(macOS)
+        content()
+            .onDrag {
+                let itemProvider = NSItemProvider()
+                itemProvider.registerDataRepresentation(
+                    forTypeIdentifier: UTType.excalidrawlibJSON.identifier,
+                    visibility: .ownProcess
+                ) { completion in
+                    viewContext.perform {
+                        do {
+                            let item = item.excalidrawLibrary
+                            let data = try item.jsonStringified().data(using: .utf8)
+                            completion(data, nil)
+                        } catch {
+                            alertToast(error)
+                            completion(nil, error)
+                        }
+                    }
+                    return Progress(totalUnitCount: 100)
+                }
+                return itemProvider
+            }
+            .contextMenu { contextMenu().labelStyle(.titleAndIcon) }
+            .confirmationDialog(.localizable(.librariesRemoveItemConfirmationTitle), isPresented: $isDeleteConfirmPresented) {
+                AsyncButton(role: .destructive) {
+                    try await deleteLibraryItem()
+                } label: {
+                    Label(.localizable(.librariesRemoveItemConfirmationConfirm), systemSymbol: .trash)
+                }
+            } message: {
+                Text(.localizable(.generalCannotUndoMessage))
+            }
+#elseif os(iOS)
+        Menu {
+            contextMenu()
+        } label: {
+            content()
+        } primaryAction: {
+            addToCanvas()
+        }
+        .buttonStyle(.borderless)
+#endif
+    }
+    
+    @MainActor @ViewBuilder
+    private func content() -> some View {
         LibraryItemContentView(item: item)
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .font(.footnote)
         .lineLimit(1)
         .truncationMode(.middle)
-        .onDrag {
-            let itemProvider = NSItemProvider()
-            itemProvider.registerDataRepresentation(
-                forTypeIdentifier: UTType.excalidrawlibJSON.identifier,
-                visibility: .ownProcess
-            ) { completion in
-                viewContext.perform {
-                    do {
-                        let item = item.excalidrawLibrary
-                        let data = try item.jsonStringified().data(using: .utf8)
-                        completion(data, nil)
-                    } catch {
-                        alertToast(error)
-                        completion(nil, error)
-                    }
-                }
-                return Progress(totalUnitCount: 100)
-            }
-            return itemProvider
-        }
-        .contextMenu { contextMenu().labelStyle(.titleAndIcon) }
-        .confirmationDialog(.localizable(.librariesRemoveItemConfirmationTitle), isPresented: $isDeleteConfirmPresented) {
-            AsyncButton(role: .destructive) {
-                try await deleteLibraryItem()
-            } label: {
-                Label(.localizable(.librariesRemoveItemConfirmationConfirm), systemSymbol: .trash)
-            }
-        } message: {
-            Text(.localizable(.generalCannotUndoMessage))
-        }
     }
     
     @MainActor @ViewBuilder
     private func contextMenu() -> some View {
         if !inSelectionMode {
             Button {
-                Task {
-                    do {
-                        try await libraryViewModel.excalidrawWebCoordinator?.loadLibraryItem(item: item.excalidrawLibrary)
-                    } catch {
-                        alertToast(error)
-                    }
-                }
+                addToCanvas()
             } label: {
                 Label(.localizable(.librariesButtonItemAddToCanvas), systemSymbol: .plusSquare)
             }
@@ -108,6 +118,16 @@ struct LibraryItemView: View {
             } label: {
                 Label(.localizable(.librariesItemRemove), systemSymbol: .trash)
                     .foregroundStyle(.red)
+            }
+        }
+    }
+    
+    private func addToCanvas() {
+        Task {
+            do {
+                try await libraryViewModel.excalidrawWebCoordinator?.loadLibraryItem(item: item.excalidrawLibrary)
+            } catch {
+                alertToast(error)
             }
         }
     }

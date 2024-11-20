@@ -8,17 +8,27 @@
 import SwiftUI
 
 struct MediasSettingsView: View {
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @FetchRequest(sortDescriptors: [SortDescriptor(\MediaItem.createdAt, order: .reverse)])
     private var medias: FetchedResults<MediaItem>
     
     @State private var selection: MediaItem?
     
     var body: some View {
-        if horizontalSizeClass == .compact {
+        if containerHorizontalSizeClass == .compact {
             compactContent()
         } else {
+#if os(iOS)
+            if #available(iOS 18.0, *) {
+                regularContent()
+                    .toolbarVisibility(.visible, for: .navigationBar)
+            } else {
+                regularContent()
+                    .toolbar(.visible, for: .navigationBar)
+            }
+#elseif os(macOS)
             regularContent()
+#endif
         }
     }
     
@@ -37,7 +47,6 @@ struct MediasSettingsView: View {
                         .border(.trailing, color: .separatorColor)
                 }
 #endif
-            
             detailView()
                 .padding()
                 .frame(maxWidth: .infinity)
@@ -140,7 +149,11 @@ struct MediasSettingsView: View {
                             }
                         }
                     }
+#if os(macOS)
                     .padding(.horizontal, 100)
+#elseif os(iOS)
+                    .padding(.horizontal, 20)
+#endif
                 }
             } else {
                 placeholderView()

@@ -15,6 +15,7 @@ import SVGView
 import UniformTypeIdentifiers
 
 struct LibraryView: View {
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var exportState: ExportState
@@ -47,6 +48,7 @@ struct LibraryView: View {
             if #available(macOS 13.0, *), appPreference.inspectorLayout == .sidebar {
                 content()
                     .toolbar(content: toolbar)
+                    .presentationDetents([.medium])
             } else {
                 VStack(spacing: 0) {
                     Divider()
@@ -127,6 +129,7 @@ struct LibraryView: View {
     
     @MainActor @ToolbarContentBuilder
     private func toolbar() -> some ToolbarContent {
+#if os(macOS)
         /// This is the key to make sidebar toggle at the right side.
         ToolbarItem(placement: .status) {
             if layoutState.isInspectorPresented {
@@ -138,7 +141,6 @@ struct LibraryView: View {
                     .frame(width: 1)
             }
         }
-        
         ToolbarItem(placement: .automatic) {
             Button {
                 layoutState.isInspectorPresented.toggle()
@@ -146,6 +148,23 @@ struct LibraryView: View {
                 Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
             }
         }
+#elseif os(iOS)
+        ToolbarItem(placement: .principal) {
+            Text(.localizable(.librariesTitle))
+                .foregroundStyle(.secondary)
+                .font(.headline)
+        }
+        
+        ToolbarItem(placement: .topBarTrailing) {
+            if containerHorizontalSizeClass == .regular {
+                Button {
+                    layoutState.isInspectorPresented.toggle()
+                } label: {
+                    Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
+                }
+            }
+        }
+#endif
     }
     
     @MainActor @ViewBuilder
@@ -319,6 +338,7 @@ struct LibraryView: View {
         }
         .fixedSize()
         .menuIndicator(.hidden)
+        .contentShape(Rectangle())
     }
     
     @MainActor @ViewBuilder

@@ -177,7 +177,7 @@ extension ExcalidrawView: UIViewRepresentable {
                 context.coordinator.$isLoading.sink { newValue in
                     DispatchQueue.main.async {
                         self.isLoading = newValue
-                        if !newValue, horizontalSizeClass == .compact {
+                        if !newValue/*, horizontalSizeClass == .compact*/ {
                             Task { @MainActor in
                                 try? await context.coordinator.toggleToolbarAction(key: "h")
                             }

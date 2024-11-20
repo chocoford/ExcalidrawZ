@@ -38,13 +38,13 @@
 			</array>
 		</dict>
 		<dict>
-			<key>CFBundleTypeMIMETypes</key>
-			<array>
-				<string></string>
-			</array>
 			<key>CFBundleTypeExtensions</key>
 			<array>
 				<string>excalidraw.svg</string>
+			</array>
+			<key>CFBundleTypeMIMETypes</key>
+			<array>
+				<string></string>
 			</array>
 			<key>CFBundleTypeName</key>
 			<string>excalidraw SVG</string>
@@ -76,6 +76,10 @@
 	<false/>
 	<key>SKIncludeConsumableInAppPurchaseHistory</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
@@ -260,5 +264,7 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>ExcalidrawZ wants to use your camera for excalidraw image input.</string>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 </dict>
 </plist>
