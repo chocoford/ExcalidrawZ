@@ -5,6 +5,7 @@ import { Icon } from "astro-icon/components";
 import exportSheet from "assets/Export sheet.png";
 import menubar from "assets/Menubar.png";
 import fileHistory from "assets/File history.png";
+import multipleFormat from "assets/ExcalidrawZ - multiple format screenshot EN.png";
 
 const features = [
   {
@@ -84,10 +85,11 @@ const features = [
     <Picture
       src={menubar}
       alt="ExcalidrawZ menubar"
-      widths={[200, 400, 600]}
-      sizes="(max-width: 800px) 100vw, 420px"
+      widths={[280, 560]}
+      sizes="(max-width: 768px) 280px, 560px"
       loading="lazy"
       format="png"
+      class="w-full"
     />
   </div>
   <div>
@@ -113,11 +115,11 @@ const features = [
     <Picture
       src={exportSheet}
       alt="ExcalidrawZ export sheet"
-      widths={[200, 400, 600]}
-      sizes="(max-width: 800px) 100vw, 420px"
-      width={800}
+      widths={[280, 560]}
+      sizes="(max-width: 768px) 280px, 560px"
       loading="lazy"
       format="png"
+      class="w-full"
     />
   </div>
   <div>
@@ -133,10 +135,31 @@ const features = [
     <Picture
       src={fileHistory}
       alt="ExcalidrawZ file history"
-      widths={[200, 400, 600]}
-      sizes="(max-width: 800px) 100vw, 420px"
+      widths={[280, 560]}
+      sizes="(max-width: 768px) 280px, 560px"
       loading="lazy"
       format="png"
+      class="w-full"
+    />
+  </div>
+  <div>
+    <h3>Multiple Format Support</h3>
+    <p class="font-normal text-base text-slate-600">
+      ExcalidrawZ provides a standalone editor for various file formats. You can
+      edit files directly without launching the main app, making it perfect for
+      quick modifications. The editor seamlessly integrates with your system,
+      supporting multiple file formats for enhanced productivity.
+    </p>
+  </div>
+  <div class="m-10">
+    <Picture
+      src={multipleFormat}
+      alt="ExcalidrawZ multiple format support"
+      widths={[280, 560]}
+      sizes="(max-width: 768px) 280px, 560px"
+      loading="lazy"
+      format="png"
+      class="w-full"
     />
   </div>
 </div>

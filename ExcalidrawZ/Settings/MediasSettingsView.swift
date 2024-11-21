@@ -164,9 +164,9 @@ struct MediasSettingsView: View {
     @MainActor @ViewBuilder
     private func placeholderView() -> some View {
         VStack {
-            Text("Media files").font(.largeTitle)
+            Text(.localizable(.settingsMediasName)).font(.largeTitle)
             VStack(alignment: .leading) {
-                Text("This section contains all the media files used by your Excalidraw documents, intended for display purposes only.")
+                Text(.localizable(.settingsMediasDescription))
             }
             .padding()
             .background {

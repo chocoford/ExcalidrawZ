@@ -167,6 +167,7 @@ struct ExportImageView: View {
                 HStack(alignment: .bottom, spacing: 0) {
                     if keepEditable {
                         Text(".excalidraw")
+                            .lineLimit(1)
                     }
                     HStack(alignment: .bottom, spacing: -2) {
                         Text(".")
@@ -178,17 +179,25 @@ struct ExportImageView: View {
                         //                    .menuStyle(.button)
                             .buttonStyle(.borderless)
                             .menuIndicator(.visible)
+
                     }
                 }
             }
+
             HStack {
                 Spacer()
-                Toggle("Keep editable", isOn: $keepEditable)
+#if os(macOS)
+                Toggle(.localizable(.exportImageToggleEditable), isOn: $keepEditable)
                     .toggleStyle(.checkboxStyle)
-                    .controlSize(horizontalSizeClass == .compact ? .mini : .regular)
-                    .font(horizontalSizeClass == .compact ? .footnote : .body)
+#elseif os(iOS)
+                Toggle("", isOn: $keepEditable)
+                    .toggleStyle(.switch)
+                Text(.localizable(.exportImageToggleEditable))
+#endif
             }
+            .controlSize(horizontalSizeClass == .compact ? .mini : .regular)
         }
+        .font(horizontalSizeClass == .compact ? .footnote : .body)
         .animation(.default, value: keepEditable)
         .padding(.horizontal, 48)
     }

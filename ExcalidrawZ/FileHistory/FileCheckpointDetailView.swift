@@ -51,6 +51,7 @@ struct FileCheckpointDetailView: View {
                     file?.name = checkpoint.filename
                     fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
                     fileState.didUpdateFile = false
+                    dismiss()
                 } label: {
                     Text(.localizable(.checkpointButtonRestore))
                 }

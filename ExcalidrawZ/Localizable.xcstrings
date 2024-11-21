@@ -1,6 +1,57 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "backupButtonDelete" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
+          }
+        }
+      }
+    },
+    "backupButtonExport" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出"
+          }
+        }
+      }
+    },
+    "backupName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backup at %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "备份-%@"
+          }
+        }
+      }
+    },
     "checkpointButtonDelete" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -341,6 +392,23 @@
         }
       }
     },
+    "exportImageToggleEditable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep editable"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保持可编辑"
+          }
+        }
+      }
+    },
     "exportSheetButtonArchive" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -426,6 +494,40 @@
         }
       }
     },
+    "generalButtonRedo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重做"
+          }
+        }
+      }
+    },
+    "generalButtonUndo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撤回"
+          }
+        }
+      }
+    },
     "generalCannotUndoMessage" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -456,6 +558,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "移动到..."
+          }
+        }
+      }
+    },
+    "generalTotalSizeLabel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total size: "
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "占用空间："
           }
         }
       }
@@ -1380,6 +1499,23 @@
         }
       }
     },
+    "navigationButtonBack" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回"
+          }
+        }
+      }
+    },
     "newFileNamePlaceholder" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1516,6 +1652,57 @@
         }
       }
     },
+    "settingsAppearanceColorScemeAuto" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动"
+          }
+        }
+      }
+    },
+    "settingsAppearanceColorScemeDark" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dark"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暗色"
+          }
+        }
+      }
+    },
+    "settingsAppearanceColorScemeLight" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "亮色"
+          }
+        }
+      }
+    },
     "settingsAppearanceSectionName" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1529,6 +1716,91 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "外观"
+          }
+        }
+      }
+    },
+    "settingsBackupsDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To ensure the safety of your data, backups are performed daily and retained for one week. Beyond one week, backups are kept at weekly intervals, and beyond one month, they are retained at monthly intervals, and so on."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为了确保您的数据安全，我们会每天进行备份，并保留一周时间。一周后，备份将按照每周的频率保存；超过一个月后，备份将按照每月的频率保存，以此类推。"
+          }
+        }
+      }
+    },
+    "settingsBackupsDescriptionSecondary" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now, you can select a specific backup from the sidebar on the left and view its details."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "现在，您可以从左侧边栏中选择一个特定的备份，并查看其详细信息。"
+          }
+        }
+      }
+    },
+    "settingsBackupsName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backups"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "备份"
+          }
+        }
+      }
+    },
+    "settingsBackupUnavailableDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backup is only available on macOS."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "备份功能仅在MacOS上启用"
+          }
+        }
+      }
+    },
+    "settingsExcalidraw" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excalidraw settings"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excalidraw设置"
           }
         }
       }
@@ -1550,6 +1822,23 @@
         }
       }
     },
+    "settingsExcalidrawPreventImageAutoInvert" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prevent image from auto invert."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "防止图片在暗色模式下自动反转颜色。"
+          }
+        }
+      }
+    },
     "settingsGeneralName" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1563,6 +1852,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "通用"
+          }
+        }
+      }
+    },
+    "settingsMediasDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This section contains all the media files used by your Excalidraw documents, intended for display purposes only."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本部分包含所有您在 Excalidraw 文档中使用的媒体文件，仅供展示使用。"
+          }
+        }
+      }
+    },
+    "settingsMediasName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Media files"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "媒体文件"
+          }
+        }
+      }
+    },
+    "settingsName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置"
           }
         }
       }
@@ -2124,6 +2464,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "只显示文件"
+          }
+        }
+      }
+    },
+    "sidebarToggleName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sidebar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "侧边栏"
           }
         }
       }

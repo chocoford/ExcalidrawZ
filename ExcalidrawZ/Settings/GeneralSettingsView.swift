@@ -114,12 +114,12 @@ struct GeneralSettingsView: View {
 #endif
         
         Section {
-            Toggle("Prevent image from auto invert.", isOn: $appPreference.autoInvertImage)
+            Toggle(.localizable(.settingsExcalidrawPreventImageAutoInvert), isOn: $appPreference.autoInvertImage)
         } header: {
             if #available(macOS 14.0, *) {
-                Text("Excalidraw Settings")
+                Text(.localizable(.settingsExcalidraw))
             } else {
-                Text("Excalidraw Settings")
+                Text(.localizable(.settingsExcalidraw))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }

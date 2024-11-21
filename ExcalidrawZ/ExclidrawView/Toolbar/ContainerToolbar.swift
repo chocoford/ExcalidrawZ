@@ -91,7 +91,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                 Button {
                     layoutState.isSidebarPresented.toggle()
                 } label: {
-                    Label("Sidebar", systemSymbol: .sidebarLeft)
+                    Label(.localizable(.sidebarToggleName), systemSymbol: .sidebarLeft)
                 }
             }
             
@@ -121,7 +121,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                 Button {
                     fileState.currentFile = nil
                 } label: {
-                    Label("Back", systemSymbol: .chevronBackward)
+                    Label(.localizable(.navigationButtonBack), systemSymbol: .chevronBackward)
                 }
             }
             if !toolState.inDragMode {
@@ -136,7 +136,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             SettingsButton(useDefaultLabel: true) {
                 
             } label: {
-                Label("Settings", systemSymbol: .gear)
+                Label(.localizable(.settingsName), systemSymbol: .gear)
                     .labelStyle(.iconOnly)
             }
         }
@@ -169,7 +169,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                 Button {
                     layoutState.isInspectorPresented.toggle()
                 } label: {
-                    Label("Library", systemSymbol: .sidebarRight)
+                    Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
                 }
             }
         }
@@ -183,15 +183,15 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                     AsyncButton {
                         try await excalidrawCore.performUndo()
                     } label: {
-                        Label("Undo", systemSymbol: .arrowUturnBackward)
+                        Label(.localizable(.generalButtonUndo), systemSymbol: .arrowUturnBackward)
                     }
                     AsyncButton {
                         try await excalidrawCore.performRedo()
                     } label: {
-                        Label("Redo", systemSymbol: .arrowUturnForward)
+                        Label(.localizable(.generalButtonRedo), systemSymbol: .arrowUturnForward)
                     }
                 } label: {
-                    Label("Undo", systemSymbol: .arrowUturnBackwardCircle)
+                    Label(.localizable(.generalButtonUndo), systemSymbol: .arrowUturnBackwardCircle)
                 } primaryAction: {
                     Task {
                         do {
@@ -206,27 +206,27 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                     AsyncButton {
                         try await excalidrawCore.performUndo()
                     } label: {
-                        Label("Undo", systemSymbol: .arrowUturnBackward)
+                        Label(.localizable(.generalButtonUndo), systemSymbol: .arrowUturnBackward)
                     }
                     .disabled(true)
                     AsyncButton {
                         try await excalidrawCore.performRedo()
                     } label: {
-                        Label("Redo", systemSymbol: .arrowUturnForward)
+                        Label(.localizable(.generalButtonRedo), systemSymbol: .arrowUturnForward)
                     }
                 } label: {
-                    Label("Undo", systemSymbol: .arrowUturnBackwardCircle)
+                    Label(.localizable(.generalButtonUndo), systemSymbol: .arrowUturnBackwardCircle)
                         .foregroundStyle(.gray)
                 }
             } else if excalidrawCore.canUndo {
                 AsyncButton {
                     try await excalidrawCore.performUndo()
                 } label: {
-                    Label("Undo", systemSymbol: .arrowUturnBackwardCircle)
+                    Label(.localizable(.generalButtonUndo), systemSymbol: .arrowUturnBackwardCircle)
                 }
             } else {
                 Button { } label: {
-                    Label("Undo", systemSymbol: .arrowUturnBackwardCircle)
+                    Label(.localizable(.generalButtonUndo), systemSymbol: .arrowUturnBackwardCircle)
                 }
                 .disabled(true)
             }

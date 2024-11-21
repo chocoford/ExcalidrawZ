@@ -33,10 +33,11 @@ struct SettingsView: View {
 #if os(macOS)
                     .toolbar(removing: .sidebarToggle)
 #endif
+                    .navigationTitle(.localizable(.settingsNavigationTitle))
             } detail: {
                 detail(for: selection)
             }
-            .navigationTitle(.localizable(.settingsNavigationTitle))
+            
         } else if #available(macOS 13.0, *) {
             NavigationSplitView {
                 sidebar
@@ -45,13 +46,13 @@ struct SettingsView: View {
                         List(selection: $selection) {}
                     )
 #endif
+                    .navigationTitle(.localizable(.settingsNavigationTitle))
             } detail: {
                 detail(for: selection)
             }
 #if os(macOS)
             .removeSettingsSidebarToggle()
 #endif
-            .navigationTitle(.localizable(.settingsNavigationTitle))
         } else {
             HStack {
                 sidebar
@@ -164,10 +165,10 @@ extension SettingsView {
 //                case .fileHistory:
 //                    return "File history"
                 case .medias:
-                    return "Media files"
+                    return .localizable(.settingsMediasName)
                     
                 case .backups:
-                    return "Backups"
+                    return .localizable(.settingsBackupsName)
                     
                 case .about:
                     return .localizable(.settingsAboutName)

@@ -76,11 +76,11 @@ final class AppPreference: ObservableObject {
         var text: String {
             switch self {
                 case .light:
-                    return "light"
+                    return String(localizable: .settingsAppearanceColorScemeLight)
                 case .dark:
-                    return "dark"
+                    return String(localizable: .settingsAppearanceColorScemeDark)
                 case .auto:
-                    return "auto"
+                    return String(localizable: .settingsAppearanceColorScemeAuto)
             }
         }
         

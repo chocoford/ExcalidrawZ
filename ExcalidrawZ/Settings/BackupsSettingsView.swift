@@ -134,12 +134,12 @@ struct BackupsSettingsView: View {
     @MainActor @ViewBuilder
     private func placeholderView() -> some View {
         VStack {
-            Text("Backups").font(.largeTitle)
+            Text(.localizable(.settingsBackupsName)).font(.largeTitle)
 //            Text("Your data is regularly backed up.").foregroundStyle(.secondary)
             VStack(alignment: .leading) {
-                Text("To ensure the safety of your data, backups are performed daily and retained for one week. Beyond one week, backups are kept at weekly intervals, and beyond one month, they are retained at monthly intervals, and so on.")
+                Text(.localizable(.settingsBackupsDescription))
                 Divider()
-                Text("Now, you can select a specific backup from the sidebar on the left and view its details.")
+                Text(.localizable(.settingsBackupsDescriptionSecondary))
             }
             .padding()
             .background {
@@ -159,11 +159,16 @@ struct BackupsSettingsView: View {
     
     @MainActor @ViewBuilder
     private func backupHomeView(_ backup: URL) -> some View {
-        let title = "Backup at \((try? backup.resourceValues(forKeys: [.creationDateKey]).creationDate?.formatted()) ?? "Unknwon")"
+        let title = String(
+            localizable: .backupName(
+                (try? backup.resourceValues(forKeys: [.creationDateKey]).creationDate?.formatted()) ?? "Unknwon"
+            )
+        )
+    
         VStack {
             Text(title).font(.title)
             
-            Text("Total size: \(selectedBackupSize.formatted(.byteCount(style: .file)))")
+            Text(String(localizable: .generalTotalSizeLabel) + selectedBackupSize.formatted(.byteCount(style: .file)))
             
             HStack {
                 Button {
@@ -177,13 +182,13 @@ struct BackupsSettingsView: View {
                         alertToast(error)
                     }
                 } label: {
-                    Label("Export", systemSymbol: .squareAndArrowUp)
+                    Label(.localizable(.backupButtonExport), systemSymbol: .squareAndArrowUp)
                 }
                 
                 Button(role: .destructive) {
                     backupToBeDeleted = backup
                 } label: {
-                    Label("Delete", systemSymbol: .trash)
+                    Label(.localizable(.backupButtonDelete), systemSymbol: .trash)
                 }
             }
         }
@@ -256,7 +261,7 @@ struct BackupsSettingsView: View {
 #elseif os(iOS)
 struct BackupsSettingsView: View {
     var body: some View {
-        Text("Backup is only available on macOS.")
+        Text(.localizable(.settingsBackupUnavailableDescription))
     }
 }
 #endif
