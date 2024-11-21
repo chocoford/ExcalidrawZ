@@ -5,18 +5,34 @@ import { Icon } from "astro-icon/components";
 <div class="relative mb-24">
   <!-- 背景装饰 -->
   <div class="absolute inset-0 -z-10 overflow-hidden">
-    <div class="absolute -left-4 -top-4 h-48 w-48 rounded-full bg-blue-200/50 blur-3xl"></div>
-    <div class="absolute -right-4 -bottom-4 h-48 w-48 rounded-full bg-purple-200/50 blur-3xl"></div>
-    <div class="absolute left-1/2 top-1/2 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-200/50 blur-3xl"></div>
+    <div
+      class="absolute -left-4 -top-4 h-48 w-48 rounded-full bg-blue-200/50 blur-3xl"
+    >
+    </div>
+    <div
+      class="absolute -right-4 -bottom-4 h-48 w-48 rounded-full bg-purple-200/50 blur-3xl"
+    >
+    </div>
+    <div
+      class="absolute left-1/2 top-1/2 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-200/50 blur-3xl"
+    >
+    </div>
   </div>
 
   <!-- 主卡片 -->
-  <div class="backdrop-blur-xl bg-white/20 p-6 rounded-lg border border-gray-200/50 shadow-lg">
-    <div class="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-200/70">
+  <div
+    class="backdrop-blur-xl bg-white/20 p-6 rounded-lg border border-gray-200/50 shadow-lg"
+  >
+    <div
+      class="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-200/70"
+    >
       <!-- macOS 下载 -->
       <div class="flex flex-col md:w-1/3 md:px-6 first:md:pl-0 last:md:pr-0">
-        <span class="text-[#666] font-semibold text-base tracking-wide mb-1 select-none" style="text-shadow: 0px 1px 0px rgba(255, 255, 255, 1)">macOS</span>
-        <div class="flex flex-col gap-2">
+        <span
+          class="text-[#666] font-semibold text-base tracking-wide mb-1 select-none"
+          style="text-shadow: 0px 1px 0px rgba(255, 255, 255, 1)">macOS</span
+        >
+        <div class="flex flex-col gap-1">
           <a
             href="https://apps.apple.com/app/excalidrawz/id6636493997"
             rel="noopener"
@@ -25,11 +41,11 @@ import { Icon } from "astro-icon/components";
             <Icon
               height={60}
               width={160}
-              name="Download_on_the_App_Store_Badge_US-UK"
+              name="Download_on_the_Mac_App_Store_Badge_US-UK"
             />
           </a>
+          <span class="flex justify-center text-gray-500 text-sm -mt-1">or</span>
           <div class="flex gap-2 items-center justify-center">
-            <span class="text-gray-500 text-sm">or</span>
             <a href="/downloads/latest" class="text-blue-500 underline text-sm"
               >Download Directly</a
             >
@@ -39,7 +55,10 @@ import { Icon } from "astro-icon/components";
 
       <!-- iOS 下载 -->
       <div class="flex flex-col md:w-1/3 md:px-6 pt-6 md:pt-0">
-        <span class="text-[#666] font-semibold text-base tracking-wide mb-1 select-none" style="text-shadow: 0px 1px 0px rgba(255, 255, 255, 1)">iOS</span>
+        <span
+          class="text-[#666] font-semibold text-base tracking-wide mb-1 select-none"
+          style="text-shadow: 0px 1px 0px rgba(255, 255, 255, 1)">iOS</span
+        >
         <div class="flex flex-col gap-2">
           <a
             href="https://apps.apple.com/app/excalidrawz/id6636493997"
@@ -57,7 +76,10 @@ import { Icon } from "astro-icon/components";
 
       <!-- iPadOS 下载 -->
       <div class="flex flex-col md:w-1/3 md:px-6 pt-6 md:pt-0 last:md:pr-0">
-        <span class="text-[#666] font-semibold text-base tracking-wide mb-1 select-none" style="text-shadow: 0px 1px 0px rgba(255, 255, 255, 1)">iPadOS</span>
+        <span
+          class="text-[#666] font-semibold text-base tracking-wide mb-1 select-none"
+          style="text-shadow: 0px 1px 0px rgba(255, 255, 255, 1)">iPadOS</span
+        >
         <div class="flex flex-col gap-2">
           <a
             href="https://apps.apple.com/app/excalidrawz/id6636493997"

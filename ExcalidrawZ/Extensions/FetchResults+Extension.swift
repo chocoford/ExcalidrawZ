@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 
-extension FetchedResults: Equatable where Result: Equatable {
+extension FetchedResults: @retroactive Equatable where Result: Equatable {
     public static func == (lhs: FetchedResults, rhs: FetchedResults) -> Bool {
         Array(lhs) == Array(rhs)
     }

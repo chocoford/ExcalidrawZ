@@ -12,10 +12,12 @@ import { Icon } from "astro-icon/components";
     <Picture
       src={appOverviews}
       alt="ExcalidrawZ in the air"
-      widths={[300, 600, 900]}
-      sizes="(max-width: 900px) 100vw, 900px"
+      widths={[480, 720, 960]}
+      sizes="(max-width: 768px) 480px, (max-width: 1536px) 720px, 960px"
       loading="eager"
-      format="avif"
+      format="webp"
+      quality={85}
+      class="w-full h-auto"
     />
   </div>
   <div class="lg:col-span-2">
@@ -26,8 +28,8 @@ import { Icon } from "astro-icon/components";
     </h1>
     <p class="text-lg mt-4 text-slate-600 max-w-xl">
       Keep your files locally and safely, with seamless sync across your Apple
-      devices. With native performance and system
-      integration. Perfect for both quick sketches and professional diagrams.
+      devices. With native performance and system integration. Perfect for both
+      quick sketches and professional diagrams.
     </p>
 
     <div class="mt-6 flex flex-col sm:flex-row gap-3 items-end">

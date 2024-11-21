@@ -187,9 +187,9 @@ struct ExcalidrawRenderer: View {
                                 with: .color(.black)
                             )
                         }
-                    case .freeDraw(let excalidrawFreeDrawElement):
+                    case .freeDraw/*(let excalidrawFreeDrawElement)*/:
                         break
-                    case .draw(let excalidrawDrawElement):
+                    case .draw/*(let excalidrawDrawElement)*/:
                         break
                     case .image(let excalidrawImageElement):
                         if let fileID = excalidrawImageElement.fileId {

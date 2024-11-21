@@ -320,6 +320,7 @@ final class FileState: ObservableObject {
 //                }
 //            }
 //        }
+        _ = groupID
     }
     
     @discardableResult
