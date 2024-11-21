@@ -75,6 +75,7 @@ struct LibraryItemView: View {
             content()
         } primaryAction: {
             addToCanvas()
+            alertToast(.init(displayMode: .hud, type: .complete(.green), title: "Added"))
         }
         .buttonStyle(.borderless)
 #endif

@@ -16,6 +16,7 @@ import UniformTypeIdentifiers
 
 struct LibraryView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var exportState: ExportState
@@ -161,6 +162,12 @@ struct LibraryView: View {
                     layoutState.isInspectorPresented.toggle()
                 } label: {
                     Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
+                }
+            } else if containerVerticalSizeClass == .compact {
+                Button {
+                    layoutState.isInspectorPresented.toggle()
+                } label: {
+                    Label(.localizable(.librariesTitle), systemSymbol: .chevronDown)
                 }
             }
         }

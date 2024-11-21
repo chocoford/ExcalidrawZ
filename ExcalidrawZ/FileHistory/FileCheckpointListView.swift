@@ -45,7 +45,9 @@ struct FileHistoryButton: View {
 }
 
 struct FileCheckpointListView: View {
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
+    @Environment(\.dismiss) private var dismiss
 
     @FetchRequest
     var fileCheckpoints: FetchedResults<FileCheckpoint>
@@ -63,7 +65,7 @@ struct FileCheckpointListView: View {
     @State private var selection: FileCheckpoint?
     
     var body: some View {
-        if horizontalSizeClass == .compact {
+        if containerHorizontalSizeClass == .compact {
 #if os(iOS)
             NavigationStack {
                 List(selection: $selection) {
@@ -72,6 +74,17 @@ struct FileCheckpointListView: View {
                     }
                 }
                 .navigationTitle("File history")
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        if containerVerticalSizeClass == .compact {
+                            Button {
+                                dismiss()
+                            } label: {
+                                Label(.localizable(.generalButtonClose), systemSymbol: .chevronDown)
+                            }
+                        }
+                    }
+                }
             }
 #else
             List {

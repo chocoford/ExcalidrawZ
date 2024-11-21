@@ -929,13 +929,13 @@
 		39B144BE2CED04F200D3EEDA /* Library */ = {
 			isa = PBXGroup;
 			children = (
+				39B144BC2CED04F200D3EEDA /* LibraryView.swift */,
 				39B144B62CED04F200D3EEDA /* LibraryImportSheetView.swift */,
 				39B144B72CED04F200D3EEDA /* LibraryItemView.swift */,
 				39B144B82CED04F200D3EEDA /* LibraryModel.swift */,
 				39B144B92CED04F200D3EEDA /* LibraryModel+Persistence.swift */,
 				39B144BA2CED04F200D3EEDA /* LibrarySection.swift */,
 				39B144BB2CED04F200D3EEDA /* LibrarySectionHeader.swift */,
-				39B144BC2CED04F200D3EEDA /* LibraryView.swift */,
 				39B144BD2CED04F200D3EEDA /* LibraryViewModel.swift */,
 			);
 			path = Library;

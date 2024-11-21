@@ -9,14 +9,15 @@ import SwiftUI
 
 struct MediasSettingsView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
     @FetchRequest(sortDescriptors: [SortDescriptor(\MediaItem.createdAt, order: .reverse)])
     private var medias: FetchedResults<MediaItem>
     
     @State private var selection: MediaItem?
     
     var body: some View {
-        if containerHorizontalSizeClass == .compact {
-            compactContent()
+        if containerHorizontalSizeClass == .compact, containerVerticalSizeClass == .regular {
+            horizontalCompactContent()
         } else {
 #if os(iOS)
             if #available(iOS 18.0, *) {
@@ -54,7 +55,7 @@ struct MediasSettingsView: View {
     }
     
     @MainActor @ViewBuilder
-    private func compactContent() -> some View {
+    private func horizontalCompactContent() -> some View {
         VStack {
             detailView()
                 .padding()

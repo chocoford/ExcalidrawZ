@@ -13,6 +13,8 @@ import Sparkle
 
 struct SettingsView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
+    @Environment(\.dismiss) private var dismiss
     
     @State private var selection: Route?
 
@@ -93,9 +95,22 @@ struct SettingsView: View {
         }
 #elseif os(iOS)
         List(selection: $selection) {
-            ForEach(Route.allCases) { route in
-                NavigationLink(value: route) {
-                    Text(route.text)
+            Section {
+                ForEach(Route.allCases) { route in
+                    NavigationLink(value: route) {
+                        Text(route.text)
+                    }
+                }
+            } footer: {
+                if containerVerticalSizeClass == .compact {
+                    HStack {
+                        Spacer()
+                        Button(role: .cancel) {
+                            dismiss()
+                        } label: {
+                            Text(.localizable(.generalButtonClose))
+                        }
+                    }
                 }
             }
 //            ForEach(Route.allCases) { route in

@@ -40,6 +40,21 @@ const menuitems = [
 ];
 ---
 
+<style>
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(-10px); }
+    20% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(10px); }
+  }
+
+  .star-tip {
+    opacity: 0;
+    animation: fadeInOut 3s ease-in-out forwards;
+    animation-delay: 1s;
+  }
+</style>
+
 <Container>
   <header class="flex flex-col lg:flex-row justify-between items-center my-5">
     <Astronav>
@@ -97,15 +112,23 @@ const menuitems = [
     </Astronav>
     <div>
       <div class="hidden lg:flex items-center gap-4">
-        <a
-          rel="noopener"
-          aria-label="Github Repo"
-          href="https://github.com/chocoford/ExcalidrawZ"
-          class="flex gap-1 items-center justify-center"
-          target="_blank"
-        >
-          <Icon class="text-black w-6 h-6" name="bx:bxl-github" />
-        </a>
+        <div class="relative">
+          <a
+            rel="noopener"
+            aria-label="Github Repo"
+            href="https://github.com/chocoford/ExcalidrawZ"
+            class="flex gap-1 items-center justify-center"
+            target="_blank"
+          >
+            <Icon class="text-black w-6 h-6" name="bx:bxl-github" />
+          </a>
+          <div class="absolute top-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
+            <div class="star-tip bg-gray-800 text-white text-xs px-2 py-1 rounded-md">
+              Give me a star ⭐️
+              <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 w-2 h-2 bg-gray-800"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </header>

@@ -47,6 +47,7 @@ struct ShareViewModifier: ViewModifier {
 @available(macOS 13.0, iOS 16.0, *)
 struct ShareView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
 
     @Environment(\.dismiss) var dismiss
     @Environment(\.alertToast) var alertToast
@@ -103,6 +104,14 @@ struct ShareView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
+                }
+                
+                if containerVerticalSizeClass == .compact {
+                    Button(role: .cancel) {
+                        dismiss()
+                    } label: {
+                        Text(.localizable(.generalButtonClose))
+                    }
                 }
             }
             .navigationDestination(for: Route.self) { route in

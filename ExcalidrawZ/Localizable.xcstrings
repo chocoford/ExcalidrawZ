@@ -494,6 +494,23 @@
         }
       }
     },
+    "generalButtonClose" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "关闭"
+          }
+        }
+      }
+    },
     "generalButtonRedo" : {
       "extractionState" : "manual",
       "localizations" : {
