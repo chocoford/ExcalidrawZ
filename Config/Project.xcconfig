@@ -1,0 +1,3 @@
+DEVELOPMENT_TEAM = 3XKM749Y3L;
+
+#include? "Overrides.xcconfig"

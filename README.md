@@ -7,6 +7,7 @@
 
 ![GitHub](https://img.shields.io/github/license/chocoford/ExcalidrawZ) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40Chocoford)](https://twitter.com/dove_zachary)
 
+<a href="https://www.buymeacoffee.com/Chocoford" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
 
 [Excalidraw](https://github.com/excalidraw/excalidraw) is a very useful web app, but the lack of file management can be troublesome and unsettling. We often need to manually save and maintain multiple different Excalidraw files. Therefore, ExcalidrawZ has wrapped it up to automatically save edited files for users and added file grouping functionality. In future versions, iCloud automatic backup will also be added to greatly reduce the insecurity of using a web app.
@@ -61,6 +62,17 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
 - [x] English (Native excalidraw font)
 - [x] 简体中文（杨任东竹书体）
 - [x] 日本語（瀬戸体）
+
+
+#### Multiple excalidraw file format support
+ExcalidrawZ now support editing of `.excalidraw`, `.excalidraw.png`, and `.excalidraw.svg` files (directly in the file system), as well as importing them into the main program.
+
+https://github.com/user-attachments/assets/486f13c4-e0ce-4e59-a21d-bc6be5d91a81
+
+ExcalidrawZ also supports maintaining editability when exporting images. The image files will end with `.excalidraw.png` or `.excalidraw.svg`, and ExcalidrawZ will be able to edit these types of files directly.
+
+https://github.com/user-attachments/assets/09323b30-29f0-4522-8190-46f7ef6a9dd3
+
 
 ## RoadMap
 
