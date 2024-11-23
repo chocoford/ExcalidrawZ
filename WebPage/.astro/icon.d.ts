@@ -6113,5 +6113,6 @@ declare module 'virtual:astro-icon' {
 		| "uil:youtube"
 		| "uil:youtube-alt"
 		| "Download_on_the_App_Store_Badge_US-UK"
-		| "Download_on_the_Mac_App_Store_Badge_US-UK";
+		| "Download_on_the_Mac_App_Store_Badge_US-UK"
+		| "discord-icon-svgrepo-com" ;
 }

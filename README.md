@@ -14,9 +14,6 @@
 
 ## Download
 
-> [!WARNING]
-> ### If you have already installed an older version of ExcalidrawZ, please export your files before downloading the official latest version. Otherwise you will lose your existing data.
-
 [![Download Link - App Store](assets/README/Download_on_the_App_Store_Badge_US-UK.svg)](https://apps.apple.com/app/excalidrawz/id6636493997) 
 
 **Non-App Store version**
@@ -73,10 +70,18 @@ ExcalidrawZ also supports maintaining editability when exporting images. The ima
 
 https://github.com/user-attachments/assets/09323b30-29f0-4522-8190-46f7ef6a9dd3
 
+#### iOS & iPadOS support
+
+ExcalidrawZ for iOS&iPadOS is now available. All data are synchronised by iCloud.
 
 ## RoadMap
 
-- [ ] iCloud synchronization
+- [x] iCloud synchronization
+- [x] iOS support.
+
+## Contact me
+
+Welcome to my [Discord server](https://discord.gg/aCv6w4HxDg) to share suggestions or report issues for ExcalidrawZ, helping make ExcalidrawZ even better!
 
 ## Develop Tips
 
