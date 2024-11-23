@@ -83,7 +83,7 @@ ExcalidrawZ for iOS&iPadOS is now available. All data are synchronised by iCloud
 
 Welcome to my [Discord server](https://discord.gg/aCv6w4HxDg) to share suggestions or report issues for ExcalidrawZ, helping make ExcalidrawZ even better!
 
-## Contributing
+## Development Guide
 
 * The `excalidraw` core for `ExcalidrawZ` is also open-source. You can find it [here](https://github.com/chocoford/excalidraw/tree/ExcalidrawZ-core) and build for your own purposes.
   * And don't forget to give it a star 😁.
