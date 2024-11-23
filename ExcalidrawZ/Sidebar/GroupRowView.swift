@@ -62,8 +62,7 @@ struct GroupRowView: View {
             if #available(macOS 13.0, *) {
                 content
                     .dropDestination(for: FileLocalizable.self) { fileInfos, location in
-                        guard let file = fileInfos.first else { return false }
-                        // viewStore.send(.moveFileToGroup(fileID: file.fileID))
+                        guard let _ = fileInfos.first else { return false }
                         return true
                     }
             } else {

@@ -1,3 +1,17 @@
+## 1.2.0
+
+#### New Features
+
+* Add multiplatform support!
+  * Also with iCloud data synchronisation.
+  * Now you can edit and view your excalidraw work on iOS.
+* Add a toggle for user to choose if preventing the invert of images in dark mode.
+
+#### Optimization
+
+* Optimize the file loading speed.
+  *  by splitting the media files with excalidraw elements.
+
 ## 1.1.0
 
 #### New Features

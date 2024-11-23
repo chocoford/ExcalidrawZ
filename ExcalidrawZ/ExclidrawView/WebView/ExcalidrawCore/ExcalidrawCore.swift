@@ -13,6 +13,12 @@ import Combine
 import SVGView
 
 class ExcalidrawCore: NSObject, ObservableObject {
+#if canImport(AppKit)
+    typealias PlatformImage = NSImage
+#elseif canImport(UIKit)
+    typealias PlatformImage = UIImage
+#endif
+    
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawCore")
     
     var parent: ExcalidrawView?
@@ -50,9 +56,15 @@ class ExcalidrawCore: NSObject, ObservableObject {
     let blobRequestQueue = DispatchQueue(label: "BlobRequestQueue", qos: .background)
     var flyingBlobsRequest: [String : (String) -> Void] = [:]
     var flyingSVGRequests: [String : (String) -> Void] = [:]
+    var flyingAllMediasRequests: [String : ([ExcalidrawFile.ResourceFile]) -> Void] = [:]
+    @Published var canUndo = false
+    @Published var canRedo = false
     
     var previousFileID: UUID? = nil
     private var lastVersion: Int = 0
+    
+    var hasInjectIndexedDBData = false
+//    var hasReloadAfterInjectIndexedDBData = false
     
     internal var lastTool: ExcalidrawTool?
     
@@ -90,7 +102,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
                 try? await self.toggleToolbarAction(key: char)
             }
         }
-        if #available(macOS 13.3, *) {
+        if #available(macOS 13.3, iOS 16.4, *) {
             self.webView.isInspectable = true
         } else {
         }
@@ -99,11 +111,14 @@ class ExcalidrawCore: NSObject, ObservableObject {
         self.webView.uiDelegate = self
         
         DispatchQueue.main.async {
+            let request: URLRequest
 #if DEBUG
-            self.webView.load(URLRequest(url: URL(string: "http://localhost:8486/index.html")!))
+            request = URLRequest(url: URL(string: "http://localhost:8486/index.html")!)
 #else
-            self.webView.load(URLRequest(url: URL(string: "http://localhost:8487/index.html")!))
+            request = URLRequest(url: URL(string: "http://localhost:8487/index.html")!)
 #endif
+            self.webView.load(request)
+
         }
     }
 }
@@ -165,6 +180,14 @@ extension ExcalidrawCore {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleColorTheme(\"\(dark ? "dark" : "light")\"); 0;")
     }
     
+    /// Make Image be the same as light mode.
+    /// autoInvert: Invert the current inverted image in dark mode.
+    @MainActor
+    func toggleInvertImageSwitch(autoInvert: Bool) async throws {
+        if self.webView.isLoading { return }
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleImageInvertSwitch(\(autoInvert)); 0;")
+    }
+    
     
     @MainActor
     func loadLibraryItem(item: ExcalidrawLibrary) async throws {
@@ -186,15 +209,30 @@ extension ExcalidrawCore {
     
     @MainActor
     func toggleToolbarAction(key: Int) async throws {
-        print(#function)
+        print(#function, key)
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction(\(key)); 0;")
     }
     @MainActor
     func toggleToolbarAction(key: Character) async throws {
-        print(#function)
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
+        print(#function, key)
+        if key == "\u{1B}" {
+            try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Escape'); 0;")
+        } else {
+            try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
+        }
     }
-    
+//    @MainActor
+//    func toggleToolbarAction(key: KeyEquivalent) async throws {
+//        print(#function, key)
+//        
+//        switch key {
+//            case .escape:
+//                try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Escape'); 0;")
+//            default:
+//                break
+//        }
+//    }
+//    
     func exportElementsToPNGData(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> Data {
         let id = UUID().uuidString
         let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified()), \(embedScene)); 0;"
@@ -221,15 +259,14 @@ extension ExcalidrawCore {
         return data
     }
     
-    func exportElementsToPNG(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> NSImage {
+    func exportElementsToPNG(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> PlatformImage {
         let data = try await self.exportElementsToPNGData(elements: elements, embedScene: embedScene)
-        guard let image = NSImage(data: data) else {
+        guard let image = PlatformImage(data: data) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
         }
         return image
     }
-    
     
     func exportElementsToSVGData(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> Data {
         let id = UUID().uuidString
@@ -265,13 +302,62 @@ extension ExcalidrawCore {
         return data
         
     }
-    func exportElementsToSVG(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> NSImage {
+    func exportElementsToSVG(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> PlatformImage {
         let data = try await exportElementsToSVGData(elements: elements, embedScene: embedScene)
-        guard let image = NSImage(data: data) else {
+        guard let image = PlatformImage(data: data) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
         }
         return image
         
     }
+    
+    /// Get Excadliraw Indexed DB Data
+    func getExcalidrawStore() async throws -> [ExcalidrawFile.ResourceFile] {
+        print(#function)
+        
+        let id = UUID().uuidString
+        
+        Task { @MainActor in
+            do {
+                try await webView.evaluateJavaScript("window.excalidrawZHelper.getAllMedias(); 0;")
+            } catch {
+                self.logger.error("\(String(describing: error))")
+            }
+        }
+        
+        let files: [ExcalidrawFile.ResourceFile] = await withCheckedContinuation { continuation in
+            blobRequestQueue.async {
+                self.flyingAllMediasRequests[id] = { data in
+                    continuation.resume(returning: data)
+                    self.flyingAllMediasRequests.removeValue(forKey: id)
+                }
+            }
+        }
+        
+        return files
+    }
+    
+    /// Insert media files to IndexedDB
+    @MainActor
+    func insertMediaFiles(_ files: [ExcalidrawFile.ResourceFile]) async throws {
+        print("insertMediaFiles: \(files.count)")
+        let jsonStringified = try files.jsonStringified()
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.insertMedias('\(jsonStringified)'); 0;")
+    }
+    
+    @MainActor
+    func performUndo() async throws {
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.undo(); 0;")
+    }
+    @MainActor
+    func performRedo() async throws {
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.redo(); 0;")
+    }
+    
+    @MainActor
+    func reload() {
+         webView.evaluateJavaScript("location.reload(); 0;")
+    }
+    
 }

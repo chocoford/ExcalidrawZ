@@ -11,8 +11,11 @@ struct LibrarySectionContent: View {
     var allLibraries: FetchedResults<Library>
     var library: Library
     var selections: Binding<Set<LibraryItem>>?
-    
+#if os(macOS)
     @State private var isExpanded = true
+#elseif os(iOS)
+    @State private var isExpanded = false
+#endif
     
     let columns = [
         GridItem(.flexible()),

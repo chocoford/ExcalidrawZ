@@ -94,6 +94,7 @@ protocol ExcalidrawElementBase: Codable, Identifiable, Hashable {
     var customData: [String: AnyCodable]? { get }
     
     var type: ExcalidrawElementType { get }
+    
 }
 
 enum AnyCodable: Codable, Hashable {

@@ -6,13 +6,16 @@
 //
 
 import SwiftUI
-import ChocofordUI
+import CoreData
 import UniformTypeIdentifiers
+
+import ChocofordUI
 
 struct ExcalidrawContainerView: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
+    @EnvironmentObject var layoutState: LayoutState
 
     @Environment(\.colorScheme) var colorScheme
     
@@ -20,106 +23,116 @@ struct ExcalidrawContainerView: View {
     
     @State private var isLoading = true
     @State private var isProgressViewPresented = true
-    @State private var resotreAlertIsPresented = false
     
     @State private var isDropping: Bool = false
     
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .center) {
-                ExcalidrawView(
-                    file: Binding {
-                        if let file = fileState.currentFile {
-                            return (try? ExcalidrawFile(from: file.objectID, context: viewContext)) ?? ExcalidrawFile()
-                        } else {
-                            return ExcalidrawFile()
-                        }
-                    } set: { file in
-                        guard file.id == fileState.currentFile?.id else {
-                            return
-                        }
-                        fileState.updateCurrentFile(with: file)
-                    },
-                    isLoadingPage: $isLoading
-                ) { error in
+    var fileBinding: Binding<ExcalidrawFile> {
+        Binding {
+            if let file = fileState.currentFile {
+                do {
+                    let excalidrawFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
+                    
+                    return excalidrawFile
+                } catch {
                     alertToast(error)
                     print(error)
+                    return ExcalidrawFile()
                 }
-                .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
-                .opacity(isProgressViewPresented ? 0 : 1)
-                .onChange(of: isLoading, debounce: 1) { newVal in
-                    isProgressViewPresented = newVal
-                }
-                
-                if isProgressViewPresented {
-                    VStack {
-                        ProgressView()
-                            .progressViewStyle(.circular)
-                        Text(.localizable(.webViewLoadingText))
-                    }
-                } else if fileState.currentFile?.inTrash == true {
-                    recoverOverlayView
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                }
-                
-//                if isLoadingFile {
-//                    Center {
-//                        VStack {
-//                            Text(.localizable(.containerLoadingFileTitle))
-//                            ProgressView()
-//                            
-//                            Text(.localizable(.containerLoadingFileDescription))
-//                                .font(.footnote)
-//                        }
-//                    }
-//                    .background(.ultraThinMaterial)
-//                }
-                
-                // This will work
-                ///* but it will conflict with image drop
-//                Color.clear
-//                    .onDrop(of: [.excalidrawFile]) { providers, location in
-//                        let alertToast = alertToast
-//                        let fileState = fileState
-//                        for provider in providers {
-//                            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier) { item, error in
-//                                guard let urlData = item as? Data else { return }
-//                                let url = URL(dataRepresentation: urlData, relativeTo: nil)
-//                                if let error {
-//                                    alertToast(error)
-//                                    return
-//                                }
-//                                if let url {
-//                                    do {
-//                                        try fileState.importFile(url)
-//                                    } catch {
-//                                        alertToast(error)
-//                                    }
-//                                }
-//                            }
-//                        }
-//                        return true
-//                    } dropMask: {
-//                        Center {
-//                            VStack {
-//                                Image(systemSymbol: .docFillBadgePlus)
-//                                    .symbolRenderingMode(.multicolor)
-//                                    .resizable()
-//                                    .scaledToFit()
-//                                    .frame(height: 100)
-//                                Text("Import a excalidraw file")
-//                                    .font(.largeTitle)
-//                                Text("ExcalidrawZ will create a new file for you to store the imported file.")
-//                                    .font(.footnote)
-//                            }
-//                        }
-//                        .background(.ultraThinMaterial)
-//                    }
-                 
+            } else {
+                return ExcalidrawFile()
             }
-            .transition(.opacity)
-            .animation(.default, value: isProgressViewPresented)
-//            .animation(.default, value: isLoadingFile)
+        } set: { file in
+            guard let currentFile = fileState.currentFile,
+                  file.id == fileState.currentFile?.id else {
+                return
+            }
+            do {
+                // Everytime load a new file will cause an actual update.
+                let oldElements = try ExcalidrawFile(from: currentFile.objectID, context: viewContext).elements
+                if file.elements == oldElements {
+                    print("[updateCurrentFile] no updates, ignored.")
+                    return
+                } else {
+                    print("[updateCurrentFile] elements changed.")
+                }
+            } catch {
+                alertToast(error)
+            }
+            fileState.updateCurrentFile(with: file)
+        }
+    }
+    
+    // everytime launch should sync data.
+    @State private var isImporting = false
+    @State private var fileBeforeImporting: ExcalidrawFile?
+    
+    var body: some View {
+        ZStack(alignment: .center) {
+            ExcalidrawView(
+                file: fileBinding,
+                isLoadingPage: $isLoading
+            ) { error in
+                alertToast(error)
+                print(error)
+            }
+            .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
+            .opacity(isProgressViewPresented ? 0 : 1)
+            .onChange(of: isLoading, debounce: 1) { newVal in
+                isProgressViewPresented = newVal
+            }
+            
+            if isProgressViewPresented {
+                VStack {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                    Text(.localizable(.webViewLoadingText))
+                }
+            } else if fileState.currentFile?.inTrash == true {
+                recoverOverlayView
+            }
+        }
+        .ignoresSafeArea(.container, edges: .bottom)
+        .overlay(alignment: .top) {
+            if isImporting, !isLoading {
+                HStack {
+                    ProgressView().controlSize(.small)
+                    Text("Syncing data...")
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background {
+                    Capsule().fill(.regularMaterial)
+                }
+                .padding()
+                .transition(.move(edge: .top))
+            }
+        }
+        .animation(.easeOut, value: isImporting)
+        .transition(.opacity)
+        .animation(.default, value: isProgressViewPresented)
+        .onReceive(
+            NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification)
+        ) { notification in
+            if let userInfo = notification.userInfo {
+                if let event = userInfo["event"] as? NSPersistentCloudKitContainer.Event {
+                    if event.type == .import, !event.succeeded {
+                        isImporting = true
+                        if let file = fileState.currentFile {
+                            self.fileBeforeImporting = try? ExcalidrawFile(from: file.objectID, context: viewContext)
+                        }
+                    }
+                    if event.type == .import, event.succeeded, isImporting {
+                        isImporting = false
+                        if let file = fileState.currentFile,
+                           let fileAfterImporting = try? ExcalidrawFile(from: file.objectID, context: viewContext),
+                           fileAfterImporting.elements != fileBeforeImporting?.elements {
+                             // force reload current file.
+                            print("force reload current file...")
+                            fileState.excalidrawWebCoordinator?.loadFile(from: fileState.currentFile, force: true)
+                        }
+                    }
+                }
+            }
         }
     }
     
@@ -129,11 +142,14 @@ struct ExcalidrawContainerView: View {
             .opacity(0)
             .contentShape(Rectangle())
             .onTapGesture {
-                resotreAlertIsPresented.toggle()
+                layoutState.isResotreAlertIsPresented.toggle()
             }
-            .alert(.localizable(.deletedFileRecoverAlertTitle), isPresented: $resotreAlertIsPresented) {
+            .alert(
+                .localizable(.deletedFileRecoverAlertTitle),
+                isPresented: $layoutState.isResotreAlertIsPresented
+            ) {
                 Button(role: .cancel) {
-                    resotreAlertIsPresented.toggle()
+                    layoutState.isResotreAlertIsPresented.toggle()
                 } label: {
                     Text(.localizable(.deletedFileRecoverAlertButtonCancel))
                 }
@@ -146,10 +162,29 @@ struct ExcalidrawContainerView: View {
                 } label: {
                     Text(.localizable(.deletedFileRecoverAlertButtonRecover))
                 }
-                
             } message: {
                 Text(.localizable(.deletedFileRecoverAlertMessage))
             }
+    }
+    
+    private func loadMedias() {
+        print("Start insert medias to IndexedDB.")
+        Task {
+            do {
+                let context = viewContext
+
+                let allMediasFetch = NSFetchRequest<MediaItem>(entityName: "MediaItem")
+                
+                let allMedias = try context.fetch(allMediasFetch)
+                try await fileState.excalidrawWebCoordinator?.insertMediaFiles(
+                    allMedias.compactMap{
+                        .init(mediaItem: $0)
+                    }
+                )
+            } catch {
+                alertToast(error)
+            }
+        }
     }
 }
 

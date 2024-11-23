@@ -6,11 +6,15 @@
 //
 
 import SwiftUI
+import CoreData
+
 import ChocofordUI
 import ChocofordEssentials
 import SwiftyAlert
 
 struct ContentView: View {
+    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
     
@@ -19,65 +23,61 @@ struct ContentView: View {
     @StateObject private var fileState = FileState()
     @StateObject private var exportState = ExportState()
     @StateObject private var toolState = ToolState()
+    @StateObject private var layoutState = LayoutState()
     
-    @State private var sharedFile: File?
-    
+#if canImport(AppKit)
     @State private var window: NSWindow?
+#elseif canImport(UIKit)
+    @State private var window: UIWindow?
+#endif
     
-    @State private var isMigrateSheetPresented = false
+    @State private var isFirstImporting: Bool?
     
-    @State private var isInspectorPresented: Bool = false
-    @State private var isSidebarPresented: Bool = true
-    @State private var isExcalidrawToolbarDense: Bool = false
-
     var body: some View {
         ZStack {
-            if #available(macOS 14.0, *), appPreference.inspectorLayout == .sidebar {
-                content()
-                    .inspector(isPresented: $isInspectorPresented) {
-                        LibraryView(isPresented: $isInspectorPresented)
-                            .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
-                    }
+            if isFirstImporting == nil {
+                Color.clear
+            } else if isFirstImporting == true {
+                welcomeView()
             } else {
-                content()
-                if appPreference.inspectorLayout == .floatingBar {
-                    HStack {
-                        Spacer()
-                        if isInspectorPresented {
-                            LibraryView(isPresented: $isInspectorPresented)
-                                .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .background {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(.regularMaterial)
-                                        .shadow(radius: 4)
-                                }
-                                .transition(.move(edge: .trailing))
+                if #available(macOS 14.0, iOS 17.0, *), appPreference.inspectorLayout == .sidebar {
+                    content()
+                        .inspector(isPresented: $layoutState.isInspectorPresented) {
+                            LibraryView()
+                                .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
                         }
+                } else {
+                    content()
+                    if appPreference.inspectorLayout == .floatingBar {
+                        HStack {
+                            Spacer()
+                            if layoutState.isInspectorPresented {
+                                LibraryView()
+                                    .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .background {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(.regularMaterial)
+                                            .shadow(radius: 4)
+                                    }
+                                    .transition(.move(edge: .trailing))
+                            }
+                        }
+                        .animation(.easeOut, value: layoutState.isInspectorPresented)
+                        .padding(.top, 10)
+                        .padding(.horizontal, 10)
+                        .padding(.bottom, 40)
                     }
-                    .animation(.easeOut, value: isInspectorPresented)
-                    .padding(.top, 10)
-                    .padding(.horizontal, 10)
-                    .padding(.bottom, 40)
                 }
             }
         }
-        .toolbar { toolbarContent() }
         .navigationTitle("")
-        .sheet(item: $sharedFile) {
-            if #available(macOS 13.0, *) {
-                ShareView(sharedFile: $0)
-                    .swiftyAlert()
-            } else {
-                ShareViewLagacy(sharedFile: $0)
-                    .swiftyAlert()
-            }
-        }
-        .modifier(MigrateToNewVersionSheetViewModifier(isPresented: $isMigrateSheetPresented))
         .environmentObject(fileState)
         .environmentObject(exportState)
         .environmentObject(toolState)
+        .environmentObject(layoutState)
         .swiftyAlert()
+        .containerSizeClassInjection()
         .bindWindow($window)
         .onReceive(NotificationCenter.default.publisher(for: .shouldHandleImport)) { notification in
             guard let urls = notification.object as? [URL] else { return }
@@ -92,48 +92,108 @@ struct ContentView: View {
                 }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification)) { notification in
+            if let userInfo = notification.userInfo {
+                if let event = userInfo["event"] as? NSPersistentCloudKitContainer.Event {
+                    // On macOS, event.type will be `setup` only when first launched.
+                    // On iOS, event.type will be `setup` every time it has been launched.
+                    print("NSPersistentCloudKitContainer.eventChangedNotification: \(event.type), succeeded: \(event.succeeded)")
+                    if event.type == .import, event.succeeded, isFirstImporting == true {
+                        isFirstImporting = false
+                        
+//                        let context = PersistenceController.shared.container.newBackgroundContext()
+                        Task {
+                            do {
+                                try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: managedObjectContext)
+                            } catch {
+                                alertToast(error)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Check if it is first launch by checking the files count.
+        .task {
+            do {
+                let isEmpty = try managedObjectContext.fetch(NSFetchRequest<File>(entityName: "File")).isEmpty
+                isFirstImporting = isEmpty
+            } catch {
+                alertToast(error)
+            }
+        }
     }
     
     @MainActor @ViewBuilder
     private func content() -> some View {
         if #available(macOS 13.0, *), appPreference.sidebarLayout == .sidebar {
-            ContentViewModern(isSidebarPresented: $isSidebarPresented)
+            ContentViewModern()
         } else {
-            ContentViewLagacy(
-                isSidebarPresented: $isSidebarPresented,
-                isInspectorPresented: $isInspectorPresented
-            )
+            ContentViewLagacy()
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func welcomeView() -> some View {
+        ProgressView {
+            VStack {
+                if isFirstImporting == true {
+                    Text("Welcome to ExcalidrawZ").font(.title)
+                    Text("We are synchronizing your data, please wait...")
+                } else {
+                    Text("Syncing data...")
+                }
+            }
         }
     }
 }
 
 @available(macOS 13.0, *)
 struct ContentViewModern: View {
+    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var appPreference: AppPreference
-    
-    @Binding var isSidebarPresented: Bool
-    
+    @EnvironmentObject var layoutState: LayoutState
+        
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+    @State private var isSettingsPresented = false
     
-
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            if #available(macOS 14.0, *) {
+            if #available(macOS 14.0, iOS 17.0, *) {
+#if os(macOS)
                 SidebarView()
                     .toolbar(content: sidebarToolbar)
                     .toolbar(removing: .sidebarToggle)
+#elseif os(iOS)
+                if horizontalSizeClass == .compact {
+                    SidebarView()
+                        .toolbar(content: sidebarToolbar)
+                        .toolbar(removing: .sidebarToggle)
+                } else {
+                    SidebarView()
+                        .toolbar(content: sidebarToolbar)
+                }
+#endif
             } else {
                 SidebarView()
                     .toolbar(content: sidebarToolbar)
             }
         } detail: {
             ExcalidrawContainerView()
+                .modifier(ExcalidrawContainerToolbarContentModifier())
         }
+#if os(macOS)
         .removeSettingsSidebarToggle()
+#elseif os(iOS)
+        .sheet(isPresented: $isSettingsPresented) {
+            SettingsView()
+        }
+#endif
         .onChange(of: columnVisibility) { newValue in
-            isSidebarPresented = newValue != .detailOnly
+            layoutState.isSidebarPresented = newValue != .detailOnly
         }
     }
     
@@ -143,7 +203,7 @@ struct ContentViewModern: View {
             // create
             Button {
                 do {
-                    try fileState.createNewFile()
+                    try fileState.createNewFile(context: managedObjectContext)
                 } catch {
                     alertToast(error)
                 }
@@ -154,44 +214,56 @@ struct ContentViewModern: View {
             .disabled(fileState.currentGroup?.groupType == .trash)
         }
         
-        ToolbarItemGroup(placement: .destructiveAction) {
-            HStack(spacing: 0) {
-                Button {
-                    withAnimation {
-                        if columnVisibility == .detailOnly {
-                            columnVisibility = .all
-                        } else {
-                            columnVisibility = .detailOnly
-                        }
-                    }
-                } label: {
-                    Image(systemSymbol: .sidebarLeading)
-                }
-                
-                Menu {
+#if os(macOS)
+        if horizontalSizeClass == .regular {
+            ToolbarItemGroup(placement: .destructiveAction) {
+                HStack(spacing: 0) {
                     Button {
-                        withAnimation { columnVisibility = .all }
-                        appPreference.sidebarMode = .all
-                    } label: {
-                        if appPreference.sidebarMode == .all && columnVisibility != .detailOnly {
-                            Image(systemSymbol: .checkmark)
+                        withAnimation {
+                            if columnVisibility == .detailOnly {
+                                columnVisibility = .all
+                            } else {
+                                columnVisibility = .detailOnly
+                            }
                         }
-                        Text(.localizable(.sidebarShowAll))
-                    }
-                    Button {
-                        withAnimation { columnVisibility = .all }
-                        appPreference.sidebarMode = .filesOnly
                     } label: {
-                        if appPreference.sidebarMode == .filesOnly && columnVisibility != .detailOnly {
-                            Image(systemSymbol: .checkmark)
-                        }
-                        Text(.localizable(.sidebarShowFilesOnly))
+                        Image(systemSymbol: .sidebarLeading)
                     }
-                } label: {
+                    
+                    Menu {
+                        Button {
+                            withAnimation { columnVisibility = .all }
+                            appPreference.sidebarMode = .all
+                        } label: {
+                            if appPreference.sidebarMode == .all && columnVisibility != .detailOnly {
+                                Image(systemSymbol: .checkmark)
+                            }
+                            Text(.localizable(.sidebarShowAll))
+                        }
+                        Button {
+                            withAnimation { columnVisibility = .all }
+                            appPreference.sidebarMode = .filesOnly
+                        } label: {
+                            if appPreference.sidebarMode == .filesOnly && columnVisibility != .detailOnly {
+                                Image(systemSymbol: .checkmark)
+                            }
+                            Text(.localizable(.sidebarShowFilesOnly))
+                        }
+                    } label: {
+                    }
+                    .buttonStyle(.borderless)
                 }
-                .buttonStyle(.borderless)
             }
         }
+#elseif os(iOS)
+        ToolbarItemGroup(placement: .topBarLeading) {
+            Button {
+                isSettingsPresented.toggle()
+            } label: {
+                Label("Settings", systemSymbol: .gear)
+            }
+        }
+#endif
 //        ToolbarItemGroup(placement: .confirmationAction) {
 //            Color.blue.frame(width: 10, height: 10)
 //        }
@@ -206,26 +278,29 @@ struct ContentViewModern: View {
 //            Color.red.frame(width: 10, height: 10)
 //        }
 //
+#if os(macOS)
+        /// It is neccessary for macOS to `space-between` the new button and sidebar toggle.
         ToolbarItemGroup(placement: .secondaryAction) {
             Color.clear
         }
+#endif
     }
 }
 
 struct ContentViewLagacy: View {
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
+    @EnvironmentObject var layoutState: LayoutState
     
-    @Binding var isSidebarPresented: Bool
-    @Binding var isInspectorPresented: Bool
     
     var body: some View {
         ZStack {
             ExcalidrawContainerView()
+                .modifier(ExcalidrawContainerToolbarContentModifier())
                 .layoutPriority(1)
             
             HStack {
-                if isSidebarPresented {
+                if layoutState.isSidebarPresented {
                     SidebarView()
                         .frame(width: 340)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -238,129 +313,13 @@ struct ContentViewLagacy: View {
                 }
                 Spacer()
             }
-            .animation(.easeOut, value: isSidebarPresented)
-            .animation(.easeOut, value: isInspectorPresented)
+            .animation(.easeOut, value: layoutState.isSidebarPresented)
+            .animation(.easeOut, value: layoutState.isInspectorPresented)
             .padding(.top, 10)
             .padding(.horizontal, 10)
             .padding(.bottom, 40)
         }
     }
-}
-
-// MARK: - Toolbar Content
-extension ContentView {
-    @ToolbarContentBuilder
-    private func toolbarContent() -> some ToolbarContent {
-#if os(iOS)
-        toolbarContent_iOS()
-#else
-        toolbarContent_macOS()
-#endif
-    }
-    
-#if os(iOS)
-    @ToolbarContentBuilder
-    private func toolbarContent_iOS() -> some ToolbarContent {
-        
-    }
-#else
-    @ToolbarContentBuilder
-    private func toolbarContent_macOS() -> some ToolbarContent {
-        ToolbarItemGroup(placement: .status) {
-            if #available(macOS 13.0, *) {
-                ExcalidrawToolbar(
-                    isInspectorPresented: appPreference.inspectorLayout == .sidebar ? $isInspectorPresented : .constant(false),
-                    isSidebarPresented: appPreference.sidebarLayout == .sidebar ? $isSidebarPresented : .constant(false),
-                    isDense: $isExcalidrawToolbarDense
-                )
-                .padding(.vertical, 2)
-            } else {
-                ExcalidrawToolbar(
-                    isInspectorPresented: .constant(false),
-                    isSidebarPresented: .constant(false),
-                    isDense: $isExcalidrawToolbarDense
-                )
-                .offset(y: isExcalidrawToolbarDense ? 0 : 6)
-            }
-        }
-        
-        ToolbarItemGroup(placement: .navigation) {
-            if #available(macOS 13.0, *), appPreference.sidebarLayout == .sidebar { } else {
-                Button {
-                    isSidebarPresented.toggle()
-                } label: {
-                    Label("Sidebar", systemSymbol: .sidebarLeft)
-                }
-            }
-            
-            if let file = fileState.currentFile {
-                VStack(alignment: .leading) {
-                    Text(file.name ?? "")
-                        .font(.headline)
-                    Text(file.createdAt?.formatted() ?? "Not modified")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            
-            if #available(macOS 13.0, *) { } else {
-                // create
-                Button {
-                    do {
-                        try fileState.createNewFile()
-                    } catch {
-                        alertToast(error)
-                    }
-                } label: {
-                    Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
-                }
-                .help(.localizable(.createNewFile))
-                .disabled(fileState.currentGroup?.groupType == .trash)
-            }
-        }
-
-        ToolbarItemGroup(placement: .automatic) {
-            Spacer()
-            
-            if !appVersion.contains("alpha"),
-               !appVersion.contains("beta"),
-               Bundle.main.bundleIdentifier == "com.chocoford.ExcalidrawZ" || Bundle.main.bundleIdentifier == "com.chocoford.ExcalidrawZ-Debug" {
-                Button {
-                    isMigrateSheetPresented.toggle()
-                } label: {
-                    Label(.localizable(.migration), systemSymbol: .sparkles)
-                }
-                .help(.localizable(.migration))
-            }
-            
-            if let currentFile = fileState.currentFile {
-                Popover {
-                    FileCheckpointListView(file: currentFile)
-                } label: {
-                    Label(.localizable(.checkpoints), systemSymbol: .clockArrowCirclepath)
-                }
-                .disabled(fileState.currentGroup?.groupType == .trash)
-                .help(.localizable(.checkpoints))
-            }
-
-            Button {
-                self.sharedFile = fileState.currentFile
-            } label: {
-                Label(.localizable(.export), systemSymbol: .squareAndArrowUp)
-            }
-            .help(.localizable(.export))
-            .disabled(fileState.currentGroup?.groupType == .trash)
-            
-            if #available(macOS 13.0, *), appPreference.inspectorLayout == .sidebar { } else {
-                Button {
-                    isInspectorPresented.toggle()
-                } label: {
-                    Label("Library", systemSymbol: .sidebarRight)
-                }
-            }
-        }
-    }
-#endif
 }
 
 #if DEBUG

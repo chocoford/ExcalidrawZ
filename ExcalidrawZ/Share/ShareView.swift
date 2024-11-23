@@ -11,10 +11,44 @@ import ChocofordUI
 import SwiftyAlert
 import SFSafeSymbols
 
+struct ShareViewModifier: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Binding var sharedFile: File?
+    
+    func body(content: Content) -> some View {
+        content
+            .sheet(item: $sharedFile) { file in
+                if horizontalSizeClass == .compact {
+                    self.content(file)
+#if os(iOS)
+                        .presentationDetents([.fraction(0.4)])
+                        .presentationDragIndicator(.visible)
+#endif
+                } else {
+                    self.content(file)
+                }
+            }
+    }
+    
+    
+    @MainActor @ViewBuilder
+    private func content(_ file: File) -> some View {
+        if #available(macOS 13.0, iOS 16.0, *) {
+            ShareView(sharedFile: file)
+                .swiftyAlert()
+        } else {
+            ShareViewLagacy(sharedFile: file)
+                .swiftyAlert()
+        }
+    }
+}
 
 
-@available(macOS 13.0, *)
+@available(macOS 13.0, iOS 16.0, *)
 struct ShareView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
+
     @Environment(\.dismiss) var dismiss
     @Environment(\.alertToast) var alertToast
     
@@ -33,10 +67,9 @@ struct ShareView: View {
     
     var body: some View {
         NavigationStack(path: $route) {
-            VStack(spacing: 20) {
+            VStack(spacing: horizontalSizeClass == .compact ? 10 : 20) {
                 Text(.localizable(.exportSheetHeadline))
-                    .font(.largeTitle)
-
+                    .font(horizontalSizeClass == .compact ? .headline : .largeTitle)
                 
                 HStack(spacing: 14) {
                     SquareButton(title: .localizable(.exportSheetButtonImage), icon: .photo) {
@@ -48,6 +81,7 @@ struct ShareView: View {
                         route.append(Route.exportFile)
                     }
                     
+#if os(macOS)
                     SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
                         do {
                             try archiveAllFiles()
@@ -55,20 +89,30 @@ struct ShareView: View {
                             alertToast(error)
                         }
                     }
+#endif
+                }
+
+                if horizontalSizeClass == .regular {
+                    Button {
+                        dismiss()
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text(.localizable(.exportSheetButtonDismiss))
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                 }
                 
-                
-                Button {
-                    dismiss()
-                } label: {
-                    HStack {
-                        Spacer()
-                        Text(.localizable(.exportSheetButtonDismiss))
-                        Spacer()
+                if containerVerticalSizeClass == .compact {
+                    Button(role: .cancel) {
+                        dismiss()
+                    } label: {
+                        Text(.localizable(.generalButtonClose))
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
             }
             .navigationDestination(for: Route.self) { route in
                 switch route {
@@ -79,10 +123,14 @@ struct ShareView: View {
                 }
             }
             .padding(.horizontal, 40)
+#if os(macOS)
             .toolbar(.hidden, for: .windowToolbar)
+#endif
         }
+#if os(macOS)
         .frame(width: 400, height: 300)
         .visualEffect(material: .sidebar)
+#endif
     }
 }
 
@@ -139,6 +187,7 @@ struct ShareViewLagacy: View {
                     route.append(Route.exportFile)
                 }
                 
+#if os(macOS)
                 SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
                     do {
                         try archiveAllFiles()
@@ -146,6 +195,7 @@ struct ShareViewLagacy: View {
                         alertToast(error)
                     }
                 }
+#endif
             }
             
             
@@ -223,8 +273,13 @@ struct ExportButtonStyle: PrimitiveButtonStyle {
                                     isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial)
                                 ) : AnyShapeStyle(Color.clear)
                             )
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(.separator, lineWidth: 0.5)
+                        if #available(macOS 10.15, iOS 17.0, *) {
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.separator, lineWidth: 0.5)
+                        } else {
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.gray, lineWidth: 0.5)
+                        }
                     }
                     .animation(.default, value: isHovered)
                 }

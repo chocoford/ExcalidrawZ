@@ -31,7 +31,6 @@ struct SegmentedPicker<Selection, Content>: View where Selection : Hashable, Con
         _VariadicView.Tree(SegmentedPickerContent()) {
             content()
         }
-        .padding(6)
         .backgroundPreferenceValue(
             SegmentedPickerPreferenceKey.self,
             alignment: .center
@@ -162,7 +161,7 @@ internal struct SegmentedPickerView: View {
             }
         }
         .background {
-            if #available(macOS 14.0, *) {
+            if #available(macOS 14.0, iOS 17.0, *) {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.regularMaterial)
                     .stroke(.separator, lineWidth: 0.5)

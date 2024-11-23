@@ -52,7 +52,7 @@ struct AboutView: View {
             HStack {
                 Spacer(minLength: 0)
                 VStack(spacing: 0) {
-                    Image(nsImage: NSApp.applicationIconImage)
+                    Image("AppIcon-macOS")
                         .resizable()
                         .frame(width: 128, height: 128)
                     Text(Bundle.main.infoDictionary!["CFBundleDisplayName"] as! String)
@@ -103,7 +103,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
         VStack {
-            
+            Text(license)
         }
     }
 }

@@ -52,4 +52,33 @@ struct ExcalidrawImageElement: ExcalidrawImageElementBase {
     var fileId: String?
     var status: ExcalidrawImageElementStatus
     var scale: [Double]
+    
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        return lhs.type == rhs.type &&
+        lhs.id == rhs.id &&
+        lhs.x == rhs.x &&
+        lhs.y == rhs.y &&
+        lhs.strokeColor == rhs.strokeColor &&
+        lhs.backgroundColor == rhs.backgroundColor &&
+        lhs.fillStyle == rhs.fillStyle &&
+        lhs.strokeWidth == rhs.strokeWidth &&
+        lhs.strokeStyle == rhs.strokeStyle &&
+        lhs.roundness == rhs.roundness &&
+        lhs.roughness == rhs.roughness &&
+        lhs.opacity == rhs.opacity &&
+        lhs.width == rhs.width &&
+        lhs.height == rhs.height &&
+        lhs.angle == rhs.angle &&
+        lhs.seed == rhs.seed &&
+        lhs.isDeleted == rhs.isDeleted &&
+        lhs.groupIds == rhs.groupIds &&
+        lhs.frameId == rhs.frameId &&
+        lhs.boundElements == rhs.boundElements &&
+        lhs.link == rhs.link &&
+        lhs.locked == rhs.locked &&
+        lhs.customData == rhs.customData &&
+        lhs.fileId == rhs.fileId &&
+        lhs.status == rhs.status &&
+        lhs.scale == rhs.scale
+    }
 }

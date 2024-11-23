@@ -10,6 +10,8 @@ import ChocofordEssentials
 
 
 struct GroupListView: View {
+    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
@@ -45,14 +47,21 @@ struct GroupListView: View {
     var body: some View {
         content
             .sheet(isPresented: $showCreateFolderDialog) {
-                CreateGroupSheetView(groups: groups) { name in
-                    Task {
-                        do {
-                            try await fileState.createNewGroup(name: name)
-                        } catch {
-                            alertToast(error)
-                        }
-                    }
+                if containerHorizontalSizeClass == .compact {
+                    createFolderSheetView()
+#if os(iOS)
+                        .presentationDetents([.height(140)])
+                        .presentationDragIndicator(.visible)
+#endif
+                } else if #available(iOS 18.0, macOS 13.0, *) {
+                    createFolderSheetView()
+                        .scrollDisabled(true)
+                        .frame(width: 400, height: 140)
+#if os(iOS)
+                        .presentationSizing(.fitted)
+#endif
+                } else {
+                    createFolderSheetView()
                 }
             }
             .onChange(of: displayedGroups) { newValue in
@@ -86,6 +95,8 @@ struct GroupListView: View {
                 .onChange(of: displayedGroups) { newValue in
                     if fileState.currentGroup == nil {
                         fileState.currentGroup = displayedGroups.first
+                    } else if !displayedGroups.contains(where: {$0 == fileState.currentGroup}) {
+                        fileState.currentGroup = displayedGroups.first
                     }
                 }
                 .watchImmediately(of: fileState.currentGroup) { newValue in
@@ -94,7 +105,7 @@ struct GroupListView: View {
                     }
                 }
             }
-            
+            .clipped()
             HStack {
                 Button {
                     showCreateFolderDialog.toggle()
@@ -106,6 +117,19 @@ struct GroupListView: View {
                 Spacer()
             }
             .padding(4)
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func createFolderSheetView() -> some View {
+        CreateGroupSheetView(groups: groups) { name in
+            Task {
+                do {
+                    try await fileState.createNewGroup(name: name, activate: true, context: managedObjectContext)
+                } catch {
+                    alertToast(error)
+                }
+            }
         }
     }
 }
@@ -120,39 +144,46 @@ struct CreateGroupSheetView: View {
     @State private var name: String = ""
     
     var body: some View {
-        VStack(alignment: .leading) {
-            Text(.localizable(.sidebarGroupListCreateTitle))
-                .fontWeight(.bold)
-            HStack {
-                Text(.localizable(.sidebarGroupListCreateGroupName))
-                TextField("", text: $name)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit {
-                        if !name.isEmpty {
-                            onCreate(name)
-                            dismiss()
+        Form {
+            Section {
+                HStack {
+                    Text(.localizable(.sidebarGroupListCreateGroupName))
+                    TextField("", text: $name)
+                        .submitLabel(.done)
+    #if os(macOS)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit {
+                            if !name.isEmpty {
+                                onCreate(name)
+                                dismiss()
+                            }
                         }
-                    }
-            }
-            Toggle(.localizable(.sidebarGroupListCreateSyncIcloud), isOn: .constant(false))
-                .disabled(true)
-            
-            Divider()
-            
-            HStack {
-                Spacer()
-                Button(.localizable(.sidebarGroupListCreateButtonCancel)) { dismiss() }
-                Button(.localizable(.sidebarGroupListCreateButtonCreate)) {
-                    onCreate(name)
-                    dismiss()
+    #endif
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(name.isEmpty)
+            } header: {
+                Text(.localizable(.sidebarGroupListCreateTitle))
+                    .fontWeight(.bold)
+            } footer: {
+                HStack {
+                    Spacer()
+                    Button(.localizable(.sidebarGroupListCreateButtonCancel)) { dismiss() }
+                    Button(.localizable(.sidebarGroupListCreateButtonCreate)) {
+                        onCreate(name)
+                        dismiss()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(name.isEmpty)
+                }
             }
+//#if os(macOS)
+//            Divider()
+//#endif
+            
         }
+        .labelsHidden()
+#if os(macOS)
         .padding()
-        .frame(width: 400)
-        //        .onChange(of: self.initialName) { newValue in self.name = newValue }
+#endif
         .onAppear {
             self.name = getNextFileName()
         }

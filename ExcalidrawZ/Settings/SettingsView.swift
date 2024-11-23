@@ -7,42 +7,60 @@
 
 import SwiftUI
 import ChocofordUI
-#if !APP_STORE
+#if os(macOS) && !APP_STORE
 import Sparkle
 #endif
 
 struct SettingsView: View {
-    @State private var selection: Route? = .general
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var selection: Route?
 
     var body: some View {
         content()
+            .task {
+                if containerHorizontalSizeClass == .regular {
+                    selection = .general
+                }
+            }
     }
     
     @MainActor @ViewBuilder
     private func content() -> some View {
-        if #available(macOS 14.0, *) {
-            NavigationSplitView(columnVisibility: .constant(.all)) {
+        if #available(macOS 14.0, iOS 17.0, *) {
+            NavigationSplitView {
                 sidebar
+#if os(macOS)
                     .toolbar(removing: .sidebarToggle)
+#endif
+                    .navigationTitle(.localizable(.settingsNavigationTitle))
             } detail: {
                 detail(for: selection)
             }
-            .navigationTitle(.localizable(.settingsNavigationTitle))
+            
         } else if #available(macOS 13.0, *) {
-            NavigationSplitView(columnVisibility: .constant(.all)) {
+            NavigationSplitView {
                 sidebar
+#if os(macOS)
                     .background(
                         List(selection: $selection) {}
                     )
+#endif
+                    .navigationTitle(.localizable(.settingsNavigationTitle))
             } detail: {
                 detail(for: selection)
             }
+#if os(macOS)
             .removeSettingsSidebarToggle()
-            .navigationTitle(.localizable(.settingsNavigationTitle))
+#endif
         } else {
             HStack {
                 sidebar
+#if os(macOS)
                     .visualEffect(material: .sidebar)
+#endif
                     .frame(width: 200)
                 detail(for: selection)
             }
@@ -56,6 +74,7 @@ struct SettingsView: View {
     
     @ViewBuilder
     private var sidebar: some View {
+#if os(macOS)
         ScrollView {
             VStack {
                 ForEach(Route.allCases) { route in
@@ -74,18 +93,47 @@ struct SettingsView: View {
             }
             .padding(10)
         }
+#elseif os(iOS)
+        List(selection: $selection) {
+            Section {
+                ForEach(Route.allCases) { route in
+                    NavigationLink(value: route) {
+                        Text(route.text)
+                    }
+                }
+            } footer: {
+                if containerVerticalSizeClass == .compact {
+                    HStack {
+                        Spacer()
+                        Button(role: .cancel) {
+                            dismiss()
+                        } label: {
+                            Text(.localizable(.generalButtonClose))
+                        }
+                    }
+                }
+            }
+//            ForEach(Route.allCases) { route in
+//                Button {
+//                    selection = route
+//                } label: {
+//                    Text(route.text)
+//                }
+//                .buttonStyle(
+//                    ListButtonStyle(
+//                        showIndicator: true,
+//                        selected: selection == route
+//                    )
+//                )
+//            }
+        }
+#endif
     }
     
     @ViewBuilder
     private func detail(for selection: Route?) -> some View {
         if let route = selection {
-#if os(macOS)
-            ScrollView {
-                detailView(for: route)
-            }
-#elseif os(iOS)
             detailView(for: route)
-#endif
         } else {
             ZStack {
                 Color.clear
@@ -100,6 +148,15 @@ struct SettingsView: View {
             case .general:
                 GeneralSettingsView()
                 
+//            case .fileHistory:
+//                FileHistorySettingsView()
+                
+            case .medias:
+                MediasSettingsView()
+                
+            case .backups:
+                BackupsSettingsView()
+                
             case .about:
                 AboutView()
         }
@@ -109,12 +166,24 @@ struct SettingsView: View {
 extension SettingsView {
     enum Route: CaseIterable, Identifiable {
         case general
+//        case fileHistory
+        case medias
+        case backups
+        
         case about
         
         var text: LocalizedStringKey {
             switch self {
                 case .general:
                     return .localizable(.settingsGeneralName)
+                    
+//                case .fileHistory:
+//                    return "File history"
+                case .medias:
+                    return .localizable(.settingsMediasName)
+                    
+                case .backups:
+                    return .localizable(.settingsBackupsName)
                     
                 case .about:
                     return .localizable(.settingsAboutName)
@@ -125,7 +194,12 @@ extension SettingsView {
             switch self {
                 case .general:
                     "general"
-                    
+//                case .fileHistory:
+//                    "fileHistory"
+                case .medias:
+                    "medias"
+                case .backups:
+                    "backups"
                 case .about:
                     "about"
             }

@@ -47,6 +47,8 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
                 self = .eraser
             case .laser:
                 self = .laser
+            default:
+                return nil
         }
     }
     
@@ -76,8 +78,38 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
                 Character("k")
         }
     }
+    
+    var localization: LocalizedStringKey {
+        switch self {
+            case .eraser:
+                    .localizable(.toolbarEraser)
+            case .cursor:
+                    .localizable(.toolbarSelection)
+            case .rectangle:
+                    .localizable(.toolbarRectangle)
+            case .diamond:
+                    .localizable(.toolbarDiamond)
+            case .ellipse:
+                    .localizable(.toolbarEllipse)
+            case .arrow:
+                    .localizable(.toolbarArrow)
+            case .line:
+                    .localizable(.toolbarLine)
+            case .freedraw:
+                    .localizable(.toolbarDraw)
+            case .text:
+                    .localizable(.toolbarText)
+            case .image:
+                    .localizable(.toolbarInsertImage)
+            case .laser:
+                    .localizable(.toolbarLaser)
+        }
+    }
 }
 final class ToolState: ObservableObject {
+    var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
+
     @Published var activatedTool: ExcalidrawTool? = .cursor
+    @Published var inDragMode: Bool = false
 }
 

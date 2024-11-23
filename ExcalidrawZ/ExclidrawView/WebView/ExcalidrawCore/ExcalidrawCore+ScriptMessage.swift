@@ -44,15 +44,31 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                 case .onBlur:
                     self.webView.shouldHandleInput = true
                 case .didSetActiveTool(let message):
-                    let tool = ExcalidrawTool(from: message.data.type)
-                    self.lastTool = tool
-                    self.parent?.toolState.activatedTool = tool
+                    guard !self.isLoading else { return }
+                    if message.data.type == .hand {
+                        self.parent?.toolState.inDragMode = true
+                    } else {
+                        let tool = ExcalidrawTool(from: message.data.type)
+                        self.lastTool = tool
+                        self.parent?.toolState.activatedTool = tool
+                        self.parent?.toolState.inDragMode = false
+                    }
                 case .getElementsBlob(let blobData):
                     self.flyingBlobsRequest[blobData.data.id]?(blobData.data.blobData)
                 case .getElementsSVG(let svgData):
                     self.flyingSVGRequests[svgData.data.id]?(svgData.data.svg)
                 case .addLibrary(let message):
                     self.addLibrary(item: message.data)
+                case .getAllMedias(let data):
+                    self.flyingAllMediasRequests[data.data.id]?(data.data.files)
+                case .historyStateChanged(let message):
+                    switch message.data.type {
+                        case .redo:
+                            self.canRedo = !message.data.disabled
+                        case .undo:
+                            self.canUndo = !message.data.disabled
+                    }
+                    
                 case .log(let logMessage):
                     self.onWebLog(message: logMessage)
             }
@@ -99,7 +115,6 @@ extension ExcalidrawCore {
                             }
                         }
                 }
-//                }
             } catch {
                 onError(error)
             }
@@ -112,13 +127,14 @@ extension ExcalidrawCore {
     }
     
     func handleCopy(_ data: [WebClipboardItem]) throws {
+#if canImport(AppKit)
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         for item in data {
             let string = item.data
             switch item.type {
                 case "text":
-                    let success = pasteboard.setString(string, forType: .string)
+                    /*let success = */pasteboard.setString(string, forType: .string)
                 case "application/json", "application/vnd.excalidraw+json", "application/vnd.excalidrawlib+json":
                     pasteboard.setString(string, forType: .string)
                 case "image/svg+xml":
@@ -144,21 +160,57 @@ extension ExcalidrawCore {
                     break
             }
         }
-        
+#elseif canImport(UIKit)
+        let pasteboard = UIPasteboard.general
+        for item in data {
+            let string = item.data
+            switch item.type {
+                case "text":
+                    pasteboard.string = string
+                case "application/json", "application/vnd.excalidraw+json", "application/vnd.excalidrawlib+json":
+                    pasteboard.string = string
+                case "image/svg+xml":
+                    pasteboard.setValue(string, forPasteboardType: "public.html")
+                case "image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "image/x-icon", "image/avif", "image/jfif":
+                    if let data = Data(
+                        base64Encoded: String(string.suffix(
+                            string.count - string.distance(
+                                from: string.startIndex,
+                                to: (string.firstIndex(of: ",") ?? string.startIndex)
+                            )
+                        )),
+                        options: [.ignoreUnknownCharacters]
+                    ) {
+                        pasteboard.setData(data, forPasteboardType: "public.png")
+                    } else {
+                        pasteboard.setValue(string, forPasteboardType: "public.png")
+                    }
+                case "application/octet-stream":
+                    pasteboard.setValue(string, forPasteboardType: "public.data")
+                default:
+                    break
+            }
+        }
+#endif
     }
     
     func onWebLog(message: LogMessage) {
         let method = message.method
         let message = message.args.map{
             if let arg = $0 {
-                return arg
+                let maxLength = 100
+                if arg.count > maxLength {
+                    return arg.prefix(maxLength - 3) + "..."
+                } else {
+                    return arg
+                }
             } else {
                 return "null"
             }
         }.joined(separator: " ")
         switch method {
             case "log":
-                //                self.logger.log("\(message)")
+                self.logger.log("Receive log from web:\n\(message)")
                 break
             case "warn":
                 self.logger.warning("Receive warning from web:\n\(message)")
@@ -167,7 +219,7 @@ extension ExcalidrawCore {
             case "debug":
                 self.logger.debug("Receive warning from debug:\n\(message)")
             case "info":
-                //                self.logger.info("\(message)")
+                self.logger.info("Receive info from web:\n\(message)")
                 break
             case "trace":
                 self.logger.trace("Receive warning from trace:\n\(message)")
@@ -200,6 +252,7 @@ extension ExcalidrawCore {
         }
         
     }
+    
 }
 
 extension ExcalidrawCore {
@@ -216,6 +269,8 @@ extension ExcalidrawCore {
         case getElementsBlob
         case getElementsSVG
         case addLibrary
+        case getAllMedias
+        case historyStateChanged
         
         case log
     }
@@ -232,6 +287,8 @@ extension ExcalidrawCore {
         case getElementsBlob(ExcalidrawElementsBlobData)
         case getElementsSVG(ExcalidrawElementsSVGData)
         case addLibrary(AddLibraryItemMessage)
+        case getAllMedias(GetAllMediasMessage)
+        case historyStateChanged(HistoryStateChangedMessage)
         
         case log(LogMessage)
         
@@ -266,6 +323,10 @@ extension ExcalidrawCore {
                     self = .getElementsSVG(try ExcalidrawElementsSVGData(from: decoder))
                 case .addLibrary:
                     self = .addLibrary(try AddLibraryItemMessage(from: decoder))
+                case .getAllMedias:
+                    self = .getAllMedias(try GetAllMediasMessage(from: decoder))
+                case .historyStateChanged:
+                    self = .historyStateChanged(try HistoryStateChangedMessage(from: decoder))
                     
                 case .log:
                     self = .log(try LogMessage(from: decoder))
@@ -286,7 +347,7 @@ extension ExcalidrawCore {
         var state: ExcalidrawState?
         var data: ExcalidrawFileData
     }
-    
+
     struct ExcalidrawState: Codable {
         let showWelcomeScreen: Bool
         let theme, currentChartType, currentItemBackgroundColor, currentItemEndArrowhead: String
@@ -348,14 +409,13 @@ extension ExcalidrawCore {
         }
     }
 
-    
     struct ExcalidrawFileData: Codable, Hashable {
         // The JSON.stringify of `elements` & `files`
         var dataString: String
         var elements: [ExcalidrawElement]?
         var files: [String : ExcalidrawFile.ResourceFile]
     }
-    
+
     struct ExcalidrawElementsBlobData: AnyExcalidrawZMessage {
         struct BlobData: Codable {
             var id: String
@@ -365,7 +425,7 @@ extension ExcalidrawCore {
         var event: String
         var data: BlobData
     }
-    
+
     struct ExcalidrawElementsSVGData: AnyExcalidrawZMessage {
         struct SVGData: Codable {
             var id: String
@@ -380,23 +440,22 @@ extension ExcalidrawCore {
         var event: String
         var data: String //SaveFileDoneMessageData
     }
-    
+
     struct BlobDataMessage: AnyExcalidrawZMessage {
         var event: String
         var data: Data
     }
-    
+
     struct CopyMessage: AnyExcalidrawZMessage {
         var event: String
         var data: [WebClipboardItem]
     }
-    
-    
+
     struct WebClipboardItem: Codable {
         var type: String
         var data: String // string or base64
     }
- 
+
     struct SetActiveToolMessage: AnyExcalidrawZMessage {
         var event: String
         var data: SetActiveToolMessageData
@@ -416,15 +475,41 @@ extension ExcalidrawCore {
                 case image
                 case eraser
                 case laser
+                
+                case hand
             }
         }
     }
-    
+
     struct AddLibraryItemMessage: AnyExcalidrawZMessage {
         var event: String
         var data: ExcalidrawLibrary.Item
     }
-    
+
+    struct GetAllMediasMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: MediasData
+        
+        struct MediasData: Codable {
+            var id: String
+            var files: [ExcalidrawFile.ResourceFile]
+        }
+        
+    }
+
+    struct HistoryStateChangedMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: HistoryStateChangedData
+     
+        struct HistoryStateChangedData: Codable {
+            var type: HistoryStateChangeType
+            var disabled: Bool
+            
+            enum HistoryStateChangeType: String, Codable {
+                case undo, redo
+            }
+        }
+    }
     
     // Log
     struct LogMessage: Codable {
@@ -437,7 +522,6 @@ extension ExcalidrawCore {
 
 extension ExcalidrawFile {
     mutating func update(data: ExcalidrawView.Coordinator.ExcalidrawFileData) throws {
-//        print("[ExcalidrawFile] update...")
         guard let content = self.content else {
             struct EmptyContentError: LocalizedError {
                 var errorDescription: String? { "Invalid excalidraw file." }
