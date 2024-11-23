@@ -1,3 +1,4 @@
 DEVELOPMENT_TEAM = 3XKM749Y3L;
+ICLOUD_CONTAINER = iCloud.com.chocoford.excalidraw
 
 #include? "Overrides.xcconfig"
