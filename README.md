@@ -86,6 +86,7 @@ Welcome to my [Discord server](https://discord.gg/aCv6w4HxDg) to share suggestio
 ## Contributing
 
 * The `excalidraw` core for `ExcalidrawZ` is also open-source. You can find it [here](https://github.com/chocoford/excalidraw/tree/ExcalidrawZ-core) and build for your own purposes.
+  * And don't forget to give it a star 😁.
 * Before you start coding, don't forget to add your own `Overrides.xcconfig` in `ExcalidrawZ/Config` and populate it with the following content:
 
 ```xcconfig
