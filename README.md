@@ -83,19 +83,13 @@ ExcalidrawZ for iOS&iPadOS is now available. All data are synchronised by iCloud
 
 Welcome to my [Discord server](https://discord.gg/aCv6w4HxDg) to share suggestions or report issues for ExcalidrawZ, helping make ExcalidrawZ even better!
 
-## Develop Tips
+## Contributing
 
-* The `excalidraw` core is built and uploaded with the `dmg` file. You can download it from [Releases](https://github.com/chocoford/ExcalidrawZ/releases).
+* The `excalidraw` core for `ExcalidrawZ` is also open-source. You can find it [here](https://github.com/chocoford/excalidraw/tree/ExcalidrawZ-core) and build for your own purposes.
+* Before you start coding, don't forget to add your own `Overrides.xcconfig` in `ExcalidrawZ/Config` and populate it with the following content:
 
-  * Or you can build your own core from [`excalidraw`](https://github.com/excalidraw/excalidraw)
+```xcconfig
+DEVELOPMENT_TEAM = <YOUR_DEVELOPMENT_TEAM_FOR_DEBUG>;
+ICLOUD_CONTAINER = <YOUR_ICLOUD_CONTAINER_IDNENTIFIER_FOR_DEBUG>;
+```
 
-* Hide toolbar in `packages/excalidraw/components/LayerUI.tsx/LayerUI`.
-
-* Add fonts after build.
-
-  * add the codes below to `index.html`.
-    ```html
-    <link rel="preload" href="YRDZST-Regular.ttf" as="font" type="font/ttf" crossorigin="anonymous">
-    <link rel="preload" href="SetoFont.ttf" as="font" type="font/ttf" crossorigin="anonymous">
-    <link rel="stylesheet" href="fonts.css" />
-    ```
