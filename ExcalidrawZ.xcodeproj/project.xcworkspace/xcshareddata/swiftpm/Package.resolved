@@ -1,5 +1,5 @@
 {
-  "originHash" : "96bc7142b45f8dfb801217ed2fa323a851777dc7ebdd5495b8b72a3d2a5624b3",
+  "originHash" : "57cce5ea8ec480331669a54d0312dd6654bbbb8afec808ae1dd1b64f5a6e22f7",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -11,12 +11,21 @@
       }
     },
     {
+      "identity" : "chocofordkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/chocoford/ChocofordKit.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "24075e4ce37da5d84b2dc16bc5af27af4bc5c910"
+      }
+    },
+    {
       "identity" : "flyingfox",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swhitty/FlyingFox.git",
       "state" : {
-        "revision" : "0482ba51ff2d6d91a7ea449c3dbdce2a78802b85",
-        "version" : "0.19.0"
+        "revision" : "5653d61252af7f2dd8b43a77fb2a03678290f393",
+        "version" : "0.20.0"
       }
     },
     {

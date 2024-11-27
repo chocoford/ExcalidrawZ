@@ -56,7 +56,7 @@ struct SettingsView: View {
             .removeSettingsSidebarToggle()
 #endif
         } else {
-            HStack {
+            HStack(spacing: 0) {
                 sidebar
 #if os(macOS)
                     .visualEffect(material: .sidebar)

@@ -52,7 +52,7 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
             self.createdAt = Date(timeIntervalSince1970: TimeInterval(created) / 1000)
             self.dataURL = try container.decode(String.self, forKey: .dataURL)
             let lastRetrieved = try container.decode(Int.self, forKey: .lastRetrievedAt)
-            self.lastRetrievedAt = Date(timeIntervalSince1970: TimeInterval(lastRetrieved))
+            self.lastRetrievedAt = Date(timeIntervalSince1970: TimeInterval(lastRetrieved) / 1000)
         }
         
         func encode(to encoder: any Encoder) throws {

@@ -22,13 +22,39 @@ struct AboutView: View {
             }
             .formStyle(.grouped)
         } else {
-            Form {
-                content()
+            ScrollView {
+                VStack(spacing: 14) {
+                    VStack(spacing: 6) {
+                        content()
+                    }
+                    .padding()
+                    .background {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.regularMaterial)
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.gray.opacity(0.7))
+                    }
 #if APP_STORE
-                AboutChocofordView(isAppStore: true)
+                    AboutChocofordView(isAppStore: true)
+                        .padding()
+                        .background {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(.regularMaterial)
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(.gray.opacity(0.7))
+                        }
 #else
-                AboutChocofordView(isAppStore: false)
+                    AboutChocofordView(isAppStore: false)
+                        .padding()
+                        .background {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(.regularMaterial)
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(.gray.opacity(0.7))
+                        }
 #endif
+                }
+                .padding()
             }
         }
     }

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreData
+import CloudKit
 
 import ChocofordUI
 import ChocofordEssentials
@@ -38,7 +39,12 @@ struct ContentView: View {
             if isFirstImporting == nil {
                 Color.clear
             } else if isFirstImporting == true {
-                welcomeView()
+                if #available(macOS 13.0, *) {
+                    welcomeView()
+                } else {
+                    welcomeView()
+                        .frame(width: 1150, height: 580)
+                }
             } else {
                 if #available(macOS 14.0, iOS 17.0, *), appPreference.inspectorLayout == .sidebar {
                     content()
@@ -100,8 +106,6 @@ struct ContentView: View {
                     print("NSPersistentCloudKitContainer.eventChangedNotification: \(event.type), succeeded: \(event.succeeded)")
                     if event.type == .import, event.succeeded, isFirstImporting == true {
                         isFirstImporting = false
-                        
-//                        let context = PersistenceController.shared.container.newBackgroundContext()
                         Task {
                             do {
                                 try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: managedObjectContext)
@@ -118,6 +122,12 @@ struct ContentView: View {
             do {
                 let isEmpty = try managedObjectContext.fetch(NSFetchRequest<File>(entityName: "File")).isEmpty
                 isFirstImporting = isEmpty
+                if isFirstImporting == true, try await CKContainer.default().accountStatus() != .available {
+                    isFirstImporting = false
+                    return
+                } else if !isEmpty {
+                    try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: managedObjectContext)
+                }
             } catch {
                 alertToast(error)
             }
@@ -145,6 +155,7 @@ struct ContentView: View {
                 }
             }
         }
+        .padding(40)
     }
 }
 
