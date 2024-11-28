@@ -151,7 +151,7 @@ struct ExcalidrawLibraryImportSheetView: View {
             .frame(minHeight: 300, maxHeight: 600)
             .background {
                 let roundedRectangle = RoundedRectangle(cornerRadius: 12)
-                if #available(iOS 17.0, macOS 10.15, *) {
+                if #available(iOS 17.0, macOS 13.0, *) {
                     roundedRectangle.stroke(.separator, lineWidth: 0.5)
                 } else {
                     roundedRectangle.stroke(.gray, lineWidth: 0.5)

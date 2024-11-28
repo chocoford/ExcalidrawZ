@@ -251,10 +251,7 @@ struct ExcalidrawRenderer: View {
         return 0
         
     }
-    
-//    private func mapRect(from element: ExcalidrawElement, to canvasRect: CGRect) -> CGRect {
-//
-//    }
+
 }
 
 extension Color {

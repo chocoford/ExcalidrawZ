@@ -273,7 +273,7 @@ struct ExportButtonStyle: PrimitiveButtonStyle {
                                     isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial)
                                 ) : AnyShapeStyle(Color.clear)
                             )
-                        if #available(macOS 10.15, iOS 17.0, *) {
+                        if #available(macOS 13.0, iOS 17.0, *) {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(.separator, lineWidth: 0.5)
                         } else {
