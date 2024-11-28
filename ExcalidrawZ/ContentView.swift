@@ -231,46 +231,12 @@ struct ContentViewModern: View {
         }
         
 #if os(macOS)
-        if horizontalSizeClass == .regular {
+        // in macOS 14.*, the horizontalSizeClass is not `.regular`
+        // if horizontalSizeClass == .regular {
             ToolbarItemGroup(placement: .destructiveAction) {
-                HStack(spacing: 0) {
-                    Button {
-                        withAnimation {
-                            if columnVisibility == .detailOnly {
-                                columnVisibility = .all
-                            } else {
-                                columnVisibility = .detailOnly
-                            }
-                        }
-                    } label: {
-                        Image(systemSymbol: .sidebarLeading)
-                    }
-                    
-                    Menu {
-                        Button {
-                            withAnimation { columnVisibility = .all }
-                            appPreference.sidebarMode = .all
-                        } label: {
-                            if appPreference.sidebarMode == .all && columnVisibility != .detailOnly {
-                                Image(systemSymbol: .checkmark)
-                            }
-                            Text(.localizable(.sidebarShowAll))
-                        }
-                        Button {
-                            withAnimation { columnVisibility = .all }
-                            appPreference.sidebarMode = .filesOnly
-                        } label: {
-                            if appPreference.sidebarMode == .filesOnly && columnVisibility != .detailOnly {
-                                Image(systemSymbol: .checkmark)
-                            }
-                            Text(.localizable(.sidebarShowFilesOnly))
-                        }
-                    } label: {
-                    }
-                    .buttonStyle(.borderless)
-                }
+                sidebarToggle()
             }
-        }
+        // }
 #elseif os(iOS)
         ToolbarItemGroup(placement: .topBarLeading) {
             Button {
@@ -300,6 +266,46 @@ struct ContentViewModern: View {
             Color.clear
         }
 #endif
+    }
+    
+    @MainActor @ViewBuilder
+    private func sidebarToggle() -> some View {
+        HStack(spacing: 0) {
+            Button {
+                withAnimation {
+                    if columnVisibility == .detailOnly {
+                        columnVisibility = .all
+                    } else {
+                        columnVisibility = .detailOnly
+                    }
+                }
+            } label: {
+                Image(systemSymbol: .sidebarLeading)
+            }
+            
+            Menu {
+                Button {
+                    withAnimation { columnVisibility = .all }
+                    appPreference.sidebarMode = .all
+                } label: {
+                    if appPreference.sidebarMode == .all && columnVisibility != .detailOnly {
+                        Image(systemSymbol: .checkmark)
+                    }
+                    Text(.localizable(.sidebarShowAll))
+                }
+                Button {
+                    withAnimation { columnVisibility = .all }
+                    appPreference.sidebarMode = .filesOnly
+                } label: {
+                    if appPreference.sidebarMode == .filesOnly && columnVisibility != .detailOnly {
+                        Image(systemSymbol: .checkmark)
+                    }
+                    Text(.localizable(.sidebarShowFilesOnly))
+                }
+            } label: {
+            }
+            .buttonStyle(.borderless)
+        }
     }
 }
 

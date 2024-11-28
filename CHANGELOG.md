@@ -1,3 +1,7 @@
+## 1.2.4
+
+Fixed a bug where the Sidebar Toggle was not displayed on macOS 14.
+
 ## 1.2.3
 
 #### New Features
