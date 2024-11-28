@@ -8,6 +8,7 @@
 import SwiftUI
 import CoreData
 import UniformTypeIdentifiers
+import Combine
 
 import ChocofordUI
 
@@ -25,7 +26,8 @@ struct ExcalidrawContainerView: View {
     @State private var isProgressViewPresented = true
     
     @State private var isDropping: Bool = false
-    
+    @State private var cloudContainerEventChangeListener: AnyCancellable?
+
     var fileBinding: Binding<ExcalidrawFile> {
         Binding {
             if let file = fileState.currentFile {
@@ -110,25 +112,28 @@ struct ExcalidrawContainerView: View {
         .animation(.easeOut, value: isImporting)
         .transition(.opacity)
         .animation(.default, value: isProgressViewPresented)
-        .onReceive(
-            NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification)
-        ) { notification in
-            if let userInfo = notification.userInfo {
-                if let event = userInfo["event"] as? NSPersistentCloudKitContainer.Event {
-                    if event.type == .import, !event.succeeded {
-                        isImporting = true
-                        if let file = fileState.currentFile {
-                            self.fileBeforeImporting = try? ExcalidrawFile(from: file.objectID, context: viewContext)
-                        }
-                    }
-                    if event.type == .import, event.succeeded, isImporting {
-                        isImporting = false
-                        if let file = fileState.currentFile,
-                           let fileAfterImporting = try? ExcalidrawFile(from: file.objectID, context: viewContext),
-                           fileAfterImporting.elements != fileBeforeImporting?.elements {
-                             // force reload current file.
-                            print("force reload current file...")
-                            fileState.excalidrawWebCoordinator?.loadFile(from: fileState.currentFile, force: true)
+        .task {
+            self.cloudContainerEventChangeListener?.cancel()
+            self.cloudContainerEventChangeListener = NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification).sink { notification in
+                if let userInfo = notification.userInfo {
+                    if let event = userInfo["event"] as? NSPersistentCloudKitContainer.Event {
+                        DispatchQueue.main.async {
+                            if event.type == .import, !event.succeeded {
+                                isImporting = true
+                                if let file = fileState.currentFile {
+                                    self.fileBeforeImporting = try? ExcalidrawFile(from: file.objectID, context: viewContext)
+                                }
+                            }
+                            if event.type == .import, event.succeeded, isImporting {
+                                isImporting = false
+                                if let file = fileState.currentFile,
+                                   let fileAfterImporting = try? ExcalidrawFile(from: file.objectID, context: viewContext),
+                                   fileAfterImporting.elements != fileBeforeImporting?.elements {
+                                    // force reload current file.
+                                    print("force reload current file...")
+                                    fileState.excalidrawWebCoordinator?.loadFile(from: fileState.currentFile, force: true)
+                                }
+                            }
                         }
                     }
                 }

@@ -8,6 +8,7 @@
 import SwiftUI
 import CoreData
 import CloudKit
+import Combine
 
 import ChocofordUI
 import ChocofordEssentials
@@ -33,6 +34,7 @@ struct ContentView: View {
 #endif
     
     @State private var isFirstImporting: Bool?
+    @State private var cloudContainerEventChangeListener: AnyCancellable?
     
     var body: some View {
         ZStack {
@@ -98,25 +100,6 @@ struct ContentView: View {
                 }
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification)) { notification in
-            if let userInfo = notification.userInfo {
-                if let event = userInfo["event"] as? NSPersistentCloudKitContainer.Event {
-                    // On macOS, event.type will be `setup` only when first launched.
-                    // On iOS, event.type will be `setup` every time it has been launched.
-                    print("NSPersistentCloudKitContainer.eventChangedNotification: \(event.type), succeeded: \(event.succeeded)")
-                    if event.type == .import, event.succeeded, isFirstImporting == true {
-                        isFirstImporting = false
-                        Task {
-                            do {
-                                try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: managedObjectContext)
-                            } catch {
-                                alertToast(error)
-                            }
-                        }
-                    }
-                }
-            }
-        }
         // Check if it is first launch by checking the files count.
         .task {
             do {
@@ -130,6 +113,28 @@ struct ContentView: View {
                 }
             } catch {
                 alertToast(error)
+            }
+            
+            self.cloudContainerEventChangeListener?.cancel()
+            self.cloudContainerEventChangeListener = NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification).sink { notification in
+                if let userInfo = notification.userInfo {
+                    if let event = userInfo["event"] as? NSPersistentCloudKitContainer.Event {
+                        // On macOS, event.type will be `setup` only when first launched.
+                        // On iOS, event.type will be `setup` every time it has been launched.
+                        print("NSPersistentCloudKitContainer.eventChangedNotification: \(event.type), succeeded: \(event.succeeded)")
+                        if event.type == .import, event.succeeded, isFirstImporting == true {
+                            isFirstImporting = false
+                            Task {
+                                do {
+                                    try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: managedObjectContext)
+                                } catch {
+                                    alertToast(error)
+                                }
+                            }
+                            self.cloudContainerEventChangeListener?.cancel()
+                        }
+                    }
+                }
             }
         }
     }

@@ -15,8 +15,7 @@ struct SingleEditorView: View {
     @Environment(\.alertToast) var alertToast
     
     @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject var layoutState: LayoutState
-    
+
     @Binding var fileDocument: ExcalidrawFile
     var fileURL: URL?
     var shouldAdjustWindowSize: Bool
@@ -45,6 +44,7 @@ struct SingleEditorView: View {
     @StateObject private var fileState = FileState()
     @StateObject private var exportState = ExportState()
     @StateObject private var toolState = ToolState()
+    @StateObject private var layoutState = LayoutState()
     
     @State private var isLoading = true
     @State private var isProgressViewPresented = true
