@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1600"
+   LastUpgradeVersion = "1610"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -39,8 +39,7 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "3963A0362C6C7EAA00472AE7"
@@ -48,10 +47,7 @@
             BlueprintName = "ExcalidrawZ (AppStore)"
             ReferencedContainer = "container:ExcalidrawZ.xcodeproj">
          </BuildableReference>
-      </BuildableProductRunnable>
-      <StoreKitConfigurationFileReference
-         identifier = "../../ExcalidrawZ/Store.storekit">
-      </StoreKitConfigurationFileReference>
+      </MacroExpansion>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "App Store"

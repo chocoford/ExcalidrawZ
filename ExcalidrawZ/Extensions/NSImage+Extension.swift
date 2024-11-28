@@ -6,7 +6,7 @@
 //
 
 import Foundation
-#if os(macOS)
+#if canImport(AppKit)
 import AppKit
 extension NSImage {
     /// Returns the height of the current image.

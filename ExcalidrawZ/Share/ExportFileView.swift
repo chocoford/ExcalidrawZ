@@ -12,6 +12,7 @@ import UniformTypeIdentifiers
 @available(*, deprecated, message: "Use ExcalidrawFile instead")
 struct ExcalidrawFileTransferable {}
 struct ExportFileView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.dismiss) var mordenDismiss
     @Environment(\.alertToast) var alertToast
@@ -51,6 +52,7 @@ struct ExportFileView: View {
     
     var body: some View {
         Center {
+#if canImport(AppKit)
             if #available(macOS 13.0, *), let file = try? ExcalidrawFile(from: file.objectID, context: viewContext) {
                 Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
                     .resizable()
@@ -65,8 +67,16 @@ struct ExportFileView: View {
                     .frame(height: 80)
                     .padding()
             }
+#else
+            Image(systemSymbol: .docText)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(height: 80)
+                .padding()
+#endif
             actionsView()
         }
+#if os(macOS)
         .overlay(alignment: .topLeading) {
             if showBackButton {
                 Button {
@@ -80,13 +90,17 @@ struct ExportFileView: View {
             }
         }
         .animation(.default, value: showBackButton)
-        .padding()
+#endif
+        .padding(horizontalSizeClass == .compact ? 0 : 20)
         .onAppear {
             saveFileToTemp()
             showBackButton = true
             fileName = file.name ?? String(localizable: .newFileNamePlaceholder)
-            if let data = file.content {
-                fileDocument = try? ExcalidrawFile(data: data)
+            do {
+                fileDocument = try ExcalidrawFile(from: file)
+                try fileDocument?.syncFiles(context: viewContext)
+            } catch {
+                alertToast(error)
             }
         }
         .onDisappear {
@@ -99,12 +113,19 @@ struct ExportFileView: View {
         HStack {
             Spacer()
             Button {
+#if canImport(AppKit)
                 NSPasteboard.general.clearContents()
+#endif
+
                 if let url = fileURL,
                    let url = (url as NSURL).fileReferenceURL() as NSURL? {
+#if canImport(AppKit)
                     NSPasteboard.general.writeObjects([url])
                     NSPasteboard.general.setString(url.relativeString, forType: .fileURL)
                     NSPasteboard.general.setData(file.content, forType: .fileContents)
+#elseif canImport(UIKit)
+                    UIPasteboard.general.setObjects([url])
+#endif
                     withAnimation {
                         copied = true
                     }
@@ -132,9 +153,7 @@ struct ExportFileView: View {
             .disabled(copied)
             
             Button {
-//                if fileDocument != nil {
-                    showFileExporter = true
-//                }
+                showFileExporter = true
             } label: {
                 Label(.localizable(.exportActionSave), systemSymbol: .squareAndArrowDown)
                     .padding(.horizontal, 6)
@@ -189,10 +208,22 @@ struct ExportFileView: View {
             if fileManager.fileExists(atPath: url.absoluteString) {
                 try fileManager.removeItem(at: url)
             }
+            
+            var file = try ExcalidrawFile(from: file)
+            try file.syncFiles(context: viewContext)
+            guard let fileData = file.content else {
+                struct NoContentError: LocalizedError {
+                    var errorDescription: String? {
+                        "The file has no data."
+                    }
+                }
+                throw NoContentError()
+            }
+
             if #available(macOS 13.0, *) {
-                fileManager.createFile(atPath: url.path(percentEncoded: false), contents: file.content)
+                fileManager.createFile(atPath: url.path(percentEncoded: false), contents: fileData)
             } else {
-                fileManager.createFile(atPath: url.standardizedFileURL.path, contents: file.content)
+                fileManager.createFile(atPath: url.standardizedFileURL.path, contents: fileData)
             }
             fileURL = url
         } catch {
@@ -200,13 +231,3 @@ struct ExportFileView: View {
         }
     }
 }
-
-#if DEBUG
-//#Preview {
-//    ExportFileView(
-//        store: .init(initialState: .init(file: .preview)) {
-//            ExportFileStore()
-//        }
-//    )
-//}
-#endif

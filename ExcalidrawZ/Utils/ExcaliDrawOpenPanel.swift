@@ -6,6 +6,7 @@
 //
 
 import Foundation
+#if os(macOS)
 import AppKit
 
 class ExcalidrawOpenPanel: NSOpenPanel {
@@ -36,3 +37,4 @@ extension ExcalidrawOpenPanel: NSOpenSavePanelDelegate {
         return url.pathExtension == "excalidraw"
     }
 }
+#endif

@@ -6,7 +6,9 @@
 //
 
 import SwiftUI
+#if os(macOS)
 import ServiceManagement
+#endif
 
 import SwiftyAlert
 import ChocofordUI
@@ -95,22 +97,28 @@ struct ExcalidrawZApp: App {
         }
 #endif
         
+#if os(macOS)
         documentGroup()
-        
+
         Settings {
             SettingsView()
+                .swiftyAlert()
+                .containerSizeClassInjection()
+                .preferredColorScheme(appPrefernece.appearance.colorScheme)
+                .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
                 .environmentObject(appPrefernece)
 #if !APP_STORE
                 .environmentObject(updateChecker)
 #endif
-                .preferredColorScheme(appPrefernece.appearance.colorScheme)
         }
+#endif
     }
     
     
+#if os(macOS)
     @MainActor
     private func documentGroup() -> some Scene {
-        if #available(macOS 13.0, *) {
+        if #available(macOS 13.0, iOS 17.0, *) {
             return DocumentGroup(newDocument: ExcalidrawFile()) { config in
                 SingleEditorView(config: config, shouldAdjustWindowSize: false)
                     .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
@@ -128,11 +136,12 @@ struct ExcalidrawZApp: App {
             }
         }
     }
+#endif
 }
 
 fileprivate extension Scene {
     func defaultSizeIfAvailable(_ size: CGSize) -> some Scene {
-        if #available(macOS 13.0, *) {
+        if #available(macOS 13.0, iOS 17.0, *) {
             return self.defaultSize(size)
         }
         else {

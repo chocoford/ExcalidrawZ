@@ -20,14 +20,31 @@ struct PersistenceController {
     init(inMemory: Bool = false) {
         // If you didn't name your model Main you'll need
         // to change this name below.
-        container = NSPersistentContainer(name: "Model")
+        container = NSPersistentCloudKitContainer(name: "Model")
         container.viewContext.automaticallyMergesChangesFromParent = true
+        /// Core Data 预设了四种合并冲突策略，分别为：
+        /// * NSMergeByPropertyStoreTrumpMergePolicy
+        /// 逐属性比较，如果持久化数据和内存数据都改变且冲突，持久化数据胜出
+        /// * NSMergeByPropertyObjectTrumpMergePolicy
+        /// 逐属性比较，如果持久化数据和内存数据都改变且冲突，内存数据胜出
+        /// * NSOverwriteMergePolicy
+        /// 内存数据永远胜出
+        /// * NSRollbackMergePolicy
+        /// 持久化数据永远胜出
+        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        do {
+              try container.viewContext.setQueryGenerationFrom(.current)
+        } catch {
+             fatalError("Failed to pin viewContext to the current generation:\(error)")
+        }
+        
         if inMemory {
             container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
         }
 
         container.loadPersistentStores { description, error in
             if let error = error {
+                print(error)
                 fatalError("Error: \(error.localizedDescription)")
             }
         }
@@ -132,14 +149,17 @@ extension PersistenceController {
 //    }
     
     @MainActor
-    func createFile(in group: Group) throws -> File {
+    func createFile(in groupID: NSManagedObjectID, context: NSManagedObjectContext) throws -> File {
         guard let templateURL = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else { throw AppError.fileError(.notFound) }
         
-        let file = File(context: container.viewContext)
+        let file = File(context: context)
         file.id = UUID()
         file.name = String(localizable: .newFileNamePlaceholder)
         file.createdAt = .now
         file.updatedAt = .now
+        guard let group = context.object(with: groupID) as? Group else {
+            throw AppError.groupError(.notFound(groupID.description))
+        }
         file.group = group
         file.content = try Data(contentsOf: templateURL)
         return file
@@ -202,12 +222,14 @@ extension PersistenceController {
 // MARK: Migration
 extension PersistenceController {
     func migration() {
+        let context = container.viewContext
         Task {
+            // Make all old trashed file to 'source from default group'
             do {
                 let filesFetch: NSFetchRequest<File> = NSFetchRequest(entityName: "File")
                 let groupsFetch: NSFetchRequest<Group> = NSFetchRequest(entityName: "Group")
                 
-                try await container.viewContext.perform {
+                try await context.perform {
                     let files = try filesFetch.execute()
                     let groups = try groupsFetch.execute()
                     
@@ -224,6 +246,96 @@ extension PersistenceController {
                 
             } catch {
                 dump(error, name: "migration failed")
+            }
+            
+            do {
+                let start = Date()
+                print("🕘🕘🕘 Begin migrate medias. ")
+                let filesFetch: NSFetchRequest<File> = NSFetchRequest(entityName: "File")
+                let checkpointsFetch: NSFetchRequest<FileCheckpoint> = NSFetchRequest(entityName: "FileCheckpoint")
+
+                try await context.perform {
+                    let files = try filesFetch.execute()
+                    let checkpoints = try checkpointsFetch.execute()
+                    
+                    let needBackup: Bool = {
+                        let excalidrawFiles = files.compactMap {
+                            try? ExcalidrawFile(from: $0)
+                        } + checkpoints.compactMap {
+                            try? ExcalidrawFile(from: $0)
+                        }
+                        return excalidrawFiles.contains(where: {!$0.files.isEmpty})
+                    }()
+                    
+#if os(macOS)
+                    if needBackup {
+                        do {
+                            try backupFiles()
+//                            let backupsDir = try getBackupsDir()
+//                            let backupDir = backupsDir.appendingPathComponent("Backup-Before-Media-Migration", conformingTo: .directory)
+//                            try FileManager.default.createDirectory(at: backupDir, withIntermediateDirectories: false)
+//                            try archiveAllFiles(to: backupDir)
+                        } catch {
+                            print(error)
+                        }
+                    }
+#endif
+                    var insertedMediaID = Set<String>()
+                    
+                    print("Need migrate \(files.count) files")
+                    for file in files {
+                        do {
+                            let excalidrawFile = try ExcalidrawFile(from: file)
+                            if excalidrawFile.files.isEmpty { continue }
+                            print("migrating \(excalidrawFile.files.count) files of \(excalidrawFile.name ?? "Untitled")")
+                            for (id, media) in excalidrawFile.files {
+                                if insertedMediaID.contains(id) { continue }
+                                
+                                let mediaItem = MediaItem(resource: media, context: context)
+                                mediaItem.file = file
+                                container.viewContext.insert(mediaItem)
+                                insertedMediaID.insert(id)
+                            }
+                            file.content = try excalidrawFile.contentWithoutFiles()
+//                            if let content = file.content,
+//                               var jsonObj = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
+//                                jsonObj.removeValue(forKey: "files")
+//                                file.content = try JSONSerialization.data(withJSONObject: jsonObj)
+//                            }
+                        } catch {
+                            continue
+                        }
+                    }
+                    print("Need migrate \(checkpoints.count) checkpoints")
+                    for checkpoint in checkpoints {
+                        guard let data = checkpoint.content else { continue }
+                        do {
+                            let excalidrawFile = try ExcalidrawFile(data: data)
+                            if excalidrawFile.files.isEmpty { continue }
+                            print("migrating \(excalidrawFile.files.count) files of checkpoint<\(checkpoint.file?.name ?? "Untitled")>")
+                            for (id, media) in excalidrawFile.files {
+                                if insertedMediaID.contains(id) { continue }
+                                let mediaItem = MediaItem(resource: media, context: context)
+                                mediaItem.file = checkpoint.file
+                                container.viewContext.insert(mediaItem)
+                            }
+                            checkpoint.content = try excalidrawFile.contentWithoutFiles()
+//                            if let content = checkpoint.content,
+//                               var jsonObj = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
+//                                jsonObj.removeValue(forKey: "files")
+//                                checkpoint.content = try JSONSerialization.data(withJSONObject: jsonObj)
+//                            }
+                        } catch {
+                            continue
+                        }
+                    }
+                    
+                }
+                print("🎉🎉🎉 Migration medias done. Time cost: \(-start.timeIntervalSinceNow) s")
+                
+
+            } catch {
+                print(error)
             }
         }
     }

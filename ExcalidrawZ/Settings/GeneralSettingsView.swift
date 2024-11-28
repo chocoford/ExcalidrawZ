@@ -7,13 +7,13 @@
 
 import SwiftUI
 import ChocofordUI
-#if !APP_STORE
+#if os(macOS) && !APP_STORE
 import Sparkle
 #endif
 
 struct GeneralSettingsView: View {
     @Environment(\.colorScheme) var colorScheme
-#if !APP_STORE
+#if os(macOS) && !APP_STORE
     @EnvironmentObject var updateChecker: UpdateChecker
 #endif
     @EnvironmentObject var appPreference: AppPreference
@@ -113,7 +113,18 @@ struct GeneralSettingsView: View {
         }
 #endif
         
-#if !APP_STORE
+        Section {
+            Toggle(.localizable(.settingsExcalidrawPreventImageAutoInvert), isOn: $appPreference.autoInvertImage)
+        } header: {
+            if #available(macOS 14.0, *) {
+                Text(.localizable(.settingsExcalidraw))
+            } else {
+                Text(.localizable(.settingsExcalidraw))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        
+#if os(macOS) && !APP_STORE
         Section {
             Toggle(.localizable(.settingsUpdatesAutoCheckLabel), isOn: $updateChecker.canCheckForUpdates)
         } header: {
@@ -136,7 +147,7 @@ struct GeneralSettingsView: View {
 #endif
     }
     
-    @ViewBuilder
+    @MainActor @ViewBuilder
     func settingCellView<T: View, V: View>(_ title: LocalizedStringKey,
                                            @ViewBuilder trailing: @escaping () -> T,
                                            @ViewBuilder content: (() -> V) = { EmptyView() }) -> some View {
@@ -157,6 +168,8 @@ struct GeneralSettingsView: View {
 #Preview {
     GeneralSettingsView()
         .environmentObject(AppPreference())
+#if os(macOS) && !APP_STORE
         .environmentObject(UpdateChecker())
+#endif
 }
 #endif

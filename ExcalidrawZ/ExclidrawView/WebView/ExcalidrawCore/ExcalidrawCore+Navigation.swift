@@ -7,6 +7,7 @@
 
 import Foundation
 import WebKit
+import CoreData
 
 extension ExcalidrawCore: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, preferences: WKWebpagePreferences) async -> (WKNavigationActionPolicy, WKWebpagePreferences) {
@@ -57,6 +58,7 @@ extension ExcalidrawCore: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        
     }
     
     
@@ -66,6 +68,27 @@ extension ExcalidrawCore: WKNavigationDelegate {
         // Add: This may occur before or after `onload`.
         DispatchQueue.main.async {
             self.isNavigating = false
+        }
+        if !hasInjectIndexedDBData {
+            // Should import medias as soon as possible.
+            // And It is required to reload after injected.
+            print("Start insert medias to IndexedDB.")
+            Task {
+                do {
+                    let context = PersistenceController.shared.container.viewContext
+                    let allMediasFetch = NSFetchRequest<MediaItem>(entityName: "MediaItem")
+                    
+                    let allMedias = try context.fetch(allMediasFetch)
+                    try await self.insertMediaFiles(
+                        allMedias.compactMap{
+                            .init(mediaItem: $0)
+                        }
+                    )
+                    hasInjectIndexedDBData = true
+                } catch {
+                    self.parent?.onError(error)
+                }
+            }
         }
     }
         

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 import ChocofordUI
 
 struct FileInfo: Equatable {
@@ -74,13 +75,18 @@ struct FileInfo: Equatable {
 }
 
 struct FileRowView: View {
+    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.alertToast) private var alertToast
     @EnvironmentObject var fileState: FileState
     
+    
+    @FetchRequest(sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)])
     var groups: FetchedResults<Group>
     var file: File
         
-    init(groups: FetchedResults<Group>, file: File) {
-        self.groups = groups
+    init(file: File) {
+//        let file = PersistenceController.shared.container.viewContext.object(with: fileID) as! File
         self.file = file
     }
     
@@ -112,34 +118,7 @@ struct FileRowView: View {
                         .font(.footnote)
                         .layoutPriority(1)
                     Spacer()
-                    
-//                    HStack {
-//                        if #available(macOS 13.0, *) {
-//                            Image("circle.grid.2x3.fill")
-//                                .resizable()
-//                                .aspectRatio(contentMode: .fit)
-//                                .frame(height: 12)
-//
-//                                .draggable(FileLocalizable(fileID: viewStore.file.id, groupID: viewStore.file.group!.id!)) {
-//                                    FileRowView(store: self.store)
-//                                        .frame(width: 200)
-//                                        .padding(.horizontal, 4)
-//                                        .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 8))
-//                                }
-//                        }
-//
-//                        Menu {
-//                            listRowContextMenu
-//                        } label: {
-//                            Image(systemName: "ellipsis.circle.fill")
-//                                .resizable()
-//                        }
-//                        .menuStyle(.borderlessButton)
-//                        .menuIndicator(.hidden)
-//                        .frame(width: 20)
-//                        .padding(.horizontal, 4)
-//                    }
-//                    .opacity(isHovered ? 1 : 0)
+                    // actions()
                 }
             }
         }
@@ -163,14 +142,10 @@ struct FileRowView: View {
                 Text(.localizable(.sidebarFileRowDeletePermanentlyAlertButtonConfirm))
             }
         }
-        .sheet(isPresented: $renameMode) {
-            RenameSheetView(text: file.name ?? "") { newName in
-                fileState.renameFile(file, newName: newName)
-            }
-            .frame(width: 300)
-        }
+        .modifier(RenameSheetViewModifier(isPresented: $renameMode, name: file.name ?? "") {
+            fileState.renameFile(file, newName: $0)
+        })
     }
-    
     
     // Context Menu
     @MainActor @ViewBuilder
@@ -183,7 +158,14 @@ struct FileRowView: View {
             }
             
             Button {
-                fileState.duplicateFile(file)
+                do {
+                    let newFile = try fileState.duplicateFile(file, context: managedObjectContext)
+                    if containerHorizontalSizeClass == .regular {
+                        fileState.currentFile = newFile
+                    }
+                } catch {
+                    alertToast(error)
+                }
             } label: {
                 Label(.localizable(.sidebarFileRowContextMenuDuplicate), systemSymbol: .docOnDoc)
             }
@@ -235,6 +217,36 @@ struct FileRowView: View {
                 )
             }
         }
+    }
+    
+    @MainActor @ViewBuilder
+    private func actions() -> some View {
+        HStack {
+            if #available(macOS 13.0, *) {
+                Image("circle.grid.2x3.fill")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(height: 12)
+//                    .draggable(FileLocalizable(fileID: file.id, groupID: file.group!.id!)) {
+//                        FileRowView(store: self.store)
+//                            .frame(width: 200)
+//                            .padding(.horizontal, 4)
+//                            .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 8))
+//                    }
+            }
+            
+            Menu {
+                listRowContextMenu
+            } label: {
+                Image(systemName: "ellipsis.circle.fill")
+                    .resizable()
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .frame(width: 20)
+            .padding(.horizontal, 4)
+        }
+        .opacity(isHovered ? 1 : 0)
     }
 }
 

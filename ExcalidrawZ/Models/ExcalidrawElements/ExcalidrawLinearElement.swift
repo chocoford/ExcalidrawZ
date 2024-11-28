@@ -9,7 +9,7 @@ import Foundation
 import CoreGraphics
 
 typealias Point = CGPoint
-extension CGPoint : Hashable {
+extension CGPoint : @retroactive Hashable {
   public func hash(into hasher: inout Hasher) {
     hasher.combine(x)
     hasher.combine(y)
@@ -79,4 +79,36 @@ struct ExcalidrawLinearElement: ExcalidrawLinearElementBase {
     var startArrowhead: Arrowhead?
     var endArrowhead: Arrowhead?
     
+    /// ignore `version`, `versionNounce`, `updated`
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        return lhs.id == rhs.id &&
+            lhs.x == rhs.x &&
+            lhs.y == rhs.y &&
+            lhs.strokeColor == rhs.strokeColor &&
+            lhs.backgroundColor == rhs.backgroundColor &&
+            lhs.fillStyle == rhs.fillStyle &&
+            lhs.strokeWidth == rhs.strokeWidth &&
+            lhs.strokeStyle == rhs.strokeStyle &&
+            lhs.roundness == rhs.roundness &&
+            lhs.roughness == rhs.roughness &&
+            lhs.opacity == rhs.opacity &&
+            lhs.width == rhs.width &&
+            lhs.height == rhs.height &&
+            lhs.angle == rhs.angle &&
+            lhs.seed == rhs.seed &&
+            lhs.isDeleted == rhs.isDeleted &&
+            lhs.groupIds == rhs.groupIds &&
+            lhs.frameId == rhs.frameId &&
+            lhs.boundElements == rhs.boundElements &&
+            lhs.link == rhs.link &&
+            lhs.locked == rhs.locked &&
+            lhs.customData == rhs.customData &&
+            lhs.type == rhs.type &&
+            lhs.points == rhs.points &&
+            lhs.lastCommittedPoint == rhs.lastCommittedPoint &&
+            lhs.startBinding == rhs.startBinding &&
+            lhs.endBinding == rhs.endBinding &&
+            lhs.startArrowhead == rhs.startArrowhead &&
+            lhs.endArrowhead == rhs.endArrowhead
+    }
 }

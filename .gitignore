@@ -96,7 +96,8 @@ firebase*
 scripts/Sparkle*
 ExcalidrawZ/Resources/excalidrawCore
 ExcalidrawZ/Resources/excalidraw-latest
-WebPage/node_modules
-WebPage/dist
+WebPage
 Design
+Resources
 Config/Overrides.xcconfig
+PRIVATE_TIPS.md

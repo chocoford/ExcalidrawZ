@@ -15,19 +15,20 @@ extension Notification.Name {
 #if os(macOS)
 import AppKit
 class AppDelegate: NSObject, NSApplicationDelegate {
-//    @Environment(\.openWindow) private var openWindow
-
-//    func applicationDidFinishLaunching(_ notification: Notification) {
-//        
-//    }
-//    
     func applicationWillTerminate(_ notification: Notification) {
         PersistenceController.shared.save()
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            if NSApp.windows.filter({$0.canBecomeMain}).isEmpty {
-                NSApp.terminate(nil)
+        DispatchQueue.main.async {
+            do {
+                try backupFiles()
+            } catch {
+                print(error)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                if NSApp.windows.filter({$0.canBecomeMain}).isEmpty {
+                    NSApp.terminate(nil)
+                }
             }
         }
         return false

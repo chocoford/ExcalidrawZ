@@ -64,7 +64,7 @@ class ExcalidrawServer {
                 serverPath: ""
             )
         )
-        try await server.start()
+        try await server.run()
     }
     
     

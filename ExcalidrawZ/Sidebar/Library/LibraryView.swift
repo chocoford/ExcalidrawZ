@@ -15,12 +15,13 @@ import SVGView
 import UniformTypeIdentifiers
 
 struct LibraryView: View {
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var exportState: ExportState
-    
-    @Binding var isPresented: Bool
-    
+    @EnvironmentObject var layoutState: LayoutState
+        
     @FetchRequest(sortDescriptors: [SortDescriptor(\.id)], animation: .smooth)
     var libraries: FetchedResults<Library>
     
@@ -48,6 +49,7 @@ struct LibraryView: View {
             if #available(macOS 13.0, *), appPreference.inspectorLayout == .sidebar {
                 content()
                     .toolbar(content: toolbar)
+                    .presentationDetents([.medium])
             } else {
                 VStack(spacing: 0) {
                     Divider()
@@ -128,9 +130,10 @@ struct LibraryView: View {
     
     @MainActor @ToolbarContentBuilder
     private func toolbar() -> some ToolbarContent {
+#if os(macOS)
         /// This is the key to make sidebar toggle at the right side.
         ToolbarItem(placement: .status) {
-            if isPresented {
+            if layoutState.isInspectorPresented {
                 Text(.localizable(.librariesTitle))
                     .foregroundStyle(.secondary)
                     .font(.headline)
@@ -139,14 +142,36 @@ struct LibraryView: View {
                     .frame(width: 1)
             }
         }
-        
         ToolbarItem(placement: .automatic) {
             Button {
-                isPresented.toggle()
+                layoutState.isInspectorPresented.toggle()
             } label: {
                 Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
             }
         }
+#elseif os(iOS)
+        ToolbarItem(placement: .principal) {
+            Text(.localizable(.librariesTitle))
+                .foregroundStyle(.secondary)
+                .font(.headline)
+        }
+        
+        ToolbarItem(placement: .topBarTrailing) {
+            if containerHorizontalSizeClass == .regular {
+                Button {
+                    layoutState.isInspectorPresented.toggle()
+                } label: {
+                    Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
+                }
+            } else if containerVerticalSizeClass == .compact {
+                Button {
+                    layoutState.isInspectorPresented.toggle()
+                } label: {
+                    Label(.localizable(.librariesTitle), systemSymbol: .chevronDown)
+                }
+            }
+        }
+#endif
     }
     
     @MainActor @ViewBuilder
@@ -320,6 +345,7 @@ struct LibraryView: View {
         }
         .fixedSize()
         .menuIndicator(.hidden)
+        .contentShape(Rectangle())
     }
     
     @MainActor @ViewBuilder
@@ -501,14 +527,14 @@ struct ExcalidrawlibFile: FileDocument {
 
 struct LibraryPreviewView: View {
     var body: some View {
-        if #available(macOS 14.0, *) {
+        if #available(macOS 14.0, iOS 17.0, *) {
             NavigationSplitView {
                 
             } detail: {
                 
             }
             .inspector(isPresented: .constant(true)) {
-                LibraryView(isPresented: .constant(true))
+                LibraryView()
             }
         } else {
             Color.clear

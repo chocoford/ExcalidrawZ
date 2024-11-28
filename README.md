@@ -14,9 +14,6 @@
 
 ## Download
 
-> [!WARNING]
-> ### If you have already installed an older version of ExcalidrawZ, please export your files before downloading the official latest version. Otherwise you will lose your existing data.
-
 [![Download Link - App Store](assets/README/Download_on_the_App_Store_Badge_US-UK.svg)](https://apps.apple.com/app/excalidrawz/id6636493997) 
 
 **Non-App Store version**
@@ -73,30 +70,27 @@ ExcalidrawZ also supports maintaining editability when exporting images. The ima
 
 https://github.com/user-attachments/assets/09323b30-29f0-4522-8190-46f7ef6a9dd3
 
+#### iOS & iPadOS support
+
+ExcalidrawZ for iOS&iPadOS is now available. All data are synchronised by iCloud.
 
 ## RoadMap
 
-- [ ] iCloud synchronization
+- [x] iCloud synchronization
+- [x] iOS support.
 
-## Develop Tips
+## Contact me
 
-* ~~Remove preload of fonts in `index.html`, otherwise fonts will not be loaded.~~
+Welcome to my [Discord server](https://discord.gg/aCv6w4HxDg) to share suggestions or report issues for ExcalidrawZ, helping make ExcalidrawZ even better!
 
-* ~~Add hook in `excalidraw-app/App.tsx/onChange` to track the activated tool changed.~~
+## Development Guide
 
-* The `excalidraw` core is built and uploaded with the `dmg` file. You can download it from [Releases](https://github.com/chocoford/ExcalidrawZ/releases).
+* The `excalidraw` core for `ExcalidrawZ` is also open-source. You can find it [here](https://github.com/chocoford/excalidraw/tree/ExcalidrawZ-core) and build for your own purposes.
+  * And don't forget to give it a star 😁.
+* Before you start coding, don't forget to add your own `Overrides.xcconfig` in `ExcalidrawZ/Config` and populate it with the following content:
 
-  * Or you can build your own core from [`excalidraw`](https://github.com/excalidraw/excalidraw)
+```xcconfig
+DEVELOPMENT_TEAM = <YOUR_DEVELOPMENT_TEAM_FOR_DEBUG>;
+ICLOUD_CONTAINER = <YOUR_ICLOUD_CONTAINER_IDNENTIFIER_FOR_DEBUG>;
+```
 
-* Hide toolbar in `packages/excalidraw/components/LayerUI.tsx/LayerUI`.
-
-* Add fonts after build.
-
-  * add the codes below to `index.html`.
-    ```html
-    <link rel="preload" href="YRDZST-Regular.ttf" as="font" type="font/ttf" crossorigin="anonymous">
-    <link rel="preload" href="SetoFont.ttf" as="font" type="font/ttf" crossorigin="anonymous">
-    <link rel="stylesheet" href="fonts.css" />
-    ```
-
-    

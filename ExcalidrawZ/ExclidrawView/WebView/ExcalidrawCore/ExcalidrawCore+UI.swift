@@ -17,6 +17,7 @@ extension ExcalidrawCore: WKUIDelegate {
         return nil
     }
     
+#if os(macOS)
     func webView(
         _ webView: WKWebView,
         runOpenPanelWith parameters: WKOpenPanelParameters,
@@ -39,4 +40,5 @@ extension ExcalidrawCore: WKUIDelegate {
 //            completionHandler(nil)
 //        }
     }
+#endif
 }

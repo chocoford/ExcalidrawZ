@@ -11,7 +11,13 @@ import UniformTypeIdentifiers
 import WebKit
 
 struct ExportImageView: View {
+#if canImport(AppKit)
+    typealias PlatformImage = NSImage
+#elseif canImport(UIKit)
+    typealias PlatformImage = UIImage
+#endif
     @Environment(\.dismiss) var mordenDismiss
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     
     @EnvironmentObject var exportState: ExportState
@@ -32,7 +38,7 @@ struct ExportImageView: View {
     }
     
     @State private var exportedImageData: ExportedImageData?
-    @State private var image: NSImage?
+    @State private var image: PlatformImage?
     @State private var loadingImage: Bool = false
     @State private var showFileExporter = false
     @State private var showShare: Bool = false
@@ -61,6 +67,7 @@ struct ExportImageView: View {
             Center {
                 content
             }
+#if os(macOS)
             .overlay(alignment: .topLeading) {
                 if showBackButton {
                     Button {
@@ -74,8 +81,9 @@ struct ExportImageView: View {
                 }
             }
             .animation(.default, value: showBackButton)
+#endif
         }
-        .padding()
+        .padding(horizontalSizeClass == .compact ? 0 : 20)
         .onChange(of: keepEditable) { newValue in
             exportImageData()
         }
@@ -84,7 +92,7 @@ struct ExportImageView: View {
         }
         .onAppear {
             if isPreview {
-                self.image = NSImage(named: "Layout-Inspector-Floating")
+                self.image = .init(named: "Layout-Inspector-Floating")
                 exportState.url = URL(string: "https://www.google.com")!
                 return
             }
@@ -129,13 +137,23 @@ struct ExportImageView: View {
     
     
     @MainActor @ViewBuilder
-    private func thumbnailView(_ image: NSImage, url: URL) -> some View {
+    private func thumbnailView(_ image: PlatformImage, url: URL) -> some View {
+#if os(macOS)
         DragableImageView(
             image: image,
             sourceURL: url
         )
         .scaledToFit()
         .frame(width: 200, height: 120, alignment: .center)
+#else
+        Color.clear
+            .overlay {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+            }
+#endif
+
     }
     
     @MainActor @ViewBuilder
@@ -149,6 +167,7 @@ struct ExportImageView: View {
                 HStack(alignment: .bottom, spacing: 0) {
                     if keepEditable {
                         Text(".excalidraw")
+                            .lineLimit(1)
                     }
                     HStack(alignment: .bottom, spacing: -2) {
                         Text(".")
@@ -160,15 +179,25 @@ struct ExportImageView: View {
                         //                    .menuStyle(.button)
                             .buttonStyle(.borderless)
                             .menuIndicator(.visible)
+
                     }
                 }
             }
+
             HStack {
                 Spacer()
-                Toggle("Keep editable", isOn: $keepEditable)
+#if os(macOS)
+                Toggle(.localizable(.exportImageToggleEditable), isOn: $keepEditable)
                     .toggleStyle(.checkboxStyle)
+#elseif os(iOS)
+                Toggle("", isOn: $keepEditable)
+                    .toggleStyle(.switch)
+                Text(.localizable(.exportImageToggleEditable))
+#endif
             }
+            .controlSize(horizontalSizeClass == .compact ? .mini : .regular)
         }
+        .font(horizontalSizeClass == .compact ? .footnote : .body)
         .animation(.default, value: keepEditable)
         .padding(.horizontal, 48)
     }
@@ -177,10 +206,11 @@ struct ExportImageView: View {
     private func actionsView(_ url: URL) -> some View {
         HStack {
             Button {
+#if canImport(AppKit)
                 NSPasteboard.general.clearContents()
                 switch self.imageType {
                     case 0:
-                        if let image = NSImage(contentsOf: url) {
+                        if let image = PlatformImage(contentsOf: url) {
                             NSPasteboard.general.writeObjects([image])
                         } else {
                             return
@@ -194,6 +224,25 @@ struct ExportImageView: View {
                     default:
                         break
                 }
+#elseif canImport(UIKit)
+                switch self.imageType {
+                    case 0:
+                        if let image = PlatformImage(contentsOf: url) {
+                            UIPasteboard.general.setObjects([image])
+                        } else {
+                            return
+                        }
+                    case 1:
+                        if let string = String(data: (try? Data(contentsOf: url)) ?? Data(), encoding: .utf8) {
+                            UIPasteboard.general.setObjects([string as NSString])
+                        } else {
+                            return
+                        }
+                    default:
+                        break
+                }
+#endif
+                
                 withAnimation {
                     copied = true
                 }
@@ -207,7 +256,7 @@ struct ExportImageView: View {
                     Label(.localizable(.exportActionCopied), systemSymbol: .checkmark)
                         .padding(.horizontal, 6)
                 } else {
-                    if #available(macOS 13.0, *) {
+                    if #available(macOS 13.0, iOS 16.0, *) {
                         Label(.localizable(.exportActionCopy), systemSymbol: .clipboard)
                             .padding(.horizontal, 6)
                     } else {
@@ -227,7 +276,7 @@ struct ExportImageView: View {
                     .padding(.vertical, 1)
             }
             
-            if #available(macOS 13.0, *) {
+            if #available(macOS 13.0, iOS 16.0, *) {
                 ShareLink(item: url) {
                     Label(.localizable(.exportActionShare), systemSymbol: .squareAndArrowUp)
                         .padding(.horizontal, 6)
@@ -273,7 +322,7 @@ struct ExportImageView: View {
                         embedScene: false
                     )
                     await MainActor.run {
-                        self.image = NSImage(data: imageData.data)?
+                        self.image = PlatformImage(data: imageData.data)?
                             .resizeWhileMaintainingAspectRatioToSize(size: .init(width: 200, height: 120))
                         self.exportedImageData = imageData
                         self.fileName = imageData.name

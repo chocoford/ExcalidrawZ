@@ -22,13 +22,39 @@ struct AboutView: View {
             }
             .formStyle(.grouped)
         } else {
-            Form {
-                content()
+            ScrollView {
+                VStack(spacing: 14) {
+                    VStack(spacing: 6) {
+                        content()
+                    }
+                    .padding()
+                    .background {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.regularMaterial)
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.gray.opacity(0.7))
+                    }
 #if APP_STORE
-                AboutChocofordView(isAppStore: true)
+                    AboutChocofordView(isAppStore: true)
+                        .padding()
+                        .background {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(.regularMaterial)
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(.gray.opacity(0.7))
+                        }
 #else
-                AboutChocofordView(isAppStore: false)
+                    AboutChocofordView(isAppStore: false)
+                        .padding()
+                        .background {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(.regularMaterial)
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(.gray.opacity(0.7))
+                        }
 #endif
+                }
+                .padding()
             }
         }
     }
@@ -52,7 +78,7 @@ struct AboutView: View {
             HStack {
                 Spacer(minLength: 0)
                 VStack(spacing: 0) {
-                    Image(nsImage: NSApp.applicationIconImage)
+                    Image("AppIcon-macOS")
                         .resizable()
                         .frame(width: 128, height: 128)
                     Text(Bundle.main.infoDictionary!["CFBundleDisplayName"] as! String)
@@ -63,7 +89,17 @@ struct AboutView: View {
             }
             .padding(.bottom)
         } footer: {
-            
+            HStack {
+                Spacer()
+                if let privacyPolicy = URL(string: "https://excalidrawz.chocoford.com/privacy/") {
+                    Link("Privacy Policy", destination: privacyPolicy)
+                }
+                Text("·")
+                if let termsOfUse = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/") {
+                    Link("Terms of Use", destination: termsOfUse)
+                }
+                
+            }
         }
     }
     
@@ -93,7 +129,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
         VStack {
-            
+            Text(license)
         }
     }
 }
@@ -101,3 +137,4 @@ SOFTWARE.
 #Preview {
     AboutView()
 }
+

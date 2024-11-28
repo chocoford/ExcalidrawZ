@@ -1,5 +1,5 @@
 {
-  "originHash" : "9adbad06e0d5e2793e33a4fe6c844ebf0766e4d8eb87bb93feb1407ce2fba05b",
+  "originHash" : "57cce5ea8ec480331669a54d0312dd6654bbbb8afec808ae1dd1b64f5a6e22f7",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -7,7 +7,7 @@
       "location" : "https://github.com/elai950/AlertToast.git",
       "state" : {
         "branch" : "master",
-        "revision" : "638f38f9daf08e17b7caea22d2fcb9c0a418d1b6"
+        "revision" : "76a1c1793cd3443001c20c6033beb84453b25d9f"
       }
     },
     {
@@ -16,7 +16,7 @@
       "location" : "https://github.com/chocoford/ChocofordKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "615863452fb51249b9d7f733c5dccd2ac5256402"
+        "revision" : "f5a38915944a5f3ab3d69b452d8c988a37066c5f"
       }
     },
     {
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swhitty/FlyingFox.git",
       "state" : {
-        "revision" : "b37b5ab2c8545cdcea27909c3441c92ca1a992a1",
-        "version" : "0.15.0"
+        "revision" : "5653d61252af7f2dd8b43a77fb2a03678290f393",
+        "version" : "0.20.0"
       }
     },
     {
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SDWebImage/SDWebImage.git",
       "state" : {
-        "revision" : "8a1be70a625683bc04d6903e2935bf23f3c6d609",
-        "version" : "5.19.7"
+        "revision" : "10d06f6a33bafae8c164fbfd1f03391f6d4692b3",
+        "version" : "5.20.0"
       }
     },
     {
@@ -123,8 +123,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/fatbobman/SwiftUIOverlayContainer.git",
       "state" : {
-        "revision" : "151b78849bc0b5741c9bc0ce5dfa7816e310d997",
-        "version" : "2.4.0"
+        "revision" : "64a124ba613adc9f2bb7bf00f5a5e8b22a816d14",
+        "version" : "2.4.1"
       }
     },
     {
@@ -133,7 +133,7 @@
       "location" : "https://github.com/chocoford/SwiftyAlert.git",
       "state" : {
         "branch" : "dev",
-        "revision" : "593eac6fe95b7765f012040c3d6685ca7c4176d8"
+        "revision" : "b5c3c834a4023d520784c1a8bcf6d0a7f679fc0d"
       }
     },
     {
