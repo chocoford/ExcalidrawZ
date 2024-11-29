@@ -92,7 +92,7 @@ struct ShareView: View {
 #endif
                 }
 
-                if horizontalSizeClass == .regular {
+                if horizontalSizeClass != .compact {
                     Button {
                         dismiss()
                     } label: {
