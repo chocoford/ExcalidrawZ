@@ -160,7 +160,7 @@ struct FileRowView: View {
             Button {
                 do {
                     let newFile = try fileState.duplicateFile(file, context: managedObjectContext)
-                    if containerHorizontalSizeClass == .regular {
+                    if containerHorizontalSizeClass != .compact {
                         fileState.currentFile = newFile
                     }
                 } catch {

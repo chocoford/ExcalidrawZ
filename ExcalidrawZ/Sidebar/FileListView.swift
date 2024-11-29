@@ -61,7 +61,7 @@ struct FileListView: View {
                     .onChange(of: fileState.currentFile) { _, newValue in
                         if newValue == nil {
                             if let file = files.first {
-                                if containerHorizontalSizeClass == .regular {
+                                if containerHorizontalSizeClass != .compact {
                                     fileState.currentFile = file
                                 }
                             } else {
@@ -81,7 +81,7 @@ struct FileListView: View {
                                 alertToast(error)
                             }
                         } else if !newValue.contains(where: {$0.id == fileState.currentFile?.id}),
-                                  containerHorizontalSizeClass == .regular {
+                                  containerHorizontalSizeClass != .compact {
                             fileState.currentFile = newValue.first
                         }
                     }
@@ -98,7 +98,7 @@ struct FileListView: View {
                     .onChange(of: fileState.currentFile) { newValue in
                         if newValue == nil {
                             if let file = files.first {
-                                if containerHorizontalSizeClass == .regular {
+                                if containerHorizontalSizeClass != .compact {
                                     fileState.currentFile = file
                                 }
                             } else {
@@ -110,8 +110,7 @@ struct FileListView: View {
                             }
                         }
                     }
-                
-                .onChange(of: files) { newValue in
+                    .onChange(of: files) { newValue in
                     if newValue.isEmpty, containerHorizontalSizeClass == .compact {
                         do {
                             try fileState.createNewFile(active: false, context: managedObjectContext)
@@ -119,7 +118,7 @@ struct FileListView: View {
                             alertToast(error)
                         }
                     } else if !newValue.contains(where: {$0.id == fileState.currentFile?.id}),
-                              containerHorizontalSizeClass == .regular {
+                              containerHorizontalSizeClass != .compact {
                         fileState.currentFile = newValue.first
                     }
                 }
@@ -140,7 +139,7 @@ struct FileListView: View {
                 } catch {
                     alertToast(error)
                 }
-            } else if containerHorizontalSizeClass == .regular || isFirstAppear {
+            } else if containerHorizontalSizeClass != .compact || isFirstAppear {
                 fileState.currentFile = files.first
             }
         }

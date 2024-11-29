@@ -87,7 +87,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
         ToolbarItemGroup(placement: .navigation) {
             if #available(macOS 13.0, iOS 16.0, *), appPreference.sidebarLayout == .sidebar {
                 
-            } else if containerHorizontalSizeClass == .regular {
+            } else if containerHorizontalSizeClass != .compact {
                 Button {
                     layoutState.isSidebarPresented.toggle()
                 } label: {

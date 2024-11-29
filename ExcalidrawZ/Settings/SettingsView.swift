@@ -21,7 +21,7 @@ struct SettingsView: View {
     var body: some View {
         content()
             .task {
-                if containerHorizontalSizeClass == .regular {
+                if containerHorizontalSizeClass != .compact {
                     selection = .general
                 }
             }

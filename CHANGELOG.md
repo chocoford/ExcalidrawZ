@@ -1,6 +1,12 @@
 ## 1.2.4
 
-Fixed a bug where the Sidebar Toggle was not displayed on macOS 14.
+Fixed multiple issues where behavior did not meet expectations on macOS 14.
+
+* The Sidebar Toggle was not displayed.
+* The Settings View does not select a tab when displayed.
+* After deleting a file, an existing file is not automatically selected for loading.
+* Switching folders does not automatically select an existing file for loading.
+* Duplicating a file does not load the newly created file.
 
 ## 1.2.3
 
