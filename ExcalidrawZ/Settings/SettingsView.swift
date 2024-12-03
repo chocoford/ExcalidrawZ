@@ -157,6 +157,13 @@ struct SettingsView: View {
             case .backups:
                 BackupsSettingsView()
                 
+#if os(iOS)
+            case .whatsNews:
+                ScrollView {
+                    WhatsNewSheetView(showContinue: false)
+                }
+#endif
+                
             case .about:
                 AboutView()
         }
@@ -169,6 +176,9 @@ extension SettingsView {
 //        case fileHistory
         case medias
         case backups
+#if os(iOS)
+        case whatsNews
+#endif
         
         case about
         
@@ -184,7 +194,10 @@ extension SettingsView {
                     
                 case .backups:
                     return .localizable(.settingsBackupsName)
-                    
+#if os(iOS)
+                case .whatsNews:
+                    return .localizable(.whatsNewTitle)
+#endif
                 case .about:
                     return .localizable(.settingsAboutName)
             }
@@ -200,6 +213,10 @@ extension SettingsView {
                     "medias"
                 case .backups:
                     "backups"
+#if os(iOS)
+                case .whatsNews:
+                    "whatsNews"
+#endif
                 case .about:
                     "about"
             }

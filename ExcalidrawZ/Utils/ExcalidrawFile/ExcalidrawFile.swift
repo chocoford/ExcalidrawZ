@@ -101,7 +101,7 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
         // maybe empty if from core data
         self.files = try container.decodeIfPresent([String : ExcalidrawFile.ResourceFile].self, forKey: .files) ?? [:]
         self.version = try container.decode(Int.self, forKey: .version)
-        self.elements = try container.decode([ExcalidrawElement].self, forKey: .elements)
+        self.elements = try container.decodeIfPresent([ExcalidrawElement].self, forKey: .elements) ?? []
         self.appState = try container.decode(ExcalidrawFile.AppState.self, forKey: .appState)
         self.type = try container.decode(String.self, forKey: .type)
     }
@@ -181,9 +181,12 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
         }
     }
     
-    func contentWithoutFiles() throws -> Data? {
+    func contentWithoutFiles() throws -> Data {
         guard let content,
-              var jsonObj = try JSONSerialization.jsonObject(with: content) as? [String : Any] else { return nil }
+              var jsonObj = try JSONSerialization.jsonObject(with: content) as? [String : Any] else {
+            struct UnexpectedContentData: Error {}
+            throw UnexpectedContentData()
+        }
         jsonObj.removeValue(forKey: "files")
         return try JSONSerialization.data(withJSONObject: jsonObj)
     }

@@ -33,8 +33,6 @@ struct SingleEditorView: View {
         }
     }
     
-    
-    
     init(config: FileDocumentConfiguration<ExcalidrawFile>, shouldAdjustWindowSize: Bool) {
         self._fileDocument = config.$document
         self.fileURL = config.fileURL
@@ -118,7 +116,13 @@ struct SingleEditorView: View {
     private func content() -> some View {
         ZStack {
             ExcalidrawView(
-                file: $fileDocument,
+                file: Binding {
+                    fileDocument
+                } set: { doc in
+                    var doc = doc
+                    try? doc.syncFiles()
+                    fileDocument = doc
+                },
                 savingType: fileType,
                 isLoadingPage: $isLoading
             ) { error in

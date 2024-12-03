@@ -47,8 +47,25 @@ class ExcalidrawWebView: WKWebView {
            let char = event.characters {
             if let num = Int(char), num >= 0, num <= 9 {
                 self.toolbarActionHandler(num)
-            } else if ExcalidrawTool.allCases.compactMap({$0.keyEquivalent}).contains(where: {$0 == Character(char)}) {
+            } else if ExcalidrawTool.allCases.compactMap({$0.keyEquivalent}).contains(where: {$0 == Character(char)}), !char.isEmpty {
                 self.toolbarActionHandler2(Character(char))
+            } else if Character(char) == Character(" ") {
+                // TODO: migrate to excalidrawZHelper
+                self.evaluateJavaScript("""
+(() => {
+const spaceKeydownEvent = {
+    key: " ",
+    code: "Space",
+    altKey: false,
+    shiftKey: false,
+    composed: true,
+    keyCode: 32, // Space 对应的 keyCode 是 32
+    which: 32,
+};
+document.dispatchEvent(new KeyboardEvent("keydown", spaceKeydownEvent));
+})();
+0;
+""")
             } else {
                 super.keyDown(with: event)
             }

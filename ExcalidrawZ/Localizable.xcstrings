@@ -505,8 +505,25 @@
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "关闭"
+          }
+        }
+      }
+    },
+    "generalButtonJoinDiscord" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join Discord"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入Discord"
           }
         }
       }
@@ -2736,6 +2753,159 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "加载中…"
+          }
+        }
+      }
+    },
+    "whatsNewButtonContinue" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续"
+          }
+        }
+      }
+    },
+    "WhatsNewItemFileLoadPerformanceDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By storing media files separately from other file contents, the file switching loading speed has been significantly improved."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过将媒体文件与其他文件内容分开存储，文件切换的加载速度得到了显著提升。"
+          }
+        }
+      }
+    },
+    "WhatsNewItemFileLoadPerformanceTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Optimize file load performance"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "优化了文件加载性能"
+          }
+        }
+      }
+    },
+    "WhatsNewItemMultiplatformDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now, ExcalidrawZ can run on Mac, iPhone, and iPad devices, with data seamlessly synchronized across different devices."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "现在，ExcalidrawZ 可以在 Mac、iPhone 和 iPad 设备上运行，且数据能够在不同设备间实现无缝同步。"
+          }
+        }
+      }
+    },
+    "WhatsNewItemMultiplatformTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multiplatform support"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多平台支持"
+          }
+        }
+      }
+    },
+    "WhatsNewItemPreventImageAutoInvertDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In dark mode, images are now prevented from inverting colors by default. You can change this feature in the Settings."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在深色模式下，图像默认不会反转颜色。您可以在设置中更改此功能。"
+          }
+        }
+      }
+    },
+    "WhatsNewItemPreventImageAutoInvertTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image auto invert prevention"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阻止图片自动反转"
+          }
+        }
+      }
+    },
+    "whatsNewTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Whta’s New in ExcalidrawZ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ新功能"
+          }
+        }
+      }
+    },
+    "whatsNewWarningBody" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currently, there are some bugs in the new version. If you encounter any issues, you can join the Discord community to provide feedback, and I’ll do my best to help you resolve them. Alternatively, you can visit the GitHub project page and submit an issue."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前，新版本存在一些问题。如果您遇到任何问题，可以加入 Discord 社区提供反馈，我会尽力帮助您解决。或者，您也可以访问 GitHub 项目页面并提交 issue。"
           }
         }
       }

@@ -19,6 +19,7 @@ import Sparkle
 extension Notification.Name {
     static let shouldHandleImport = Notification.Name("ShouldHandleImport")
     static let didImportToExcalidrawZ = Notification.Name("DidImportToExcalidrawZ")
+    static let toggleWhatsNewSheet = Notification.Name("ToggleWhatsNewSheet")
 }
 
 @main
@@ -92,6 +93,14 @@ struct ExcalidrawZApp: App {
                     try? archiveAllFiles()
                 } label: {
                     Text(.localizable(.exportAll))
+                }
+            }
+            
+            CommandGroup(after: .help) {
+                Button {
+                    NotificationCenter.default.post(name: .toggleWhatsNewSheet, object: nil)
+                } label: {
+                    Text(.localizable(.whatsNewTitle))
                 }
             }
         }

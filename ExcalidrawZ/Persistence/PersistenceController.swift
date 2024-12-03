@@ -96,6 +96,9 @@ extension PersistenceController {
         return try container.viewContext.fetch(fetchRequest)
     }
     func listFiles(in group: Group) throws -> [File] {
+        if group.groupType == .trash {
+            return try listTrashedFiles()
+        }
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
         fetchRequest.predicate = NSPredicate(format: "group == %@ AND inTrash == NO", group)
         fetchRequest.sortDescriptors = [ .init(key: "updatedAt", ascending: false),
@@ -139,14 +142,6 @@ extension PersistenceController {
         }
         return results
     }
-    
-//    func createGroup(name: String, context: NSManagedObjectContext) throws -> Group {
-//        let group = Group(context: context)
-//        group.id = UUID()
-//        group.name = name
-//        group.createdAt = .now
-//        return group
-//    }
     
     @MainActor
     func createFile(in groupID: NSManagedObjectID, context: NSManagedObjectContext) throws -> File {
@@ -199,8 +194,6 @@ extension PersistenceController {
         fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
         return try viewContext.fetch(fetchRequest)
     }
-    
-    
     
     func save() {
         let context = container.viewContext
@@ -258,7 +251,7 @@ extension PersistenceController {
                     let files = try filesFetch.execute()
                     let checkpoints = try checkpointsFetch.execute()
                     
-                    let needBackup: Bool = {
+                    let needMigrate: Bool = {
                         let excalidrawFiles = files.compactMap {
                             try? ExcalidrawFile(from: $0)
                         } + checkpoints.compactMap {
@@ -266,22 +259,18 @@ extension PersistenceController {
                         }
                         return excalidrawFiles.contains(where: {!$0.files.isEmpty})
                     }()
-                    
+                    guard needMigrate else {
+                        print("No need to migrate, skip")
+                        return
+                    }
 #if os(macOS)
-                    if needBackup {
-                        do {
-                            try backupFiles()
-//                            let backupsDir = try getBackupsDir()
-//                            let backupDir = backupsDir.appendingPathComponent("Backup-Before-Media-Migration", conformingTo: .directory)
-//                            try FileManager.default.createDirectory(at: backupDir, withIntermediateDirectories: false)
-//                            try archiveAllFiles(to: backupDir)
-                        } catch {
-                            print(error)
-                        }
+                    do {
+                        try backupFiles()
+                    } catch {
+                        print(error)
                     }
 #endif
                     var insertedMediaID = Set<String>()
-                    
                     print("Need migrate \(files.count) files")
                     for file in files {
                         do {
@@ -297,19 +286,18 @@ extension PersistenceController {
                                 insertedMediaID.insert(id)
                             }
                             file.content = try excalidrawFile.contentWithoutFiles()
-//                            if let content = file.content,
-//                               var jsonObj = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
-//                                jsonObj.removeValue(forKey: "files")
-//                                file.content = try JSONSerialization.data(withJSONObject: jsonObj)
-//                            }
                         } catch {
+                            print("⚠️⚠️⚠️File migration failed. name: \(String(describing: file.name)), content: \(String(describing: try? JSONSerialization.jsonObject(with: file.content ?? Data())))")
                             continue
                         }
                     }
                     print("Need migrate \(checkpoints.count) checkpoints")
                     for checkpoint in checkpoints {
-                        guard let data = checkpoint.content else { continue }
                         do {
+                            guard let data = checkpoint.content else {
+                                struct NoContentError: LocalizedError { var errorDescription: String? { "Checkpoint has no content data." } }
+                                throw NoContentError()
+                            }
                             let excalidrawFile = try ExcalidrawFile(data: data)
                             if excalidrawFile.files.isEmpty { continue }
                             print("migrating \(excalidrawFile.files.count) files of checkpoint<\(checkpoint.file?.name ?? "Untitled")>")
@@ -320,20 +308,13 @@ extension PersistenceController {
                                 container.viewContext.insert(mediaItem)
                             }
                             checkpoint.content = try excalidrawFile.contentWithoutFiles()
-//                            if let content = checkpoint.content,
-//                               var jsonObj = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
-//                                jsonObj.removeValue(forKey: "files")
-//                                checkpoint.content = try JSONSerialization.data(withJSONObject: jsonObj)
-//                            }
                         } catch {
+                            print("⚠️⚠️⚠️Checkpoint migration failed. file name: \(String(describing: checkpoint.file?.name)), content: \(String(describing: try? JSONSerialization.jsonObject(with: checkpoint.file?.content ?? Data())))")
                             continue
                         }
                     }
-                    
+                    print("🎉🎉🎉 Migration medias done. Time cost: \(-start.timeIntervalSinceNow) s")
                 }
-                print("🎉🎉🎉 Migration medias done. Time cost: \(-start.timeIntervalSinceNow) s")
-                
-
             } catch {
                 print(error)
             }

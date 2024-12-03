@@ -9,7 +9,7 @@ import Foundation
 import CoreData
 
 extension ExcalidrawFile {
-    init( from persistenceFile: File) throws {
+    init(from persistenceFile: File) throws {
         guard let data = persistenceFile.content else {
             struct EmptyContentError: Error {}
             throw EmptyContentError()
@@ -33,6 +33,7 @@ extension ExcalidrawFile {
             struct EmptyContentError: Error {}
             throw EmptyContentError()
         }
+//        print(#function, persistenceFile.name, try? JSONSerialization.jsonObject(with: data))
         let file = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
         self = file
         self.id = persistenceFile.id ?? UUID()
@@ -70,6 +71,8 @@ extension ExcalidrawFile {
             self.content = try JSONSerialization.data(withJSONObject: contentObject)
         }
     }
+    
+    
 }
 
 

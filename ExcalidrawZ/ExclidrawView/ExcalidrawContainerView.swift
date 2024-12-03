@@ -171,26 +171,6 @@ struct ExcalidrawContainerView: View {
                 Text(.localizable(.deletedFileRecoverAlertMessage))
             }
     }
-    
-    private func loadMedias() {
-        print("Start insert medias to IndexedDB.")
-        Task {
-            do {
-                let context = viewContext
-
-                let allMediasFetch = NSFetchRequest<MediaItem>(entityName: "MediaItem")
-                
-                let allMedias = try context.fetch(allMediasFetch)
-                try await fileState.excalidrawWebCoordinator?.insertMediaFiles(
-                    allMedias.compactMap{
-                        .init(mediaItem: $0)
-                    }
-                )
-            } catch {
-                alertToast(error)
-            }
-        }
-    }
 }
 
 

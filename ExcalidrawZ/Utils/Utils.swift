@@ -118,32 +118,44 @@ func backupFiles() throws {
 func archiveAllFiles(to url: URL) throws {
     let filemanager = FileManager.default
     let allFiles = try PersistenceController.shared.listAllFiles()
+    print("Archive all files: \(allFiles.map {[$0.key : $0.value.map{$0.name}]}.merged())")
+    
+    var errorDuringArchive: Error?
+    
     for files in allFiles {
         let dir = url.appendingPathComponent(files.key, conformingTo: .directory)
         try filemanager.createDirectory(at: dir, withIntermediateDirectories: false)
         for file in files.value {
-            var file = try ExcalidrawFile(from: file)
-            try file.syncFiles(context: PersistenceController.shared.container.viewContext)
-            var index = 1
-            var filename = file.name ?? String(localizable: .newFileNamePlaceholder)
-            var fileURL: URL = dir.appendingPathComponent(filename, conformingTo: .fileURL).appendingPathExtension("excalidraw")
-            var retryCount = 0
-            while filemanager.fileExists(at: fileURL), retryCount < 100 {
-                if filename.hasSuffix(" (\(index))") {
-                    filename = filename.replacingOccurrences(of: " (\(index))", with: "")
-                    index += 1
+            do {
+                var file = try ExcalidrawFile(from: file)
+                try file.syncFiles(context: PersistenceController.shared.container.viewContext)
+                var index = 1
+                var filename = file.name ?? String(localizable: .newFileNamePlaceholder)
+                var fileURL: URL = dir.appendingPathComponent(filename, conformingTo: .fileURL).appendingPathExtension("excalidraw")
+                var retryCount = 0
+                while filemanager.fileExists(at: fileURL), retryCount < 100 {
+                    if filename.hasSuffix(" (\(index))") {
+                        filename = filename.replacingOccurrences(of: " (\(index))", with: "")
+                        index += 1
+                    }
+                    filename = "\(filename) (\(index))"
+                    fileURL = fileURL
+                        .deletingLastPathComponent()
+                        .appendingPathComponent(filename, conformingTo: .excalidrawFile)
+                    retryCount += 1
                 }
-                filename = "\(filename) (\(index))"
-                fileURL = fileURL
-                    .deletingLastPathComponent()
-                    .appendingPathComponent(filename, conformingTo: .excalidrawFile)
-                retryCount += 1
-            }
-            let filePath: String = fileURL.filePath
-            if !filemanager.createFile(atPath: filePath, contents: file.content) {
-                print("export file \(filePath) failed")
+                let filePath: String = fileURL.filePath
+                if !filemanager.createFile(atPath: filePath, contents: file.content) {
+                    print("export file \(filePath) failed")
+                }
+            } catch {
+                errorDuringArchive = error
             }
         }
+    }
+    
+    if let errorDuringArchive {
+        throw errorDuringArchive
     }
 }
 #endif

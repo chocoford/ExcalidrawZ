@@ -30,12 +30,20 @@ extension ExcalidrawFile: FileDocument {
                return
            }
         }
-        self = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
-        self.content = data
+        self = try ExcalidrawFile(data: data)
+        print("Init from ReadConfiguration: \(String(describing: self))")
     }
     
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
         return FileWrapper(regularFileWithContents: content ?? Data())
+    }
+    
+    mutating func syncFiles() throws {
+        if let content = self.content,
+           var contentObject = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
+            contentObject["files"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(self.files))
+            self.content = try JSONSerialization.data(withJSONObject: contentObject)
+        }
     }
 }
 

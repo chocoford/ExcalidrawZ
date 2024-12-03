@@ -85,8 +85,9 @@ struct ContentView: View {
         .environmentObject(toolState)
         .environmentObject(layoutState)
         .swiftyAlert()
-        .containerSizeClassInjection()
         .bindWindow($window)
+        .modifier(WhatsNewSheetViewModifier())
+        .containerSizeClassInjection()
         .onReceive(NotificationCenter.default.publisher(for: .shouldHandleImport)) { notification in
             guard let urls = notification.object as? [URL] else { return }
             if window?.isKeyWindow == true {

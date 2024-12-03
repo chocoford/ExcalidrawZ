@@ -1,3 +1,13 @@
+## 1.2.5
+
+- Added a “What’s New” sheet.
+- Fixed the issue where images were lost after saving directly opened Excalidraw files.
+- Improved compatibility with improperly formatted data.
+- Fixed a bug where backups failed in the presence of data compatibility issues.
+- Fixed a bug where exports failed in the presence of data compatibility issues.
+- Fixed an issue where files in the trash were not included during export.
+- Fixed the issue where pressing the spacebar would continuously trigger warning sounds.
+
 ## 1.2.4
 
 Fixed multiple issues where behavior did not meet expectations on macOS 14.

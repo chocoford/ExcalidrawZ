@@ -200,6 +200,9 @@
 		39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */ = {isa = PBXBuildFile; fileRef = 39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */; };
 		39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
 		39AD1EF2295B504C00DA9657 /* AppEnviornment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */; };
+		39AF4C802CFF1689009126C4 /* WhatsNewSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AF4C7F2CFF1688009126C4 /* WhatsNewSheetView.swift */; };
+		39AF4C812CFF1689009126C4 /* WhatsNewSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AF4C7F2CFF1688009126C4 /* WhatsNewSheetView.swift */; };
+		39AF4C822CFF1689009126C4 /* WhatsNewSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AF4C7F2CFF1688009126C4 /* WhatsNewSheetView.swift */; };
 		39B141402CE5E2F800D3EEDA /* MediaItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */; };
 		39B141412CE5E2F900D3EEDA /* MediaItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */; };
 		39B141422CE5E2F900D3EEDA /* MediaItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */; };
@@ -435,6 +438,7 @@
 		39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = FakeToggleColorMode.js; sourceTree = "<group>"; };
 		39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = FakeSaveCommand.js; sourceTree = "<group>"; };
 		39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppEnviornment.swift; sourceTree = "<group>"; };
+		39AF4C7F2CFF1688009126C4 /* WhatsNewSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewSheetView.swift; sourceTree = "<group>"; };
 		39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MediaItem+Persistence.swift"; sourceTree = "<group>"; };
 		39B141882CE7183200D3EEDA /* FileHistorySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileHistorySettingsView.swift; sourceTree = "<group>"; };
 		39B1418C2CE7186C00D3EEDA /* MediasSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediasSettingsView.swift; sourceTree = "<group>"; };
@@ -863,6 +867,7 @@
 				397E468C295A02E7003B824B /* LoadingView.swift */,
 				39F5968F2A7AAA1700E2F937 /* RenameSheetView.swift */,
 				3966624A2C67BEE900F863BC /* SegmentedPicker */,
+				39AF4C7F2CFF1688009126C4 /* WhatsNewSheetView.swift */,
 			);
 			path = components;
 			sourceTree = "<group>";
@@ -1332,6 +1337,7 @@
 				397152EA2C86DD2900A65ADF /* Library+Persistence.swift in Sources */,
 				3963A04A2C6C7EAA00472AE7 /* FileCheckpointRowView.swift in Sources */,
 				3963A04B2C6C7EAA00472AE7 /* ExportState.swift in Sources */,
+				39AF4C802CFF1689009126C4 /* WhatsNewSheetView.swift in Sources */,
 				3963A04C2C6C7EAA00472AE7 /* ExportFileView.swift in Sources */,
 				3963A04D2C6C7EAA00472AE7 /* String+Extension.swift in Sources */,
 				3963A04E2C6C7EAA00472AE7 /* Group.swift in Sources */,
@@ -1413,6 +1419,7 @@
 				3963A1172C6D1D4900472AE7 /* Group.swift in Sources */,
 				390E1F412CDDE7D400DEB779 /* UIImage+Extension.swift in Sources */,
 				3963A1182C6D1D4900472AE7 /* ExportImageView.swift in Sources */,
+				39AF4C822CFF1689009126C4 /* WhatsNewSheetView.swift in Sources */,
 				3963A1192C6D1D4900472AE7 /* Array+Extension.swift in Sources */,
 				3963A11A2C6D1D4900472AE7 /* Utils.swift in Sources */,
 				3963A11B2C6D1D4900472AE7 /* FileCheckpoint+Extension.swift in Sources */,
@@ -1497,6 +1504,7 @@
 				39E0577D296C935200304655 /* Group.swift in Sources */,
 				390E1F3F2CDDE7D400DEB779 /* UIImage+Extension.swift in Sources */,
 				39E73D6F29DADCF100098A79 /* ExportImageView.swift in Sources */,
+				39AF4C812CFF1689009126C4 /* WhatsNewSheetView.swift in Sources */,
 				3908EB942966E7690054A3ED /* Array+Extension.swift in Sources */,
 				397E468929599E85003B824B /* Utils.swift in Sources */,
 				39BF8E8C2A7EAE33002BD9D8 /* FileCheckpoint+Extension.swift in Sources */,
@@ -1649,7 +1657,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 28;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1674,7 +1682,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.4;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.excalidraw-Debug";
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -1694,7 +1702,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 28;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1719,7 +1727,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.4;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -1799,7 +1807,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 28;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1824,7 +1832,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.4;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -1844,7 +1852,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 28;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1868,7 +1876,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.4;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -2188,7 +2196,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 28;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2212,7 +2220,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.4;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.excalidraw-Debug";
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -2231,7 +2239,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 28;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2255,7 +2263,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.4;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -2357,7 +2365,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 24;
+				CURRENT_PROJECT_VERSION = 28;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -2371,7 +2379,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.3;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.excalidraw-Debug.QuickLookPreviewExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2387,7 +2395,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 24;
+				CURRENT_PROJECT_VERSION = 28;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -2401,7 +2409,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.3;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw.QuickLookPreviewExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2416,7 +2424,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 24;
+				CURRENT_PROJECT_VERSION = 28;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -2430,7 +2438,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.3;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw.QuickLookPreviewExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
