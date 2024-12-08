@@ -41,17 +41,7 @@ struct WhatsNewSheetViewModifier: ViewModifier {
                     lastBuild = (Int(buildString) ?? 0)
                 }
             } content: {
-                if containerHorizontalSizeClass == .compact {
-                    ScrollView {
-                        WhatsNewSheetView()
-                    }
-                } else {
-                    WhatsNewSheetView()
-                        .padding(.horizontal, 60)
-                        .frame(width: 600)
-                }
-                
-
+                sheetContent()
             }
             .bindWindow($window)
             .onAppear {
@@ -63,6 +53,19 @@ struct WhatsNewSheetViewModifier: ViewModifier {
                     isPresented = true
                 }
             }
+    }
+    
+    @MainActor @ViewBuilder
+    private func sheetContent() -> some View {
+        if containerHorizontalSizeClass == .compact {
+            ScrollView {
+                WhatsNewSheetView()
+            }
+        } else {
+            WhatsNewSheetView()
+                .padding(.horizontal, 60)
+                .frame(width: 600)
+        }
     }
 }
 
@@ -77,43 +80,61 @@ struct WhatsNewSheetView: View {
     }
     
     var body: some View {
-        VStack(spacing: 30) {
-            Text(.localizable(.whatsNewTitle)).font(.largeTitle)
-
-            VStack(alignment: .leading, spacing: 28) {
-                Image("What's New Cover")
-                    .resizable()
-                    .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                
-                fetureRow(
-                    title: .localizable(.whatsNewItemMultiplatformTitle),
-                    description: .localizable(.whatsNewItemMultiplatformDescription)
-                ) {
-                    if #available(macOS 13.0, iOS 16.1, *) {
-                        Image(systemSymbol: .macbookAndIphone)
-                            .resizable()
-                    } else {
-                        Image(systemSymbol: .ipadAndIphone)
-                            .resizable()
-                    }
-                }
-                
-                fetureRow(
-                    title: .localizable(.whatsNewItemPreventImageAutoInvertTitle),
-                    description: .localizable(.whatsNewItemPreventImageAutoInvertDescription),
-                    icon: Image(systemSymbol: .photoOnRectangle)
-                )
-                
-                
-                fetureRow(
-                    title: .localizable(.whatsNewItemFileLoadPerformanceTitle),
-                    description: .localizable(.whatsNewItemFileLoadPerformanceDescription),
-                    icon: Image(systemSymbol: .timer)
-                )
+        VStack(spacing: 20) {
+            VStack(spacing: 6) {
+                Text(.localizable(.whatsNewTitle)).font(.largeTitle)
+//                if let versionString = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as? String {
+//                    Text(versionString).foregroundStyle(.secondary)
+//                }
             }
-            .padding(.vertical)
-            .fixedSize(horizontal: false, vertical: true)
+            
+            VStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: 22) {
+                    Image("What's New Cover")
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    
+                    fetureRow(
+                        title: .localizable(.whatsNewItemMultiplatformTitle),
+                        description: .localizable(.whatsNewItemMultiplatformDescription)
+                    ) {
+                        if #available(macOS 13.0, iOS 16.1, *) {
+                            Image(systemSymbol: .macbookAndIphone)
+                                .resizable()
+                        } else {
+                            Image(systemSymbol: .ipadAndIphone)
+                                .resizable()
+                        }
+                    }
+                    
+                    fetureRow(
+                        title: .localizable(.whatsNewItemPreventImageAutoInvertTitle),
+                        description: .localizable(.whatsNewItemPreventImageAutoInvertDescription),
+                        icon: Image(systemSymbol: .photoOnRectangle)
+                    )
+                    
+                    
+                    fetureRow(
+                        title: .localizable(.whatsNewItemFileLoadPerformanceTitle),
+                        description: .localizable(.whatsNewItemFileLoadPerformanceDescription),
+                        icon: Image(systemSymbol: .timer)
+                    )
+                }
+                .padding(.vertical)
+                .fixedSize(horizontal: false, vertical: true)
+                
+                HStack {
+                    Spacer()
+                    Link(destination: URL(string: "https://github.com/chocoford/ExcalidrawZ/blob/main/CHANGELOG.md")!) {
+                        HStack(spacing: 2) {
+                            Text("Change Log")
+                            Image(systemSymbol: .arrowRight)
+                        }
+                    }
+                    .buttonStyle(.link)
+                }
+            }
             
             warnningSection()
             
@@ -228,7 +249,31 @@ struct WhatsNewSheetView: View {
     }
 }
 
+struct ChangeLogView: View {
+    var body: some View {
+        ScrollView {
+            if let changeLogURL = Bundle.main.url(forResource: "CHANGELOG", withExtension: "md"),
+               let changeLogText = try? String(contentsOf: changeLogURL, encoding: .utf8),
+               let changeLog = try? AttributedString(
+                markdown: changeLogText,
+                options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+               ) {
+                Text(changeLog)
+            }
+        }
+    }
+}
+
 #Preview {
-    WhatsNewSheetView()
+    if #available(macOS 13.0, iOS 16.0, *) {
+        NavigationStack {
+            WhatsNewSheetView()
+        }
         .frame(width: 600, height: 800)
+    } else {
+        NavigationView {
+            WhatsNewSheetView()
+        }
+        .frame(width: 600, height: 800)
+    }
 }

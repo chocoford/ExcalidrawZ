@@ -80,15 +80,17 @@ struct FileRowView: View {
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject var fileState: FileState
     
+    var file: File
+    @Binding var fileIDToBeRenamed: NSManagedObjectID?
+        
+    init(file: File, fileIDToBeRenamed: Binding<NSManagedObjectID?>) {
+//        let file = PersistenceController.shared.container.viewContext.object(with: fileID) as! File
+        self.file = file
+        self._fileIDToBeRenamed = fileIDToBeRenamed
+    }
     
     @FetchRequest(sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)])
     var groups: FetchedResults<Group>
-    var file: File
-        
-    init(file: File) {
-//        let file = PersistenceController.shared.container.viewContext.object(with: fileID) as! File
-        self.file = file
-    }
     
     @State private var renameMode: Bool = false
     @State private var showPermanentlyDeleteAlert: Bool = false
@@ -142,9 +144,6 @@ struct FileRowView: View {
                 Text(.localizable(.sidebarFileRowDeletePermanentlyAlertButtonConfirm))
             }
         }
-        .modifier(RenameSheetViewModifier(isPresented: $renameMode, name: file.name ?? "") {
-            fileState.renameFile(file, newName: $0)
-        })
     }
     
     // Context Menu
@@ -152,7 +151,7 @@ struct FileRowView: View {
     private var listRowContextMenu: some View {
         if !file.inTrash {
             Button {
-                renameMode.toggle()
+                fileIDToBeRenamed = self.file.objectID
             } label: {
                 Label(.localizable(.sidebarFileRowContextMenuRename), systemSymbol: .pencil)
             }

@@ -1,3 +1,9 @@
+## 1.2.6
+
+- Fixed an issue where the sidebar `file` could not be clicked on some Mac devices.
+
+- Fixed an issue where duplicated `default` and `Recently deleted` folders appeared during the initial data synchronization.
+
 ## 1.2.5
 
 - Added a “What’s New” sheet.

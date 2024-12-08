@@ -361,11 +361,15 @@ final class FileState: ObservableObject {
         
         return group.objectID
     }
-    @MainActor
-    func renameFile(_ file: File, newName: String) {
-        file.name = newName
-        PersistenceController.shared.save()
-        self.objectWillChange.send()
+    
+    
+    func renameFile(_ fileID: NSManagedObjectID, context: NSManagedObjectContext, newName: String) {
+        context.perform {
+            guard let file = context.object(with: fileID) as? File else { return }
+            file.name = newName
+            try? context.save()
+            self.objectWillChange.send()
+        }
     }
     
     func renameGroup(_ group: Group, newName: String) {
@@ -444,6 +448,7 @@ final class FileState: ObservableObject {
     }
     
     func mergeDefaultGroupAndTrashIfNeeded(context: NSManagedObjectContext) async throws {
+        print("mergeDefaultGroupAndTrashIfNeeded...")
         try await context.perform {
             let groups = try context.fetch(NSFetchRequest<Group>(entityName: "Group"))
             

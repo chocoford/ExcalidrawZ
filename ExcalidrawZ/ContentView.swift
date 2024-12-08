@@ -117,7 +117,9 @@ struct ContentView: View {
             }
             
             self.cloudContainerEventChangeListener?.cancel()
-            self.cloudContainerEventChangeListener = NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification).sink { notification in
+            self.cloudContainerEventChangeListener = NotificationCenter.default.publisher(
+                for: NSPersistentCloudKitContainer.eventChangedNotification
+            ).sink { notification in
                 if let userInfo = notification.userInfo {
                     if let event = userInfo["event"] as? NSPersistentCloudKitContainer.Event {
                         // On macOS, event.type will be `setup` only when first launched.
@@ -125,8 +127,9 @@ struct ContentView: View {
                         print("NSPersistentCloudKitContainer.eventChangedNotification: \(event.type), succeeded: \(event.succeeded)")
                         if event.type == .import, event.succeeded, isFirstImporting == true {
                             isFirstImporting = false
-                            Task {
+                            Task { @MainActor in
                                 do {
+                                    try? await Task.sleep(nanoseconds: UInt64(2 * 1e+9))
                                     try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: managedObjectContext)
                                 } catch {
                                     alertToast(error)

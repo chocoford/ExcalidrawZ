@@ -24,6 +24,7 @@ struct RenameSheetViewModifier: ViewModifier {
 #if canImport(UIKit)
                     .presentationDetents([.height(140)])
                     .presentationDragIndicator(.visible)
+                    .presentationCompactAdaptation(.sheet)
 #endif
                 } else if #available(iOS 18.0, macOS 13.0, *) {
                     RenameSheetView(text: name) { newName in
@@ -34,6 +35,7 @@ struct RenameSheetViewModifier: ViewModifier {
 #if canImport(UIKit)
                     .presentationSizing(.fitted)
                     .presentationDragIndicator(.hidden)
+                    .presentationCompactAdaptation(.sheet)
 #endif
                 } else {
                     RenameSheetView(text: name) { newName in

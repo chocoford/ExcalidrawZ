@@ -36,8 +36,12 @@ struct FileListView: View {
         )
     }
     
+    @State private var fileIDToBeRenamed: NSManagedObjectID?
+    var fileToBeRenamed: File? {
+        guard let fileIDToBeRenamed else { return nil }
+        return managedObjectContext.object(with: fileIDToBeRenamed) as? File
+    }
 
-    
     struct DateGrouppedFiles {
         var date: Date
         var files: [File]
@@ -151,7 +155,7 @@ struct FileListView: View {
         ScrollView {
             LazyVStack(alignment: .leading) {
                 ForEach(files) { file in
-                    FileRowView(file: file)
+                    FileRowView(file: file, fileIDToBeRenamed: $fileIDToBeRenamed)
                         .transition(.opacity)
                 }
             }
@@ -160,6 +164,13 @@ struct FileListView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 12)
         }
+        .modifier(RenameSheetViewModifier(isPresented: Binding {
+            fileIDToBeRenamed != nil
+        } set: { _ in
+            fileIDToBeRenamed = nil
+        }, name: fileToBeRenamed?.name ?? "") {
+            fileState.renameFile(fileIDToBeRenamed!, context: managedObjectContext, newName: $0)
+        })
     }
 }
 
