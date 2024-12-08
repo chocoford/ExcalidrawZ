@@ -92,7 +92,7 @@ struct FileRowView: View {
     @FetchRequest(sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)])
     var groups: FetchedResults<Group>
     
-    @State private var renameMode: Bool = false
+//    @State private var renameMode: Bool = false
     @State private var showPermanentlyDeleteAlert: Bool = false
     @State private var isHovered = false
     
