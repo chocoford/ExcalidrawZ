@@ -132,7 +132,11 @@ struct WhatsNewSheetView: View {
                             Image(systemSymbol: .arrowRight)
                         }
                     }
+#if os(macOS)
                     .buttonStyle(.link)
+#elseif os(iOS)
+                    .buttonStyle(.linkStyle)
+#endif
                 }
             }
             
