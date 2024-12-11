@@ -156,7 +156,6 @@ struct FileListView: View {
             LazyVStack(alignment: .leading) {
                 ForEach(files) { file in
                     FileRowView(file: file, fileIDToBeRenamed: $fileIDToBeRenamed)
-                        .transition(.opacity)
                 }
             }
             // ⬇️ cause `com.apple.SwiftUI.AsyncRenderer (22): EXC_BREAKPOINT` on iOS

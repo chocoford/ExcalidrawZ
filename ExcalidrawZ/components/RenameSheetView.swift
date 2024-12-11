@@ -48,7 +48,6 @@ struct RenameSheetViewModifier: ViewModifier {
                     .frame(width: 300)
 #endif
                 }
-
             }
     }
 }

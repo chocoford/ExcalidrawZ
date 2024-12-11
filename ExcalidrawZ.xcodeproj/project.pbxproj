@@ -12,7 +12,6 @@
 		3901E2622965704400E79788 /* FileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3901E2612965704400E79788 /* FileListView.swift */; };
 		390716DB2C6F159B002D7834 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 390716DA2C6F159B002D7834 /* Localizable.xcstrings */; };
 		390716DC2C6F159B002D7834 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 390716DA2C6F159B002D7834 /* Localizable.xcstrings */; };
-		390716DD2C6F159C002D7834 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 390716DA2C6F159B002D7834 /* Localizable.xcstrings */; };
 		3908EB942966E7690054A3ED /* Array+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB932966E7690054A3ED /* Array+Extension.swift */; };
 		3908EB96296719170054A3ED /* String+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB95296719170054A3ED /* String+Extension.swift */; };
 		3908EB9929674DF60054A3ED /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB9729674DF60054A3ED /* Model.xcdatamodeld */; };
@@ -20,7 +19,6 @@
 		390B2C7B2967EACA00AA359C /* FetchResults+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B2C7A2967EACA00AA359C /* FetchResults+Extension.swift */; };
 		390E1F3F2CDDE7D400DEB779 /* UIImage+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390E1F3E2CDDE7D400DEB779 /* UIImage+Extension.swift */; };
 		390E1F402CDDE7D400DEB779 /* UIImage+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390E1F3E2CDDE7D400DEB779 /* UIImage+Extension.swift */; };
-		390E1F412CDDE7D400DEB779 /* UIImage+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390E1F3E2CDDE7D400DEB779 /* UIImage+Extension.swift */; };
 		3914876D2960AFD10042927A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 3914876C2960AFD10042927A /* Sparkle */; };
 		391585A52A80238B0028D250 /* ShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391585A42A80238B0028D250 /* ShareView.swift */; };
 		3929AB792CA5E4B800C7CCE8 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3929AB782CA5E4B800C7CCE8 /* ChocofordEssentials */; };
@@ -81,74 +79,17 @@
 		3963A07C2C6C7EAA00472AE7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 397E465A295838D0003B824B /* Assets.xcassets */; };
 		3963A07D2C6C7EAA00472AE7 /* FakeToggleColorMode.js in Resources */ = {isa = PBXBuildFile; fileRef = 39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */; };
 		3963A07E2C6C7EAA00472AE7 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
-		3963A10B2C6D1D4900472AE7 /* ExcalidrawImageElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1502A7ED71300B1DDA0 /* ExcalidrawImageElement.swift */; };
-		3963A10C2C6D1D4900472AE7 /* NSImage+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E73D7029DAFE3E00098A79 /* NSImage+Extension.swift */; };
-		3963A10D2C6D1D4900472AE7 /* URL+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3901E25D29652AD800E79788 /* URL+Extension.swift */; };
-		3963A10E2C6D1D4900472AE7 /* FileRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98CA295CBC01009BED55 /* FileRowView.swift */; };
-		3963A10F2C6D1D4900472AE7 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394A7FAE2C515CB700D4918B /* RootView.swift */; };
-		3963A1102C6D1D4900472AE7 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB9729674DF60054A3ED /* Model.xcdatamodeld */; };
-		3963A1112C6D1D4900472AE7 /* FileCheckpointListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BF8E892A7EADB1002BD9D8 /* FileCheckpointListView.swift */; };
-		3963A1122C6D1D4900472AE7 /* GroupListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3901E25F29656FC500E79788 /* GroupListView.swift */; };
-		3963A1132C6D1D4900472AE7 /* FileCheckpointRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1532A7FAC9200B1DDA0 /* FileCheckpointRowView.swift */; };
-		3963A1142C6D1D4900472AE7 /* ExportState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BBE4742A6F078100045BEA /* ExportState.swift */; };
-		3963A1152C6D1D4900472AE7 /* ExportFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394804C22A815D1100886972 /* ExportFileView.swift */; };
-		3963A1162C6D1D4900472AE7 /* String+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB95296719170054A3ED /* String+Extension.swift */; };
-		3963A1172C6D1D4900472AE7 /* Group.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E0577C296C935200304655 /* Group.swift */; };
-		3963A1182C6D1D4900472AE7 /* ExportImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E73D6E29DADCF100098A79 /* ExportImageView.swift */; };
-		3963A1192C6D1D4900472AE7 /* Array+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB932966E7690054A3ED /* Array+Extension.swift */; };
-		3963A11A2C6D1D4900472AE7 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E468829599E85003B824B /* Utils.swift */; };
-		3963A11B2C6D1D4900472AE7 /* FileCheckpoint+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BF8E8B2A7EAE33002BD9D8 /* FileCheckpoint+Extension.swift */; };
-		3963A11C2C6D1D4900472AE7 /* ExcalidrawElementBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1452A7ECA8E00B1DDA0 /* ExcalidrawElementBase.swift */; };
-		3963A11D2C6D1D4900472AE7 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98CF295DA071009BED55 /* Error.swift */; };
-		3963A11E2C6D1D4900472AE7 /* ExcalidrawElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1432A7EC7DA00B1DDA0 /* ExcalidrawElement.swift */; };
-		3963A11F2C6D1D4900472AE7 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4658295838CF003B824B /* ContentView.swift */; };
-		3963A1202C6D1D4900472AE7 /* VersionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E73D7229DB3B9800098A79 /* VersionState.swift */; };
-		3963A1212C6D1D4900472AE7 /* FetchResults+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B2C7A2967EACA00AA359C /* FetchResults+Extension.swift */; };
-		3963A1222C6D1D4900472AE7 /* ExcalidrawGenricElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1482A7ECB0600B1DDA0 /* ExcalidrawGenricElement.swift */; };
-		3963A1232C6D1D4900472AE7 /* ExcalidrawTextElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA14A2A7ED07B00B1DDA0 /* ExcalidrawTextElement.swift */; };
-		3963A1252C6D1D4900472AE7 /* GroupRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E0577A296C92DD00304655 /* GroupRowView.swift */; };
-		3963A1262C6D1D4900472AE7 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B2C782967CF5C00AA359C /* PersistenceController.swift */; };
-		3963A1272C6D1D4900472AE7 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39EE68A72A76AC7200344799 /* SidebarView.swift */; };
-		3963A1282C6D1D4900472AE7 /* ExcalidrawLinearElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA14C2A7ED2D200B1DDA0 /* ExcalidrawLinearElement.swift */; };
-		3963A1292C6D1D4900472AE7 /* File+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B7B877296C110B005F7E9D /* File+Persistence.swift */; };
-		3963A12A2C6D1D4900472AE7 /* ShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391585A42A80238B0028D250 /* ShareView.swift */; };
-		3963A12B2C6D1D4900472AE7 /* ExcalidrawServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3966623B2C66686A00F863BC /* ExcalidrawServer.swift */; };
-		3963A12C2C6D1D4900472AE7 /* ExcaliDrawOpenPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98E129607D58009BED55 /* ExcaliDrawOpenPanel.swift */; };
-		3963A12D2C6D1D4900472AE7 /* ExcalidrawFreeDrawElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA14E2A7ED68B00B1DDA0 /* ExcalidrawFreeDrawElement.swift */; };
-		3963A12E2C6D1D4900472AE7 /* ExcalidrawZApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4656295838CF003B824B /* ExcalidrawZApp.swift */; };
-		3963A12F2C6D1D4900472AE7 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963A52A0E0E15000FEB40 /* SettingsView.swift */; };
-		3963A1302C6D1D4900472AE7 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394963A82A0E1F7B000FEB40 /* GeneralSettingsView.swift */; };
-		3963A1312C6D1D4900472AE7 /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E468C295A02E7003B824B /* LoadingView.swift */; };
-		3963A1342C6D1D4900472AE7 /* FileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3901E2612965704400E79788 /* FileListView.swift */; };
-		3963A1352C6D1D4900472AE7 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397F98DD295EE18E009BED55 /* AppDelegate.swift */; };
-		3963A1372C6D1D4900472AE7 /* AppEnviornment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */; };
-		3963A1382C6D1D4900472AE7 /* RenameSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39F5968F2A7AAA1700E2F937 /* RenameSheetView.swift */; };
-		3963A13A2C6D1D4900472AE7 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A1032C6D1D4900472AE7 /* ChocofordUI */; };
-		3963A13B2C6D1D4900472AE7 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 3963A1002C6D1D4900472AE7 /* Sparkle */; };
-		3963A13D2C6D1D4900472AE7 /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A1072C6D1D4900472AE7 /* FlyingFox */; };
-		3963A13E2C6D1D4900472AE7 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A1042C6D1D4900472AE7 /* ChocofordEssentials */; };
-		3963A1412C6D1D4900472AE7 /* excalidraw-latest in Resources */ = {isa = PBXBuildFile; fileRef = 3966612F2C665D3E00F863BC /* excalidraw-latest */; };
-		3963A1422C6D1D4900472AE7 /* FakeDrop.js in Resources */ = {isa = PBXBuildFile; fileRef = 397E468629599DD3003B824B /* FakeDrop.js */; };
-		3963A1432C6D1D4900472AE7 /* template.excalidraw in Resources */ = {isa = PBXBuildFile; fileRef = 397E468E295AAE5D003B824B /* template.excalidraw */; };
-		3963A1442C6D1D4900472AE7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 397E465E295838D0003B824B /* Preview Assets.xcassets */; };
-		3963A1452C6D1D4900472AE7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 397E465A295838D0003B824B /* Assets.xcassets */; };
-		3963A1462C6D1D4900472AE7 /* FakeToggleColorMode.js in Resources */ = {isa = PBXBuildFile; fileRef = 39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */; };
-		3963A1472C6D1D4900472AE7 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
 		396661302C665D4300F863BC /* excalidraw-latest in Resources */ = {isa = PBXBuildFile; fileRef = 3966612F2C665D3E00F863BC /* excalidraw-latest */; };
 		3966623C2C66686A00F863BC /* ExcalidrawServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3966623B2C66686A00F863BC /* ExcalidrawServer.swift */; };
 		3966623F2C666EC600F863BC /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = 3966623E2C666EC600F863BC /* FlyingFox */; };
-		397152D42C85D00E00A65ADF /* SVGView in Frameworks */ = {isa = PBXBuildFile; productRef = 397152D32C85D00E00A65ADF /* SVGView */; };
 		397152D72C85D05D00A65ADF /* SVGView in Frameworks */ = {isa = PBXBuildFile; productRef = 397152D62C85D05D00A65ADF /* SVGView */; };
 		397152D92C85D06A00A65ADF /* SVGView in Frameworks */ = {isa = PBXBuildFile; productRef = 397152D82C85D06A00A65ADF /* SVGView */; };
-		397152E92C86DD2900A65ADF /* Library+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397152E82C86DD2900A65ADF /* Library+Persistence.swift */; };
 		397152EA2C86DD2900A65ADF /* Library+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397152E82C86DD2900A65ADF /* Library+Persistence.swift */; };
 		397152EB2C86DD2900A65ADF /* Library+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397152E82C86DD2900A65ADF /* Library+Persistence.swift */; };
 		397152EE2C86E18F00A65ADF /* LibraryItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397152ED2C86E18F00A65ADF /* LibraryItem+Persistence.swift */; };
-		397152EF2C86E18F00A65ADF /* LibraryItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397152ED2C86E18F00A65ADF /* LibraryItem+Persistence.swift */; };
 		397152F02C86E18F00A65ADF /* LibraryItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397152ED2C86E18F00A65ADF /* LibraryItem+Persistence.swift */; };
 		3976C4D62C8789F60037D3AF /* overwrite_console.js in Resources */ = {isa = PBXBuildFile; fileRef = 3976C4D52C8789F60037D3AF /* overwrite_console.js */; };
 		3976C4D72C8789F60037D3AF /* overwrite_console.js in Resources */ = {isa = PBXBuildFile; fileRef = 3976C4D52C8789F60037D3AF /* overwrite_console.js */; };
-		3976C4D82C8789F60037D3AF /* overwrite_console.js in Resources */ = {isa = PBXBuildFile; fileRef = 3976C4D52C8789F60037D3AF /* overwrite_console.js */; };
 		397E4657295838CF003B824B /* ExcalidrawZApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4656295838CF003B824B /* ExcalidrawZApp.swift */; };
 		397E4659295838CF003B824B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4658295838CF003B824B /* ContentView.swift */; };
 		397E465B295838D0003B824B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 397E465A295838D0003B824B /* Assets.xcassets */; };
@@ -175,11 +116,8 @@
 		3987A5382CB550000054D7D5 /* ExcalidrawLinearElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA14C2A7ED2D200B1DDA0 /* ExcalidrawLinearElement.swift */; };
 		3987A55F2CB556860054D7D5 /* FileState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3987A55E2CB556860054D7D5 /* FileState.swift */; };
 		3987A5602CB556860054D7D5 /* FileState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3987A55E2CB556860054D7D5 /* FileState.swift */; };
-		3987A5612CB556860054D7D5 /* FileState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3987A55E2CB556860054D7D5 /* FileState.swift */; };
 		3987A5632CB556BC0054D7D5 /* AppPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3987A5622CB556BC0054D7D5 /* AppPreference.swift */; };
 		3987A5642CB556BC0054D7D5 /* AppPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3987A5622CB556BC0054D7D5 /* AppPreference.swift */; };
-		3987A5652CB556BC0054D7D5 /* AppPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3987A5622CB556BC0054D7D5 /* AppPreference.swift */; };
-		3987A5672CB557160054D7D5 /* ToolState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3987A5662CB557160054D7D5 /* ToolState.swift */; };
 		3987A5682CB557160054D7D5 /* ToolState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3987A5662CB557160054D7D5 /* ToolState.swift */; };
 		3987A5692CB557160054D7D5 /* ToolState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3987A5662CB557160054D7D5 /* ToolState.swift */; };
 		3987A5D02CB63FB00054D7D5 /* overwrite_console.js in Resources */ = {isa = PBXBuildFile; fileRef = 3976C4D52C8789F60037D3AF /* overwrite_console.js */; };
@@ -189,11 +127,9 @@
 		398F144D2CF7379C0061CCF9 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 398F144C2CF7379C0061CCF9 /* ChocofordUI */; };
 		398F14532CF738DB0061CCF9 /* SwiftyAlert in Frameworks */ = {isa = PBXBuildFile; productRef = 398F14522CF738DB0061CCF9 /* SwiftyAlert */; };
 		398F14552CF738ED0061CCF9 /* SwiftyAlert in Frameworks */ = {isa = PBXBuildFile; productRef = 398F14542CF738ED0061CCF9 /* SwiftyAlert */; };
-		398F14572CF738F30061CCF9 /* SwiftyAlert in Frameworks */ = {isa = PBXBuildFile; productRef = 398F14562CF738F30061CCF9 /* SwiftyAlert */; };
 		398F14592CF738F70061CCF9 /* SwiftyAlert in Frameworks */ = {isa = PBXBuildFile; productRef = 398F14582CF738F70061CCF9 /* SwiftyAlert */; };
 		398F14612CF739B50061CCF9 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 398F14602CF739B50061CCF9 /* ChocofordUI */; };
 		398F14632CF739B90061CCF9 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 398F14622CF739B90061CCF9 /* ChocofordEssentials */; };
-		3990F82C2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F82D2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F82E2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F8362CACF4C500C94983 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3990F8352CACF4C500C94983 /* StoreKit.framework */; };
@@ -202,25 +138,18 @@
 		39AD1EF2295B504C00DA9657 /* AppEnviornment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AD1EEE295B504C00DA9657 /* AppEnviornment.swift */; };
 		39AF4C802CFF1689009126C4 /* WhatsNewSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AF4C7F2CFF1688009126C4 /* WhatsNewSheetView.swift */; };
 		39AF4C812CFF1689009126C4 /* WhatsNewSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AF4C7F2CFF1688009126C4 /* WhatsNewSheetView.swift */; };
-		39AF4C822CFF1689009126C4 /* WhatsNewSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AF4C7F2CFF1688009126C4 /* WhatsNewSheetView.swift */; };
 		39AF4DE12D0611E0009126C4 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 39AF4DE02D0611E0009126C4 /* CHANGELOG.md */; };
-		39AF4DE22D0611E0009126C4 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 39AF4DE02D0611E0009126C4 /* CHANGELOG.md */; };
 		39AF4DE32D0611E0009126C4 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 39AF4DE02D0611E0009126C4 /* CHANGELOG.md */; };
 		39B141402CE5E2F800D3EEDA /* MediaItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */; };
-		39B141412CE5E2F900D3EEDA /* MediaItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */; };
 		39B141422CE5E2F900D3EEDA /* MediaItem+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1413F2CE5E2F800D3EEDA /* MediaItem+Persistence.swift */; };
 		39B141892CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141882CE7183200D3EEDA /* FileHistorySettingsView.swift */; };
-		39B1418A2CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141882CE7183200D3EEDA /* FileHistorySettingsView.swift */; };
 		39B1418B2CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141882CE7183200D3EEDA /* FileHistorySettingsView.swift */; };
 		39B1418D2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1418C2CE7186C00D3EEDA /* MediasSettingsView.swift */; };
 		39B1418E2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1418C2CE7186C00D3EEDA /* MediasSettingsView.swift */; };
-		39B1418F2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1418C2CE7186C00D3EEDA /* MediasSettingsView.swift */; };
-		39B141912CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141902CE7198500D3EEDA /* FileCheckpointDetailView.swift */; };
 		39B141922CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141902CE7198500D3EEDA /* FileCheckpointDetailView.swift */; };
 		39B141932CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141902CE7198500D3EEDA /* FileCheckpointDetailView.swift */; };
 		39B141B72CE736BA00D3EEDA /* BackupsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141B62CE736BA00D3EEDA /* BackupsSettingsView.swift */; };
 		39B141B82CE736BA00D3EEDA /* BackupsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141B62CE736BA00D3EEDA /* BackupsSettingsView.swift */; };
-		39B141B92CE736BA00D3EEDA /* BackupsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B141B62CE736BA00D3EEDA /* BackupsSettingsView.swift */; };
 		39B142EA2CE9D2A100D3EEDA /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39B142E92CE9D2A100D3EEDA /* Zlib */; };
 		39B143312CEA5E8700D3EEDA /* ExcalidrawCore+Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143262CEA5E8700D3EEDA /* ExcalidrawCore+Navigation.swift */; };
 		39B143322CEA5E8700D3EEDA /* ExcalidrawCore+UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143292CEA5E8700D3EEDA /* ExcalidrawCore+UI.swift */; };
@@ -246,29 +175,14 @@
 		39B143462CEA5E8700D3EEDA /* ExcalidrawCore+ScriptMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143282CEA5E8700D3EEDA /* ExcalidrawCore+ScriptMessage.swift */; };
 		39B143472CEA5E8700D3EEDA /* ExcalidrawToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1432F2CEA5E8700D3EEDA /* ExcalidrawToolbar.swift */; };
 		39B143482CEA5E8700D3EEDA /* ExcalidrawImageRenderer_CoreData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143202CEA5E8700D3EEDA /* ExcalidrawImageRenderer_CoreData.swift */; };
-		39B143492CEA5E8700D3EEDA /* ExcalidrawCore+Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143262CEA5E8700D3EEDA /* ExcalidrawCore+Navigation.swift */; };
-		39B1434A2CEA5E8700D3EEDA /* ExcalidrawCore+UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143292CEA5E8700D3EEDA /* ExcalidrawCore+UI.swift */; };
-		39B1434B2CEA5E8700D3EEDA /* ExcalidrawWebActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1432A2CEA5E8700D3EEDA /* ExcalidrawWebActor.swift */; };
-		39B1434C2CEA5E8700D3EEDA /* ExcalidrawCore+Persisitence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143272CEA5E8700D3EEDA /* ExcalidrawCore+Persisitence.swift */; };
-		39B1434D2CEA5E8700D3EEDA /* ExcalidrawContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1432E2CEA5E8700D3EEDA /* ExcalidrawContainerView.swift */; };
-		39B1434E2CEA5E8700D3EEDA /* ExcalidrawCore+Download.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143252CEA5E8700D3EEDA /* ExcalidrawCore+Download.swift */; };
-		39B1434F2CEA5E8700D3EEDA /* ExcalidrawCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143242CEA5E8700D3EEDA /* ExcalidrawCore.swift */; };
-		39B143502CEA5E8700D3EEDA /* ExcalidrawRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143222CEA5E8700D3EEDA /* ExcalidrawRenderer.swift */; };
-		39B143512CEA5E8700D3EEDA /* ExcalidrawView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1432C2CEA5E8700D3EEDA /* ExcalidrawView.swift */; };
-		39B143522CEA5E8700D3EEDA /* ExcalidrawCore+ScriptMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143282CEA5E8700D3EEDA /* ExcalidrawCore+ScriptMessage.swift */; };
-		39B143532CEA5E8700D3EEDA /* ExcalidrawToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1432F2CEA5E8700D3EEDA /* ExcalidrawToolbar.swift */; };
-		39B143542CEA5E8700D3EEDA /* ExcalidrawImageRenderer_CoreData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143202CEA5E8700D3EEDA /* ExcalidrawImageRenderer_CoreData.swift */; };
 		39B143552CEA5E8700D3EEDA /* ExcalidrawRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143222CEA5E8700D3EEDA /* ExcalidrawRenderer.swift */; };
 		39B143562CEA5E8700D3EEDA /* ExcalidrawImageRenderer_File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143212CEA5E8700D3EEDA /* ExcalidrawImageRenderer_File.swift */; };
 		39B1435A2CEA5EA200D3EEDA /* ContainerToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143592CEA5EA200D3EEDA /* ContainerToolbar.swift */; };
-		39B1435B2CEA5EA200D3EEDA /* ContainerToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143592CEA5EA200D3EEDA /* ContainerToolbar.swift */; };
 		39B1435C2CEA5EA200D3EEDA /* ContainerToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143592CEA5EA200D3EEDA /* ContainerToolbar.swift */; };
 		39B1435E2CEA5FB700D3EEDA /* LayoutState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1435D2CEA5FB700D3EEDA /* LayoutState.swift */; };
-		39B1435F2CEA5FB700D3EEDA /* LayoutState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1435D2CEA5FB700D3EEDA /* LayoutState.swift */; };
 		39B143602CEA5FB700D3EEDA /* LayoutState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B1435D2CEA5FB700D3EEDA /* LayoutState.swift */; };
 		39B143662CEAF84700D3EEDA /* SingleEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143642CEAF84700D3EEDA /* SingleEditorView.swift */; };
 		39B143672CEAF84700D3EEDA /* SingleEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143642CEAF84700D3EEDA /* SingleEditorView.swift */; };
-		39B143682CEAF84700D3EEDA /* SingleEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B143642CEAF84700D3EEDA /* SingleEditorView.swift */; };
 		39B144BF2CED04F200D3EEDA /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BD2CED04F200D3EEDA /* LibraryViewModel.swift */; };
 		39B144C02CED04F200D3EEDA /* LibrarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BA2CED04F200D3EEDA /* LibrarySection.swift */; };
 		39B144C12CED04F200D3EEDA /* LibraryModel+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B92CED04F200D3EEDA /* LibraryModel+Persistence.swift */; };
@@ -285,14 +199,6 @@
 		39B144CC2CED04F200D3EEDA /* LibrarySectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BB2CED04F200D3EEDA /* LibrarySectionHeader.swift */; };
 		39B144CD2CED04F200D3EEDA /* LibraryImportSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B62CED04F200D3EEDA /* LibraryImportSheetView.swift */; };
 		39B144CE2CED04F200D3EEDA /* LibraryItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B72CED04F200D3EEDA /* LibraryItemView.swift */; };
-		39B144CF2CED04F200D3EEDA /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BD2CED04F200D3EEDA /* LibraryViewModel.swift */; };
-		39B144D02CED04F200D3EEDA /* LibrarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BA2CED04F200D3EEDA /* LibrarySection.swift */; };
-		39B144D12CED04F200D3EEDA /* LibraryModel+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B92CED04F200D3EEDA /* LibraryModel+Persistence.swift */; };
-		39B144D22CED04F200D3EEDA /* LibraryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B82CED04F200D3EEDA /* LibraryModel.swift */; };
-		39B144D32CED04F200D3EEDA /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BC2CED04F200D3EEDA /* LibraryView.swift */; };
-		39B144D42CED04F200D3EEDA /* LibrarySectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144BB2CED04F200D3EEDA /* LibrarySectionHeader.swift */; };
-		39B144D52CED04F200D3EEDA /* LibraryImportSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B62CED04F200D3EEDA /* LibraryImportSheetView.swift */; };
-		39B144D62CED04F200D3EEDA /* LibraryItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B144B72CED04F200D3EEDA /* LibraryItemView.swift */; };
 		39B7B878296C110B005F7E9D /* File+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B7B877296C110B005F7E9D /* File+Persistence.swift */; };
 		39BBE4752A6F078100045BEA /* ExportState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BBE4742A6F078100045BEA /* ExportState.swift */; };
 		39BE12EE2CB7DD8C006781D5 /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39BE12ED2CB7DD8C006781D5 /* Zlib */; };
@@ -303,8 +209,6 @@
 		39DC11BC2C9195F60037C4AE /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03D2C6C7EAA00472AE7 /* ChocofordUI */; };
 		39DC11BD2C9195F60037C4AE /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2F72C512E7B00F14E88 /* ChocofordEssentials */; };
 		39DC11BE2C9195F60037C4AE /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2F92C512E7B00F14E88 /* ChocofordUI */; };
-		39DC11C12C9195F60037C4AE /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A1022C6D1D4900472AE7 /* ChocofordEssentials */; };
-		39DC11C22C9195F60037C4AE /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A1062C6D1D4900472AE7 /* ChocofordUI */; };
 		39DCA1442A7EC7DA00B1DDA0 /* ExcalidrawElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1432A7EC7DA00B1DDA0 /* ExcalidrawElement.swift */; };
 		39DCA1462A7ECA8E00B1DDA0 /* ExcalidrawElementBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1452A7ECA8E00B1DDA0 /* ExcalidrawElementBase.swift */; };
 		39DCA1492A7ECB0600B1DDA0 /* ExcalidrawGenricElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DCA1482A7ECB0600B1DDA0 /* ExcalidrawGenricElement.swift */; };
@@ -320,7 +224,6 @@
 		39E73D6F29DADCF100098A79 /* ExportImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E73D6E29DADCF100098A79 /* ExportImageView.swift */; };
 		39E73D7129DAFE3E00098A79 /* NSImage+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E73D7029DAFE3E00098A79 /* NSImage+Extension.swift */; };
 		39E73D7329DB3B9800098A79 /* VersionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E73D7229DB3B9800098A79 /* VersionState.swift */; };
-		39E9C59E2C8CA78100BC1C07 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E9C59D2C8CA78100BC1C07 /* AboutView.swift */; };
 		39E9C59F2C8CA78100BC1C07 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E9C59D2C8CA78100BC1C07 /* AboutView.swift */; };
 		39E9C5A02C8CA78100BC1C07 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39E9C59D2C8CA78100BC1C07 /* AboutView.swift */; };
 		39E9C5A52C8CB2E600BC1C07 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 39E9C5A42C8CB2E600BC1C07 /* ChocofordEssentials */; };
@@ -406,7 +309,6 @@
 		394A7FAE2C515CB700D4918B /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		3963A0822C6C7EAA00472AE7 /* ExcalidrawZ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExcalidrawZ.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3963A0832C6C7EAA00472AE7 /* AppStore-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "AppStore-Info.plist"; path = "/Users/chocoford/Developer/ExcaliDrawZ/ExcalidrawZ/AppStore-Info.plist"; sourceTree = "<absolute>"; };
-		3963A14C2C6D1D4900472AE7 /* ExcalidrawZ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExcalidrawZ.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3963A14D2C6D1D4900472AE7 /* Lagacy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Lagacy-Info.plist"; path = "/Users/chocoford/Developer/ExcaliDrawZ/ExcalidrawZ/Lagacy-Info.plist"; sourceTree = "<absolute>"; };
 		3966612F2C665D3E00F863BC /* excalidraw-latest */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "excalidraw-latest"; sourceTree = "<group>"; };
 		3966623B2C66686A00F863BC /* ExcalidrawServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcalidrawServer.swift; sourceTree = "<group>"; };
@@ -552,30 +454,6 @@
 			);
 			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
 		};
-		39B8031D2C6D2AFE00308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				CheckForUpdatesView.swift,
-				UpdateChecker.swift,
-			);
-			target = 3963A0FF2C6D1D4900472AE7 /* ExcalidrawZ (Lagacy) */;
-		};
-		39B8032C2C6D2B1A00308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				SegmentedPicker.swift,
-				SegmentedPickerEnvironment.swift,
-				SegmentedPickerHeroLayer.swift,
-			);
-			target = 3963A0FF2C6D1D4900472AE7 /* ExcalidrawZ (Lagacy) */;
-		};
-		39B8032D2C6D2B1A00308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				MigrateToNewVersion.swift,
-			);
-			target = 3963A0FF2C6D1D4900472AE7 /* ExcalidrawZ (Lagacy) */;
-		};
 		39B8032F2C6D2B3300308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -587,9 +465,9 @@
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		392CF8EA2C8EF1A700CC81B9 /* ci_scripts */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ci_scripts; sourceTree = "<group>"; };
-		3963A0342C6BD6B200472AE7 /* Sparkle */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A0352C6BD6B900472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39B8031D2C6D2AFE00308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Sparkle; sourceTree = "<group>"; };
-		3963A08A2C6C87EF00472AE7 /* Migration */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A08B2C6C87F400472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39B8032F2C6D2B3300308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39B8032D2C6D2B1A00308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Migration; sourceTree = "<group>"; };
-		3966624A2C67BEE900F863BC /* SegmentedPicker */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A09E2C6D05DF00472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 3966624B2C67BEF000F863BC /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39B8032C2C6D2B1A00308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SegmentedPicker; sourceTree = "<group>"; };
+		3963A0342C6BD6B200472AE7 /* Sparkle */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A0352C6BD6B900472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Sparkle; sourceTree = "<group>"; };
+		3963A08A2C6C87EF00472AE7 /* Migration */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A08B2C6C87F400472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39B8032F2C6D2B3300308432 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Migration; sourceTree = "<group>"; };
+		3966624A2C67BEE900F863BC /* SegmentedPicker */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A09E2C6D05DF00472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 3966624B2C67BEF000F863BC /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SegmentedPicker; sourceTree = "<group>"; };
 		3987A5092CB54B200054D7D5 /* QuickLookPreviewExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3987A51A2CB54B200054D7D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = QuickLookPreviewExtension; sourceTree = "<group>"; };
 		3987A53F2CB550740054D7D5 /* ExcalidrawFile */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3987A61C2CB6DEC20054D7D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ExcalidrawFile; sourceTree = "<group>"; };
 		39BE12DF2CB79DE0006781D5 /* Excalidraw+Image */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (39B142E42CE9D25C00D3EEDA /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = "Excalidraw+Image"; sourceTree = "<group>"; };
@@ -609,21 +487,6 @@
 				39BE12F12CB7DD97006781D5 /* Zlib in Frameworks */,
 				3963A0742C6C7EAA00472AE7 /* FlyingFox in Frameworks */,
 				3963A0762C6C7EAA00472AE7 /* ChocofordEssentials in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		3963A1392C6D1D4900472AE7 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				39DC11C22C9195F60037C4AE /* ChocofordUI in Frameworks */,
-				398F14572CF738F30061CCF9 /* SwiftyAlert in Frameworks */,
-				39DC11C12C9195F60037C4AE /* ChocofordEssentials in Frameworks */,
-				3963A13A2C6D1D4900472AE7 /* ChocofordUI in Frameworks */,
-				3963A13B2C6D1D4900472AE7 /* Sparkle in Frameworks */,
-				3963A13D2C6D1D4900472AE7 /* FlyingFox in Frameworks */,
-				397152D42C85D00E00A65ADF /* SVGView in Frameworks */,
-				3963A13E2C6D1D4900472AE7 /* ChocofordEssentials in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -760,7 +623,6 @@
 				397E4664295838D0003B824B /* ExcalidrawZTests.xctest */,
 				397E466E295838D0003B824B /* ExcalidrawZUITests.xctest */,
 				3963A0822C6C7EAA00472AE7 /* ExcalidrawZ.app */,
-				3963A14C2C6D1D4900472AE7 /* ExcalidrawZ.app */,
 				3987A5072CB54B200054D7D5 /* QuickLookPreviewExtension.appex */,
 			);
 			name = Products;
@@ -1044,38 +906,6 @@
 			productReference = 3963A0822C6C7EAA00472AE7 /* ExcalidrawZ.app */;
 			productType = "com.apple.product-type.application";
 		};
-		3963A0FF2C6D1D4900472AE7 /* ExcalidrawZ (Lagacy) */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 3963A1482C6D1D4900472AE7 /* Build configuration list for PBXNativeTarget "ExcalidrawZ (Lagacy)" */;
-			buildPhases = (
-				3963A1092C6D1D4900472AE7 /* Sources */,
-				3963A1392C6D1D4900472AE7 /* Frameworks */,
-				3963A1402C6D1D4900472AE7 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				390716DF2C6F15C7002D7834 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				3987A53F2CB550740054D7D5 /* ExcalidrawFile */,
-				39BE12DF2CB79DE0006781D5 /* Excalidraw+Image */,
-			);
-			name = "ExcalidrawZ (Lagacy)";
-			packageProductDependencies = (
-				3963A1002C6D1D4900472AE7 /* Sparkle */,
-				3963A1022C6D1D4900472AE7 /* ChocofordEssentials */,
-				3963A1032C6D1D4900472AE7 /* ChocofordUI */,
-				3963A1042C6D1D4900472AE7 /* ChocofordEssentials */,
-				3963A1062C6D1D4900472AE7 /* ChocofordUI */,
-				3963A1072C6D1D4900472AE7 /* FlyingFox */,
-				397152D32C85D00E00A65ADF /* SVGView */,
-				398F14562CF738F30061CCF9 /* SwiftyAlert */,
-			);
-			productName = ExcaliDrawZ;
-			productReference = 3963A14C2C6D1D4900472AE7 /* ExcalidrawZ.app */;
-			productType = "com.apple.product-type.application";
-		};
 		397E4652295838CF003B824B /* ExcalidrawZ */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 397E4678295838D0003B824B /* Build configuration list for PBXNativeTarget "ExcalidrawZ" */;
@@ -1233,7 +1063,6 @@
 			targets = (
 				3963A0362C6C7EAA00472AE7 /* ExcalidrawZ (AppStore) */,
 				397E4652295838CF003B824B /* ExcalidrawZ */,
-				3963A0FF2C6D1D4900472AE7 /* ExcalidrawZ (Lagacy) */,
 				397E4663295838D0003B824B /* ExcalidrawZTests */,
 				397E466D295838D0003B824B /* ExcalidrawZUITests */,
 				3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */,
@@ -1257,24 +1086,6 @@
 				3990F82E2CA9C55100C94983 /* Store.storekit in Resources */,
 				3976C4D72C8789F60037D3AF /* overwrite_console.js in Resources */,
 				3963A07E2C6C7EAA00472AE7 /* FakeSaveCommand.js in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		3963A1402C6D1D4900472AE7 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				3963A1412C6D1D4900472AE7 /* excalidraw-latest in Resources */,
-				3963A1422C6D1D4900472AE7 /* FakeDrop.js in Resources */,
-				39AF4DE22D0611E0009126C4 /* CHANGELOG.md in Resources */,
-				390716DD2C6F159C002D7834 /* Localizable.xcstrings in Resources */,
-				3963A1432C6D1D4900472AE7 /* template.excalidraw in Resources */,
-				3963A1442C6D1D4900472AE7 /* Preview Assets.xcassets in Resources */,
-				3963A1452C6D1D4900472AE7 /* Assets.xcassets in Resources */,
-				3963A1462C6D1D4900472AE7 /* FakeToggleColorMode.js in Resources */,
-				3990F82C2CA9C55100C94983 /* Store.storekit in Resources */,
-				3976C4D82C8789F60037D3AF /* overwrite_console.js in Resources */,
-				3963A1472C6D1D4900472AE7 /* FakeSaveCommand.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1406,91 +1217,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		3963A1092C6D1D4900472AE7 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				3963A10B2C6D1D4900472AE7 /* ExcalidrawImageElement.swift in Sources */,
-				3963A10C2C6D1D4900472AE7 /* NSImage+Extension.swift in Sources */,
-				3963A10D2C6D1D4900472AE7 /* URL+Extension.swift in Sources */,
-				3963A10E2C6D1D4900472AE7 /* FileRowView.swift in Sources */,
-				3963A10F2C6D1D4900472AE7 /* RootView.swift in Sources */,
-				39B141412CE5E2F900D3EEDA /* MediaItem+Persistence.swift in Sources */,
-				3963A1102C6D1D4900472AE7 /* Model.xcdatamodeld in Sources */,
-				3963A1112C6D1D4900472AE7 /* FileCheckpointListView.swift in Sources */,
-				3963A1122C6D1D4900472AE7 /* GroupListView.swift in Sources */,
-				3963A1132C6D1D4900472AE7 /* FileCheckpointRowView.swift in Sources */,
-				3963A1142C6D1D4900472AE7 /* ExportState.swift in Sources */,
-				397152EF2C86E18F00A65ADF /* LibraryItem+Persistence.swift in Sources */,
-				3963A1152C6D1D4900472AE7 /* ExportFileView.swift in Sources */,
-				3963A1162C6D1D4900472AE7 /* String+Extension.swift in Sources */,
-				3963A1172C6D1D4900472AE7 /* Group.swift in Sources */,
-				390E1F412CDDE7D400DEB779 /* UIImage+Extension.swift in Sources */,
-				3963A1182C6D1D4900472AE7 /* ExportImageView.swift in Sources */,
-				39AF4C822CFF1689009126C4 /* WhatsNewSheetView.swift in Sources */,
-				3963A1192C6D1D4900472AE7 /* Array+Extension.swift in Sources */,
-				3963A11A2C6D1D4900472AE7 /* Utils.swift in Sources */,
-				3963A11B2C6D1D4900472AE7 /* FileCheckpoint+Extension.swift in Sources */,
-				3963A11C2C6D1D4900472AE7 /* ExcalidrawElementBase.swift in Sources */,
-				3963A11D2C6D1D4900472AE7 /* Error.swift in Sources */,
-				3987A5612CB556860054D7D5 /* FileState.swift in Sources */,
-				3987A5672CB557160054D7D5 /* ToolState.swift in Sources */,
-				3963A11E2C6D1D4900472AE7 /* ExcalidrawElement.swift in Sources */,
-				3963A11F2C6D1D4900472AE7 /* ContentView.swift in Sources */,
-				3963A1202C6D1D4900472AE7 /* VersionState.swift in Sources */,
-				3963A1212C6D1D4900472AE7 /* FetchResults+Extension.swift in Sources */,
-				39B144CF2CED04F200D3EEDA /* LibraryViewModel.swift in Sources */,
-				39B144D02CED04F200D3EEDA /* LibrarySection.swift in Sources */,
-				39B144D12CED04F200D3EEDA /* LibraryModel+Persistence.swift in Sources */,
-				39B144D22CED04F200D3EEDA /* LibraryModel.swift in Sources */,
-				39B144D32CED04F200D3EEDA /* LibraryView.swift in Sources */,
-				39B144D42CED04F200D3EEDA /* LibrarySectionHeader.swift in Sources */,
-				39B144D52CED04F200D3EEDA /* LibraryImportSheetView.swift in Sources */,
-				39B144D62CED04F200D3EEDA /* LibraryItemView.swift in Sources */,
-				3963A1222C6D1D4900472AE7 /* ExcalidrawGenricElement.swift in Sources */,
-				3963A1232C6D1D4900472AE7 /* ExcalidrawTextElement.swift in Sources */,
-				3987A5652CB556BC0054D7D5 /* AppPreference.swift in Sources */,
-				3963A1252C6D1D4900472AE7 /* GroupRowView.swift in Sources */,
-				39B141B92CE736BA00D3EEDA /* BackupsSettingsView.swift in Sources */,
-				3963A1262C6D1D4900472AE7 /* PersistenceController.swift in Sources */,
-				3963A1272C6D1D4900472AE7 /* SidebarView.swift in Sources */,
-				3963A1282C6D1D4900472AE7 /* ExcalidrawLinearElement.swift in Sources */,
-				3963A1292C6D1D4900472AE7 /* File+Persistence.swift in Sources */,
-				39B141912CE7198500D3EEDA /* FileCheckpointDetailView.swift in Sources */,
-				39B1418A2CE7183200D3EEDA /* FileHistorySettingsView.swift in Sources */,
-				3963A12A2C6D1D4900472AE7 /* ShareView.swift in Sources */,
-				3963A12B2C6D1D4900472AE7 /* ExcalidrawServer.swift in Sources */,
-				3963A12C2C6D1D4900472AE7 /* ExcaliDrawOpenPanel.swift in Sources */,
-				3963A12D2C6D1D4900472AE7 /* ExcalidrawFreeDrawElement.swift in Sources */,
-				39B1418F2CE7186C00D3EEDA /* MediasSettingsView.swift in Sources */,
-				3963A12E2C6D1D4900472AE7 /* ExcalidrawZApp.swift in Sources */,
-				3963A12F2C6D1D4900472AE7 /* SettingsView.swift in Sources */,
-				3963A1302C6D1D4900472AE7 /* GeneralSettingsView.swift in Sources */,
-				39B143492CEA5E8700D3EEDA /* ExcalidrawCore+Navigation.swift in Sources */,
-				39B1434A2CEA5E8700D3EEDA /* ExcalidrawCore+UI.swift in Sources */,
-				39B1434B2CEA5E8700D3EEDA /* ExcalidrawWebActor.swift in Sources */,
-				39B1435F2CEA5FB700D3EEDA /* LayoutState.swift in Sources */,
-				39B1434C2CEA5E8700D3EEDA /* ExcalidrawCore+Persisitence.swift in Sources */,
-				39B1434D2CEA5E8700D3EEDA /* ExcalidrawContainerView.swift in Sources */,
-				39B143682CEAF84700D3EEDA /* SingleEditorView.swift in Sources */,
-				39B1434E2CEA5E8700D3EEDA /* ExcalidrawCore+Download.swift in Sources */,
-				39B1434F2CEA5E8700D3EEDA /* ExcalidrawCore.swift in Sources */,
-				39B143502CEA5E8700D3EEDA /* ExcalidrawRenderer.swift in Sources */,
-				39B143512CEA5E8700D3EEDA /* ExcalidrawView.swift in Sources */,
-				39B143522CEA5E8700D3EEDA /* ExcalidrawCore+ScriptMessage.swift in Sources */,
-				39B143532CEA5E8700D3EEDA /* ExcalidrawToolbar.swift in Sources */,
-				39B1435B2CEA5EA200D3EEDA /* ContainerToolbar.swift in Sources */,
-				39B143542CEA5E8700D3EEDA /* ExcalidrawImageRenderer_CoreData.swift in Sources */,
-				3963A1312C6D1D4900472AE7 /* LoadingView.swift in Sources */,
-				397152E92C86DD2900A65ADF /* Library+Persistence.swift in Sources */,
-				3963A1342C6D1D4900472AE7 /* FileListView.swift in Sources */,
-				39E9C59E2C8CA78100BC1C07 /* AboutView.swift in Sources */,
-				3963A1352C6D1D4900472AE7 /* AppDelegate.swift in Sources */,
-				3963A1372C6D1D4900472AE7 /* AppEnviornment.swift in Sources */,
-				3963A1382C6D1D4900472AE7 /* RenameSheetView.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		397E464F295838CF003B824B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1612,10 +1338,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		390716DF2C6F15C7002D7834 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			productRef = 390716DE2C6F15C7002D7834 /* XCStringsToolPlugin */;
-		};
 		390716E22C6F15DE002D7834 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			productRef = 390716E12C6F15DE002D7834 /* XCStringsToolPlugin */;
@@ -1665,7 +1387,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 31;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1690,7 +1412,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.6;
+				MARKETING_VERSION = 1.2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.excalidraw-Debug";
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -1710,7 +1432,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 31;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1735,7 +1457,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.6;
+				MARKETING_VERSION = 1.2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -1815,7 +1537,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 31;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1840,7 +1562,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.6;
+				MARKETING_VERSION = 1.2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -1860,7 +1582,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 31;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1884,7 +1606,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.6;
+				MARKETING_VERSION = 1.2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -1936,136 +1658,6 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = ExcaliDrawZ;
-			};
-			name = "App Store";
-		};
-		3963A1492C6D1D4900472AE7 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 28;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "ExcalidrawZ/Lagacy-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "ExcalidrawZ (Lagacy)";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.ExcalidrawZ-Debug";
-				PRODUCT_NAME = ExcalidrawZ;
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		3963A14A2C6D1D4900472AE7 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 28;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "ExcalidrawZ/Lagacy-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "ExcalidrawZ (Lagacy)";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.ExcalidrawZ;
-				PRODUCT_NAME = ExcalidrawZ;
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		3963A14B2C6D1D4900472AE7 /* App Store */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 28;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "ExcalidrawZ/Lagacy-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "ExcalidrawZ (Lagacy)";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.ExcalidrawZ;
-				PRODUCT_NAME = ExcalidrawZ;
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = APP_STORE;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = "App Store";
 		};
@@ -2204,7 +1796,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 31;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2228,7 +1820,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.6;
+				MARKETING_VERSION = 1.2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.excalidraw-Debug";
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -2247,7 +1839,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 31;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2271,7 +1863,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.6;
+				MARKETING_VERSION = 1.2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -2373,7 +1965,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 31;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -2387,7 +1979,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.6;
+				MARKETING_VERSION = 1.2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.excalidraw-Debug.QuickLookPreviewExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2403,7 +1995,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 31;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -2417,7 +2009,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.6;
+				MARKETING_VERSION = 1.2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw.QuickLookPreviewExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2432,7 +2024,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 31;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -2446,7 +2038,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.6;
+				MARKETING_VERSION = 1.2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw.QuickLookPreviewExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2465,16 +2057,6 @@
 				3963A0802C6C7EAA00472AE7 /* Debug */,
 				3963A0812C6C7EAA00472AE7 /* Release */,
 				3963A0A52C6D12D400472AE7 /* App Store */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		3963A1482C6D1D4900472AE7 /* Build configuration list for PBXNativeTarget "ExcalidrawZ (Lagacy)" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				3963A1492C6D1D4900472AE7 /* Debug */,
-				3963A14A2C6D1D4900472AE7 /* Release */,
-				3963A14B2C6D1D4900472AE7 /* App Store */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -2564,30 +2146,6 @@
 				minimumVersion = 0.15.0;
 			};
 		};
-		3963A1012C6D1D4900472AE7 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/sparkle-project/Sparkle.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.0;
-			};
-		};
-		3963A1052C6D1D4900472AE7 /* XCRemoteSwiftPackageReference "ChocofordKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/chocoford/ChocofordKit.git";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
-		3963A1082C6D1D4900472AE7 /* XCRemoteSwiftPackageReference "FlyingFox" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/swhitty/FlyingFox.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.15.0;
-			};
-		};
 		3966623D2C666EC600F863BC /* XCRemoteSwiftPackageReference "FlyingFox" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/swhitty/FlyingFox.git";
@@ -2631,11 +2189,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		390716DE2C6F15C7002D7834 /* XCStringsToolPlugin */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */;
-			productName = "plugin:XCStringsToolPlugin";
-		};
 		390716E12C6F15DE002D7834 /* XCStringsToolPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */;
@@ -2690,43 +2243,10 @@
 			package = 3963A03F2C6C7EAA00472AE7 /* XCRemoteSwiftPackageReference "FlyingFox" */;
 			productName = FlyingFox;
 		};
-		3963A1002C6D1D4900472AE7 /* Sparkle */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 3963A1012C6D1D4900472AE7 /* XCRemoteSwiftPackageReference "Sparkle" */;
-			productName = Sparkle;
-		};
-		3963A1022C6D1D4900472AE7 /* ChocofordEssentials */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = ChocofordEssentials;
-		};
-		3963A1032C6D1D4900472AE7 /* ChocofordUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = ChocofordUI;
-		};
-		3963A1042C6D1D4900472AE7 /* ChocofordEssentials */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 3963A1052C6D1D4900472AE7 /* XCRemoteSwiftPackageReference "ChocofordKit" */;
-			productName = ChocofordEssentials;
-		};
-		3963A1062C6D1D4900472AE7 /* ChocofordUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 3963A1052C6D1D4900472AE7 /* XCRemoteSwiftPackageReference "ChocofordKit" */;
-			productName = ChocofordUI;
-		};
-		3963A1072C6D1D4900472AE7 /* FlyingFox */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 3963A1082C6D1D4900472AE7 /* XCRemoteSwiftPackageReference "FlyingFox" */;
-			productName = FlyingFox;
-		};
 		3966623E2C666EC600F863BC /* FlyingFox */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 3966623D2C666EC600F863BC /* XCRemoteSwiftPackageReference "FlyingFox" */;
 			productName = FlyingFox;
-		};
-		397152D32C85D00E00A65ADF /* SVGView */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 397152D22C85D00E00A65ADF /* XCRemoteSwiftPackageReference "SVGView" */;
-			productName = SVGView;
 		};
 		397152D62C85D05D00A65ADF /* SVGView */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2769,11 +2289,6 @@
 			productName = SwiftyAlert;
 		};
 		398F14542CF738ED0061CCF9 /* SwiftyAlert */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 398F14512CF738DB0061CCF9 /* XCRemoteSwiftPackageReference "SwiftyAlert" */;
-			productName = SwiftyAlert;
-		};
-		398F14562CF738F30061CCF9 /* SwiftyAlert */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 398F14512CF738DB0061CCF9 /* XCRemoteSwiftPackageReference "SwiftyAlert" */;
 			productName = SwiftyAlert;
