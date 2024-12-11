@@ -120,29 +120,24 @@ struct FileRowView: View {
                         .font(.footnote)
                         .layoutPriority(1)
                     Spacer()
-                    // actions()
                 }
             }
+            .contentShape(Rectangle())
         }
         .onHover{ isHovered = $0 }
         .buttonStyle(ListButtonStyle(selected: isSelected))
-        .contextMenu {
-            listRowContextMenu.labelStyle(.titleAndIcon)
-        }
-        .alert(
+        .contextMenu { listRowContextMenu.labelStyle(.titleAndIcon) }
+        .confirmationDialog(
             LocalizedStringKey.localizable(.sidebarFileRowDeletePermanentlyAlertTitle(file.name ?? "")),
             isPresented: $showPermanentlyDeleteAlert
         ) {
-            Button(role: .cancel) {
-                showPermanentlyDeleteAlert.toggle()
-            } label: {
-                Text(.localizable(.sidebarFileRowDeletePermanentlyAlertButtonCancel))
-            }
             Button(role: .destructive) {
                 fileState.deleteFilePermanently(file)
             } label: {
                 Text(.localizable(.sidebarFileRowDeletePermanentlyAlertButtonConfirm))
             }
+        } message: {
+            Text(.localizable(.generalCannotUndoMessage))
         }
     }
     
