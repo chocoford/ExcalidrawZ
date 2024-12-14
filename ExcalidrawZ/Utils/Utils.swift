@@ -6,6 +6,11 @@
 //
 
 import Foundation
+import SwiftUI
+#if canImport(AppKit)
+import AppKit
+#endif
+
 
 func loadResource<T: Decodable>(_ filename: String) -> T {
     let data: Data
@@ -157,6 +162,54 @@ func archiveAllFiles(to url: URL) throws {
     if let errorDuringArchive {
         throw errorDuringArchive
     }
+}
+
+// MARK: Export PDF
+func exportPDF<Content: View>(@ViewBuilder content: () -> Content) {
+    let printInfo = NSPrintInfo.shared
+    printInfo.topMargin = 10
+    printInfo.bottomMargin = 10
+    printInfo.leftMargin = 10
+    printInfo.rightMargin = 10
+    printInfo.isHorizontallyCentered = true
+    printInfo.isVerticallyCentered = true
+    
+    let hostingView = NSHostingView(rootView: content())
+    hostingView.setFrameSize(NSSize(width: 400, height: 800)) // 设置视图的尺寸
+
+    let printOperation = NSPrintOperation(view: hostingView)
+    printOperation.printInfo = printInfo
+    
+    // 展示打印面板
+    printOperation.run()
+}
+
+func exportPDF(image: NSImage) {
+    let printInfo = NSPrintInfo.shared
+    printInfo.topMargin = 0
+    printInfo.bottomMargin = 0
+    printInfo.leftMargin = 0
+    printInfo.rightMargin = 0
+    let printImage = /*image.preparingThumbnail(width: printInfo.paperSize.width) ??*/ image
+    
+    let imageView = NSImageView(image: printImage)// PrintableImageView(image: printImage)
+    imageView.frame.size.width = printInfo.paperSize.width
+    imageView.frame.size.height = printInfo.paperSize.width / printImage.width * printImage.size.height
+    let printOperation = NSPrintOperation(view: imageView, printInfo: printInfo)
+    
+    printOperation.printPanel.options = [
+        .showsCopies,
+        .showsPageRange,
+        .showsPaperSize,
+        .showsOrientation,
+        .showsScaling,
+        .showsPrintSelection,
+        .showsPageSetupAccessory,
+        .showsPreview
+    ]
+
+    // 展示打印面板
+    printOperation.run()
 }
 #endif
 

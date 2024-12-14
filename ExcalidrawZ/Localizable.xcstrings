@@ -324,23 +324,6 @@
         }
       }
     },
-    "exportAll" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export All"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部导出"
-          }
-        }
-      }
-    },
     "exportImageLoading" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -473,6 +456,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "图像"
+          }
+        }
+      }
+    },
+    "exportSheetButtonPDF" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF"
           }
         }
       }
@@ -626,23 +626,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未命名"
-          }
-        }
-      }
-    },
-    "import" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Import"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导入"
           }
         }
       }
@@ -1291,6 +1274,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "素材库"
+          }
+        }
+      }
+    },
+    "menubarButtonExportAll" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export All"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部导出"
+          }
+        }
+      }
+    },
+    "menubarButtonImport" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入"
+          }
+        }
+      }
+    },
+    "menubarButtonPrint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Print..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打印..."
           }
         }
       }

@@ -84,7 +84,6 @@ struct FileRowView: View {
     @Binding var fileIDToBeRenamed: NSManagedObjectID?
         
     init(file: File, fileIDToBeRenamed: Binding<NSManagedObjectID?>) {
-//        let file = PersistenceController.shared.container.viewContext.object(with: fileID) as! File
         self.file = file
         self._fileIDToBeRenamed = fileIDToBeRenamed
     }

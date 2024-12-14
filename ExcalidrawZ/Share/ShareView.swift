@@ -30,7 +30,6 @@ struct ShareViewModifier: ViewModifier {
             }
     }
     
-    
     @MainActor @ViewBuilder
     private func content(_ file: File) -> some View {
         if #available(macOS 13.0, iOS 16.0, *) {
@@ -51,6 +50,9 @@ struct ShareView: View {
 
     @Environment(\.dismiss) var dismiss
     @Environment(\.alertToast) var alertToast
+    
+    @EnvironmentObject var exportState: ExportState
+
     
     var sharedFile: File
     
@@ -81,6 +83,21 @@ struct ShareView: View {
                         route.append(Route.exportFile)
                     }
                     
+                    
+                    SquareButton(title: "PDF", icon: .docRichtext, priority: .background) {
+                        do {
+                            let imageData = try await exportState.exportCurrentFileToImage(
+                                type: .png,
+                                embedScene: false
+                            ).data
+                            if let image = NSImage(dataIgnoringOrientation: imageData) {
+                                exportPDF(image: image)
+                            }
+                        } catch {
+                            alertToast(error)
+                        }
+                    }
+                    
 #if os(macOS)
                     SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
                         do {
@@ -90,6 +107,7 @@ struct ShareView: View {
                         }
                     }
 #endif
+
                 }
 
                 if horizontalSizeClass != .compact {
@@ -113,6 +131,7 @@ struct ShareView: View {
                         Text(.localizable(.generalButtonClose))
                     }
                 }
+                
             }
             .navigationDestination(for: Route.self) { route in
                 switch route {
@@ -122,13 +141,12 @@ struct ShareView: View {
                         ExportFileView(file: sharedFile)
                 }
             }
-            .padding(.horizontal, 40)
+            .padding(40)
 #if os(macOS)
             .toolbar(.hidden, for: .windowToolbar)
 #endif
         }
 #if os(macOS)
-        .frame(width: 400, height: 300)
         .visualEffect(material: .sidebar)
 #endif
     }
@@ -138,6 +156,7 @@ struct ShareViewLagacy: View {
     @Environment(\.dismiss) var dismiss
 
     @Environment(\.alertToast) var alertToast
+    @EnvironmentObject var exportState: ExportState
 
     var sharedFile: File
     
@@ -177,7 +196,6 @@ struct ShareViewLagacy: View {
             Text(.localizable(.exportSheetHeadline))
                 .font(.largeTitle)
 
-            
             HStack(spacing: 14) {
                 SquareButton(title: .localizable(.exportSheetButtonImage), icon: .photo) {
                     route.append(Route.exportImage)
@@ -187,6 +205,19 @@ struct ShareViewLagacy: View {
                     route.append(Route.exportFile)
                 }
                 
+                SquareButton(title: .localizable(.exportSheetButtonPDF), icon: .docRichtext, priority: .background) {
+                    do {
+                        let imageData = try await exportState.exportCurrentFileToImage(
+                            type: .png,
+                            embedScene: false
+                        ).data
+                        if let image = NSImage(dataIgnoringOrientation: imageData) {
+                            exportPDF(image: image)
+                        }
+                    } catch {
+                        alertToast(error)
+                    }
+                }
 #if os(macOS)
                 SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
                     do {
@@ -198,13 +229,12 @@ struct ShareViewLagacy: View {
 #endif
             }
             
-            
             Button {
                 dismiss()
             } label: {
                 HStack {
                     Spacer()
-                    Text("Dismiss")
+                    Text(.localizable(.generalButtonClose))
                     Spacer()
                 }
             }
@@ -219,21 +249,34 @@ fileprivate struct SquareButton: View {
     
     var title: LocalizedStringKey
     var icon: SFSymbol
-    var action: () -> Void
+    var action: () async -> Void
+    var priority: TaskPriority?
     
     init(
         title: LocalizedStringKey,
         icon: SFSymbol,
-        action: @escaping () -> Void
+        priority: TaskPriority? = nil,
+        action: @escaping () async -> Void
     ) {
         self.title = title
         self.icon = icon
         self.action = action
+        self.priority = priority
     }
+    
+    @State private var isLoading = false
     
     var body: some View {
         Button {
-            action()
+            Task.detached(priority: priority) {
+                await MainActor.run {
+                    isLoading = true
+                }
+                await action()
+                await MainActor.run {
+                    isLoading = false
+                }
+            }
         } label: {
             VStack {
                 Image(systemSymbol: icon)
@@ -242,6 +285,13 @@ fileprivate struct SquareButton: View {
                     .padding(.horizontal, 10)
                 Text(title)
             }
+            .opacity(isLoading ? 0 : 1)
+            .overlay {
+                if isLoading {
+                    ProgressView()
+                }
+            }
+            .animation(.default, value: isLoading)
         }
         .buttonStyle(ExportButtonStyle())
     }
