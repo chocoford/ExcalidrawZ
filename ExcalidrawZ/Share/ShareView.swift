@@ -32,13 +32,20 @@ struct ShareViewModifier: ViewModifier {
     
     @MainActor @ViewBuilder
     private func content(_ file: File) -> some View {
-        if #available(macOS 13.0, iOS 16.0, *) {
-            ShareView(sharedFile: file)
-                .swiftyAlert()
-        } else {
-            ShareViewLagacy(sharedFile: file)
-                .swiftyAlert()
+        ZStack {
+            if #available(macOS 13.0, iOS 16.0, *) {
+                ShareView(sharedFile: file)
+                    .swiftyAlert()
+            } else {
+                ShareViewLagacy(sharedFile: file)
+                    .swiftyAlert()
+            }
         }
+#if os(macOS)
+        .visualEffect(material: .sidebar)
+        .frame(height: 300)
+#endif
+        
     }
 }
 
@@ -88,7 +95,8 @@ struct ShareView: View {
                         do {
                             let imageData = try await exportState.exportCurrentFileToImage(
                                 type: .png,
-                                embedScene: false
+                                embedScene: false,
+                                withBackground: true
                             ).data
                             if let image = NSImage(dataIgnoringOrientation: imageData) {
                                 exportPDF(image: image)
@@ -146,9 +154,6 @@ struct ShareView: View {
             .toolbar(.hidden, for: .windowToolbar)
 #endif
         }
-#if os(macOS)
-        .visualEffect(material: .sidebar)
-#endif
     }
 }
 
@@ -209,7 +214,8 @@ struct ShareViewLagacy: View {
                     do {
                         let imageData = try await exportState.exportCurrentFileToImage(
                             type: .png,
-                            embedScene: false
+                            embedScene: false,
+                            withBackground: true
                         ).data
                         if let image = NSImage(dataIgnoringOrientation: imageData) {
                             exportPDF(image: image)

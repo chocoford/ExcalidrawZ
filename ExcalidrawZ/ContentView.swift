@@ -198,7 +198,8 @@ struct PrintModifier: ViewModifier {
                         do {
                             let imageData = try await exportState.exportCurrentFileToImage(
                                 type: .png,
-                                embedScene: false
+                                embedScene: false,
+                                withBackground: true
                             ).data
                             await MainActor.run {
                                 if let image = NSImage(dataIgnoringOrientation: imageData) {

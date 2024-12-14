@@ -233,9 +233,13 @@ extension ExcalidrawCore {
 //        }
 //    }
 //    
-    func exportElementsToPNGData(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> Data {
+    func exportElementsToPNGData(
+        elements: [ExcalidrawElement],
+        embedScene: Bool = false,
+        withBackground: Bool = true
+    ) async throws -> Data {
         let id = UUID().uuidString
-        let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified()), \(embedScene)); 0;"
+        let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified()), \(embedScene), \(withBackground)); 0;"
         self.logger.debug("\(#function), script:\n\(script)")
         Task { @MainActor in
             do {
@@ -259,8 +263,12 @@ extension ExcalidrawCore {
         return data
     }
     
-    func exportElementsToPNG(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> PlatformImage {
-        let data = try await self.exportElementsToPNGData(elements: elements, embedScene: embedScene)
+    func exportElementsToPNG(
+        elements: [ExcalidrawElement],
+        embedScene: Bool = false,
+        withBackground: Bool = true
+    ) async throws -> PlatformImage {
+        let data = try await self.exportElementsToPNGData(elements: elements, embedScene: embedScene, withBackground: withBackground)
         guard let image = PlatformImage(data: data) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
@@ -268,9 +276,13 @@ extension ExcalidrawCore {
         return image
     }
     
-    func exportElementsToSVGData(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> Data {
+    func exportElementsToSVGData(
+        elements: [ExcalidrawElement],
+        embedScene: Bool = false,
+        withBackground: Bool = true
+    ) async throws -> Data {
         let id = UUID().uuidString
-        let script = try "window.excalidrawZHelper.exportElementsToSvg('\(id)', \(elements.jsonStringified()), \(embedScene)); 0;"
+        let script = try "window.excalidrawZHelper.exportElementsToSvg('\(id)', \(elements.jsonStringified()), \(embedScene), \(withBackground)); 0;"
         self.logger.debug("\(#function)")
         Task { @MainActor in
             do {
@@ -302,8 +314,16 @@ extension ExcalidrawCore {
         return data
         
     }
-    func exportElementsToSVG(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> PlatformImage {
-        let data = try await exportElementsToSVGData(elements: elements, embedScene: embedScene)
+    func exportElementsToSVG(
+        elements: [ExcalidrawElement],
+        embedScene: Bool = false,
+        withBackground: Bool = true
+    ) async throws -> PlatformImage {
+        let data = try await exportElementsToSVGData(
+            elements: elements,
+            embedScene: embedScene,
+            withBackground: withBackground
+        )
         guard let image = PlatformImage(data: data) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
