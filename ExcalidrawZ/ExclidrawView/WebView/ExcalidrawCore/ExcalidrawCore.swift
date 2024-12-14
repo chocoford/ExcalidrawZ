@@ -113,9 +113,9 @@ class ExcalidrawCore: NSObject, ObservableObject {
         DispatchQueue.main.async {
             let request: URLRequest
 #if DEBUG
-            request = URLRequest(url: URL(string: "http://localhost:8486/index.html")!)
+            request = URLRequest(url: URL(string: "http://127.0.0.1:8486/index.html")!)
 #else
-            request = URLRequest(url: URL(string: "http://localhost:8487/index.html")!)
+            request = URLRequest(url: URL(string: "http://127.0.0.1:8487/index.html")!)
 #endif
             self.webView.load(request)
 

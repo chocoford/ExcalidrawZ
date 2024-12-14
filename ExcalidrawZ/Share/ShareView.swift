@@ -93,6 +93,7 @@ struct ShareView: View {
                     
                     SquareButton(title: "PDF", icon: .docRichtext, priority: .background) {
                         do {
+#if os(macOS)
                             let imageData = try await exportState.exportCurrentFileToImage(
                                 type: .png,
                                 embedScene: false,
@@ -101,6 +102,7 @@ struct ShareView: View {
                             if let image = NSImage(dataIgnoringOrientation: imageData) {
                                 exportPDF(image: image)
                             }
+#endif
                         } catch {
                             alertToast(error)
                         }
@@ -212,6 +214,7 @@ struct ShareViewLagacy: View {
                 
                 SquareButton(title: .localizable(.exportSheetButtonPDF), icon: .docRichtext, priority: .background) {
                     do {
+#if os(macOS)
                         let imageData = try await exportState.exportCurrentFileToImage(
                             type: .png,
                             embedScene: false,
@@ -220,6 +223,7 @@ struct ShareViewLagacy: View {
                         if let image = NSImage(dataIgnoringOrientation: imageData) {
                             exportPDF(image: image)
                         }
+#endif
                     } catch {
                         alertToast(error)
                     }
