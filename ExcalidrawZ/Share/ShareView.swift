@@ -91,7 +91,7 @@ struct ShareView: View {
                     }
                     
                     
-                    SquareButton(title: "PDF", icon: .docRichtext, priority: .background) {
+                    SquareButton(title: .localizable(.exportSheetButtonPDF), icon: .docRichtext, priority: .background) {
                         do {
 #if os(macOS)
                             let imageData = try await exportState.exportCurrentFileToImage(

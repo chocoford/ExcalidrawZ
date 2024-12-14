@@ -186,7 +186,7 @@ struct PrintModifier: ViewModifier {
         content
             .sheet(isPresented: .constant(isPreparingForPrint)) {
                 ProgressView {
-                    Text("Loading...")
+                    Text(.localizable(.generalLoading))
                 }
                 .padding(.horizontal, 40)
             }
