@@ -74,6 +74,11 @@ struct ShareView: View {
     
     @State private var route: NavigationPath = .init()
     
+    
+#if os(iOS)
+    @State private var exportedPDFURL: URL?
+#endif
+    
     var body: some View {
         NavigationStack(path: $route) {
             VStack(spacing: horizontalSizeClass == .compact ? 10 : 20) {
@@ -90,7 +95,6 @@ struct ShareView: View {
                         route.append(Route.exportFile)
                     }
                     
-                    
                     SquareButton(title: .localizable(.exportSheetButtonPDF), icon: .docRichtext, priority: .background) {
                         do {
 #if os(macOS)
@@ -100,13 +104,25 @@ struct ShareView: View {
                                 withBackground: true
                             ).data
                             if let image = NSImage(dataIgnoringOrientation: imageData) {
-                                exportPDF(image: image)
+                                exportPDF(image: image, name: sharedFile.name)
+                            }
+#elseif os(iOS)
+                            let imageData = try await exportState.exportCurrentFileToImage(
+                                type: .png,
+                                embedScene: false,
+                                withBackground: true
+                            ).data
+                            if let image = UIImage(data: imageData) {
+                                self.exportedPDFURL = try exportPDF(image: image, name: sharedFile.name)
                             }
 #endif
                         } catch {
                             alertToast(error)
                         }
                     }
+#if os(iOS)
+                    .activitySheet(item: $exportedPDFURL)
+#endif
                     
 #if os(macOS)
                     SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
@@ -196,6 +212,9 @@ struct ShareViewLagacy: View {
         .frame(width: 400, height: 300)
     }
     
+#if os(iOS)
+    @State private var exportedPDFURL: URL?
+#endif
     
     @MainActor @ViewBuilder
     private func homepage() -> some View {
@@ -211,7 +230,6 @@ struct ShareViewLagacy: View {
                 SquareButton(title: .localizable(.exportSheetButtonFile), icon: .doc) {
                     route.append(Route.exportFile)
                 }
-                
                 SquareButton(title: .localizable(.exportSheetButtonPDF), icon: .docRichtext, priority: .background) {
                     do {
 #if os(macOS)
@@ -221,13 +239,47 @@ struct ShareViewLagacy: View {
                             withBackground: true
                         ).data
                         if let image = NSImage(dataIgnoringOrientation: imageData) {
-                            exportPDF(image: image)
+                            exportPDF(image: image, name: sharedFile.name)
+                        }
+#elseif os(iOS)
+                        let imageData = try await exportState.exportCurrentFileToImage(
+                            type: .png,
+                            embedScene: false,
+                            withBackground: true
+                        ).data
+                        if let image = UIImage(data: imageData) {
+                            self.exportedPDFURL = try exportPDF(image: image, name: sharedFile.name)
                         }
 #endif
                     } catch {
                         alertToast(error)
                     }
                 }
+#if os(iOS)
+                .activitySheet(item: $exportedPDFURL)
+#endif
+
+//                ShareLink(
+//                    item: PDFFile(
+//                        name: sharedFile.name,
+//                        makeImage: {
+//                            do {
+//                                let imageData = try await exportState.exportCurrentFileToImage(
+//                                    type: .png,
+//                                    embedScene: false,
+//                                    withBackground: true
+//                                ).data
+//                                return UIImage(data: imageData) ?? UIImage(systemSymbol: .exclamationmarkTriangle)
+//                            } catch {
+//                                return UIImage(systemSymbol: .exclamationmarkTriangle)
+//                            }
+//                        }
+//                    ),
+//                    preview: SharePreview(sharedFile.name ?? "Excalidraw PDF")
+//                ) {
+//                    SquareButton.label(.localizable(.exportSheetButtonPDF), icon: .docRichtext)
+//                }
+//                .buttonStyle(ExportButtonStyle())
 #if os(macOS)
                 SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
                     do {
@@ -288,22 +340,28 @@ fileprivate struct SquareButton: View {
                 }
             }
         } label: {
-            VStack {
-                Image(systemSymbol: icon)
-                    .resizable()
-                    .scaledToFit()
-                    .padding(.horizontal, 10)
-                Text(title)
-            }
-            .opacity(isLoading ? 0 : 1)
-            .overlay {
-                if isLoading {
-                    ProgressView()
+            Self
+                .label(title, icon: icon)
+                .opacity(isLoading ? 0 : 1)
+                .overlay {
+                    if isLoading {
+                        ProgressView()
+                    }
                 }
-            }
-            .animation(.default, value: isLoading)
+                .animation(.default, value: isLoading)
         }
         .buttonStyle(ExportButtonStyle())
+    }
+    
+    @MainActor @ViewBuilder
+    static func label(_ title: LocalizedStringKey, icon: SFSymbol) -> some View {
+        VStack {
+            Image(systemSymbol: icon)
+                .resizable()
+                .scaledToFit()
+                .padding(.horizontal, 10)
+            Text(title)
+        }
     }
 }
 

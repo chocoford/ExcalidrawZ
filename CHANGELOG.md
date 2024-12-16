@@ -1,3 +1,12 @@
+## 1.2.7
+
+* Try fix sidebar bug.
+* iOS no network accessiblilty.
+* Export PDF.
+* Export PNG without background.
+* Double tap to undo on iOS&iPadOS.
+* iCloud synchronization enable settings.
+
 ## 1.2.6
 
 - Fixed an issue where the sidebar `file` could not be clicked on some Mac devices.

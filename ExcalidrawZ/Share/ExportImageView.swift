@@ -140,7 +140,6 @@ struct ExportImageView: View {
         }
     }
     
-    
     @MainActor @ViewBuilder
     private func thumbnailView(_ image: PlatformImage, url: URL) -> some View {
 #if os(macOS)
@@ -390,8 +389,6 @@ struct ImageFile: FileDocument {
 //        print(fileWrapper, fileWrapper.filename, fileWrapper.preferredFilename)
         return fileWrapper
     }
-    
-    
 }
 //print(url, fileWrapper.filename)
 //        if let filename = fileWrapper.filename,

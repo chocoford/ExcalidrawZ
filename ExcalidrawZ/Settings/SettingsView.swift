@@ -158,6 +158,9 @@ struct SettingsView: View {
                 BackupsSettingsView()
                 
 #if os(iOS)
+            case .pencil:
+                PencilSettingsView()
+                
             case .whatsNews:
                 ScrollView {
                     WhatsNewSheetView(showContinue: false)
@@ -177,6 +180,7 @@ extension SettingsView {
         case medias
         case backups
 #if os(iOS)
+        case pencil
         case whatsNews
 #endif
         
@@ -195,6 +199,8 @@ extension SettingsView {
                 case .backups:
                     return .localizable(.settingsBackupsName)
 #if os(iOS)
+                case .pencil:
+                    return "Apple Pencil"
                 case .whatsNews:
                     return .localizable(.whatsNewTitle)
 #endif
@@ -214,6 +220,8 @@ extension SettingsView {
                 case .backups:
                     "backups"
 #if os(iOS)
+                case .pencil:
+                    "pencil"
                 case .whatsNews:
                     "whatsNews"
 #endif

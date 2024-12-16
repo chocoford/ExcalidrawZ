@@ -64,7 +64,6 @@ class ExcalidrawCore: NSObject, ObservableObject {
     private var lastVersion: Int = 0
     
     var hasInjectIndexedDBData = false
-//    var hasReloadAfterInjectIndexedDBData = false
     
     internal var lastTool: ExcalidrawTool?
     
@@ -109,6 +108,12 @@ class ExcalidrawCore: NSObject, ObservableObject {
         
         self.webView.navigationDelegate = self
         self.webView.uiDelegate = self
+        
+#if os(iOS)
+        let pencilInteraction = UIPencilInteraction()
+        pencilInteraction.delegate = self
+        self.webView.addInteraction(pencilInteraction)
+#endif
         
         DispatchQueue.main.async {
             let request: URLRequest
@@ -217,6 +222,8 @@ extension ExcalidrawCore {
         print(#function, key)
         if key == "\u{1B}" {
             try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Escape'); 0;")
+//        } else if key == " " {
+//            try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Space'); 0;")
         } else {
             try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
         }
@@ -374,6 +381,10 @@ extension ExcalidrawCore {
     func performRedo() async throws {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.redo(); 0;")
     }
+    @MainActor
+    func togglePenMode(enabled: Bool) async throws {
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.togglePenMode(\(enabled)); 0;")
+    }
     
     @MainActor
     func reload() {
@@ -381,3 +392,5 @@ extension ExcalidrawCore {
     }
     
 }
+
+

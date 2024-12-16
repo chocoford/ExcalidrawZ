@@ -111,5 +111,7 @@ final class ToolState: ObservableObject {
 
     @Published var activatedTool: ExcalidrawTool? = .cursor
     @Published var inDragMode: Bool = false
+    
+    @Published var inPenMode: Bool = false
 }
 

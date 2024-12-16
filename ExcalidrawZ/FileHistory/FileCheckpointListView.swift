@@ -65,7 +65,7 @@ struct FileCheckpointListView: View {
     @State private var selection: FileCheckpoint?
     
     var body: some View {
-        if containerHorizontalSizeClass == .compact {
+//        if containerHorizontalSizeClass == .compact {
 #if os(iOS)
             NavigationStack {
                 List(selection: $selection) {
@@ -93,13 +93,13 @@ struct FileCheckpointListView: View {
                 }
             }
 #endif
-        } else {
-            List {
-                ForEach(fileCheckpoints) { checkpoint in
-                    FileCheckpointRowView(checkpoint: checkpoint)
-                }
-            }
-        }
+//        } else {
+//            List {
+//                ForEach(fileCheckpoints) { checkpoint in
+//                    FileCheckpointRowView(checkpoint: checkpoint)
+//                }
+//            }
+//        }
     }
     
 //    @MainActor @ViewBuilder

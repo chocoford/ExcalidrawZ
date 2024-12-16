@@ -528,6 +528,23 @@
         }
       }
     },
+    "generalButtonCloseApp" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close ExcalidrawZ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭ExcalidrawZ"
+          }
+        }
+      }
+    },
     "generalButtonJoinDiscord" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -541,6 +558,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "加入Discord"
+          }
+        }
+      }
+    },
+    "generalButtonOK" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好的"
           }
         }
       }
@@ -1954,6 +1988,91 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "通用"
+          }
+        }
+      }
+    },
+    "settingsICloudDisableByAccountMessage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please go to your iCloud settings and enable iCloud for the ExcalidrawZ app."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请前往您的 iCloud 设置，并为 ExcalidrawZ 应用启用 iCloud 功能。"
+          }
+        }
+      }
+    },
+    "settingsICloudDisableByAccountTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud synchronization is disabled by account settings."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由于账户设置原因，iCloud 同步已被禁用。"
+          }
+        }
+      }
+    },
+    "settingsICloudRestartToApplyMessage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You should reopen the app to apply the changes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您需要重新打开应用以应用更改。"
+          }
+        }
+      }
+    },
+    "settingsICloudTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud synchronization settings"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud 同步设置"
+          }
+        }
+      }
+    },
+    "settingsICloudToggleDisable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disable iCloud synchronization"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭iCloud数据同步"
           }
         }
       }
