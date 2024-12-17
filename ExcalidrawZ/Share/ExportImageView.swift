@@ -49,6 +49,7 @@ struct ExportImageView: View {
     @State private var showBackButton = false
     
     @State private var keepEditable = false
+    @State private var exportWithBackground = true
     @State private var imageType: Int = 0
     
     var exportType: UTType {
@@ -87,6 +88,9 @@ struct ExportImageView: View {
         .onChange(of: keepEditable) { newValue in
             exportImageData()
         }
+        .onChange(of: exportWithBackground) { newValue in
+            exportImageData()
+        }
         .onChange(of: imageType) { newValue in
             exportImageData()
         }
@@ -94,6 +98,7 @@ struct ExportImageView: View {
             if isPreview {
                 self.image = .init(named: "Layout-Inspector-Floating")
                 exportState.url = URL(string: "https://www.google.com")!
+                exportedImageData = .init(name: "Preview", data: Data(), url: URL(string: "https://www.google.com")!)
                 return
             }
             exportImageData(initial: true)
@@ -134,7 +139,6 @@ struct ExportImageView: View {
             hasError = false
         }
     }
-    
     
     @MainActor @ViewBuilder
     private func thumbnailView(_ image: PlatformImage, url: URL) -> some View {
@@ -186,6 +190,15 @@ struct ExportImageView: View {
 
             HStack {
                 Spacer()
+#if os(macOS)
+                Toggle(.localizable(.exportImageToggleWithBackground), isOn: $exportWithBackground)
+                    .toggleStyle(.checkboxStyle)
+#elseif os(iOS)
+                Toggle("", isOn: $exportWithBackground)
+                    .toggleStyle(.switch)
+                Text(.localizable(.exportImageToggleWithBackground))
+#endif
+                
 #if os(macOS)
                 Toggle(.localizable(.exportImageToggleEditable), isOn: $keepEditable)
                     .toggleStyle(.checkboxStyle)
@@ -319,7 +332,8 @@ struct ExportImageView: View {
                 if initial {
                     let imageData = try await exportState.exportCurrentFileToImage(
                         type: .png,
-                        embedScene: false
+                        embedScene: false,
+                        withBackground: self.exportWithBackground
                     )
                     await MainActor.run {
                         self.image = PlatformImage(data: imageData.data)?
@@ -330,7 +344,8 @@ struct ExportImageView: View {
                 } else {
                     let imageData = try await exportState.exportCurrentFileToImage(
                         type: self.imageType == 0 ? .png : .svg,
-                        embedScene: self.keepEditable
+                        embedScene: self.keepEditable,
+                        withBackground: self.exportWithBackground
                     )
                     await MainActor.run {
                         self.exportedImageData = imageData
@@ -374,8 +389,6 @@ struct ImageFile: FileDocument {
 //        print(fileWrapper, fileWrapper.filename, fileWrapper.preferredFilename)
         return fileWrapper
     }
-    
-    
 }
 //print(url, fileWrapper.filename)
 //        if let filename = fileWrapper.filename,

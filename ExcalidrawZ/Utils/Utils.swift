@@ -6,6 +6,11 @@
 //
 
 import Foundation
+import SwiftUI
+#if canImport(AppKit)
+import AppKit
+#endif
+
 
 func loadResource<T: Decodable>(_ filename: String) -> T {
     let data: Data
@@ -158,6 +163,122 @@ func archiveAllFiles(to url: URL) throws {
         throw errorDuringArchive
     }
 }
+
+// MARK: Export PDF
+func exportPDF<Content: View>(@ViewBuilder content: () -> Content) {
+    let printInfo = NSPrintInfo.shared
+    printInfo.topMargin = 10
+    printInfo.bottomMargin = 10
+    printInfo.leftMargin = 10
+    printInfo.rightMargin = 10
+    printInfo.isHorizontallyCentered = true
+    printInfo.isVerticallyCentered = true
+    
+    let hostingView = NSHostingView(rootView: content())
+    hostingView.setFrameSize(NSSize(width: 400, height: 800)) // 设置视图的尺寸
+
+    let printOperation = NSPrintOperation(view: hostingView)
+    printOperation.printInfo = printInfo
+    
+    // 展示打印面板
+    printOperation.run()
+}
+
+func exportPDF(image: NSImage, name: String? = nil) {
+    let printInfo = NSPrintInfo.shared
+    printInfo.topMargin = 0
+    printInfo.bottomMargin = 0
+    printInfo.leftMargin = 0
+    printInfo.rightMargin = 0
+
+    let printImage = /*image.preparingThumbnail(width: printInfo.paperSize.width) ??*/ image
+    
+    let imageView = NSImageView(image: printImage)// PrintableImageView(image: printImage)
+    imageView.frame.size.width = printInfo.paperSize.width
+    imageView.frame.size.height = printInfo.paperSize.width / printImage.width * printImage.size.height
+    let printOperation = NSPrintOperation(view: imageView, printInfo: printInfo)
+    
+    printOperation.printPanel.options = [
+        .showsCopies,
+        .showsPageRange,
+        .showsPaperSize,
+        .showsOrientation,
+        .showsScaling,
+        .showsPrintSelection,
+        .showsPageSetupAccessory,
+        .showsPreview
+    ]
+
+    // 展示打印面板
+    printOperation.run()
+}
+#elseif os(iOS)
+func exportPDF(image: UIImage, name: String? = nil, to url: URL? = nil) throws -> URL {
+    // 设置 PDF 页面大小（例如 A4）
+    let pageSize = CGSize(width: 595.2, height: 841.8) // A4 尺寸，单位为点 (1 point = 1/72 inch)
+    
+    // 创建 PDF 渲染器
+    let pdfRenderer = UIGraphicsPDFRenderer(bounds: CGRect(origin: .zero, size: pageSize))
+    
+    // 确定临时文件保存路径
+    let pdfURL = url ?? FileManager.default.temporaryDirectory.appendingPathComponent("\(name ?? "Excalidraw").pdf")
+    
+    // 计算图片缩放比例
+    let scale = pageSize.width / image.size.width
+    let scaledImageSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+    
+    // 计算需要的页数
+    let pageCount = Int(ceil(scaledImageSize.height / pageSize.height))
+    
+    do {
+        try pdfRenderer.writePDF(to: pdfURL) { context in
+            for page in 0..<pageCount {
+                context.beginPage()
+                let isLastPage = (page == pageCount - 1)
+                let visibleRect = CGRect(
+                    x: 0,
+                    y: CGFloat(page) * pageSize.height / scale,
+                    width: image.size.width,
+                    height: isLastPage ? image.size.height - CGFloat(page) * pageSize.height / scale // 剩余高度
+                    : pageSize.height / scale
+                )
+                
+                let targetRect: CGRect
+                if isLastPage {
+                    // 按比例调整最后一页，使其内容填满页面
+                    let remainingHeight = visibleRect.height * scale
+                    targetRect = CGRect(
+                        x: 0,
+                        y: 0,
+                        width: pageSize.width,
+                        height: remainingHeight
+                    )
+                } else {
+                    // 普通页面填满整页
+                    targetRect = CGRect(
+                        x: 0,
+                        y: 0,
+                        width: pageSize.width,
+                        height: pageSize.height
+                    )
+                }
+                
+                // 裁剪并绘制当前页图片内容
+                if let cgImage = image.cgImage?.cropping(to: visibleRect) {
+                    UIImage(cgImage: cgImage).draw(in: targetRect)
+                }
+            }
+        }
+        
+        print("PDF saved to: \(pdfURL)")
+        return pdfURL
+    } catch {
+        print("Failed to create PDF: \(error)")
+        throw error
+    }
+}
+
+
 #endif
 
 func getTempDirectory() throws -> URL {

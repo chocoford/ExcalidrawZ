@@ -59,6 +59,7 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
 - [x] English (Native excalidraw font)
 - [x] 简体中文（杨任东竹书体）
 - [x] 日本語（瀬戸体）
+- [x] [한국어 (빙그레 싸만코체)](http://www.bingfont.co.kr/license.html)
 
 
 #### Multiple excalidraw file format support

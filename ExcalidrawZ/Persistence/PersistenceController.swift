@@ -10,17 +10,30 @@ import CoreData
 
 struct PersistenceController {
     // A singleton for our entire app to use
-    static let shared = PersistenceController()
+    static let shared = PersistenceController(cloudKitEnabled: !UserDefaults.standard.bool(forKey: "DisableCloudSync"))
 
     // Storage for Core Data
     let container: NSPersistentContainer
 
     // An initializer to load Core Data, optionally able
     // to use an in-memory store.
-    init(inMemory: Bool = false) {
+    /// Init function
+    /// - Parameters:
+    ///   - inMemory: inMemory
+    ///   - cloudKitEnabled: Enabled status for app internal.
+    init(inMemory: Bool = false, cloudKitEnabled: Bool = true) {
         // If you didn't name your model Main you'll need
         // to change this name below.
-        container = NSPersistentCloudKitContainer(name: "Model")
+        print("[PersistenceController] init with\(cloudKitEnabled ? "" : "out") cloudKit")
+        if cloudKitEnabled {
+            container = NSPersistentCloudKitContainer(name: "Model")
+        } else {
+            container = NSPersistentContainer(name: "Model")
+        }
+        
+        let description = container.persistentStoreDescriptions.first
+        description?.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+        
         container.viewContext.automaticallyMergesChangesFromParent = true
         /// Core Data 预设了四种合并冲突策略，分别为：
         /// * NSMergeByPropertyStoreTrumpMergePolicy

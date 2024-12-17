@@ -67,6 +67,8 @@ struct GroupListView: View {
             .onChange(of: displayedGroups) { newValue in
                 if fileState.currentGroup == nil {
                     fileState.currentGroup = newValue.first
+                } else if newValue.contains(where: {$0.id == fileState.currentGroup?.id}) == false {
+                    fileState.currentGroup = newValue.first
                 }
             }
             .onAppear {

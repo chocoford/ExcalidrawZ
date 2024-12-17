@@ -34,12 +34,8 @@ class ExcalidrawWebView: WKWebView {
     
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 #if canImport(UIKit)
-    override var safeAreaInsets: UIEdgeInsets {
-//        .init(top: 0, left: 0, bottom: -40, right: 0)
-        .zero
-    }
+    override var safeAreaInsets: UIEdgeInsets { .zero }
 #endif
-    
     
 #if canImport(AppKit)
     override func keyDown(with event: NSEvent) {
@@ -66,6 +62,7 @@ document.dispatchEvent(new KeyboardEvent("keydown", spaceKeydownEvent));
 })();
 0;
 """)
+                // self.toolbarActionHandler2(Character(" ")) <-- not a toolbar action actually.
             } else {
                 super.keyDown(with: event)
             }
@@ -114,6 +111,39 @@ struct ExcalidrawView {
     @State private var cancellables = Set<AnyCancellable>()
 }
 
+extension ExcalidrawView {
+    func updateExcalidrawWebView(_ webView: ExcalidrawWebView, context: Context) {
+        let webView = context.coordinator.webView
+        context.coordinator.parent = self
+        exportState.excalidrawWebCoordinator = context.coordinator
+        fileState.excalidrawWebCoordinator = context.coordinator
+        toolState.excalidrawWebCoordinator = context.coordinator
+        guard !webView.isLoading, !isLoading else { return }
+        Task {
+            do {
+                if appPreference.excalidrawAppearance == .auto {
+                    try await context.coordinator.changeColorMode(dark: colorScheme == .dark)
+                } else {
+                    try await context.coordinator.changeColorMode(dark: appPreference.excalidrawAppearance.colorScheme ?? colorScheme == .dark)
+                }
+            } catch {
+                self.onError(error)
+            }
+            do {
+                if appPreference.autoInvertImage,
+                   appPreference.excalidrawAppearance == .dark || colorScheme == .dark && appPreference.excalidrawAppearance == .auto {
+                    try await context.coordinator.toggleInvertImageSwitch(autoInvert: true)
+                } else {
+                    try await context.coordinator.toggleInvertImageSwitch(autoInvert: false)
+                }
+            } catch {
+                self.onError(error)
+            }
+        }
+        context.coordinator.loadFile(from: file)
+    }
+}
+
 #if os(macOS)
 extension ExcalidrawView: NSViewRepresentable {
 
@@ -136,50 +166,7 @@ extension ExcalidrawView: NSViewRepresentable {
     }
     
     func updateNSView(_ nsView: ExcalidrawWebView, context: Context) {
-        let webView = context.coordinator.webView
-        context.coordinator.parent = self
-        exportState.excalidrawWebCoordinator = context.coordinator
-        fileState.excalidrawWebCoordinator = context.coordinator
-        toolState.excalidrawWebCoordinator = context.coordinator
-        guard !webView.isLoading, !isLoading else { return }
-        Task {
-            do {
-                if appPreference.excalidrawAppearance == .auto {
-                    try await context.coordinator.changeColorMode(dark: colorScheme == .dark)
-                } else {
-                    try await context.coordinator.changeColorMode(dark: appPreference.excalidrawAppearance.colorScheme ?? colorScheme == .dark)
-                }
-            } catch {
-                self.onError(error)
-            }
-            do {
-                if appPreference.autoInvertImage,
-                    appPreference.excalidrawAppearance == .dark || colorScheme == .dark && appPreference.excalidrawAppearance == .auto {
-                    try await context.coordinator.toggleInvertImageSwitch(autoInvert: true)
-                } else {
-                    try await context.coordinator.toggleInvertImageSwitch(autoInvert: false)
-                }
-            } catch {
-                self.onError(error)
-            }
-        }
-        context.coordinator.loadFile(from: file)
-        if context.coordinator.lastTool != toolState.activatedTool {
-            Task {
-                do {
-                    if let rawValue = toolState.activatedTool?.rawValue {
-                        if rawValue < 10 {
-                            try await context.coordinator.toggleToolbarAction(key: rawValue)
-                        } else if let keyEquivalent = toolState.activatedTool?.keyEquivalent {
-                            try await context.coordinator.toggleToolbarAction(key: keyEquivalent)
-                        }
-                        context.coordinator.lastTool = toolState.activatedTool
-                    }
-                } catch {
-                    self.onError(error)
-                }
-            }
-        }
+        updateExcalidrawWebView(nsView, context: context)
     }
 
     func makeCoordinator() -> ExcalidrawCore {
@@ -196,6 +183,7 @@ extension ExcalidrawView: UIViewRepresentable {
                         self.isLoading = newValue
                         if !newValue/*, horizontalSizeClass == .compact*/ {
                             Task { @MainActor in
+                                try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.5))
                                 try? await context.coordinator.toggleToolbarAction(key: "h")
                             }
                         }
@@ -212,53 +200,7 @@ extension ExcalidrawView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: ExcalidrawWebView, context: Context) {
-        let webView = context.coordinator.webView
-        context.coordinator.parent = self
-        exportState.excalidrawWebCoordinator = context.coordinator
-        fileState.excalidrawWebCoordinator = context.coordinator
-        toolState.excalidrawWebCoordinator = context.coordinator
-        guard !webView.isLoading, !isLoading else { return }
-        Task {
-            do {
-                if appPreference.excalidrawAppearance == .auto {
-                    try await context.coordinator.changeColorMode(dark: colorScheme == .dark)
-                } else {
-                    try await context.coordinator.changeColorMode(dark: appPreference.excalidrawAppearance.colorScheme ?? colorScheme == .dark)
-                }
-            } catch {
-                self.onError(error)
-            }
-            do {
-                if appPreference.autoInvertImage,
-                    appPreference.excalidrawAppearance == .dark || colorScheme == .dark && appPreference.excalidrawAppearance == .auto {
-                    try await context.coordinator.toggleInvertImageSwitch(autoInvert: true)
-                } else {
-                    try await context.coordinator.toggleInvertImageSwitch(autoInvert: false)
-                }
-            } catch {
-                self.onError(error)
-            }
-        }
-        context.coordinator.loadFile(from: file)
-        
-        
-        if !toolState.inDragMode,
-           context.coordinator.lastTool != toolState.activatedTool {
-            Task {
-                do {
-                    if let rawValue = toolState.activatedTool?.rawValue {
-                        if rawValue < 10 {
-                            try await context.coordinator.toggleToolbarAction(key: rawValue)
-                        } else if let keyEquivalent = toolState.activatedTool?.keyEquivalent {
-                            try await context.coordinator.toggleToolbarAction(key: keyEquivalent)
-                        }
-                        context.coordinator.lastTool = toolState.activatedTool
-                    }
-                } catch {
-                    self.onError(error)
-                }
-            }
-        }
+        updateExcalidrawWebView(uiView, context: context)
     }
     
     func makeCoordinator() -> ExcalidrawCore {

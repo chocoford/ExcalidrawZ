@@ -20,6 +20,7 @@ extension Notification.Name {
     static let shouldHandleImport = Notification.Name("ShouldHandleImport")
     static let didImportToExcalidrawZ = Notification.Name("DidImportToExcalidrawZ")
     static let toggleWhatsNewSheet = Notification.Name("ToggleWhatsNewSheet")
+    static let togglePrintModalSheet = Notification.Name("TogglePrintModalSheet")
 }
 
 @main
@@ -59,7 +60,6 @@ struct ExcalidrawZApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .swiftyAlert()
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
                 .environmentObject(appPrefernece)
@@ -80,6 +80,15 @@ struct ExcalidrawZApp: App {
 #if os(macOS)
         .defaultSizeIfAvailable(CGSize(width: 1200, height: 700))
         .commands {
+            CommandGroup(after: .printItem) {
+                Button {
+                    NotificationCenter.default.post(name: .togglePrintModalSheet, object: nil)
+                } label: {
+                    Text(.localizable(.menubarButtonPrint))
+                }
+                .keyboardShortcut("p", modifiers: .command)
+            }
+            
             CommandGroup(after: .importExport) {
                 Button {
                     let panel = ExcalidrawOpenPanel.importPanel
@@ -87,12 +96,12 @@ struct ExcalidrawZApp: App {
                         NotificationCenter.default.post(name: .shouldHandleImport, object: panel.urls)
                     }
                 } label: {
-                    Text(.localizable(.import))
+                    Text(.localizable(.menubarButtonImport))
                 }
                 Button {
                     try? archiveAllFiles()
                 } label: {
-                    Text(.localizable(.exportAll))
+                    Text(.localizable(.menubarButtonExportAll))
                 }
             }
             

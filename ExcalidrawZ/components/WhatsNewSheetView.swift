@@ -63,8 +63,8 @@ struct WhatsNewSheetViewModifier: ViewModifier {
             }
         } else {
             WhatsNewSheetView()
-                .padding(.horizontal, 60)
-                .frame(width: 600)
+                .padding(.horizontal, 40)
+                .frame(width: 640)
         }
     }
 }
@@ -83,9 +83,6 @@ struct WhatsNewSheetView: View {
         VStack(spacing: 20) {
             VStack(spacing: 6) {
                 Text(.localizable(.whatsNewTitle)).font(.largeTitle)
-//                if let versionString = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as? String {
-//                    Text(versionString).foregroundStyle(.secondary)
-//                }
             }
             
             VStack(spacing: 6) {
@@ -95,31 +92,7 @@ struct WhatsNewSheetView: View {
                         .scaledToFit()
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     
-                    fetureRow(
-                        title: .localizable(.whatsNewItemMultiplatformTitle),
-                        description: .localizable(.whatsNewItemMultiplatformDescription)
-                    ) {
-                        if #available(macOS 13.0, iOS 16.1, *) {
-                            Image(systemSymbol: .macbookAndIphone)
-                                .resizable()
-                        } else {
-                            Image(systemSymbol: .ipadAndIphone)
-                                .resizable()
-                        }
-                    }
-                    
-                    fetureRow(
-                        title: .localizable(.whatsNewItemPreventImageAutoInvertTitle),
-                        description: .localizable(.whatsNewItemPreventImageAutoInvertDescription),
-                        icon: Image(systemSymbol: .photoOnRectangle)
-                    )
-                    
-                    
-                    fetureRow(
-                        title: .localizable(.whatsNewItemFileLoadPerformanceTitle),
-                        description: .localizable(.whatsNewItemFileLoadPerformanceDescription),
-                        icon: Image(systemSymbol: .timer)
-                    )
+                    featuresContent()
                 }
                 .padding(.vertical)
                 .fixedSize(horizontal: false, vertical: true)
@@ -151,18 +124,85 @@ struct WhatsNewSheetView: View {
                 }
                 .controlSize(.large)
                 .buttonStyle(.borderedProminent)
+//                .keyboardShortcut(.cancelAction)
+                .keyboardShortcut(.defaultAction)
             }
         }
         .padding(40)
     }
+    
+    @MainActor @ViewBuilder
+    private func featuresContent() -> some View {
+        featureRow(
+            title: .localizable(.whatsNewItemMultiplatformTitle),
+            description: .localizable(.whatsNewItemMultiplatformDescription)
+        ) {
+            if #available(macOS 13.0, iOS 16.1, *) {
+                Image(systemSymbol: .macbookAndIphone)
+                    .resizable()
+            } else {
+                Image(systemSymbol: .ipadAndIphone)
+                    .resizable()
+            }
+        }
+        
+        
+        featureRow(
+            title: .localizable(.whatsnewMultiTouchTitle),
+            // 当使用两根手指触碰屏幕，将进行一次undo操作；当使用三根手指触碰屏幕，将进行一次redo操作
+            description: .localizable(.whatsnewMultiTouchDescription),
+            icon: Image(systemSymbol: .handTapFill)
+        )
+        
+        featureRow(
+            title: .localizable(.whatsnewExportPDFTitle),
+            description: .localizable(.whatsnewExportPDFDescription),
+            icon: Image(systemSymbol: .docRichtext)
+        )
+        
+        featureRow(
+            title: .localizable(.whatsnewExportImageWithoutBackgroundTitle),
+            description: .localizable(.whatsnewExportImageWithoutBackgroundDescription),
+            icon: Image(systemSymbol: .photoOnRectangle)
+        )
+        
+#if os(iOS)
+        if UIDevice().userInterfaceIdiom == .pad {
+            featureRow(
+                title: .localizable(.whatsnewApplePencilSupportTitle),
+                description: .localizable(.whatsnewApplePencilSupportDescription),
+                icon:  Image(systemSymbol: .applepencil)
+            )
+        } else if UIDevice().userInterfaceIdiom == .phone {
+            featureRow(
+                title: .localizable(.whatsnewAccesibleWithoutNetworkTitle),
+                description: .localizable(.whatsnewAccesibleWithoutNetworkDescription),
+                icon:  Image(systemSymbol: .applepencil)
+            )
+        }
+#endif
+        
+//        fetureRow(
+//            title: .localizable(.whatsNewItemPreventImageAutoInvertTitle),
+//            description: .localizable(.whatsNewItemPreventImageAutoInvertDescription),
+//            icon: Image(systemSymbol: .photoOnRectangle)
+//        )
+//        
+//        
+//        fetureRow(
+//            title: .localizable(.whatsNewItemFileLoadPerformanceTitle),
+//            description: .localizable(.whatsNewItemFileLoadPerformanceDescription),
+//            icon: Image(systemSymbol: .timer)
+//        )
+    }
 
     @MainActor @ViewBuilder
-    private func fetureRow(
+    private func featureRow(
         title: LocalizedStringKey,
         description: LocalizedStringKey,
         icon: Image
     ) -> some View {
-        fetureRow(
+        featureRow(
             title: title,
             description: description
         ) {
@@ -172,7 +212,7 @@ struct WhatsNewSheetView: View {
     }
     
     @MainActor @ViewBuilder
-    private func fetureRow(
+    private func featureRow(
         title: LocalizedStringKey,
         description: LocalizedStringKey,
         @ViewBuilder icon: () -> some View
@@ -211,6 +251,7 @@ struct WhatsNewSheetView: View {
                                 Text("Github repository")
                             }
                         }
+                        .foregroundStyle(.white)
                     }
                     
                     Link(destination: URL(string: "https://discord.gg/aCv6w4HxDg")!) {
@@ -221,6 +262,7 @@ struct WhatsNewSheetView: View {
                                 .frame(height: 16)
                             Text(.localizable(.generalButtonJoinDiscord))
                         }
+                        .foregroundStyle(.white)
                     }
                 }
                 .buttonStyle(.plain)
@@ -239,6 +281,7 @@ struct WhatsNewSheetView: View {
         }
         .font(.callout)
         .padding()
+        .fixedSize(horizontal: false, vertical: true)
         .background {
             let roundRect = RoundedRectangle(cornerRadius: 12)
             ZStack {
@@ -273,11 +316,15 @@ struct ChangeLogView: View {
         NavigationStack {
             WhatsNewSheetView()
         }
+#if os(macOS)
         .frame(width: 600, height: 800)
+#endif
     } else {
         NavigationView {
             WhatsNewSheetView()
         }
+#if os(macOS)
         .frame(width: 600, height: 800)
+#endif
     }
 }

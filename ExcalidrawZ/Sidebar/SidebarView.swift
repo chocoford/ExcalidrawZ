@@ -60,9 +60,11 @@ struct SidebarView: View {
 #endif
         }
         .border(.top, color: .separatorColor)
+#if os(iOS)
         .background {
             List(selection: $fileState.currentFile) {}
         }
+#endif
     }
     
     @MainActor @ViewBuilder

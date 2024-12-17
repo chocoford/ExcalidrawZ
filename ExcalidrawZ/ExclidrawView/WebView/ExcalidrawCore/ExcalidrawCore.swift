@@ -64,7 +64,6 @@ class ExcalidrawCore: NSObject, ObservableObject {
     private var lastVersion: Int = 0
     
     var hasInjectIndexedDBData = false
-//    var hasReloadAfterInjectIndexedDBData = false
     
     internal var lastTool: ExcalidrawTool?
     
@@ -110,12 +109,18 @@ class ExcalidrawCore: NSObject, ObservableObject {
         self.webView.navigationDelegate = self
         self.webView.uiDelegate = self
         
+#if os(iOS)
+        let pencilInteraction = UIPencilInteraction()
+        pencilInteraction.delegate = self
+        self.webView.addInteraction(pencilInteraction)
+#endif
+        
         DispatchQueue.main.async {
             let request: URLRequest
 #if DEBUG
-            request = URLRequest(url: URL(string: "http://localhost:8486/index.html")!)
+            request = URLRequest(url: URL(string: "http://127.0.0.1:8486/index.html")!)
 #else
-            request = URLRequest(url: URL(string: "http://localhost:8487/index.html")!)
+            request = URLRequest(url: URL(string: "http://127.0.0.1:8487/index.html")!)
 #endif
             self.webView.load(request)
 
@@ -214,9 +219,12 @@ extension ExcalidrawCore {
     }
     @MainActor
     func toggleToolbarAction(key: Character) async throws {
+        guard !self.isLoading else { return }
         print(#function, key)
         if key == "\u{1B}" {
             try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Escape'); 0;")
+//        } else if key == " " {
+//            try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Space'); 0;")
         } else {
             try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
         }
@@ -233,9 +241,13 @@ extension ExcalidrawCore {
 //        }
 //    }
 //    
-    func exportElementsToPNGData(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> Data {
+    func exportElementsToPNGData(
+        elements: [ExcalidrawElement],
+        embedScene: Bool = false,
+        withBackground: Bool = true
+    ) async throws -> Data {
         let id = UUID().uuidString
-        let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified()), \(embedScene)); 0;"
+        let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified()), \(embedScene), \(withBackground)); 0;"
         self.logger.debug("\(#function), script:\n\(script)")
         Task { @MainActor in
             do {
@@ -259,8 +271,12 @@ extension ExcalidrawCore {
         return data
     }
     
-    func exportElementsToPNG(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> PlatformImage {
-        let data = try await self.exportElementsToPNGData(elements: elements, embedScene: embedScene)
+    func exportElementsToPNG(
+        elements: [ExcalidrawElement],
+        embedScene: Bool = false,
+        withBackground: Bool = true
+    ) async throws -> PlatformImage {
+        let data = try await self.exportElementsToPNGData(elements: elements, embedScene: embedScene, withBackground: withBackground)
         guard let image = PlatformImage(data: data) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
@@ -268,9 +284,13 @@ extension ExcalidrawCore {
         return image
     }
     
-    func exportElementsToSVGData(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> Data {
+    func exportElementsToSVGData(
+        elements: [ExcalidrawElement],
+        embedScene: Bool = false,
+        withBackground: Bool = true
+    ) async throws -> Data {
         let id = UUID().uuidString
-        let script = try "window.excalidrawZHelper.exportElementsToSvg('\(id)', \(elements.jsonStringified()), \(embedScene)); 0;"
+        let script = try "window.excalidrawZHelper.exportElementsToSvg('\(id)', \(elements.jsonStringified()), \(embedScene), \(withBackground)); 0;"
         self.logger.debug("\(#function)")
         Task { @MainActor in
             do {
@@ -302,8 +322,16 @@ extension ExcalidrawCore {
         return data
         
     }
-    func exportElementsToSVG(elements: [ExcalidrawElement], embedScene: Bool = false) async throws -> PlatformImage {
-        let data = try await exportElementsToSVGData(elements: elements, embedScene: embedScene)
+    func exportElementsToSVG(
+        elements: [ExcalidrawElement],
+        embedScene: Bool = false,
+        withBackground: Bool = true
+    ) async throws -> PlatformImage {
+        let data = try await exportElementsToSVGData(
+            elements: elements,
+            embedScene: embedScene,
+            withBackground: withBackground
+        )
         guard let image = PlatformImage(data: data) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
@@ -354,6 +382,10 @@ extension ExcalidrawCore {
     func performRedo() async throws {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.redo(); 0;")
     }
+    @MainActor
+    func togglePenMode(enabled: Bool) async throws {
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.togglePenMode(\(enabled)); 0;")
+    }
     
     @MainActor
     func reload() {
@@ -361,3 +393,5 @@ extension ExcalidrawCore {
     }
     
 }
+
+

@@ -64,8 +64,24 @@ struct ExcalidrawToolbar: View {
                 if newValue == nil {
                     toolState.activatedTool = .cursor
                 }
+                
+                if let tool = newValue, tool != toolState.excalidrawWebCoordinator?.lastTool {
+                    Task {
+                        do {
+                            if let key = tool.keyEquivalent {
+                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: key)
+                            } else {
+                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: tool.rawValue)
+                            }
+                        } catch {
+                            alertToast(error)
+                        }
+                    }
+                }
             }
     }
+    
+    @State private var isApplePencilDisconnectConfirmationDialogPresented = false
     
     @MainActor @ViewBuilder
     private func toolbar() -> some View {
@@ -76,7 +92,7 @@ struct ExcalidrawToolbar: View {
                     // initial drag at ExcalidrawView line 171
                     toolState.inDragMode = true
                 }
-        } else if horizontalSizeClass == .regular {
+        } else if horizontalSizeClass == .regular, !toolState.inPenMode {
             HStack {
                 compactContent()
             }
@@ -96,6 +112,48 @@ struct ExcalidrawToolbar: View {
                 // initial drag at ExcalidrawView line 171
                 toolState.inDragMode = true
             }
+        } else if toolState.inPenMode {
+            HStack(spacing: 10) {
+                content(size: layoutState.isExcalidrawToolbarDense ? 14 : 20, withFooter: false)
+                Button {
+                    isApplePencilDisconnectConfirmationDialogPresented.toggle()
+                } label: {
+                    if #available(iOS 17.0, *) {
+                        Label("Apple Pencil", systemSymbol: .applepencilTip)
+                    } else {
+                        Label("Apple Pencil", systemSymbol: .applepencil)
+                    }
+                }
+                .confirmationDialog(
+                    "Apple pencil connected",
+                    isPresented: $isApplePencilDisconnectConfirmationDialogPresented,
+                    titleVisibility: .visible
+                ) {
+                    Button(role: .destructive) {
+                        Task {
+                            do {
+                                try await toolState.excalidrawWebCoordinator?.togglePenMode(enabled: false)
+                                toolState.inPenMode = false
+                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: "h")
+                            } catch {
+                                alertToast(error)
+                            }
+                        }
+                    } label: {
+                        Label("Disconnect", systemSymbol: .pencilSlash)
+                            .labelStyle(.titleAndIcon)
+                    }
+                } message: {
+                    Text("""
+In the current mode, you can draw using your Apple Pencil. When using your fingers:
+• A single finger allows you to move the canvas.
+• A two-finger tap on the screen performs an undo operation.
+• A three-finger tap on the screen performs a redo operation.
+""")
+                    .multilineTextAlignment(.leading)
+                }
+                
+            }
         }
 #elseif os(macOS)
         if layoutState.isExcalidrawToolbarDense {
@@ -107,16 +165,18 @@ struct ExcalidrawToolbar: View {
     }
     
     @MainActor @ViewBuilder
-    private func content() -> some View {
-        HStack(spacing: 10) {
+    private func content(size: CGFloat = 20, withFooter: Bool = true) -> some View {
+        HStack(spacing: size / 2) {
             SegmentedPicker(selection: $toolState.activatedTool) {
                 SegmentedPickerItem(value: ExcalidrawTool.cursor) {
                     Cursor()
                         .stroke(.primary, lineWidth: 1.5)
                         .aspectRatio(1, contentMode: .fit)
                         .modifier(
-                            ExcalidrawToolbarItemModifer(labelType: .svg) {
-                                Text("1")
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .svg) {
+                                if withFooter {
+                                    Text("1")
+                                }
                             }
                         )
                 }
@@ -126,8 +186,10 @@ struct ExcalidrawToolbar: View {
                     RoundedRectangle(cornerRadius: 3)
                         .stroke(.primary, lineWidth: 1.5)
                         .modifier(
-                            ExcalidrawToolbarItemModifer(labelType: .nativeShape) {
-                                Text("2")
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .nativeShape) {
+                                if withFooter {
+                                    Text("2")
+                                }
                             }
                         )
                     
@@ -139,8 +201,10 @@ struct ExcalidrawToolbar: View {
                         .stroke(.primary, lineWidth: 1.5)
                         .rotationEffect(.degrees(45))
                         .modifier(
-                            ExcalidrawToolbarItemModifer(labelType: .nativeShape) {
-                                Text("3")
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .nativeShape) {
+                                if withFooter {
+                                    Text("3")
+                                }
                             }
                         )
                 }
@@ -150,8 +214,10 @@ struct ExcalidrawToolbar: View {
                     Circle()
                         .stroke(.primary, lineWidth: 1.5)
                         .modifier(
-                            ExcalidrawToolbarItemModifer(labelType: .nativeShape) {
-                                Text("4")
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .nativeShape) {
+                                if withFooter {
+                                    Text("4")
+                                }
                             }
                         )
                 }
@@ -159,10 +225,14 @@ struct ExcalidrawToolbar: View {
                 
                 SegmentedPickerItem(value: ExcalidrawTool.arrow) {
                     Image(systemSymbol: .arrowRight)
+                        .resizable()
+                        .scaledToFit()
                         .font(.body.weight(.semibold))
                         .modifier(
-                            ExcalidrawToolbarItemModifer(labelType: .image) {
-                                Text("5")
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                                if withFooter {
+                                    Text("5")
+                                }
                             }
                         )
                 }
@@ -173,8 +243,10 @@ struct ExcalidrawToolbar: View {
                         .stroke(.primary, lineWidth: 1.5)
                         .frame(height: 1)
                         .modifier(
-                            ExcalidrawToolbarItemModifer(labelType: .nativeShape) {
-                                Text("6")
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .nativeShape) {
+                                if withFooter {
+                                    Text("6")
+                                }
                             }
                         )
                 }
@@ -182,10 +254,14 @@ struct ExcalidrawToolbar: View {
                 
                 SegmentedPickerItem(value: ExcalidrawTool.freedraw) {
                     Image(systemSymbol: .pencil)
+                        .resizable()
+                        .scaledToFit()
                         .font(.body.weight(.semibold))
                         .modifier(
-                            ExcalidrawToolbarItemModifer(labelType: .image) {
-                                Text("7")
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                                if withFooter {
+                                    Text("7")
+                                }
                             }
                         )
                 }
@@ -193,10 +269,14 @@ struct ExcalidrawToolbar: View {
                 
                 SegmentedPickerItem(value: ExcalidrawTool.text) {
                     Image(systemSymbol: .character)
+                        .resizable()
+                        .scaledToFit()
                         .font(.body.weight(.semibold))
                         .modifier(
-                            ExcalidrawToolbarItemModifer(labelType: .image) {
-                                Text("8")
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                                if withFooter {
+                                    Text("8")
+                                }
                             }
                         )
                 }
@@ -204,10 +284,14 @@ struct ExcalidrawToolbar: View {
                 
                 SegmentedPickerItem(value: ExcalidrawTool.image) {
                     Image(systemSymbol: .photo)
+                        .resizable()
+                        .scaledToFit()
                         .font(.body.weight(.semibold))
                         .modifier(
-                            ExcalidrawToolbarItemModifer(labelType: .image) {
-                                Text("9")
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                                if withFooter {
+                                    Text("9")
+                                }
                             }
                         )
                 }
@@ -216,18 +300,26 @@ struct ExcalidrawToolbar: View {
                 SegmentedPickerItem(value: ExcalidrawTool.eraser) {
                     if #available(macOS 13.0, *) {
                         Image(systemSymbol: .eraserLineDashed)
+                            .resizable()
+                            .scaledToFit()
                             .font(.body.weight(.semibold))
                             .modifier(
-                                ExcalidrawToolbarItemModifer(labelType: .image) {
-                                    Text("0")
+                                ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                                    if withFooter {
+                                        Text("0")
+                                    }
                                 }
                             )
                     } else {
                         Image(systemSymbol: .pencilSlash)
+                            .resizable()
+                            .scaledToFit()
                             .font(.body.weight(.semibold))
                             .modifier(
-                                ExcalidrawToolbarItemModifer(labelType: .image) {
-                                    Text("0")
+                                ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                                    if withFooter {
+                                        Text("0")
+                                    }
                                 }
                             )
                     }
@@ -236,23 +328,27 @@ struct ExcalidrawToolbar: View {
                 
                 SegmentedPickerItem(value: ExcalidrawTool.laser) {
                     Image(systemSymbol: .wandAndRaysInverse)
+                        .resizable()
+                        .scaledToFit()
                         .font(.body.weight(.semibold))
                         .modifier(
-                            ExcalidrawToolbarItemModifer(labelType: .image) {
-                                Text("K")
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                                if withFooter {
+                                    Text("K")
+                                }
                             }
                         )
                 }
                 .help("\(String(localizable: .toolbarLaser)) — K")
             }
-            .padding(6)
+            .padding(size / 3)
             .background {
                 if #available(macOS 14.0, iOS 17.0, *) {
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: size / 1.6)
                         .fill(.regularMaterial)
                         .stroke(.separator, lineWidth: 0.5)
                 } else {
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: size / 1.6)
                         .fill(.regularMaterial)
                 }
             }
@@ -439,10 +535,10 @@ struct ExcalidrawToolbarItemModifer: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .padding(labelType == .nativeShape ? 4 : labelType == .svg ? 0 : 6)
+            .padding(labelType == .nativeShape ? size / 6 : labelType == .svg ? 0 : size / 6)
             .aspectRatio(1, contentMode: .fit)
             .frame(width: size, height: size)
-            .padding(4)
+            .padding(size / 5)
             .overlay(alignment: .bottomTrailing) {
                 footer
                     .font(.footnote)

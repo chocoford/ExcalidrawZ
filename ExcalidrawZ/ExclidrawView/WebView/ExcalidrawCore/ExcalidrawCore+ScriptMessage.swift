@@ -68,6 +68,9 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                         case .undo:
                             self.canUndo = !message.data.disabled
                     }
+                case .didPenDown:
+                    self.parent?.toolState.inPenMode = true
+                    self.parent?.toolState.inDragMode = false
                     
                 case .log(let logMessage):
                     self.onWebLog(message: logMessage)
@@ -271,6 +274,7 @@ extension ExcalidrawCore {
         case addLibrary
         case getAllMedias
         case historyStateChanged
+        case didPenDown
         
         case log
     }
@@ -289,6 +293,7 @@ extension ExcalidrawCore {
         case addLibrary(AddLibraryItemMessage)
         case getAllMedias(GetAllMediasMessage)
         case historyStateChanged(HistoryStateChangedMessage)
+        case didPenDown
         
         case log(LogMessage)
         
@@ -327,6 +332,8 @@ extension ExcalidrawCore {
                     self = .getAllMedias(try GetAllMediasMessage(from: decoder))
                 case .historyStateChanged:
                     self = .historyStateChanged(try HistoryStateChangedMessage(from: decoder))
+                case .didPenDown:
+                    self = .didPenDown
                     
                 case .log:
                     self = .log(try LogMessage(from: decoder))

@@ -69,7 +69,7 @@ final class ExportState: ObservableObject {
         case svg
     }
     
-    func exportCurrentFileToImage(type: ImageType, embedScene: Bool) async throws -> ExportedImageData {
+    func exportCurrentFileToImage(type: ImageType, embedScene: Bool, withBackground: Bool) async throws -> ExportedImageData {
         guard let excalidrawWebCoordinator else {
             struct NoWebCoordinatorError: LocalizedError {
                 var errorDescription: String? {
@@ -92,13 +92,15 @@ final class ExportState: ObservableObject {
             case .png:
                 imageData = try await excalidrawWebCoordinator.exportElementsToPNGData(
                     elements: file.elements,
-                    embedScene: embedScene
+                    embedScene: embedScene,
+                    withBackground: withBackground
                 )
                 utType = embedScene ? .excalidrawPNG : .png
             case .svg:
                 imageData = try await excalidrawWebCoordinator.exportElementsToSVGData(
                     elements: file.elements,
-                    embedScene: embedScene
+                    embedScene: embedScene,
+                    withBackground: withBackground
                 )
                 utType = embedScene ? .excalidrawSVG :.svg
         }

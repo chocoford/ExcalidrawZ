@@ -324,23 +324,6 @@
         }
       }
     },
-    "exportAll" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export All"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部导出"
-          }
-        }
-      }
-    },
     "exportImageLoading" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -405,6 +388,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "保持可编辑"
+          }
+        }
+      }
+    },
+    "exportImageToggleWithBackground" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "背景"
           }
         }
       }
@@ -477,6 +477,23 @@
         }
       }
     },
+    "exportSheetButtonPDF" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF"
+          }
+        }
+      }
+    },
     "exportSheetHeadline" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -511,6 +528,23 @@
         }
       }
     },
+    "generalButtonCloseApp" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close ExcalidrawZ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭ExcalidrawZ"
+          }
+        }
+      }
+    },
     "generalButtonJoinDiscord" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -524,6 +558,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "加入Discord"
+          }
+        }
+      }
+    },
+    "generalButtonOK" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好的"
           }
         }
       }
@@ -579,6 +630,23 @@
         }
       }
     },
+    "generalLoading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载中..."
+          }
+        }
+      }
+    },
     "generalMoveTo" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -626,23 +694,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未命名"
-          }
-        }
-      }
-    },
-    "import" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Import"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导入"
           }
         }
       }
@@ -1295,6 +1346,57 @@
         }
       }
     },
+    "menubarButtonExportAll" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export All"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部导出"
+          }
+        }
+      }
+    },
+    "menubarButtonImport" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入"
+          }
+        }
+      }
+    },
+    "menubarButtonPrint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Print..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打印..."
+          }
+        }
+      }
+    },
     "migration" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1886,6 +1988,91 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "通用"
+          }
+        }
+      }
+    },
+    "settingsICloudDisableByAccountMessage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please go to your iCloud settings and enable iCloud for the ExcalidrawZ app."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请前往您的 iCloud 设置，并为 ExcalidrawZ 应用启用 iCloud 功能。"
+          }
+        }
+      }
+    },
+    "settingsICloudDisableByAccountTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud synchronization is disabled by account settings."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由于账户设置原因，iCloud 同步已被禁用。"
+          }
+        }
+      }
+    },
+    "settingsICloudRestartToApplyMessage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You should reopen the app to apply the changes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您需要重新打开应用以应用更改。"
+          }
+        }
+      }
+    },
+    "settingsICloudTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud synchronization settings"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud 同步设置"
+          }
+        }
+      }
+    },
+    "settingsICloudToggleDisable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disable iCloud synchronization"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭iCloud数据同步"
           }
         }
       }
@@ -2757,6 +2944,74 @@
         }
       }
     },
+    "whatsnewAccesibleWithoutNetworkDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ now works perfectly offline, so you can access and use the app even without an internet connection."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ 现在可以完美离线使用，因此即使没有互联网连接，您也可以访问和使用该应用。"
+          }
+        }
+      }
+    },
+    "whatsnewAccesibleWithoutNetworkTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accessible without network"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无需网络即可访问"
+          }
+        }
+      }
+    },
+    "whatsnewApplePencilSupportDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When you use the Apple Pencil to tap the screen, it will enter Pencil mode. At this point, sliding your finger on the screen will directly move the canvas. Double-tapping the Apple Pencil will switch between the cursor and eraser modes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当您使用 Apple Pencil 点击屏幕时，它会进入触控笔模式。这时，滑动手指可以直接移动画布。双击 Apple Pencil 会在光标模式和橡皮擦模式之间切换。"
+          }
+        }
+      }
+    },
+    "whatsnewApplePencilSupportTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple pencil support"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Pencil支持"
+          }
+        }
+      }
+    },
     "whatsNewButtonContinue" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2770,6 +3025,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "继续"
+          }
+        }
+      }
+    },
+    "whatsnewExportImageWithoutBackgroundDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When exporting an image, unchecking the background option will export the image without a background."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在导出图像时，取消勾选背景选项将导出没有背景的图像。"
+          }
+        }
+      }
+    },
+    "whatsnewExportImageWithoutBackgroundTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export Image without background"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出无背景的图片"
+          }
+        }
+      }
+    },
+    "whatsnewExportPDFDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ now supports exporting as a PDF, and the new option can be found in the Export sheet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ 现在支持导出为 PDF，新的选项可以在导出页面中找到。"
+          }
+        }
+      }
+    },
+    "whatsnewExportPDFTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export PDF"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出PDF"
           }
         }
       }
@@ -2872,6 +3195,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "阻止图片自动反转"
+          }
+        }
+      }
+    },
+    "whatsnewMultiTouchDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When using two fingers to touch the screen, it will perform an undo operation. When using three fingers to touch the screen, it will perform a redo operation."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当使用两根手指触摸屏幕时，它将执行撤销操作。当使用三根手指触摸屏幕时，它将执行重做操作。"
+          }
+        }
+      }
+    },
+    "whatsnewMultiTouchTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo&Redo with multi-finger touch"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用多指触控进行撤销和重做"
           }
         }
       }

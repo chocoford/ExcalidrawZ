@@ -17,6 +17,10 @@ struct GeneralSettingsView: View {
     @EnvironmentObject var updateChecker: UpdateChecker
 #endif
     @EnvironmentObject var appPreference: AppPreference
+    
+    @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
+    @State private var isDisableBySettingsDialogPresented: Bool = false
+    @State private var isRestartAlertPresented: Bool = false
 
     var body: some View {
         if #available(macOS 14.0, *) {
@@ -145,6 +149,57 @@ struct GeneralSettingsView: View {
             }
         }
 #endif
+        
+        Section {
+            Toggle(.localizable(.settingsICloudToggleDisable), isOn: Binding {
+                FileManager.default.ubiquityIdentityToken == nil ||
+                isICloudDisabled
+            } set: { disabled in
+                isICloudDisabled = disabled
+                if !disabled, FileManager.default.ubiquityIdentityToken == nil {
+                    DispatchQueue.main.async {
+                        isDisableBySettingsDialogPresented.toggle()
+                    }
+                }
+            })
+            .alert(
+                .localizable(.settingsICloudDisableByAccountTitle),
+                isPresented: $isDisableBySettingsDialogPresented
+            ) {
+                Button {
+                    isDisableBySettingsDialogPresented.toggle()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        isICloudDisabled.toggle()
+                    }
+                } label: {
+                    Text(.localizable(.generalButtonOK))
+                }
+            } message: {
+                Text(.localizable(.settingsICloudDisableByAccountMessage))
+            }
+            .alert(.localizable(.settingsICloudRestartToApplyMessage), isPresented: $isRestartAlertPresented) {
+                Button {
+#if canImport(AppKit)
+                    NSApp.terminate(nil)
+#elseif canImport(UIKit)
+                    UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
+                    // terminaing app in background
+                     DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1), execute: {
+                         exit(EXIT_SUCCESS)
+                     })
+#endif
+                } label: {
+                    Text(.localizable(.generalButtonCloseApp))
+                }
+            }
+            .onChange(of: isICloudDisabled) { newValue in
+                if newValue || FileManager.default.ubiquityIdentityToken != nil {
+                    isRestartAlertPresented.toggle()
+                }
+            }
+        } header: {
+            Text(.localizable(.settingsICloudTitle))
+        }
     }
     
     @MainActor @ViewBuilder

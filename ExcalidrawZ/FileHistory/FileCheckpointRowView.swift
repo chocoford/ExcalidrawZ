@@ -9,7 +9,7 @@ import SwiftUI
 import ChocofordUI
  
 struct FileCheckpointRowView: View {
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
 
     @Environment(\.colorScheme) var colorScheme
     
@@ -31,24 +31,25 @@ struct FileCheckpointRowView: View {
     
     @MainActor @ViewBuilder
     private func content() -> some View {
-        if horizontalSizeClass == .compact {
+//        if containerHorizontalSizeClass == .compact {
+#if os(iOS)
             NavigationLink {
                 FileCheckpointDetailView(checkpoint: checkpoint)
             } label: {
                 label()
             }
-        } else {
+//        } else {
+#elseif os(macOS)
             Popover(arrowEdge: .trailing) {
                 FileCheckpointDetailView(checkpoint: checkpoint)
                     .padding(40)
             } label: {
                 label()
             }
-#if os(macOS)
+//#if os(macOS)
             .buttonStyle(ListButtonStyle())
 #endif
-            
-        }
+//        }
     }
     
     @MainActor @ViewBuilder
