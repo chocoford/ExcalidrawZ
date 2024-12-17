@@ -65,10 +65,14 @@ struct ExcalidrawToolbar: View {
                     toolState.activatedTool = .cursor
                 }
                 
-                if let tool = newValue, let key = tool.keyEquivalent, tool != toolState.excalidrawWebCoordinator?.lastTool {
+                if let tool = newValue, tool != toolState.excalidrawWebCoordinator?.lastTool {
                     Task {
                         do {
-                            try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: key)
+                            if let key = tool.keyEquivalent {
+                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: key)
+                            } else {
+                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: tool.rawValue)
+                            }
                         } catch {
                             alertToast(error)
                         }
