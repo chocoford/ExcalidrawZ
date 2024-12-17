@@ -42,7 +42,6 @@ struct ShareViewModifier: ViewModifier {
             }
         }
 #if os(macOS)
-        .visualEffect(material: .sidebar)
         .frame(height: 300)
 #endif
         

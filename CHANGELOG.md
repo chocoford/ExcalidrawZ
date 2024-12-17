@@ -1,11 +1,15 @@
 ## 1.2.7
 
-* Try fix sidebar bug.
-* iOS no network accessiblilty.
-* Export PDF.
-* Export PNG without background.
-* Double tap to undo on iOS&iPadOS.
-* iCloud synchronization enable settings.
+- New feature: Export PDF.
+- New feature: Export images without background.
+- New feature: Undo & Redo via multi-touch gestures.
+- New feature: iCloud data sync toggle within the app.
+- Apple Pencil support.
+  - Also support drawing with the Apple Pencil and directly dragging the canvas with your finger.
+- Fix issue where Sidebar was not clickable.
+- Accessibility improvements for offline usage on iOS.
+- Fix issue with File History not working properly on iPad.
+- Sync with the latest Excalidraw core code.
 
 ## 1.2.6
 

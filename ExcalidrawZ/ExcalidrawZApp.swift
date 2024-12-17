@@ -60,7 +60,6 @@ struct ExcalidrawZApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .swiftyAlert()
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
                 .environmentObject(appPrefernece)

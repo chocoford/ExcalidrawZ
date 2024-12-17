@@ -219,6 +219,7 @@ extension ExcalidrawCore {
     }
     @MainActor
     func toggleToolbarAction(key: Character) async throws {
+        guard !self.isLoading else { return }
         print(#function, key)
         if key == "\u{1B}" {
             try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Escape'); 0;")

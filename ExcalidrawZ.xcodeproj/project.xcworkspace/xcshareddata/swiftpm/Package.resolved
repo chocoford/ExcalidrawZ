@@ -16,7 +16,7 @@
       "location" : "https://github.com/chocoford/ChocofordKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "7b271f52fbb92d7ea9da9a0e70a9d05598a035ee"
+        "revision" : "e8182a7cf08dde2951783bf7e17bfbad99cd0290"
       }
     },
     {
@@ -133,7 +133,7 @@
       "location" : "https://github.com/chocoford/SwiftyAlert.git",
       "state" : {
         "branch" : "dev",
-        "revision" : "b5c3c834a4023d520784c1a8bcf6d0a7f679fc0d"
+        "revision" : "af78f5205f97bc8b8bc66c2c9c249e4cc2338d9c"
       }
     },
     {

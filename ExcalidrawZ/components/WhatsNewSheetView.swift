@@ -63,8 +63,8 @@ struct WhatsNewSheetViewModifier: ViewModifier {
             }
         } else {
             WhatsNewSheetView()
-                .padding(.horizontal, 60)
-                .frame(width: 600)
+                .padding(.horizontal, 40)
+                .frame(width: 640)
         }
     }
 }
@@ -124,6 +124,8 @@ struct WhatsNewSheetView: View {
                 }
                 .controlSize(.large)
                 .buttonStyle(.borderedProminent)
+//                .keyboardShortcut(.cancelAction)
+                .keyboardShortcut(.defaultAction)
             }
         }
         .padding(40)
@@ -146,16 +148,39 @@ struct WhatsNewSheetView: View {
         
         
         featureRow(
-            title: "",
-            description: "",
-            icon:  Image(systemSymbol: .handTapFill)
+            title: .localizable(.whatsnewMultiTouchTitle),
+            // 当使用两根手指触碰屏幕，将进行一次undo操作；当使用三根手指触碰屏幕，将进行一次redo操作
+            description: .localizable(.whatsnewMultiTouchDescription),
+            icon: Image(systemSymbol: .handTapFill)
         )
         
         featureRow(
-            title: "Apple pencil support",
-            description: "",
-            icon:  Image(systemSymbol: .applepencil)
+            title: .localizable(.whatsnewExportPDFTitle),
+            description: .localizable(.whatsnewExportPDFDescription),
+            icon: Image(systemSymbol: .docRichtext)
         )
+        
+        featureRow(
+            title: .localizable(.whatsnewExportImageWithoutBackgroundTitle),
+            description: .localizable(.whatsnewExportImageWithoutBackgroundDescription),
+            icon: Image(systemSymbol: .photoOnRectangle)
+        )
+        
+#if os(iOS)
+        if UIDevice().userInterfaceIdiom == .pad {
+            featureRow(
+                title: .localizable(.whatsnewApplePencilSupportTitle),
+                description: .localizable(.whatsnewApplePencilSupportDescription),
+                icon:  Image(systemSymbol: .applepencil)
+            )
+        } else if UIDevice().userInterfaceIdiom == .phone {
+            featureRow(
+                title: .localizable(.whatsnewAccesibleWithoutNetworkTitle),
+                description: .localizable(.whatsnewAccesibleWithoutNetworkDescription),
+                icon:  Image(systemSymbol: .applepencil)
+            )
+        }
+#endif
         
 //        fetureRow(
 //            title: .localizable(.whatsNewItemPreventImageAutoInvertTitle),
@@ -226,6 +251,7 @@ struct WhatsNewSheetView: View {
                                 Text("Github repository")
                             }
                         }
+                        .foregroundStyle(.white)
                     }
                     
                     Link(destination: URL(string: "https://discord.gg/aCv6w4HxDg")!) {
@@ -236,6 +262,7 @@ struct WhatsNewSheetView: View {
                                 .frame(height: 16)
                             Text(.localizable(.generalButtonJoinDiscord))
                         }
+                        .foregroundStyle(.white)
                     }
                 }
                 .buttonStyle(.plain)
@@ -254,6 +281,7 @@ struct WhatsNewSheetView: View {
         }
         .font(.callout)
         .padding()
+        .fixedSize(horizontal: false, vertical: true)
         .background {
             let roundRect = RoundedRectangle(cornerRadius: 12)
             ZStack {
@@ -288,11 +316,15 @@ struct ChangeLogView: View {
         NavigationStack {
             WhatsNewSheetView()
         }
+#if os(macOS)
         .frame(width: 600, height: 800)
+#endif
     } else {
         NavigationView {
             WhatsNewSheetView()
         }
+#if os(macOS)
         .frame(width: 600, height: 800)
+#endif
     }
 }

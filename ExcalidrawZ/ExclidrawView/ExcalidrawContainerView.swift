@@ -37,7 +37,6 @@ struct ExcalidrawContainerView: View {
                     return excalidrawFile
                 } catch {
                     alertToast(error)
-                    print(error)
                     return ExcalidrawFile()
                 }
             } else {
@@ -75,7 +74,7 @@ struct ExcalidrawContainerView: View {
                 isLoadingPage: $isLoading
             ) { error in
                 alertToast(error)
-                print(error)
+                print("[ExcalidrawView Error]", error)
             }
             .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
             .opacity(isProgressViewPresented ? 0 : 1)

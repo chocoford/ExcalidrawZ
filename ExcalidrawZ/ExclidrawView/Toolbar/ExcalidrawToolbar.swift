@@ -65,7 +65,7 @@ struct ExcalidrawToolbar: View {
                     toolState.activatedTool = .cursor
                 }
                 
-                if let tool = newValue, let key = tool.keyEquivalent {
+                if let tool = newValue, let key = tool.keyEquivalent, tool != toolState.excalidrawWebCoordinator?.lastTool {
                     Task {
                         do {
                             try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: key)
@@ -110,7 +110,7 @@ struct ExcalidrawToolbar: View {
             }
         } else if toolState.inPenMode {
             HStack(spacing: 10) {
-                content(withFooter: false)
+                content(size: layoutState.isExcalidrawToolbarDense ? 14 : 20, withFooter: false)
                 Button {
                     isApplePencilDisconnectConfirmationDialogPresented.toggle()
                 } label: {
@@ -162,7 +162,7 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
     
     @MainActor @ViewBuilder
     private func content(size: CGFloat = 20, withFooter: Bool = true) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: size / 2) {
             SegmentedPicker(selection: $toolState.activatedTool) {
                 SegmentedPickerItem(value: ExcalidrawTool.cursor) {
                     Cursor()
@@ -221,6 +221,8 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                 
                 SegmentedPickerItem(value: ExcalidrawTool.arrow) {
                     Image(systemSymbol: .arrowRight)
+                        .resizable()
+                        .scaledToFit()
                         .font(.body.weight(.semibold))
                         .modifier(
                             ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
@@ -248,6 +250,8 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                 
                 SegmentedPickerItem(value: ExcalidrawTool.freedraw) {
                     Image(systemSymbol: .pencil)
+                        .resizable()
+                        .scaledToFit()
                         .font(.body.weight(.semibold))
                         .modifier(
                             ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
@@ -261,6 +265,8 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                 
                 SegmentedPickerItem(value: ExcalidrawTool.text) {
                     Image(systemSymbol: .character)
+                        .resizable()
+                        .scaledToFit()
                         .font(.body.weight(.semibold))
                         .modifier(
                             ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
@@ -274,6 +280,8 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                 
                 SegmentedPickerItem(value: ExcalidrawTool.image) {
                     Image(systemSymbol: .photo)
+                        .resizable()
+                        .scaledToFit()
                         .font(.body.weight(.semibold))
                         .modifier(
                             ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
@@ -288,6 +296,8 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                 SegmentedPickerItem(value: ExcalidrawTool.eraser) {
                     if #available(macOS 13.0, *) {
                         Image(systemSymbol: .eraserLineDashed)
+                            .resizable()
+                            .scaledToFit()
                             .font(.body.weight(.semibold))
                             .modifier(
                                 ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
@@ -298,6 +308,8 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                             )
                     } else {
                         Image(systemSymbol: .pencilSlash)
+                            .resizable()
+                            .scaledToFit()
                             .font(.body.weight(.semibold))
                             .modifier(
                                 ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
@@ -312,6 +324,8 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                 
                 SegmentedPickerItem(value: ExcalidrawTool.laser) {
                     Image(systemSymbol: .wandAndRaysInverse)
+                        .resizable()
+                        .scaledToFit()
                         .font(.body.weight(.semibold))
                         .modifier(
                             ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
@@ -323,14 +337,14 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                 }
                 .help("\(String(localizable: .toolbarLaser)) — K")
             }
-            .padding(6)
+            .padding(size / 3)
             .background {
                 if #available(macOS 14.0, iOS 17.0, *) {
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: size / 1.6)
                         .fill(.regularMaterial)
                         .stroke(.separator, lineWidth: 0.5)
                 } else {
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: size / 1.6)
                         .fill(.regularMaterial)
                 }
             }
@@ -517,10 +531,10 @@ struct ExcalidrawToolbarItemModifer: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .padding(labelType == .nativeShape ? 4 : labelType == .svg ? 0 : 6)
+            .padding(labelType == .nativeShape ? size / 6 : labelType == .svg ? 0 : size / 6)
             .aspectRatio(1, contentMode: .fit)
             .frame(width: size, height: size)
-            .padding(4)
+            .padding(size / 5)
             .overlay(alignment: .bottomTrailing) {
                 footer
                     .font(.footnote)
