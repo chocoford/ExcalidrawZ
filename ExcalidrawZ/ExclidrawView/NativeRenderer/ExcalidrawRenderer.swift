@@ -187,6 +187,33 @@ struct ExcalidrawRenderer: View {
                                 with: .color(.black)
                             )
                         }
+                    case .arrow(let excalidrawArrowElement):
+                        guard excalidrawArrowElement.points.count > 1 else { break }
+                        context.drawLayer { context in
+                            let rotationCenter = makePointInCanvas(
+                                point: CGPoint(x: (excalidrawArrowElement.x + excalidrawArrowElement.points[0].x),
+                                               y: (excalidrawArrowElement.y + excalidrawArrowElement.points[0].y)),
+                                canvasSize: size
+                            )
+                            context.translateBy(x: rotationCenter.x, y: rotationCenter.y)
+                            context.rotate(by: .radians(excalidrawArrowElement.angle))
+                            context.translateBy(x: -rotationCenter.x, y: -rotationCenter.y)
+                            
+                            context.stroke(
+                                Path { path in
+                                    path.move(to:rotationCenter)
+                                    for point in excalidrawArrowElement.points.suffix(excalidrawArrowElement.points.count - 1) {
+                                        path.addLine(to: makePointInCanvas(
+                                            point: CGPoint(x: (excalidrawArrowElement.x + point.x),
+                                                           y: (excalidrawArrowElement.y + point.y)),
+                                            canvasSize: size
+                                        ))
+                                    }
+                                    
+                                },
+                                with: .color(.black)
+                            )
+                        }
                     case .freeDraw/*(let excalidrawFreeDrawElement)*/:
                         break
                     case .draw/*(let excalidrawDrawElement)*/:
@@ -200,6 +227,10 @@ struct ExcalidrawRenderer: View {
                                 rect: transformedRect
                             )
                         }
+                    case .frame:
+                        break
+                    case .iframeLike:
+                        break
                 }
             }
         }

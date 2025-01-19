@@ -37,6 +37,7 @@ struct ExcalidrawContainerView: View {
                     return excalidrawFile
                 } catch {
                     alertToast(error)
+                    print(error)
                     return ExcalidrawFile()
                 }
             } else {
@@ -58,6 +59,7 @@ struct ExcalidrawContainerView: View {
                 }
             } catch {
                 alertToast(error)
+                print(error)
             }
             fileState.updateCurrentFile(with: file)
         }

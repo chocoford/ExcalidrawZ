@@ -125,7 +125,7 @@ struct ExcalidrawToolbar: View {
                     }
                 }
                 .confirmationDialog(
-                    "Apple pencil connected",
+                    .localizable(.toolbarApplePencilConnectedTitle),
                     isPresented: $isApplePencilDisconnectConfirmationDialogPresented,
                     titleVisibility: .visible
                 ) {
@@ -140,16 +140,11 @@ struct ExcalidrawToolbar: View {
                             }
                         }
                     } label: {
-                        Label("Disconnect", systemSymbol: .pencilSlash)
+                        Label(.localizable(.toolbarApplePencilButtonDisconnect), systemSymbol: .pencilSlash)
                             .labelStyle(.titleAndIcon)
                     }
                 } message: {
-                    Text("""
-In the current mode, you can draw using your Apple Pencil. When using your fingers:
-• A single finger allows you to move the canvas.
-• A two-finger tap on the screen performs an undo operation.
-• A three-finger tap on the screen performs a redo operation.
-""")
+                    Text(.localizable(.toolbarApplePencilConnectedMessage))
                     .multilineTextAlignment(.leading)
                 }
                 

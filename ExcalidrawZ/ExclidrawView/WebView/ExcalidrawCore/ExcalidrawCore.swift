@@ -10,8 +10,6 @@ import WebKit
 import OSLog
 import Combine
 
-import SVGView
-
 class ExcalidrawCore: NSObject, ObservableObject {
 #if canImport(AppKit)
     typealias PlatformImage = NSImage
@@ -391,7 +389,6 @@ extension ExcalidrawCore {
     func reload() {
          webView.evaluateJavaScript("location.reload(); 0;")
     }
-    
 }
 
 

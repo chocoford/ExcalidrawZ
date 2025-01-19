@@ -7,10 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		390716DB2C6F159B002D7834 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 390716DA2C6F159B002D7834 /* Localizable.xcstrings */; };
-		390716DC2C6F159B002D7834 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 390716DA2C6F159B002D7834 /* Localizable.xcstrings */; };
 		3908EB9929674DF60054A3ED /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB9729674DF60054A3ED /* Model.xcdatamodeld */; };
 		3914876D2960AFD10042927A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 3914876C2960AFD10042927A /* Sparkle */; };
+		39263F642D3641B400F9C827 /* SwiftSVG in Frameworks */ = {isa = PBXBuildFile; productRef = 39263F632D3641B400F9C827 /* SwiftSVG */; };
 		3929AB792CA5E4B800C7CCE8 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3929AB782CA5E4B800C7CCE8 /* ChocofordEssentials */; };
 		3929AB7B2CA5E4B800C7CCE8 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3929AB7A2CA5E4B800C7CCE8 /* ChocofordUI */; };
 		394A7FAF2C515CB700D4918B /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394A7FAE2C515CB700D4918B /* RootView.swift */; };
@@ -30,8 +29,6 @@
 		3963A07E2C6C7EAA00472AE7 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
 		396661302C665D4300F863BC /* excalidraw-latest in Resources */ = {isa = PBXBuildFile; fileRef = 3966612F2C665D3E00F863BC /* excalidraw-latest */; };
 		3966623F2C666EC600F863BC /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = 3966623E2C666EC600F863BC /* FlyingFox */; };
-		397152D72C85D05D00A65ADF /* SVGView in Frameworks */ = {isa = PBXBuildFile; productRef = 397152D62C85D05D00A65ADF /* SVGView */; };
-		397152D92C85D06A00A65ADF /* SVGView in Frameworks */ = {isa = PBXBuildFile; productRef = 397152D82C85D06A00A65ADF /* SVGView */; };
 		3976C4D62C8789F60037D3AF /* overwrite_console.js in Resources */ = {isa = PBXBuildFile; fileRef = 3976C4D52C8789F60037D3AF /* overwrite_console.js */; };
 		3976C4D72C8789F60037D3AF /* overwrite_console.js in Resources */ = {isa = PBXBuildFile; fileRef = 3976C4D52C8789F60037D3AF /* overwrite_console.js */; };
 		397E4657295838CF003B824B /* ExcalidrawZApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397E4656295838CF003B824B /* ExcalidrawZApp.swift */; };
@@ -62,6 +59,8 @@
 		39B142EA2CE9D2A100D3EEDA /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39B142E92CE9D2A100D3EEDA /* Zlib */; };
 		39BE12EE2CB7DD8C006781D5 /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39BE12ED2CB7DD8C006781D5 /* Zlib */; };
 		39BE12F12CB7DD97006781D5 /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39BE12F02CB7DD97006781D5 /* Zlib */; };
+		39D6D43E2D132D7300DF4BFA /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 39D6D43D2D132D7300DF4BFA /* Localizable.xcstrings */; };
+		39D6D43F2D132D7300DF4BFA /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 39D6D43D2D132D7300DF4BFA /* Localizable.xcstrings */; };
 		39DC11BB2C9195F60037C4AE /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03B2C6C7EAA00472AE7 /* ChocofordEssentials */; };
 		39DC11BC2C9195F60037C4AE /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03D2C6C7EAA00472AE7 /* ChocofordUI */; };
 		39DC11BD2C9195F60037C4AE /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2F72C512E7B00F14E88 /* ChocofordEssentials */; };
@@ -129,7 +128,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		390716DA2C6F159B002D7834 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		3908EB9829674DF60054A3ED /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
 		39148772296316720042927A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3915C9AB2CB54A6800B860E7 /* QuickLookUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLookUI.framework; path = System/Library/Frameworks/QuickLookUI.framework; sourceTree = SDKROOT; };
@@ -156,6 +154,7 @@
 		39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = FakeToggleColorMode.js; sourceTree = "<group>"; };
 		39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = FakeSaveCommand.js; sourceTree = "<group>"; };
 		39AF4DE02D0611E0009126C4 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = SOURCE_ROOT; };
+		39D6D43D2D132D7300DF4BFA /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		500E089B2CF1BFB600392CC2 /* Project.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Project.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -259,7 +258,6 @@
 				398F14552CF738ED0061CCF9 /* SwiftyAlert in Frameworks */,
 				3990F8362CACF4C500C94983 /* StoreKit.framework in Frameworks */,
 				39DC11BB2C9195F60037C4AE /* ChocofordEssentials in Frameworks */,
-				397152D92C85D06A00A65ADF /* SVGView in Frameworks */,
 				3963A0712C6C7EAA00472AE7 /* ChocofordUI in Frameworks */,
 				39BE12F12CB7DD97006781D5 /* Zlib in Frameworks */,
 				3963A0742C6C7EAA00472AE7 /* FlyingFox in Frameworks */,
@@ -276,13 +274,13 @@
 				39DC11BE2C9195F60037C4AE /* ChocofordUI in Frameworks */,
 				39DC11BD2C9195F60037C4AE /* ChocofordEssentials in Frameworks */,
 				3929AB7B2CA5E4B800C7CCE8 /* ChocofordUI in Frameworks */,
+				39263F642D3641B400F9C827 /* SwiftSVG in Frameworks */,
 				39E9C5A72C8CB2E600BC1C07 /* ChocofordUI in Frameworks */,
 				3914876D2960AFD10042927A /* Sparkle in Frameworks */,
 				39BE12EE2CB7DD8C006781D5 /* Zlib in Frameworks */,
 				3966623F2C666EC600F863BC /* FlyingFox in Frameworks */,
 				39E556F42CC8060E0009F051 /* ChocofordUI in Frameworks */,
 				3929AB792CA5E4B800C7CCE8 /* ChocofordEssentials in Frameworks */,
-				397152D72C85D05D00A65ADF /* SVGView in Frameworks */,
 				398F144B2CF7379C0061CCF9 /* ChocofordEssentials in Frameworks */,
 				398F14532CF738DB0061CCF9 /* SwiftyAlert in Frameworks */,
 				39E9C5A52C8CB2E600BC1C07 /* ChocofordEssentials in Frameworks */,
@@ -380,7 +378,7 @@
 				3966034F2D096D2900870AC9 /* Utils */,
 				397E468529599DA0003B824B /* Resources */,
 				397E465A295838D0003B824B /* Assets.xcassets */,
-				390716DA2C6F159B002D7834 /* Localizable.xcstrings */,
+				39D6D43D2D132D7300DF4BFA /* Localizable.xcstrings */,
 				3990F82B2CA9C55100C94983 /* Store.storekit */,
 				3908EB9729674DF60054A3ED /* Model.xcdatamodeld */,
 				397E465C295838D0003B824B /* ExcalidrawZ.entitlements */,
@@ -451,7 +449,6 @@
 				3963A03B2C6C7EAA00472AE7 /* ChocofordEssentials */,
 				3963A03D2C6C7EAA00472AE7 /* ChocofordUI */,
 				3963A03E2C6C7EAA00472AE7 /* FlyingFox */,
-				397152D82C85D06A00A65ADF /* SVGView */,
 				39BE12F02CB7DD97006781D5 /* Zlib */,
 				398F14542CF738ED0061CCF9 /* SwiftyAlert */,
 			);
@@ -495,7 +492,6 @@
 				3930B2F72C512E7B00F14E88 /* ChocofordEssentials */,
 				3930B2F92C512E7B00F14E88 /* ChocofordUI */,
 				3966623E2C666EC600F863BC /* FlyingFox */,
-				397152D62C85D05D00A65ADF /* SVGView */,
 				39E9C5A42C8CB2E600BC1C07 /* ChocofordEssentials */,
 				39E9C5A62C8CB2E600BC1C07 /* ChocofordUI */,
 				3929AB782CA5E4B800C7CCE8 /* ChocofordEssentials */,
@@ -506,6 +502,7 @@
 				398F144A2CF7379C0061CCF9 /* ChocofordEssentials */,
 				398F144C2CF7379C0061CCF9 /* ChocofordUI */,
 				398F14522CF738DB0061CCF9 /* SwiftyAlert */,
+				39263F632D3641B400F9C827 /* SwiftSVG */,
 			);
 			productName = ExcaliDrawZ;
 			productReference = 397E4653295838CF003B824B /* ExcalidrawZ.app */;
@@ -623,10 +620,10 @@
 				3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */,
 				3966623D2C666EC600F863BC /* XCRemoteSwiftPackageReference "FlyingFox" */,
 				390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */,
-				397152D22C85D00E00A65ADF /* XCRemoteSwiftPackageReference "SVGView" */,
 				39BE12EC2CB7DD8C006781D5 /* XCRemoteSwiftPackageReference "Zlib" */,
 				398F14492CF7379C0061CCF9 /* XCRemoteSwiftPackageReference "ChocofordKit" */,
 				398F14512CF738DB0061CCF9 /* XCRemoteSwiftPackageReference "SwiftyAlert" */,
+				39263F622D3641B400F9C827 /* XCLocalSwiftPackageReference "../Clones/SwiftSVG" */,
 			);
 			productRefGroup = 397E4654295838CF003B824B /* Products */;
 			projectDirPath = "";
@@ -649,7 +646,7 @@
 				3963A0782C6C7EAA00472AE7 /* excalidraw-latest in Resources */,
 				3963A0792C6C7EAA00472AE7 /* FakeDrop.js in Resources */,
 				39AF4DE32D0611E0009126C4 /* CHANGELOG.md in Resources */,
-				390716DB2C6F159B002D7834 /* Localizable.xcstrings in Resources */,
+				39D6D43E2D132D7300DF4BFA /* Localizable.xcstrings in Resources */,
 				3963A07A2C6C7EAA00472AE7 /* template.excalidraw in Resources */,
 				3963A07C2C6C7EAA00472AE7 /* Assets.xcassets in Resources */,
 				3963A07D2C6C7EAA00472AE7 /* FakeToggleColorMode.js in Resources */,
@@ -666,7 +663,7 @@
 				396661302C665D4300F863BC /* excalidraw-latest in Resources */,
 				397E468729599DD4003B824B /* FakeDrop.js in Resources */,
 				39AF4DE12D0611E0009126C4 /* CHANGELOG.md in Resources */,
-				390716DC2C6F159B002D7834 /* Localizable.xcstrings in Resources */,
+				39D6D43F2D132D7300DF4BFA /* Localizable.xcstrings in Resources */,
 				397E468F295AAE5E003B824B /* template.excalidraw in Resources */,
 				397E465B295838D0003B824B /* Assets.xcassets in Resources */,
 				39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */,
@@ -798,7 +795,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -823,7 +820,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 1.2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.excalidraw-Debug";
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -843,7 +840,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -868,7 +865,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 1.2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -948,7 +945,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -973,7 +970,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 1.2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -993,7 +990,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1017,7 +1014,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 1.2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -1207,7 +1204,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1231,7 +1228,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 1.2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.excalidraw-Debug";
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -1250,7 +1247,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1274,7 +1271,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 1.2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
 				SDKROOT = auto;
@@ -1376,7 +1373,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1390,7 +1387,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 1.2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.excalidraw-Debug.QuickLookPreviewExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1406,7 +1403,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1420,7 +1417,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 1.2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw.QuickLookPreviewExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1435,7 +1432,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1449,7 +1446,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 1.2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw.QuickLookPreviewExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1524,6 +1521,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		39263F622D3641B400F9C827 /* XCLocalSwiftPackageReference "../Clones/SwiftSVG" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Clones/SwiftSVG;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1563,14 +1567,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 0.15.0;
-			};
-		};
-		397152D22C85D00E00A65ADF /* XCRemoteSwiftPackageReference "SVGView" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/exyte/SVGView.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.6;
 			};
 		};
 		398F14492CF7379C0061CCF9 /* XCRemoteSwiftPackageReference "ChocofordKit" */ = {
@@ -1615,6 +1611,10 @@
 			package = 3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
 		};
+		39263F632D3641B400F9C827 /* SwiftSVG */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SwiftSVG;
+		};
 		3929AB782CA5E4B800C7CCE8 /* ChocofordEssentials */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ChocofordEssentials;
@@ -1658,16 +1658,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3966623D2C666EC600F863BC /* XCRemoteSwiftPackageReference "FlyingFox" */;
 			productName = FlyingFox;
-		};
-		397152D62C85D05D00A65ADF /* SVGView */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 397152D22C85D00E00A65ADF /* XCRemoteSwiftPackageReference "SVGView" */;
-			productName = SVGView;
-		};
-		397152D82C85D06A00A65ADF /* SVGView */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 397152D22C85D00E00A65ADF /* XCRemoteSwiftPackageReference "SVGView" */;
-			productName = SVGView;
 		};
 		3987A57E2CB558B40054D7D5 /* XCStringsToolPlugin */ = {
 			isa = XCSwiftPackageProductDependency;

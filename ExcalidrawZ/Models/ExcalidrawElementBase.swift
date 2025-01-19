@@ -59,11 +59,24 @@ enum ExcalidrawElementType: String, Codable {
     case selection = "selection"
     case diamond = "diamond"
     case image = "image"
+    case frame = "frame"
+    case magicFrame = "magicframe"
+    case embeddable = "embeddable"
+    case iframe = "iframe"
 }
 
-//struct FractionalIndex: Codable {
-//    
-//}
+struct ExcalidrawBrand: Codable, Hashable {
+    var _brand: String
+}
+enum ExcalidrawRadians: Codable, Hashable {
+    case number(Double)
+    case brand(ExcalidrawBrand)
+}
+
+enum FractionalIndex: Codable, Hashable {
+    case string(String)
+    case brand(ExcalidrawBrand)
+}
 
 protocol ExcalidrawElementBase: Codable, Identifiable, Hashable {
     var id: String { get }
@@ -83,7 +96,7 @@ protocol ExcalidrawElementBase: Codable, Identifiable, Hashable {
     var seed: Int { get }
     var version: Int { get }
     var versionNonce: Int { get }
-//    var index: FractionalIndex? { get }
+    var index: String? { get }
     var isDeleted: Bool { get }
     var groupIds: [String] { get }
     var frameId: String? { get }
@@ -94,8 +107,8 @@ protocol ExcalidrawElementBase: Codable, Identifiable, Hashable {
     var customData: [String: AnyCodable]? { get }
     
     var type: ExcalidrawElementType { get }
-    
 }
+
 
 enum AnyCodable: Codable, Hashable {
     case string(String)

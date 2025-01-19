@@ -11,6 +11,7 @@ import SwiftUI
 import AppKit
 #endif
 
+import SwiftSVG
 
 func loadResource<T: Decodable>(_ filename: String) -> T {
     let data: Data
@@ -167,21 +168,81 @@ func archiveAllFiles(to url: URL) throws {
 // MARK: Export PDF
 func exportPDF<Content: View>(@ViewBuilder content: () -> Content) {
     let printInfo = NSPrintInfo.shared
-    printInfo.topMargin = 10
-    printInfo.bottomMargin = 10
-    printInfo.leftMargin = 10
-    printInfo.rightMargin = 10
+    printInfo.topMargin = 0
+    printInfo.bottomMargin = 0
+    printInfo.leftMargin = 0
+    printInfo.rightMargin = 0
     printInfo.isHorizontallyCentered = true
     printInfo.isVerticallyCentered = true
     
     let hostingView = NSHostingView(rootView: content())
-    hostingView.setFrameSize(NSSize(width: 400, height: 800)) // 设置视图的尺寸
 
-    let printOperation = NSPrintOperation(view: hostingView)
-    printOperation.printInfo = printInfo
+    let printOperation = NSPrintOperation(
+        view: hostingView,
+        printInfo: printInfo
+    )
     
+    printOperation.printPanel.options = [
+        .showsCopies,
+        .showsPageRange,
+        .showsPaperSize,
+        .showsOrientation,
+        .showsScaling,
+        .showsPrintSelection,
+        .showsPageSetupAccessory,
+        .showsPreview
+    ]
+
     // 展示打印面板
     printOperation.run()
+}
+
+func exportPDF(svgURL: URL) {
+    let printInfo = NSPrintInfo.shared
+    printInfo.topMargin = 0
+    printInfo.bottomMargin = 0
+    printInfo.leftMargin = 0
+    printInfo.rightMargin = 0
+    printInfo.isHorizontallyCentered = true
+    printInfo.isVerticallyCentered = true
+
+    let view = SVGView(svgURL: svgURL) // NSView()
+//    view.frame.size.width = printInfo.paperSize.width
+//    view.frame.size.height = printInfo.paperSize.height
+    
+    
+//    let svgView = SVGView(svgURL: svgURL)
+    
+//    let webView = WKWebView(frame: view.frame)
+//    webView.loadFileURL(
+//        svgURL,
+//        allowingReadAccessTo: svgURL.deletingLastPathComponent()
+//    )
+//    webView.autoresizingMask = [.width, .height] // 让它随父视图大小变化
+//    view.addSubview(webView)
+//    
+    let printOperation = NSPrintOperation(
+        view: view,
+        printInfo: printInfo
+    )
+    
+
+    printOperation.printPanel.options = [
+        .showsCopies,
+        .showsPageRange,
+        .showsPaperSize,
+        .showsOrientation,
+        .showsScaling,
+        .showsPrintSelection,
+        .showsPageSetupAccessory,
+        .showsPreview
+    ]
+    
+    Task {
+        try? await Task.sleep(nanoseconds: UInt64(1e+9 * 2))
+        // 展示打印面板
+        await printOperation.run()
+    }
 }
 
 func exportPDF(image: NSImage, name: String? = nil) {
@@ -191,12 +252,15 @@ func exportPDF(image: NSImage, name: String? = nil) {
     printInfo.leftMargin = 0
     printInfo.rightMargin = 0
 
-    let printImage = /*image.preparingThumbnail(width: printInfo.paperSize.width) ??*/ image
+    let printImage = image
     
-    let imageView = NSImageView(image: printImage)// PrintableImageView(image: printImage)
+    let imageView = NSImageView(image: printImage)
     imageView.frame.size.width = printInfo.paperSize.width
     imageView.frame.size.height = printInfo.paperSize.width / printImage.width * printImage.size.height
-    let printOperation = NSPrintOperation(view: imageView, printInfo: printInfo)
+    let printOperation = NSPrintOperation(
+        view: imageView,
+        printInfo: printInfo
+    )
     
     printOperation.printPanel.options = [
         .showsCopies,

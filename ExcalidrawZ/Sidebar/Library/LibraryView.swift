@@ -11,7 +11,6 @@ import CoreData
 import SFSafeSymbols
 import ChocofordEssentials
 import ChocofordUI
-import SVGView
 import UniformTypeIdentifiers
 
 struct LibraryView: View {

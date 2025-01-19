@@ -96,21 +96,17 @@ struct ShareView: View {
                     
                     SquareButton(title: .localizable(.exportSheetButtonPDF), icon: .docRichtext, priority: .background) {
                         do {
-#if os(macOS)
                             let imageData = try await exportState.exportCurrentFileToImage(
                                 type: .png,
                                 embedScene: false,
                                 withBackground: true
-                            ).data
-                            if let image = NSImage(dataIgnoringOrientation: imageData) {
+                            )
+#if os(macOS)
+                            if let image = NSImage(dataIgnoringOrientation: imageData.data) {
                                 exportPDF(image: image, name: sharedFile.name)
                             }
+//                            exportPDF(svgURL: imageData.url)
 #elseif os(iOS)
-                            let imageData = try await exportState.exportCurrentFileToImage(
-                                type: .png,
-                                embedScene: false,
-                                withBackground: true
-                            ).data
                             if let image = UIImage(data: imageData) {
                                 self.exportedPDFURL = try exportPDF(image: image, name: sharedFile.name)
                             }
