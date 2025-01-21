@@ -227,7 +227,7 @@ struct ExcalidrawRenderer: View {
                                 rect: transformedRect
                             )
                         }
-                    case .frame:
+                    case .frameLike:
                         break
                     case .iframeLike:
                         break

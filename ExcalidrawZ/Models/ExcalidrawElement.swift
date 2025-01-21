@@ -5,6 +5,7 @@
 //  Created by Dove Zachary on 2023/8/6.
 //
 
+
 import Foundation
 
 enum ExcalidrawElement: Codable, Hashable {
@@ -15,7 +16,7 @@ enum ExcalidrawElement: Codable, Hashable {
     case freeDraw(ExcalidrawFreeDrawElement)
     case draw(ExcalidrawDrawElement) // lagacy - only existed in v1
     case image(ExcalidrawImageElement)
-    case frame(ExcalidrawFrameElement)
+    case frameLike(ExcalidrawFrameLikeElement)
     case iframeLike(ExcalidrawIframeLikeElement)
     
     enum CodingKeys: String, CodingKey {
@@ -42,7 +43,7 @@ enum ExcalidrawElement: Codable, Hashable {
             case .image:
                 self = .image(try ExcalidrawImageElement(from: decoder))
             case .frame, .magicFrame:
-                self = .frame(try ExcalidrawFrameElement(from: decoder))
+                self = .frameLike(try ExcalidrawFrameLikeElement(from: decoder))
             case .iframe, .embeddable:
                 self = .iframeLike(try ExcalidrawIframeLikeElement(from: decoder))
         }
@@ -64,7 +65,7 @@ enum ExcalidrawElement: Codable, Hashable {
                 try excalidrawDrawElement.encode(to: encoder)
             case .image(let excalidrawImageElement):
                 try excalidrawImageElement.encode(to: encoder)
-            case .frame(let excalidrawFrameElement):
+            case .frameLike(let excalidrawFrameElement):
                 try excalidrawFrameElement.encode(to: encoder)
             case .iframeLike(let excalidrawIframeLikeElement):
                 try excalidrawIframeLikeElement.encode(to: encoder)
@@ -90,7 +91,7 @@ extension ExcalidrawElement: Identifiable {
                 excalidrawDrawElement.id
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.id
-            case .frame(let excalidrawFrameElement):
+            case .frameLike(let excalidrawFrameElement):
                 excalidrawFrameElement.id
             case .iframeLike(let excalidrawIframeLikeElement):
                 excalidrawIframeLikeElement.id
@@ -115,7 +116,7 @@ extension ExcalidrawElement {
                 excalidrawDrawElement.x
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.x
-            case .frame(let excalidrawFrameElement):
+            case .frameLike(let excalidrawFrameElement):
                 excalidrawFrameElement.x
             case .iframeLike(let excalidrawIframeLikeElement):
                 excalidrawIframeLikeElement.x
@@ -138,7 +139,7 @@ extension ExcalidrawElement {
                 excalidrawDrawElement.y
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.y
-            case .frame(let excalidrawFrameElement):
+            case .frameLike(let excalidrawFrameElement):
                 excalidrawFrameElement.y
             case .iframeLike(let excalidrawIframeLikeElement):
                 excalidrawIframeLikeElement.y
@@ -161,7 +162,7 @@ extension ExcalidrawElement {
                 excalidrawDrawElement.width
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.width
-            case .frame(let excalidrawFrameElement):
+            case .frameLike(let excalidrawFrameElement):
                 excalidrawFrameElement.width
             case .iframeLike(let excalidrawIframeLikeElement):
                 excalidrawIframeLikeElement.width
@@ -184,7 +185,7 @@ extension ExcalidrawElement {
                 excalidrawDrawElement.height
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.height
-            case .frame(let excalidrawFrameElement):
+            case .frameLike(let excalidrawFrameElement):
                 excalidrawFrameElement.height
             case .iframeLike(let excalidrawIframeLikeElement):
                 excalidrawIframeLikeElement.height

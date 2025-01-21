@@ -227,18 +227,20 @@ extension ExcalidrawCore {
             try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
         }
     }
-//    @MainActor
-//    func toggleToolbarAction(key: KeyEquivalent) async throws {
-//        print(#function, key)
-//        
-//        switch key {
-//            case .escape:
-//                try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Escape'); 0;")
-//            default:
-//                break
-//        }
-//    }
-//    
+    
+    enum ExtraTool: String {
+        case webEmbed = "webEmbed"
+        case text2Diagram = "text2diagram"
+        case mermaid = "mermaid"
+        case magicFrame = "wireframe"
+    }
+    @MainActor
+    func toggleToolbarAction(tool: ExtraTool) async throws {
+        guard !self.isLoading else { return }
+        print(#function, tool)
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(tool.rawValue)'); 0;")
+    }
+    
     func exportElementsToPNGData(
         elements: [ExcalidrawElement],
         embedScene: Bool = false,
@@ -303,17 +305,41 @@ extension ExcalidrawCore {
                 self.flyingSVGRequests.removeValue(forKey: id)
             }
         }
-        var miniizedSvg = svg.trimmingCharacters(in: .whitespacesAndNewlines)
-        let pattern = "<defs[^>]*>.*?</defs>"
-        do {
-            let regex = try NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators])
-            let range = NSRange(location: 0, length: svg.utf16.count)
-            miniizedSvg = regex.stringByReplacingMatches(in: svg, options: [], range: range, withTemplate: "")
-        } catch {
-            print("Invalid regex: \(error.localizedDescription)")
+        let minisizedSvg = removeWidthAndHeight(from: svg).trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        func removeWidthAndHeight(from svgContent: String) -> String {
+            // 正则表达式确保匹配 `<svg>` 标签上的 width 和 height 属性
+            let regexPattern = #"<svg([^>]*)\s+(width="[^"]*")\s*([^>]*)>"#
+            
+            do {
+                // 创建正则表达式
+                let regex = try NSRegularExpression(pattern: regexPattern, options: [])
+                
+                // 替换 `width` 和 `height`，保留 `<svg>` 标签其他属性
+                let tempResult = regex.stringByReplacingMatches(
+                    in: svgContent,
+                    options: [],
+                    range: NSRange(location: 0, length: svgContent.utf16.count),
+                    withTemplate: "<svg$1 $3>"
+                )
+                
+                // 再次处理可能分开的 height
+                let finalRegexPattern = #"<svg([^>]*)\s+(height="[^"]*")\s*([^>]*)>"#
+                let finalResult = try NSRegularExpression(pattern: finalRegexPattern, options: []).stringByReplacingMatches(
+                    in: tempResult,
+                    options: [],
+                    range: NSRange(location: 0, length: tempResult.utf16.count),
+                    withTemplate: "<svg$1 $3>"
+                )
+                
+                return finalResult
+            } catch {
+                print("Error creating regex: \(error)")
+                return svgContent
+            }
         }
-
-        guard let data = miniizedSvg.data(using: .utf8) else {
+        
+        guard let data = minisizedSvg.data(using: .utf8) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
         }

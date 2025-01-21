@@ -484,6 +484,10 @@ extension ExcalidrawCore {
                 case laser
                 
                 case hand
+                
+                case frame
+                case webEmbed = "embeddable"
+                case magicFrame = "magicframe"
             }
         }
     }

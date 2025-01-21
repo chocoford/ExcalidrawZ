@@ -1,5 +1,5 @@
 {
-  "originHash" : "7c151a9f9034764185955ff26c7083b84b4e34bf1eb6276cfe1c549bd15d8939",
+  "originHash" : "dfbc1c1858fcb220abfd711d979e2f85e0328f12ff773fd2e28ba498ef79ad4d",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -16,7 +16,7 @@
       "location" : "https://github.com/chocoford/ChocofordKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "e8182a7cf08dde2951783bf7e17bfbad99cd0290"
+        "revision" : "1bccccb2a4a9a3defae17cdb944be624bb2fec9b"
       }
     },
     {
@@ -124,7 +124,7 @@
       "location" : "https://github.com/chocoford/SwiftyAlert.git",
       "state" : {
         "branch" : "dev",
-        "revision" : "af78f5205f97bc8b8bc66c2c9c249e4cc2338d9c"
+        "revision" : "bbfd113deca9efce132200d1618ee7b7cabbee6c"
       }
     },
     {

@@ -162,9 +162,7 @@ struct SettingsView: View {
                 PencilSettingsView()
                 
             case .whatsNews:
-                ScrollView {
-                    WhatsNewSheetView(showContinue: false)
-                }
+                WhatsNewSheetView(showContinue: false)
 #endif
                 
             case .about:

@@ -12,6 +12,7 @@ import AppKit
 #endif
 
 import SwiftSVG
+import WebKit
 
 func loadResource<T: Decodable>(_ filename: String) -> T {
     let data: Data
@@ -197,52 +198,9 @@ func exportPDF<Content: View>(@ViewBuilder content: () -> Content) {
     printOperation.run()
 }
 
-func exportPDF(svgURL: URL) {
-    let printInfo = NSPrintInfo.shared
-    printInfo.topMargin = 0
-    printInfo.bottomMargin = 0
-    printInfo.leftMargin = 0
-    printInfo.rightMargin = 0
-    printInfo.isHorizontallyCentered = true
-    printInfo.isVerticallyCentered = true
-
-    let view = SVGView(svgURL: svgURL) // NSView()
-//    view.frame.size.width = printInfo.paperSize.width
-//    view.frame.size.height = printInfo.paperSize.height
-    
-    
-//    let svgView = SVGView(svgURL: svgURL)
-    
-//    let webView = WKWebView(frame: view.frame)
-//    webView.loadFileURL(
-//        svgURL,
-//        allowingReadAccessTo: svgURL.deletingLastPathComponent()
-//    )
-//    webView.autoresizingMask = [.width, .height] // 让它随父视图大小变化
-//    view.addSubview(webView)
-//    
-    let printOperation = NSPrintOperation(
-        view: view,
-        printInfo: printInfo
-    )
-    
-
-    printOperation.printPanel.options = [
-        .showsCopies,
-        .showsPageRange,
-        .showsPaperSize,
-        .showsOrientation,
-        .showsScaling,
-        .showsPrintSelection,
-        .showsPageSetupAccessory,
-        .showsPreview
-    ]
-    
-    Task {
-        try? await Task.sleep(nanoseconds: UInt64(1e+9 * 2))
-        // 展示打印面板
-        await printOperation.run()
-    }
+func exportPDF(name: String, svgURL: URL) async {
+    let webView = await PrinterWebView(filename: name)
+    await webView.print(fileURL: svgURL)
 }
 
 func exportPDF(image: NSImage, name: String? = nil) {
@@ -277,6 +235,11 @@ func exportPDF(image: NSImage, name: String? = nil) {
     printOperation.run()
 }
 #elseif os(iOS)
+func exportPDF(name: String, svgURL: URL) async -> URL? {
+    let webView = await PrinterWebView(filename: name)
+    return await webView.exportPDF(fileURL: svgURL)
+}
+
 func exportPDF(image: UIImage, name: String? = nil, to url: URL? = nil) throws -> URL {
     // 设置 PDF 页面大小（例如 A4）
     let pageSize = CGSize(width: 595.2, height: 841.8) // A4 尺寸，单位为点 (1 point = 1/72 inch)

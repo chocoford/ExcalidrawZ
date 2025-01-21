@@ -134,8 +134,6 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 #if os(macOS)
         ToolbarItemGroup(placement: .cancellationAction) {
             SettingsButton(useDefaultLabel: true) {
-                
-            } label: {
                 Label(.localizable(.settingsName), systemSymbol: .gear)
                     .labelStyle(.iconOnly)
             }

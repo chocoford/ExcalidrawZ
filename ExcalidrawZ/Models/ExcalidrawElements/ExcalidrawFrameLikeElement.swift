@@ -1,5 +1,5 @@
 //
-//  ExcalidrawFrameElement.swift
+//  ExcalidrawFrameLikeElement.swift
 //  ExcalidrawZ
 //
 //  Created by Dove Zachary on 1/19/25.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ExcalidrawFrameElement: ExcalidrawElementBase {
+struct ExcalidrawFrameLikeElement: ExcalidrawElementBase {
     var type: ExcalidrawElementType
     
     var id: String
