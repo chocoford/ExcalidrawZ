@@ -11,7 +11,6 @@ import SwiftUI
 import AppKit
 #endif
 
-import SwiftSVG
 import WebKit
 
 func loadResource<T: Decodable>(_ filename: String) -> T {
