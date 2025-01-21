@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import WebKit
 
 import ChocofordUI
 import SwiftyAlert
@@ -69,6 +70,9 @@ struct ShareView: View {
     enum Route: Hashable {
         case exportImage
         case exportFile
+#if DEBUG
+        case svgPreview(URL)
+#endif
     }
     
     @State private var route: NavigationPath = .init()
@@ -96,24 +100,16 @@ struct ShareView: View {
                     
                     SquareButton(title: .localizable(.exportSheetButtonPDF), icon: .docRichtext, priority: .background) {
                         do {
+                            let imageData = try await exportState.exportCurrentFileToImage(
+                                type: .svg,
+                                embedScene: false,
+                                withBackground: true
+                            )
 #if os(macOS)
-                            let imageData = try await exportState.exportCurrentFileToImage(
-                                type: .png,
-                                embedScene: false,
-                                withBackground: true
-                            ).data
-                            if let image = NSImage(dataIgnoringOrientation: imageData) {
-                                exportPDF(image: image, name: sharedFile.name)
-                            }
+                            await exportPDF(name: imageData.name, svgURL: imageData.url)
 #elseif os(iOS)
-                            let imageData = try await exportState.exportCurrentFileToImage(
-                                type: .png,
-                                embedScene: false,
-                                withBackground: true
-                            ).data
-                            if let image = UIImage(data: imageData) {
-                                self.exportedPDFURL = try exportPDF(image: image, name: sharedFile.name)
-                            }
+                            exportedPDFURL = await exportPDF(name: imageData.name, svgURL: imageData.url)
+//                            route.append(Route.svgPreview(imageData.url))
 #endif
                         } catch {
                             alertToast(error)
@@ -164,6 +160,10 @@ struct ShareView: View {
                         ExportImageView()
                     case .exportFile:
                         ExportFileView(file: sharedFile)
+#if DEBUG
+                    case .svgPreview(let url):
+                        svgPreviewView(url: url)
+#endif
                 }
             }
             .padding(40)
@@ -172,7 +172,50 @@ struct ShareView: View {
 #endif
         }
     }
+    
+#if DEBUG
+    @MainActor @ViewBuilder
+    private func svgPreviewView(url: URL) -> some View {
+        SVGPreviewWebView(svgURL: url)
+    }
+#endif
 }
+
+#if canImport(AppKit)
+struct SVGPreviewWebView: NSViewRepresentable {
+    var svgURL: URL
+    
+    func makeNSView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        if #available(macOS 13.3, *) {
+            webView.isInspectable = true
+        }
+        webView.loadFileURL(svgURL, allowingReadAccessTo: svgURL.deletingLastPathComponent())
+        return webView
+    }
+    
+    func updateNSView(_ nsView: WKWebView, context: Context) {
+        
+    }
+}
+#elseif canImport(UIKit)
+struct SVGPreviewWebView: UIViewRepresentable {
+    var svgURL: URL
+    
+    func makeUIView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        if #available(iOS 16.4, *) {
+            webView.isInspectable = true
+        }
+        webView.loadFileURL(svgURL, allowingReadAccessTo: svgURL.deletingLastPathComponent())
+        return webView
+    }
+    
+    func updateUIView(_ nsView: WKWebView, context: Context) {
+        
+    }
+}
+#endif
 
 struct ShareViewLagacy: View {
     @Environment(\.dismiss) var dismiss
@@ -303,6 +346,7 @@ struct ShareViewLagacy: View {
             .controlSize(.large)
         }
     }
+
 }
 
 fileprivate struct SquareButton: View {

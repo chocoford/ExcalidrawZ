@@ -62,6 +62,7 @@ struct ExcalidrawLinearElement: ExcalidrawLinearElementBase {
     var seed: Int
     var version: Int
     var versionNonce: Int
+    var index: String?
     var isDeleted: Bool
     var groupIds: [String]
     var frameId: String?
@@ -78,6 +79,115 @@ struct ExcalidrawLinearElement: ExcalidrawLinearElementBase {
     var endBinding: PointBinding?
     var startArrowhead: Arrowhead?
     var endArrowhead: Arrowhead?
+    
+    /// ignore `version`, `versionNounce`, `updated`
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        return lhs.id == rhs.id &&
+            lhs.x == rhs.x &&
+            lhs.y == rhs.y &&
+            lhs.strokeColor == rhs.strokeColor &&
+            lhs.backgroundColor == rhs.backgroundColor &&
+            lhs.fillStyle == rhs.fillStyle &&
+            lhs.strokeWidth == rhs.strokeWidth &&
+            lhs.strokeStyle == rhs.strokeStyle &&
+            lhs.roundness == rhs.roundness &&
+            lhs.roughness == rhs.roughness &&
+            lhs.opacity == rhs.opacity &&
+            lhs.width == rhs.width &&
+            lhs.height == rhs.height &&
+            lhs.angle == rhs.angle &&
+            lhs.seed == rhs.seed &&
+            lhs.isDeleted == rhs.isDeleted &&
+            lhs.groupIds == rhs.groupIds &&
+            lhs.frameId == rhs.frameId &&
+            lhs.boundElements == rhs.boundElements &&
+            lhs.link == rhs.link &&
+            lhs.locked == rhs.locked &&
+            lhs.customData == rhs.customData &&
+            lhs.type == rhs.type &&
+            lhs.points == rhs.points &&
+            lhs.lastCommittedPoint == rhs.lastCommittedPoint &&
+            lhs.startBinding == rhs.startBinding &&
+            lhs.endBinding == rhs.endBinding &&
+            lhs.startArrowhead == rhs.startArrowhead &&
+            lhs.endArrowhead == rhs.endArrowhead
+    }
+}
+
+struct ExcalidrawArrowElement: ExcalidrawLinearElementBase {
+    var id: String
+    var x: Double
+    var y: Double
+    var strokeColor: String
+    var backgroundColor: String
+    var fillStyle: ExcalidrawFillStyle
+    var strokeWidth: Double
+    var strokeStyle: ExcalidrawStrokeStyle
+    var roundness: ExcalidrawRoundness?
+    var roughness: Double
+    var opacity: Double
+    var width: Double
+    var height: Double
+    var angle: Double
+    var seed: Int
+    var version: Int
+    var versionNonce: Int
+    var index: String?
+    var isDeleted: Bool
+    var groupIds: [String]
+    var frameId: String?
+    var boundElements: [ExcalidrawBoundElement]?
+    var updated: Double? // not available in v1
+    var link: String?
+    var locked: Bool? // not available in v1
+    var customData: [String : AnyCodable]?
+    var type: ExcalidrawElementType
+
+    var points: [Point]
+    var lastCommittedPoint: Point?
+    var startBinding: PointBinding?
+    var endBinding: PointBinding?
+    var startArrowhead: Arrowhead?
+    var endArrowhead: Arrowhead?
+    var elbowed: Bool
+    
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.x = try container.decode(Double.self, forKey: .x)
+        self.y = try container.decode(Double.self, forKey: .y)
+        self.strokeColor = try container.decode(String.self, forKey: .strokeColor)
+        self.backgroundColor = try container.decode(String.self, forKey: .backgroundColor)
+        self.fillStyle = try container.decode(ExcalidrawFillStyle.self, forKey: .fillStyle)
+        self.strokeWidth = try container.decode(Double.self, forKey: .strokeWidth)
+        self.strokeStyle = try container.decode(ExcalidrawStrokeStyle.self, forKey: .strokeStyle)
+        self.roundness = try container.decodeIfPresent(ExcalidrawRoundness.self, forKey: .roundness)
+        self.roughness = try container.decode(Double.self, forKey: .roughness)
+        self.opacity = try container.decode(Double.self, forKey: .opacity)
+        self.width = try container.decode(Double.self, forKey: .width)
+        self.height = try container.decode(Double.self, forKey: .height)
+        self.angle = try container.decode(Double.self, forKey: .angle)
+        self.seed = try container.decode(Int.self, forKey: .seed)
+        self.version = try container.decode(Int.self, forKey: .version)
+        self.versionNonce = try container.decode(Int.self, forKey: .versionNonce)
+        self.index = try container.decodeIfPresent(String.self, forKey: .index)
+        self.isDeleted = try container.decode(Bool.self, forKey: .isDeleted)
+        self.groupIds = try container.decode([String].self, forKey: .groupIds)
+        self.frameId = try container.decodeIfPresent(String.self, forKey: .frameId)
+        self.boundElements = try container.decodeIfPresent([ExcalidrawBoundElement].self, forKey: .boundElements)
+        self.updated = try container.decodeIfPresent(Double.self, forKey: .updated)
+        self.link = try container.decodeIfPresent(String.self, forKey: .link)
+        self.locked = try container.decodeIfPresent(Bool.self, forKey: .locked)
+        self.customData = try container.decodeIfPresent([String : AnyCodable].self, forKey: .customData)
+        self.type = try container.decode(ExcalidrawElementType.self, forKey: .type)
+        self.points = try container.decode([Point].self, forKey: .points)
+        self.lastCommittedPoint = try container.decodeIfPresent(Point.self, forKey: .lastCommittedPoint)
+        self.startBinding = try container.decodeIfPresent(PointBinding.self, forKey: .startBinding)
+        self.endBinding = try container.decodeIfPresent(PointBinding.self, forKey: .endBinding)
+        self.startArrowhead = try container.decodeIfPresent(Arrowhead.self, forKey: .startArrowhead)
+        self.endArrowhead = try container.decodeIfPresent(Arrowhead.self, forKey: .endArrowhead)
+        self.elbowed = try container.decodeIfPresent(Bool.self, forKey: .elbowed) ?? false
+    }
     
     /// ignore `version`, `versionNounce`, `updated`
     static func == (lhs: Self, rhs: Self) -> Bool {

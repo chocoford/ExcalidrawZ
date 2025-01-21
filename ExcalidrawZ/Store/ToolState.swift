@@ -23,6 +23,10 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
     case image
     case laser
     
+    case frame
+    case webEmbed
+    case magicFrame
+    
     init?(from tool: ExcalidrawView.Coordinator.SetActiveToolMessage.SetActiveToolMessageData.Tool) {
         switch tool {
             case .selection:
@@ -47,6 +51,12 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
                 self = .eraser
             case .laser:
                 self = .laser
+            case .frame:
+                self = .frame
+            case .webEmbed:
+                self = .webEmbed
+            case .magicFrame:
+                self = .magicFrame
             default:
                 return nil
         }
@@ -72,10 +82,12 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
                 Character("p")
             case .text:
                 Character("t")
-            case .image:
-                nil
             case .laser:
                 Character("k")
+            case .frame:
+                Character("f")
+            case .image, .webEmbed, .magicFrame:
+                nil
         }
     }
     
@@ -103,9 +115,16 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
                     .localizable(.toolbarInsertImage)
             case .laser:
                     .localizable(.toolbarLaser)
+            case .webEmbed:
+                    .localizable(.toolbarWebEmbed)
+            case .frame:
+                    .localizable(.toolbarFrame)
+            case .magicFrame:
+                    .localizable(.toolbarMagicFrame)
         }
     }
 }
+
 final class ToolState: ObservableObject {
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
 

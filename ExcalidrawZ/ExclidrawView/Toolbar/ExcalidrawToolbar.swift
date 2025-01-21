@@ -30,16 +30,16 @@ struct ExcalidrawToolbar: View {
         if #available(macOS 13.0, *) {
             if layoutState.isInspectorPresented,
                layoutState.isSidebarPresented {
-                return 1480
+                return 1760
             } else if layoutState.isSidebarPresented {
-                return 1300
+                return 1520
             } else if layoutState.isInspectorPresented {
-                return 1400
+                return 1620
             } else {
-                return 1150
+                return 1380
             }
         } else {
-            return 1150
+            return 1380
         }
     }
     
@@ -70,6 +70,10 @@ struct ExcalidrawToolbar: View {
                         do {
                             if let key = tool.keyEquivalent {
                                 try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: key)
+                            } else if tool == .webEmbed {
+                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(tool: .webEmbed)
+                            } else if tool == .magicFrame {
+                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(tool: .magicFrame)
                             } else {
                                 try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: tool.rawValue)
                             }
@@ -115,6 +119,9 @@ struct ExcalidrawToolbar: View {
         } else if toolState.inPenMode {
             HStack(spacing: 10) {
                 content(size: layoutState.isExcalidrawToolbarDense ? 14 : 20, withFooter: false)
+
+                moreTools()
+                
                 Button {
                     isApplePencilDisconnectConfirmationDialogPresented.toggle()
                 } label: {
@@ -125,7 +132,7 @@ struct ExcalidrawToolbar: View {
                     }
                 }
                 .confirmationDialog(
-                    "Apple pencil connected",
+                    .localizable(.toolbarApplePencilConnectedTitle),
                     isPresented: $isApplePencilDisconnectConfirmationDialogPresented,
                     titleVisibility: .visible
                 ) {
@@ -140,19 +147,13 @@ struct ExcalidrawToolbar: View {
                             }
                         }
                     } label: {
-                        Label("Disconnect", systemSymbol: .pencilSlash)
+                        Label(.localizable(.toolbarApplePencilButtonDisconnect), systemSymbol: .pencilSlash)
                             .labelStyle(.titleAndIcon)
                     }
                 } message: {
-                    Text("""
-In the current mode, you can draw using your Apple Pencil. When using your fingers:
-• A single finger allows you to move the canvas.
-• A two-finger tap on the screen performs an undo operation.
-• A three-finger tap on the screen performs a redo operation.
-""")
+                    Text(.localizable(.toolbarApplePencilConnectedMessage))
                     .multilineTextAlignment(.leading)
                 }
-                
             }
         }
 #elseif os(macOS)
@@ -161,6 +162,8 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
         } else {
             content()
         }
+        
+        moreTools()
 #endif
     }
     
@@ -327,7 +330,7 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                 .help("\(String(localizable: .toolbarEraser)) — E \(String(localizable: .toolbarOr)) 0")
                 
                 SegmentedPickerItem(value: ExcalidrawTool.laser) {
-                    Image(systemSymbol: .wandAndRaysInverse)
+                    Image(systemSymbol: .cursorarrowRays)
                         .resizable()
                         .scaledToFit()
                         .font(.body.weight(.semibold))
@@ -340,6 +343,44 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                         )
                 }
                 .help("\(String(localizable: .toolbarLaser)) — K")
+                
+                SegmentedPickerItem(value: ExcalidrawTool.frame) {
+                    Image(systemSymbol: .grid)
+                        .resizable()
+                        .scaledToFit()
+                        .font(.body.weight(.semibold))
+                        .modifier(
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                                if withFooter {
+                                    Text("F")
+                                }
+                            }
+                        )
+                }
+                .help("\(String(localizable: .toolbarFrame)) - F")
+                
+                SegmentedPickerItem(value: ExcalidrawTool.webEmbed) {
+                    Image(systemSymbol: .chevronLeftForwardslashChevronRight)
+                        .resizable()
+                        .scaledToFit()
+                        .font(.body.weight(.semibold))
+                        .modifier(
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {}
+                        )
+                            
+                }
+                .help("\(String(localizable: .toolbarWebEmbed))")
+                
+                SegmentedPickerItem(value: ExcalidrawTool.magicFrame) {
+                    Image(systemSymbol: .wandAndStarsInverse)
+                        .resizable()
+                        .scaledToFit()
+                        .font(.body.weight(.semibold))
+                        .modifier(
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {}
+                        )
+                }
+                .help("\(String(localizable: .toolbarMagicFrame))")
             }
             .padding(size / 3)
             .background {
@@ -360,11 +401,11 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
         if toolState.inDragMode {
             Button {
             } label: {
-                Text("Edit")
+                Text(.localizable(.toolbarEdit))
             }
             .opacity(0)
             Spacer()
-            Text("View mode")
+            Text(.localizable(.toolbarViewMode))
             Spacer()
             Button {
                 if fileState.currentFile?.inTrash == true {
@@ -379,7 +420,7 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                     }
                 }
             } label: {
-                Text("Edit")
+                Text(.localizable(.toolbarEdit))
             }
         } else if let activatedTool = toolState.activatedTool, activatedTool != .cursor {
             Text(activatedTool.localization)
@@ -392,13 +433,13 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                 }
                 toolState.activatedTool = .cursor
             } label: {
-                Label("Cancel", systemSymbol: .xmark)
+                Label(.localizable(.generalButtonCancel), systemSymbol: .xmark)
             }
         } else {
             Button {
                 toolState.activatedTool = .freedraw
             } label: {
-                Label("Free draw", systemSymbol: .pencilAndOutline)
+                Label(.localizable(.toolbarDraw), systemSymbol: .pencilAndOutline)
             }
             Spacer()
             Menu {
@@ -415,7 +456,7 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                 Button {
                     toolState.activatedTool = .ellipse
                 } label: {
-                    Label(.localizable(.toolbarEllipse), systemSymbol: .ellipsis)
+                    Label(.localizable(.toolbarEllipse), systemSymbol: .circle)
                 }
                 Button {
                     toolState.activatedTool = .arrow
@@ -427,9 +468,51 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                 } label: {
                     Label(.localizable(.toolbarLine), systemSymbol: .lineDiagonal)
                 }
+                Button {
+                    toolState.activatedTool = .text
+                } label: {
+                    Label(.localizable(.toolbarText), systemSymbol: .characterTextbox)
+                }
+                Button {
+                    toolState.activatedTool = .image
+                } label: {
+                    Label(.localizable(.toolbarInsertImage), systemSymbol: .photoOnRectangle)
+                }
+                
+                Divider()
+                
+                Button {
+                    toolState.activatedTool = .eraser
+                } label: {
+                    if #available(macOS 13.0, *) {
+                        Label(.localizable(.toolbarEraser), systemSymbol: .eraser)
+                    } else {
+                        Label(.localizable(.toolbarEraser), systemSymbol: .pencilSlash)
+                    }
+                }
+                Button {
+                    toolState.activatedTool = .laser
+                } label: {
+                    Label(.localizable(.toolbarLaser), systemSymbol: .cursorarrowRays)
+                }
+                Button {
+                    toolState.activatedTool = .frame
+                } label: {
+                    Label(.localizable(.toolbarFrame), systemSymbol: .grid)
+                }
+                Button {
+                    toolState.activatedTool = .webEmbed
+                } label: {
+                    Label(.localizable(.toolbarWebEmbed), systemSymbol: .chevronLeftForwardslashChevronRight)
+                }
+                Button {
+                    toolState.activatedTool = .magicFrame
+                } label: {
+                    Label(.localizable(.toolbarMagicFrame), systemSymbol: .wandAndStarsInverse)
+                }
             } label: {
                 if toolState.activatedTool == .cursor {
-                    Label("Shapes", systemSymbol: .squareOnCircle)
+                    Label(.localizable(.toolbarShapesAndTools), systemSymbol: .squareOnCircle)
                 } else {
                     activeShape()
                         .foregroundStyle(Color.accentColor)
@@ -438,32 +521,26 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
 #if os(iOS)
             .menuOrder(.fixed)
 #endif
+            
             Spacer()
-            Button {
-                toolState.activatedTool = .text
-            } label: {
-                Label(.localizable(.toolbarText), systemSymbol: .characterTextbox)
-            }
+            
+            moreTools()
+            
             Spacer()
-            Button {
-                toolState.activatedTool = .image
-            } label: {
-                Label(.localizable(.toolbarInsertImage), systemSymbol: .photoOnRectangle)
-            }
-            Spacer()
+            
             if toolState.activatedTool == .cursor {
                 Button {
                     Task {
                         try? await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: "h")
                     }
                 } label: {
-                    Text("Done")
+                    Text(.localizable(.generalButtonDone))
                 }
             } else {
                 Button {
                     toolState.activatedTool = .cursor
                 } label: {
-                    Text("Cancel")
+                    Text(.localizable(.generalButtonCancel))
                 }
             }
 
@@ -484,6 +561,10 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
                 Text(.localizable(.toolbarText)).tag(ExcalidrawTool.text)
                 Text(.localizable(.toolbarInsertImage)).tag(ExcalidrawTool.image)
                 Text(.localizable(.toolbarEraser)).tag(ExcalidrawTool.eraser)
+                Text(.localizable(.toolbarLaser)).tag(ExcalidrawTool.laser)
+                Text(.localizable(.toolbarFrame)).tag(ExcalidrawTool.frame)
+                Text(.localizable(.toolbarWebEmbed)).tag(ExcalidrawTool.webEmbed)
+                Text(.localizable(.toolbarMagicFrame)).tag(ExcalidrawTool.magicFrame)
             } label: {
                 Text("Active tool")
             }
@@ -508,6 +589,36 @@ In the current mode, you can draw using your Apple Pencil. When using your finge
             default:
                 Label("Shapes", systemSymbol: .squareOnCircle)
         }
+    }
+    
+    @MainActor @ViewBuilder
+    private func moreTools() -> some View {
+        Menu {
+            Button {
+                Task {
+                    try? await toolState.excalidrawWebCoordinator?.toggleToolbarAction(tool: .text2Diagram)
+                }
+            } label: {
+                Text(.localizable(.toolbarText2Diagram))
+            }
+            Button {
+                Task {
+                    try? await toolState.excalidrawWebCoordinator?.toggleToolbarAction(tool: .mermaid)
+                }
+            } label: {
+                Text(.localizable(.toolbarMermaid))
+            }
+        } label: {
+            if #available(macOS 15.0, iOS 18.0, *) {
+                Label(.localizable(.toolbarMoreTools), systemImage: "xmark.triangle.circle.square")
+            } else {
+                Label(.localizable(.toolbarMoreTools), systemSymbol: .chartXyaxisLine)
+            }
+        }
+        .menuIndicator(.hidden)
+#if os(iOS)
+        .menuOrder(.fixed)
+#endif
     }
 }
 

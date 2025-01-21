@@ -1,3 +1,15 @@
+## 1.2.9
+
+- More Excalidraw tools support.
+  - `Frame tool`, `Web Embed`, `Text to diagram`, `Mermaid to Excalidraw`, `Wireframe to code`.
+- Lossless PDF Export.
+- Fallback to `Excalifont`.
+- Optimize Excalidraw data compatibility.
+
+## 1.2.8
+
+* Optimize i18n, now supports `English`, `简体中文`, `繁體中文`, `日本語`, `한국어`, `Español`, `Français`, `Deutsch`, `Italiano`, `Русский`, `Português`, `Nederlands`, `Polski`, `Türkçe`, `العربية`, `हिन्दी`, `ไทย`, `Tiếng Việt`
+
 ## 1.2.7
 
 - New feature: Export PDF.
@@ -10,6 +22,7 @@
 - Accessibility improvements for offline usage on iOS.
 - Fix issue with File History not working properly on iPad.
 - Sync with the latest Excalidraw core code.
+- Add Korean font support.
 
 ## 1.2.6
 

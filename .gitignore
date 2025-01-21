@@ -95,9 +95,11 @@ archives*
 firebase*
 scripts/Sparkle*
 ExcalidrawZ/Resources/excalidrawCore
-ExcalidrawZ/Resources/excalidraw-latest
+ExcalidrawZ/Resources/excalidraw*
+ExcalidrawZ/Resources/excalidraw-lagacy
+ExcalidrawZ/Resources/Videos
 WebPage
 Design
-Resources
+Resources/*
 Config/Overrides.xcconfig
 PRIVATE_TIPS.md

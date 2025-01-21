@@ -11,6 +11,7 @@ import SwiftUI
 import AppKit
 #endif
 
+import WebKit
 
 func loadResource<T: Decodable>(_ filename: String) -> T {
     let data: Data
@@ -167,21 +168,38 @@ func archiveAllFiles(to url: URL) throws {
 // MARK: Export PDF
 func exportPDF<Content: View>(@ViewBuilder content: () -> Content) {
     let printInfo = NSPrintInfo.shared
-    printInfo.topMargin = 10
-    printInfo.bottomMargin = 10
-    printInfo.leftMargin = 10
-    printInfo.rightMargin = 10
+    printInfo.topMargin = 0
+    printInfo.bottomMargin = 0
+    printInfo.leftMargin = 0
+    printInfo.rightMargin = 0
     printInfo.isHorizontallyCentered = true
     printInfo.isVerticallyCentered = true
     
     let hostingView = NSHostingView(rootView: content())
-    hostingView.setFrameSize(NSSize(width: 400, height: 800)) // 设置视图的尺寸
 
-    let printOperation = NSPrintOperation(view: hostingView)
-    printOperation.printInfo = printInfo
+    let printOperation = NSPrintOperation(
+        view: hostingView,
+        printInfo: printInfo
+    )
     
+    printOperation.printPanel.options = [
+        .showsCopies,
+        .showsPageRange,
+        .showsPaperSize,
+        .showsOrientation,
+        .showsScaling,
+        .showsPrintSelection,
+        .showsPageSetupAccessory,
+        .showsPreview
+    ]
+
     // 展示打印面板
     printOperation.run()
+}
+
+func exportPDF(name: String, svgURL: URL) async {
+    let webView = await PrinterWebView(filename: name)
+    await webView.print(fileURL: svgURL)
 }
 
 func exportPDF(image: NSImage, name: String? = nil) {
@@ -191,12 +209,15 @@ func exportPDF(image: NSImage, name: String? = nil) {
     printInfo.leftMargin = 0
     printInfo.rightMargin = 0
 
-    let printImage = /*image.preparingThumbnail(width: printInfo.paperSize.width) ??*/ image
+    let printImage = image
     
-    let imageView = NSImageView(image: printImage)// PrintableImageView(image: printImage)
+    let imageView = NSImageView(image: printImage)
     imageView.frame.size.width = printInfo.paperSize.width
     imageView.frame.size.height = printInfo.paperSize.width / printImage.width * printImage.size.height
-    let printOperation = NSPrintOperation(view: imageView, printInfo: printInfo)
+    let printOperation = NSPrintOperation(
+        view: imageView,
+        printInfo: printInfo
+    )
     
     printOperation.printPanel.options = [
         .showsCopies,
@@ -213,6 +234,11 @@ func exportPDF(image: NSImage, name: String? = nil) {
     printOperation.run()
 }
 #elseif os(iOS)
+func exportPDF(name: String, svgURL: URL) async -> URL? {
+    let webView = await PrinterWebView(filename: name)
+    return await webView.exportPDF(fileURL: svgURL)
+}
+
 func exportPDF(image: UIImage, name: String? = nil, to url: URL? = nil) throws -> URL {
     // 设置 PDF 页面大小（例如 A4）
     let pageSize = CGSize(width: 595.2, height: 841.8) // A4 尺寸，单位为点 (1 point = 1/72 inch)

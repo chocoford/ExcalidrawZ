@@ -75,6 +75,10 @@ https://github.com/user-attachments/assets/09323b30-29f0-4522-8190-46f7ef6a9dd3
 
 ExcalidrawZ for iOS&iPadOS is now available. All data are synchronised by iCloud.
 
+- Apple pencil interaction support.
+- Tap with two fingers to undo.
+- Tap with three fingers to redo. 
+
 ## RoadMap
 
 - [x] iCloud synchronization

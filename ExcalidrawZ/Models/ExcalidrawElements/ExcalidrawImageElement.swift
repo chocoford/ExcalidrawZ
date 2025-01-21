@@ -10,14 +10,20 @@ enum ExcalidrawImageElementStatus: String, Codable {
     case pending, saved, error
 }
 
+struct ExcalidrawIImageCrop: Codable, Hashable {
+    var x: Double
+    var y: Double
+    var width: Double
+    var height: Double
+    var naturalWidth: Double
+    var naturalHeight: Double
+}
+
 protocol ExcalidrawImageElementBase: ExcalidrawElementBase {
     var fileId: String? { get }
     var status: ExcalidrawImageElementStatus { get }
     var scale: [Double] { get }
-}
-
-extension ExcalidrawImageElementBase {
-    var type: ExcalidrawElementType { .image }
+    var crop: ExcalidrawIImageCrop? { get }
 }
  
 struct ExcalidrawImageElement: ExcalidrawImageElementBase {
@@ -40,6 +46,7 @@ struct ExcalidrawImageElement: ExcalidrawImageElementBase {
     var seed: Int
     var version: Int
     var versionNonce: Int
+    var index: String?
     var isDeleted: Bool
     var groupIds: [String]
     var frameId: String?
@@ -52,6 +59,7 @@ struct ExcalidrawImageElement: ExcalidrawImageElementBase {
     var fileId: String?
     var status: ExcalidrawImageElementStatus
     var scale: [Double]
+    var crop: ExcalidrawIImageCrop?
     
     static func == (lhs: Self, rhs: Self) -> Bool {
         return lhs.type == rhs.type &&
@@ -81,4 +89,6 @@ struct ExcalidrawImageElement: ExcalidrawImageElementBase {
         lhs.status == rhs.status &&
         lhs.scale == rhs.scale
     }
+    
+
 }

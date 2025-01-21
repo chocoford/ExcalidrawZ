@@ -32,6 +32,7 @@ struct ExcalidrawFreeDrawElement: ExcalidrawFreeDrawElementBase {
     var seed: Int
     var version: Int
     var versionNonce: Int
+    var index: String?
     var isDeleted: Bool
     var groupIds: [String]
     var frameId: String?
@@ -98,6 +99,7 @@ struct ExcalidrawDrawElement: ExcalidrawElementBase {
     var seed: Int
     var version: Int
     var versionNonce: Int
+    var index: String?
     var isDeleted: Bool
     var groupIds: [String]
     var frameId: String?

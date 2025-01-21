@@ -5,15 +5,19 @@
 //  Created by Dove Zachary on 2023/8/6.
 //
 
+
 import Foundation
 
 enum ExcalidrawElement: Codable, Hashable {
     case generic(ExcalidrawGenericElement)
     case text(ExcalidrawTextElement)
     case linear(ExcalidrawLinearElement)
+    case arrow(ExcalidrawArrowElement)
     case freeDraw(ExcalidrawFreeDrawElement)
     case draw(ExcalidrawDrawElement) // lagacy - only existed in v1
     case image(ExcalidrawImageElement)
+    case frameLike(ExcalidrawFrameLikeElement)
+    case iframeLike(ExcalidrawIframeLikeElement)
     
     enum CodingKeys: String, CodingKey {
        case type
@@ -28,23 +32,20 @@ enum ExcalidrawElement: Codable, Hashable {
                 self = .generic(try ExcalidrawGenericElement(from: decoder))
             case .text:
                 self = .text(try ExcalidrawTextElement(from: decoder))
-            case .line, .arrow:
+            case .line:
                 self = .linear(try ExcalidrawLinearElement(from: decoder))
+            case  .arrow:
+                self = .arrow(try ExcalidrawArrowElement(from: decoder))
             case .freedraw:
                 self = .freeDraw(try ExcalidrawFreeDrawElement(from: decoder))
             case .draw:
                 self = .draw(try ExcalidrawDrawElement(from: decoder))
             case .image:
                 self = .image(try ExcalidrawImageElement(from: decoder))
-                
-//            default:
-//                throw DecodingError.typeMismatch(
-//                    ExcalidrawGenericElement.self,
-//                    DecodingError.Context(
-//                        codingPath: decoder.codingPath,
-//                        debugDescription: "Type<\(type)> is not matched",
-//                        underlyingError: nil)
-//                )
+            case .frame, .magicFrame:
+                self = .frameLike(try ExcalidrawFrameLikeElement(from: decoder))
+            case .iframe, .embeddable:
+                self = .iframeLike(try ExcalidrawIframeLikeElement(from: decoder))
         }
     }
     
@@ -56,12 +57,18 @@ enum ExcalidrawElement: Codable, Hashable {
                 try excalidrawTextElement.encode(to: encoder)
             case .linear(let excalidrawLinearElement):
                 try excalidrawLinearElement.encode(to: encoder)
+            case .arrow(let excalidrawArrowElement):
+                try excalidrawArrowElement.encode(to: encoder)
             case .freeDraw(let excalidrawFreeDrawElement):
                 try excalidrawFreeDrawElement.encode(to: encoder)
             case .draw(let excalidrawDrawElement):
                 try excalidrawDrawElement.encode(to: encoder)
             case .image(let excalidrawImageElement):
                 try excalidrawImageElement.encode(to: encoder)
+            case .frameLike(let excalidrawFrameElement):
+                try excalidrawFrameElement.encode(to: encoder)
+            case .iframeLike(let excalidrawIframeLikeElement):
+                try excalidrawIframeLikeElement.encode(to: encoder)
         }
     }
 }
@@ -76,12 +83,18 @@ extension ExcalidrawElement: Identifiable {
                 excalidrawTextElement.id
             case .linear(let excalidrawLinearElement):
                 excalidrawLinearElement.id
+            case .arrow(let excalidrawArrowElement):
+                excalidrawArrowElement.id
             case .freeDraw(let excalidrawFreeDrawElement):
                 excalidrawFreeDrawElement.id
             case .draw(let excalidrawDrawElement):
                 excalidrawDrawElement.id
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.id
+            case .frameLike(let excalidrawFrameElement):
+                excalidrawFrameElement.id
+            case .iframeLike(let excalidrawIframeLikeElement):
+                excalidrawIframeLikeElement.id
         }
     }
 }
@@ -95,12 +108,18 @@ extension ExcalidrawElement {
                 excalidrawTextElement.x
             case .linear(let excalidrawLinearElement):
                 excalidrawLinearElement.x
+            case .arrow(let excalidrawArrowElement):
+                excalidrawArrowElement.x
             case .freeDraw(let excalidrawFreeDrawElement):
                 excalidrawFreeDrawElement.x
             case .draw(let excalidrawDrawElement):
                 excalidrawDrawElement.x
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.x
+            case .frameLike(let excalidrawFrameElement):
+                excalidrawFrameElement.x
+            case .iframeLike(let excalidrawIframeLikeElement):
+                excalidrawIframeLikeElement.x
         }
     }
     
@@ -112,12 +131,18 @@ extension ExcalidrawElement {
                 excalidrawTextElement.y
             case .linear(let excalidrawLinearElement):
                 excalidrawLinearElement.y
+            case .arrow(let excalidrawArrowElement):
+                excalidrawArrowElement.y
             case .freeDraw(let excalidrawFreeDrawElement):
                 excalidrawFreeDrawElement.y
             case .draw(let excalidrawDrawElement):
                 excalidrawDrawElement.y
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.y
+            case .frameLike(let excalidrawFrameElement):
+                excalidrawFrameElement.y
+            case .iframeLike(let excalidrawIframeLikeElement):
+                excalidrawIframeLikeElement.y
         }
     }
     
@@ -129,12 +154,18 @@ extension ExcalidrawElement {
                 excalidrawTextElement.width
             case .linear(let excalidrawLinearElement):
                 excalidrawLinearElement.width
+            case .arrow(let excalidrawArrowElement):
+                excalidrawArrowElement.width
             case .freeDraw(let excalidrawFreeDrawElement):
                 excalidrawFreeDrawElement.width
             case .draw(let excalidrawDrawElement):
                 excalidrawDrawElement.width
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.width
+            case .frameLike(let excalidrawFrameElement):
+                excalidrawFrameElement.width
+            case .iframeLike(let excalidrawIframeLikeElement):
+                excalidrawIframeLikeElement.width
         }
     }
     
@@ -146,14 +177,19 @@ extension ExcalidrawElement {
                 excalidrawTextElement.height
             case .linear(let excalidrawLinearElement):
                 excalidrawLinearElement.height
+            case .arrow(let excalidrawArrowElement):
+                excalidrawArrowElement.height
             case .freeDraw(let excalidrawFreeDrawElement):
                 excalidrawFreeDrawElement.height
             case .draw(let excalidrawDrawElement):
                 excalidrawDrawElement.height
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.height
+            case .frameLike(let excalidrawFrameElement):
+                excalidrawFrameElement.height
+            case .iframeLike(let excalidrawIframeLikeElement):
+                excalidrawIframeLikeElement.height
         }
     }
 }
-
 
