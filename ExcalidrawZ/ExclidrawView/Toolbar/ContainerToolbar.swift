@@ -178,12 +178,12 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
         if let excalidrawCore = fileState.excalidrawWebCoordinator {
             if excalidrawCore.canUndo, excalidrawCore.canRedo {
                 Menu {
-                    AsyncButton {
+                    AsyncButton { @MainActor in
                         try await excalidrawCore.performUndo()
                     } label: {
                         Label(.localizable(.generalButtonUndo), systemSymbol: .arrowUturnBackward)
                     }
-                    AsyncButton {
+                    AsyncButton { @MainActor in
                         try await excalidrawCore.performRedo()
                     } label: {
                         Label(.localizable(.generalButtonRedo), systemSymbol: .arrowUturnForward)
@@ -201,13 +201,13 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                 }
             } else if excalidrawCore.canRedo {
                 Menu {
-                    AsyncButton {
+                    AsyncButton { @MainActor in
                         try await excalidrawCore.performUndo()
                     } label: {
                         Label(.localizable(.generalButtonUndo), systemSymbol: .arrowUturnBackward)
                     }
                     .disabled(true)
-                    AsyncButton {
+                    AsyncButton { @MainActor in
                         try await excalidrawCore.performRedo()
                     } label: {
                         Label(.localizable(.generalButtonRedo), systemSymbol: .arrowUturnForward)
@@ -217,7 +217,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                         .foregroundStyle(.gray)
                 }
             } else if excalidrawCore.canUndo {
-                AsyncButton {
+                AsyncButton { @MainActor in
                     try await excalidrawCore.performUndo()
                 } label: {
                     Label(.localizable(.generalButtonUndo), systemSymbol: .arrowUturnBackwardCircle)

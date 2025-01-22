@@ -1,4 +1,4 @@
-## 1.2.9
+## 1.2.10
 
 - More Excalidraw tools support.
   - `Frame tool`, `Web Embed`, `Text to diagram`, `Mermaid to Excalidraw`, `Wireframe to code`.
