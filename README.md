@@ -7,8 +7,7 @@
 
 ![GitHub](https://img.shields.io/github/license/chocoford/ExcalidrawZ) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40Chocoford)](https://twitter.com/dove_zachary)
 
-<a href="https://www.buymeacoffee.com/Chocoford" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
-
+<a href="https://www.chocoford.com/donation" target="_blank"><img src="https://github.com/chocoford/chocoford/blob/main/public/Donation%20Button.png?raw=true" alt="Donation to Chocoford" style="height: 60px !important;"></a>
 
 [Excalidraw](https://github.com/excalidraw/excalidraw) is a very useful web app, but the lack of file management can be troublesome and unsettling. We often need to manually save and maintain multiple different Excalidraw files. Therefore, ExcalidrawZ has wrapped it up to automatically save edited files for users and added file grouping functionality. In future versions, iCloud automatic backup will also be added to greatly reduce the insecurity of using a web app.
 
@@ -52,15 +51,6 @@ Safety is a feature that ExcalidrawZ highly prioritize as a local client. To ens
 
 ![File History](assets/README/File%20History.gif)
 
-#### Multiple hand-writing fonts supported
-
-> If you need more languages support, please do not hesitate to contact me.
-
-- [x] English (Native excalidraw font)
-- [x] 简体中文（杨任东竹书体）
-- [x] 日本語（瀬戸体）
-- [x] [한국어 (빙그레 싸만코체)](http://www.bingfont.co.kr/license.html)
-
 
 #### Multiple excalidraw file format support
 ExcalidrawZ now support editing of `.excalidraw`, `.excalidraw.png`, and `.excalidraw.svg` files (directly in the file system), as well as importing them into the main program.
@@ -78,6 +68,17 @@ ExcalidrawZ for iOS&iPadOS is now available. All data are synchronised by iCloud
 - Apple pencil interaction support.
 - Tap with two fingers to undo.
 - Tap with three fingers to redo. 
+
+
+
+#### ~~Multiple hand-writing fonts supported~~ (Fallback to Excalifont)
+
+> ~~If you need more languages support, please do not hesitate to contact me.~~
+
+- [x] ~~English (Native excalidraw font)~~
+- [x] ~~简体中文（杨任东竹书体）~~
+- [x] ~~日本語（瀬戸体）~~
+- [x] ~~[한국어 (빙그레 싸만코체)](http://www.bingfont.co.kr/license.html)~~
 
 ## RoadMap
 
