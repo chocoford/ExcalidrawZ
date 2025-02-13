@@ -410,6 +410,10 @@ extension ExcalidrawCore {
     func togglePenMode(enabled: Bool) async throws {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.togglePenMode(\(enabled)); 0;")
     }
+    @MainActor
+    public func toggleActionsMenu(isPresented: Bool) async throws {
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleActionsMenu(\(isPresented)); 0;")
+    }
     
     @MainActor
     func reload() {

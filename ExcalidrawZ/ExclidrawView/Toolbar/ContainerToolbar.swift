@@ -45,6 +45,8 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
         }
         .toolbar(content: toolbarContent)
 #if os(iOS)
+        .modifier(HideToolbarModifier(isPresented: toolState.isBottomBarPresented, placement: .bottomBar))
+        .animation(.default, value: toolState.isBottomBarPresented)
         .toolbarBackground(.visible, for: .bottomBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline) // <- fix principal toolbar
@@ -79,8 +81,11 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             }
         }
 #elseif os(iOS)
-        ToolbarItemGroup(placement: containerHorizontalSizeClass == .regular ? .principal : .bottomBar) {
+        ToolbarItemGroup(
+            placement: containerHorizontalSizeClass == .regular ? .principal : .bottomBar
+        ) {
             ExcalidrawToolbar()
+//                .offset(y: toolState.isBottomBarPresented || containerHorizontalSizeClass == .regular ? 100 : 0)
         }
 #endif
         
@@ -95,7 +100,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                 }
             }
             
-#if os(macOS)            
+#if os(macOS)
             title()
 #endif
 
@@ -141,6 +146,9 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 #endif
         
         ToolbarItemGroup(placement: .confirmationAction) {
+#if os(iOS)
+            applePencilToggle()
+#endif
             
             FileHistoryButton()
             
@@ -243,6 +251,47 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func applePencilToggle() -> some View {
+        if containerHorizontalSizeClass == .regular {
+            Button {
+                Task {
+                    toolState.inPenMode.toggle()
+                    do {
+                        try await toolState.excalidrawWebCoordinator?.togglePenMode(enabled: toolState.inPenMode)
+                    } catch {
+                        toolState.inPenMode.toggle()
+                    }
+                }
+            } label: {
+                Label("Apple Pencil", systemSymbol: .pencilTipCropCircle)
+                    .symbolVariant(toolState.inPenMode ? .fill : .none)
+            }
+        }
+    }
+}
+
+
+struct HideToolbarModifier: ViewModifier {
+    
+    var isPresented: Bool
+    var placement: ToolbarPlacement
+    
+    init(isPresented: Bool, placement: ToolbarPlacement) {
+        self.isPresented = isPresented
+        self.placement = placement
+    }
+    
+    func body(content: Content) -> some View {
+        if #available(macOS 15.0, iOS 18.0, *) {
+            content
+                .toolbarVisibility(isPresented ? .visible : .hidden, for: placement)
+        } else {
+            content
+                .toolbar(isPresented ? .visible : .hidden, for: placement)
         }
     }
 }
