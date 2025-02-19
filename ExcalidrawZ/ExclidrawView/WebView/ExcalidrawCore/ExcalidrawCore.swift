@@ -228,6 +228,12 @@ extension ExcalidrawCore {
         }
     }
     
+    @MainActor
+    func toggleDeleteAction() async throws {
+        guard !self.isLoading else { return }
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Backspace'); 0;")
+    }
+    
     enum ExtraTool: String {
         case webEmbed = "webEmbed"
         case text2Diagram = "text2diagram"

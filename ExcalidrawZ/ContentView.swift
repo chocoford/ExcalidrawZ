@@ -82,7 +82,9 @@ struct ContentView: View {
         .navigationTitle("")
         .modifier(PrintModifier())
         .modifier(WhatsNewSheetViewModifier())
+#if os(iOS)
         .modifier(ApplePencilToolbarModifier())
+#endif
         .environmentObject(fileState)
         .environmentObject(exportState)
         .environmentObject(toolState)

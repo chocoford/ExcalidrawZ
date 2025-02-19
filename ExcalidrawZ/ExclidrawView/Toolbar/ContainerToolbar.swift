@@ -47,7 +47,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 #if os(iOS)
         .modifier(HideToolbarModifier(isPresented: toolState.isBottomBarPresented, placement: .bottomBar))
         .animation(.default, value: toolState.isBottomBarPresented)
-        .toolbarBackground(.visible, for: .bottomBar)
+        .toolbarBackground(containerHorizontalSizeClass == .regular ? .automatic : .visible, for: .bottomBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline) // <- fix principal toolbar
 #endif
@@ -274,9 +274,8 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
     }
 }
 
-
+#if os(iOS)
 struct HideToolbarModifier: ViewModifier {
-    
     var isPresented: Bool
     var placement: ToolbarPlacement
     
@@ -288,10 +287,11 @@ struct HideToolbarModifier: ViewModifier {
     func body(content: Content) -> some View {
         if #available(macOS 15.0, iOS 18.0, *) {
             content
-                .toolbarVisibility(isPresented ? .visible : .hidden, for: placement)
+                .toolbarVisibility(isPresented ? .automatic : .hidden, for: placement)
         } else {
             content
-                .toolbar(isPresented ? .visible : .hidden, for: placement)
+                .toolbar(isPresented ? .automatic : .hidden, for: placement)
         }
     }
 }
+#endif

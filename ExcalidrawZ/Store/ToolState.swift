@@ -271,6 +271,10 @@ final class ToolState: ObservableObject {
             }
         }
     }
+    
+    func toggleDelegeAction() async throws {
+        try await excalidrawWebCoordinator?.toggleDeleteAction()
+    }
 }
 
 fileprivate struct Cursor: Shape {

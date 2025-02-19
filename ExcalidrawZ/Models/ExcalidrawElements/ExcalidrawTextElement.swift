@@ -75,7 +75,7 @@ struct ExcalidrawTextElement: ExcalidrawTextElementBase {
     var verticalAlign: VerticalAlign
     var containerId: ExcalidrawGenericElement.ID?
     var originalText: String?
-    var autoResize: Bool
+    var autoResize: Bool? // Maybe nil...
     var lineHeight: Double?
     
     static func == (lhs: Self, rhs: Self) -> Bool {

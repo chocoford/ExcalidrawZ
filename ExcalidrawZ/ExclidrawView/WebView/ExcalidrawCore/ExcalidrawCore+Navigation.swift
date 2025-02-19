@@ -64,9 +64,10 @@ extension ExcalidrawCore: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         logger.info("did finish navigation")
+        let delay: TimeInterval = 0.2
         // Can not do this here. DOM maybe not loaded.
         // Add: This may occur before or after `onload`.
-        DispatchQueue.main.async {
+        DispatchQueue.main.asyncAfter(deadline: .now()) {
             self.isNavigating = false
         }
         if !hasInjectIndexedDBData {
@@ -79,6 +80,7 @@ extension ExcalidrawCore: WKNavigationDelegate {
                     let allMediasFetch = NSFetchRequest<MediaItem>(entityName: "MediaItem")
                     
                     let allMedias = try context.fetch(allMediasFetch)
+                    try? await Task.sleep(nanoseconds: UInt64(delay * 1e+9))
                     try await self.insertMediaFiles(
                         allMedias.compactMap{
                             .init(mediaItem: $0)

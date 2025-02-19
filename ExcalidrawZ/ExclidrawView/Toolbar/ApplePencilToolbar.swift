@@ -7,7 +7,9 @@
 
 import SwiftUI
 
+#if os(iOS)
 struct ApplePencilToolbarModifier: ViewModifier {
+    @Environment(\.alertToast) var alertToast
     @EnvironmentObject private var toolState: ToolState
 
     @State private var toolbarOffset: CGSize = .zero
@@ -81,6 +83,7 @@ struct ApplePencilToolbarModifier: ViewModifier {
                             }
                             .allowsHitTesting(isExpanded)
                         
+                        // Actions Menu Button
                         ZStack {
                             if !isDragging && !isExpanded {
                                 Button {
@@ -119,6 +122,46 @@ struct ApplePencilToolbarModifier: ViewModifier {
                         .animation(.default, value: isExpanded)
                         .animation(nil, value: toolbarAlignment)
                         
+                        // Delete Button
+                        ZStack {
+                            if !isDragging && !isExpanded {
+                                ZStack {
+                                    if !toolState.isBottomBarPresented {
+                                        Button(role: .destructive) {
+                                            Task {
+                                                do {
+                                                    try await toolState.toggleDelegeAction()
+                                                } catch {
+                                                    alertToast(error)
+                                                }
+                                            }
+                                        } label: {
+                                            Color.clear
+                                                .frame(width: 20, height: 20)
+                                                .overlay {
+                                                    Image(systemSymbol: .trash)
+                                                        .resizable()
+                                                        .scaledToFit()
+                                                        .foregroundStyle(.red)
+                                                }
+                                                .padding(10)
+                                                .background {
+                                                    Circle()
+                                                        .fill(.background)
+                                                        .shadow(radius: 8)
+                                                }
+                                        }
+                                        .hoverEffect(.lift)
+                                        .padding(.horizontal, 90)
+                                        .padding(.vertical, 10)
+                                    }
+                                }
+                                .transition(.asymmetric(insertion: .fade.animation(.default.delay(0.5)), removal: .fade))
+                            }
+                        }
+                        .animation(.default, value: isDragging)
+                        .animation(.default, value: isExpanded)
+                        .animation(nil, value: toolbarAlignment)
                         
                         ApplePencilToolbar(isExpanded: $isExpanded, expansionDirection: expansionDirection)
                             .readSize($toolbarSize)
@@ -454,7 +497,9 @@ struct ApplePencilToolbar: View {
                                 Circle()
                                     .fill(.regularMaterial)
                             }
+#if os(iOS)
                             .hoverEffect(.lift)
+#endif
                     }
                     .menuIndicator(.hidden)
 #if os(iOS)
@@ -517,6 +562,7 @@ struct ApplePencilToolbar: View {
                 .fill(.background)
                 .shadow(radius: 20)
         }
+        
         .onAppear {
             if toolState.activatedTool == nil {
                 Task {
@@ -593,6 +639,7 @@ struct GeometryGroupModifier: ViewModifier {
     }
 }
 
+#endif
 extension CGSize {
     static func + (_ lhs: CGSize, _ rhs: CGSize) -> CGSize {
         CGSize(width: lhs.width + rhs.width, height: lhs.height + rhs.height)
@@ -607,7 +654,6 @@ extension Comparable {
         return min(max(self, limits.lowerBound), limits.upperBound)
     }
 }
-
 
 extension CGPoint {
     /// 计算两点之间的欧氏距离
