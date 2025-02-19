@@ -73,11 +73,15 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     self.parent?.toolState.inDragMode = false
                 case .didSelectElements:
                     DispatchQueue.main.async {
-                        self.parent?.toolState.isBottomBarPresented = false
+                        if self.parent?.toolState.isBottomBarPresented == true {
+                            self.parent?.toolState.isBottomBarPresented = false
+                        }
                     }
                 case .didUnselectAllElements:
-                    DispatchQueue.main.async {   
-                        self.parent?.toolState.isBottomBarPresented = true
+                    DispatchQueue.main.async {
+                        if self.parent?.toolState.isBottomBarPresented == false {
+                            self.parent?.toolState.isBottomBarPresented = true
+                        }
                     }
                 case .log(let logMessage):
                     self.onWebLog(message: logMessage)

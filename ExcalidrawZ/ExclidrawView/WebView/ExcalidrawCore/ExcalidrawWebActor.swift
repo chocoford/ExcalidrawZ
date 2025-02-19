@@ -31,24 +31,4 @@ actor ExcalidrawWebActor {
             webView.evaluateJavaScript("window.excalidrawZHelper.loadFileBuffer(\(buf)); 0;")
         }
     }
-//    func loadFile(id: UUID, data: Data, force: Bool = false) async throws {
-//        let webView = webView
-//        guard loadedFileID != id || force else { return }
-//        self.loadedFileID = id
-//        let startDate = Date()
-//        
-//        let dataString = String(data: data, encoding: .utf8)?
-//            .replacingOccurrences(of: "'", with: "\\'")
-//            .replacingOccurrences(of: "\\n", with: "\\\\n")
-//        
-//        guard let dataString else {
-//            print("Load file failed.")
-//            return
-//        }
-//        print("[ExcalidrawWebActor loadFile]", dataString)
-//        await MainActor.run {
-//            webView.evaluateJavaScript("window.excalidrawZHelper.loadFileString('\(dataString)'); 0;")
-//        }
-//        print("load file done. time cost", Date.now.timeIntervalSince(startDate))
-//    }
 }

@@ -22,28 +22,6 @@ extension ExcalidrawCore: WKNavigationDelegate {
         if let url = navigationResponse.response.url,
            url.scheme == "blob" {
             return .download
-//            print(url)
-//            do {
-//                let script = """
-//fetch('\(url.absoluteString)')
-//.then(response => response.blob())
-//.then(blob => blob.arrayBuffer())
-//.then(arrayBuffer => { window.webkit.messageHandlers.excalidrawZ.postMessage({
-//        event: 'blobData',
-//        data: arrayBuffer
-//    });
-//})
-//.catch((error) => {
-//    console.error(error)
-//});
-//0;
-//"""
-//                try await self.webView.evaluateJavaScript(script)
-//            } catch {
-//                self.parent.store.send(.setError(.init(error)))
-//            }
-//            
-//            return .cancel
         }
         if navigationResponse.canShowMIMEType {
             return .allow
@@ -64,33 +42,29 @@ extension ExcalidrawCore: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         logger.info("did finish navigation")
-        let delay: TimeInterval = 0.2
-        // Can not do this here. DOM maybe not loaded.
-        // Add: This may occur before or after `onload`.
-        DispatchQueue.main.asyncAfter(deadline: .now()) {
-            self.isNavigating = false
-        }
-        if !hasInjectIndexedDBData {
-            // Should import medias as soon as possible.
-            // And It is required to reload after injected.
-            print("Start insert medias to IndexedDB.")
-            Task {
-                do {
-                    let context = PersistenceController.shared.container.viewContext
-                    let allMediasFetch = NSFetchRequest<MediaItem>(entityName: "MediaItem")
-                    
-                    let allMedias = try context.fetch(allMediasFetch)
-                    try? await Task.sleep(nanoseconds: UInt64(delay * 1e+9))
-                    try await self.insertMediaFiles(
-                        allMedias.compactMap{
-                            .init(mediaItem: $0)
-                        }
-                    )
-                    hasInjectIndexedDBData = true
-                } catch {
-                    self.parent?.onError(error)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            if !self.hasInjectIndexedDBData {
+                // Should import medias as soon as possible.
+                // And It is required to reload after injected.
+                print("Start insert medias to IndexedDB.")
+                Task {
+                    do {
+                        let context = PersistenceController.shared.container.viewContext
+                        let allMediasFetch = NSFetchRequest<MediaItem>(entityName: "MediaItem")
+                        
+                        let allMedias = try context.fetch(allMediasFetch)
+                        try await self.insertMediaFiles(
+                            allMedias.compactMap{
+                                .init(mediaItem: $0)
+                            }
+                        )
+                        self.hasInjectIndexedDBData = true
+                    } catch {
+                        self.parent?.onError(error)
+                    }
                 }
             }
+            self.isNavigating = false
         }
     }
         

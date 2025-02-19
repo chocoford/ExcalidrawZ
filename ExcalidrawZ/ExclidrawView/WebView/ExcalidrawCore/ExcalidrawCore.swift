@@ -162,19 +162,6 @@ extension ExcalidrawCore {
         }
     }
     
-//    @MainActor
-//    func saveTheme() async throws {
-//        let isExcalidrawDark = try await getIsDark()
-//        let isAppDark = self.parent.colorScheme == .dark
-//        let isSameTheme = isExcalidrawDark && isAppDark || !isExcalidrawDark && !isAppDark
-//        if !isSameTheme {
-//            self.parent.appearance = isExcalidrawDark ? .dark : .light
-//            self.parent.loading = true
-//            /// without reload will lead to wierd blank view.
-//            webView.reload()
-//        }
-//    }
-    
     @MainActor
     func changeColorMode(dark: Bool) async throws {
         if self.webView.isLoading { return }
