@@ -1,3 +1,7 @@
+## 1.2.11
+
+Fixing data compatibility issues, which previously involved multiple aspects such as library imports, arrow head types, and compatibility for reading and writing old files.
+
 ## 1.2.10
 
 - More Excalidraw tools support.

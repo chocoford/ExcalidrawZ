@@ -31,8 +31,16 @@ struct PointBinding: Codable, Hashable {
 enum Arrowhead: String, Codable {
     case arrow
     case bar
-    case dot
+    case dot // legacy. Do not use for new elements.
+    case circle
+    case circleOutline = "circle_outline"
     case triangle
+    case triangleOutline = "triangle_outline"
+    case diamond
+    case diamondOutline = "diamond_outline"
+    case crowfootOne = "crowfoot_one"
+    case crowfootMany = "crowfoot_many"
+    case crowfootOneOrMany = "crowfoot_one_or_many"
 }
 
 protocol ExcalidrawLinearElementBase: ExcalidrawElementBase {

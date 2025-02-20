@@ -71,7 +71,18 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                 case .didPenDown:
                     self.parent?.toolState.inPenMode = true
                     self.parent?.toolState.inDragMode = false
-                    
+                case .didSelectElements:
+                    DispatchQueue.main.async {
+                        if self.parent?.toolState.isBottomBarPresented == true {
+                            self.parent?.toolState.isBottomBarPresented = false
+                        }
+                    }
+                case .didUnselectAllElements:
+                    DispatchQueue.main.async {
+                        if self.parent?.toolState.isBottomBarPresented == false {
+                            self.parent?.toolState.isBottomBarPresented = true
+                        }
+                    }
                 case .log(let logMessage):
                     self.onWebLog(message: logMessage)
             }
@@ -275,6 +286,8 @@ extension ExcalidrawCore {
         case getAllMedias
         case historyStateChanged
         case didPenDown
+        case didSelectElements
+        case didUnselectAllElements
         
         case log
     }
@@ -294,6 +307,8 @@ extension ExcalidrawCore {
         case getAllMedias(GetAllMediasMessage)
         case historyStateChanged(HistoryStateChangedMessage)
         case didPenDown
+        case didSelectElements(DidSelectElementsMessage)
+        case didUnselectAllElements
         
         case log(LogMessage)
         
@@ -334,6 +349,10 @@ extension ExcalidrawCore {
                     self = .historyStateChanged(try HistoryStateChangedMessage(from: decoder))
                 case .didPenDown:
                     self = .didPenDown
+                case .didSelectElements:
+                    self = .didSelectElements(try DidSelectElementsMessage(from: decoder))
+                case .didUnselectAllElements:
+                    self = .didUnselectAllElements
                     
                 case .log:
                     self = .log(try LogMessage(from: decoder))
@@ -520,6 +539,11 @@ extension ExcalidrawCore {
                 case undo, redo
             }
         }
+    }
+    
+    struct DidSelectElementsMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: [ExcalidrawElement]
     }
     
     // Log

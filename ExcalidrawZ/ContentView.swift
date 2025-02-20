@@ -82,6 +82,9 @@ struct ContentView: View {
         .navigationTitle("")
         .modifier(PrintModifier())
         .modifier(WhatsNewSheetViewModifier())
+#if os(iOS)
+        .modifier(ApplePencilToolbarModifier())
+#endif
         .environmentObject(fileState)
         .environmentObject(exportState)
         .environmentObject(toolState)
@@ -158,10 +161,10 @@ struct ContentView: View {
         ProgressView {
             VStack {
                 if isFirstImporting == true {
-                    Text("Welcome to ExcalidrawZ").font(.title)
-                    Text("We are synchronizing your data, please wait...")
+                    Text(.localizable(.welcomeTitle)).font(.title)
+                    Text(.localizable(.welcomeDescription))
                 } else {
-                    Text("Syncing data...")
+                    Text(.localizable(.welcomeSyncing))
                 }
             }
         }

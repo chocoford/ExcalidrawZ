@@ -112,4 +112,44 @@ struct ExcalidrawTextElement: ExcalidrawTextElementBase {
         lhs.autoResize == rhs.autoResize &&
         lhs.lineHeight == rhs.lineHeight
     }
+    
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.type = try container.decode(ExcalidrawElementType.self, forKey: .type)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.x = try container.decode(Double.self, forKey: .x)
+        self.y = try container.decode(Double.self, forKey: .y)
+        self.strokeColor = try container.decode(String.self, forKey: .strokeColor)
+        self.backgroundColor = try container.decode(String.self, forKey: .backgroundColor)
+        self.fillStyle = try container.decode(ExcalidrawFillStyle.self, forKey: .fillStyle)
+        self.strokeWidth = try container.decode(Double.self, forKey: .strokeWidth)
+        self.strokeStyle = try container.decode(ExcalidrawStrokeStyle.self, forKey: .strokeStyle)
+        self.roundness = try container.decodeIfPresent(ExcalidrawRoundness.self, forKey: .roundness)
+        self.roughness = try container.decode(Double.self, forKey: .roughness)
+        self.opacity = try container.decode(Double.self, forKey: .opacity)
+        self.width = try container.decode(Double.self, forKey: .width)
+        self.height = try container.decode(Double.self, forKey: .height)
+        self.angle = try container.decode(Double.self, forKey: .angle)
+        self.seed = try container.decode(Int.self, forKey: .seed)
+        self.version = try container.decode(Int.self, forKey: .version)
+        self.versionNonce = try container.decode(Int.self, forKey: .versionNonce)
+        self.index = try container.decodeIfPresent(String.self, forKey: .index)
+        self.isDeleted = try container.decode(Bool.self, forKey: .isDeleted)
+        self.groupIds = try container.decode([String].self, forKey: .groupIds)
+        self.frameId = try container.decodeIfPresent(String.self, forKey: .frameId)
+        self.boundElements = try container.decodeIfPresent([ExcalidrawBoundElement].self, forKey: .boundElements)
+        self.updated = try container.decodeIfPresent(Double.self, forKey: .updated)
+        self.link = try container.decodeIfPresent(String.self, forKey: .link)
+        self.locked = try container.decodeIfPresent(Bool.self, forKey: .locked)
+        self.customData = try container.decodeIfPresent([String : AnyCodable].self, forKey: .customData)
+        self.fontSize = try container.decode(Double.self, forKey: .fontSize)
+        self.fontFamily = try container.decode(Int.self, forKey: .fontFamily)
+        self.text = try container.decode(String.self, forKey: .text)
+        self.textAlign = try container.decode(TextAlign.self, forKey: .textAlign)
+        self.verticalAlign = try container.decode(VerticalAlign.self, forKey: .verticalAlign)
+        self.containerId = try container.decodeIfPresent(ExcalidrawGenericElement.ID.self, forKey: .containerId)
+        self.originalText = try container.decodeIfPresent(String.self, forKey: .originalText)
+        self.autoResize = try container.decodeIfPresent(Bool.self, forKey: .autoResize) ?? true
+        self.lineHeight = try container.decodeIfPresent(Double.self, forKey: .lineHeight)
+    }
 }

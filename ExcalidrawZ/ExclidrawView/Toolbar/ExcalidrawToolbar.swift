@@ -118,41 +118,18 @@ struct ExcalidrawToolbar: View {
             }
         } else if toolState.inPenMode {
             HStack(spacing: 10) {
-                content(size: layoutState.isExcalidrawToolbarDense ? 14 : 20, withFooter: false)
-
-                moreTools()
-                
-                Button {
-                    isApplePencilDisconnectConfirmationDialogPresented.toggle()
-                } label: {
-                    if #available(iOS 17.0, *) {
-                        Label("Apple Pencil", systemSymbol: .applepencilTip)
-                    } else {
-                        Label("Apple Pencil", systemSymbol: .applepencil)
-                    }
-                }
-                .confirmationDialog(
-                    .localizable(.toolbarApplePencilConnectedTitle),
-                    isPresented: $isApplePencilDisconnectConfirmationDialogPresented,
-                    titleVisibility: .visible
-                ) {
-                    Button(role: .destructive) {
-                        Task {
-                            do {
-                                try await toolState.excalidrawWebCoordinator?.togglePenMode(enabled: false)
-                                toolState.inPenMode = false
-                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: "h")
-                            } catch {
-                                alertToast(error)
-                            }
-                        }
-                    } label: {
-                        Label(.localizable(.toolbarApplePencilButtonDisconnect), systemSymbol: .pencilSlash)
-                            .labelStyle(.titleAndIcon)
-                    }
-                } message: {
-                    Text(.localizable(.toolbarApplePencilConnectedMessage))
-                    .multilineTextAlignment(.leading)
+                Text("Apple Pencil Connected")
+            }
+            .frame(maxWidth: 400)
+            .padding(6)
+            .background {
+                if #available(macOS 14.0, iOS 17.0, *) {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.regularMaterial)
+                        .stroke(.separator, lineWidth: 0.5)
+                } else {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.regularMaterial)
                 }
             }
         }
@@ -570,6 +547,13 @@ struct ExcalidrawToolbar: View {
             }
             .pickerStyle(.menu)
             .fixedSize()
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func applepencilContent() -> some View {
+        HStack {
+            
         }
     }
     

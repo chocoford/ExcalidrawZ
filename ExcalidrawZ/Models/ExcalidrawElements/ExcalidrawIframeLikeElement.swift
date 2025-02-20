@@ -53,7 +53,7 @@ struct ExcalidrawIframeLikeElement: ExcalidrawElementBase {
         }
         
         init(from decoder: any Decoder) throws {
-            var container = try decoder.container(keyedBy: CodingKeys.self)
+            let container = try decoder.container(keyedBy: CodingKeys.self)
             let status = try container.decode(Status.self, forKey: .status)
             
             switch status {

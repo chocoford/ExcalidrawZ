@@ -162,19 +162,6 @@ extension ExcalidrawCore {
         }
     }
     
-//    @MainActor
-//    func saveTheme() async throws {
-//        let isExcalidrawDark = try await getIsDark()
-//        let isAppDark = self.parent.colorScheme == .dark
-//        let isSameTheme = isExcalidrawDark && isAppDark || !isExcalidrawDark && !isAppDark
-//        if !isSameTheme {
-//            self.parent.appearance = isExcalidrawDark ? .dark : .light
-//            self.parent.loading = true
-//            /// without reload will lead to wierd blank view.
-//            webView.reload()
-//        }
-//    }
-    
     @MainActor
     func changeColorMode(dark: Bool) async throws {
         if self.webView.isLoading { return }
@@ -226,6 +213,12 @@ extension ExcalidrawCore {
         } else {
             try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
         }
+    }
+    
+    @MainActor
+    func toggleDeleteAction() async throws {
+        guard !self.isLoading else { return }
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Backspace'); 0;")
     }
     
     enum ExtraTool: String {
@@ -409,6 +402,10 @@ extension ExcalidrawCore {
     @MainActor
     func togglePenMode(enabled: Bool) async throws {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.togglePenMode(\(enabled)); 0;")
+    }
+    @MainActor
+    public func toggleActionsMenu(isPresented: Bool) async throws {
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleActionsMenu(\(isPresented)); 0;")
     }
     
     @MainActor
