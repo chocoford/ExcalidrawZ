@@ -238,7 +238,7 @@ struct ApplePencilToolbarModifier: ViewModifier {
                 }
             }
             .sheet(isPresented: $isPencilModeTipsPresented) {
-                
+                PencilTipsSheetView()
             }
     }
     

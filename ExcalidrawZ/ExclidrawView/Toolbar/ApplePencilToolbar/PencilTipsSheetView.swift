@@ -10,6 +10,8 @@ import SwiftUI
 struct PencilTipsSheetView: View {
     @Environment(\.dismiss) private var dismiss
     
+    @EnvironmentObject private var toolState: ToolState
+    
     var body: some View {
         VStack(spacing: 16) {
             Text("Apple pencil connected")
@@ -20,6 +22,11 @@ struct PencilTipsSheetView: View {
                     Text("Select with finger")
                         .font(.headline)
                     
+                    Image("Select with finger")
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    
                     Text(
 """
 • Drag with one finger to select
@@ -27,15 +34,42 @@ struct PencilTipsSheetView: View {
 """
                     )
                     .font(.callout)
+                    
+                    Spacer()
+                    if toolState.pencilInteractionMode == .fingerSelect {
+                        Image(systemSymbol: .checkmark)
+                            .symbolVariant(.circle)
+                            .foregroundStyle(.green)
+                    }
                 }
                 .padding()
+                .background {
+                    if toolState.pencilInteractionMode == .fingerSelect {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.accentColor.opacity(0.2))
+                    } else if #available(iOS 17.0, *) {
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.separator)
+                    } else {
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.secondary)
+                    }
+                }
                 .frame(maxWidth: .infinity)
-                
-                Divider()
-                
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    toolState.pencilInteractionMode = .fingerSelect
+                }
+                                
                 VStack {
                     Text("Move with finger")
                         .font(.headline)
+                    
+                    Image("Move with finger")
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    
                     
                     Text(
 """
@@ -45,8 +79,31 @@ struct PencilTipsSheetView: View {
 """
                     )
                     .font(.callout)
+                    
+                    Spacer()
+                    if toolState.pencilInteractionMode == .fingerMove {
+                        Image(systemSymbol: .checkmark)
+                            .symbolVariant(.circle)
+                            .foregroundStyle(.green)
+                    }
                 }
                 .padding()
+                .background {
+                    if toolState.pencilInteractionMode == .fingerMove {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.accentColor.opacity(0.2))
+                    } else if #available(iOS 17.0, *) {
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.separator)
+                    } else {
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.secondary)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    toolState.pencilInteractionMode = .fingerMove
+                }
                 .frame(maxWidth: .infinity)
             }
             
@@ -61,6 +118,7 @@ struct PencilTipsSheetView: View {
             }
             .buttonStyle(.borderedProminent)
         }
+        .padding(40)
     }
 }
 
@@ -68,7 +126,6 @@ struct PencilTipsSheetView: View {
     Color.clear
         .sheet(isPresented: .constant(true)) {
             PencilTipsSheetView()
-                .padding(40)
-                
         }
+        .environmentObject(ToolState())
 }

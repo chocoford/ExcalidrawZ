@@ -47,9 +47,9 @@ struct WhatsNewSheetViewModifier: ViewModifier {
             }
             .bindWindow($window)
             .onAppear {
-#if DEBUG
-                isPresented = true
-#endif
+//#if DEBUG
+//                isPresented = true
+//#endif
                 if let buildString = Bundle.main.infoDictionary!["CFBundleVersion"] as? String,
                    lastBuild < (Int(buildString) ?? 0) {
                     isPresented = true
