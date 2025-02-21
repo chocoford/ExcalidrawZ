@@ -48,6 +48,7 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     if message.data.type == .hand {
                         self.parent?.toolState.inDragMode = true
                     } else {
+                        self.parent?.toolState.previousActivatedTool = self.parent?.toolState.activatedTool
                         let tool = ExcalidrawTool(from: message.data.type)
                         self.lastTool = tool
                         self.parent?.toolState.activatedTool = tool
@@ -71,6 +72,7 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                 case .didPenDown:
                     self.parent?.toolState.inPenMode = true
                     self.parent?.toolState.inDragMode = false
+                    NotificationCenter.default.post(name: .didPencilConnected, object: nil)
                 case .didSelectElements:
                     DispatchQueue.main.async {
                         if self.parent?.toolState.isBottomBarPresented == true {

@@ -93,7 +93,9 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
                 Character("k")
             case .frame:
                 Character("f")
-            case .image, .webEmbed, .magicFrame/*, .text2Diagram, .mermaid*/:
+            case .image:
+                Character("9")
+            case .webEmbed, .magicFrame/*, .text2Diagram, .mermaid*/:
                 nil
         }
     }
@@ -222,13 +224,20 @@ final class ToolState: ObservableObject {
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
 
     @Published var activatedTool: ExcalidrawTool? = .cursor
+    @Published var previousActivatedTool: ExcalidrawTool? = nil
     @Published var inDragMode: Bool = false
     
     @Published var inPenMode: Bool = false
     
     @Published var isActionsMenuPresneted = true
     @Published var isBottomBarPresented = true
+    
+    enum PencilInteractionMode: Int, Hashable {
+        case fingerSelect = 0
+        case fingerMove
+    }
 
+    @AppStorage("PencilInteractionMode") var pencilInteractionMode: PencilInteractionMode = .fingerSelect
     
     func toggleTool(_ tool: ExcalidrawTool) async throws {
         switch tool {
@@ -236,8 +245,6 @@ final class ToolState: ObservableObject {
                 try await self.excalidrawWebCoordinator?.toggleToolbarAction(tool: .webEmbed)
             case .magicFrame:
                 try await self.excalidrawWebCoordinator?.toggleToolbarAction(tool: .magicFrame)
-            case .image:
-                break
             default:
                 if let key = tool.keyEquivalent {
                     try await self.excalidrawWebCoordinator?.toggleToolbarAction(key: key)
@@ -274,6 +281,20 @@ final class ToolState: ObservableObject {
     
     func toggleDelegeAction() async throws {
         try await excalidrawWebCoordinator?.toggleDeleteAction()
+    }
+    
+    func togglePencilInterationMode(_ mode: PencilInteractionMode) async throws {
+        try await excalidrawWebCoordinator?.togglePencilInterationMode(mode: mode)
+    }
+    
+    func togglePenMode(enabled: Bool, pencilConnected: Bool = false) async throws {
+        DispatchQueue.main.async {
+            self.inPenMode = enabled
+        }
+        try await excalidrawWebCoordinator?.togglePenMode(enabled: enabled)
+        if pencilConnected || !enabled {
+            try await excalidrawWebCoordinator?.connectPencil(enabled: enabled)
+        }
     }
 }
 

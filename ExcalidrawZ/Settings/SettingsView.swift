@@ -162,7 +162,7 @@ struct SettingsView: View {
                 PencilSettingsView()
                 
             case .whatsNews:
-                WhatsNewSheetView(showContinue: false)
+                WhatsNewView(showContinue: false)
 #endif
                 
             case .about:

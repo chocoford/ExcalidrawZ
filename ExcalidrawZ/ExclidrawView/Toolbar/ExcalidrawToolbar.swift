@@ -118,7 +118,7 @@ struct ExcalidrawToolbar: View {
             }
         } else if toolState.inPenMode {
             HStack(spacing: 10) {
-                Text("Apple Pencil Connected")
+                Text("Pencil Mode")
             }
             .frame(maxWidth: 400)
             .padding(6)

@@ -400,12 +400,22 @@ extension ExcalidrawCore {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.redo(); 0;")
     }
     @MainActor
+    func connectPencil(enabled: Bool) async throws {
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.connectPencil(\(enabled)); 0;")
+    }
+    @MainActor
     func togglePenMode(enabled: Bool) async throws {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.togglePenMode(\(enabled)); 0;")
     }
     @MainActor
     public func toggleActionsMenu(isPresented: Bool) async throws {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleActionsMenu(\(isPresented)); 0;")
+    }
+    @MainActor
+    public func togglePencilInterationMode(mode: ToolState.PencilInteractionMode) async throws {
+        try await webView.evaluateJavaScript(
+            "window.excalidrawZHelper.togglePencilInterationMode(\(mode.rawValue)); 0;"
+        )
     }
     
     @MainActor

@@ -7,8 +7,14 @@
 
 import SwiftUI
 
+extension Notification.Name {
+    static let didPencilConnected = Notification.Name("didPencilConnected")
+}
+
 #if os(iOS)
 struct ApplePencilToolbarModifier: ViewModifier {
+    @AppStorage("isFirstOpenPencilMode") private var isFirstOpenPencilMode = true
+
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject private var toolState: ToolState
 
@@ -26,6 +32,7 @@ struct ApplePencilToolbarModifier: ViewModifier {
 
     @State private var toolbarAlignment: Alignment = .bottomTrailing
     
+    @State private var isPencilModeTipsPresented = false
     
     /// 工具栏与屏幕边缘的最小间距
     private let margin: CGFloat = 16
@@ -210,6 +217,29 @@ struct ApplePencilToolbarModifier: ViewModifier {
                 }
             }
             .readSize($viewSize)
+            .watchImmediately(of: toolState.pencilInteractionMode) { mode in
+                Task {
+                    do {
+                        switch mode {
+                            case .fingerSelect:
+                                try await toolState.togglePencilInterationMode(.fingerSelect)
+                            case .fingerMove:
+                                try await toolState.togglePencilInterationMode(.fingerMove)
+                        }
+                    } catch {
+                        alertToast(error)
+                    }
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .didPencilConnected)) { _ in
+                if isFirstOpenPencilMode {
+                    isPencilModeTipsPresented = true
+                    isFirstOpenPencilMode = false
+                }
+            }
+            .sheet(isPresented: $isPencilModeTipsPresented) {
+                
+            }
     }
     
     private func onDragging(_ value: DragGesture.Value) {
@@ -434,7 +464,6 @@ struct ApplePencilToolbar: View {
     @Binding var isExpanded: Bool
     var expansionDirection: Axis
     
-    @Namespace var backgroundNS
     @Namespace var activeToolNamespace
     
     var body: some View {
@@ -445,30 +474,31 @@ struct ApplePencilToolbar: View {
                     let layout2 = expansionDirection == .horizontal ? AnyLayout(HStackLayout(spacing: 6)) : AnyLayout(VStackLayout(spacing: 6))
                     layout2 {
                         ForEach(ExcalidrawTool.allCases, id: \.self) { tool in
-                            Color.clear
-                                .aspectRatio(1, contentMode: .fit)
-                                .overlay {
-                                    tool.icon(strokeLineWidth: 2)
-                                        .matchedGeometryEffect(
-                                            id: tool.rawValue,
-                                            in: activeToolNamespace,
-                                            properties: .frame,
-                                            isSource: true
-                                        )
-                                        .padding(6)
-                                }
-                                .contentShape(Rectangle())
-                                .hoverEffect()
-                                .onTapGesture {
-                                    Task {
-                                        do {
-                                            try await toolState.toggleTool(tool)
-                                            self.isExpanded = false
-                                        } catch {
-                                            alertToast(error)
-                                        }
+                            Button {
+                                Task {
+                                    do {
+                                        try await toolState.toggleTool(tool)
+                                        self.isExpanded = false
+                                    } catch {
+                                        alertToast(error)
                                     }
                                 }
+                            } label: {
+                                Color.clear
+                                    .aspectRatio(1, contentMode: .fit)
+                                    .overlay {
+                                        tool.icon(strokeLineWidth: 2)
+                                            .matchedGeometryEffect(
+                                                id: tool.rawValue,
+                                                in: activeToolNamespace,
+                                                properties: .frame,
+                                                isSource: true
+                                            )
+                                            .padding(6)
+                                    }
+                                    .contentShape(Rectangle())
+                                    .hoverEffect()
+                            }
                         }
                     }
                     .padding(.vertical, 4)
@@ -479,7 +509,9 @@ struct ApplePencilToolbar: View {
                     
                     Menu {
                         Button(role: .destructive) {
-                            toolState.inPenMode.toggle()
+                            Task {
+                                try? await toolState.togglePenMode(enabled: false)
+                            }
                         } label: {
                             Label("Disconnect", systemSymbol: .pencilSlash)
                         }
@@ -507,43 +539,21 @@ struct ApplePencilToolbar: View {
 #endif
                 }
             } else if let tool = toolState.activatedTool {
-//                let layout = expansionDirection == .horizontal ? AnyLayout(HStackLayout(spacing: 10)) : AnyLayout(VStackLayout(spacing: 10))
-//                layout {
-                    Color.clear
-                        .aspectRatio(1, contentMode: .fit)
-                        .overlay {
-                            tool.icon(strokeLineWidth: 4)
-                                .matchedGeometryEffect(
-                                    id: tool.rawValue,
-                                    in: activeToolNamespace,
-                                    properties: .frame,
-                                    isSource: false
-                                )
-                        }
-                    
-//                    Divider()
-//                    
-//                    Color.clear
-//                        .aspectRatio(1, contentMode: .fit)
-//                        .overlay {
-//                            Image(systemSymbol: .menucard)
-//                                .resizable()
-//                                .scaledToFit()
-//                        }
-//                        .hoverEffect()
-//                }
+                Color.clear
+                    .aspectRatio(1, contentMode: .fit)
+                    .overlay {
+                        tool.icon(strokeLineWidth: 4)
+                            .matchedGeometryEffect(
+                                id: tool.rawValue,
+                                in: activeToolNamespace,
+                                properties: .frame,
+                                isSource: false
+                            )
+                    }
             } else {
-//                let layout = expansionDirection == .horizontal ? AnyLayout(HStackLayout(spacing: 10)) : AnyLayout(VStackLayout(spacing: 10))
-//                layout {
-                    ExcalidrawTool.freedraw.icon()
-                        .aspectRatio(1, contentMode: .fit)
-                    
-//                    Divider()
-//                    
-//                    Image(systemSymbol: .menucard)
-//                        .resizable()
-//                        .aspectRatio(1, contentMode: .fit)
-//                }
+                ExcalidrawTool.freedraw.icon()
+                    .aspectRatio(1, contentMode: .fit)
+                
             }
         }
         .foregroundStyle(.primary)
@@ -562,7 +572,6 @@ struct ApplePencilToolbar: View {
                 .fill(.background)
                 .shadow(radius: 20)
         }
-        
         .onAppear {
             if toolState.activatedTool == nil {
                 Task {
@@ -638,6 +647,7 @@ struct GeometryGroupModifier: ViewModifier {
         }
     }
 }
+
 
 #endif
 extension CGSize {

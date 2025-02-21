@@ -85,7 +85,6 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             placement: containerHorizontalSizeClass == .regular ? .principal : .bottomBar
         ) {
             ExcalidrawToolbar()
-//                .offset(y: toolState.isBottomBarPresented || containerHorizontalSizeClass == .regular ? 100 : 0)
         }
 #endif
         
@@ -262,6 +261,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                     toolState.inPenMode.toggle()
                     do {
                         try await toolState.excalidrawWebCoordinator?.togglePenMode(enabled: toolState.inPenMode)
+                        try await toolState.toggleTool(.freedraw)
                     } catch {
                         toolState.inPenMode.toggle()
                     }

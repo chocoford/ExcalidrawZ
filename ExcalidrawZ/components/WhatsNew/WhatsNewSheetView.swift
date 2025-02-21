@@ -47,9 +47,9 @@ struct WhatsNewSheetViewModifier: ViewModifier {
             }
             .bindWindow($window)
             .onAppear {
-//#if DEBUG
-//                isPresented = true
-//#endif
+#if DEBUG
+                isPresented = true
+#endif
                 if let buildString = Bundle.main.infoDictionary!["CFBundleVersion"] as? String,
                    lastBuild < (Int(buildString) ?? 0) {
                     isPresented = true
@@ -59,11 +59,11 @@ struct WhatsNewSheetViewModifier: ViewModifier {
     
     @MainActor @ViewBuilder
     private func sheetContent() -> some View {
-        WhatsNewSheetView()
+        WhatsNewView()
     }
 }
 
-struct WhatsNewSheetView: View {
+struct WhatsNewView: View {
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
@@ -144,7 +144,6 @@ struct WhatsNewSheetView: View {
                 Text(.localizable(.whatsNewTitle)).font(.largeTitle)
             }
 #endif
-            
             VStack(spacing: 6) {
                 VStack(alignment: .leading, spacing: 22) {
                     Image("What's New Cover")
@@ -456,14 +455,14 @@ struct ChangeLogView: View {
 #Preview {
     if #available(macOS 13.0, iOS 16.0, *) {
         NavigationStack {
-            WhatsNewSheetView()
+            WhatsNewView()
         }
 #if os(macOS)
         .frame(width: 600, height: 800)
 #endif
     } else {
         NavigationView {
-            WhatsNewSheetView()
+            WhatsNewView()
         }
 #if os(macOS)
         .frame(width: 600, height: 800)
