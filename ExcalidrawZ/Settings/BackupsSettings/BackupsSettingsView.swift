@@ -14,6 +14,7 @@ struct BackupsSettingsView: View {
     @Environment(\.alertToast) var alertToast
     
     @State private var backups: [URL] = []
+    @State private var backupRootFolders: [URL] = []
     
     @State private var selectedBackup: URL?
     @State private var selectedBackupSize: Int = 0
@@ -87,20 +88,23 @@ struct BackupsSettingsView: View {
         if let backup = selectedBackup {
             HStack(spacing: 0) {
                 ScrollView {
-                    VStack {
-                        ForEach(Array(selectedBackupDirs), id: \.key) { (groupName, files) in
-                            DisclosureGroup(groupName) {
-                                ForEach(files, id: \.self) { file in
-                                    Button {
-                                        selectedFile = file
-                                    } label: {
-                                        Text(file.deletingPathExtension().lastPathComponent)
-                                            .lineLimit(1)
-                                            .truncationMode(.middle)
-                                    }
-                                    .buttonStyle(.listCell(selected: selectedFile == file))
-                                }
-                            }
+                    LazyVStack(spacing: 3) {
+//                        ForEach(Array(selectedBackupDirs), id: \.key) { (groupName, files) in
+//                            DisclosureGroup(groupName) {
+//                                ForEach(files, id: \.self) { file in
+//                                    Button {
+//                                        selectedFile = file
+//                                    } label: {
+//                                        Text(file.deletingPathExtension().lastPathComponent)
+//                                            .lineLimit(1)
+//                                            .truncationMode(.middle)
+//                                    }
+//                                    .buttonStyle(.listCell(selected: selectedFile == file))
+//                                }
+//                            }
+//                        }
+                        ForEach(backupRootFolders, id: \.self) { folder in
+                            BackupFoldersView(selection: $selectedFile, folder: folder)
                         }
                     }
                     .padding(10)
@@ -223,6 +227,8 @@ struct BackupsSettingsView: View {
                 at: selectedBackup,
                 includingPropertiesForKeys: [.nameKey, .isDirectoryKey]
             ).filter({ (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true })
+            
+            self.backupRootFolders = groups
             
             for group in groups {
                 let files: [URL] = try FileManager.default.contentsOfDirectory(
