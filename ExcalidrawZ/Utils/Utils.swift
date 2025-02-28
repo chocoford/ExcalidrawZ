@@ -70,20 +70,27 @@ func backupFiles() throws {
     let fileManager = FileManager.default
     let backupsDir = try getBackupsDir()
     
+    
     let today = Date()
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy-MM-dd"
     let exportURL = backupsDir.appendingPathComponent(formatter.string(from: today), conformingTo: .directory)
     
     if fileManager.fileExists(at: exportURL) { return }
-    print("--- backupFiles --- \(exportURL)")
-    
-    try fileManager.createDirectory(at: exportURL, withIntermediateDirectories: true)
-    try archiveAllFiles(to: exportURL)
-    
+    do {
+        print("[Backup Files] Start... \(exportURL)")
+        try fileManager.createDirectory(at: exportURL, withIntermediateDirectories: true)
+        try archiveAllFiles(to: exportURL)
+    } catch {
+        print("[Backup Files] backup done, but with error: \(error)")
+    }
     // clean
-    let backupFolders: [URL] = try fileManager.contentsOfDirectory(at: backupsDir, includingPropertiesForKeys: [.creationDateKey], options: .skipsHiddenFiles)
-        .filter { $0.hasDirectoryPath && formatter.date(from: $0.lastPathComponent) != nil }
+    let backupFolders: [URL] = try fileManager.contentsOfDirectory(
+        at: backupsDir,
+        includingPropertiesForKeys: [.creationDateKey],
+        options: .skipsHiddenFiles
+    ).filter { $0.hasDirectoryPath && formatter.date(from: $0.lastPathComponent) != nil }
+    
     let sortedFolders = backupFolders.compactMap { folder -> (URL, Date)? in
         if let date = formatter.date(from: folder.lastPathComponent) {
             return (folder, date)
@@ -113,6 +120,7 @@ func backupFiles() throws {
         }
     }
     let foldersToDelete = Set(sortedFolders.map { $0.0 }).subtracting(foldersToKeep)
+    print("[Backup files] folder to keep: \(foldersToKeep.count), folder to delete: \(foldersToDelete.count)")
     for folder in foldersToDelete {
         do {
             try fileManager.removeItem(at: folder)
