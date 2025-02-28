@@ -45,7 +45,7 @@ func archiveAllFiles() throws {
             do {
                 let exportURL = url.appendingPathComponent("ExcalidrawZ exported at \(Date.now.formatted(date: .abbreviated, time: .shortened))", conformingTo: .directory)
                 try filemanager.createDirectory(at: exportURL, withIntermediateDirectories: false)
-                try archiveAllFiles(to: exportURL)
+                try archiveAllCloudFiles(to: exportURL)
             } catch {
                 print(error)
                 throw error
@@ -70,20 +70,55 @@ func backupFiles() throws {
     let fileManager = FileManager.default
     let backupsDir = try getBackupsDir()
     
-    
     let today = Date()
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy-MM-dd"
     let exportURL = backupsDir.appendingPathComponent(formatter.string(from: today), conformingTo: .directory)
-    
     if fileManager.fileExists(at: exportURL) { return }
+
+    
+    // Cloud
+    let cloudExportURL = exportURL.appendingPathComponent("Cloud", conformingTo: .directory)
     do {
-        print("[Backup Files] Start... \(exportURL)")
-        try fileManager.createDirectory(at: exportURL, withIntermediateDirectories: true)
-        try archiveAllFiles(to: exportURL)
+        print("[Backup Files] Start... \(cloudExportURL)")
+        try fileManager.createDirectory(at: cloudExportURL, withIntermediateDirectories: true)
+        try archiveAllCloudFiles(to: cloudExportURL)
     } catch {
-        print("[Backup Files] backup done, but with error: \(error)")
+        print("[Backup Files] backup cloud files done, but with error: \(error)")
     }
+    // Local
+    let localExportURL = exportURL.appendingPathComponent("Local", conformingTo: .directory)
+    Task {
+        do {
+            print("[Backup Files] Start... \(localExportURL)")
+            try fileManager.createDirectory(at: localExportURL, withIntermediateDirectories: true)
+            let context = PersistenceController.shared.container.newBackgroundContext()
+            try await context.perform {
+                let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                fetchRequest.predicate = NSPredicate(format: "parent = nil")
+                let allFolders = try context.fetch(fetchRequest)
+                
+                for folder in allFolders {
+                    try folder.withSecurityScopedURL { scopedURL in
+                        let fileCoordinator = NSFileCoordinator()
+                        fileCoordinator.coordinate(readingItemAt: scopedURL, error: nil) { url in
+                            do {
+                                try fileManager.copyItem(
+                                    at: url,
+                                    to: localExportURL.appendingPathComponent(url.lastPathComponent, conformingTo: .directory)
+                                )
+                            } catch {
+                                print("[Backup Files] error occured when copy local folder: \(url)")
+                            }
+                        }
+                    }
+                }
+            }
+        } catch {
+            print("[Backup Files] backup local files done, but with error: \(error)")
+        }
+    }
+    
     // clean
     let backupFolders: [URL] = try fileManager.contentsOfDirectory(
         at: backupsDir,
@@ -130,7 +165,7 @@ func backupFiles() throws {
     }
 }
 
-func archiveAllFiles(to url: URL) throws {
+func archiveAllCloudFiles(to url: URL) throws {
     let filemanager = FileManager.default
     let allFiles = try PersistenceController.shared.listAllFiles()
     print("Archive all files: \(allFiles.map {[$0.key : $0.value.map{$0.name}]}.merged())")
