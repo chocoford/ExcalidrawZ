@@ -54,6 +54,7 @@ struct FileListView: View {
             if #available(macOS 14.0, iOS 17.0, *) {
                 content()
                     .onChange(of: fileState.currentGroup) { oldValue, newValue in
+                        guard newValue != nil else { return }
                         if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
                             if containerHorizontalSizeClass == .compact {
                                 // do not set file at iphone.
@@ -63,6 +64,7 @@ struct FileListView: View {
                         }
                     }
                     .onChange(of: fileState.currentFile) { _, newValue in
+                        guard fileState.currentGroup != nil else { return }
                         if newValue == nil {
                             if let file = files.first {
                                 if containerHorizontalSizeClass != .compact {
@@ -92,6 +94,7 @@ struct FileListView: View {
             } else {
                 content()
                     .onChange(of: fileState.currentGroup) { newValue in
+                        guard newValue != nil else { return }
                         if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
                             if containerHorizontalSizeClass == .compact {
                                 return
@@ -100,6 +103,7 @@ struct FileListView: View {
                         }
                     }
                     .onChange(of: fileState.currentFile) { newValue in
+                        guard fileState.currentGroup != nil else { return }
                         if newValue == nil {
                             if let file = files.first {
                                 if containerHorizontalSizeClass != .compact {

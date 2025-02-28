@@ -11,7 +11,7 @@ import ChocofordUI
 
 struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 //    @Environment(\.dismiss) var dismiss
-    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
     
@@ -20,7 +20,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var toolState: ToolState
 
-    @State private var sharedFile: File?
+    @State private var sharedFile: ExcalidrawFile?
     
     func body(content: Content) -> some View {
         ZStack {
@@ -51,7 +51,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
         .toolbarBackground(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline) // <- fix principal toolbar
 #endif
-        .modifier(ShareViewModifier(sharedFile: $sharedFile))
+        .modifier(ShareFileModifier(sharedFile: $sharedFile))
     }
     
     @ToolbarContentBuilder
@@ -107,7 +107,17 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                 // create
                 Button {
                     do {
-                        try fileState.createNewFile(context: managedObjectContext)
+                        if fileState.currentGroup != nil {
+                            try fileState.createNewFile(context: viewContext)
+                        } else if let folder = fileState.currentLocalFolder {
+                            try folder.withSecurityScopedURL { scopedURL in
+                                do {
+                                    try await fileState.createNewLocalFile(folderURL: scopedURL)
+                                } catch {
+                                    alertToast(error)
+                                }
+                            }
+                        }
                     } catch {
                         alertToast(error)
                     }
@@ -152,13 +162,27 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             FileHistoryButton()
             
             Button {
-                self.sharedFile = fileState.currentFile
+                do {
+                    if let file = fileState.currentFile {
+                        self.sharedFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
+                    } else if let folder = fileState.currentLocalFolder,
+                        let fileURL = fileState.currentLocalFile {
+                        try folder.withSecurityScopedURL { _ in
+                            self.sharedFile = try ExcalidrawFile(contentsOf: fileURL)
+                        }
+                    }
+                } catch {
+                    alertToast(error)
+                }
+                
             } label: {
                 Label(.localizable(.export), systemSymbol: .squareAndArrowUp)
             }
             .help(.localizable(.export))
-            .disabled(fileState.currentGroup?.groupType == .trash)
-
+            .disabled(
+                fileState.currentGroup?.groupType == .trash ||
+                (fileState.currentFile == nil && fileState.currentLocalFile == nil)
+            )
 
             if #available(macOS 13.0, iOS 16.0, *), appPreference.inspectorLayout == .sidebar {
 #if os(iOS)

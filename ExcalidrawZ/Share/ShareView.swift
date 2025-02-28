@@ -12,9 +12,10 @@ import ChocofordUI
 import SwiftyAlert
 import SFSafeSymbols
 
-struct ShareViewModifier: ViewModifier {
+struct ShareFileModifier: ViewModifier {
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Binding var sharedFile: File?
+    @Binding var sharedFile: ExcalidrawFile?
     
     func body(content: Content) -> some View {
         content
@@ -32,7 +33,7 @@ struct ShareViewModifier: ViewModifier {
     }
     
     @MainActor @ViewBuilder
-    private func content(_ file: File) -> some View {
+    private func content(_ file: ExcalidrawFile) -> some View {
         ZStack {
             if #available(macOS 13.0, iOS 16.0, *) {
                 ShareView(sharedFile: file)
@@ -61,9 +62,13 @@ struct ShareView: View {
     @EnvironmentObject var exportState: ExportState
 
     
-    var sharedFile: File
+    var sharedFile: ExcalidrawFile
     
     init(sharedFile: File) {
+        self.sharedFile = (try? ExcalidrawFile(from: sharedFile)) ?? ExcalidrawFile()
+    }
+    
+    init(sharedFile: ExcalidrawFile) {
         self.sharedFile = sharedFile
     }
     
@@ -76,7 +81,6 @@ struct ShareView: View {
     }
     
     @State private var route: NavigationPath = .init()
-    
     
 #if os(iOS)
     @State private var exportedPDFURL: URL?
@@ -92,7 +96,7 @@ struct ShareView: View {
                     SquareButton(title: .localizable(.exportSheetButtonImage), icon: .photo) {
                         route.append(Route.exportImage)
                     }
-                    .disabled((try? ExcalidrawFile(from: sharedFile).elements.isEmpty) != false)
+                    .disabled(sharedFile.elements.isEmpty != false)
                     
                     SquareButton(title: .localizable(.exportSheetButtonFile), icon: .doc) {
                         route.append(Route.exportFile)
@@ -128,7 +132,6 @@ struct ShareView: View {
                         }
                     }
 #endif
-
                 }
 
                 if horizontalSizeClass != .compact {
@@ -152,12 +155,11 @@ struct ShareView: View {
                         Text(.localizable(.generalButtonClose))
                     }
                 }
-                
             }
             .navigationDestination(for: Route.self) { route in
                 switch route {
                     case .exportImage:
-                        ExportImageView()
+                        ExportImageView(file: sharedFile)
                     case .exportFile:
                         ExportFileView(file: sharedFile)
 #if DEBUG
@@ -223,7 +225,7 @@ struct ShareViewLagacy: View {
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var exportState: ExportState
 
-    var sharedFile: File
+    var sharedFile: ExcalidrawFile
     
     enum Route: Hashable {
         case exportImage
@@ -235,7 +237,7 @@ struct ShareViewLagacy: View {
     var body: some View {
         ZStack {
             if route.last == .exportImage {
-                ExportImageView {
+                ExportImageView(file: sharedFile) {
                     route.removeLast()
                 }
                 .transition(.fade)
@@ -453,7 +455,7 @@ struct ExportButtonStyle: PrimitiveButtonStyle {
 #if DEBUG
 #Preview {
     if #available(macOS 13.0, *) {
-        ShareView(sharedFile: .preview)
+        ShareView(sharedFile: ExcalidrawFile.preview)
             .environmentObject(ExportState())
     } else {
         ShareViewLagacy(sharedFile: .preview)

@@ -21,7 +21,8 @@ struct SidebarView: View {
     )
     var groups: FetchedResults<Group>
     
-    
+    @StateObject private var localFolderState = LocalFolderState()
+
     var body: some View {
         twoColumnSidebar()
     }
@@ -45,6 +46,8 @@ struct SidebarView: View {
                         currentGroupID: currentGroup.id,
                         groupType: currentGroup.groupType
                     )
+                } else if let currentLocalFolder = fileState.currentLocalFolder {
+                    LocalFilesListView(folder: currentLocalFolder)
                 } else {
                     if #available(macOS 14.0, iOS 17.0, *) {
                         Text(.localizable(.sidebarFilesPlaceholder))
@@ -65,6 +68,7 @@ struct SidebarView: View {
             List(selection: $fileState.currentFile) {}
         }
 #endif
+        .environmentObject(localFolderState)
     }
     
     @MainActor @ViewBuilder

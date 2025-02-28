@@ -82,8 +82,10 @@ struct PencilSettingsView: View {
 }
 
 #Preview {
-    NavigationStack {
-        PencilSettingsView()
-            .environmentObject(ToolState())
+    if #available(macOS 13.0, *) {
+        NavigationStack {
+            PencilSettingsView()
+                .environmentObject(ToolState())
+        }
     }
 }

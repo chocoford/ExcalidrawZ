@@ -102,7 +102,7 @@ extension ExcalidrawCore {
     
     func onStateChanged(_ data: StateChangedMessageData) {
         guard !(self.isLoading) else { return }
-        let currentFileID = self.parent?.file.id
+        let currentFileID = self.parent?.file?.id
         let onError = self.publishError
         Task {
             do {
@@ -115,17 +115,17 @@ extension ExcalidrawCore {
                     case .excalidrawPNG, .png:
                         let data = try await self.exportElementsToPNGData(elements: elements ?? [], embedScene: true)
                         await MainActor.run {
-                            self.parent?.file.content = data
+                            self.parent?.file?.content = data
                         }
                     case .excalidrawSVG, .svg:
                         let data = try await self.exportElementsToSVGData(elements: elements ?? [], embedScene: true)
                         await MainActor.run {
-                            self.parent?.file.content = data
+                            self.parent?.file?.content = data
                         }
                     default:
                         await MainActor.run {
                             do {
-                                try self.parent?.file.update(data: data.data)
+                                try self.parent?.file?.update(data: data.data)
                             } catch {
                                 onError(error)
                             }

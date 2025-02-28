@@ -7,15 +7,17 @@
 
 import SwiftUI
 
-struct FileCheckpointDetailView: View {
+struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
+    @Environment(\.alertToast) private var alertToast
     @Environment(\.colorScheme) var colorScheme
-    @Environment(\.managedObjectContext) var managedObjectContext
+    @Environment(\.managedObjectContext) var viewContext
     @Environment(\.dismiss) private var dismiss
+    
     @EnvironmentObject var fileState: FileState
 
-    var checkpoint: FileCheckpoint
+    var checkpoint: Checkpoint
     
-    init(checkpoint: FileCheckpoint) {
+    init(checkpoint: Checkpoint) {
         self.checkpoint = checkpoint
     }
     
@@ -23,7 +25,7 @@ struct FileCheckpointDetailView: View {
         VStack(spacing: 12) {
             ZStack {
                 if let data = checkpoint.content,
-                   let file = try? ExcalidrawFile(data: data, id: checkpoint.file?.id),
+                   let file = try? ExcalidrawFile(data: data, id: checkpoint.fileID),
                    !file.elements.isEmpty {
                     ExcalidrawRenderer(file: file)
                 } else {
@@ -46,18 +48,13 @@ struct FileCheckpointDetailView: View {
             
             HStack {
                 Button { @MainActor in
-                    let file = fileState.currentFile
-                    file?.content = checkpoint.content
-                    file?.name = checkpoint.filename
-                    fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
-                    fileState.didUpdateFile = false
-                    dismiss()
+                    restoreCheckpoint()
                 } label: {
                     Text(.localizable(.checkpointButtonRestore))
                 }
                 
                 Button {
-                    managedObjectContext.delete(checkpoint)
+                    viewContext.delete(checkpoint)
                     dismiss()
                 } label: {
                     Text(.localizable(.checkpointButtonDelete))
@@ -65,10 +62,34 @@ struct FileCheckpointDetailView: View {
             }
         }
     }
+    
+    private func restoreCheckpoint() {
+        guard let content = checkpoint.content else { return }
+        if checkpoint.fileID != nil {
+            let file = fileState.currentFile
+            file?.content = checkpoint.content
+            file?.name = checkpoint.filename
+            fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
+        } else if let folder = fileState.currentLocalFolder,
+                  let fileURL = fileState.currentLocalFile {
+            do {
+                try folder.withSecurityScopedURL { scopedURL in
+                    var file = try ExcalidrawFile(data: content)
+                    file.id = ExcalidrawFile.localFileURLIDMapping[fileURL] ?? UUID()
+                    fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
+                    try content.write(to: fileURL)
+                }
+            } catch {
+                alertToast(error)
+            }
+        }
+        fileState.didUpdateFile = false
+        dismiss()
+    }
 }
 
 #if DEBUG
 #Preview {
-    FileCheckpointDetailView(checkpoint: .preview)
+    FileCheckpointDetailView(checkpoint: FileCheckpoint.preview)
 }
 #endif

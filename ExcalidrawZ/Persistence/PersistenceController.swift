@@ -9,31 +9,61 @@ import Foundation
 import CoreData
 
 struct PersistenceController {
-    // A singleton for our entire app to use
     static let shared = PersistenceController(cloudKitEnabled: !UserDefaults.standard.bool(forKey: "DisableCloudSync"))
-
-    // Storage for Core Data
     let container: NSPersistentContainer
 
-    // An initializer to load Core Data, optionally able
-    // to use an in-memory store.
     /// Init function
     /// - Parameters:
     ///   - inMemory: inMemory
     ///   - cloudKitEnabled: Enabled status for app internal.
     init(inMemory: Bool = false, cloudKitEnabled: Bool = true) {
-        // If you didn't name your model Main you'll need
-        // to change this name below.
         print("[PersistenceController] init with\(cloudKitEnabled ? "" : "out") cloudKit")
         if cloudKitEnabled {
             container = NSPersistentCloudKitContainer(name: "Model")
         } else {
             container = NSPersistentContainer(name: "Model")
         }
-        
         let description = container.persistentStoreDescriptions.first
         description?.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
         
+        let storeDir = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        )[0].appendingPathComponent("ExcalidrawZ", conformingTo: .directory)
+        
+        if !FileManager.default.fileExists(at: storeDir) {
+            try? FileManager.default.createDirectory(at: storeDir, withIntermediateDirectories: false)
+        }
+        
+        let cloudStoreDescription: NSPersistentStoreDescription = if inMemory {
+            NSPersistentStoreDescription(url: URL(fileURLWithPath: "/dev/null"))
+        } else {
+            // Historical reason
+            NSPersistentStoreDescription(
+                url: container.persistentStoreDescriptions.first?.url ??
+                storeDir.appendingPathComponent("Model.sqlite")
+            )
+        }
+        cloudStoreDescription.configuration = "Cloud"
+        cloudStoreDescription.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
+            containerIdentifier: "iCloud.com.chocoford.excalidraw"
+        )
+        cloudStoreDescription.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+        
+        let localStoreLocation = storeDir
+            .appendingPathComponent("ExcalidrawZLocal.sqlite")
+        let localStoreDescription: NSPersistentStoreDescription = if inMemory {
+            NSPersistentStoreDescription(url: URL(fileURLWithPath: "/dev/null"))
+        } else {
+            NSPersistentStoreDescription(url: localStoreLocation)
+        }
+        localStoreDescription.configuration = "Local"
+        
+        container.persistentStoreDescriptions = [
+            cloudStoreDescription,
+            localStoreDescription
+        ]
+        print(container.persistentStoreDescriptions)
         container.viewContext.automaticallyMergesChangesFromParent = true
         /// Core Data 预设了四种合并冲突策略，分别为：
         /// * NSMergeByPropertyStoreTrumpMergePolicy
@@ -49,10 +79,6 @@ struct PersistenceController {
               try container.viewContext.setQueryGenerationFrom(.current)
         } catch {
              fatalError("Failed to pin viewContext to the current generation:\(error)")
-        }
-        
-        if inMemory {
-            container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
         }
 
         container.loadPersistentStores { description, error in

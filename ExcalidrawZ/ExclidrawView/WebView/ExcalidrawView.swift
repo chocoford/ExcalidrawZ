@@ -87,7 +87,7 @@ struct ExcalidrawView {
         category: "WebView"
     )
     
-    @Binding var file: ExcalidrawFile
+    @Binding var file: ExcalidrawFile?
     @Binding var isLoading: Bool
     
     var savingType: UTType
@@ -96,7 +96,7 @@ struct ExcalidrawView {
     
     // TODO: isLoadingFile is not used yet.
     init(
-        file: Binding<ExcalidrawFile>,
+        file: Binding<ExcalidrawFile?>,
         savingType: UTType = .excalidrawFile,
         isLoadingPage: Binding<Bool>,
         isLoadingFile: Binding<Bool>? = nil,
@@ -140,7 +140,9 @@ extension ExcalidrawView {
                 self.onError(error)
             }
         }
-        context.coordinator.loadFile(from: file)
+        if let file {
+            context.coordinator.loadFile(from: file)
+        }
     }
 }
 

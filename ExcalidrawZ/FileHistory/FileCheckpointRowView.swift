@@ -7,8 +7,8 @@
 
 import SwiftUI
 import ChocofordUI
- 
-struct FileCheckpointRowView: View {
+
+struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
 
     @Environment(\.colorScheme) var colorScheme
@@ -16,7 +16,7 @@ struct FileCheckpointRowView: View {
     @Environment(\.managedObjectContext) var managedObjectContext
     @EnvironmentObject var fileState: FileState
     
-    var checkpoint: FileCheckpoint
+    var checkpoint: Checkpoint
     
     @State private var file: ExcalidrawFile?
     
@@ -28,17 +28,14 @@ struct FileCheckpointRowView: View {
             }
     }
     
-    
     @MainActor @ViewBuilder
     private func content() -> some View {
-//        if containerHorizontalSizeClass == .compact {
 #if os(iOS)
             NavigationLink {
                 FileCheckpointDetailView(checkpoint: checkpoint)
             } label: {
                 label()
             }
-//        } else {
 #elseif os(macOS)
             Popover(arrowEdge: .trailing) {
                 FileCheckpointDetailView(checkpoint: checkpoint)
@@ -46,10 +43,8 @@ struct FileCheckpointRowView: View {
             } label: {
                 label()
             }
-//#if os(macOS)
             .buttonStyle(ListButtonStyle())
 #endif
-//        }
     }
     
     @MainActor @ViewBuilder
@@ -84,7 +79,7 @@ struct FileCheckpointRowView: View {
 
 #if DEBUG
 #Preview {
-    FileCheckpointRowView(checkpoint: .preview)
+    FileCheckpointRowView(checkpoint: FileCheckpoint.preview)
         .environmentObject(FileState())
 }
 #endif

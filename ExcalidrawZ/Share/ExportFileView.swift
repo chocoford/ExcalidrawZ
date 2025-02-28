@@ -9,18 +9,16 @@ import SwiftUI
 import ChocofordUI
 import UniformTypeIdentifiers
 
-@available(*, deprecated, message: "Use ExcalidrawFile instead")
-struct ExcalidrawFileTransferable {}
 struct ExportFileView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.dismiss) var mordenDismiss
     @Environment(\.alertToast) var alertToast
     
-    var file: File
+    var file: ExcalidrawFile
     private var _dismissAction: (() -> Void)?
     
-    init(file: File, dismissAction: (() -> Void)? = nil) {
+    init(file: ExcalidrawFile, dismissAction: (() -> Void)? = nil) {
         self.file = file
         if let dismissAction {
             self._dismissAction = dismissAction
@@ -48,12 +46,10 @@ struct ExportFileView: View {
     
     @State private var showBackButton = false
     
-    
-    
     var body: some View {
         Center {
 #if canImport(AppKit)
-            if #available(macOS 13.0, *), let file = try? ExcalidrawFile(from: file.objectID, context: viewContext) {
+            if #available(macOS 13.0, *) {
                 Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -97,7 +93,7 @@ struct ExportFileView: View {
             showBackButton = true
             fileName = file.name ?? String(localizable: .newFileNamePlaceholder)
             do {
-                fileDocument = try ExcalidrawFile(from: file)
+                fileDocument = file
                 try fileDocument?.syncFiles(context: viewContext)
             } catch {
                 alertToast(error)
@@ -163,7 +159,7 @@ struct ExportFileView: View {
             if #available(macOS 13.0, *),
                let url = fileURL {
                 ShareLink(item: url) {
-                    Label("Share", systemImage: "square.and.arrow.up")
+                    Label("Share", systemSymbol: .squareAndArrowUp)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 1)
                 }
@@ -171,7 +167,7 @@ struct ExportFileView: View {
                 Button {
                     self.showShare = true
                 } label: {
-                    Label("Share", systemImage: "square.and.arrow.up")
+                    Label("Share", systemSymbol: .squareAndArrowUp)
                         .padding(.horizontal, 6)
                 }
                 .background(SharingsPicker(
@@ -209,7 +205,7 @@ struct ExportFileView: View {
                 try fileManager.removeItem(at: url)
             }
             
-            var file = try ExcalidrawFile(from: file)
+            var file = file
             try file.syncFiles(context: viewContext)
             guard let fileData = file.content else {
                 struct NoContentError: LocalizedError {

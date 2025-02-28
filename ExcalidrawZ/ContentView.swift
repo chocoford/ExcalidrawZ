@@ -225,7 +225,7 @@ struct PrintModifier: ViewModifier {
 
 @available(macOS 13.0, *)
 struct ContentViewModern: View {
-    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
@@ -278,7 +278,17 @@ struct ContentViewModern: View {
             // create
             Button {
                 do {
-                    try fileState.createNewFile(context: managedObjectContext)
+                    if fileState.currentGroup != nil {
+                        try fileState.createNewFile(context: viewContext)
+                    } else if let folder = fileState.currentLocalFolder {
+                        try folder.withSecurityScopedURL { scopedURL in
+                            do {
+                                try await fileState.createNewLocalFile(folderURL: scopedURL)
+                            } catch {
+                                alertToast(error)
+                            }
+                        }
+                    }
                 } catch {
                     alertToast(error)
                 }

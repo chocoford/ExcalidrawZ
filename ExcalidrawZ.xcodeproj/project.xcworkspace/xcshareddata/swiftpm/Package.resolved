@@ -1,5 +1,5 @@
 {
-  "originHash" : "dfbc1c1858fcb220abfd711d979e2f85e0328f12ff773fd2e28ba498ef79ad4d",
+  "originHash" : "17676bced9b44358ae8a316189746a4a6ca74035067d25881aec2c826191d4a7",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "5653d61252af7f2dd8b43a77fb2a03678290f393",
         "version" : "0.20.0"
+      }
+    },
+    {
+      "identity" : "fseventswrapper",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Frizlab/FSEventsWrapper.git",
+      "state" : {
+        "revision" : "70bbea4b108221fcabfce8dbced8502831c0ae04",
+        "version" : "2.1.0"
       }
     },
     {

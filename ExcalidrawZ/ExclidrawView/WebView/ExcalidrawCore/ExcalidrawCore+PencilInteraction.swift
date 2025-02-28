@@ -12,9 +12,7 @@ import UIKit
 extension ExcalidrawCore: UIPencilInteractionDelegate {
     
     @available(iOS 17.5, *)
-    func pencilInteraction(_ interaction: UIPencilInteraction, didReceiveTap tap: UIPencilInteraction.Tap) {
-        print(#function, interaction, tap)
-        
+    func pencilInteraction(_ interaction: UIPencilInteraction, didReceiveTap tap: UIPencilInteraction.Tap) {        
         if self.parent?.toolState.inPenMode == false {
             Task {
                 try? await self.parent?.toolState.togglePenMode(enabled: true, pencilConnected: true)

@@ -22,6 +22,8 @@
 		3963A07C2C6C7EAA00472AE7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 397E465A295838D0003B824B /* Assets.xcassets */; };
 		3963A07D2C6C7EAA00472AE7 /* FakeToggleColorMode.js in Resources */ = {isa = PBXBuildFile; fileRef = 39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */; };
 		3963A07E2C6C7EAA00472AE7 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
+		3965F2102D6F60170065A8C8 /* FSEventsWrapper in Frameworks */ = {isa = PBXBuildFile; productRef = 3965F20F2D6F60170065A8C8 /* FSEventsWrapper */; };
+		3965F2122D6F60330065A8C8 /* FSEventsWrapper in Frameworks */ = {isa = PBXBuildFile; productRef = 3965F2112D6F60330065A8C8 /* FSEventsWrapper */; };
 		396661302C665D4300F863BC /* excalidraw-latest in Resources */ = {isa = PBXBuildFile; fileRef = 3966612F2C665D3E00F863BC /* excalidraw-latest */; };
 		3966623F2C666EC600F863BC /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = 3966623E2C666EC600F863BC /* FlyingFox */; };
 		3976C4D62C8789F60037D3AF /* overwrite_console.js in Resources */ = {isa = PBXBuildFile; fileRef = 3976C4D52C8789F60037D3AF /* overwrite_console.js */; };
@@ -265,6 +267,7 @@
 				39BE12F12CB7DD97006781D5 /* Zlib in Frameworks */,
 				3963A0742C6C7EAA00472AE7 /* FlyingFox in Frameworks */,
 				3990F8362CACF4C500C94983 /* StoreKit.framework in Frameworks */,
+				3965F2122D6F60330065A8C8 /* FSEventsWrapper in Frameworks */,
 				39ED18632D40FCBD00E437A0 /* AVKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -287,6 +290,7 @@
 				3914876D2960AFD10042927A /* Sparkle in Frameworks */,
 				39BE12EE2CB7DD8C006781D5 /* Zlib in Frameworks */,
 				3966623F2C666EC600F863BC /* FlyingFox in Frameworks */,
+				3965F2102D6F60170065A8C8 /* FSEventsWrapper in Frameworks */,
 				398F14532CF738DB0061CCF9 /* SwiftyAlert in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -458,6 +462,7 @@
 				3963A03E2C6C7EAA00472AE7 /* FlyingFox */,
 				39BE12F02CB7DD97006781D5 /* Zlib */,
 				398F14542CF738ED0061CCF9 /* SwiftyAlert */,
+				3965F2112D6F60330065A8C8 /* FSEventsWrapper */,
 			);
 			productName = ExcaliDrawZ;
 			productReference = 3963A0822C6C7EAA00472AE7 /* ExcalidrawZ.app */;
@@ -510,6 +515,7 @@
 				398F144A2CF7379C0061CCF9 /* ChocofordEssentials */,
 				398F144C2CF7379C0061CCF9 /* ChocofordUI */,
 				398F14522CF738DB0061CCF9 /* SwiftyAlert */,
+				3965F20F2D6F60170065A8C8 /* FSEventsWrapper */,
 			);
 			productName = ExcaliDrawZ;
 			productReference = 397E4653295838CF003B824B /* ExcalidrawZ.app */;
@@ -630,6 +636,7 @@
 				39BE12EC2CB7DD8C006781D5 /* XCRemoteSwiftPackageReference "Zlib" */,
 				398F14492CF7379C0061CCF9 /* XCRemoteSwiftPackageReference "ChocofordKit" */,
 				398F14512CF738DB0061CCF9 /* XCRemoteSwiftPackageReference "SwiftyAlert" */,
+				3965F20E2D6F60170065A8C8 /* XCRemoteSwiftPackageReference "FSEventsWrapper" */,
 			);
 			productRefGroup = 397E4654295838CF003B824B /* Products */;
 			projectDirPath = "";
@@ -1566,6 +1573,14 @@
 				minimumVersion = 0.15.0;
 			};
 		};
+		3965F20E2D6F60170065A8C8 /* XCRemoteSwiftPackageReference "FSEventsWrapper" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Frizlab/FSEventsWrapper.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.1.0;
+			};
+		};
 		3966623D2C666EC600F863BC /* XCRemoteSwiftPackageReference "FlyingFox" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/swhitty/FlyingFox.git";
@@ -1654,6 +1669,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3963A03F2C6C7EAA00472AE7 /* XCRemoteSwiftPackageReference "FlyingFox" */;
 			productName = FlyingFox;
+		};
+		3965F20F2D6F60170065A8C8 /* FSEventsWrapper */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3965F20E2D6F60170065A8C8 /* XCRemoteSwiftPackageReference "FSEventsWrapper" */;
+			productName = FSEventsWrapper;
+		};
+		3965F2112D6F60330065A8C8 /* FSEventsWrapper */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3965F20E2D6F60170065A8C8 /* XCRemoteSwiftPackageReference "FSEventsWrapper" */;
+			productName = FSEventsWrapper;
 		};
 		3966623E2C666EC600F863BC /* FlyingFox */ = {
 			isa = XCSwiftPackageProductDependency;

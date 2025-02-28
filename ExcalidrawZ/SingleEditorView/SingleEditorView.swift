@@ -119,7 +119,7 @@ struct SingleEditorView: View {
                 file: Binding {
                     fileDocument
                 } set: { doc in
-                    var doc = doc
+                    guard var doc = doc else { return }
                     try? doc.syncFiles()
                     fileDocument = doc
                 },

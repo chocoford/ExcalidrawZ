@@ -47,6 +47,7 @@ func archiveAllFiles() throws {
                 try filemanager.createDirectory(at: exportURL, withIntermediateDirectories: false)
                 try archiveAllFiles(to: exportURL)
             } catch {
+                print(error)
                 throw error
             }
         } else {

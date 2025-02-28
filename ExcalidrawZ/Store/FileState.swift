@@ -29,8 +29,11 @@ final class FileState: ObservableObject {
                     self?.objectWillChange.send()
                 }
             ]
+            currentLocalFolder = nil
+            currentLocalFile = nil
         }
     }
+    
     @Published var currentFile: File? {
         didSet {
             print("freeze watchUpdate: \(Date.now.formatted(date: .omitted, time: .complete))")
@@ -50,7 +53,31 @@ final class FileState: ObservableObject {
                         }
                     }
                 ]
-//                excalidrawWebCoordinator?.loadFile(from: currentFile)
+                currentLocalFile = nil
+            }
+        }
+    }
+    
+    @Published var currentLocalFolder: LocalFolder? {
+        didSet {
+            if currentLocalFolder != nil {
+                currentFile = nil
+                currentGroup = nil
+            }
+        }
+    }
+
+    @Published var currentLocalFile: URL? {
+        didSet {
+            if currentLocalFile != nil {
+                currentFile = nil
+            }
+        }
+    }
+    @Published var currentLocalFileBookmarkData: Data? {
+        didSet {
+            if currentLocalFileBookmarkData != nil {
+                currentFile = nil
             }
         }
     }
@@ -174,11 +201,9 @@ final class FileState: ObservableObject {
                         
                         try bgContext.save()
                     }
-                    
                     await MainActor.run {
                         self.didUpdateFile = true
                     }
-                    
                 } catch {
                     print(error)
                 }
@@ -187,6 +212,86 @@ final class FileState: ObservableObject {
             
         }
     }
+    
+    func createNewLocalFile(active: Bool = true, folderURL scopedURL: URL) async throws {
+        guard let data = ExcalidrawFile().content else { return }
+        var newFileName = "Untitled"
+        
+        while FileManager.default.fileExists(at: scopedURL.appendingPathComponent(newFileName, conformingTo: .excalidrawFile)) {
+            let components = newFileName.components(separatedBy: "-")
+            if components.count == 2, let numComponent = components.last, let index = Int(numComponent) {
+                newFileName = "\(components[0])-\(index+1)"
+            } else {
+                newFileName = "\(newFileName)-1"
+            }
+        }
+        
+        let fileCoordinator = NSFileCoordinator()
+        
+        let fileURL = scopedURL.appendingPathComponent(newFileName, conformingTo: .excalidrawFile)
+        
+        try await withCheckedThrowingContinuation { continuation in
+            fileCoordinator.coordinate(
+                writingItemAt: fileURL,
+                options: .forReplacing,
+                error: nil
+            ) { newURL in
+                // 文件操作
+                do {
+                    try data.write(to: newURL)
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+        
+        if active {
+            await MainActor.run {
+                self.currentLocalFile = fileURL
+            }
+        }
+    }
+    
+    /// Remember to call `startAccessingSecurityScopedResource` before calling this function.
+    func updateCurrentLocalFile(with excalidrawFile: ExcalidrawFile, context: NSManagedObjectContext) async throws {
+        guard !shouldIgnoreUpdate, let fileURL = self.currentLocalFile else { return }
+        let didUpdateFile = didUpdateFile
+        var excalidrawFile = excalidrawFile
+        try excalidrawFile.syncFiles()
+        try JSONEncoder().encode(excalidrawFile).write(to: fileURL)
+        let bgContext = context // PersistenceController.shared.container.newBackgroundContext()
+        try await bgContext.perform {
+            // record to checkpoints
+            
+            let fetchRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
+            fetchRequest.predicate = NSPredicate(format: "url = %@", fileURL as NSURL)
+            fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \LocalFileCheckpoint.updatedAt, ascending: false)]
+            let localFileCheckpoints = try bgContext.fetch(fetchRequest)
+            
+            if didUpdateFile, let firstCheckpoint = localFileCheckpoints.first {
+                firstCheckpoint.updatedAt = Date()
+                firstCheckpoint.content = excalidrawFile.content
+            } else {
+                let localFileCheckpoint = LocalFileCheckpoint(context: bgContext)
+                localFileCheckpoint.url = fileURL
+                localFileCheckpoint.updatedAt = Date()
+                localFileCheckpoint.content = excalidrawFile.content
+                
+                bgContext.insert(localFileCheckpoint)
+                
+                if localFileCheckpoints.count > 50, let last = localFileCheckpoints.last {
+                    bgContext.delete(last)
+                }
+            }
+            
+        }
+        
+        await MainActor.run {
+            self.didUpdateFile = true
+        }
+    }
+    
     
     enum ImportGroupType: Hashable {
         case current

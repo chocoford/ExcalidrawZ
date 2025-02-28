@@ -6,8 +6,9 @@
 //
 
 import SwiftUI
-import ChocofordEssentials
 
+import ChocofordEssentials
+import ChocofordUI
 
 struct GroupListView: View {
     @Environment(\.managedObjectContext) private var managedObjectContext
@@ -41,12 +42,12 @@ struct GroupListView: View {
     
     var trashedFilesCount: Int { trashedFiles.count }
     
-    @State private var showCreateFolderDialog = false
-    
+    @State private var isCreateICloudFolderDialogPresented = false
+    @State private var isCreateLocalFolderDialogPresented = false
     
     var body: some View {
         content
-            .sheet(isPresented: $showCreateFolderDialog) {
+            .sheet(isPresented: $isCreateICloudFolderDialogPresented) {
                 if containerHorizontalSizeClass == .compact {
                     createFolderSheetView()
 #if os(iOS)
@@ -82,43 +83,76 @@ struct GroupListView: View {
     private var content: some View {
         VStack(alignment: .leading) {
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(displayedGroups) { group in
-                        GroupRowView(group: group, groups: displayedGroups)
-                            .padding(.horizontal, 8)
+                LazyVStack(spacing: 8) {
+                    let spacing: CGFloat = 4
+                    VStack(alignment: .leading, spacing: spacing) {
+                        databaseGroupsList()
+                            .modifier(
+                                ContentHeaderCreateButtonHoverModifier(
+                                    isCreateDialogPresented: $isCreateICloudFolderDialogPresented,
+                                    title: "iCloud"
+                                )
+                            )
+                    }
+                    
+                    VStack(alignment: .leading, spacing: spacing) {
+                        LocalFoldersListView()
+                            .modifier(
+                                ContentHeaderCreateButtonHoverModifier(
+                                    isCreateDialogPresented: $isCreateLocalFolderDialogPresented,
+                                    title: "Local"
+                                )
+                            )
+                            .fileImporterWithAlert(
+                                isPresented: $isCreateLocalFolderDialogPresented,
+                                allowedContentTypes: [.folder],
+                                allowsMultipleSelection: true
+                            ) { urls in
+                                try importLocalFolders(urls: urls)
+                            }
                     }
                 }
-                .onChange(of: trashedFilesCount) { count in
-                    if count == 0 && fileState.currentGroup?.groupType == .trash {
-                        fileState.currentGroup = displayedGroups.first
-                    }
-                }
-                .padding(.vertical, 12)
-                .onChange(of: displayedGroups) { newValue in
-                    if fileState.currentGroup == nil {
-                        fileState.currentGroup = displayedGroups.first
-                    } else if !displayedGroups.contains(where: {$0 == fileState.currentGroup}) {
-                        fileState.currentGroup = displayedGroups.first
-                    }
-                }
-                .watchImmediately(of: fileState.currentGroup) { newValue in
-                    if newValue == nil {
-                        fileState.currentGroup = displayedGroups.first
-                    }
-                }
+                .padding(8)
             }
             .clipped()
-            HStack {
-                Button {
-                    showCreateFolderDialog.toggle()
-                } label: {
-                    Label(.localizable(.sidebarGroupListNewFolder), systemSymbol: .plusCircle)
-                }
-                .buttonStyle(.borderless)
-                
-                Spacer()
+            
+//            HStack {
+//                Button {
+//                    showCreateFolderDialog.toggle()
+//                } label: {
+//                    Label(.localizable(.sidebarGroupListNewFolder), systemSymbol: .plusCircle)
+//                }
+//                .buttonStyle(.borderless)
+//                
+//                Spacer()
+//            }
+//            .padding(4)
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func databaseGroupsList() -> some View {
+        LazyVStack(alignment: .leading, spacing: 0) {
+            ForEach(displayedGroups) { group in
+                GroupRowView(group: group, groups: displayedGroups)
             }
-            .padding(4)
+        }
+        .onChange(of: trashedFilesCount) { count in
+            if count == 0 && fileState.currentGroup?.groupType == .trash {
+                fileState.currentGroup = displayedGroups.first
+            }
+        }
+        .onChange(of: displayedGroups) { newValue in
+            if fileState.currentGroup == nil {
+                fileState.currentGroup = displayedGroups.first
+            } else if !displayedGroups.contains(where: {$0 == fileState.currentGroup}) {
+                fileState.currentGroup = displayedGroups.first
+            }
+        }
+        .watchImmediately(of: fileState.currentGroup) { newValue in
+            if newValue == nil && fileState.currentLocalFolder == nil {
+                fileState.currentGroup = displayedGroups.first
+            }
         }
     }
     
@@ -127,11 +161,31 @@ struct GroupListView: View {
         CreateGroupSheetView(groups: groups) { name in
             Task {
                 do {
-                    try await fileState.createNewGroup(name: name, activate: true, context: managedObjectContext)
+                    try await fileState.createNewGroup(
+                        name: name,
+                        activate: true,
+                        context: managedObjectContext
+                    )
                 } catch {
                     alertToast(error)
                 }
             }
+        }
+    }
+    
+    private func importLocalFolders(urls: [URL]) throws {
+        for url in urls {
+            guard url.startAccessingSecurityScopedResource() else {
+                continue
+            }
+             
+            try managedObjectContext.performAndWait {
+                let localFolder = try LocalFolder(url: url, context: managedObjectContext)
+                managedObjectContext.insert(localFolder)
+                try managedObjectContext.save()
+            }
+            
+            url.stopAccessingSecurityScopedResource()
         }
     }
 }
@@ -152,7 +206,7 @@ struct CreateGroupSheetView: View {
                     Text(.localizable(.sidebarGroupListCreateGroupName))
                     TextField("", text: $name)
                         .submitLabel(.done)
-    #if os(macOS)
+#if os(macOS)
                         .textFieldStyle(.roundedBorder)
                         .onSubmit {
                             if !name.isEmpty {
@@ -160,7 +214,7 @@ struct CreateGroupSheetView: View {
                                 dismiss()
                             }
                         }
-    #endif
+#endif
                 }
             } header: {
                 Text(.localizable(.sidebarGroupListCreateTitle))
@@ -202,6 +256,49 @@ struct CreateGroupSheetView: View {
         return result
     }
 }
+
+fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
+    
+    @Binding var isCreateDialogPresented: Bool
+    var title: LocalizedStringKey
+    
+    init(
+        isCreateDialogPresented: Binding<Bool>,
+        title: LocalizedStringKey
+    ) {
+        self._isCreateDialogPresented = isCreateDialogPresented
+        self.title = title
+    }
+    
+    @State private var isHovered = false
+    
+    func body(content: Content) -> some View {
+        Section {
+            content
+        } header: {
+            HStack {
+                Text(title)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if isHovered {
+                    Button {
+                        isCreateDialogPresented.toggle()
+                    } label: {
+                        Label(.localizable(.sidebarGroupListNewFolder), systemSymbol: .plusCircleFill)
+                            .labelStyle(.iconOnly)
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+            .font(.callout.bold())
+            .animation(.smooth, value: isHovered)
+        }
+        .onHover {
+            isHovered = $0
+        }
+    }
+}
+
 
 #if DEBUG
 //struct GroupSidebarView_Previews: PreviewProvider {
