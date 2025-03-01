@@ -28,7 +28,7 @@ struct BackupsSettingsView: View {
     var body: some View {
         HStack {
             ScrollView {
-                LazyVStack {
+                LazyVStack(spacing: 4) {
                     ForEach(backups, id: \.self) { item in
                         Button {
                             selectedBackup = item
@@ -89,25 +89,12 @@ struct BackupsSettingsView: View {
             HStack(spacing: 0) {
                 ScrollView {
                     LazyVStack(spacing: 3) {
-//                        ForEach(Array(selectedBackupDirs), id: \.key) { (groupName, files) in
-//                            DisclosureGroup(groupName) {
-//                                ForEach(files, id: \.self) { file in
-//                                    Button {
-//                                        selectedFile = file
-//                                    } label: {
-//                                        Text(file.deletingPathExtension().lastPathComponent)
-//                                            .lineLimit(1)
-//                                            .truncationMode(.middle)
-//                                    }
-//                                    .buttonStyle(.listCell(selected: selectedFile == file))
-//                                }
-//                            }
-//                        }
                         ForEach(backupRootFolders, id: \.self) { folder in
                             BackupFoldersView(selection: $selectedFile, folder: folder)
                         }
                     }
                     .padding(10)
+                    .frame(minHeight: 400, alignment: .top)
                     .background {
                         Color.clear
                             .contentShape(Rectangle())
