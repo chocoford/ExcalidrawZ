@@ -60,7 +60,6 @@ struct BackupFoldersView: View {
                     }
                     .buttonStyle(ListButtonStyle(selected: selection == url))
                 }
-                
             }
         } label: {
             HStack(spacing: 4) {
