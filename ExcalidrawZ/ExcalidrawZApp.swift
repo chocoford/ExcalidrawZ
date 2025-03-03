@@ -31,7 +31,7 @@ struct ExcalidrawZApp: App {
 #elseif os(iOS)
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 #endif
-    
+        
 #if os(macOS) && !APP_STORE
     private let updaterController: SPUStandardUpdaterController
 #endif
@@ -85,6 +85,35 @@ struct ExcalidrawZApp: App {
 #if os(macOS)
         .defaultSizeIfAvailable(CGSize(width: 1200, height: 700))
         .commands {
+            CommandGroup(replacing: .newItem) {
+                Button {
+                    NotificationCenter.default.post(
+                        name: .shouldHandleNewDraw,
+                        object: nil
+                    )
+                } label: {
+                    Text("New draw")
+                }
+                .keyboardShortcut("N", modifiers: .command)
+                
+                Button {
+                    NotificationCenter.default.post(
+                        name: .shouldHandleNewDrawFromClipboard,
+                        object: nil
+                    )
+                } label: {
+                    Text("New draw from clipboard")
+                }
+                .keyboardShortcut("N", modifiers: [.command, .option, .shift])
+                
+//                Divider()
+                
+//                Button("New Window") {
+//                    // openWindow(id: "Some ID")
+//                }
+//                .keyboardShortcut("N", modifiers: [.command, .shift])
+            }
+            
             CommandGroup(after: .printItem) {
                 Button {
                     NotificationCenter.default.post(name: .togglePrintModalSheet, object: nil)

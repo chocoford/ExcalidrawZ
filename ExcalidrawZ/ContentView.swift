@@ -276,34 +276,14 @@ struct ContentViewModern: View {
     private func sidebarToolbar() -> some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
             // create
-            Button {
-                do {
-                    if fileState.currentGroup != nil {
-                        try fileState.createNewFile(context: viewContext)
-                    } else if let folder = fileState.currentLocalFolder {
-                        try folder.withSecurityScopedURL { scopedURL in
-                            do {
-                                try await fileState.createNewLocalFile(folderURL: scopedURL)
-                            } catch {
-                                alertToast(error)
-                            }
-                        }
-                    }
-                } catch {
-                    alertToast(error)
-                }
-            } label: {
-                Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
-            }
-            .help(.localizable(.createNewFile))
-            .disabled(fileState.currentGroup?.groupType == .trash)
+            NewFileButton()
         }
         
 #if os(macOS)
         // in macOS 14.*, the horizontalSizeClass is not `.regular`
         // if horizontalSizeClass == .regular {
             ToolbarItemGroup(placement: .destructiveAction) {
-                sidebarToggle()
+                SidebarToggle(columnVisibility: $columnVisibility)
             }
         // }
 #elseif os(iOS)
@@ -335,46 +315,6 @@ struct ContentViewModern: View {
             Color.clear
         }
 #endif
-    }
-    
-    @MainActor @ViewBuilder
-    private func sidebarToggle() -> some View {
-        HStack(spacing: 0) {
-            Button {
-                withAnimation {
-                    if columnVisibility == .detailOnly {
-                        columnVisibility = .all
-                    } else {
-                        columnVisibility = .detailOnly
-                    }
-                }
-            } label: {
-                Image(systemSymbol: .sidebarLeading)
-            }
-            
-            Menu {
-                Button {
-                    withAnimation { columnVisibility = .all }
-                    appPreference.sidebarMode = .all
-                } label: {
-                    if appPreference.sidebarMode == .all && columnVisibility != .detailOnly {
-                        Image(systemSymbol: .checkmark)
-                    }
-                    Text(.localizable(.sidebarShowAll))
-                }
-                Button {
-                    withAnimation { columnVisibility = .all }
-                    appPreference.sidebarMode = .filesOnly
-                } label: {
-                    if appPreference.sidebarMode == .filesOnly && columnVisibility != .detailOnly {
-                        Image(systemSymbol: .checkmark)
-                    }
-                    Text(.localizable(.sidebarShowFilesOnly))
-                }
-            } label: {
-            }
-            .buttonStyle(.borderless)
-        }
     }
 }
 

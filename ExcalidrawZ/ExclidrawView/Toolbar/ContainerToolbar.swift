@@ -104,28 +104,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 #endif
 
             if #available(macOS 13.0, iOS 16.0, *) { } else {
-                // create
-                Button {
-                    do {
-                        if fileState.currentGroup != nil {
-                            try fileState.createNewFile(context: viewContext)
-                        } else if let folder = fileState.currentLocalFolder {
-                            try folder.withSecurityScopedURL { scopedURL in
-                                do {
-                                    try await fileState.createNewLocalFile(folderURL: scopedURL)
-                                } catch {
-                                    alertToast(error)
-                                }
-                            }
-                        }
-                    } catch {
-                        alertToast(error)
-                    }
-                } label: {
-                    Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
-                }
-                .help(.localizable(.createNewFile))
-                .disabled(fileState.currentGroup?.groupType == .trash)
+                NewFileButton()
             }
         }
         

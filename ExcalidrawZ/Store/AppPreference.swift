@@ -14,7 +14,7 @@ import ChocofordUI
 import UniformTypeIdentifiers
 
 final class AppPreference: ObservableObject {
-    enum SidebarMode: Sendable {
+    enum SidebarMode: Hashable, Sendable {
         case all
         case filesOnly
     }

@@ -417,6 +417,13 @@ extension ExcalidrawCore {
             "window.excalidrawZHelper.togglePencilInterationMode(\(mode.rawValue)); 0;"
         )
     }
+    @MainActor
+    public func loadImageToExcalidrawCanvas(imageData: Data, type: String) async throws {
+        var buffer = [UInt8].init(repeating: 0, count: imageData.count)
+        imageData.copyBytes(to: &buffer, count: imageData.count)
+        let buf = buffer
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.loadImageBuffer(\(buf), '\(type)'); 0;")
+    }
     
     @MainActor
     func reload() {

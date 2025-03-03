@@ -58,19 +58,26 @@ extension LocalFolder {
     
     public func withSecurityScopedURL(actions: @escaping (_ scopedURL: URL) async -> Void) throws {
         guard let scopedURL = try self.scopedURL else {
-            struct InvalidScopedURLError: Error {}
             throw InvalidScopedURLError()
         }
         guard scopedURL.startAccessingSecurityScopedResource() else {
-            struct StartAccessingSecurityScopedResourceError: LocalizedError {
-                var errorDescription: String? { "Start accessing security scoped resource failed." }
-            }
             throw StartAccessingSecurityScopedResourceError()
         }
         Task {
             defer { scopedURL.stopAccessingSecurityScopedResource() }
             await actions(scopedURL)
         }
+    }
+    @discardableResult
+    public func withSecurityScopedURL<T>(actions: @escaping (_ scopedURL: URL) async throws -> T) async throws -> T {
+        guard let scopedURL = try self.scopedURL else {
+            throw InvalidScopedURLError()
+        }
+        guard scopedURL.startAccessingSecurityScopedResource() else {
+            throw StartAccessingSecurityScopedResourceError()
+        }
+        defer { scopedURL.stopAccessingSecurityScopedResource() }
+        return try await actions(scopedURL)
     }
     
     func refreshChildren(context: NSManagedObjectContext) throws {
