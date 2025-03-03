@@ -28,24 +28,6 @@ struct SidebarToggle: View {
                 EmptyView()
             }
             .pickerStyle(.inline)
-//            Button {
-//                withAnimation { columnVisibility = .all }
-//                appPreference.sidebarMode = .all
-//            } label: {
-//                if appPreference.sidebarMode == .all && columnVisibility != .detailOnly {
-//                    Image(systemSymbol: .checkmark).font(.footnote)
-//                }
-//                Text(.localizable(.sidebarShowAll))
-//            }
-//            Button {
-//                withAnimation { columnVisibility = .all }
-//                appPreference.sidebarMode = .filesOnly
-//            } label: {
-//                if appPreference.sidebarMode == .filesOnly && columnVisibility != .detailOnly {
-//                    Image(systemSymbol: .checkmark).font(.footnote)
-//                }
-//                Text(.localizable(.sidebarShowFilesOnly))
-//            }
         } label: {
             Label("Toggle sidebar", systemSymbol: .sidebarLeading)
         } primaryAction: {
