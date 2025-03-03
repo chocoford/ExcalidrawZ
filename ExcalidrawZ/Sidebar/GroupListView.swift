@@ -47,9 +47,12 @@ struct GroupListView: View {
     @State private var isCreateICloudFolderDialogPresented = false
     @State private var isCreateLocalFolderDialogPresented = false
     
+    @State private var createGroupType: CreateGroupSheetView.CreateGroupType = .group
+    @State private var isCreateGroupDialogPresented = false
+    
     var body: some View {
         content
-            .sheet(isPresented: $isCreateICloudFolderDialogPresented) {
+            .sheet(isPresented: $isCreateGroupDialogPresented) {
                 if containerHorizontalSizeClass == .compact {
                     createFolderSheetView()
 #if os(iOS)
@@ -85,7 +88,16 @@ struct GroupListView: View {
                         databaseGroupsList()
                             .modifier(
                                 ContentHeaderCreateButtonHoverModifier(
-                                    isCreateDialogPresented: $isCreateICloudFolderDialogPresented,
+                                    isCreateDialogPresented: Binding {
+                                        isCreateGroupDialogPresented && createGroupType == .group
+                                    } set: {
+                                        if $0 {
+                                            isCreateGroupDialogPresented = true
+                                            createGroupType = .group
+                                        } else {
+                                            isCreateGroupDialogPresented = false
+                                        }
+                                    },
                                     title: "iCloud"
                                 )
                             )
@@ -114,7 +126,8 @@ struct GroupListView: View {
             
 //            HStack {
 //                Button {
-//                    showCreateFolderDialog.toggle()
+//                    isCreateGroupDialogPresented.toggle()
+//                    createGroupType = .group
 //                } label: {
 //                    Label(.localizable(.sidebarGroupListNewFolder), systemSymbol: .plusCircle)
 //                }
@@ -157,7 +170,10 @@ struct GroupListView: View {
     
     @MainActor @ViewBuilder
     private func createFolderSheetView() -> some View {
-        CreateGroupSheetView(initialName: initialNewGroupName) { name in
+        CreateGroupSheetView(
+            name: $initialNewGroupName,
+            createType: createGroupType
+        ) { name in
             Task {
                 do {
                     try await fileState.createNewGroup(
@@ -198,67 +214,6 @@ struct GroupListView: View {
             url.stopAccessingSecurityScopedResource()
         }
     }
-}
-
-struct CreateGroupSheetView: View {
-    @Environment(\.dismiss) var dismiss
-    
-    init(
-        initialName: String,
-        onCreate: @escaping (_ name: String) -> Void
-    ) {
-        self._name = State(initialValue: initialName)
-        self.onCreate = onCreate
-    }
-    
-    var onCreate: (_ name: String) -> Void
-    
-    @State private var name: String = ""
-    
-    var body: some View {
-        Form {
-            Section {
-                HStack {
-                    Text(.localizable(.sidebarGroupListCreateGroupName))
-                    TextField("", text: $name)
-                        .submitLabel(.done)
-#if os(macOS)
-                        .textFieldStyle(.roundedBorder)
-                        .onSubmit {
-                            if !name.isEmpty {
-                                onCreate(name)
-                                dismiss()
-                            }
-                        }
-#endif
-                }
-            } header: {
-                Text(.localizable(.sidebarGroupListCreateTitle))
-                    .fontWeight(.bold)
-            } footer: {
-                HStack {
-                    Spacer()
-                    Button(.localizable(.sidebarGroupListCreateButtonCancel)) { dismiss() }
-                    Button(.localizable(.sidebarGroupListCreateButtonCreate)) {
-                        onCreate(name)
-                        dismiss()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(name.isEmpty)
-                }
-            }
-//#if os(macOS)
-//            Divider()
-//#endif
-            
-        }
-        .labelsHidden()
-#if os(macOS)
-        .padding()
-#endif
-    }
-    
-
 }
 
 fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
@@ -306,6 +261,8 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
 
 
 #if DEBUG
+
+
 //struct GroupSidebarView_Previews: PreviewProvider {
 //    static var previews: some View {
 //        GroupListView(

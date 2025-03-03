@@ -11,6 +11,15 @@ import ChocofordUI
 import Sparkle
 #endif
 
+enum FolderStructureStyle: Int {
+    case disclosureGroup
+    case tree
+}
+
+private struct FolderChildren: Identifiable, Hashable {
+    var id = UUID()
+}
+
 struct GeneralSettingsView: View {
     @Environment(\.colorScheme) var colorScheme
 #if os(macOS) && !APP_STORE
@@ -21,6 +30,15 @@ struct GeneralSettingsView: View {
     @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
     @State private var isDisableBySettingsDialogPresented: Bool = false
     @State private var isRestartAlertPresented: Bool = false
+    
+    @AppStorage("FolderStructureStyle") var folderStructStyle: FolderStructureStyle = .disclosureGroup
+    
+    @State private var isDisclosureGroupUnspportedAlertPresented = false
+    struct DisclosureGroupUnspportedError: LocalizedError {
+        var errorDescription: String? {
+            "Disclosure Group Style is unavailable below macOS 13.0."
+        }
+    }
 
     var body: some View {
         if #available(macOS 14.0, *) {
@@ -66,6 +84,91 @@ struct GeneralSettingsView: View {
                 Text(.localizable(.settingsAppAppearanceName))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+        }
+        
+        // Folder structure UI
+        Section {
+            HStack {
+                Text("Folder structure style")
+                Spacer()
+                Picker("Folder structure style", selection: $folderStructStyle) {
+                    Text("Disclosure group").tag(FolderStructureStyle.disclosureGroup)
+                    Text("Tree structure").tag(FolderStructureStyle.tree)
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .fixedSize()
+                .onChange(of: folderStructStyle) { newValue in
+                    if #available(macOS 13.0, *) { } else {
+                        if newValue == .disclosureGroup {
+                            isDisclosureGroupUnspportedAlertPresented.toggle()
+                            folderStructStyle = .tree
+                        }
+                    }
+                }
+                .alert(
+                    isPresented: $isDisclosureGroupUnspportedAlertPresented,
+                    error: DisclosureGroupUnspportedError()
+                ) {
+                    
+                }
+            }
+        } footer: {
+            HStack {
+                VStack(spacing: 10) {
+                    Text("Disclosure Group Style").font(.headline)
+                    VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 4) {
+                                Image(systemSymbol: .chevronDown).font(.footnote)
+                                Text("Folder")
+                            }
+                            
+                            VStack(spacing: 4) {
+                                Text("Subfolder")
+                                Text("Subfolder")
+                            }
+                            .padding(.leading, 24)
+                        }
+                        
+                        HStack(spacing: 4) {
+                            Image(systemSymbol: .chevronDown).font(.footnote).opacity(0)
+                            Text("Folder")
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxWidth: 160)
+                
+                Divider()
+                
+                VStack(spacing: 10) {
+                    let children: [FolderChildren] = [FolderChildren(), FolderChildren()]
+                    let children2: [FolderChildren] = []
+                    Text("Tree Structure Style").font(.headline)
+                    VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            TreeStructureView(children: children) {
+                                Text("Folder")
+                            } childView: { child in
+                                TreeStructureView(children: children2) {
+                                    Text("Subfolder")
+                                } childView: { child in
+                                    
+                                }
+                            }
+                        }
+                        TreeStructureView(children: children) {
+                            Text("Folder").padding(.vertical, 4)
+                        } childView: { _ in
+                            
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxWidth: 160)
+            }
+            .foregroundStyle(.secondary)
         }
         
 #if DEBUG

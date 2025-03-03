@@ -41,6 +41,8 @@ struct GroupInfo: Equatable {
 }
 
 struct GroupRowView: View {
+    @AppStorage("FolderStructureStyle") var folderStructStyle: FolderStructureStyle = .disclosureGroup
+
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
@@ -50,7 +52,6 @@ struct GroupRowView: View {
     var group: Group
     @FetchRequest
     private var childrenGroups: FetchedResults<Group>
-    private var lagacy: Bool
     @Binding var isExpanded: Bool
     
     /// Tap to select is move to parent view -- GroupsView
@@ -58,8 +59,7 @@ struct GroupRowView: View {
     init(
         group: Group,
         topLevelGroups: FetchedResults<Group>,
-        isExpanded: Binding<Bool>,
-        lagacy: Bool = false
+        isExpanded: Binding<Bool>
     ) {
         self.group = group
         self.topLevelGroups = topLevelGroups
@@ -69,7 +69,6 @@ struct GroupRowView: View {
             animation: .default
         )
         self._isExpanded = isExpanded
-        self.lagacy = lagacy
     }
 
     @State private var isDeleteConfirmPresented = false
@@ -128,7 +127,17 @@ struct GroupRowView: View {
 
     @MainActor @ViewBuilder
     private func groupRowView() -> some View {
-        if lagacy {
+        if folderStructStyle == .disclosureGroup {
+            HStack {
+                Label {
+                    Text(group.name ?? "Untitled").lineLimit(1)
+                } icon: {
+                    groupIcon
+                }
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        } else {
             Button {
                 fileState.currentGroup = group
             } label: {
@@ -143,16 +152,6 @@ struct GroupRowView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(ListButtonStyle(selected: isSelected))
-        } else {
-            HStack {
-                Label {
-                    Text(group.name ?? "Untitled").lineLimit(1)
-                } icon: {
-                    groupIcon
-                }
-                Spacer()
-            }
-            .contentShape(Rectangle())
         }
     }
     
@@ -188,17 +187,19 @@ struct GroupRowView: View {
                 }
             }
             
-            if #available(macOS 13.0, *), group.groupType != .trash {
+            if group.groupType != .trash {
                 Button {
                     isCreateSubfolderSheetPresented.toggle()
                 } label: {
-                    Label("Add subfolder", systemSymbol: .folderBadgePlus)
+                    Label("Add a subgroup", systemSymbol: .folderBadgePlus)
                 }
                 
-                Button {
-                    self.expandAllSubGroups(group.objectID)
-                } label: {
-                    Label("Expand all", systemSymbol: .squareFillTextGrid1x2)
+                if folderStructStyle == .disclosureGroup {
+                    Button {
+                        self.expandAllSubGroups(group.objectID)
+                    } label: {
+                        Label("Expand all", systemSymbol: .squareFillTextGrid1x2)
+                    }
                 }
                 
                 if group.groupType != .default {
@@ -213,7 +214,7 @@ struct GroupRowView: View {
                             Divider()
                         }
                         
-                        ForEach(topLevelGroups) { group in
+                        ForEach(Array(topLevelGroups.filter({$0.groupType != .trash}))) { group in
                             GroupsMoveToMenu(group: group, sourceGroup: self.group) {
                                 performGroupMoveAction(source: self.group.objectID, target: $0)
                             }
@@ -278,7 +279,10 @@ struct GroupRowView: View {
     
     @MainActor @ViewBuilder
     private func createSubFolderSheetView() -> some View {
-        CreateGroupSheetView(initialName: initialNewGroupName) { name in
+        CreateGroupSheetView(
+            name: $initialNewGroupName,
+            createType: .group
+        ) { name in
             Task {
                 do {
                     try await fileState.createNewGroup(

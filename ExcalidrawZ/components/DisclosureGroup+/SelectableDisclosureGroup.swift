@@ -107,7 +107,6 @@ struct SelectableDisclosureGroup: View {
         .disclosureGroupStyle(.selectable)
         .onAppear {
             expandSubGroupsFlag = expandFlag
-            print("[SelectableDisclosureGroup] on appear", expandFlag)
             if expandFlag == true {
                 withAnimation(.smooth(duration: 0.2)) {
                     isExpanded.wrappedValue = true

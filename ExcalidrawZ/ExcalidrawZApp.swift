@@ -45,6 +45,11 @@ struct ExcalidrawZApp: App {
             userDriverDelegate: nil
         )
 #endif
+        
+        // Setting Folder Structure Type
+        if #available(macOS 13.0, *) {} else {
+            UserDefaults.standard.set(1, forKey: "FolderStructureStyle")
+        }
     }
     // Can not run agent in a sandboxed app.
     // let service = SMAppService.agent(plistName: "com.chocoford.excalidraw.ExcalidrawServer.agent.plist")

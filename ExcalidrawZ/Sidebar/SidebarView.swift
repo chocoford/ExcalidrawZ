@@ -29,7 +29,7 @@ struct SidebarView: View {
             if appPreference.sidebarMode == .all {
                 GroupListView()
 #if os(macOS)
-                    .frame(minWidth: 150)
+                    .frame(minWidth: 174)
 #endif
                 Divider()
                     .ignoresSafeArea(edges: .bottom)

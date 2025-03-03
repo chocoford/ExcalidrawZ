@@ -74,54 +74,40 @@ extension LocalFolder {
     }
     
     func refreshChildren(context: NSManagedObjectContext) throws {
-        guard let bookmarkData else { return }
-        var isStale: Bool = false
-        let url = try URL(
-            resolvingBookmarkData: bookmarkData,
-            options: [.withSecurityScope],
-            relativeTo: nil,
-            bookmarkDataIsStale: &isStale
-        )
-        
-        guard url.startAccessingSecurityScopedResource() else {
-            struct StartAccessingSecurityScopedResourceError: Error {}
-            throw StartAccessingSecurityScopedResourceError()
-        }
-        let contents = try FileManager.default.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: [.nameKey],
-            options: [
-                .skipsHiddenFiles,
-                .skipsSubdirectoryDescendants
-            ]
-        )
-        
-        try context.performAndWait {
-            var mismatchedFolders = self.children?.allObjects.compactMap {
-                ($0 as? LocalFolder)
-            } ?? []
-            for url in contents.filter({$0.isDirectory}) {
-                mismatchedFolders.removeAll(where: {$0.url == url})
-                if self.children?.contains(where: {
-                    if let child = $0 as? LocalFolder {
-                        return child.url == url
+        try self.withSecurityScopedURL { url in
+            let contents = try FileManager.default.contentsOfDirectory(
+                at: url,
+                includingPropertiesForKeys: []
+            )
+            try context.performAndWait {
+                var mismatchedFolders = self.children?.allObjects.compactMap {
+                    ($0 as? LocalFolder)
+                } ?? []
+                for url in contents.filter({$0.isDirectory}) {
+                    mismatchedFolders.removeAll(where: {$0.url == url})
+                    if self.children?.contains(where: {
+                        if let child = $0 as? LocalFolder {
+                            return child.url == url
+                        }
+                        return false
+                    }) == true {
+                        continue
                     }
-                    return false
-                }) == true {
-                    continue
+                    let child = try LocalFolder(url: url, context: context)
+                    self.addToChildren(child)
+                    debugPrint("[LocalFolder] new child folder: \(String(describing: child.url))")
                 }
-                let child = try LocalFolder(url: url, context: context)
-                self.addToChildren(child)
-                debugPrint("[LocalFolder] new child folder: \(String(describing: child.url))")
-            }
-
-            // remove mismatched folders
-            for folder in mismatchedFolders {
-                context.delete(folder)
-                debugPrint("[LocalFolder] remove child folder: \(String(describing: folder.url))")
+                
+                // remove mismatched folders
+                for folder in mismatchedFolders {
+                    context.delete(folder)
+                    debugPrint("[LocalFolder] remove child folder: \(String(describing: folder.url))")
+                }
+                
+                for case let subfolder as LocalFolder in self.children?.allObjects ?? [] {
+                    try subfolder.refreshChildren(context: context)
+                }
             }
         }
-        
-        url.stopAccessingSecurityScopedResource()
     }
 }
