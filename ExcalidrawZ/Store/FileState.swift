@@ -106,9 +106,19 @@ final class FileState: ObservableObject {
     }
     
     @discardableResult
-    func createNewGroup(name: String, activate: Bool = true, context: NSManagedObjectContext) async throws -> NSManagedObjectID {
+    func createNewGroup(
+        name: String,
+        activate: Bool = true,
+        parentGroupID: NSManagedObjectID? = nil,
+        context: NSManagedObjectContext
+    ) async throws -> NSManagedObjectID {
         try await context.perform {
             let group = Group(name: name, context: context)
+            
+            if let parentGroupID,
+               let parent = context.object(with: parentGroupID) as? Group {
+                group.parent = parent
+            }
             try context.save()
             if activate {
                 DispatchQueue.main.async {

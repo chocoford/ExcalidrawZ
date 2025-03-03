@@ -41,20 +41,41 @@ struct GroupInfo: Equatable {
 }
 
 struct GroupRowView: View {
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
-    var groups: [Group]
+    var topLevelGroups: FetchedResults<Group>
+    
     var group: Group
+    @FetchRequest
+    private var childrenGroups: FetchedResults<Group>
+    private var lagacy: Bool
+    @Binding var isExpanded: Bool
     
-    init(group: Group, groups: [Group]) {
+    /// Tap to select is move to parent view -- GroupsView
+    /// in system above macOS 13.0.
+    init(
+        group: Group,
+        topLevelGroups: FetchedResults<Group>,
+        isExpanded: Binding<Bool>,
+        lagacy: Bool = false
+    ) {
         self.group = group
-        self.groups = groups
+        self.topLevelGroups = topLevelGroups
+        self._childrenGroups = FetchRequest(
+            sortDescriptors: [SortDescriptor(\Group.name, order: .forward)],
+            predicate: NSPredicate(format: "parent = %@", group),
+            animation: .default
+        )
+        self._isExpanded = isExpanded
+        self.lagacy = lagacy
     }
-    
+
     @State private var isDeleteConfirmPresented = false
     @State private var isRenameSheetPresented = false
-    
+    @State private var isCreateSubfolderSheetPresented = false
+
     var isSelected: Bool { fileState.currentGroup == group }
 
     var body: some View {
@@ -72,48 +93,69 @@ struct GroupRowView: View {
             content
         }
     }
-    
+
     @MainActor @ViewBuilder
     private var content: some View {
-        Button {
-            fileState.currentGroup = group
-        } label: {
+        groupRowView()
+            .contextMenu { contextMenuView }
+            .confirmationDialog(
+                group.groupType == .trash ? LocalizedStringKey.localizable(.sidebarGroupRowDeletePermanentlyConfirmTitle) : LocalizedStringKey.localizable(.sidebarGroupRowDeleteConfirmTitle(group.name ?? "Untitled")),
+                isPresented: $isDeleteConfirmPresented
+            ) {
+                Button(
+                    group.groupType == .trash ? LocalizedStringKey.localizable(.sidebarGroupRowEmptyTrashButton) : LocalizedStringKey.localizable(.sidebarGroupRowDeleteButton),
+                    role: .destructive
+                ) {
+                    // Handle empty trash action.
+                    do {
+                        try fileState.deleteGroup(group)
+                    } catch {
+                        alertToast(error)
+                    }
+                }
+            } message: {
+                Text(.localizable(.sidebarGroupRowDeleteMessage))
+            }
+            .sheet(isPresented: $isRenameSheetPresented) {
+                RenameSheetView(text: group.name ?? "") { newName in
+                    fileState.renameGroup(group, newName: newName)
+                }
+            }
+            .sheet(isPresented: $isCreateSubfolderSheetPresented) {
+                createSubFolderSheetView()
+            }
+    }
+
+    @MainActor @ViewBuilder
+    private func groupRowView() -> some View {
+        if lagacy {
+            Button {
+                fileState.currentGroup = group
+            } label: {
+                HStack {
+                    Label {
+                        Text(group.name ?? "Untitled").lineLimit(1)
+                    } icon: {
+                        groupIcon
+                    }
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(ListButtonStyle(selected: isSelected))
+        } else {
             HStack {
-                Label { Text(group.name ?? "Untitled").lineLimit(1) } icon: { groupIcon }
+                Label {
+                    Text(group.name ?? "Untitled").lineLimit(1)
+                } icon: {
+                    groupIcon
+                }
                 Spacer()
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(ListButtonStyle(selected: isSelected))
-        .contextMenu { contextMenuView }
-        .confirmationDialog(
-            group.groupType == .trash ? LocalizedStringKey.localizable(.sidebarGroupRowDeletePermanentlyConfirmTitle) : LocalizedStringKey.localizable(.sidebarGroupRowDeleteConfirmTitle(group.name ?? "Untitled")),
-            isPresented: $isDeleteConfirmPresented
-        ) {
-            Button(
-                group.groupType == .trash ? LocalizedStringKey.localizable(.sidebarGroupRowEmptyTrashButton) : LocalizedStringKey.localizable(.sidebarGroupRowDeleteButton),
-                role: .destructive
-            ) {
-                // Handle empty trash action.
-                do {
-                    try fileState.deleteGroup(group)
-                } catch {
-                    alertToast(error)
-                }
-            }
-        } message: {
-            Text(.localizable(.sidebarGroupRowDeleteMessage))
-        }
-        .sheet(isPresented: $isRenameSheetPresented) {
-            RenameSheetView(text: group.name ?? "") { newName in
-                fileState.renameGroup(group, newName: newName)
-            }
-        }
     }
     
-}
-
-extension GroupRowView {
     @MainActor @ViewBuilder
     private var groupIcon: some View {
         switch group.groupType {
@@ -130,50 +172,72 @@ extension GroupRowView {
     @MainActor @ViewBuilder
     private var contextMenuView: some View {
         ZStack {
-            if group.groupType == .normal {
+            if group.groupType != .trash {
                 Button {
                     isRenameSheetPresented.toggle()
                 } label: {
                     if #available(macOS 13.0, *) {
-                        Label(.localizable(.sidebarGroupRowContextMenuRename), systemSymbol: .pencilLine)
+                        Label(
+                            .localizable(.sidebarGroupRowContextMenuRename),
+                            systemSymbol: .pencilLine
+                        )
                     } else {
                         // Fallback on earlier versions
                         Label(.localizable(.sidebarGroupRowContextMenuRename), systemSymbol: .pencil)
                     }
                 }
+            }
+            
+            if #available(macOS 13.0, *), group.groupType != .trash {
+                Button {
+                    isCreateSubfolderSheetPresented.toggle()
+                } label: {
+                    Label("Add subfolder", systemSymbol: .folderBadgePlus)
+                }
                 
-                Menu {
-                    ForEach(groups.filter{$0 != group}) { group in
-                        Button {
-                            mergeWithGroup(group)
-                        } label: {
-                            Text(group.name ?? "Unknown")
+                Button {
+                    self.expandAllSubGroups(group.objectID)
+                } label: {
+                    Label("Expand all", systemSymbol: .squareFillTextGrid1x2)
+                }
+                
+                if group.groupType != .default {
+                    Menu {
+                        if self.group.parent != nil {
+                            Button {
+                                performGroupMoveAction(source: self.group.objectID, target: nil)
+                            } label: {
+                                Text("Move to top level")
+                            }
+                            
+                            Divider()
                         }
+                        
+                        ForEach(topLevelGroups) { group in
+                            GroupsMoveToMenu(group: group, sourceGroup: self.group) {
+                                performGroupMoveAction(source: self.group.objectID, target: $0)
+                            }
+                        }
+                    } label: {
+                        Label(
+                            .localizable(.sidebarFileRowContextMenuMoveTo),
+                            systemSymbol: .trayAndArrowUp
+                        )
                     }
-                } label: {
-                    Label(.localizable(.sidebarGroupRowContextMenuMerge), systemSymbol: .rectangleStackBadgePlus)
                 }
-                
+            }
+            
+            if group.groupType != .default {
                 Button(role: .destructive) {
                     isDeleteConfirmPresented.toggle()
                 } label: {
-                    Label(.localizable(.sidebarGroupRowContextMenuDelete), systemSymbol: .trash)
-                }
-            } else if group.groupType == .trash {
-                Button(role: .destructive) {
-                    isDeleteConfirmPresented.toggle()
-                } label: {
-                    Label(.localizable(.sidebarGroupRowContextMenuEmptyTrash), systemSymbol: .trash)
-                }
-            } else if group.groupType == .default {
-                Button {
-                    isRenameSheetPresented.toggle()
-                } label: {
-                    if #available(macOS 13.0, *) {
-                        Label(.localizable(.sidebarGroupRowContextMenuRename), systemSymbol: .pencilLine)
+                    if group.groupType == .trash {
+                        Label(.localizable(.sidebarGroupRowContextMenuEmptyTrash), systemSymbol: .trash)
                     } else {
-                        // Fallback on earlier versions
-                        Label(.localizable(.sidebarGroupRowContextMenuRename), systemSymbol: .pencil)
+                        Label(
+                            .localizable(.sidebarGroupRowContextMenuDelete),
+                            systemSymbol: .trash
+                        )
                     }
                 }
             }
@@ -206,6 +270,179 @@ extension GroupRowView {
                 try bgContext.save()
             } catch {
                 print(error)
+            }
+        }
+    }
+    
+    @State private var initialNewGroupName: String = ""
+    
+    @MainActor @ViewBuilder
+    private func createSubFolderSheetView() -> some View {
+        CreateGroupSheetView(initialName: initialNewGroupName) { name in
+            Task {
+                do {
+                    try await fileState.createNewGroup(
+                        name: name,
+                        activate: true,
+                        parentGroupID: group.objectID,
+                        context: viewContext
+                    )
+                    withAnimation(.smooth(duration: 0.2)) {
+                        isExpanded = true
+                    }
+                } catch {
+                    alertToast(error)
+                }
+            }
+        }
+        .onAppear {
+            self.initialNewGroupName = getNextGroupName()
+        }
+    }
+    
+    func getNextGroupName() -> String {
+        let name = String(
+            localizable: .sidebarGroupListCreateNewGroupNamePlaceholder
+        )
+        var result = name
+        var i = 1
+        while childrenGroups.first(where: {$0.name == result}) != nil {
+            result = "\(name) \(i)"
+            i += 1
+        }
+        return result
+    }
+    
+    private func performGroupMoveAction(source: NSManagedObjectID, target: NSManagedObjectID?) {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        Task.detached {
+            do {
+                try await context.perform {
+                    guard let sourceGroup = context.object(with: source) as? Group else {
+                        return
+                    }
+                    let targetGroup: Group? = if let target { context.object(with: target) as? Group } else { nil }
+                    
+                    sourceGroup.parent = targetGroup
+                    try context.save()
+                    
+                    
+                    var groupIDs: [NSManagedObjectID] = []
+                    // get groupIDs
+                    do {
+                        var targetGroupID = target
+                        var parentGroup = targetGroup
+                        while true {
+                            if let targetGroupID {
+                                groupIDs.insert(targetGroupID, at: 0)
+                            }
+                            guard let parentGroupID = parentGroup?.parent?.objectID else {
+                                break
+                            }
+                            parentGroup = context.object(with: parentGroupID) as? Group
+                            targetGroupID = parentGroup?.objectID
+                        }
+                    }
+                    Task { [groupIDs] in
+                        for groupId in groupIDs {
+                            await MainActor.run {
+                                NotificationCenter.default.post(
+                                    name: .shouldExpandGroup,
+                                    object: groupId
+                                )
+                            }
+                            try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.2))
+                        }
+                        await MainActor.run {
+                            // IMPORTANT -- viewContext fetch group
+                            fileState.currentGroup = viewContext.object(with: source) as? Group
+                        }
+                    }
+                }
+            } catch {
+                await alertToast(error)
+            }
+        }
+    }
+    
+    private func expandAllSubGroups(_ groupID: NSManagedObjectID) {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        NotificationCenter.default.post(name: .shouldExpandGroup, object: groupID)
+        Task.detached {
+            do {
+                try await context.perform {
+                    guard let group = context.object(with: groupID) as? Group else { return }
+                    let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+                    fetchRequest.predicate = NSPredicate(format: "parent = %@", group)
+                    let subGroups = try context.fetch(fetchRequest)
+                    
+                    Task {
+                        for subGroup in subGroups {
+                            await MainActor.run {
+                                NotificationCenter.default.post(name: .shouldExpandGroup, object: subGroup.objectID)
+                            }
+                            
+                            try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.2))
+                            
+                            await expandAllSubGroups(subGroup.objectID)
+                        }
+                    }
+                }
+            } catch {
+                await alertToast(error)
+            }
+        }
+    }
+}
+
+
+struct GroupsMoveToMenu: View {
+    @Environment(\.alertToast) private var alertToast
+        
+    var group: Group
+    var sourceGroup: Group
+    @FetchRequest
+    private var childrenGroups: FetchedResults<Group>
+    
+    var onMove: (_ targetGroupID: NSManagedObjectID) -> Void
+    
+    init(
+        group: Group,
+        sourceGroup: Group,
+        onMove: @escaping (_ targetGroupID: NSManagedObjectID) -> Void
+    ) {
+        self.group = group
+        self.sourceGroup = sourceGroup
+        self.onMove = onMove
+        self._childrenGroups = FetchRequest(
+            sortDescriptors: [SortDescriptor(\Group.name, order: .forward)],
+            predicate: NSPredicate(format: "parent = %@", group),
+            animation: .default
+        )
+    }
+    
+    var body: some View {
+        if childrenGroups.isEmpty {
+            Button {
+                self.onMove(group.objectID)
+            } label: {
+                Text(group.name ?? "Unknown")
+            }
+        } else if sourceGroup != group {
+            Menu {
+                Button {
+                    self.onMove(group.objectID)
+                } label: {
+                    Text("Move to \"\(group.name ?? "Unknown")\"")
+                }
+                
+                Divider()
+
+                ForEach(childrenGroups) { group in
+                    GroupsMoveToMenu(group: group, sourceGroup: sourceGroup, onMove: onMove)
+                }
+            } label: {
+                Text(group.name ?? "Unknown")
             }
         }
     }

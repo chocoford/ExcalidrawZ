@@ -16,11 +16,13 @@ struct GroupListView: View {
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
+    @FetchRequest(
+        sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],
+        predicate: NSPredicate(format: "parent = nil")
+    )
     var groups: FetchedResults<Group>
     
-    init(groups: FetchedResults<Group>) {
-        self.groups = groups
-    }
+    init() { }
     
     var displayedGroups: [Group] {
         groups
@@ -65,17 +67,11 @@ struct GroupListView: View {
                     createFolderSheetView()
                 }
             }
-            .onChange(of: displayedGroups) { newValue in
-                if fileState.currentGroup == nil {
-                    fileState.currentGroup = newValue.first
-                } else if newValue.contains(where: {$0.id == fileState.currentGroup?.id}) == false {
-                    fileState.currentGroup = newValue.first
-                }
-            }
             .onAppear {
                 if fileState.currentGroup == nil {
                     fileState.currentGroup = displayedGroups.first
                 }
+                initialNewGroupName = getNextGroupName()
             }
     }
     
@@ -134,7 +130,7 @@ struct GroupListView: View {
     private func databaseGroupsList() -> some View {
         LazyVStack(alignment: .leading, spacing: 0) {
             ForEach(displayedGroups) { group in
-                GroupRowView(group: group, groups: displayedGroups)
+                GroupsView(group: group, groups: groups)
             }
         }
         .onChange(of: trashedFilesCount) { count in
@@ -148,6 +144,7 @@ struct GroupListView: View {
             } else if !displayedGroups.contains(where: {$0 == fileState.currentGroup}) {
                 fileState.currentGroup = displayedGroups.first
             }
+            initialNewGroupName = getNextGroupName()
         }
         .watchImmediately(of: fileState.currentGroup) { newValue in
             if newValue == nil && fileState.currentLocalFolder == nil {
@@ -156,9 +153,11 @@ struct GroupListView: View {
         }
     }
     
+    @State private var initialNewGroupName: String = ""
+    
     @MainActor @ViewBuilder
     private func createFolderSheetView() -> some View {
-        CreateGroupSheetView(groups: groups) { name in
+        CreateGroupSheetView(initialName: initialNewGroupName) { name in
             Task {
                 do {
                     try await fileState.createNewGroup(
@@ -171,6 +170,17 @@ struct GroupListView: View {
                 }
             }
         }
+    }
+    
+    func getNextGroupName() -> String {
+        let name = String(localizable: .sidebarGroupListCreateNewGroupNamePlaceholder)
+        var result = name
+        var i = 1
+        while groups.first(where: {$0.name == result}) != nil {
+            result = "\(name) \(i)"
+            i += 1
+        }
+        return result
     }
     
     private func importLocalFolders(urls: [URL]) throws {
@@ -193,7 +203,13 @@ struct GroupListView: View {
 struct CreateGroupSheetView: View {
     @Environment(\.dismiss) var dismiss
     
-    var groups: FetchedResults<Group>
+    init(
+        initialName: String,
+        onCreate: @escaping (_ name: String) -> Void
+    ) {
+        self._name = State(initialValue: initialName)
+        self.onCreate = onCreate
+    }
     
     var onCreate: (_ name: String) -> Void
     
@@ -240,21 +256,9 @@ struct CreateGroupSheetView: View {
 #if os(macOS)
         .padding()
 #endif
-        .onAppear {
-            self.name = getNextFileName()
-        }
     }
     
-    func getNextFileName() -> String {
-        let name = String(localizable: .sidebarGroupListCreateNewGroupNamePlaceholder)
-        var result = name
-        var i = 1
-        while groups.first(where: {$0.name == result}) != nil {
-            result = "\(name) \(i)"
-            i += 1
-        }
-        return result
-    }
+
 }
 
 fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
@@ -298,6 +302,7 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
         }
     }
 }
+
 
 
 #if DEBUG

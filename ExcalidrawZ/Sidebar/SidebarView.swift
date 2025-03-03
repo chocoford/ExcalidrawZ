@@ -16,11 +16,6 @@ struct SidebarView: View {
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var fileState: FileState
     
-    @FetchRequest(
-        sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)]
-    )
-    var groups: FetchedResults<Group>
-    
     @StateObject private var localFolderState = LocalFolderState()
 
     var body: some View {
@@ -32,7 +27,7 @@ struct SidebarView: View {
     private func twoColumnSidebar() -> some View {
         HStack(spacing: 0) {
             if appPreference.sidebarMode == .all {
-                GroupListView(groups: groups)
+                GroupListView()
 #if os(macOS)
                     .frame(minWidth: 150)
 #endif

@@ -33,7 +33,7 @@ struct BackupFoldersView: View {
     var body: some View {
         if #available(macOS 13.0, *) {
             contentView()
-                .disclosureGroupStyle(BackupFoldersDisclosureGroupStyle())
+                .disclosureGroupStyle(.leadingChevron)
         } else {
             contentView()
         }
@@ -82,52 +82,3 @@ struct BackupFoldersView: View {
     }
 }
 
-private struct DisclosureGroupDepthKey: EnvironmentKey {
-    static let defaultValue: Int = 0
-}
-
-// 2. Extend the environment with our property
-private extension EnvironmentValues {
-    var diclosureGroupDepth: Int {
-        get { self[DisclosureGroupDepthKey.self] }
-        set { self[DisclosureGroupDepthKey.self] = newValue }
-    }
-}
-
-@available(macOS 13.0, *)
-struct BackupFoldersDisclosureGroupStyle: DisclosureGroupStyle {
-    @Environment(\.diclosureGroupDepth) private var depth
-    
-    func makeBody(configuration: Configuration) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .center, spacing: 0) {
-                Color.clear
-                    .frame(width: CGFloat(depth * 8), height: 1)
-                
-                Image(systemSymbol: .chevronRight)
-                    .font(.footnote)
-                    .rotationEffect(.degrees(configuration.isExpanded ? 90 : 0))
-
-                configuration.label
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .padding(.leading, 6)
-                
-                Spacer()
-            }
-            .padding(.vertical, 3)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                withAnimation {
-                    configuration.isExpanded.toggle()
-                }
-            }
-            
-            if configuration.isExpanded {
-                configuration.content
-                    .disclosureGroupStyle(self)
-                    .environment(\.diclosureGroupDepth, depth + 1)
-            }
-        }
-    }
-}
