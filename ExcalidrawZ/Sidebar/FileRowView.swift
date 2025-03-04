@@ -237,7 +237,12 @@ struct FileRowView: View {
                         a.groupType == b.groupType && b.groupType == .normal && a.createdAt ?? .distantPast < b.createdAt ?? .distantPast
                     }
                 ForEach(groups) { group in
-                    MoveToGroupMenu(destination: group, sourceGroup: sourceGroup, allowSubgroups: true) { targetGroupID in
+                    MoveToGroupMenu(
+                        destination: group,
+                        sourceGroup: sourceGroup,
+                        childrenSortKey: \Group.name,
+                        allowSubgroups: true
+                    ) { targetGroupID in
                         moveFile(to: targetGroupID)
                     }
                 }
@@ -251,7 +256,7 @@ struct FileRowView: View {
         Task {
             do {
                 try await fileState.moveFile(
-                    file,
+                    file.objectID,
                     to: groupID,
                     context: PersistenceController.shared.container.newBackgroundContext()
                 )

@@ -493,9 +493,10 @@ final class FileState: ObservableObject {
         self.objectWillChange.send()
     }
     
-    func moveFile(_ file: File, to groupID: NSManagedObjectID, context: NSManagedObjectContext) async throws {
+    func moveFile(_ fileID: NSManagedObjectID, to groupID: NSManagedObjectID, context: NSManagedObjectContext) async throws {
         let currentFile = self.currentFile
-        guard case let group as Group = context.object(with: groupID) else { return }
+        guard case let group as Group = context.object(with: groupID),
+              case let file as File = context.object(with: fileID) else { return }
         try await context.perform {
             file.group = group
             try context.save()

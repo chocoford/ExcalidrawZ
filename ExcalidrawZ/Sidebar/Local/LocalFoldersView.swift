@@ -39,6 +39,11 @@ struct LocalFoldersView: View {
     
     var isSelected: Bool {
         fileState.currentLocalFolder == folder
+//        if let currentLocalFolder = fileState.currentLocalFolder {
+//            return currentLocalFolder.url == folder.url
+//        } else {
+//            return false
+//        }
     }
     
     @State private var isExpanded = false

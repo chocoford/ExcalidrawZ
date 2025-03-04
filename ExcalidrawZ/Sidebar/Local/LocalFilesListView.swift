@@ -28,6 +28,7 @@ struct LocalFilesListView: View {
             LazyVStack(alignment: .leading) {
                 ForEach(files, id: \.self) { file in
                     LocalFileRowView(file: file, updateFlag: updateFlags[file])
+                        .id(updateFlags[file])
                 }
             }
             .animation(.default, value: files)
@@ -56,11 +57,17 @@ struct LocalFilesListView: View {
         .onReceive(localFolderState.itemUpdatedPublisher) { path in
             handleItemUpdated(path: path)
         }
+        .onReceive(localFolderState.itemRenamedPublisher) { path in
+            handleItemRenamed(path: path)
+        }
+        .onReceive(localFolderState.refreshFilesPublisher) { _ in
+            getFolderContents()
+            fileState.currentLocalFile = files.first
+        }
     }
 
     private func getFolderContents() {
         do {
-            debugPrint("[TEST] getFolderContents...")
             try folder.withSecurityScopedURL { folderURL in
                 let contents = try FileManager.default.contentsOfDirectory(
                     at: folderURL,
@@ -77,6 +84,7 @@ struct LocalFilesListView: View {
                     [$0 : Date()]
                 }.merged()
             }
+            // debugPrint("[DEBUG] getFolderContents...", self.files)
         } catch {
             alertToast(error)
         }
@@ -111,5 +119,9 @@ struct LocalFilesListView: View {
         self.files.sort {
                 ((try? FileManager.default.attributesOfItem(atPath: $0.filePath)[FileAttributeKey.modificationDate]) as? Date) ?? .distantPast > ((try? FileManager.default.attributesOfItem(atPath: $1.filePath)[FileAttributeKey.modificationDate]) as? Date) ?? .distantPast
             }
+    }
+    
+    private func handleItemRenamed(path: String) {
+        getFolderContents()
     }
 }

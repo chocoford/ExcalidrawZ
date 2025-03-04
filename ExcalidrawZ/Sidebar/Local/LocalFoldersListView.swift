@@ -27,9 +27,9 @@ struct LocalFoldersListView: View {
     var folders: FetchedResults<LocalFolder>
     
     init() {
-        let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-        fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \LocalFolder.filePath, ascending: true)]
-        try? print("[TEST] LocalFolder", fetchRequest.execute().count)
+//        let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+//        fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \LocalFolder.filePath, ascending: true)]
+//        try? print("[TEST] LocalFolder", fetchRequest.execute().count)
     }
     
     
@@ -38,6 +38,8 @@ struct LocalFoldersListView: View {
     @State private var currentFolderMonitor: DirectoryMonitor?
     @State private var monitorTask: Task<Void, Never>?
     @State private var monitorTasks: [LocalFolder : Task<Void, Never>] = [:]
+    
+    @State private var folderUrlBeforeResignKey: URL?
 
     var body: some View {
         LazyVStack(alignment: .leading, spacing: 4) {
@@ -74,55 +76,25 @@ struct LocalFoldersListView: View {
                window == self.window {
                 do {
                     try self.refreshFoldersContent()
+                    try redirectToCurrentFolder()
                 } catch {
                     alertToast(error)
                 }
+                folderUrlBeforeResignKey = nil
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { notification in
+            if let window = notification.object as? NSWindow,
+               window == self.window {
+                self.folderUrlBeforeResignKey = fileState.currentLocalFolder?.url
             }
         }
         .watchImmediately(of: folders) { newValue in
             handleFoldersObservation(folders: newValue)
         }
-//        .onChange(of: fileState.currentLocalFolder) { newValue in
-//            currentFolderMonitor?.stop()
-//            currentFolderMonitor = nil
-//            monitorTask?.cancel()
-//            guard let folder = newValue else { return }
-//            monitorTask = Task{
-//                do {
-//                    try folder.withSecurityScopedURL { scopedURL in
-//                        for await event in FSEventAsyncStream(
-//                            path: scopedURL.filePath,
-//                            flags: FSEventStreamCreateFlags(kFSEventStreamCreateFlagFileEvents)
-//                        ) {
-//                            print("[FSEventAsyncStream]", event)
-//                            switch event {
-//                                case .itemCreated(let path, let itemType, _, _):
-//                                    break
-//                                default:
-//                                    break
-//                            }
-//                            
-//                        }
-////                    let monitor = DirectoryMonitor(url: scopedURL) { event in
-////                        do {
-////                            debugPrint("Refresing folder: \(String(describing: folder.url))")
-////                            try folder.refreshChildren(context: viewContext)
-////                        } catch {
-////                            alertToast(error)
-////                        }
-////                    }
-////                    monitor.start()
-////                    currentFolderMonitor = monitor
-//                    }
-//                } catch {
-//                    alertToast(error)
-//                }
-//            }
-//
-//            Task {
-//                 await monitorTask?.value
-//            }
-//        }
+        .onAppear {
+            folders.forEach { try? $0.refreshChildren(context: viewContext) }
+        }
     }
     
     private func refreshFoldersContent() throws {
@@ -155,14 +127,15 @@ struct LocalFoldersListView: View {
                                                 break
                                         }
                                         
-                                    // Folders Deletion triggers `itemRenamed`
+                                    // Move triggers `itemRenamed`, before&after
+                                    // so 'Move to Trash' is actually `itemRenamed`
                                     case .itemRenamed(let path, let itemType, _, _):
                                         switch itemType {
                                             case .dir:
                                                 try folder.refreshChildren(context: viewContext)
                                             case .file:
                                                 guard path.hasSuffix(".excalidraw") else { return }
-                                                localFolderState.itemRemovedPublisher.send(path)
+                                                localFolderState.itemRenamedPublisher.send(path)
                                             default:
                                                 break
                                         }
@@ -201,5 +174,15 @@ struct LocalFoldersListView: View {
             outdatedMonitor.value.cancel()
             monitorTasks.removeValue(forKey: outdatedMonitor.key)
         }
+    }
+    
+    private func redirectToCurrentFolder() throws {
+        guard fileState.currentGroup == nil, let folderUrlBeforeResignKey else { return }
+        let context = viewContext
+        let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+        let allFolders = try context.fetch(fetchRequest)
+        
+        fileState.currentLocalFolder = allFolders.first(where: {$0.url == folderUrlBeforeResignKey})
+        
     }
 }

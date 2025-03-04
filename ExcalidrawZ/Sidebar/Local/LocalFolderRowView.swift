@@ -15,6 +15,7 @@ struct LocalFolderRowView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var localFolderState: LocalFolderState
 
     var folder: LocalFolder
     var onDelete: () -> Void
@@ -32,7 +33,19 @@ struct LocalFolderRowView: View {
 
     var isSelected: Bool {
         fileState.currentLocalFolder == folder
+//        if let currentLocalFolder = fileState.currentLocalFolder {
+//            return currentLocalFolder.url == folder.url
+//        } else {
+//            return false
+//        }
     }
+    
+    @FetchRequest(
+        sortDescriptors: [SortDescriptor(\.filePath, order: .forward)],
+        predicate: NSPredicate(format: "parent = nil"),
+        animation: .default
+    )
+    private var topLevelLocalFolders: FetchedResults<LocalFolder>
     
     var body: some View {
         content()
@@ -80,6 +93,16 @@ struct LocalFolderRowView: View {
             }
         }
         
+        moveLocalFileMenu()
+        
+        Button {
+            generateNewSubfolderName()
+            isCreateSubfolderPresented.toggle()
+        } label: {
+            Label("Add a subfolder", systemSymbol: .folderBadgePlus)
+        }
+        
+        
         if let url = self.folder.url {
             Button {
                 NSPasteboard.general.clearContents()
@@ -88,20 +111,13 @@ struct LocalFolderRowView: View {
                 Label("Copy Folder Path", systemSymbol: .arrowRightDocOnClipboard)
                     .foregroundStyle(.red)
             }
-        
+
             Button {
                 NSWorkspace.shared.activateFileViewerSelecting([url])
             } label: {
                 Label("Reveal in Finder", systemSymbol: .docViewfinder)
                     .foregroundStyle(.red)
             }
-        }
-        
-        Button {
-            generateNewSubfolderName()
-            isCreateSubfolderPresented.toggle()
-        } label: {
-            Label("Add a subfolder", systemSymbol: .folderBadgePlus)
         }
         
         Divider()
@@ -137,6 +153,24 @@ struct LocalFolderRowView: View {
             } label: {
                 Label("Move to Trash", systemSymbol: .trash)
             }
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func moveLocalFileMenu() -> some View {
+        Menu {
+            ForEach(topLevelLocalFolders) { folder in
+                MoveToGroupMenu(
+                    destination: folder,
+                    sourceGroup: self.folder,
+                    childrenSortKey: \LocalFolder.filePath,
+                    allowSubgroups: true
+                ) { targetFolderID in
+                    moveLocalFolder(to: targetFolderID)
+                }
+            }
+        } label: {
+            Label(.localizable(.sidebarFileRowContextMenuMoveTo), systemSymbol: .trayAndArrowUp)
         }
     }
     
@@ -233,6 +267,113 @@ struct LocalFolderRowView: View {
                     let batchDeletion = NSBatchDeleteRequest(objectIDs: allSubfolders.map{$0.objectID} + [folder.objectID])
                     
                     try context.executeAndMergeChanges(using: batchDeletion)
+                    try context.save()
+                }
+            } catch {
+                await alertToast(error)
+            }
+        }
+    }
+    
+    private func moveLocalFolder(to targetFolderID: NSManagedObjectID) {
+        guard case let targetFolder as LocalFolder = viewContext.object(with: targetFolderID),
+              let targetURL = targetFolder.url,
+              let sourceURL = self.folder.url else { return }
+        do {
+            let isSelected = self.isSelected
+            try self.folder.withSecurityScopedURL { sourceURL in
+                let newURL: URL = targetURL.appendingPathComponent(
+                    sourceURL.lastPathComponent,
+                    conformingTo: .directory
+                )
+                // find all files in sourceURL...
+                guard let enumerator = FileManager.default.enumerator(
+                    at: sourceURL,
+                    includingPropertiesForKeys: []
+                ) else {
+                    return
+                }
+                
+                for case let file as URL in enumerator {
+                    // get the changed folder
+                    let relativePath = file.filePath.suffix(from: sourceURL.filePath.endIndex)
+                    let fileNewURL = if #available(macOS 13.0, *) {
+                        newURL.appending(path: relativePath)
+                    } else {
+                        newURL.appendingPathComponent(String(relativePath))
+                    }
+                    
+                    // Update local file ID mapping
+                    ExcalidrawFile.localFileURLIDMapping[fileNewURL] = ExcalidrawFile.localFileURLIDMapping[file]
+                    ExcalidrawFile.localFileURLIDMapping[file] = nil
+                    
+                    // Also update checkpoints
+                    updateCheckpoints(oldURL: file, newURL: fileNewURL)
+                }
+            }
+            
+            try targetFolder.withSecurityScopedURL { taretURL in
+                let newURL = taretURL.appendingPathComponent(
+                    sourceURL.lastPathComponent,
+                    conformingTo: .directory
+                )
+                let fileCoordinator = NSFileCoordinator()
+                fileCoordinator.coordinate(writingItemAt: taretURL, options: .forMoving, error: nil) { url in
+                    do {
+                        try FileManager.default.moveItem(
+                            at: sourceURL,
+                            to: newURL
+                        )
+                    } catch {
+                        alertToast(error)
+                    }
+                }
+                
+                // update LocalFolder
+                Task {
+                    do {
+                        try await viewContext.perform {
+                            guard case let folder as LocalFolder = viewContext.object(with: self.folder.objectID) else {
+                                return
+                            }
+                            folder.url = newURL
+                            folder.filePath = newURL.filePath
+                            folder.bookmarkData = try newURL.bookmarkData(
+                                options: .withSecurityScope,
+                                includingResourceValuesForKeys: [.nameKey]
+                            )
+                            folder.parent = targetFolder
+//                            print("[DEBUG] update folder done: \(folder.objectID)")
+//                            print("[DEBUG] current folder: \(fileState.currentLocalFolder?.objectID)")
+//                            print("[DEBUG] current folder == folder? \(fileState.currentLocalFolder == folder)")
+                            try viewContext.save()
+                        }
+                    } catch {
+                        alertToast(error)
+                    }
+                }
+                
+                if isSelected {
+                    DispatchQueue.main.async {
+                        localFolderState.objectWillChange.send()
+                        localFolderState.refreshFilesPublisher.send()
+                    }
+                }
+            }
+        } catch {
+            alertToast(error)
+        }
+    }
+    
+    private func updateCheckpoints(oldURL: URL, newURL: URL) {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        Task.detached {
+            do {
+                try await context.perform {
+                    let fetchRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
+                    fetchRequest.predicate = NSPredicate(format: "url = %@", oldURL as NSURL)
+                    let checkpoints = try context.fetch(fetchRequest)
+                    checkpoints.forEach { $0.url = newURL }
                     try context.save()
                 }
             } catch {

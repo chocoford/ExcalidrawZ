@@ -10,7 +10,7 @@ import SwiftUI
 import ChocofordUI
 
 struct LocalFileRowView: View {
-    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject var fileState: FileState
     
@@ -22,21 +22,18 @@ struct LocalFileRowView: View {
         self.updateFlag = updateFlag
     }
     
-    var modifiedDate: Date {
-        do {
-            let attributes = try FileManager.default.attributesOfItem(atPath: file.filePath)
-            if let modifiedDate = attributes[FileAttributeKey.modificationDate] as? Date {
-                return modifiedDate
-            }
-        } catch {
-            print(error)
-        }
-        
-        return Date.distantPast
-    }
+    @State private var modifiedDate: Date = .distantPast
     
     @State private var isRenameSheetPresented = false
     @State private var isDeleteConfirmationDialogPresented = false
+    
+    
+    @FetchRequest(
+        sortDescriptors: [SortDescriptor(\.filePath, order: .forward)],
+        predicate: NSPredicate(format: "parent = nil"),
+        animation: .default
+    )
+    private var topLevelLocalFolders: FetchedResults<LocalFolder>
     
     var body: some View {
         Button {
@@ -73,27 +70,15 @@ struct LocalFileRowView: View {
                 renameFile(newName: newName)
             }
         )
-//        .confirmationDialog(
-//            "Are you sure to delete the file?",
-//            isPresented: $isDeleteConfirmationDialogPresented,
-//            titleVisibility: .automatic
-//        ) {
-//            Button(role: .destructive) {
-//                do {
-//                    if let folder = fileState.currentLocalFolder {
-//                        try folder.withSecurityScopedURL { _ in
-//                            try FileManager.default.removeItem(at: file)
-//                        }
-//                    }
-//                } catch {
-//                    alertToast(error)
-//                }
-//            } label: {
-//                Text("Confirm")
-//            }
-//        } message: {
-//            Text("You can not revert this changes")
-//        }
+        .onChange(of: file) { newValue in
+            updateModifiedDate()
+        }
+        .onChange(of: updateFlag) { _ in
+            updateModifiedDate()
+        }
+        .onAppear {
+            updateModifiedDate()
+        }
     }
     
     @MainActor @ViewBuilder
@@ -141,6 +126,8 @@ struct LocalFileRowView: View {
                 .foregroundStyle(.red)
         }
 
+        moveLocalFileMenu()
+        
         Button {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(self.file.filePath, forType: .string)
@@ -190,6 +177,26 @@ struct LocalFileRowView: View {
         }
     }
     
+    @MainActor @ViewBuilder
+    private func moveLocalFileMenu() -> some View {
+        if let currentLocalFolder = fileState.currentLocalFolder {
+            Menu {
+                ForEach(topLevelLocalFolders) { folder in
+                    MoveToGroupMenu(
+                        destination: folder,
+                        sourceGroup: currentLocalFolder,
+                        childrenSortKey: \LocalFolder.filePath,
+                        allowSubgroups: true
+                    ) { targetFolderID in
+                        moveLocalFile(to: targetFolderID)
+                    }
+                }
+            } label: {
+                Label(.localizable(.sidebarFileRowContextMenuMoveTo), systemSymbol: .trayAndArrowUp)
+            }
+        }
+    }
+    
     private func renameFile(newName: String) {
         do {
             if let folder = fileState.currentLocalFolder {
@@ -201,13 +208,85 @@ struct LocalFileRowView: View {
                         )
                     try FileManager.default.moveItem(at: file, to: newURL)
                     
+                    // Update local file ID mapping
                     ExcalidrawFile.localFileURLIDMapping[newURL] = ExcalidrawFile.localFileURLIDMapping[file]
                     self.fileState.currentLocalFile = newURL
                     ExcalidrawFile.localFileURLIDMapping[file] = nil
+                    
+                    // Also update checkpoints
+                    updateCheckpoints(oldURL: self.file, newURL: newURL)
                 }
             }
         } catch {
             alertToast(error)
+        }
+    }
+    
+    private func moveLocalFile(to targetFolderID: NSManagedObjectID) {
+        guard case let folder as LocalFolder = viewContext.object(with: targetFolderID) else { return }
+        do {
+            try folder.withSecurityScopedURL { scopedURL in
+                let fileCoordinator = NSFileCoordinator()
+                fileCoordinator.coordinate(writingItemAt: scopedURL, options: .forMoving, error: nil) { url in
+                    do {
+                        try FileManager.default.moveItem(
+                            at: self.file,
+                            to: url.appendingPathComponent(
+                                self.file.lastPathComponent,
+                                conformingTo: .excalidrawFile
+                            )
+                        )
+                    } catch {
+                        alertToast(error)
+                    }
+                }
+            }
+            
+            if let newURL = folder.url?.appendingPathComponent(
+                self.file.lastPathComponent,
+                conformingTo: .excalidrawFile
+            ) {
+                // Update local file ID mapping
+                ExcalidrawFile.localFileURLIDMapping[newURL] = ExcalidrawFile.localFileURLIDMapping[file]
+                ExcalidrawFile.localFileURLIDMapping[file] = nil
+                
+                // Also update checkpoints
+                updateCheckpoints(oldURL: self.file, newURL: newURL)
+            }
+        } catch {
+            alertToast(error)
+        }
+    }
+    
+    private func updateCheckpoints(oldURL: URL, newURL: URL) {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        Task.detached {
+            do {
+                let fetchRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
+                fetchRequest.predicate = NSPredicate(format: "url = %@", oldURL as NSURL)
+                let checkpoints = try context.fetch(fetchRequest)
+                checkpoints.forEach {
+                    $0.url = newURL
+                }
+                try context.save()
+            } catch {
+                await alertToast(error)
+            }
+        }
+    }
+    
+    private func updateModifiedDate() {
+        self.modifiedDate = .distantPast
+        do {
+            let attributes = try FileManager.default.attributesOfItem(atPath: file.filePath)
+            if let modifiedDate = attributes[FileAttributeKey.modificationDate] as? Date {
+                self.modifiedDate = modifiedDate
+            }
+        } catch {
+            print(error)
+            DispatchQueue.main.async {
+                alertToast(error)
+            }
         }
     }
 }

@@ -68,8 +68,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-com.apple.CoreData.Logging.stderr 1"
-            isEnabled = "NO">
+            argument = "-com.apple.CoreData.Logging.stderr 0"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <StoreKitConfigurationFileReference
