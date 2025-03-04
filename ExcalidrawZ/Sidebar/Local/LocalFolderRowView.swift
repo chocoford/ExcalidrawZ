@@ -12,7 +12,7 @@ import ChocofordUI
 struct LocalFolderRowView: View {
     @AppStorage("FolderStructureStyle") var folderStructStyle: FolderStructureStyle = .disclosureGroup
 
-    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
 
@@ -72,7 +72,7 @@ struct LocalFolderRowView: View {
     
     @MainActor @ViewBuilder
     private func contextMenu() -> some View {
-        if folderStructStyle == .disclosureGroup {
+        if folderStructStyle == .disclosureGroup, folder.children?.allObjects.isEmpty == false {
             Button {
                 self.expandAllSubFolders(folder.objectID)
             } label: {
@@ -80,23 +80,39 @@ struct LocalFolderRowView: View {
             }
         }
         
+        if let url = self.folder.url {
+            Button {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(url.filePath, forType: .string)
+            } label: {
+                Label("Copy Folder Path", systemSymbol: .arrowRightDocOnClipboard)
+                    .foregroundStyle(.red)
+            }
+        
+            Button {
+                NSWorkspace.shared.activateFileViewerSelecting([url])
+            } label: {
+                Label("Reveal in Finder", systemSymbol: .docViewfinder)
+                    .foregroundStyle(.red)
+            }
+        }
+        
+        Button {
+            generateNewSubfolderName()
+            isCreateSubfolderPresented.toggle()
+        } label: {
+            Label("Add a subfolder", systemSymbol: .folderBadgePlus)
+        }
+        
+        Divider()
+        
         if folder.parent == nil {
             Button(role: .destructive) {
-                Task {
-                    await managedObjectContext.perform {
-                        managedObjectContext.delete(folder)
-                    }
-                }
+                removeObservation()
             } label: {
                 Label("Remove Observation", systemSymbol: .trash)
             }
         } else {
-            Button {
-                generateNewSubfolderName()
-                isCreateSubfolderPresented.toggle()
-            } label: {
-                Label("Add a subfolder", systemSymbol: .folderBadgePlus)
-            }
             
             Button(role: .destructive) {
                 do {
@@ -191,6 +207,37 @@ struct LocalFolderRowView: View {
             }
         } catch {
             alertToast(error)
+        }
+    }
+    
+    private func removeObservation() {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        let folderID = folder.objectID
+        Task.detached {
+            do {
+                try await context.perform {
+                    guard case let folder as LocalFolder = context.object(with: folderID) else { return }
+                    // also should delete the subfolders...
+                    var allSubfolders: [LocalFolder] = []
+                    var fetchIndex = -1
+                    var parent = folder
+                    while fetchIndex < allSubfolders.count {
+                        if fetchIndex > -1 {
+                            parent = allSubfolders[fetchIndex]
+                        }
+                        let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                        fetchRequest.predicate = NSPredicate(format: "parent = %@", parent)
+                        try allSubfolders.append(contentsOf: context.fetch(fetchRequest))
+                        fetchIndex += 1
+                    }
+                    let batchDeletion = NSBatchDeleteRequest(objectIDs: allSubfolders.map{$0.objectID} + [folder.objectID])
+                    
+                    try context.executeAndMergeChanges(using: batchDeletion)
+                    try context.save()
+                }
+            } catch {
+                await alertToast(error)
+            }
         }
     }
 }

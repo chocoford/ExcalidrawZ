@@ -87,9 +87,10 @@ extension LocalFolder {
                 includingPropertiesForKeys: []
             )
             try context.performAndWait {
-                var mismatchedFolders = self.children?.allObjects.compactMap {
-                    ($0 as? LocalFolder)
-                } ?? []
+                let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                fetchRequest.predicate = NSPredicate(format: "parent = %@", self)
+                let childeren = try context.fetch(fetchRequest)
+                var mismatchedFolders = childeren
                 for url in contents.filter({$0.isDirectory}) {
                     mismatchedFolders.removeAll(where: {$0.url == url})
                     if self.children?.contains(where: {
