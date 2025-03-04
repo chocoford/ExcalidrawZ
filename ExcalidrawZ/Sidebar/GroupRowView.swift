@@ -215,7 +215,7 @@ struct GroupRowView: View {
                         }
                         
                         ForEach(Array(topLevelGroups.filter({$0.groupType != .trash}))) { group in
-                            GroupsMoveToMenu(group: group, sourceGroup: self.group) {
+                            MoveToGroupMenu(destination: group, sourceGroup: self.group) {
                                 performGroupMoveAction(source: self.group.objectID, target: $0)
                             }
                         }
@@ -400,23 +400,26 @@ struct GroupRowView: View {
 }
 
 
-struct GroupsMoveToMenu: View {
+struct MoveToGroupMenu: View {
     @Environment(\.alertToast) private var alertToast
         
     var group: Group
     var sourceGroup: Group
+    var allowSubgroups: Bool
     @FetchRequest
     private var childrenGroups: FetchedResults<Group>
     
     var onMove: (_ targetGroupID: NSManagedObjectID) -> Void
     
     init(
-        group: Group,
+        destination group: Group,
         sourceGroup: Group,
+        allowSubgroups: Bool = false,
         onMove: @escaping (_ targetGroupID: NSManagedObjectID) -> Void
     ) {
         self.group = group
         self.sourceGroup = sourceGroup
+        self.allowSubgroups = allowSubgroups
         self.onMove = onMove
         self._childrenGroups = FetchRequest(
             sortDescriptors: [SortDescriptor(\Group.name, order: .forward)],
@@ -432,18 +435,19 @@ struct GroupsMoveToMenu: View {
             } label: {
                 Text(group.name ?? "Unknown")
             }
-        } else if sourceGroup != group {
+        } else if sourceGroup != group || allowSubgroups {
             Menu {
-                Button {
-                    self.onMove(group.objectID)
-                } label: {
-                    Text("Move to \"\(group.name ?? "Unknown")\"")
+                if sourceGroup != group {
+                    Button {
+                        self.onMove(group.objectID)
+                    } label: {
+                        Text("Move to \"\(group.name ?? "Unknown")\"")
+                    }
+                    
+                    Divider()
                 }
-                
-                Divider()
-
                 ForEach(childrenGroups) { group in
-                    GroupsMoveToMenu(group: group, sourceGroup: sourceGroup, onMove: onMove)
+                    MoveToGroupMenu(destination: group, sourceGroup: sourceGroup, onMove: onMove)
                 }
             } label: {
                 Text(group.name ?? "Unknown")

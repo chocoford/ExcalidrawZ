@@ -24,6 +24,8 @@
 		3963A07E2C6C7EAA00472AE7 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
 		3965F2102D6F60170065A8C8 /* FSEventsWrapper in Frameworks */ = {isa = PBXBuildFile; productRef = 3965F20F2D6F60170065A8C8 /* FSEventsWrapper */; };
 		3965F2122D6F60330065A8C8 /* FSEventsWrapper in Frameworks */ = {isa = PBXBuildFile; productRef = 3965F2112D6F60330065A8C8 /* FSEventsWrapper */; };
+		3965F3772D76B4EC0065A8C8 /* MathJaxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3965F3762D76B4EC0065A8C8 /* MathJaxSwift */; };
+		3965F3792D76B5090065A8C8 /* MathJaxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3965F3782D76B5090065A8C8 /* MathJaxSwift */; };
 		396661302C665D4300F863BC /* excalidraw-latest in Resources */ = {isa = PBXBuildFile; fileRef = 3966612F2C665D3E00F863BC /* excalidraw-latest */; };
 		3966623F2C666EC600F863BC /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = 3966623E2C666EC600F863BC /* FlyingFox */; };
 		3976C4D62C8789F60037D3AF /* overwrite_console.js in Resources */ = {isa = PBXBuildFile; fileRef = 3976C4D52C8789F60037D3AF /* overwrite_console.js */; };
@@ -261,6 +263,7 @@
 			files = (
 				39E4A9C02D410437002BF98C /* ChocofordUI in Frameworks */,
 				39E4A9BF2D410437002BF98C /* ChocofordEssentials in Frameworks */,
+				3965F3792D76B5090065A8C8 /* MathJaxSwift in Frameworks */,
 				39DC11BC2C9195F60037C4AE /* ChocofordUI in Frameworks */,
 				398F14552CF738ED0061CCF9 /* SwiftyAlert in Frameworks */,
 				39DC11BB2C9195F60037C4AE /* ChocofordEssentials in Frameworks */,
@@ -281,6 +284,7 @@
 				39E4A9C62D410437002BF98C /* ChocofordUI in Frameworks */,
 				39E4A9C52D410437002BF98C /* ChocofordEssentials in Frameworks */,
 				39E4A9C42D410437002BF98C /* ChocofordUI in Frameworks */,
+				3965F3772D76B4EC0065A8C8 /* MathJaxSwift in Frameworks */,
 				39E4A9C32D410437002BF98C /* ChocofordEssentials in Frameworks */,
 				39E4A9C22D410437002BF98C /* ChocofordUI in Frameworks */,
 				39E4A9C12D410437002BF98C /* ChocofordEssentials in Frameworks */,
@@ -463,6 +467,7 @@
 				39BE12F02CB7DD97006781D5 /* Zlib */,
 				398F14542CF738ED0061CCF9 /* SwiftyAlert */,
 				3965F2112D6F60330065A8C8 /* FSEventsWrapper */,
+				3965F3782D76B5090065A8C8 /* MathJaxSwift */,
 			);
 			productName = ExcaliDrawZ;
 			productReference = 3963A0822C6C7EAA00472AE7 /* ExcalidrawZ.app */;
@@ -516,6 +521,7 @@
 				398F144C2CF7379C0061CCF9 /* ChocofordUI */,
 				398F14522CF738DB0061CCF9 /* SwiftyAlert */,
 				3965F20F2D6F60170065A8C8 /* FSEventsWrapper */,
+				3965F3762D76B4EC0065A8C8 /* MathJaxSwift */,
 			);
 			productName = ExcaliDrawZ;
 			productReference = 397E4653295838CF003B824B /* ExcalidrawZ.app */;
@@ -637,6 +643,7 @@
 				398F14492CF7379C0061CCF9 /* XCRemoteSwiftPackageReference "ChocofordKit" */,
 				398F14512CF738DB0061CCF9 /* XCRemoteSwiftPackageReference "SwiftyAlert" */,
 				3965F20E2D6F60170065A8C8 /* XCRemoteSwiftPackageReference "FSEventsWrapper" */,
+				3965F3752D76B4EC0065A8C8 /* XCRemoteSwiftPackageReference "MathJaxSwift" */,
 			);
 			productRefGroup = 397E4654295838CF003B824B /* Products */;
 			projectDirPath = "";
@@ -1581,6 +1588,14 @@
 				minimumVersion = 2.1.0;
 			};
 		};
+		3965F3752D76B4EC0065A8C8 /* XCRemoteSwiftPackageReference "MathJaxSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/colinc86/MathJaxSwift.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		3966623D2C666EC600F863BC /* XCRemoteSwiftPackageReference "FlyingFox" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/swhitty/FlyingFox.git";
@@ -1679,6 +1694,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3965F20E2D6F60170065A8C8 /* XCRemoteSwiftPackageReference "FSEventsWrapper" */;
 			productName = FSEventsWrapper;
+		};
+		3965F3762D76B4EC0065A8C8 /* MathJaxSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3965F3752D76B4EC0065A8C8 /* XCRemoteSwiftPackageReference "MathJaxSwift" */;
+			productName = MathJaxSwift;
+		};
+		3965F3782D76B5090065A8C8 /* MathJaxSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3965F3752D76B4EC0065A8C8 /* XCRemoteSwiftPackageReference "MathJaxSwift" */;
+			productName = MathJaxSwift;
 		};
 		3966623E2C666EC600F863BC /* FlyingFox */ = {
 			isa = XCSwiftPackageProductDependency;

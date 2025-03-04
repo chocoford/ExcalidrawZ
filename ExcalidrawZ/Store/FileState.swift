@@ -493,13 +493,20 @@ final class FileState: ObservableObject {
         self.objectWillChange.send()
     }
     
-    func moveFile(_ file: File, to group: Group) {
-        file.group = group
-        if file == currentFile {
-            currentGroup = group
-            currentFile = file
+    func moveFile(_ file: File, to groupID: NSManagedObjectID, context: NSManagedObjectContext) async throws {
+        let currentFile = self.currentFile
+        guard case let group as Group = context.object(with: groupID) else { return }
+        try await context.perform {
+            file.group = group
+            try context.save()
         }
-        PersistenceController.shared.save()
+        
+        if file == currentFile {
+            await MainActor.run {
+                self.currentGroup = group
+                self.currentFile = file
+            }
+        }
     }
     
     @discardableResult

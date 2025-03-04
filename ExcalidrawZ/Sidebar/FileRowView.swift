@@ -82,16 +82,19 @@ struct FileRowView: View {
     
     var file: File
     @Binding var fileIDToBeRenamed: NSManagedObjectID?
+    
+    @FetchRequest(
+        sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],
+        predicate: NSPredicate(format: "parent = nil"),
+        animation: .default
+    )
+    var topLevelGroups: FetchedResults<Group>
         
     init(file: File, fileIDToBeRenamed: Binding<NSManagedObjectID?>) {
         self.file = file
         self._fileIDToBeRenamed = fileIDToBeRenamed
     }
     
-    @FetchRequest(sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)])
-    var groups: FetchedResults<Group>
-    
-//    @State private var renameMode: Bool = false
     @State private var showPermanentlyDeleteAlert: Bool = false
     @State private var isHovered = false
     
@@ -163,26 +166,7 @@ struct FileRowView: View {
                 Label(.localizable(.sidebarFileRowContextMenuDuplicate), systemSymbol: .docOnDoc)
             }
              
-            if groups.filter({ $0.groupType != .trash }).count > 1 {
-                Menu {
-                    let groups: [Group] = groups
-                        .filter{ $0.groupType != .trash }
-                        .sorted { a, b in
-                            a.groupType == .default && b.groupType != .default ||
-                            a.groupType == b.groupType && b.groupType == .normal && a.createdAt ?? .distantPast < b.createdAt ?? .distantPast
-                        }
-                    ForEach(groups) { group in
-                        Button {
-                            fileState.moveFile(file, to: group)
-                        } label: {
-                            Text(group.name ?? "unknown")
-                        }
-                        .disabled(group.id == file.group?.id)
-                    }
-                } label: {
-                    Label(.localizable(.sidebarFileRowContextMenuMoveTo), systemSymbol: .trayAndArrowUp)
-                }
-            }
+            moveFileMenu()
             
             Button(role: .destructive) {
                 fileState.deleteFile(file)
@@ -240,6 +224,41 @@ struct FileRowView: View {
             .padding(.horizontal, 4)
         }
         .opacity(isHovered ? 1 : 0)
+    }
+    
+    @MainActor @ViewBuilder
+    private func moveFileMenu() -> some View {
+        if let sourceGroup = file.group {
+            Menu {
+                let groups: [Group] = topLevelGroups
+                    .filter{ $0.groupType != .trash }
+                    .sorted { a, b in
+                        a.groupType == .default && b.groupType != .default ||
+                        a.groupType == b.groupType && b.groupType == .normal && a.createdAt ?? .distantPast < b.createdAt ?? .distantPast
+                    }
+                ForEach(groups) { group in
+                    MoveToGroupMenu(destination: group, sourceGroup: sourceGroup, allowSubgroups: true) { targetGroupID in
+                        moveFile(to: targetGroupID)
+                    }
+                }
+            } label: {
+                Label(.localizable(.sidebarFileRowContextMenuMoveTo), systemSymbol: .trayAndArrowUp)
+            }
+        }
+    }
+    
+    private func moveFile(to groupID: NSManagedObjectID) {
+        Task {
+            do {
+                try await fileState.moveFile(
+                    file,
+                    to: groupID,
+                    context: PersistenceController.shared.container.newBackgroundContext()
+                )
+            } catch {
+                alertToast(error)
+            }
+        }
     }
 }
 

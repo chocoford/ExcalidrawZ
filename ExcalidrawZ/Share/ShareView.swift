@@ -178,46 +178,11 @@ struct ShareView: View {
 #if DEBUG
     @MainActor @ViewBuilder
     private func svgPreviewView(url: URL) -> some View {
-        SVGPreviewWebView(svgURL: url)
+        SVGPreviewView(svgURL: url)
     }
 #endif
 }
 
-#if canImport(AppKit)
-struct SVGPreviewWebView: NSViewRepresentable {
-    var svgURL: URL
-    
-    func makeNSView(context: Context) -> WKWebView {
-        let webView = WKWebView()
-        if #available(macOS 13.3, *) {
-            webView.isInspectable = true
-        }
-        webView.loadFileURL(svgURL, allowingReadAccessTo: svgURL.deletingLastPathComponent())
-        return webView
-    }
-    
-    func updateNSView(_ nsView: WKWebView, context: Context) {
-        
-    }
-}
-#elseif canImport(UIKit)
-struct SVGPreviewWebView: UIViewRepresentable {
-    var svgURL: URL
-    
-    func makeUIView(context: Context) -> WKWebView {
-        let webView = WKWebView()
-        if #available(iOS 16.4, *) {
-            webView.isInspectable = true
-        }
-        webView.loadFileURL(svgURL, allowingReadAccessTo: svgURL.deletingLastPathComponent())
-        return webView
-    }
-    
-    func updateUIView(_ nsView: WKWebView, context: Context) {
-        
-    }
-}
-#endif
 
 struct ShareViewLagacy: View {
     @Environment(\.dismiss) var dismiss
