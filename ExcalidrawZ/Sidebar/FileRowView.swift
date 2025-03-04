@@ -75,7 +75,7 @@ struct FileInfo: Equatable {
 }
 
 struct FileRowView: View {
-    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject var fileState: FileState
@@ -134,7 +134,7 @@ struct FileRowView: View {
             isPresented: $showPermanentlyDeleteAlert
         ) {
             Button(role: .destructive) {
-                fileState.deleteFilePermanently(file)
+                deleteFilePermanently()
             } label: {
                 Text(.localizable(.sidebarFileRowDeletePermanentlyAlertButtonConfirm))
             }
@@ -155,7 +155,7 @@ struct FileRowView: View {
             
             Button {
                 do {
-                    let newFile = try fileState.duplicateFile(file, context: managedObjectContext)
+                    let newFile = try fileState.duplicateFile(file, context: viewContext)
                     if containerHorizontalSizeClass != .compact {
                         fileState.currentFile = newFile
                     }
@@ -253,15 +253,56 @@ struct FileRowView: View {
     }
     
     private func moveFile(to groupID: NSManagedObjectID) {
-        Task {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        let fileID = file.objectID
+        let currentFile = fileState.currentFile
+        Task.detached {
             do {
-                try await fileState.moveFile(
-                    file.objectID,
-                    to: groupID,
-                    context: PersistenceController.shared.container.newBackgroundContext()
-                )
+                try await context.perform {
+                    guard case let group as Group = context.object(with: groupID),
+                          case let file as File = context.object(with: fileID) else { return }
+                    file.group = group
+                    try context.save()
+                }
+                
+                if await file == currentFile {
+                    await MainActor.run {
+                        guard case let group as Group = viewContext.object(with: groupID),
+                              case let file as File = viewContext.object(with: fileID) else { return }
+                        fileState.currentGroup = group
+                        fileState.currentFile = file
+                        
+                        fileState.expandToGroup(group.objectID)
+                    }
+                }
             } catch {
-                alertToast(error)
+                await alertToast(error)
+            }
+        }
+    }
+    
+    private func deleteFilePermanently() {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        let fileID = file.objectID
+        Task.detached {
+            do {
+                try await context.perform {
+                    guard case let file as File = context.object(with: fileID) else { return }
+                    
+                    // also delete checkpoints
+                    let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+                    checkpointsFetchRequest.predicate = NSPredicate(format: "file = %@", file)
+                    let fileCheckpoints = try context.fetch(checkpointsFetchRequest)
+                    let objectIDsToBeDeleted = fileCheckpoints.map{$0.objectID}
+                    if !objectIDsToBeDeleted.isEmpty {
+                        let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: objectIDsToBeDeleted)
+                        try context.executeAndMergeChanges(using: batchDeleteRequest)
+                    }
+                    context.delete(file)
+                    try context.save()
+                }
+            } catch {
+                await alertToast(error)
             }
         }
     }

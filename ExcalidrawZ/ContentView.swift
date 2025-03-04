@@ -89,7 +89,7 @@ struct ContentView: View {
         .environmentObject(exportState)
         .environmentObject(toolState)
         .environmentObject(layoutState)
-        .swiftyAlert()
+        .swiftyAlert(logs: true)
         .bindWindow($window)
         .containerSizeClassInjection()
         .onReceive(NotificationCenter.default.publisher(for: .shouldHandleImport)) { notification in

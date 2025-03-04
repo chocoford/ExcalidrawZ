@@ -164,7 +164,7 @@ struct LocalFolderRowView: View {
                     destination: folder,
                     sourceGroup: self.folder,
                     childrenSortKey: \LocalFolder.filePath,
-                    allowSubgroups: true
+                    allowSubgroups: false
                 ) { targetFolderID in
                     moveLocalFolder(to: targetFolderID)
                 }
@@ -343,9 +343,6 @@ struct LocalFolderRowView: View {
                                 includingResourceValuesForKeys: [.nameKey]
                             )
                             folder.parent = targetFolder
-//                            print("[DEBUG] update folder done: \(folder.objectID)")
-//                            print("[DEBUG] current folder: \(fileState.currentLocalFolder?.objectID)")
-//                            print("[DEBUG] current folder == folder? \(fileState.currentLocalFolder == folder)")
                             try viewContext.save()
                         }
                     } catch {
@@ -353,10 +350,43 @@ struct LocalFolderRowView: View {
                     }
                 }
                 
+                // Toggle refresh state
                 if isSelected {
                     DispatchQueue.main.async {
                         localFolderState.objectWillChange.send()
                         localFolderState.refreshFilesPublisher.send()
+                    }
+                }
+                
+                // auto expand
+                var localFolderIDs: [NSManagedObjectID] = []
+                do {
+                    var targetFolderID: NSManagedObjectID? = targetFolderID
+                    var parentFolder: LocalFolder? = targetFolder
+                    while true {
+                        if let targetFolderID {
+                            localFolderIDs.insert(targetFolderID, at: 0)
+                        }
+                        guard let parentFolderID = parentFolder?.parent?.objectID else {
+                            break
+                        }
+                        parentFolder = viewContext.object(with: parentFolderID) as? LocalFolder
+                        targetFolderID = parentFolder?.objectID
+                    }
+                }
+                Task { [localFolderIDs] in
+                    for localFolderID in localFolderIDs {
+                        await MainActor.run {
+                            NotificationCenter.default.post(
+                                name: .shouldExpandGroup,
+                                object: localFolderID
+                            )
+                        }
+                        try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.2))
+                    }
+                    await MainActor.run {
+                        // IMPORTANT -- viewContext fetch group
+                        fileState.currentLocalFolder = viewContext.object(with: self.folder.objectID) as? LocalFolder
                     }
                 }
             }

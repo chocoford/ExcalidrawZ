@@ -105,12 +105,7 @@ struct GroupRowView: View {
                     group.groupType == .trash ? LocalizedStringKey.localizable(.sidebarGroupRowEmptyTrashButton) : LocalizedStringKey.localizable(.sidebarGroupRowDeleteButton),
                     role: .destructive
                 ) {
-                    // Handle empty trash action.
-                    do {
-                        try fileState.deleteGroup(group)
-                    } catch {
-                        alertToast(error)
-                    }
+                   deleteGroup()
                 }
             } message: {
                 Text(.localizable(.sidebarGroupRowDeleteMessage))
@@ -323,6 +318,7 @@ struct GroupRowView: View {
     
     private func performGroupMoveAction(source: NSManagedObjectID, target: NSManagedObjectID?) {
         let context = PersistenceController.shared.container.newBackgroundContext()
+        let fileState = fileState
         Task.detached {
             do {
                 try await context.perform {
@@ -334,38 +330,13 @@ struct GroupRowView: View {
                     sourceGroup.parent = targetGroup
                     try context.save()
                     
-                    
-                    var groupIDs: [NSManagedObjectID] = []
-                    // get groupIDs
-                    do {
-                        var targetGroupID = target
-                        var parentGroup = targetGroup
-                        while true {
-                            if let targetGroupID {
-                                groupIDs.insert(targetGroupID, at: 0)
-                            }
-                            guard let parentGroupID = parentGroup?.parent?.objectID else {
-                                break
-                            }
-                            parentGroup = context.object(with: parentGroupID) as? Group
-                            targetGroupID = parentGroup?.objectID
-                        }
+                    if let target {
+                        fileState.expandToGroup(target)
                     }
-                    Task { [groupIDs] in
-                        for groupId in groupIDs {
-                            await MainActor.run {
-                                NotificationCenter.default.post(
-                                    name: .shouldExpandGroup,
-                                    object: groupId
-                                )
-                            }
-                            try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.2))
-                        }
-                        await MainActor.run {
-                            // IMPORTANT -- viewContext fetch group
-                            fileState.currentGroup = viewContext.object(with: source) as? Group
-                        }
-                    }
+                }
+                await MainActor.run {
+                    // IMPORTANT -- viewContext fetch group
+                    fileState.currentGroup = viewContext.object(with: source) as? Group
                 }
             } catch {
                 await alertToast(error)
@@ -394,6 +365,86 @@ struct GroupRowView: View {
                             
                             await expandAllSubGroups(subGroup.objectID)
                         }
+                    }
+                }
+            } catch {
+                await alertToast(error)
+            }
+        }
+    }
+    
+    private func deleteGroup() {
+        let groupID = self.group.objectID
+        Task.detached {
+            // Handle empty trash action.
+            do {
+                let context = PersistenceController.shared.container.newBackgroundContext()
+                try await context.perform {
+                    guard case let group as Group = context.object(with: groupID) else { return }
+
+                    if group.groupType == .trash {
+                        let files = try PersistenceController.shared.listTrashedFiles(context: context)
+                        for file in files {
+                            // Also delete checkpoints
+                            let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+                            checkpointsFetchRequest.predicate = NSPredicate(format: "file = %@", file)
+                            let fileCheckpoints = try context.fetch(checkpointsFetchRequest)
+                            let objectIDsToBeDeleted = fileCheckpoints.map{$0.objectID}
+                            if !objectIDsToBeDeleted.isEmpty {
+                                let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: objectIDsToBeDeleted)
+                                try context.executeAndMergeChanges(using: batchDeleteRequest)
+                            }
+                            context.delete(file)
+                            
+                        }
+                    } else {
+                        guard let defaultGroup = try PersistenceController.shared.getDefaultGroup(context: context) else {
+                            throw AppError.fileError(.notFound)
+                        }
+                        
+                        // get all subgroups' files
+                        var allFiles: [File] = []
+                        var allGroups: [Group] = [group]
+                        var groupIndex = -1
+                        var parentGroup = group
+                        while groupIndex < allGroups.count {
+                            if groupIndex >= 0 {
+                                parentGroup = allGroups[groupIndex]
+                            }
+                            
+                            let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+                            fetchRequest.predicate = NSPredicate(format: "parent = %@", parentGroup)
+                            let groups = try context.fetch(fetchRequest)
+                            allGroups.append(contentsOf: groups)
+                            
+                            let fileFetchRequest = NSFetchRequest<File>(entityName: "File")
+                            fileFetchRequest.predicate = NSPredicate(format: "group = %@", parentGroup)
+                            let files = try context.fetch(fileFetchRequest)
+                            allFiles.append(contentsOf: files)
+                            
+                            groupIndex += 1
+                        }
+                        
+                        
+                        for file in allFiles {
+                            file.inTrash = true
+                            file.deletedAt = .now
+                            file.group = defaultGroup
+                        }
+                        
+                        for group in allGroups {
+                            context.delete(group)
+                        }
+                        // Issue: Could not merge changes...
+                        // let batchDeletion = NSBatchDeleteRequest(objectIDs: allGroups.map{$0.objectID})
+                        // try context.executeAndMergeChanges(using: batchDeletion)
+                        try context.save()
+                    }
+                }
+
+                await MainActor.run {
+                    if group == fileState.currentGroup {
+                        fileState.currentGroup = nil
                     }
                 }
             } catch {

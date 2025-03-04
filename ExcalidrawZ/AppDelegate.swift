@@ -21,7 +21,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         DispatchQueue.main.async {
             do {
-                try backupFiles()
+                try backupFiles(context: PersistenceController.shared.container.viewContext)
             } catch {
                 print(error)
             }

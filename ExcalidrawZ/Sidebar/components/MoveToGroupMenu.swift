@@ -9,15 +9,22 @@ import SwiftUI
 import CoreData
 
 protocol ExcalidrawFileGroupRepresentable: NSManagedObject, NSFetchRequestResult, Identifiable {
-     var name: String? { get }
+    var name: String? { get }
+    
+    func getParent() -> Any?
 }
 
 extension Group: ExcalidrawFileGroupRepresentable {
-    
+    func getParent() -> Any? {
+        parent
+    }
 }
 extension LocalFolder: ExcalidrawFileGroupRepresentable {
     var name: String? {
         url?.lastPathComponent
+    }
+    func getParent() -> Any? {
+        parent
     }
 }
 
@@ -53,15 +60,19 @@ struct MoveToGroupMenu<Group: ExcalidrawFileGroupRepresentable>: View {
     }
     
     var body: some View {
+        let filteredChildren = childrenGroups.filter({
+            sourceGroup != $0 || allowSubgroups
+        })
+        
         if childrenGroups.isEmpty {
             Button {
                 self.onMove(group.objectID)
             } label: {
                 Text(group.name ?? "Unknown")
             }
-        } else if sourceGroup != group || allowSubgroups {
+        } else if !filteredChildren.isEmpty || (sourceGroup.getParent() as? Group != group && sourceGroup != group) {
             Menu {
-                if sourceGroup != group {
+                if sourceGroup.getParent() as? Group != group && sourceGroup != group {
                     Button {
                         self.onMove(group.objectID)
                     } label: {
@@ -70,9 +81,10 @@ struct MoveToGroupMenu<Group: ExcalidrawFileGroupRepresentable>: View {
                     
                     Divider()
                 }
-                ForEach(childrenGroups) { group in
+
+                ForEach(filteredChildren) { child in
                     MoveToGroupMenu(
-                        destination: group,
+                        destination: child,
                         sourceGroup: sourceGroup,
                         childrenSortKey: childrenSortKey,
                         onMove: onMove

@@ -26,6 +26,7 @@ extension Notification.Name {
 @main
 @MainActor
 struct ExcalidrawZApp: App {
+    @Environment(\.managedObjectContext) private var viewContext
 #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 #elseif os(iOS)
@@ -133,7 +134,7 @@ struct ExcalidrawZApp: App {
                     Text(.localizable(.menubarButtonImport))
                 }
                 Button {
-                    try? archiveAllFiles()
+                    try? archiveAllFiles(context: viewContext)
                 } label: {
                     Text(.localizable(.menubarButtonExportAll))
                 }

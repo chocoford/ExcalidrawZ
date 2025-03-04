@@ -37,7 +37,7 @@ func loadResource<T: Decodable>(_ filename: String) -> T {
 
 
 #if canImport(AppKit)
-func archiveAllFiles() throws {
+func archiveAllFiles(context: NSManagedObjectContext) throws {
     let panel = ExcalidrawOpenPanel.exportPanel
     if panel.runModal() == .OK {
         if let url = panel.url {
@@ -45,7 +45,7 @@ func archiveAllFiles() throws {
             do {
                 let exportURL = url.appendingPathComponent("ExcalidrawZ exported at \(Date.now.formatted(date: .abbreviated, time: .shortened))", conformingTo: .directory)
                 try filemanager.createDirectory(at: exportURL, withIntermediateDirectories: false)
-                try archiveAllCloudFiles(to: exportURL)
+                try archiveAllCloudFiles(to: exportURL, context: context)
             } catch {
                 print(error)
                 throw error
@@ -66,7 +66,7 @@ func getBackupsDir() throws -> URL {
     return backupsDir
 }
 
-func backupFiles() throws {
+func backupFiles(context: NSManagedObjectContext) throws {
     let fileManager = FileManager.default
     let backupsDir = try getBackupsDir()
     
@@ -82,7 +82,7 @@ func backupFiles() throws {
     do {
         print("[Backup Files] Start... \(cloudExportURL)")
         try fileManager.createDirectory(at: cloudExportURL, withIntermediateDirectories: true)
-        try archiveAllCloudFiles(to: cloudExportURL)
+        try archiveAllCloudFiles(to: cloudExportURL, context: context)
     } catch {
         print("[Backup Files] backup cloud files done, but with error: \(error)")
     }
@@ -165,9 +165,9 @@ func backupFiles() throws {
     }
 }
 
-func archiveAllCloudFiles(to url: URL) throws {
+func archiveAllCloudFiles(to url: URL, context: NSManagedObjectContext) throws {
     let filemanager = FileManager.default
-    let allFiles = try PersistenceController.shared.listAllFiles()
+    let allFiles = try PersistenceController.shared.listAllFiles(context: context)
     print("Archive all files: \(allFiles.map {[$0.key : $0.value.map{$0.name}]}.merged())")
     
     var errorDuringArchive: Error?

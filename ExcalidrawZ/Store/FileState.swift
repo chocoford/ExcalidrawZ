@@ -492,24 +492,7 @@ final class FileState: ObservableObject {
         PersistenceController.shared.save()
         self.objectWillChange.send()
     }
-    
-    func moveFile(_ fileID: NSManagedObjectID, to groupID: NSManagedObjectID, context: NSManagedObjectContext) async throws {
-        let currentFile = self.currentFile
-        guard case let group as Group = context.object(with: groupID),
-              case let file as File = context.object(with: fileID) else { return }
-        try await context.perform {
-            file.group = group
-            try context.save()
-        }
-        
-        if file == currentFile {
-            await MainActor.run {
-                self.currentGroup = group
-                self.currentFile = file
-            }
-        }
-    }
-    
+
     @discardableResult
     func duplicateFile(_ file: File, context: NSManagedObjectContext) throws -> File {
         let newFile = File(context: context)
@@ -541,35 +524,6 @@ final class FileState: ObservableObject {
         PersistenceController.shared.save()
     }
 
-    func deleteFilePermanently(_ file: File) {
-        PersistenceController.shared.container.viewContext.delete(file)
-        PersistenceController.shared.save()
-        if file == currentFile {
-            currentFile = nil
-        }
-    }
-    
-    func deleteGroup(_ group: Group) throws {
-        if group.groupType == .trash {
-            let files = try PersistenceController.shared.listTrashedFiles()
-            files.forEach { PersistenceController.shared.container.viewContext.delete($0) }
-        } else {
-            guard let defaultGroup = try PersistenceController.shared.getDefaultGroup() else { throw AppError.fileError(.notFound) }
-            let groupFiles: [File] = group.files?.allObjects as? [File] ?? []
-            for file in groupFiles {
-                file.inTrash = true
-                file.deletedAt = .now
-                file.group = defaultGroup
-            }
-            PersistenceController.shared.container.viewContext.delete(group)
-        }
-        PersistenceController.shared.save()
-        
-        if group == currentGroup {
-            currentGroup = nil
-        }
-    }
-    
     func mergeDefaultGroupAndTrashIfNeeded(context: NSManagedObjectContext) async throws {
         print("mergeDefaultGroupAndTrashIfNeeded...")
         try await context.perform {
@@ -605,6 +559,43 @@ final class FileState: ObservableObject {
                 context.delete(trash)
             }
             try context.save()
+        }
+    }
+    
+    public func expandToGroup(_ groupID: NSManagedObjectID) {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        Task.detached {
+            await context.perform {
+                guard case let targetGroup as any ExcalidrawFileGroupRepresentable = context.object(with: groupID) else { return }
+                
+                var groupIDs: [NSManagedObjectID] = []
+                // get groupIDs
+                do {
+                    var targetGroupID: NSManagedObjectID? = groupID
+                    var parentGroup: (any ExcalidrawFileGroupRepresentable)? = targetGroup
+                    while true {
+                        if let targetGroupID {
+                            groupIDs.insert(targetGroupID, at: 0)
+                        }
+                        guard let parentGroupID = (parentGroup?.getParent() as? (any ExcalidrawFileGroupRepresentable))?.objectID else {
+                            break
+                        }
+                        parentGroup = context.object(with: parentGroupID) as? (any ExcalidrawFileGroupRepresentable)
+                        targetGroupID = parentGroup?.objectID
+                    }
+                }
+                Task { [groupIDs] in
+                    for groupId in groupIDs {
+                        await MainActor.run {
+                            NotificationCenter.default.post(
+                                name: .shouldExpandGroup,
+                                object: groupId
+                            )
+                        }
+                        try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.2))
+                    }
+                }
+            }
         }
     }
 }

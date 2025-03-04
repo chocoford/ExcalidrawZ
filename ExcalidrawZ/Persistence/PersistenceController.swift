@@ -134,31 +134,31 @@ extension PersistenceController {
         fetchRequest.sortDescriptors = [.init(key: "createdAt", ascending: true)]
         return try container.viewContext.fetch(fetchRequest)
     }
-    func listFiles(in group: Group) throws -> [File] {
+    func listFiles(in group: Group, context: NSManagedObjectContext) throws -> [File] {
         if group.groupType == .trash {
-            return try listTrashedFiles()
+            return try listTrashedFiles(context: context)
         }
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
         fetchRequest.predicate = NSPredicate(format: "group == %@ AND inTrash == NO", group)
         fetchRequest.sortDescriptors = [ .init(key: "updatedAt", ascending: false),
                                          .init(key: "createdAt", ascending: false)]
-        return try container.viewContext.fetch(fetchRequest)
+        return try context.fetch(fetchRequest)
     }
-    func listTrashedFiles() throws -> [File] {
+    func listTrashedFiles(context: NSManagedObjectContext) throws -> [File] {
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
         fetchRequest.predicate = NSPredicate(format: "inTrash == YES")
         fetchRequest.sortDescriptors = [.init(key: "deletedAt", ascending: false)] 
-        return try container.viewContext.fetch(fetchRequest)
+        return try context.fetch(fetchRequest)
     }
     func findGroup(id: UUID) throws -> Group? {
         let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
         fetchRequest.predicate = NSPredicate(format: "id == %@", id.uuidString)
         return try container.viewContext.fetch(fetchRequest).first
     }
-    func getDefaultGroup() throws -> Group? {
+    func getDefaultGroup(context: NSManagedObjectContext) throws -> Group? {
         let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
         fetchRequest.predicate = NSPredicate(format: "type == %@", "default")
-        return try container.viewContext.fetch(fetchRequest).first
+        return try context.fetch(fetchRequest).first
     }
     func findFile(id: UUID) throws -> File? {
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
@@ -166,7 +166,7 @@ extension PersistenceController {
         return try container.viewContext.fetch(fetchRequest).first
     }
     
-    func listAllFiles() throws -> [String : [File]] {
+    func listAllFiles(context: NSManagedObjectContext) throws -> [String : [File]] {
         let groups = try listGroups()
         var results: [String : [File]] = [:]
         for group in groups {
@@ -177,7 +177,7 @@ extension PersistenceController {
                 newName = "\(name) (\(renameI))"
                 renameI += 1
             }
-            results[newName] = try listFiles(in: group)
+            results[newName] = try listFiles(in: group, context: context)
         }
         return results
     }
@@ -304,7 +304,7 @@ extension PersistenceController {
                     }
 #if os(macOS)
                     do {
-                        try backupFiles()
+                        try backupFiles(context: context)
                     } catch {
                         print(error)
                     }

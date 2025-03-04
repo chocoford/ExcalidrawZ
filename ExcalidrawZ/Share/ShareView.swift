@@ -53,6 +53,7 @@ struct ShareFileModifier: ViewModifier {
 
 @available(macOS 13.0, iOS 16.0, *)
 struct ShareView: View {
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
 
@@ -126,7 +127,7 @@ struct ShareView: View {
 #if os(macOS)
                     SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
                         do {
-                            try archiveAllFiles()
+                            try archiveAllFiles(context: viewContext)
                         } catch {
                             alertToast(error)
                         }
@@ -185,6 +186,7 @@ struct ShareView: View {
 
 
 struct ShareViewLagacy: View {
+    @Environment(\.managedObjectContext) var viewContext
     @Environment(\.dismiss) var dismiss
 
     @Environment(\.alertToast) var alertToast
@@ -292,7 +294,7 @@ struct ShareViewLagacy: View {
 #if os(macOS)
                 SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
                     do {
-                        try archiveAllFiles()
+                        try archiveAllFiles(context: viewContext)
                     } catch {
                         alertToast(error)
                     }

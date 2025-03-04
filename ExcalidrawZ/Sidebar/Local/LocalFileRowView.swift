@@ -147,30 +147,7 @@ struct LocalFileRowView: View {
         
         // Delete
         Button {
-            do {
-                if let folder = fileState.currentLocalFolder {
-                    try folder.withSecurityScopedURL { _ in
-                        // Item removed will be handled in `LocalFilesListView`
-                        let fileCoordinator = NSFileCoordinator()
-                        fileCoordinator.coordinate(
-                            writingItemAt: file,
-                            options: .forDeleting,
-                            error: nil
-                        ) { url in
-                            do {
-                                try FileManager.default.trashItem(
-                                    at: url,
-                                    resultingItemURL: nil
-                                )
-                            } catch {
-                                alertToast(error)
-                            }
-                        }
-                    }
-                }
-            } catch {
-                alertToast(error)
-            }
+            moveToTrash()
         } label: {
             Label("Move to Trash", systemSymbol: .trash)
                 .foregroundStyle(.red)
@@ -253,6 +230,13 @@ struct LocalFileRowView: View {
                 // Also update checkpoints
                 updateCheckpoints(oldURL: self.file, newURL: newURL)
             }
+            
+            if fileState.currentLocalFile == self.file {
+                DispatchQueue.main.async {
+                    fileState.currentLocalFolder = folder
+                    fileState.expandToGroup(folder.objectID)
+                }
+            }
         } catch {
             alertToast(error)
         }
@@ -262,13 +246,15 @@ struct LocalFileRowView: View {
         let context = PersistenceController.shared.container.newBackgroundContext()
         Task.detached {
             do {
-                let fetchRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
-                fetchRequest.predicate = NSPredicate(format: "url = %@", oldURL as NSURL)
-                let checkpoints = try context.fetch(fetchRequest)
-                checkpoints.forEach {
-                    $0.url = newURL
+                try await context.perform {
+                    let fetchRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
+                    fetchRequest.predicate = NSPredicate(format: "url = %@", oldURL as NSURL)
+                    let checkpoints = try context.fetch(fetchRequest)
+                    checkpoints.forEach {
+                        $0.url = newURL
+                    }
+                    try context.save()
                 }
-                try context.save()
             } catch {
                 await alertToast(error)
             }
@@ -287,6 +273,39 @@ struct LocalFileRowView: View {
             DispatchQueue.main.async {
                 alertToast(error)
             }
+        }
+    }
+    
+    private func moveToTrash() {
+        do {
+            if let folder = fileState.currentLocalFolder {
+                try folder.withSecurityScopedURL { _ in
+                    // Item removed will be handled in `LocalFilesListView`
+                    let fileCoordinator = NSFileCoordinator()
+                    fileCoordinator.coordinate(
+                        writingItemAt: self.file,
+                        options: .forDeleting,
+                        error: nil
+                    ) { url in
+                        do {
+                            try FileManager.default.trashItem(
+                                at: url,
+                                resultingItemURL: nil
+                            )
+                        } catch {
+                            alertToast(error)
+                        }
+                    }
+                }
+                
+                // Should change current local file...
+                let folderURL = self.file.deletingLastPathComponent()
+                let contents = try FileManager.default.contentsOfDirectory(at: folderURL, includingPropertiesForKeys: [.nameKey])
+                let file = contents.first(where: {$0.pathExtension == "excalidraw"})
+                fileState.currentLocalFile = file
+            }
+        } catch {
+            alertToast(error)
         }
     }
 }
