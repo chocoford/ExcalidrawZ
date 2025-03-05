@@ -52,6 +52,8 @@ struct MathInputSheetView: View {
     @State private var svgContent: String?
     @State private var previewSVGURL: URL?
     
+    @State private var error: Error?
+    
     var body: some View {
         VStack {
             HStack {
@@ -64,7 +66,18 @@ struct MathInputSheetView: View {
             
             Color.clear.frame(height: 100)
                 .overlay {
-                    if let previewSVGURL {
+                    if let error {
+                        ZStack {
+                            if case let error as LocalizedError = error {
+                                Text(error.errorDescription ?? error.localizedDescription)
+                            } else if let error = error as (any CustomStringConvertible)? {
+                                Text(error.description)
+                            } else {
+                                Text(error.localizedDescription)
+                            }
+                        }
+                        .foregroundStyle(.red)
+                    } else if let previewSVGURL {
                         SVGPreviewView(svgURL: previewSVGURL)
                     } else {
                         Text("Preview here")
@@ -100,6 +113,7 @@ struct MathInputSheetView: View {
     
     private func generatePreview(input: String) {
         logger.debug("[MathInputSheetView] generatePreview for \(input)")
+        self.error = nil
         do {
             let mathjax = try MathJax()
             let svg = try mathjax.tex2svg(input)
@@ -114,7 +128,7 @@ struct MathInputSheetView: View {
         }
         catch {
             logger.error("[MathInputSheetView] error: \(error)")
-            alertToast(error)
+            self.error = error
         }
     }
 }
