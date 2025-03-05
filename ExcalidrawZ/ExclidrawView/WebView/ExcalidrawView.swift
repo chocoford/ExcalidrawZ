@@ -132,8 +132,10 @@ extension ExcalidrawView {
             do {
                 if appPreference.autoInvertImage,
                    appPreference.excalidrawAppearance == .dark || colorScheme == .dark && appPreference.excalidrawAppearance == .auto {
+                    try await context.coordinator.applyAntiInvertImageSettings(payload: appPreference.antiInvertImageSettings)
                     try await context.coordinator.toggleInvertImageSwitch(autoInvert: true)
                 } else {
+                    try await context.coordinator.applyAntiInvertImageSettings(payload: appPreference.antiInvertImageSettings)
                     try await context.coordinator.toggleInvertImageSwitch(autoInvert: false)
                 }
             } catch {

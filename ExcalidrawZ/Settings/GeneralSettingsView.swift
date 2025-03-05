@@ -220,16 +220,8 @@ struct GeneralSettingsView: View {
         }
 #endif
         
-        Section {
-            Toggle(.localizable(.settingsExcalidrawPreventImageAutoInvert), isOn: $appPreference.autoInvertImage)
-        } header: {
-            if #available(macOS 14.0, *) {
-                Text(.localizable(.settingsExcalidraw))
-            } else {
-                Text(.localizable(.settingsExcalidraw))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
+        // Anti-Invert Image
+        AntiInvertImageSettingsSection()
         
 #if os(macOS) && !APP_STORE
         Section {
@@ -322,6 +314,32 @@ struct GeneralSettingsView: View {
     }
 }
 
+struct AntiInvertImageSettingsSection: View {
+    @EnvironmentObject private var appPreference: AppPreference
+    
+    var body: some View {
+        Section {
+            Toggle(.localizable(.settingsExcalidrawPreventImageAutoInvert), isOn: $appPreference.autoInvertImage)
+            // Divider()
+            VStack {
+                Toggle("PNG", isOn: $appPreference.antiInvertImageSettings.png)
+                Toggle("SVG", isOn: $appPreference.antiInvertImageSettings.svg)
+            }
+            .padding(.leading, 6)
+        } header: {
+            if #available(macOS 14.0, *) {
+                Text(.localizable(.settingsExcalidraw))
+            } else {
+                Text(.localizable(.settingsExcalidraw))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        } footer: {
+            Text("Need the precise settings for each individual file? Come to Discord and let me know!")
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
 #if DEBUG
 #Preview {
     GeneralSettingsView()
@@ -329,5 +347,16 @@ struct GeneralSettingsView: View {
 #if os(macOS) && !APP_STORE
         .environmentObject(UpdateChecker())
 #endif
+}
+
+
+#Preview {
+    if #available(macOS 13.0, *) {
+        Form {
+            AntiInvertImageSettingsSection()
+        }
+        .formStyle(.grouped)
+        .environmentObject(AppPreference())
+    }
 }
 #endif

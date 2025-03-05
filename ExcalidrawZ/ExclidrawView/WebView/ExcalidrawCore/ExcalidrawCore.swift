@@ -177,7 +177,13 @@ extension ExcalidrawCore {
         if self.webView.isLoading { return }
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleImageInvertSwitch(\(autoInvert)); 0;")
     }
-    
+    @MainActor
+    func applyAntiInvertImageSettings(payload: AntiInvertImageSettings) async throws {
+        if self.webView.isLoading { return }
+        let payload = try payload.jsonStringified()
+        // print("[applyAntiInvertImageSettings] payload: ", payload)
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleAntiInvertImageSettings(\(payload)); 0;")
+    }
     
     @MainActor
     func loadLibraryItem(item: ExcalidrawLibrary) async throws {
@@ -202,6 +208,7 @@ extension ExcalidrawCore {
         print(#function, key)
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction(\(key)); 0;")
     }
+    
     @MainActor
     func toggleToolbarAction(key: Character) async throws {
         guard !self.isLoading else { return }

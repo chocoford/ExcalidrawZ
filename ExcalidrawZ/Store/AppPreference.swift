@@ -120,4 +120,34 @@ final class AppPreference: ObservableObject {
     }
     /// Invert the inverted image in dark mode.
     @AppStorage("autoInvertImage") var autoInvertImage = true
+    @AppStorage("autoInvertImageSettings") private var autoInvertImageSettings: String = ""
+    
+    var antiInvertImageSettings: AntiInvertImageSettings {
+        get {
+            do {
+                guard let data = autoInvertImageSettings.data(using: .utf8) else {
+                    return AntiInvertImageSettings()
+                }
+                return try JSONDecoder().decode(AntiInvertImageSettings.self, from: data)
+            } catch {
+                return AntiInvertImageSettings()
+            }
+        }
+        set {
+            do {
+                let data = try JSONEncoder().encode(newValue)
+                if let string = String(data: data, encoding: .utf8) {
+                    self.autoInvertImageSettings = string
+                }
+            } catch {
+                
+            }
+        }
+    }
+}
+
+
+struct AntiInvertImageSettings: Codable {
+    var png: Bool = true
+    var svg: Bool = false
 }
