@@ -126,7 +126,7 @@ struct ContentView: View {
         .handlesExternalEvents(preferring: ["MainWindowGroup"], allowing: ["*"])
         .onOpenURL { url in
             // logger.debug("on open url: \(url, privacy: .public)")
-            if fileState.temporaryFiles.contains(where: {$0 == url}) {
+            if !fileState.temporaryFiles.contains(where: {$0 == url}) {
                 fileState.temporaryFiles.append(url)
             }
             if !fileState.isTemporaryGroupSelected || fileState.currentTemporaryFile == nil {
