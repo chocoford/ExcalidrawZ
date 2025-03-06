@@ -39,23 +39,10 @@ struct LocalFileRowView: View {
         Button {
             fileState.currentLocalFile = file
         } label: {
-            VStack(alignment: .leading) {
-                HStack {
-                    Text(file.deletingPathExtension().lastPathComponent)
-                }
-                .foregroundColor(.secondary)
-                .font(.title3)
-                .lineLimit(1)
-                .padding(.bottom, 4)
-
-                HStack {
-                    Text(modifiedDate.formatted())
-                        .font(.footnote)
-                        .layoutPriority(1)
-                    Spacer()
-                }
-            }
-            .contentShape(Rectangle())
+            FileRowLabel(
+                name: file.deletingPathExtension().lastPathComponent,
+                updatedAt: modifiedDate
+            )
         }
         .buttonStyle(ListButtonStyle(selected: fileState.currentLocalFile == file))
         .contextMenu {

@@ -43,6 +43,8 @@ struct SidebarView: View {
                     )
                 } else if let currentLocalFolder = fileState.currentLocalFolder {
                     LocalFilesListView(folder: currentLocalFolder)
+                } else if fileState.isTemporaryGroupSelected {
+                    TemporaryFileListView()
                 } else {
                     if #available(macOS 14.0, iOS 17.0, *) {
                         Text(.localizable(.sidebarFilesPlaceholder))

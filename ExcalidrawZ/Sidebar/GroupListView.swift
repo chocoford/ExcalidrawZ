@@ -84,6 +84,13 @@ struct GroupListView: View {
             ScrollView {
                 LazyVStack(spacing: 8) {
                     let spacing: CGFloat = 4
+                    // Temporary
+                    if !fileState.temporaryFiles.isEmpty {
+                        VStack(alignment: .leading, spacing: spacing) {
+                            TemporaryGroupRowView()
+                        }
+                    }
+                    // iCloud
                     VStack(alignment: .leading, spacing: spacing) {
                         databaseGroupsList()
                             .modifier(
@@ -103,6 +110,7 @@ struct GroupListView: View {
                             )
                     }
                     
+                    // Local
                     VStack(alignment: .leading, spacing: spacing) {
                         LocalFoldersListView()
                             .modifier(
@@ -160,7 +168,7 @@ struct GroupListView: View {
             initialNewGroupName = getNextGroupName()
         }
         .watchImmediately(of: fileState.currentGroup) { newValue in
-            if newValue == nil && fileState.currentLocalFolder == nil {
+            if newValue == nil && fileState.currentLocalFolder == nil && !fileState.isTemporaryGroupSelected {
                 fileState.currentGroup = displayedGroups.first
             }
         }

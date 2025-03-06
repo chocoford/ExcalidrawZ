@@ -119,17 +119,17 @@ struct FileListView: View {
                         }
                     }
                     .onChange(of: files) { newValue in
-                    if newValue.isEmpty, containerHorizontalSizeClass == .compact {
-                        do {
-                            try fileState.createNewFile(active: false, context: managedObjectContext)
-                        } catch {
-                            alertToast(error)
+                        if newValue.isEmpty, containerHorizontalSizeClass == .compact {
+                            do {
+                                try fileState.createNewFile(active: false, context: managedObjectContext)
+                            } catch {
+                                alertToast(error)
+                            }
+                        } else if !newValue.contains(where: {$0.id == fileState.currentFile?.id}),
+                                  containerHorizontalSizeClass != .compact {
+                            fileState.currentFile = newValue.first
                         }
-                    } else if !newValue.contains(where: {$0.id == fileState.currentFile?.id}),
-                              containerHorizontalSizeClass != .compact {
-                        fileState.currentFile = newValue.first
                     }
-                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .didImportToExcalidrawZ)) { notification in

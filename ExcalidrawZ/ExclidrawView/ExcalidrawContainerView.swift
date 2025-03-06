@@ -36,7 +36,6 @@ struct ExcalidrawContainerView: View {
                     return excalidrawFile
                 } catch {
                     alertToast(error)
-                    print(error)
                 }
             } else if let folder = fileState.currentLocalFolder,
                       let file = fileState.currentLocalFile,
@@ -50,7 +49,13 @@ struct ExcalidrawContainerView: View {
                     return file
                 } catch {
                     alertToast(error)
-                    print(error)
+                }
+            } else if fileState.isTemporaryGroupSelected,
+                      let file = fileState.currentTemporaryFile {
+                do {
+                    return try ExcalidrawFile(contentsOf: file)
+                } catch {
+                    alertToast(error)
                 }
             }
             return nil
@@ -69,7 +74,6 @@ struct ExcalidrawContainerView: View {
                     }
                 } catch {
                     alertToast(error)
-                    print(error)
                 }
                 fileState.updateCurrentFile(with: file)
             } else if let folder = fileState.currentLocalFolder,
@@ -87,6 +91,13 @@ struct ExcalidrawContainerView: View {
                         alertToast(error)
                     }
                 }
+            } else if fileState.isTemporaryGroupSelected,
+                      let file = fileState.currentTemporaryFile {
+//                do {
+//                    return try ExcalidrawFile(contentsOf: file)
+//                } catch {
+//                    alertToast(error)
+//                }
             }
         }
     }
@@ -229,7 +240,10 @@ struct ExcalidrawContainerView: View {
             }
         }
         .animation(.default, value: isSelectFilePlaceholderPresented)
-        .onChange(of: fileState.currentLocalFile == nil && fileState.currentFile == nil, debounce: 0.1) { newValue in
+        .onChange(
+            of: fileState.currentLocalFile == nil && fileState.currentFile == nil && fileState.currentTemporaryFile == nil,
+            debounce: 0.1
+        ) { newValue in
             isSelectFilePlaceholderPresented = newValue
         }
         .contentShape(Rectangle())

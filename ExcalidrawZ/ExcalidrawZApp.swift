@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import os.log
 #if os(macOS)
 import ServiceManagement
 #endif
@@ -61,8 +62,10 @@ struct ExcalidrawZApp: App {
 #if os(macOS) && !APP_STORE
     @StateObject private var updateChecker = UpdateChecker()
 #endif
+    
     let server = ExcalidrawServer()
-        
+    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawApp")
+    
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -75,7 +78,12 @@ struct ExcalidrawZApp: App {
 #endif
                 }
         }
-        .handlesExternalEvents(matching: Set(arrayLiteral: "MainWindowGroup"))
+        .onChange(of: scenePhase) { newValue in
+            logger.info("On scene phase changed: \(String(describing: newValue), privacy: .public)")
+        }
+        // prevent window being open by urls.
+        .handlesExternalEvents(matching: ["MainWindowGroup"])
+
 #if os(macOS) && !APP_STORE
         .commands {
             CommandGroup(after: .appInfo) {
@@ -151,7 +159,7 @@ struct ExcalidrawZApp: App {
 #endif
         
 #if os(macOS)
-        documentGroup()
+        // documentGroup()
 
         Settings {
             SettingsView()

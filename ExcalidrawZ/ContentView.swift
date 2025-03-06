@@ -9,16 +9,21 @@ import SwiftUI
 import CoreData
 import CloudKit
 import Combine
+import os.log
 
 import ChocofordUI
 import ChocofordEssentials
 import SwiftyAlert
+
+
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var managedObjectContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
+     
+    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ContentView")
     
     @State private var hideContent: Bool = false
     
@@ -35,7 +40,7 @@ struct ContentView: View {
     
     @State private var isFirstImporting: Bool?
     @State private var cloudContainerEventChangeListener: AnyCancellable?
-    
+        
     var body: some View {
         ZStack {
             if isFirstImporting == nil {
@@ -85,6 +90,7 @@ struct ContentView: View {
 #if os(iOS)
         .modifier(ApplePencilToolbarModifier())
 #endif
+        // .debugNotify()
         .environmentObject(fileState)
         .environmentObject(exportState)
         .environmentObject(toolState)
@@ -103,6 +109,29 @@ struct ContentView: View {
                         await alertToast(error)
                     }
                 }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .didOpenFromUrls)) { notification in
+            logger.debug("[DEBUG] Receive >>> didOpenFromUrls: \(String(describing: notification.object as? [URL]), privacy: .public)")
+            // guard window?.isKeyWindow == true else { return }
+            if let urls = notification.object as? [URL] {
+                fileState.temporaryFiles.append(contentsOf: urls)
+                fileState.temporaryFiles = Array(Set(fileState.temporaryFiles))
+                if !fileState.isTemporaryGroupSelected || fileState.currentTemporaryFile == nil {
+                    fileState.isTemporaryGroupSelected = true
+                    fileState.currentTemporaryFile = fileState.temporaryFiles.first
+                }
+            }
+        }
+        .handlesExternalEvents(preferring: ["MainWindowGroup"], allowing: ["*"])
+        .onOpenURL { url in
+            // logger.debug("on open url: \(url, privacy: .public)")
+            if fileState.temporaryFiles.contains(where: {$0 == url}) {
+                fileState.temporaryFiles.append(url)
+            }
+            if !fileState.isTemporaryGroupSelected || fileState.currentTemporaryFile == nil {
+                fileState.isTemporaryGroupSelected = true
+                fileState.currentTemporaryFile = fileState.temporaryFiles.first
             }
         }
         // Check if it is first launch by checking the files count.

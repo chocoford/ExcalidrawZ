@@ -15,8 +15,6 @@ struct GroupsView: View {
     @AppStorage("FolderStructureStyle") var folderStructStyle: FolderStructureStyle = .disclosureGroup
 
     @EnvironmentObject var fileState: FileState
-    
-
 
     var groups: FetchedResults<Group>
     var group: Group

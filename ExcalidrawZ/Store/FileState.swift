@@ -31,6 +31,7 @@ final class FileState: ObservableObject {
             ]
             currentLocalFolder = nil
             currentLocalFile = nil
+            isTemporaryGroupSelected = false
         }
     }
     
@@ -53,7 +54,9 @@ final class FileState: ObservableObject {
                         }
                     }
                 ]
+                currentLocalFolder = nil
                 currentLocalFile = nil
+                isTemporaryGroupSelected = false
             }
         }
     }
@@ -63,6 +66,7 @@ final class FileState: ObservableObject {
             if currentLocalFolder != nil {
                 currentFile = nil
                 currentGroup = nil
+                isTemporaryGroupSelected = false
             }
         }
     }
@@ -71,6 +75,8 @@ final class FileState: ObservableObject {
         didSet {
             if currentLocalFile != nil {
                 currentFile = nil
+                currentGroup = nil
+                isTemporaryGroupSelected = false
             }
         }
     }
@@ -78,6 +84,30 @@ final class FileState: ObservableObject {
         didSet {
             if currentLocalFileBookmarkData != nil {
                 currentFile = nil
+                currentGroup = nil
+                isTemporaryGroupSelected = false
+            }
+        }
+    }
+    
+    @Published var isTemporaryGroupSelected = false {
+        didSet {
+            if isTemporaryGroupSelected {
+                currentFile = nil
+                currentGroup = nil
+                currentLocalFolder = nil
+                currentLocalFile = nil
+            }
+        }
+    }
+    @Published var temporaryFiles: [URL] = []
+    @Published var currentTemporaryFile: URL? {
+        didSet {
+            if currentTemporaryFile != nil {
+                currentFile = nil
+                currentGroup = nil
+                currentLocalFolder = nil
+                currentLocalFile = nil
             }
         }
     }

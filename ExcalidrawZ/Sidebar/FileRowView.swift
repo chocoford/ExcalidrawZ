@@ -108,23 +108,10 @@ struct FileRowView: View {
         Button {
             fileState.currentFile = file
         } label: {
-            VStack(alignment: .leading) {
-                HStack {
-                    Text(file.name ?? "")
-                }
-                .foregroundColor(.secondary)
-                .font(.title3)
-                .lineLimit(1)
-                .padding(.bottom, 4)
-                
-                HStack {
-                    Text((file.updatedAt ?? .distantPast).formatted())
-                        .font(.footnote)
-                        .layoutPriority(1)
-                    Spacer()
-                }
-            }
-            .contentShape(Rectangle())
+            FileRowLabel(
+                name: file.name ?? "",
+                updatedAt: file.updatedAt ?? .distantPast
+            )
         }
         .onHover{ isHovered = $0 }
         .buttonStyle(ListButtonStyle(selected: isSelected))
