@@ -319,13 +319,22 @@ struct AntiInvertImageSettingsSection: View {
     
     var body: some View {
         Section {
-            Toggle(.localizable(.settingsExcalidrawPreventImageAutoInvert), isOn: $appPreference.autoInvertImage)
+            Toggle(.localizable(.settingsExcalidrawPreventImageAutoInvert), isOn: Binding {
+                appPreference.autoInvertImage
+            } set: { val in
+                withAnimation {
+                    appPreference.autoInvertImage = val
+                }
+            })
             // Divider()
-            VStack {
-                Toggle("PNG", isOn: $appPreference.antiInvertImageSettings.png)
-                Toggle("SVG", isOn: $appPreference.antiInvertImageSettings.svg)
+            if appPreference.autoInvertImage {
+                VStack {
+                    Toggle("PNG", isOn: $appPreference.antiInvertImageSettings.png)
+                    Toggle("SVG", isOn: $appPreference.antiInvertImageSettings.svg)
+                }
+                .padding(.leading, 6)
+                .disabled(!appPreference.autoInvertImage)
             }
-            .padding(.leading, 6)
         } header: {
             if #available(macOS 14.0, *) {
                 Text(.localizable(.settingsExcalidraw))
