@@ -82,7 +82,7 @@ struct ExcalidrawZApp: App {
             logger.info("On scene phase changed: \(String(describing: newValue), privacy: .public)")
         }
         // prevent window being open by urls.
-        .handlesExternalEvents(matching: ["MainWindowGroup"])
+        .handlesExternalEvents(matching: ["*"])
 
 #if os(macOS) && !APP_STORE
         .commands {

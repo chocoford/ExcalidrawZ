@@ -16,15 +16,13 @@ struct GroupsView: View {
 
     @EnvironmentObject var fileState: FileState
 
-    var groups: FetchedResults<Group>
     var group: Group
     
     @FetchRequest
     private var children: FetchedResults<Group>
     
-    init(group: Group, groups: FetchedResults<Group>) {
+    init(group: Group) {
         self.group = group
-        self.groups = groups
         let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
         fetchRequest.predicate = NSPredicate(format: "parent = %@", group)
         fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \Group.name, ascending: true)]
@@ -63,12 +61,11 @@ struct GroupsView: View {
             isExpanded: $isExpanded
         ) {
             ForEach(children) { group in
-                GroupsView(group: group, groups: groups)
+                GroupsView(group: group)
             }
         } label: {
             GroupRowView(
                 group: group,
-                topLevelGroups: groups,
                 isExpanded: $isExpanded
             )
         }
@@ -87,11 +84,10 @@ struct GroupsView: View {
         TreeStructureView(children: children, paddingLeading: 6) {
             GroupRowView(
                 group: group,
-                topLevelGroups: groups,
                 isExpanded: $isExpanded
             )
         } childView: { child in
-            GroupsView(group: child, groups: groups)
+            GroupsView(group: child)
         }
     }
 }

@@ -33,14 +33,15 @@ extension EnvironmentValues {
 }
 
 
-struct TreeStructureView<Children: RandomAccessCollection, ChildView: View>: View
-where Children.Element : Identifiable & Hashable {
+struct TreeStructureView<Children: RandomAccessCollection, ChildView: View, ID: Hashable>: View
+where Children.Element : Hashable {
     @Environment(\.treeStructureDepth) var depth
     @Environment(\.treeStructureIsLast) var isLast
     
     var root: AnyView
     var paddingLeading: CGFloat
     var children: Children
+    var childrenID: KeyPath<Children.Element, ID>
     var childView: (Children.Element) -> ChildView
     
     init<Root: View>(
@@ -48,12 +49,30 @@ where Children.Element : Identifiable & Hashable {
         paddingLeading: CGFloat = 0,
         @ViewBuilder root: () -> Root,
         @ViewBuilder childView: @escaping (Children.Element) -> ChildView
-    ) {
+    ) where Children.Element : Identifiable, ID == Children.Element.ID {
         self.children = children
+        self.childrenID = \.id
         self.paddingLeading = paddingLeading
         self.root = AnyView(root())
         self.childView = childView
     }
+    
+    
+    init<Root: View>(
+        children: Children,
+        id: KeyPath<Children.Element, ID>,
+        paddingLeading: CGFloat = 0,
+        @ViewBuilder root: () -> Root,
+        @ViewBuilder childView: @escaping (Children.Element) -> ChildView
+    ) {
+        self.children = children
+        self.childrenID = id
+        self.paddingLeading = paddingLeading
+        self.root = AnyView(root())
+        self.childView = childView
+    }
+    
+    
     
     var paddingBase: CGFloat { 14 }
     @State private var height: CGFloat = .zero
@@ -64,7 +83,7 @@ where Children.Element : Identifiable & Hashable {
                 .readHeight($height)
             
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(children) { child in
+                ForEach(children, id: childrenID) { child in
                     let isLast = child == children.last
                     
                     childView(child)

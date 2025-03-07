@@ -45,8 +45,28 @@ struct TemporaryFileRowView: View {
             )
         }
         .buttonStyle(ListButtonStyle(selected: fileState.currentTemporaryFile == file))
+        .contextMenu {
+            contextMenu()
+                .labelStyle(.titleAndIcon)
+        }
         .watchImmediately(of: file) { newValue in
             updateModifiedDate()
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func contextMenu() -> some View {
+        Button {
+            fileState.currentTemporaryFile = nil
+            fileState.temporaryFiles.removeAll(where: {$0 == file})
+            
+            if fileState.temporaryFiles.isEmpty {
+                fileState.isTemporaryGroupSelected = false
+            } else {
+                fileState.currentTemporaryFile = fileState.temporaryFiles.first
+            }
+        } label: {
+            Label("Close file", systemSymbol: .xmarkCircle)
         }
     }
     

@@ -70,8 +70,18 @@ struct GroupListView: View {
                     createFolderSheetView()
                 }
             }
+            .onChange(of: fileState.isTemporaryGroupSelected) { newValue in
+                if fileState.currentGroup == nil, !newValue, fileState.currentLocalFolder == nil {
+                    fileState.currentGroup = displayedGroups.first
+                }
+            }
+            .onChange(of: fileState.currentLocalFolder) { newValue in
+                if fileState.currentGroup == nil, !fileState.isTemporaryGroupSelected, newValue == nil {
+                    fileState.currentGroup = displayedGroups.first
+                }
+            }
             .onAppear {
-                if fileState.currentGroup == nil {
+                if fileState.currentGroup == nil, !fileState.isTemporaryGroupSelected, fileState.currentLocalFolder == nil {
                     fileState.currentGroup = displayedGroups.first
                 }
                 initialNewGroupName = getNextGroupName()
@@ -151,7 +161,7 @@ struct GroupListView: View {
     private func databaseGroupsList() -> some View {
         LazyVStack(alignment: .leading, spacing: 0) {
             ForEach(displayedGroups) { group in
-                GroupsView(group: group, groups: groups)
+                 GroupsView(group: group)
             }
         }
         .onChange(of: trashedFilesCount) { count in

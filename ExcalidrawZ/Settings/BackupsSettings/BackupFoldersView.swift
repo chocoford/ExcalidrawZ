@@ -29,43 +29,37 @@ struct BackupFoldersView: View {
     
     @State private var content: [URL] = []
     
-    
     var body: some View {
-        if #available(macOS 13.0, *) {
-            contentView()
-                .disclosureGroupStyle(.leadingChevron)
-        } else {
-            contentView()
-        }
-    }
-    
-    @MainActor @ViewBuilder
-    private func contentView() -> some View {
-        DisclosureGroup {
-            ForEach(content, id: \.self) { url in
-                if (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
-                    BackupFoldersView(selection: $selection, folder: url, depth: depth + 1)
-                } else if let name = (try? url.resourceValues(forKeys: [.nameKey]))?.name,
-                          name.hasSuffix(".excalidraw") {
-                    Button {
-                        selection = url
-                    } label: {
-                        HStack(spacing: 4) {
-                            Label(url.deletingPathExtension().lastPathComponent, systemSymbol: .doc)
-                                .symbolVariant(.fill)
-                                .padding(.leading, CGFloat(8 * depth) + 14)
-                        }
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                    }
-                    .buttonStyle(ListButtonStyle(selected: selection == url))
-                }
-            }
-        } label: {
+        TreeStructureView(children: content, id: \.self, paddingLeading: 6) {
             HStack(spacing: 4) {
                 let folderName = folder.lastPathComponent
-                Label(folderName, systemSymbol: depth == 0 ? (folderName == "Cloud" ? .cloud : (folderName == "Local" ? .externaldrive : .folder)) : .folder)
-                    .symbolVariant(.fill)
+                Label(
+                    folderName,
+                    systemSymbol: depth == 0 ? (folderName == "Cloud" ? .cloud : (folderName == "Local" ? .externaldrive : .folder)) : .folder
+                )
+                // .symbolVariant(.fill)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            }
+            .padding(.vertical, 4)
+            .padding(.leading, 6)
+        } childView: { url in
+            if (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+                BackupFoldersView(selection: $selection, folder: url, depth: depth + 1)
+            } else if let name = (try? url.resourceValues(forKeys: [.nameKey]))?.name,
+                      name.hasSuffix(".excalidraw") {
+                Button {
+                    selection = url
+                } label: {
+                    HStack(spacing: 4) {
+                        Label(url.deletingPathExtension().lastPathComponent, systemSymbol: .doc)
+                            // .symbolVariant(.fill)
+                            // .padding(.leading, CGFloat(8 * depth) + 14)
+                    }
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                }
+                .buttonStyle(ListButtonStyle(selected: selection == url))
             }
         }
         .onAppear {

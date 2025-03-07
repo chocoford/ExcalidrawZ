@@ -112,7 +112,6 @@ struct ContentView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .didOpenFromUrls)) { notification in
-            logger.debug("[DEBUG] Receive >>> didOpenFromUrls: \(String(describing: notification.object as? [URL]), privacy: .public)")
             // guard window?.isKeyWindow == true else { return }
             if let urls = notification.object as? [URL] {
                 fileState.temporaryFiles.append(contentsOf: urls)
@@ -123,7 +122,7 @@ struct ContentView: View {
                 }
             }
         }
-        .handlesExternalEvents(preferring: ["MainWindowGroup"], allowing: ["*"])
+        .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
         .onOpenURL { url in
             // logger.debug("on open url: \(url, privacy: .public)")
             if !fileState.temporaryFiles.contains(where: {$0 == url}) {

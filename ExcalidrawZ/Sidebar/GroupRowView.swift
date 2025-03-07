@@ -47,7 +47,12 @@ struct GroupRowView: View {
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
-    var topLevelGroups: FetchedResults<Group>
+    @FetchRequest(
+        sortDescriptors: [],
+        predicate: NSPredicate(format: "parent = nil"),
+        animation: .default
+    )
+    private var topLevelGroups: FetchedResults<Group>
     
     var group: Group
     @FetchRequest
@@ -58,11 +63,9 @@ struct GroupRowView: View {
     /// in system above macOS 13.0.
     init(
         group: Group,
-        topLevelGroups: FetchedResults<Group>,
         isExpanded: Binding<Bool>
     ) {
         self.group = group
-        self.topLevelGroups = topLevelGroups
         self._childrenGroups = FetchRequest(
             sortDescriptors: [SortDescriptor(\Group.name, order: .forward)],
             predicate: NSPredicate(format: "parent = %@", group),

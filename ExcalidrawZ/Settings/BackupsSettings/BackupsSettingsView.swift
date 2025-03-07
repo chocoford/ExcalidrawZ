@@ -14,7 +14,6 @@ struct BackupsSettingsView: View {
     @Environment(\.alertToast) var alertToast
     
     @State private var backups: [URL] = []
-    @State private var backupRootFolders: [URL] = []
     
     @State private var selectedBackup: URL?
     @State private var selectedBackupSize: Int = 0
@@ -25,48 +24,64 @@ struct BackupsSettingsView: View {
     
     @State private var backupToBeDeleted: URL?
     
+    enum Route: Hashable {
+        case dateList
+        case folderList
+    }
+    
+    @State private var route: Route = .dateList
+    
     var body: some View {
-        HStack {
-            ScrollView {
-                LazyVStack(spacing: 4) {
-                    ForEach(backups, id: \.self) { item in
-                        Button {
-                            selectedBackup = item
-                            selectedFile = nil
-                        } label: {
-                            Text(item.lastPathComponent)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                        }
-                        .buttonStyle(.listCell(selected: selectedBackup == item))
-                        .contextMenu {
-                            Button(role: .destructive) {
-                                backupToBeDeleted = item
-                            } label: {
-                                Label("Delete", systemSymbol: .trash)
-                                    .labelStyle(.titleAndIcon)
+        HStack(spacing: 0) {
+            ZStack {
+                switch route {
+                    case .dateList:
+                        backupsDateList()
+                    case .folderList:
+                        VStack(spacing: 0) {
+                            HStack {
+                                Button {
+                                    route = .dateList
+                                    self.selectedBackup = nil
+                                    self.selectedFile = nil
+                                } label: {
+                                    Label("Back", systemSymbol: .chevronLeft)
+                                }
+                                .buttonStyle(.borderless)
+                                Spacer()
+                            }
+                            .padding(6)
+                            .transition(.opacity)
+                            
+                            if let selectedBackup {
+                                BackupContentView(
+                                    backup: selectedBackup,
+                                    selectedFile: $selectedFile,
+                                    selectedBackupSize: $selectedBackupSize
+                                )
+                                .transition(.opacity.combined(with: .offset(x: 50)).animation(.smooth(duration: 0.2)))
                             }
                         }
-                    }
-                }
-                .padding(10)
-                .frame(minHeight: 400, alignment: .top)
-                .background {
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            selectedBackup = nil
-                        }
+                        .animation(.default, value: selectedBackup)
                 }
             }
-            .frame(width: 120)
+            .clipped()
+            .animation(.default, value: route)
+            .frame(width: 240)
             .visualEffect(material: .sidebar)
 
-            backupContent()
-                .frame(maxWidth: .infinity)
-                .watchImmediately(of: selectedBackup) { _ in
-                    loadSelectedBackup()
+            Divider()
+            
+            ZStack {
+                if let selectedFile, let excalidrawFile = try? ExcalidrawFile(contentsOf: selectedFile) {
+                    ExcalidrawRenderer(file: excalidrawFile)
+                } else if let selectedBackup {
+                    backupHomeView(selectedBackup)
+                } else {
+                    placeholderView()
                 }
+            }
+            .frame(maxWidth: .infinity)
         }
         .confirmationDialog(
             "Are you sure to delete this backup?",
@@ -84,49 +99,46 @@ struct BackupsSettingsView: View {
     }
     
     @MainActor @ViewBuilder
-    private func backupContent() -> some View {
-        if let backup = selectedBackup {
-            HStack(spacing: 0) {
-                ScrollView {
-                    LazyVStack(spacing: 3) {
-                        ForEach(backupRootFolders, id: \.self) { folder in
-                            BackupFoldersView(selection: $selectedFile, folder: folder)
+    private func backupsDateList() -> some View {
+        ScrollView {
+            LazyVStack(spacing: 4) {
+                ForEach(backups, id: \.self) { item in
+                    Button {
+                        route = .folderList
+                        selectedBackup = item
+                    } label: {
+                        Text(item.lastPathComponent)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    .buttonStyle(.listCell(selected: selectedBackup == item))
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            backupToBeDeleted = item
+                        } label: {
+                            Label("Delete", systemSymbol: .trash)
+                                .labelStyle(.titleAndIcon)
                         }
                     }
-                    .padding(10)
-                    .frame(minHeight: 400, alignment: .top)
-                    .background {
-                        Color.clear
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                selectedFile = nil
-                            }
-                    }
                 }
-                .frame(width: 200)
-                
-                Divider()
-                
-                ZStack {
-                    if let selectedFile, let excalidrawFile = try? ExcalidrawFile(contentsOf: selectedFile) {
-                        ExcalidrawRenderer(file: excalidrawFile)
-                    } else {
-                        backupHomeView(backup)
-                    }
-                }
-                .frame(maxWidth: .infinity)
             }
-        } else {
-            placeholderView()
+            .padding(10)
+            .frame(minHeight: 400, alignment: .top)
+            .background {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        selectedBackup = nil
+                    }
+            }
         }
-
     }
+    
     
     @MainActor @ViewBuilder
     private func placeholderView() -> some View {
         VStack {
             Text(.localizable(.settingsBackupsName)).font(.largeTitle)
-//            Text("Your data is regularly backed up.").foregroundStyle(.secondary)
             VStack(alignment: .leading) {
                 Text(.localizable(.settingsBackupsDescription))
                 Divider()
@@ -147,7 +159,7 @@ struct BackupsSettingsView: View {
         }
         .frame(maxWidth: 400)
     }
-    
+
     @MainActor @ViewBuilder
     private func backupHomeView(_ backup: URL) -> some View {
         let title = String(
@@ -199,41 +211,11 @@ struct BackupsSettingsView: View {
                 })
                         
             self.backups = backupDirs
-            
-        } catch {
-            
-        }
-    }
-    
-    private func loadSelectedBackup() {
-        selectedBackupDirs.removeAll()
-        guard let selectedBackup else { return }
-        var accSize: Int = 0
-        do {
-            let groups: [URL] = try FileManager.default.contentsOfDirectory(
-                at: selectedBackup,
-                includingPropertiesForKeys: [.nameKey, .isDirectoryKey]
-            ).filter({ (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true })
-            
-            self.backupRootFolders = groups
-            
-            for group in groups {
-                let files: [URL] = try FileManager.default.contentsOfDirectory(
-                    at: group,
-                    includingPropertiesForKeys: [.nameKey, .fileSizeKey]
-                )//.filter({ (try? $0.resourceValues(forKeys: [.nameKey]))?.name?.hasSuffix("excalidraw") == true })
-                selectedBackupDirs.updateValue(files, forKey: group.lastPathComponent)
-                
-                accSize += files.reduce(0) { partialResult, url in
-                    partialResult + ((try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
-                }
-            }
-            
-            self.selectedBackupSize = accSize
         } catch {
             alertToast(error)
         }
     }
+    
     
     private func deleteBackup() {
         guard let item = backupToBeDeleted, let index = backups.firstIndex(of: item) else {
@@ -251,6 +233,9 @@ struct BackupsSettingsView: View {
         }
     }
 }
+
+
+
 #elseif os(iOS)
 struct BackupsSettingsView: View {
     var body: some View {
