@@ -192,7 +192,7 @@ struct GroupRowView: View {
                     Label("Add a subgroup", systemSymbol: .folderBadgePlus)
                 }
                 
-                if folderStructStyle == .disclosureGroup {
+                if folderStructStyle == .disclosureGroup, !childrenGroups.isEmpty {
                     Button {
                         self.expandAllSubGroups(group.objectID)
                     } label: {
@@ -398,7 +398,6 @@ struct GroupRowView: View {
                                 try context.executeAndMergeChanges(using: batchDeleteRequest)
                             }
                             context.delete(file)
-                            
                         }
                     } else {
                         guard let defaultGroup = try PersistenceController.shared.getDefaultGroup(context: context) else {
@@ -441,8 +440,8 @@ struct GroupRowView: View {
                         // Issue: Could not merge changes...
                         // let batchDeletion = NSBatchDeleteRequest(objectIDs: allGroups.map{$0.objectID})
                         // try context.executeAndMergeChanges(using: batchDeletion)
-                        try context.save()
                     }
+                    try context.save()
                 }
 
                 await MainActor.run {
