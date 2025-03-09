@@ -129,10 +129,33 @@ struct PersistenceController {
 }
 
 extension PersistenceController {
-    func listGroups() throws -> [Group] {
+    struct ExcalidrawGroup: Hashable {
+        var group: Group
+        var ancestors: [Group]
+        var children: [ExcalidrawGroup]
+    }
+    
+    func listGroups(
+        context: NSManagedObjectContext,
+        ancestors: [Group] = []
+    ) throws -> [ExcalidrawGroup] {
         let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+        if let parent = ancestors.last {
+            fetchRequest.predicate = NSPredicate(format: "parent = %@", parent)
+        } else {
+            fetchRequest.predicate = NSPredicate(format: "parent = nil")
+        }
         fetchRequest.sortDescriptors = [.init(key: "createdAt", ascending: true)]
-        return try container.viewContext.fetch(fetchRequest)
+        
+        let groups = try context.fetch(fetchRequest)
+        
+        return try groups.map {
+            try ExcalidrawGroup(
+                group: $0,
+                ancestors: ancestors,
+                children: listGroups(context: context, ancestors: ancestors + [$0])
+            )
+        }
     }
     func listFiles(in group: Group, context: NSManagedObjectContext) throws -> [File] {
         if group.groupType == .trash {
@@ -140,8 +163,10 @@ extension PersistenceController {
         }
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
         fetchRequest.predicate = NSPredicate(format: "group == %@ AND inTrash == NO", group)
-        fetchRequest.sortDescriptors = [ .init(key: "updatedAt", ascending: false),
-                                         .init(key: "createdAt", ascending: false)]
+        fetchRequest.sortDescriptors = [
+            .init(key: "updatedAt", ascending: false),
+            .init(key: "createdAt", ascending: false)
+        ]
         return try context.fetch(fetchRequest)
     }
     func listTrashedFiles(context: NSManagedObjectContext) throws -> [File] {
@@ -166,25 +191,27 @@ extension PersistenceController {
         return try container.viewContext.fetch(fetchRequest).first
     }
     
-    func listAllFiles(context: NSManagedObjectContext) throws -> [String : [File]] {
-        let groups = try listGroups()
-        var results: [String : [File]] = [:]
+    func listAllFiles(
+        context: NSManagedObjectContext,
+        children: [ExcalidrawGroup]? = nil
+    ) throws -> [ExcalidrawGroup : [File]] {
+        let groups: [ExcalidrawGroup] = try children ?? listGroups(context: context)
+        var results: [ExcalidrawGroup : [File]] = [:]
         for group in groups {
-            guard let name = group.name else { continue }
-            var renameI = 1
-            var newName = name
-            while results[newName] != nil {
-                newName = "\(name) (\(renameI))"
-                renameI += 1
-            }
-            results[newName] = try listFiles(in: group, context: context)
+            results[group] = try listFiles(in: group.group, context: context)
+            results = try results.merging(
+                listAllFiles(context: context, children: group.children),
+                uniquingKeysWith: { lhs, _ in lhs }
+            )
         }
         return results
     }
-    
+
     @MainActor
     func createFile(in groupID: NSManagedObjectID, context: NSManagedObjectContext) throws -> File {
-        guard let templateURL = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else { throw AppError.fileError(.notFound) }
+        guard let templateURL = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else {
+            throw AppError.fileError(.notFound)
+        }
         
         let file = File(context: context)
         file.id = UUID()
