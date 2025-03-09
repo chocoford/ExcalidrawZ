@@ -168,7 +168,6 @@ func backupFiles(context: NSManagedObjectContext) throws {
 func archiveAllCloudFiles(to url: URL, context: NSManagedObjectContext) throws {
     let filemanager = FileManager.default
     let allFiles:  [PersistenceController.ExcalidrawGroup : [File]] = try PersistenceController.shared.listAllFiles(context: context)
-    // print("Archive all files: \(allFiles.map {[$0.key : $0.value.map{$0.name}]}.merged())")
     
     var errorDuringArchive: Error?
     
