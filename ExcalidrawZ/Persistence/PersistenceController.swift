@@ -172,7 +172,9 @@ extension PersistenceController {
     func listTrashedFiles(context: NSManagedObjectContext) throws -> [File] {
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
         fetchRequest.predicate = NSPredicate(format: "inTrash == YES")
-        fetchRequest.sortDescriptors = [.init(key: "deletedAt", ascending: false)] 
+        fetchRequest.sortDescriptors = [
+            .init(key: "deletedAt", ascending: false)
+        ]
         return try context.fetch(fetchRequest)
     }
     func findGroup(id: UUID) throws -> Group? {
