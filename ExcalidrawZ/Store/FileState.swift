@@ -294,18 +294,16 @@ final class FileState: ObservableObject {
     }
     
     /// Remember to call `startAccessingSecurityScopedResource` before calling this function.
-    func updateCurrentLocalFile(with excalidrawFile: ExcalidrawFile, context: NSManagedObjectContext) async throws {
-        guard !shouldIgnoreUpdate, let fileURL = self.currentLocalFile else { return }
+    func updateLocalFile(to url: URL, with excalidrawFile: ExcalidrawFile, context: NSManagedObjectContext) async throws {
+        guard !shouldIgnoreUpdate/*, let fileURL = self.currentLocalFile*/ else { return }
         let didUpdateFile = didUpdateFile
         var excalidrawFile = excalidrawFile
         try excalidrawFile.syncFiles()
-        try JSONEncoder().encode(excalidrawFile).write(to: fileURL)
+        try JSONEncoder().encode(excalidrawFile).write(to: url)
         let bgContext = context // PersistenceController.shared.container.newBackgroundContext()
         try await bgContext.perform {
-            // record to checkpoints
-            
             let fetchRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
-            fetchRequest.predicate = NSPredicate(format: "url = %@", fileURL as NSURL)
+            fetchRequest.predicate = NSPredicate(format: "url = %@", url as NSURL)
             fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \LocalFileCheckpoint.updatedAt, ascending: false)]
             let localFileCheckpoints = try bgContext.fetch(fetchRequest)
             
@@ -314,7 +312,7 @@ final class FileState: ObservableObject {
                 firstCheckpoint.content = excalidrawFile.content
             } else {
                 let localFileCheckpoint = LocalFileCheckpoint(context: bgContext)
-                localFileCheckpoint.url = fileURL
+                localFileCheckpoint.url = url
                 localFileCheckpoint.updatedAt = Date()
                 localFileCheckpoint.content = excalidrawFile.content
                 

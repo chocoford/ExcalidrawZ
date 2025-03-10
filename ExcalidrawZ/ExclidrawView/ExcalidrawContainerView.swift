@@ -77,12 +77,19 @@ struct ExcalidrawContainerView: View {
                 }
                 fileState.updateCurrentFile(with: file)
             } else if let folder = fileState.currentLocalFolder,
-                      let _ = fileState.currentLocalFile {
+                      let url = fileState.currentLocalFile {
                 Task {
                     do {
                         try folder.withSecurityScopedURL { _ in
                             do {
-                                try await fileState.updateCurrentLocalFile(with: file, context: viewContext)
+                                let oldElements = try ExcalidrawFile(contentsOf: url).elements
+                                if file.elements == oldElements {
+                                    print("[updateCurrentFile] no updates, ignored.")
+                                    return
+                                } else {
+                                    print("[updateCurrentFile] elements changed.")
+                                }
+                                try await fileState.updateLocalFile(to: url, with: file, context: viewContext)
                             } catch {
                                 alertToast(error)
                             }
@@ -92,12 +99,21 @@ struct ExcalidrawContainerView: View {
                     }
                 }
             } else if fileState.isTemporaryGroupSelected,
-                      let file = fileState.currentTemporaryFile {
-//                do {
-//                    return try ExcalidrawFile(contentsOf: file)
-//                } catch {
-//                    alertToast(error)
-//                }
+                      let url = fileState.currentTemporaryFile {
+                Task {
+                    do {
+                        let oldElements = try ExcalidrawFile(contentsOf: url).elements
+                        if file.elements == oldElements {
+                            print("[updateCurrentFile] no updates, ignored.")
+                            return
+                        } else {
+                            print("[updateCurrentFile] elements changed.")
+                        }
+                        try await fileState.updateLocalFile(to: url, with: file, context: viewContext)
+                    } catch {
+                        alertToast(error)
+                    }
+                }
             }
         }
     }
