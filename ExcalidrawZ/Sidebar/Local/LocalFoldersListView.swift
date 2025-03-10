@@ -102,6 +102,7 @@ struct LocalFoldersListView: View {
 #endif
         .onAppear {
             folders.forEach { try? $0.refreshChildren(context: viewContext) }
+            ICloudFileMonitor.shared.startMonitoring()
         }
     }
     
@@ -158,6 +159,28 @@ struct LocalFoldersListView: View {
                                         if itemType == .file, path.hasSuffix(".excalidraw") {
                                             localFolderState.itemUpdatedPublisher.send(path)
                                         }
+                                    case .itemInodeMetadataModified(let path, let itemType, _, _):
+                                        if itemType == .file,
+                                           path.hasSuffix(".excalidraw") {
+                                            
+                                            NotificationCenter.default.post(name: .fileMetadataDidModified, object: path)
+                                        }
+                                        
+                                    case .itemXattrModified(let path, let itemType, _, _):
+                                        if itemType == .file,
+                                           path.hasSuffix(".excalidraw") {
+                                            
+                                            NotificationCenter.default.post(name: .fileXattrDidModified, object: path)
+                                        }
+//                                           let url = URL(string: "file://\(path)") {
+//                                            NotificationCenter.default.post(name: .fileMetadataDidModified, object: url)
+//
+////                                            let resources = try url.resourceValues(forKeys: [
+////                                                .ubiquitousItemDownloadingStatusKey,
+////                                                .ubiquitousItemIsDownloadingKey
+////                                            ])
+////                                            print("[FSEventAsyncStream] downloading status >>>", resources.ubiquitousItemDownloadingStatus, resources.ubiquitousItemIsDownloading)
+//                                        }
                                     default:
                                         break
                                 }

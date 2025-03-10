@@ -11,10 +11,25 @@ struct FileRowLabel: View {
     var name: String
     var updatedAt: Date
     
+    var nameTrailingView: AnyView
+    
+    init<T: View>(
+        name: String,
+        updatedAt: Date,
+        @ViewBuilder nameTrailingView: () -> T = {
+            EmptyView()
+        }
+    ) {
+        self.name = name
+        self.updatedAt = updatedAt
+        self.nameTrailingView = AnyView(nameTrailingView())
+    }
+    
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
                 Text(name)
+                nameTrailingView
             }
             .foregroundColor(.secondary)
             .font(.title3)
