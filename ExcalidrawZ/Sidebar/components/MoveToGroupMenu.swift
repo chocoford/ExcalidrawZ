@@ -32,7 +32,7 @@ struct MoveToGroupMenu<Group: ExcalidrawFileGroupRepresentable>: View {
     @Environment(\.alertToast) private var alertToast
         
     var group: Group
-    var sourceGroup: Group
+    var sourceGroup: Group?
     var allowSubgroups: Bool
     var childrenSortKey: KeyPath<Group, String?>
     @FetchRequest
@@ -42,7 +42,7 @@ struct MoveToGroupMenu<Group: ExcalidrawFileGroupRepresentable>: View {
     
     init(
         destination group: Group,
-        sourceGroup: Group,
+        sourceGroup: Group?,
         childrenSortKey: KeyPath<Group, String?>,
         allowSubgroups: Bool = false,
         onMove: @escaping (_ targetGroupID: NSManagedObjectID) -> Void
@@ -70,9 +70,9 @@ struct MoveToGroupMenu<Group: ExcalidrawFileGroupRepresentable>: View {
             } label: {
                 Text(group.name ?? String(localizable: .generalUnknown))
             }
-        } else if !filteredChildren.isEmpty || (sourceGroup.getParent() as? Group != group && sourceGroup != group) {
+        } else if sourceGroup == nil || !filteredChildren.isEmpty || (sourceGroup!.getParent() as? Group != group && sourceGroup != group) {
             Menu {
-                if sourceGroup.getParent() as? Group != group && sourceGroup != group {
+                if sourceGroup == nil || (sourceGroup!.getParent() as? Group != group && sourceGroup != group) {
                     Button {
                         self.onMove(group.objectID)
                     } label: {

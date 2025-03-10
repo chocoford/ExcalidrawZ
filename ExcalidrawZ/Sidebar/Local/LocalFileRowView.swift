@@ -160,35 +160,7 @@ struct LocalFileRowView: View {
         }
 
         Button {
-            do {
-                guard let folder = fileState.currentLocalFolder else { return }
-                try folder.withSecurityScopedURL { scopedURL in
-                    let file = try ExcalidrawFile(contentsOf: file)
-                    
-                    var newFileName = self.file.deletingPathExtension().lastPathComponent
-                    while FileManager.default.fileExists(at: scopedURL.appendingPathComponent(newFileName, conformingTo: .excalidrawFile)) {
-                        let components = newFileName.components(separatedBy: "-")
-                        if components.count == 2, let numComponent = components.last, let index = Int(numComponent) {
-                            newFileName = "\(components[0])-\(index+1)"
-                        } else {
-                            newFileName = "\(newFileName)-1"
-                        }
-                    }
-                    
-                    let newURL = self.file.deletingLastPathComponent().appendingPathComponent(newFileName, conformingTo: .excalidrawFile)
-                    
-                    let fileCoordinator = NSFileCoordinator()
-                    fileCoordinator.coordinate(writingItemAt: newURL, options: .forReplacing, error: nil) { url in
-                        do {
-                            try file.content?.write(to: url)
-                        } catch {
-                            alertToast(error)
-                        }
-                    }
-                }
-            } catch {
-                
-            }
+            duplicateFile()
         } label: {
             Label(.localizable(.sidebarFileRowContextMenuDuplicate), systemSymbol: .docOnDoc)
                 .foregroundStyle(.red)
@@ -272,46 +244,94 @@ struct LocalFileRowView: View {
         }
     }
     
-    private func moveLocalFile(to targetFolderID: NSManagedObjectID) {
-        guard case let folder as LocalFolder = viewContext.object(with: targetFolderID) else { return }
+    private func duplicateFile() {
         do {
+            guard let folder = fileState.currentLocalFolder else { return }
             try folder.withSecurityScopedURL { scopedURL in
+                let file = try ExcalidrawFile(contentsOf: file)
+                
+                var newFileName = self.file.deletingPathExtension().lastPathComponent
+                while FileManager.default.fileExists(at: scopedURL.appendingPathComponent(newFileName, conformingTo: .excalidrawFile)) {
+                    let components = newFileName.components(separatedBy: "-")
+                    if components.count == 2, let numComponent = components.last, let index = Int(numComponent) {
+                        newFileName = "\(components[0])-\(index+1)"
+                    } else {
+                        newFileName = "\(newFileName)-1"
+                    }
+                }
+                
+                let newURL = self.file.deletingLastPathComponent().appendingPathComponent(newFileName, conformingTo: .excalidrawFile)
+                
                 let fileCoordinator = NSFileCoordinator()
-                fileCoordinator.coordinate(writingItemAt: scopedURL, options: .forMoving, error: nil) { url in
+                fileCoordinator.coordinate(writingItemAt: newURL, options: .forReplacing, error: nil) { url in
                     do {
-                        try FileManager.default.moveItem(
-                            at: self.file,
-                            to: url.appendingPathComponent(
-                                self.file.lastPathComponent,
-                                conformingTo: .excalidrawFile
-                            )
-                        )
+                        try file.content?.write(to: url)
                     } catch {
                         alertToast(error)
                     }
                 }
-            }
-            
-            if let newURL = folder.url?.appendingPathComponent(
-                self.file.lastPathComponent,
-                conformingTo: .excalidrawFile
-            ) {
-                // Update local file ID mapping
-                ExcalidrawFile.localFileURLIDMapping[newURL] = ExcalidrawFile.localFileURLIDMapping[file]
-                ExcalidrawFile.localFileURLIDMapping[file] = nil
-                
-                // Also update checkpoints
-                updateCheckpoints(oldURL: self.file, newURL: newURL)
-            }
-            
-            if fileState.currentLocalFile == self.file {
-                DispatchQueue.main.async {
-                    fileState.currentLocalFolder = folder
-                    fileState.expandToGroup(folder.objectID)
-                }
+                fileState.currentLocalFile = newURL
             }
         } catch {
             alertToast(error)
+        }
+    }
+    
+    private func moveLocalFile(to targetFolderID: NSManagedObjectID) {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        let file = self.file
+        Task.detached {
+            do {
+                try await context.perform {
+                    guard case let folder as LocalFolder = context.object(with: targetFolderID) else { return }
+                    
+                    try folder.withSecurityScopedURL { scopedURL in
+                        let fileCoordinator = NSFileCoordinator()
+                        fileCoordinator.coordinate(writingItemAt: scopedURL, options: .forMoving, error: nil) { url in
+                            do {
+                                try FileManager.default.moveItem(
+                                    at: file,
+                                    to: url.appendingPathComponent(
+                                        file.lastPathComponent,
+                                        conformingTo: .excalidrawFile
+                                    )
+                                )
+                            } catch {
+                                alertToast(error)
+                            }
+                        }
+                    }
+                    
+                    if let newURL = folder.url?.appendingPathComponent(
+                        file.lastPathComponent,
+                        conformingTo: .excalidrawFile
+                    ) {
+                        // Update local file ID mapping
+                        ExcalidrawFile.localFileURLIDMapping[newURL] = ExcalidrawFile.localFileURLIDMapping[file]
+                        ExcalidrawFile.localFileURLIDMapping[file] = nil
+                        
+                        // Also update checkpoints
+                        Task {
+                            await MainActor.run {
+                                updateCheckpoints(oldURL: file, newURL: newURL)
+                            }
+                        }
+                        Task {
+                            await MainActor.run {
+                                if fileState.currentLocalFile == file {
+                                    DispatchQueue.main.async {
+                                        fileState.currentLocalFolder = viewContext.object(with: targetFolderID) as? LocalFolder
+                                        fileState.currentLocalFile = newURL
+                                        fileState.expandToGroup(targetFolderID)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch {
+                await alertToast(error)
+            }
         }
     }
     

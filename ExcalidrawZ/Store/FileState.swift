@@ -590,6 +590,13 @@ final class FileState: ObservableObject {
         }
     }
     
+//    public func moveLocalFiles(_ sourceFileIDs: [NSManagedObjectID], to targetFolderID: NSManagedObjectID) {
+//        
+//    }
+//    public func moveFiles(_ sourceFileIDs: [NSManagedObjectID], to targetGroupID: NSManagedObjectID) {
+//        
+//    }
+    
     public func expandToGroup(_ groupID: NSManagedObjectID) {
         let context = PersistenceController.shared.container.newBackgroundContext()
         Task.detached {

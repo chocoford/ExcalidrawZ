@@ -18,6 +18,11 @@ extension File {
         self.updatedAt = .now
     }
     
+    convenience init(url: URL, context: NSManagedObjectContext) throws {
+        self.init(name: url.deletingPathExtension().lastPathComponent, context: context)
+        self.content = try Data(contentsOf: url)
+    }
+    
     /// Return if has changed.
     func updateElements(with fileData: Data, newCheckpoint: Bool = false) throws {
         guard let data = self.content else { return }
