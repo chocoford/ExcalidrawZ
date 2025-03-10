@@ -128,7 +128,6 @@ extension SVGPreviewWebView {
                 """
             webView.evaluateJavaScript(js) { result, error in
                 if let arr = result as? [Double], arr.count == 2 {
-                    print("result", result)
                     DispatchQueue.main.async {
                         self.contentSize = CGSize(width: arr[0], height: arr[1])
                     }
