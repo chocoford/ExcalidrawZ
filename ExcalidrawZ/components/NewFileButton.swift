@@ -51,7 +51,7 @@ struct NewFileButton: View {
         }
         .bindWindow($window)
         .help(.localizable(.createNewFile))
-        .disabled(fileState.currentGroup?.groupType == .trash)
+        .disabled(fileState.currentGroup?.groupType == .trash || fileState.isTemporaryGroupSelected)
         .onReceive(NotificationCenter.default.publisher(for: .shouldHandleNewDraw)) { _ in
             guard window?.isKeyWindow == true else { return }
             
