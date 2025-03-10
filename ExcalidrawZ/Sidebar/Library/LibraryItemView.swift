@@ -105,7 +105,7 @@ struct LibraryItemView: View {
                         Button {
                             moveToLibrary(library)
                         } label: {
-                            Text(library.name ?? "Untitled")
+                            Text(library.name ?? String(localizable: .generalUntitled))
                         }
                     }
                 } label: {

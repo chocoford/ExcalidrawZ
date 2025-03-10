@@ -45,7 +45,7 @@ struct BackupsSettingsView: View {
                                     self.selectedBackup = nil
                                     self.selectedFile = nil
                                 } label: {
-                                    Label("Back", systemSymbol: .chevronLeft)
+                                    Label(.localizable(.navigationButtonBack), systemSymbol: .chevronLeft)
                                 }
                                 .buttonStyle(.borderless)
                                 Spacer()
@@ -84,13 +84,13 @@ struct BackupsSettingsView: View {
             .frame(maxWidth: .infinity)
         }
         .confirmationDialog(
-            "Are you sure to delete this backup?",
+            .localizable(.backupsDeleteConfirmationTitle),
             isPresented: Binding { backupToBeDeleted != nil } set: { if !$0 { backupToBeDeleted = nil } }
         ) {
             Button(role: .destructive) {
                 deleteBackup()
             } label: {
-                Text("Confirm")
+                Text(.localizable(.generalButtonConfirm))
             }
         }
         .onAppear {
@@ -116,7 +116,7 @@ struct BackupsSettingsView: View {
                         Button(role: .destructive) {
                             backupToBeDeleted = item
                         } label: {
-                            Label("Delete", systemSymbol: .trash)
+                            Label(.localizable(.generalButtonDelete), systemSymbol: .trash)
                                 .labelStyle(.titleAndIcon)
                         }
                     }
@@ -164,7 +164,7 @@ struct BackupsSettingsView: View {
     private func backupHomeView(_ backup: URL) -> some View {
         let title = String(
             localizable: .backupName(
-                (try? backup.resourceValues(forKeys: [.creationDateKey]).creationDate?.formatted()) ?? "Unknwon"
+                (try? backup.resourceValues(forKeys: [.creationDateKey]).creationDate?.formatted()) ?? String(localizable: .generalUnknown)
             )
         )
     

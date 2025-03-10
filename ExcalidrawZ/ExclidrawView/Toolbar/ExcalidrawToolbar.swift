@@ -544,7 +544,7 @@ struct ExcalidrawToolbar: View {
                 Text(.localizable(.toolbarWebEmbed)).tag(ExcalidrawTool.webEmbed)
                 Text(.localizable(.toolbarMagicFrame)).tag(ExcalidrawTool.magicFrame)
             } label: {
-                Text("Active tool")
+                Text(.localizable(.toolbarActiveToolTitle))
             }
             .pickerStyle(.menu)
             .fixedSize()
@@ -555,17 +555,17 @@ struct ExcalidrawToolbar: View {
     private func activeShape() -> some View {
         switch toolState.activatedTool {
             case .rectangle:
-                Label("Rectangle", systemSymbol: .rectangle)
+                Label(.localizable(.toolbarRectangle), systemSymbol: .rectangle)
             case .diamond:
-                Label("Diamond", systemSymbol: .diamond)
+                Label(.localizable(.toolbarDiamond), systemSymbol: .diamond)
             case .ellipse:
-                Label("Ellips", systemSymbol: .ellipsis)
+                Label(.localizable(.toolbarEllipse), systemSymbol: .ellipsis)
             case .arrow:
-                Label("Arrow", systemSymbol: .lineDiagonalArrow)
+                Label(.localizable(.toolbarArrow), systemSymbol: .lineDiagonalArrow)
             case .line:
-                Label("Line", systemSymbol: .lineDiagonal)
+                Label(.localizable(.toolbarLine), systemSymbol: .lineDiagonal)
             default:
-                Label("Shapes", systemSymbol: .squareOnCircle)
+                Label(.localizable(.toolbarShapes), systemSymbol: .squareOnCircle)
         }
     }
     
@@ -590,7 +590,7 @@ struct ExcalidrawToolbar: View {
             Button {
                 isMathInputSheetPresented.toggle()
             } label: {
-                Text("Math")
+                Text(.localizable(.toolbarLatexMath))
             }
         } label: {
             if #available(macOS 15.0, iOS 18.0, *) {
@@ -603,11 +603,7 @@ struct ExcalidrawToolbar: View {
 #if os(iOS)
         .menuOrder(.fixed)
 #endif
-        .modifier(
-            MathInputSheetViewModifier(isPresented: $isMathInputSheetPresented) {
-                
-            }
-        )
+        .modifier(MathInputSheetViewModifier(isPresented: $isMathInputSheetPresented))
     }
 }
 

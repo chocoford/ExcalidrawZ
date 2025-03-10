@@ -116,7 +116,7 @@ struct GroupListView: View {
                                             isCreateGroupDialogPresented = false
                                         }
                                     },
-                                    title: "iCloud"
+                                    title: .localizable(.sidebarGroupListSectionHeaderICloud)
                                 )
                             )
 #endif
@@ -129,7 +129,7 @@ struct GroupListView: View {
                             .modifier(
                                 ContentHeaderCreateButtonHoverModifier(
                                     isCreateDialogPresented: $isCreateLocalFolderDialogPresented,
-                                    title: "Local"
+                                    title: .localizable(.sidebarGroupListSectionHeaderLocal)
                                 )
                             )
                             .fileImporterWithAlert(

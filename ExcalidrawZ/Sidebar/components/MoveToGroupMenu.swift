@@ -68,7 +68,7 @@ struct MoveToGroupMenu<Group: ExcalidrawFileGroupRepresentable>: View {
             Button {
                 self.onMove(group.objectID)
             } label: {
-                Text(group.name ?? "Unknown")
+                Text(group.name ?? String(localizable: .generalUnknown))
             }
         } else if !filteredChildren.isEmpty || (sourceGroup.getParent() as? Group != group && sourceGroup != group) {
             Menu {
@@ -76,7 +76,7 @@ struct MoveToGroupMenu<Group: ExcalidrawFileGroupRepresentable>: View {
                     Button {
                         self.onMove(group.objectID)
                     } label: {
-                        Text("Move to \"\(group.name ?? "Unknown")\"")
+                        Text("Move to \"\(group.name ?? String(localizable: .generalUnknown))\"")
                     }
                     
                     Divider()
@@ -91,7 +91,7 @@ struct MoveToGroupMenu<Group: ExcalidrawFileGroupRepresentable>: View {
                     )
                 }
             } label: {
-                Text(group.name ?? "Unknown")
+                Text(group.name ?? String(localizable: .generalUnknown))
             }
         }
     }

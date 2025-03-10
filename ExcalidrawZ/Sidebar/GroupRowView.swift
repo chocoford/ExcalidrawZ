@@ -23,7 +23,7 @@ struct GroupInfo: Equatable {
     init(_ groupEntity: Group) {
         self.groupEntity = groupEntity
         self.id = groupEntity.id ?? UUID()
-        self.name = groupEntity.name ?? "Untitled"
+        self.name = groupEntity.name ?? String(localizable: .generalUntitled)
         self.type = groupEntity.groupType
         self.createdAt = groupEntity.createdAt ?? .distantPast
         self.icon = groupEntity.icon
@@ -102,7 +102,7 @@ struct GroupRowView: View {
         groupRowView()
             .contextMenu { contextMenuView }
             .confirmationDialog(
-                group.groupType == .trash ? LocalizedStringKey.localizable(.sidebarGroupRowDeletePermanentlyConfirmTitle) : LocalizedStringKey.localizable(.sidebarGroupRowDeleteConfirmTitle(group.name ?? "Untitled")),
+                group.groupType == .trash ? LocalizedStringKey.localizable(.sidebarGroupRowDeletePermanentlyConfirmTitle) : LocalizedStringKey.localizable(.sidebarGroupRowDeleteConfirmTitle(group.name ?? String(localizable: .generalUntitled))),
                 isPresented: $isDeleteConfirmPresented
             ) {
                 Button(
@@ -129,7 +129,7 @@ struct GroupRowView: View {
         if folderStructStyle == .disclosureGroup {
             HStack {
                 Label {
-                    Text(group.name ?? "Untitled").lineLimit(1)
+                    Text(group.name ?? String(localizable: .generalUntitled)).lineLimit(1)
                 } icon: {
                     groupIcon
                 }
@@ -142,7 +142,7 @@ struct GroupRowView: View {
             } label: {
                 HStack {
                     Label {
-                        Text(group.name ?? "Untitled").lineLimit(1)
+                        Text(group.name ?? String(localizable: .generalUntitled)).lineLimit(1)
                     } icon: {
                         groupIcon
                     }
@@ -190,14 +190,14 @@ struct GroupRowView: View {
                 Button {
                     isCreateSubfolderSheetPresented.toggle()
                 } label: {
-                    Label("Add a subgroup", systemSymbol: .folderBadgePlus)
+                    Label(.localizable(.sidebarGroupRowContextMenuAddSubgroup), systemSymbol: .folderBadgePlus)
                 }
                 
                 if folderStructStyle == .disclosureGroup, !childrenGroups.isEmpty {
                     Button {
                         self.expandAllSubGroups(group.objectID)
                     } label: {
-                        Label("Expand all", systemSymbol: .squareFillTextGrid1x2)
+                        Label(.localizable(.sidebarGroupRowContextMenuExpandAll), systemSymbol: .squareFillTextGrid1x2)
                     }
                 }
                 
@@ -207,7 +207,7 @@ struct GroupRowView: View {
                             Button {
                                 performGroupMoveAction(source: self.group.objectID, target: nil)
                             } label: {
-                                Text("Move to top level")
+                                Text(.localizable(.sidebarGroupRowContextMenuMoveToTopLevel))
                             }
                             
                             Divider()

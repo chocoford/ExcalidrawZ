@@ -89,11 +89,11 @@ struct GeneralSettingsView: View {
         // Folder structure UI
         Section {
             HStack {
-                Text("Folder structure style")
+                Text(.localizable(.settingsFolderStructureStyleTitle))
                 Spacer()
-                Picker("Folder structure style", selection: $folderStructStyle) {
-                    Text("Disclosure group").tag(FolderStructureStyle.disclosureGroup)
-                    Text("Tree structure").tag(FolderStructureStyle.tree)
+                Picker(.localizable(.settingsFolderStructureStyleTitle), selection: $folderStructStyle) {
+                    Text(.localizable(.settingsFolderStructureStyleDisclosureGroup)).tag(FolderStructureStyle.disclosureGroup)
+                    Text(.localizable(.settingsFolderStructureStyleTreeStructure)).tag(FolderStructureStyle.tree)
                 }
                 .labelsHidden()
                 .pickerStyle(.segmented)
@@ -116,24 +116,24 @@ struct GeneralSettingsView: View {
         } footer: {
             HStack {
                 VStack(spacing: 10) {
-                    Text("Disclosure Group Style").font(.headline)
+                    Text(.localizable(.settingsFolderStructureDisclosureGroupStyleTitle)).font(.headline)
                     VStack(alignment: .leading, spacing: 4) {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack(spacing: 4) {
                                 Image(systemSymbol: .chevronDown).font(.footnote)
-                                Text("Folder")
+                                Text(.localizable(.generalFolderName))
                             }
                             
                             VStack(spacing: 4) {
-                                Text("Subfolder")
-                                Text("Subfolder")
+                                Text(.localizable(.generalSubfolderName))
+                                Text(.localizable(.generalSubfolderName))
                             }
                             .padding(.leading, 24)
                         }
                         
                         HStack(spacing: 4) {
                             Image(systemSymbol: .chevronDown).font(.footnote).opacity(0)
-                            Text("Folder")
+                            Text(.localizable(.generalFolderName))
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -145,21 +145,21 @@ struct GeneralSettingsView: View {
                 VStack(spacing: 10) {
                     let children: [FolderChildren] = [FolderChildren(), FolderChildren()]
                     let children2: [FolderChildren] = []
-                    Text("Tree Structure Style").font(.headline)
+                    Text(.localizable(.settingsFolderStructureTreeStructureStyleTitle)).font(.headline)
                     VStack(alignment: .leading, spacing: 4) {
                         VStack(alignment: .leading, spacing: 0) {
                             TreeStructureView(children: children) {
-                                Text("Folder")
+                                Text(.localizable(.generalFolderName))
                             } childView: { child in
                                 TreeStructureView(children: children2) {
-                                    Text("Subfolder")
+                                    Text(.localizable(.generalSubfolderName))
                                 } childView: { child in
                                     
                                 }
                             }
                         }
                         TreeStructureView(children: children) {
-                            Text("Folder").padding(.vertical, 4)
+                            Text(.localizable(.generalFolderName)).padding(.vertical, 4)
                         } childView: { _ in
                             
                         }

@@ -326,7 +326,7 @@ struct LibraryView: View {
         ) { result in
             switch result {
                 case .success:
-                    alertToast(.init(displayMode: .hud, type: .complete(.green), title: "Export Libraries done"))
+                    alertToast(.init(displayMode: .hud, type: .complete(.green), title: String(localizable: .librariesExportLibraryDone)))
                 case .failure(let failure):
                     alertToast(failure)
             }
@@ -356,7 +356,7 @@ struct LibraryView: View {
                         Button {
                             moveSelectionsToLibrary(library)
                         } label: {
-                            Text(library.name ?? "Untitled")
+                            Text(library.name ?? String(localizable: .generalUntitled))
                         }
                     }
                 } label: {

@@ -319,7 +319,7 @@ struct ContentViewModern: View {
             Button {
                 isSettingsPresented.toggle()
             } label: {
-                Label("Settings", systemSymbol: .gear)
+                Label(.localizable(.settingsName), systemSymbol: .gear)
             }
         }
 #endif

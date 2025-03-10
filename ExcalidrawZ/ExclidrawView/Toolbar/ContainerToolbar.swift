@@ -247,7 +247,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             VStack(
                 alignment: .leading
             ) {
-                Text(file.name ?? "")
+                Text(file.name ?? String(localizable: .generalUntitled))
                     .font(.headline)
                 Text(file.createdAt?.formatted() ?? "Not modified")
                     .font(.footnote)

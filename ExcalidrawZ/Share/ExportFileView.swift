@@ -159,7 +159,7 @@ struct ExportFileView: View {
             if #available(macOS 13.0, *),
                let url = fileURL {
                 ShareLink(item: url) {
-                    Label("Share", systemSymbol: .squareAndArrowUp)
+                    Label(.localizable(.exportActionShare), systemSymbol: .squareAndArrowUp)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 1)
                 }
@@ -167,7 +167,7 @@ struct ExportFileView: View {
                 Button {
                     self.showShare = true
                 } label: {
-                    Label("Share", systemSymbol: .squareAndArrowUp)
+                    Label(.localizable(.exportActionShare), systemSymbol: .squareAndArrowUp)
                         .padding(.horizontal, 6)
                 }
                 .background(SharingsPicker(
@@ -186,7 +186,7 @@ struct ExportFileView: View {
         ) { result in
             switch result {
                 case .success:
-                    alertToast(.init(displayMode: .hud, type: .complete(.green), title: "Saved"))
+                    alertToast(.init(displayMode: .hud, type: .complete(.green), title: String(localizable: .generalFileExporterSaved)))
                 case .failure(let failure):
                     alertToast(failure)
             }

@@ -115,7 +115,6 @@ struct ExcalidrawContainerView: View {
                 isLoadingPage: $isLoading
             ) { error in
                 alertToast(error)
-                print("[ExcalidrawView Error]", error)
             }
             .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
             .opacity(isProgressViewPresented ? 0 : 1)
@@ -172,7 +171,6 @@ struct ExcalidrawContainerView: View {
                                    let fileAfterImporting = try? ExcalidrawFile(from: file.objectID, context: viewContext),
                                    fileAfterImporting.elements != fileBeforeImporting?.elements {
                                     // force reload current file.
-                                    print("force reload current file...")
                                     fileState.excalidrawWebCoordinator?.loadFile(from: fileState.currentFile, force: true)
                                 }
                             }
@@ -227,7 +225,7 @@ struct ExcalidrawContainerView: View {
                             .fill(Color.windowBackgroundColor)
                     }
                     
-                    Text("Select a excalidraw file")
+                    Text(.localizable(.excalidrawWebViewPlaceholderSelectFile))
                         .font(.title)
                         .foregroundStyle(.secondary)
                 }

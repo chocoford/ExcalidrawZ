@@ -16,7 +16,6 @@ struct MathInputSheetViewModifier: ViewModifier {
     @EnvironmentObject private var fileState: FileState
     
     @Binding var isPresented: Bool
-    var onInsert: () -> Void
     
     func body(content: Content) -> some View {
         content

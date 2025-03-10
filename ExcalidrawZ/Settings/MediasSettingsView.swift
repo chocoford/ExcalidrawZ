@@ -89,7 +89,7 @@ struct MediasSettingsView: View {
                     Button {
                         selection = item
                     } label: {
-                        Text(item.id ?? "Unknown")
+                        Text(item.id ?? String(localizable: .generalUnknown))
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
@@ -120,18 +120,18 @@ struct MediasSettingsView: View {
                         .frame(maxHeight: .infinity)
 
                     VStack(alignment: .leading) {
-                        Text(item.id ?? "Untitled")
+                        Text(item.id ?? String(localizable: .generalUntitled))
                             .font(.headline)
                         HStack {
                             VStack(alignment: .trailing) {
-                                Text("Created at:")
-                                Text("Size:")
-                                Text("Referenced from:")
+                                Text("\(String(localizable: .mediasInfoLabelCreatedAt)):")
+                                Text("\(String(localizable: .mediasInfoLabelFileSize)):")
+                                Text("\(String(localizable: .mediasInfoLabelReferencedFrom)):")
                             }
                             VStack(alignment: .leading) {
                                 Text((item.createdAt ?? .distantPast).formatted())
                                 Text(imageData.count.formatted(.byteCount(style: .file)))
-                                Text(item.file?.name ?? "Unknown")
+                                Text(item.file?.name ?? String(localizable: .generalUnknown))
                             }
                             .foregroundStyle(.secondary)
                         }

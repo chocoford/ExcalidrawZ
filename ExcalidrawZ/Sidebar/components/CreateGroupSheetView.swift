@@ -73,7 +73,7 @@ struct CreateGroupSheetView: View {
                         }
                 }
             } header: {
-                Text(createType == .group ? .localizable(.sidebarGroupListCreateTitle) : "Create a Folder")
+                Text(createType == .group ? .localizable(.sidebarGroupListCreateTitle) : .localizable(.sidebarGroupListCreateFolderTitle))
                     .fontWeight(.bold)
             } footer: {
                 HStack {

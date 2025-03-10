@@ -14,7 +14,7 @@ struct PencilTipsSheetView: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            Text("Apple pencil connected")
+            Text(.localizable(.applePencilTipsTitle))
                 .font(.title)
             
             HStack(alignment: .top) {
@@ -47,7 +47,7 @@ struct PencilTipsSheetView: View {
                     if toolState.pencilInteractionMode == .fingerSelect {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color.accentColor.opacity(0.2))
-                    } else if #available(iOS 17.0, *) {
+                    } else if #available(iOS 17.0, macOS 13.0, *) {
                         RoundedRectangle(cornerRadius: 8)
                             .stroke(.separator)
                     } else {
@@ -92,7 +92,7 @@ struct PencilTipsSheetView: View {
                     if toolState.pencilInteractionMode == .fingerMove {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color.accentColor.opacity(0.2))
-                    } else if #available(iOS 17.0, *) {
+                    } else if #available(iOS 17.0, macOS 13.0, *) {
                         RoundedRectangle(cornerRadius: 8)
                             .stroke(.separator)
                     } else {
@@ -107,13 +107,13 @@ struct PencilTipsSheetView: View {
                 .frame(maxWidth: .infinity)
             }
             
-            Text("You can later change this in settings.")
+            Text(.localizable(.applePencilTipsChangeInSettingsHelp))
                 .foregroundStyle(.secondary)
                 .font(.footnote)
             Button {
                 dismiss()
             } label: {
-                Text("Done")
+                Text(.localizable(.generalButtonDone))
                     .padding(.horizontal)
             }
             .buttonStyle(.borderedProminent)

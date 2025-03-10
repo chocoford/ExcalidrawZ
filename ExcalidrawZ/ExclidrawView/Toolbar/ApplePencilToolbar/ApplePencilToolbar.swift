@@ -34,6 +34,9 @@ struct ApplePencilToolbarModifier: ViewModifier {
     
     @State private var isPencilModeTipsPresented = false
     
+    @State private var isMathInputSheetPresented = false
+
+    
     /// 工具栏与屏幕边缘的最小间距
     private let margin: CGFloat = 16
     
@@ -513,14 +516,14 @@ struct ApplePencilToolbar: View {
                                 try? await toolState.togglePenMode(enabled: false)
                             }
                         } label: {
-                            Label("Disconnect", systemSymbol: .pencilSlash)
+                            Label(.localizable(.applePencilButtonDisconnect), systemSymbol: .pencilSlash)
                         }
                         .labelStyle(.titleAndIcon)
                     } label: {
                         Color.clear
                             .aspectRatio(1, contentMode: .fit)
                             .overlay {
-                                Label("More", systemSymbol: .ellipsis)
+                                Label(.localizable(.toolbarMoreTools), systemSymbol: .ellipsis)
                                     .font(.body.bold())
                                     .foregroundStyle(.secondary)
                                     .labelStyle(.iconOnly)
@@ -598,6 +601,11 @@ struct ApplePencilToolbar: View {
             } label: {
                 Text(.localizable(.toolbarMermaid))
             }
+            Button {
+                isMathInputSheetPresented.toggle()
+            } label: {
+                Text(.localizable(.toolbarLatexMath))
+            }
         } label: {
             Color.clear
                 .aspectRatio(1, contentMode: .fit)
@@ -620,6 +628,7 @@ struct ApplePencilToolbar: View {
 #if os(iOS)
         .menuOrder(.fixed)
 #endif
+        .modifier(MathInputSheetViewModifier(isPresented: $isMathInputSheetPresented))
     }
 }
 

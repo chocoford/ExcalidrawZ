@@ -30,27 +30,18 @@ struct PencilSettingsView: View {
     private func content() -> some View {
         Section {
             Picker(selection: $toolState.pencilInteractionMode) {
-                Text("Select with one finger").tag(ToolState.PencilInteractionMode.fingerSelect)
-                Text("Move with one finger").tag(ToolState.PencilInteractionMode.fingerMove)
+                Text(.localizable(.applePencilInterationModeOneFingerSelectTitle)).tag(ToolState.PencilInteractionMode.fingerSelect)
+                Text(.localizable(.applePencilInterationModeOneFingerMoveTitle)).tag(ToolState.PencilInteractionMode.fingerMove)
             } label: {
                 
             }
             .pickerStyle(.inline)
         } header: {
-            Text("Interaction")
+            Text(.localizable(.applePencilInterationTitle))
         } footer: {
             VStack(spacing: 10) {
-                Text("""
-**Select with one finger**
-    • Drag with one finger to select
-    • Use two fingers to move or zoom the canvas
-""")
-                Text("""
-**Move with one finger**
-    • Use one finger to move the canvas
-    • Use two fingers to move or zoom the canvas
-    • Select with the dedicated tool
-""")
+                Text(.localizable(.applePencilInterationModeOneFingerSelectDescription))
+                Text(.localizable(.applePencilInterationModeOneFingerMoveDescription))
             }
         }
         
@@ -63,7 +54,7 @@ struct PencilSettingsView: View {
                     toolState.inPenMode = false
                 }
             }) {
-                Text("Connect to pencil")
+                Text(.localizable(.applePencilConnectToPencil))
             }
             .disabled(!toolState.inPenMode)
             .onChange(of: toolState.inPenMode) { newValue in
@@ -74,7 +65,7 @@ struct PencilSettingsView: View {
                 }
             }
         } footer: {
-            Text("You can activate pencil mode by tapping on the canvas with your Apple Pencil.")
+            Text(.localizable(.applePencilConnectionTips))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }

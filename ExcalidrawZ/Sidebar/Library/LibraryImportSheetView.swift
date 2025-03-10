@@ -111,7 +111,7 @@ struct ExcalidrawLibraryImportSheetView: View {
                         } header: {
                             VStack(spacing: 0) {
                                 HStack {
-                                    Text(library.name ?? "Untitled")
+                                    Text(library.name ?? String(localizable: .generalUntitled))
                                     Text(.localizable(.librariesImportLibraryItemsCount(library.libraryItems.count)))
                                         .foregroundStyle(.secondary)
                                         .font(.footnote)

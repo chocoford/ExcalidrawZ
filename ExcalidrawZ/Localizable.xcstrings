@@ -1,6 +1,116 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "applePencilButtonDisconnect" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disconnect"
+          }
+        }
+      }
+    },
+    "applePencilConnectionTips" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can activate pencil mode by tapping on the canvas with your Apple Pencil."
+          }
+        }
+      }
+    },
+    "applePencilConnectToPencil" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to pencil"
+          }
+        }
+      }
+    },
+    "applePencilInterationModeOneFingerMoveDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Move with one finger**\n    • Use one finger to move the canvas\n    • Use two fingers to move or zoom the canvas\n    • Select with the dedicated tool"
+          }
+        }
+      }
+    },
+    "applePencilInterationModeOneFingerMoveTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move with one finger"
+          }
+        }
+      }
+    },
+    "applePencilInterationModeOneFingerSelectDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Select with one finger**\n    • Drag with one finger to select\n    • Use two fingers to move or zoom the canvas"
+          }
+        }
+      }
+    },
+    "applePencilInterationModeOneFingerSelectTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select with one finger"
+          }
+        }
+      }
+    },
+    "applePencilInterationTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interation"
+          }
+        }
+      }
+    },
+    "applePencilTipsChangeInSettingsHelp" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can later change this in settings."
+          }
+        }
+      }
+    },
+    "applePencilTipsTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple pencil connected"
+          }
+        }
+      }
+    },
     "backupButtonDelete" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -340,6 +450,17 @@
         }
       }
     },
+    "backupsDeleteConfirmationTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure to delete this backup?"
+          }
+        }
+      }
+    },
     "checkpointButtonDelete" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -675,6 +796,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "檔案歷史"
+          }
+        }
+      }
+    },
+    "checkpointsElementsDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "^[%d elements](inflect: true)"
           }
         }
       }
@@ -1579,6 +1711,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "檔案已刪除，無法編輯。"
+          }
+        }
+      }
+    },
+    "excalidrawWebViewPlaceholderSelectFile" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select an excalidraw file."
           }
         }
       }
@@ -3730,6 +3873,28 @@
         }
       }
     },
+    "generalButtonConfirm" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm"
+          }
+        }
+      }
+    },
+    "generalButtonDelete" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete..."
+          }
+        }
+      }
+    },
     "generalButtonDone" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3952,6 +4117,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "加入 Discord"
+          }
+        }
+      }
+    },
+    "generalButtonMoveToTrash" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to Trash"
           }
         }
       }
@@ -4182,6 +4358,17 @@
         }
       }
     },
+    "generalButtonRevealInFinder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reveal in Finder"
+          }
+        }
+      }
+    },
     "generalButtonUndo" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4404,6 +4591,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "您無法撤銷此操作。"
+          }
+        }
+      }
+    },
+    "generalFileExporterSaved" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved"
+          }
+        }
+      }
+    },
+    "generalFolderName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder"
           }
         }
       }
@@ -4634,6 +4843,39 @@
         }
       }
     },
+    "generalNewFolderName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Folder"
+          }
+        }
+      }
+    },
+    "generalNewGroupName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Group"
+          }
+        }
+      }
+    },
+    "generalSubfolderName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subfolder"
+          }
+        }
+      }
+    },
     "generalTotalSizeLabel" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4743,6 +4985,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "總大小: "
+          }
+        }
+      }
+    },
+    "generalUnknown" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown"
           }
         }
       }
@@ -9154,6 +9407,39 @@
         }
       }
     },
+    "mediasInfoLabelCreatedAt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Created at"
+          }
+        }
+      }
+    },
+    "mediasInfoLabelFileSize" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Size"
+          }
+        }
+      }
+    },
+    "mediasInfoLabelReferencedFrom" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Referenced from"
+          }
+        }
+      }
+    },
     "menubarButtonExportAll" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13335,6 +13621,61 @@
         }
       }
     },
+    "settingsFolderStructureDisclosureGroupStyleTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disclosure Group Style"
+          }
+        }
+      }
+    },
+    "settingsFolderStructureStyleDisclosureGroup" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disclosure group"
+          }
+        }
+      }
+    },
+    "settingsFolderStructureStyleTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder structure style"
+          }
+        }
+      }
+    },
+    "settingsFolderStructureStyleTreeStructure" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tree structure"
+          }
+        }
+      }
+    },
+    "settingsFolderStructureTreeStructureStyleTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tree Structure Style"
+          }
+        }
+      }
+    },
     "settingsGeneralName" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16273,6 +16614,17 @@
         }
       }
     },
+    "sidebarGroupListCreateFolderTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a Folder"
+          }
+        }
+      }
+    },
     "sidebarGroupListCreateGroupName" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16838,6 +17190,40 @@
         }
       }
     },
+    "sidebarGroupListSectionHeaderICloud" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "sidebarGroupListSectionHeaderLocal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local"
+          }
+        }
+      }
+    },
+    "sidebarGroupRowContextMenuAddSubgroup" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a subgroup"
+          }
+        }
+      }
+    },
     "sidebarGroupRowContextMenuDelete" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17064,6 +17450,17 @@
         }
       }
     },
+    "sidebarGroupRowContextMenuExpandAll" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand all"
+          }
+        }
+      }
+    },
     "sidebarGroupRowContextMenuMerge" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17173,6 +17570,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "合併為..."
+          }
+        }
+      }
+    },
+    "sidebarGroupRowContextMenuMoveToTopLevel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to top level"
           }
         }
       }
@@ -17855,6 +18263,61 @@
         }
       }
     },
+    "sidebarGroupRowTitleTemporary" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temporary"
+          }
+        }
+      }
+    },
+    "sidebarLocalFileRowContextMenuCopyPath" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy file path"
+          }
+        }
+      }
+    },
+    "sidebarLocalFolderRowContextMenuAddSubfolder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a subfolder"
+          }
+        }
+      }
+    },
+    "sidebarLocalFolderRowContextMenuCopyFolderPath" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy folder path"
+          }
+        }
+      }
+    },
+    "sidebarLocalFolderRowContextMenuRemoveObservation" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove observation"
+          }
+        }
+      }
+    },
     "sidebarShowAll" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18081,6 +18544,17 @@
         }
       }
     },
+    "sidebarTemporaryFileRowContextMenuCloseFile" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close file"
+          }
+        }
+      }
+    },
     "sidebarToggleName" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18190,6 +18664,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "側邊欄"
+          }
+        }
+      }
+    },
+    "toolbarActiveToolTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active tool"
           }
         }
       }
@@ -19550,6 +20035,17 @@
         }
       }
     },
+    "toolbarLatexMath" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Math"
+          }
+        }
+      }
+    },
     "toolbarLine" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20337,6 +20833,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選擇"
+          }
+        }
+      }
+    },
+    "toolbarShapes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shapes"
           }
         }
       }

@@ -155,7 +155,7 @@ struct LocalFileRowView: View {
         Button {
             isRenameSheetPresented.toggle()
         } label: {
-            Label("Rename...", systemSymbol: .squareAndPencil)
+            Label(.localizable(.sidebarFileRowContextMenuRename), systemSymbol: .squareAndPencil)
                 .foregroundStyle(.red)
         }
 
@@ -190,7 +190,7 @@ struct LocalFileRowView: View {
                 
             }
         } label: {
-            Label("Duplicate", systemSymbol: .docOnDoc)
+            Label(.localizable(.sidebarFileRowContextMenuDuplicate), systemSymbol: .docOnDoc)
                 .foregroundStyle(.red)
         }
 
@@ -205,14 +205,14 @@ struct LocalFileRowView: View {
             UIPasteboard.general.setObjects([self.file.filePath])
 #endif
         } label: {
-            Label("Copy File Path", systemSymbol: .arrowRightDocOnClipboard)
+            Label(.localizable(.sidebarLocalFileRowContextMenuCopyPath), systemSymbol: .arrowRightDocOnClipboard)
                 .foregroundStyle(.red)
         }
         
         Button {
             NSWorkspace.shared.activateFileViewerSelecting([self.file])
         } label: {
-            Label("Reveal in Finder", systemSymbol: .docViewfinder)
+            Label(.localizable(.generalButtonRevealInFinder), systemSymbol: .docViewfinder)
                 .foregroundStyle(.red)
         }
 #endif
@@ -222,7 +222,7 @@ struct LocalFileRowView: View {
         Button {
             moveToTrash()
         } label: {
-            Label("Move to Trash", systemSymbol: .trash)
+            Label(.localizable(.generalButtonMoveToTrash), systemSymbol: .trash)
                 .foregroundStyle(.red)
         }
     }

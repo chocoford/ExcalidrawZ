@@ -30,7 +30,7 @@ struct LocalFolderRowView: View {
     }
     
     @State private var isCreateSubfolderPresented = false
-    @State private var newSubfolderName: String = "New Folder"
+    @State private var newSubfolderName: String = String(localizable: .generalNewFolderName)
 
     var isSelected: Bool {
         fileState.currentLocalFolder == folder
@@ -90,7 +90,7 @@ struct LocalFolderRowView: View {
             Button {
                 self.expandAllSubFolders(folder.objectID)
             } label: {
-                Label("Expand all", systemSymbol: .squareFillTextGrid1x2)
+                Label(.localizable(.sidebarGroupRowContextMenuExpandAll), systemSymbol: .squareFillTextGrid1x2)
             }
         }
         
@@ -100,7 +100,7 @@ struct LocalFolderRowView: View {
             generateNewSubfolderName()
             isCreateSubfolderPresented.toggle()
         } label: {
-            Label("Add a subfolder", systemSymbol: .folderBadgePlus)
+            Label(.localizable(.sidebarLocalFolderRowContextMenuAddSubfolder), systemSymbol: .folderBadgePlus)
         }
         
         
@@ -110,14 +110,14 @@ struct LocalFolderRowView: View {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(url.filePath, forType: .string)
             } label: {
-                Label("Copy Folder Path", systemSymbol: .arrowRightDocOnClipboard)
+                Label(.localizable(.sidebarLocalFolderRowContextMenuCopyFolderPath), systemSymbol: .arrowRightDocOnClipboard)
                     .foregroundStyle(.red)
             }
 
             Button {
                 NSWorkspace.shared.activateFileViewerSelecting([url])
             } label: {
-                Label("Reveal in Finder", systemSymbol: .docViewfinder)
+                Label(.localizable(.generalButtonRevealInFinder), systemSymbol: .docViewfinder)
                     .foregroundStyle(.red)
             }
 #endif
@@ -129,7 +129,7 @@ struct LocalFolderRowView: View {
             Button(role: .destructive) {
                 removeObservation()
             } label: {
-                Label("Remove Observation", systemSymbol: .trash)
+                Label(.localizable(.sidebarLocalFolderRowContextMenuRemoveObservation), systemSymbol: .trash)
             }
         } else {
             
@@ -154,7 +154,7 @@ struct LocalFolderRowView: View {
                     alertToast(error)
                 }
             } label: {
-                Label("Move to Trash", systemSymbol: .trash)
+                Label(.localizable(.generalButtonMoveToTrash), systemSymbol: .trash)
             }
         }
     }
@@ -240,7 +240,6 @@ struct LocalFolderRowView: View {
                         newSubfolderName = "\(newSubfolderName)-1"
                     }
                 }
-                debugPrint("[TEST] contents", contents, newSubfolderName)
             }
         } catch {
             alertToast(error)

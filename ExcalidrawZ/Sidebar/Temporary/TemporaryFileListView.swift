@@ -66,7 +66,7 @@ struct TemporaryFileRowView: View {
                 fileState.currentTemporaryFile = fileState.temporaryFiles.first
             }
         } label: {
-            Label("Close file", systemSymbol: .xmarkCircle)
+            Label(.localizable(.sidebarTemporaryFileRowContextMenuCloseFile), systemSymbol: .xmarkCircle)
         }
     }
     

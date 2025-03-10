@@ -18,7 +18,7 @@ struct TemporaryGroupRowView: View {
         } label: {
             HStack {
                 Label {
-                    Text("Temporary")
+                    Text(.localizable(.sidebarGroupRowTitleTemporary))
                 } icon: {
                     Image(systemSymbol: .clock)
                 }
