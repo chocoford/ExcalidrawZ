@@ -22,7 +22,7 @@ struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
-     
+    
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ContentView")
     
     @State private var hideContent: Bool = false
@@ -40,7 +40,7 @@ struct ContentView: View {
     
     @State private var isFirstImporting: Bool?
     @State private var cloudContainerEventChangeListener: AnyCancellable?
-        
+    
     var body: some View {
         ZStack {
             if isFirstImporting == nil {
@@ -124,31 +124,7 @@ struct ContentView: View {
         }
         .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
         .onOpenURL { url in
-            // logger.debug("on open url: \(url, privacy: .public)")
-            if !fileState.temporaryFiles.contains(where: {$0 == url}) {
-                fileState.temporaryFiles.append(url)
-            }
-            if !fileState.isTemporaryGroupSelected || fileState.currentTemporaryFile == nil {
-                fileState.isTemporaryGroupSelected = true
-                fileState.currentTemporaryFile = fileState.temporaryFiles.first
-            }
-            // save a checkpoint immediately.
-            let context = viewContext
-            Task.detached {
-                do {
-                    try await context.perform {
-                        let newCheckpoint = LocalFileCheckpoint(context: context)
-                        newCheckpoint.url = url
-                        newCheckpoint.updatedAt = .now
-                        newCheckpoint.content = try Data(contentsOf: url)
-                        
-                        context.insert(newCheckpoint)
-                        try context.save()
-                    }
-                } catch {
-                    await alertToast(error)
-                }
-            }
+            onOpenURL(url)
         }
         // Check if it is first launch by checking the files count.
         .task {
@@ -214,6 +190,61 @@ struct ContentView: View {
             }
         }
         .padding(40)
+    }
+    
+    private func onOpenURL(_ url: URL) {
+        // check if it is already in LocalFolder
+        let context = viewContext
+        var canAddToTemp = true
+        do {
+            try context.performAndWait {
+                let folderFetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                folderFetchRequest.predicate = NSPredicate(format: "filePath == %@", url.deletingLastPathComponent().filePath)
+                guard let folder = try context.fetch(folderFetchRequest).first else {
+                    return
+                }
+                canAddToTemp = false
+                Task {
+                    await MainActor.run {
+                        fileState.currentLocalFolder = folder
+                        fileState.expandToGroup(folder.objectID)
+                    }
+                    try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.1))
+                    await MainActor.run {
+                        fileState.currentLocalFile = url
+                    }
+                }
+            }
+        } catch {
+            alertToast(error)
+        }
+        
+        guard canAddToTemp else { return }
+        
+        // logger.debug("on open url: \(url, privacy: .public)")
+        if !fileState.temporaryFiles.contains(where: {$0 == url}) {
+            fileState.temporaryFiles.append(url)
+        }
+        if !fileState.isTemporaryGroupSelected || fileState.currentTemporaryFile == nil {
+            fileState.isTemporaryGroupSelected = true
+            fileState.currentTemporaryFile = fileState.temporaryFiles.first
+        }
+        // save a checkpoint immediately.
+        Task.detached {
+            do {
+                try await context.perform {
+                    let newCheckpoint = LocalFileCheckpoint(context: context)
+                    newCheckpoint.url = url
+                    newCheckpoint.updatedAt = .now
+                    newCheckpoint.content = try Data(contentsOf: url)
+                    
+                    context.insert(newCheckpoint)
+                    try context.save()
+                }
+            } catch {
+                await alertToast(error)
+            }
+        }
     }
 }
 
