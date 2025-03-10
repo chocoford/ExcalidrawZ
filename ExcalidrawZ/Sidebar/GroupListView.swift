@@ -11,7 +11,7 @@ import ChocofordEssentials
 import ChocofordUI
 
 struct GroupListView: View {
-    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
@@ -137,7 +137,7 @@ struct GroupListView: View {
                                 allowedContentTypes: [.folder],
                                 allowsMultipleSelection: true
                             ) { urls in
-                                try importLocalFolders(urls: urls)
+                                importLocalFolders(urls: urls)
                             }
 #endif
                     }
@@ -203,7 +203,7 @@ struct GroupListView: View {
                     try await fileState.createNewGroup(
                         name: name,
                         activate: true,
-                        context: managedObjectContext
+                        context: viewContext
                     )
                 } catch {
                     alertToast(error)
@@ -223,19 +223,40 @@ struct GroupListView: View {
         return result
     }
     
-    private func importLocalFolders(urls: [URL]) throws {
-        for url in urls {
-            guard url.startAccessingSecurityScopedResource() else {
-                continue
+    private func importLocalFolders(urls: [URL]) {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        Task.detached {
+            do {
+                for url in urls {
+                    guard url.startAccessingSecurityScopedResource() else {
+                        continue
+                    }
+                    
+                    try await context.perform {
+                        let localFolder = try LocalFolder(url: url, context: context)
+                        context.insert(localFolder)
+                        
+                        // create checkpoints for every file in folder
+                        if let enumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: [.isDirectoryKey, .nameKey]) {
+                            for case let url as URL in enumerator {
+                                if url.pathExtension == "excalidraw" {
+                                    let checkpoint = LocalFileCheckpoint(context: context)
+                                    checkpoint.url = url
+                                    checkpoint.content = try Data(contentsOf: url)
+                                    checkpoint.updatedAt = .now
+                                    context.insert(checkpoint)
+                                }
+                            }
+                        }
+                        
+                        try context.save()
+                    }
+                    
+                    url.stopAccessingSecurityScopedResource()
+                }
+            } catch {
+                await alertToast(error)
             }
-             
-            try managedObjectContext.performAndWait {
-                let localFolder = try LocalFolder(url: url, context: managedObjectContext)
-                managedObjectContext.insert(localFolder)
-                try managedObjectContext.save()
-            }
-            
-            url.stopAccessingSecurityScopedResource()
         }
     }
 }

@@ -27,6 +27,15 @@ struct TemporaryGroupRowView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(ListButtonStyle(selected: fileState.isTemporaryGroupSelected))
+        .contextMenu {
+            Button {
+                fileState.currentTemporaryFile = nil
+                fileState.temporaryFiles.removeAll()
+                fileState.isTemporaryGroupSelected = false
+            } label: {
+                Label(.localizable(.sidebarTemporaryGroupRowContextMenuCloseAll), systemSymbol: .xmarkCircle)
+            }
+        }
     }
 }
 

@@ -17,7 +17,7 @@ struct FileHistoryButton: View {
     
     private var disabled: Bool {
         fileState.currentGroup?.groupType == .trash ||
-        (fileState.currentFile == nil && fileState.currentLocalFile == nil)
+        (fileState.currentFile == nil && fileState.currentLocalFile == nil && fileState.currentTemporaryFile == nil)
     }
 
     var body: some View {
@@ -34,6 +34,8 @@ struct FileHistoryButton: View {
                 FileCheckpointListView(file: file)
             } else if let localFile = fileState.currentLocalFile {
                 FileCheckpointListView(localFile: localFile)
+            } else if let tempFile = fileState.currentTemporaryFile {
+                FileCheckpointListView(localFile: tempFile)
             }
         }
 #elseif os(iOS)

@@ -149,6 +149,9 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                         try folder.withSecurityScopedURL { _ in
                             self.sharedFile = try ExcalidrawFile(contentsOf: fileURL)
                         }
+                    } else if fileState.isTemporaryGroupSelected,
+                              let fileURL = fileState.currentTemporaryFile {
+                        self.sharedFile = try ExcalidrawFile(contentsOf: fileURL)
                     }
                 } catch {
                     alertToast(error)
@@ -160,7 +163,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             .help(.localizable(.export))
             .disabled(
                 fileState.currentGroup?.groupType == .trash ||
-                (fileState.currentFile == nil && fileState.currentLocalFile == nil)
+                (fileState.currentFile == nil && fileState.currentLocalFile == nil && fileState.currentTemporaryFile == nil)
             )
 
             if #available(macOS 13.0, iOS 16.0, *), appPreference.inspectorLayout == .sidebar {

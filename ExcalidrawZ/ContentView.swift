@@ -18,7 +18,7 @@ import SwiftyAlert
 
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
@@ -132,17 +132,34 @@ struct ContentView: View {
                 fileState.isTemporaryGroupSelected = true
                 fileState.currentTemporaryFile = fileState.temporaryFiles.first
             }
+            // save a checkpoint immediately.
+            let context = viewContext
+            Task.detached {
+                do {
+                    try await context.perform {
+                        let newCheckpoint = LocalFileCheckpoint(context: context)
+                        newCheckpoint.url = url
+                        newCheckpoint.updatedAt = .now
+                        newCheckpoint.content = try Data(contentsOf: url)
+                        
+                        context.insert(newCheckpoint)
+                        try context.save()
+                    }
+                } catch {
+                    await alertToast(error)
+                }
+            }
         }
         // Check if it is first launch by checking the files count.
         .task {
             do {
-                let isEmpty = try managedObjectContext.fetch(NSFetchRequest<File>(entityName: "File")).isEmpty
+                let isEmpty = try viewContext.fetch(NSFetchRequest<File>(entityName: "File")).isEmpty
                 isFirstImporting = isEmpty
                 if isFirstImporting == true, try await CKContainer.default().accountStatus() != .available {
                     isFirstImporting = false
                     return
                 } else if !isEmpty {
-                    try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: managedObjectContext)
+                    try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: viewContext)
                 }
             } catch {
                 alertToast(error)
@@ -162,7 +179,7 @@ struct ContentView: View {
                             Task { @MainActor in
                                 do {
                                     try? await Task.sleep(nanoseconds: UInt64(2 * 1e+9))
-                                    try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: managedObjectContext)
+                                    try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: viewContext)
                                 } catch {
                                     alertToast(error)
                                 }

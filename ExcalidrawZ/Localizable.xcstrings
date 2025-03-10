@@ -18555,6 +18555,17 @@
         }
       }
     },
+    "sidebarTemporaryGroupRowContextMenuCloseAll" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close all files"
+          }
+        }
+      }
+    },
     "sidebarToggleName" : {
       "extractionState" : "manual",
       "localizations" : {
