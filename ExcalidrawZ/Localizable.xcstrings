@@ -18566,6 +18566,28 @@
         }
       }
     },
+    "sidebarTemporaryGroupRowContextMenuMoveTo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to..."
+          }
+        }
+      }
+    },
+    "sidebarTemporaryGroupRowContextMenuSaveTo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to..."
+          }
+        }
+      }
+    },
     "sidebarToggleName" : {
       "extractionState" : "manual",
       "localizations" : {

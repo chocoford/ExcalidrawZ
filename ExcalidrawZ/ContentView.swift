@@ -15,8 +15,6 @@ import ChocofordUI
 import ChocofordEssentials
 import SwiftyAlert
 
-
-
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass

@@ -90,7 +90,10 @@ struct TemporaryFileRowView: View {
                 }
             }
         } label: {
-            Label("Save to...", systemSymbol: .trayAndArrowDown)
+            Label(
+                .localizable(.sidebarTemporaryGroupRowContextMenuSaveTo),
+                systemSymbol: .trayAndArrowDown
+            )
         }
         
         Menu {
@@ -105,7 +108,10 @@ struct TemporaryFileRowView: View {
                 }
             }
         } label: {
-            Label("Move to...", systemSymbol: .trayAndArrowUp)
+            Label(
+                .localizable(.sidebarTemporaryGroupRowContextMenuMoveTo),
+                systemSymbol: .trayAndArrowUp
+            )
         }
         
         
