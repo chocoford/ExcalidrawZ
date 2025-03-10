@@ -7,6 +7,7 @@
 
 import SwiftUI
 import ChocofordUI
+import CoreData
 
 struct GroupInfo: Equatable {
     private(set) var groupEntity: Group

@@ -6,9 +6,12 @@
 //
 
 import SwiftUI
+import CoreData
 
 import ChocofordUI
+#if os(macOS)
 import FSEventsWrapper
+#endif
 
 struct LocalFoldersListView: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -32,13 +35,16 @@ struct LocalFoldersListView: View {
 //        try? print("[TEST] LocalFolder", fetchRequest.execute().count)
     }
     
-    
-    @State private var window: NSWindow?
-    @State private var localFolderMonitors: [LocalFolder : DirectoryMonitor] = [:]
-    @State private var currentFolderMonitor: DirectoryMonitor?
+#if canImport(AppKit)
+    typealias PlatformWindow = NSWindow
+#elseif canImport(UIKit)
+    typealias PlatformWindow = UIWindow
+#endif
+
+    @State private var window: PlatformWindow?
     @State private var monitorTask: Task<Void, Never>?
     @State private var monitorTasks: [LocalFolder : Task<Void, Never>] = [:]
-    
+
     @State private var folderUrlBeforeResignKey: URL?
 
     var body: some View {
@@ -69,6 +75,7 @@ struct LocalFoldersListView: View {
             }
         }
         .bindWindow($window)
+#if os(macOS)
         .onReceive(
             NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
         ) { notification in
@@ -92,6 +99,7 @@ struct LocalFoldersListView: View {
         .watchImmediately(of: folders) { newValue in
             handleFoldersObservation(folders: newValue)
         }
+#endif
         .onAppear {
             folders.forEach { try? $0.refreshChildren(context: viewContext) }
         }
@@ -103,6 +111,7 @@ struct LocalFoldersListView: View {
         }
     }
     
+#if os(macOS)
     private func handleFoldersObservation(folders newValue: FetchedResults<LocalFolder>) {
         for folder in newValue.filter({ folder in !monitorTasks.contains(where: {$0.key == folder})}) {
             let monitorTask = Task { @MainActor in
@@ -175,7 +184,7 @@ struct LocalFoldersListView: View {
             monitorTasks.removeValue(forKey: outdatedMonitor.key)
         }
     }
-    
+#endif
     private func redirectToCurrentFolder() throws {
         guard fileState.currentGroup == nil, let folderUrlBeforeResignKey else { return }
         let context = viewContext

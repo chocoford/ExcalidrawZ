@@ -56,19 +56,21 @@ struct CreateGroupSheetView: View {
 //                }
                 
                 HStack {
+#if os(macOS)
                     Text(.localizable(.sidebarGroupListCreateGroupName))
                         .frame(width: 40, alignment: .trailing)
-                    TextField("", text: $name)
+#endif
+                    TextField(.localizable(.sidebarGroupListCreateGroupName), text: $name)
                         .submitLabel(.done)
 #if os(macOS)
                         .textFieldStyle(.roundedBorder)
+#endif
                         .onSubmit {
                             if !name.isEmpty {
                                 onCreate(name)
                                 dismiss()
                             }
                         }
-#endif
                 }
             } header: {
                 Text(createType == .group ? .localizable(.sidebarGroupListCreateTitle) : "Create a Folder")

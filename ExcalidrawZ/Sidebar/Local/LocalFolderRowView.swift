@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 import ChocofordUI
 
@@ -104,6 +105,7 @@ struct LocalFolderRowView: View {
         
         
         if let url = self.folder.url {
+#if os(macOS)
             Button {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(url.filePath, forType: .string)
@@ -118,6 +120,7 @@ struct LocalFolderRowView: View {
                 Label("Reveal in Finder", systemSymbol: .docViewfinder)
                     .foregroundStyle(.red)
             }
+#endif
         }
         
         Divider()
@@ -338,8 +341,13 @@ struct LocalFolderRowView: View {
                             }
                             folder.url = newURL
                             folder.filePath = newURL.filePath
+#if os(macOS)
+                            let options: URL.BookmarkCreationOptions = [.withSecurityScope]
+#elseif os(iOS)
+                            let options: URL.BookmarkCreationOptions = []
+#endif
                             folder.bookmarkData = try newURL.bookmarkData(
-                                options: .withSecurityScope,
+                                options: options,
                                 includingResourceValuesForKeys: [.nameKey]
                             )
                             folder.parent = targetFolder

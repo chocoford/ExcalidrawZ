@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 import ChocofordUI
 
@@ -115,9 +116,14 @@ struct LocalFileRowView: View {
 
         moveLocalFileMenu()
         
+#if os(macOS)
         Button {
+#if canImport(AppKit)
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(self.file.filePath, forType: .string)
+#elseif canImport(UIKit)
+            UIPasteboard.general.setObjects([self.file.filePath])
+#endif
         } label: {
             Label("Copy File Path", systemSymbol: .arrowRightDocOnClipboard)
                 .foregroundStyle(.red)
@@ -129,7 +135,7 @@ struct LocalFileRowView: View {
             Label("Reveal in Finder", systemSymbol: .docViewfinder)
                 .foregroundStyle(.red)
         }
-        
+#endif
         Divider()
         
         // Delete

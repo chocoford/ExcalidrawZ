@@ -64,7 +64,7 @@ extension SVGPreviewWebView: NSViewRepresentable {
     }
 }
 #elseif canImport(UIKit)
-struct SVGPreviewWebView: UIViewRepresentable {
+extension SVGPreviewWebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         makePlatformView(context: context)
     }

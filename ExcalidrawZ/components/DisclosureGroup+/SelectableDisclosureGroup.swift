@@ -80,26 +80,33 @@ struct SelectableDisclosureGroup: View {
                 if indicatorVisibility == .visible {
                     HStack(spacing: 0) {
                         Color.clear
-                            .frame(width: CGFloat(depth * 8) + 4, height: 1)
+                            .frame(width: CGFloat(depth * 8), height: 1)
                         
                         Image(systemSymbol: .chevronRight)
                             .font(.footnote)
                             .rotationEffect(.degrees(isExpanded.wrappedValue ? 90 : 0))
+                            .padding(4)
                             .contentShape(Rectangle())
-                            .onTapGesture {
-                                let workItem = DispatchWorkItem(flags: .noQoS) {
-                                    withAnimation(.smooth(duration: 0.2)) {
-                                        isExpanded.wrappedValue.toggle()
+                            .simultaneousGesture(
+                                TapGesture().onEnded {
+                                    let workItem = DispatchWorkItem(flags: .noQoS) {
+                                        withAnimation(.smooth(duration: 0.2)) {
+                                            isExpanded.wrappedValue.toggle()
+                                        }
                                     }
-                                }
-                                
-                                if NSEvent.modifierFlags.contains(.option) {
-                                    expandSubGroupsFlag = !isExpanded.wrappedValue
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: workItem)
-                                } else {
+#if canImport(AppKit)
+                                    if NSEvent.modifierFlags.contains(.option) {
+                                        expandSubGroupsFlag = !isExpanded.wrappedValue
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: workItem)
+                                    } else {
+                                        workItem.perform()
+                                    }
+#else
                                     workItem.perform()
-                                }
-                            }
+#endif
+                                },
+                                including: .gesture
+                            )
                     }
                 }
             }

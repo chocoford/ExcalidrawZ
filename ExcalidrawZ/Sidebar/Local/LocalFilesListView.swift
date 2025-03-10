@@ -21,7 +21,11 @@ struct LocalFilesListView: View {
     @State private var files: [URL] = []
     @State private var updateFlags: [URL : Date] = [:]
     
+#if canImport(AppKit)
     @State private var window: NSWindow?
+#elseif canImport(UIKit)
+    @State private var window: UIWindow?
+#endif
     
     var body: some View {
         ScrollView {
@@ -40,6 +44,7 @@ struct LocalFilesListView: View {
             getFolderContents()
             fileState.currentLocalFile = files.first
         }
+#if os(macOS)
         .onReceive(
             NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
         ) { notification in
@@ -48,6 +53,7 @@ struct LocalFilesListView: View {
                 getFolderContents()
             }
         }
+#endif
         .onReceive(localFolderState.itemCreatedPublisher) { path in
             getFolderContents()
         }

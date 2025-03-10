@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 extension Notification.Name {
     static let shouldExpandGroup = Notification.Name("ShouldExpandGroup")

@@ -22,8 +22,8 @@
 		3963A07C2C6C7EAA00472AE7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 397E465A295838D0003B824B /* Assets.xcassets */; };
 		3963A07D2C6C7EAA00472AE7 /* FakeToggleColorMode.js in Resources */ = {isa = PBXBuildFile; fileRef = 39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */; };
 		3963A07E2C6C7EAA00472AE7 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
-		3965F2102D6F60170065A8C8 /* FSEventsWrapper in Frameworks */ = {isa = PBXBuildFile; productRef = 3965F20F2D6F60170065A8C8 /* FSEventsWrapper */; };
-		3965F2122D6F60330065A8C8 /* FSEventsWrapper in Frameworks */ = {isa = PBXBuildFile; productRef = 3965F2112D6F60330065A8C8 /* FSEventsWrapper */; };
+		3965F2102D6F60170065A8C8 /* FSEventsWrapper in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 3965F20F2D6F60170065A8C8 /* FSEventsWrapper */; };
+		3965F2122D6F60330065A8C8 /* FSEventsWrapper in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 3965F2112D6F60330065A8C8 /* FSEventsWrapper */; };
 		3965F3772D76B4EC0065A8C8 /* MathJaxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3965F3762D76B4EC0065A8C8 /* MathJaxSwift */; };
 		3965F3792D76B5090065A8C8 /* MathJaxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3965F3782D76B5090065A8C8 /* MathJaxSwift */; };
 		396661302C665D4300F863BC /* excalidraw-latest in Resources */ = {isa = PBXBuildFile; fileRef = 3966612F2C665D3E00F863BC /* excalidraw-latest */; };
@@ -1399,7 +1399,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 33;
+				CURRENT_PROJECT_VERSION = 36;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1429,7 +1429,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 33;
+				CURRENT_PROJECT_VERSION = 36;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1458,7 +1458,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = QuickLookPreviewExtension/QuickLookPreviewExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 33;
+				CURRENT_PROJECT_VERSION = 36;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;

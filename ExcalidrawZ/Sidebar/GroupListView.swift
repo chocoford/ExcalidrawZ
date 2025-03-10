@@ -103,6 +103,7 @@ struct GroupListView: View {
                     // iCloud
                     VStack(alignment: .leading, spacing: spacing) {
                         databaseGroupsList()
+#if os(macOS)
                             .modifier(
                                 ContentHeaderCreateButtonHoverModifier(
                                     isCreateDialogPresented: Binding {
@@ -118,11 +119,13 @@ struct GroupListView: View {
                                     title: "iCloud"
                                 )
                             )
+#endif
                     }
                     
                     // Local
                     VStack(alignment: .leading, spacing: spacing) {
                         LocalFoldersListView()
+#if os(macOS)
                             .modifier(
                                 ContentHeaderCreateButtonHoverModifier(
                                     isCreateDialogPresented: $isCreateLocalFolderDialogPresented,
@@ -136,24 +139,27 @@ struct GroupListView: View {
                             ) { urls in
                                 try importLocalFolders(urls: urls)
                             }
+#endif
                     }
                 }
                 .padding(8)
             }
             .clipped()
-            
-//            HStack {
-//                Button {
-//                    isCreateGroupDialogPresented.toggle()
-//                    createGroupType = .group
-//                } label: {
-//                    Label(.localizable(.sidebarGroupListNewFolder), systemSymbol: .plusCircle)
-//                }
-//                .buttonStyle(.borderless)
-//                
-//                Spacer()
-//            }
-//            .padding(4)
+
+#if os(iOS)
+            HStack {
+                Button {
+                    isCreateGroupDialogPresented.toggle()
+                    createGroupType = .group
+                } label: {
+                    Label(.localizable(.sidebarGroupListNewFolder), systemSymbol: .plusCircle)
+                }
+                .buttonStyle(.borderless)
+                
+                Spacer()
+            }
+            .padding(4)
+#endif
         }
     }
     

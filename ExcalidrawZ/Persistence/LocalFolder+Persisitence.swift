@@ -9,13 +9,26 @@ import Foundation
 import CoreData
 
 extension LocalFolder {
+
+#if os(macOS)
+    var bookmarkResolutionOptions: URL.BookmarkResolutionOptions {
+        [.withSecurityScope]
+    }
+    var bookmarkCreationOptions: URL.BookmarkCreationOptions {
+        [.withSecurityScope]
+    }
+#elseif os(iOS)
+    var bookmarkResolutionOptions: URL.BookmarkResolutionOptions { [] }
+    var bookmarkCreationOptions: URL.BookmarkCreationOptions { [] }
+#endif
+    
     var scopedURL: URL? {
         get throws {
             guard let bookmarkData else { return nil }
             var isStale: Bool = false
             return try URL(
                 resolvingBookmarkData: bookmarkData,
-                options: [.withSecurityScope],
+                options: bookmarkResolutionOptions,
                 bookmarkDataIsStale: &isStale
             )
         }
@@ -27,7 +40,7 @@ extension LocalFolder {
         self.filePath = url.filePath
         self.importedAt = Date()
         self.bookmarkData = try url.bookmarkData(
-            options: [.withSecurityScope],
+            options: bookmarkCreationOptions,
             includingResourceValuesForKeys: [.nameKey],
             relativeTo: nil
         )

@@ -78,6 +78,11 @@ where Children.Element : Hashable {
     @State private var height: CGFloat = .zero
     
     var body: some View {
+        let fillStyle = if #available(iOS 17.0, *) {
+            AnyShapeStyle(.separator)
+        } else {
+            AnyShapeStyle(.secondary)
+        }
         VStack(alignment: .leading, spacing: 0) {
             root
                 .readHeight($height)
@@ -85,7 +90,7 @@ where Children.Element : Hashable {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(children, id: childrenID) { child in
                     let isLast = child == children.last
-                    
+
                     childView(child)
                         .environment(\.treeStructureDepth, depth+1)
                         .environment(\.treeStructureIsLast, isLast)
@@ -94,17 +99,17 @@ where Children.Element : Hashable {
                             HStack(spacing: 0) {
                                 VStack(spacing: 0) {
                                     Rectangle()
-                                        .fill(.separator)
+                                        .fill(fillStyle)
                                         .frame(width: 1, height: height / 2)
                                     
                                     Rectangle()
-                                        .fill(.separator)
+                                        .fill(fillStyle)
                                         .frame(width: 1, height: height / 2)
                                         .opacity(isLast ? 0 : 1)
                                 }
                                 
                                 Rectangle()
-                                    .fill(.separator)
+                                    .fill(fillStyle)
                                     .frame(width: 5, height: 1)
                             }
                             .padding(.leading, 6 + paddingLeading)
@@ -114,7 +119,7 @@ where Children.Element : Hashable {
             .overlay(alignment: .leading) {
                 if !isLast {
                     Rectangle()
-                        .fill(.separator)
+                        .fill(fillStyle)
                         .frame(width: 1)
                         .offset(x: -8 + paddingLeading)
                 }

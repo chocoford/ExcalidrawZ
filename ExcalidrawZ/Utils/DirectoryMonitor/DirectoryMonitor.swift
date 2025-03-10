@@ -11,8 +11,8 @@ import os.log
 import CoreServices
 
 import ChocofordEssentials
-
-@available(macOS 14.0, *)
+#if os(macOS)
+@available(macOS 14.0, iOS 17.0, *)
 @Observable
 final class DirectoryObserver {
     private(set) var monitors: [DirectoryMonitor] = []
@@ -193,8 +193,6 @@ extension DirectoryMonitor {
 }
 */
 
-
-
 public class DirectoryMonitor {
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
@@ -329,3 +327,4 @@ private let eventCallback: @convention(c) (
         eventIds: eventIds
     )
 }
+#endif

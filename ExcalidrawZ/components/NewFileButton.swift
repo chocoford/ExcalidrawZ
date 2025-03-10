@@ -21,7 +21,11 @@ struct NewFileButton: View {
     @Environment(\.alert) private var alert
     @EnvironmentObject private var fileState: FileState
     
+#if canImport(AppKit)
     @State private var window: NSWindow?
+#elseif canImport(UIKit)
+    @State private var window: UIWindow?
+#endif
     
     init() {}
     
@@ -81,6 +85,7 @@ struct NewFileButton: View {
     private func createNewFileFromClipboard() {
         Task {
             do {
+#if canImport(AppKit)
                 guard let pngData = NSPasteboard.general.data(forType: .png) else {
                     struct CanNotReadFromClipboardError: LocalizedError {
                         var errorDescription: String? {
@@ -89,7 +94,17 @@ struct NewFileButton: View {
                     }
                     throw CanNotReadFromClipboardError()
                 }
-                
+#elseif canImport(UIKit)
+                let image = UIPasteboard.general.image
+                guard let pngData = image?.pngData() else {
+                    struct CanNotReadFromClipboardError: LocalizedError {
+                        var errorDescription: String? {
+                            "Can not read from clipboard"
+                        }
+                    }
+                    throw CanNotReadFromClipboardError()
+                }
+#endif
                 if fileState.currentGroup != nil {
                     try fileState.createNewFile(context: viewContext)
                 } else if let folder = fileState.currentLocalFolder {
