@@ -407,7 +407,7 @@ struct ContentViewLagacy: View {
             HStack {
                 if layoutState.isSidebarPresented {
                     SidebarView()
-                        .frame(width: 340)
+                        .frame(width: 374)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .background {
                             RoundedRectangle(cornerRadius: 12)

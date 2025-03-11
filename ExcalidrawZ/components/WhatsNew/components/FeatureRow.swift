@@ -12,22 +12,23 @@ struct WhatsNewFeatureRow: View {
     
     var icon: AnyView
     var content: AnyView
-    var mediaURL: URL?
+    var overlayTrailing: AnyView
     
-    init<Icon: View, Content: View>(
+    init<Icon: View, Content: View, Trailing: View>(
         @ViewBuilder icon: () -> Icon,
-        @ViewBuilder content: () -> Content
+        @ViewBuilder content: () -> Content,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView().frame(width: 0, height: 0) }
     ) {
         self.icon = AnyView(icon())
         self.content = AnyView(content())
+        self.overlayTrailing = AnyView(trailing())
     }
     
-    
-    init<ImageView: View>(
+    init<ImageView: View, Trailing: View>(
         title: LocalizedStringKey,
         description: LocalizedStringKey,
-        appendMediaURL: URL? = nil,
-        @ViewBuilder icon: () -> ImageView
+        @ViewBuilder icon: () -> ImageView,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView().frame(width: 0, height: 0) }
     ) {
         self.init {
             icon()
@@ -36,23 +37,26 @@ struct WhatsNewFeatureRow: View {
                 Text(title).font(.headline)
                 Text(description).font(.caption).foregroundStyle(.secondary)
             }
+        } trailing: {
+            trailing()
         }
-        self.mediaURL = appendMediaURL
     }
     
-    init(
+    init<Trailing: View>(
         title: LocalizedStringKey,
         description: LocalizedStringKey,
         icon: Image,
-        appendMediaURL: URL? = nil
+        @ViewBuilder trailing: @escaping () -> Trailing = { EmptyView().frame(width: 0, height: 0) }
     ) {
-        self.init(title: title, description: description, appendMediaURL: appendMediaURL) {
+        self.init(title: title, description: description) {
             icon.resizable()
+        } trailing: {
+            trailing()
         }
     }
     
-    @State private var mediaPreviewImage: Image?
-    
+    // @State private var mediaPreviewImage: Image?
+    @State private var overlayTrailingWidth: CGFloat = .zero
     
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
@@ -63,65 +67,16 @@ struct WhatsNewFeatureRow: View {
             
             content
             
-            if mediaURL != nil {
+            if overlayTrailingWidth > 0 {
                 Rectangle()
-                    .frame(width: 120, height: 1)
+                    .frame(width: overlayTrailingWidth, height: 1)
                     .opacity(0)
             }
         }
         .overlay(alignment: .trailing) {
-            if let mediaURL {
-                NavigationLink {
-                    VideoPlayer(player: AVPlayer(url: mediaURL))
-#if os(macOS)
-                        .frame(width: 720, height: 500)
-#endif
-                } label: {
-                    ZStack {
-                        if let mediaPreviewImage {
-                            mediaPreviewImage
-                                .resizable()
-                                .scaledToFit()
-                        } else {
-                            Color.black
-                        }
-                    }
-                    .frame(width: 120)
-                    .overlay {
-                        Image(systemSymbol: .playCircleFill)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: 60, maxHeight: 60)
-                            .padding(10)
-                            .blendMode(.difference)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.borderless)
-            }
+            overlayTrailing
+                .readWidth($overlayTrailingWidth)
         }
-        .onAppear {
-            if let mediaURL {
-                let asset = AVAsset(url: mediaURL)
-                let imageGenerator = AVAssetImageGenerator(asset: asset)
-                imageGenerator.appliesPreferredTrackTransform = true
-                
-                if #available(macOS 13.0,  *) {
-                    imageGenerator.generateCGImageAsynchronously(for: .zero) { cgImage, time, error in
-                        Task.detached {
-                            if let cgImage {
-                                let image = Image(cgImage: cgImage)
-                                await MainActor.run {
-                                    self.mediaPreviewImage = image
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // Fallback on earlier versions
-                }
-            }
-        }
+        
     }
 }

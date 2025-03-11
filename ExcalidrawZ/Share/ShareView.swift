@@ -220,7 +220,7 @@ struct ShareViewLagacy: View {
         }
         .animation(.default, value: route.last)
         .padding(.horizontal, 40)
-        .frame(width: 400, height: 300)
+        .frame(width: 460, height: 300)
     }
     
 #if os(iOS)

@@ -39,11 +39,22 @@ struct CreateGroupSheetView: View {
     var canSelectCreateType: Bool
     
     var body: some View {
+        if #available(macOS 13.0, *) {
+            content()
+        } else {
+            content()
+                .frame(width: 400)
+        }
+    }
+    
+
+    @MainActor @ViewBuilder
+    private func content() -> some View {
         Form {
             Section {
 //                HStack {
 //                    Text("type:").frame(width: 40, alignment: .trailing)
-//                    
+//
 //                    Picker(selection: $createType) {
 //                        Text("Group").tag(CreateGroupType.group)
 //                        Text("Folder").tag(CreateGroupType.localFolder)
@@ -97,8 +108,6 @@ struct CreateGroupSheetView: View {
         .padding()
 #endif
     }
-    
-
 }
 
 #Preview {

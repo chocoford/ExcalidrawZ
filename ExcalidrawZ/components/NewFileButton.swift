@@ -41,7 +41,8 @@ struct NewFileButton: View {
             Button {
                 createNewFileFromClipboard()
             } label: {
-                Label("New draw from clipboard", systemSymbol: .squareAndPencil)
+                // TODO: Temp, change it next version.
+                Label(.localizable(.whatsNewNewDrawFromClipboardTitle), systemSymbol: .squareAndPencil)
             }
             .keyboardShortcut("n", modifiers: [.command, .option, .shift])
         } label: {

@@ -101,7 +101,7 @@ struct ExcalidrawZApp: App {
                         object: nil
                     )
                 } label: {
-                    Text("New draw")
+                    Text(.localizable(.createNewFile))
                 }
                 .keyboardShortcut("N", modifiers: .command)
                 
@@ -111,7 +111,7 @@ struct ExcalidrawZApp: App {
                         object: nil
                     )
                 } label: {
-                    Text("New draw from clipboard")
+                    Text(.localizable(.whatsNewNewDrawFromClipboardTitle))
                 }
                 .keyboardShortcut("N", modifiers: [.command, .option, .shift])
                 

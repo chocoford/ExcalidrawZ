@@ -41,8 +41,10 @@ struct LocalFilesListView: View {
         }
         .bindWindow($window)
         .watchImmediately(of: folder.url) { newValue in
-            getFolderContents()
-            fileState.currentLocalFile = files.first
+            DispatchQueue.main.async {
+                getFolderContents()
+                fileState.currentLocalFile = files.first
+            }
         }
 #if os(macOS)
         .onReceive(
@@ -50,7 +52,12 @@ struct LocalFilesListView: View {
         ) { notification in
             if let window = notification.object as? NSWindow,
                window == self.window {
-                getFolderContents()
+                DispatchQueue.main.async {
+                    getFolderContents()
+                    if fileState.currentLocalFile == nil || fileState.currentLocalFile?.deletingLastPathComponent() != folder.url {
+                        fileState.currentLocalFile = files.first
+                    }
+                }
             }
         }
 #endif

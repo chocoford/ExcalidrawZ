@@ -42,7 +42,12 @@ struct SidebarView: View {
                         groupType: currentGroup.groupType
                     )
                 } else if let currentLocalFolder = fileState.currentLocalFolder {
-                    LocalFilesListView(folder: currentLocalFolder)
+                    if #available(macOS 13.0, *) {
+                        LocalFilesListView(folder: currentLocalFolder)
+                    } else {
+                        LocalFilesListView(folder: currentLocalFolder)
+                            .id(currentLocalFolder)
+                    }
                 } else if fileState.isTemporaryGroupSelected {
                     TemporaryFileListView()
                 } else {

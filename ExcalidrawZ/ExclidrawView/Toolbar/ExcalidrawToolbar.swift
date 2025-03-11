@@ -595,6 +595,8 @@ struct ExcalidrawToolbar: View {
         } label: {
             if #available(macOS 15.0, iOS 18.0, *) {
                 Label(.localizable(.toolbarMoreTools), systemImage: "xmark.triangle.circle.square")
+            } else if #available(macOS 13.0, iOS 16.0, *) {
+                Label(.localizable(.toolbarMoreTools), systemSymbol: .chartXyaxisLine)
             } else {
                 Label(.localizable(.toolbarMoreTools), systemSymbol: .chartXyaxisLine)
             }
