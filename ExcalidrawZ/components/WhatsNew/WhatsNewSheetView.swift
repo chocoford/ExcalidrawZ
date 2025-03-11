@@ -47,9 +47,9 @@ struct WhatsNewSheetViewModifier: ViewModifier {
             }
             .bindWindow($window)
             .onAppear {
-//#if DEBUG
-//                isPresented = true
-//#endif
+#if DEBUG
+                isPresented = true
+#endif
                 if let buildString = Bundle.main.infoDictionary!["CFBundleVersion"] as? String,
                    lastBuild < (Int(buildString) ?? 0) {
                     isPresented = true
@@ -218,31 +218,42 @@ struct WhatsNewView: View {
         }
         
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewFallbackExcalifontTitle),
-            description: .localizable(.whatsNewFallbackExcalifontDescription),
-            icon: Image(systemSymbol: .characterCursorIbeam),
-            appendMediaURL: Bundle.main.url(forResource: "Fallback Excalifont 720p", withExtension: "mov")
-        )
-        
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewMoreToolsSupportTitle),
-            description: .localizable(.whatsNewMoreToolsSupportDescription)
+            title: .localizable(.whatsNewSubgroupsSupportTitle),
+            description: .localizable(.whatsNewSubgroupsSupportDescription)
         ) {
-            if #available(macOS 15.0, iOS 18.0, *) {
-                Image(systemName: "xmark.triangle.circle.square")
-                    .resizable()
-            } else {
-                Image(systemSymbol: .shippingbox)
-                    .resizable()
-            }
+            Image(systemSymbol: .listBulletIndent)
+                .resizable()
+                .scaledToFit()
+                .padding(.leading, 2)
         }
         
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewLosslessPDFExportTitle),
-            description: .localizable(.whatsNewLosslessPDFExportDescription),
-            icon: Image(systemSymbol: .scribble)
+            title: .localizable(.whatsNewSupportLocalFoldersTitle),
+            description: .localizable(.whatsNewSupportLocalFoldersDescription),
+            icon: Image(systemSymbol: .folder)
         )
+        
+        
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewSupportMathTitle),
+            description: .localizable(.whatsNewSupportMathDescription),
+            icon: Image(systemSymbol: .xSquareroot)
+        )
+        
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewNewDrawFromClipboardTitle),
+            description: .localizable(.whatsNewNewDrawFromClipboardDescription),
+            icon: Image(systemSymbol: .docOnClipboard)
+        )
+ 
+        
 #if os(iOS)
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewApplePencilToolbarTitle),
+            description: .localizable(.whatsNewApplePencilToolbarDescrition),
+            icon: Image(systemSymbol: .applepencilTip)
+        )
+       
         if UIDevice().userInterfaceIdiom == .pad {
 
         } else if UIDevice().userInterfaceIdiom == .phone {
@@ -264,6 +275,39 @@ struct WhatsNewView: View {
                                 .font(.headline)
                             Divider()
                         }
+                    }
+                }
+                VStack(alignment: .leading, spacing: 10) {
+                    Section {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewFallbackExcalifontTitle),
+                            description: .localizable(.whatsNewFallbackExcalifontDescription),
+                            icon: Image(systemSymbol: .characterCursorIbeam),
+                            appendMediaURL: Bundle.main.url(forResource: "Fallback Excalifont 720p", withExtension: "mov")
+                        )
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewMoreToolsSupportTitle),
+                            description: .localizable(.whatsNewMoreToolsSupportDescription)
+                        ) {
+                            if #available(macOS 15.0, iOS 18.0, *) {
+                                Image(systemName: "xmark.triangle.circle.square")
+                                    .resizable()
+                            } else {
+                                Image(systemSymbol: .shippingbox)
+                                    .resizable()
+                            }
+                        }
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewLosslessPDFExportTitle),
+                            description: .localizable(.whatsNewLosslessPDFExportDescription),
+                            icon: Image(systemSymbol: .scribble)
+                        )
+                    } header: {
+                        Text("v1.2.9")
+                            .font(.headline)
+                        Divider()
                     }
                 }
                 VStack(alignment: .leading, spacing: 10) {
