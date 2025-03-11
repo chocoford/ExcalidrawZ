@@ -116,13 +116,11 @@ extension LocalFolder {
                     }
                     let child = try LocalFolder(url: url, context: context)
                     self.addToChildren(child)
-                    debugPrint("[LocalFolder] new child folder: \(String(describing: child.url))")
                 }
                 
                 // remove mismatched folders
                 for folder in mismatchedFolders {
                     context.delete(folder)
-                    debugPrint("[LocalFolder] remove child folder: \(String(describing: folder.url))")
                 }
                 
                 for case let subfolder as LocalFolder in self.children?.allObjects ?? [] {
