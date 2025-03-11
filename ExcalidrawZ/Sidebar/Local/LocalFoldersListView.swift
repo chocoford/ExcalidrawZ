@@ -15,6 +15,7 @@ import FSEventsWrapper
 
 struct LocalFoldersListView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.alertToast) private var alertToast
     
     @EnvironmentObject private var fileState: FileState
@@ -96,10 +97,21 @@ struct LocalFoldersListView: View {
                 self.folderUrlBeforeResignKey = fileState.currentLocalFolder?.url
             }
         }
+#elseif os(iOS)
+        .onChange(of: scenePhase) { newValue in
+            if newValue == .active {
+                do {
+                    try self.refreshFoldersContent()
+                    try redirectToCurrentFolder()
+                } catch {
+                    alertToast(error)
+                }
+            }
+        }
+#endif
         .watchImmediately(of: folders) { newValue in
             handleFoldersObservation(folders: newValue)
         }
-#endif
         .onAppear {
             folders.forEach { try? $0.refreshChildren(context: viewContext) }
             ICloudFileMonitor.shared.startMonitoring()
@@ -112,7 +124,7 @@ struct LocalFoldersListView: View {
         }
     }
     
-#if os(macOS)
+#if canImport(AppKit)
     private func handleFoldersObservation(folders newValue: FetchedResults<LocalFolder>) {
         for folder in newValue.filter({ folder in !monitorTasks.contains(where: {$0.key == folder})}) {
             let monitorTask = Task { @MainActor in
@@ -206,6 +218,10 @@ struct LocalFoldersListView: View {
             outdatedMonitor.value.cancel()
             monitorTasks.removeValue(forKey: outdatedMonitor.key)
         }
+    }
+#elseif canImport(UIKit)
+    private func handleFoldersObservation(folders newValue: FetchedResults<LocalFolder>) {
+        
     }
 #endif
     private func redirectToCurrentFolder() throws {

@@ -34,7 +34,6 @@ struct ApplePencilToolbarModifier: ViewModifier {
     
     @State private var isPencilModeTipsPresented = false
     
-    @State private var isMathInputSheetPresented = false
 
     
     /// 工具栏与屏幕边缘的最小间距
@@ -469,6 +468,8 @@ struct ApplePencilToolbar: View {
     
     @Namespace var activeToolNamespace
     
+    @State private var isMathInputSheetPresented = false
+
     var body: some View {
         ZStack {
             if isExpanded {

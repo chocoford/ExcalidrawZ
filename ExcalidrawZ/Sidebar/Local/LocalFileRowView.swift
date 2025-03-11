@@ -80,12 +80,12 @@ struct LocalFileRowView: View {
                             .font(.footnote)
                     } else if iCloudState.isUploading {
                         Spacer()
-                        if #available(macOS 15.0, *) {
+                        if #available(macOS 15.0, iOS 18.0, *) {
                             Image(systemSymbol: .icloudAndArrowUp)
                                 .foregroundStyle(.secondary)
                                 .font(.footnote)
                                 .symbolEffect(.breathe)
-                        } else if #available(macOS 14.0, *) {
+                        } else if #available(macOS 14.0, iOS 17.0, *) {
                             Image(systemSymbol: .icloudAndArrowUp)
                                 .foregroundStyle(.secondary)
                                 .font(.footnote)

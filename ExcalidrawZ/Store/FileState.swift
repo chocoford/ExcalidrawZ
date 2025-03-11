@@ -151,8 +151,10 @@ final class FileState: ObservableObject {
             }
             try context.save()
             if activate {
-                DispatchQueue.main.async {
-                    self.currentGroup = group
+                Task {
+                    await MainActor.run {
+                        self.currentGroup = group
+                    }
                 }
             }
             return group.objectID
@@ -376,11 +378,11 @@ final class FileState: ObservableObject {
             }
             PersistenceController.shared.save()
 
-            DispatchQueue.main.async {
-                Task {
-                    try? await self.excalidrawWebCoordinator?.insertMediaFiles(mediaItemsNeedImport)
-                }
-                self.currentFile = file
+             Task {
+                 try? await self.excalidrawWebCoordinator?.insertMediaFiles(mediaItemsNeedImport)
+                 await MainActor.run {
+                     self.currentFile = file
+                 }
             }
         }
     }
@@ -396,6 +398,10 @@ final class FileState: ObservableObject {
         let currentGroupID = currentGroup?.objectID
         var groupID: NSManagedObjectID?
         if urls.count == 1, let url = urls.first {
+            guard url.startAccessingSecurityScopedResource() else {
+                throw AppError.urlError(.startAccessingSecurityScopedResourceFailed)
+            }
+            defer { url.stopAccessingSecurityScopedResource() }
             if FileManager.default.isDirectory(url) { // a directory
                 let viewContext = PersistenceController.shared.container.newBackgroundContext()
                 try await viewContext.perform {
@@ -442,10 +448,19 @@ final class FileState: ObservableObject {
                 guard let group else { return }
                 // multiple folders
                 for folderURL in urls.filter({FileManager.default.isDirectory($0)}) {
+                    guard folderURL.startAccessingSecurityScopedResource() else {
+                        throw AppError.urlError(.startAccessingSecurityScopedResourceFailed)
+                    }
+                    defer { folderURL.stopAccessingSecurityScopedResource() }
                     try self.importGroupFiles(url: folderURL, viewContext: viewContext)
                 }
                 // only files
                 for fileURL in urls.filter({!FileManager.default.isDirectory($0)}) {
+                    guard fileURL.startAccessingSecurityScopedResource() else {
+                        throw AppError.urlError(.startAccessingSecurityScopedResourceFailed)
+                    }
+                    defer { fileURL.stopAccessingSecurityScopedResource() }
+                    
                     let data = try Data(contentsOf: fileURL, options: .uncached)
                     let file = File(name: fileURL.deletingPathExtension().lastPathComponent, context: viewContext)
                     file.content = data
@@ -456,13 +471,6 @@ final class FileState: ObservableObject {
                 groupID = group.objectID
             }
         }
-//        await PersistenceController.shared.container.viewContext.perform {
-//            if let groupID, let group = PersistenceController.shared.container.viewContext.object(with: groupID) as? Group {
-//                DispatchQueue.main.async {
-//                    self.currentGroup = group
-//                }
-//            }
-//        }
         _ = groupID
     }
     
@@ -577,8 +585,10 @@ final class FileState: ObservableObject {
                     }
                 }
                 
-                DispatchQueue.main.async {
-                    self.currentGroup = theEearlisetGroup
+                Task {
+                    await MainActor.run {
+                        self.currentGroup = theEearlisetGroup
+                    }
                 }
             }
             

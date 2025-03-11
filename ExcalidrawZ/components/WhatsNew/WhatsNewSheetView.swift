@@ -298,11 +298,19 @@ struct WhatsNewView: View {
  
         
 #if os(iOS)
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewApplePencilToolbarTitle),
-            description: .localizable(.whatsNewApplePencilToolbarDescrition),
-            icon: Image(systemSymbol: .applepencilTip)
-        )
+        if #available(iOS 17.0, *) {
+            WhatsNewFeatureRow(
+                title: .localizable(.whatsNewApplePencilToolbarTitle),
+                description: .localizable(.whatsNewApplePencilToolbarDescrition),
+                icon: Image(systemSymbol: .applepencilTip)
+            )
+        } else {
+            WhatsNewFeatureRow(
+                title: .localizable(.whatsNewApplePencilToolbarTitle),
+                description: .localizable(.whatsNewApplePencilToolbarDescrition),
+                icon: Image(systemSymbol: .pencilTip)
+            )
+        }
        
         if UIDevice().userInterfaceIdiom == .pad {
 

@@ -60,6 +60,17 @@ struct LocalFilesListView: View {
                 }
             }
         }
+#elseif os(iOS)
+        .onChange(of: scenePhase) { newValue in
+            if newValue == .active {
+                DispatchQueue.main.async {
+                    getFolderContents()
+                    if fileState.currentLocalFile == nil || fileState.currentLocalFile?.deletingLastPathComponent() != folder.url {
+                        fileState.currentLocalFile = files.first
+                    }
+                }
+            }
+        }
 #endif
         .onReceive(localFolderState.itemCreatedPublisher) { path in
             getFolderContents()

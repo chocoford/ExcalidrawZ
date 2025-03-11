@@ -103,7 +103,7 @@ struct GroupListView: View {
                     // iCloud
                     VStack(alignment: .leading, spacing: spacing) {
                         databaseGroupsList()
-#if os(macOS)
+// #if os(macOS)
                             .modifier(
                                 ContentHeaderCreateButtonHoverModifier(
                                     isCreateDialogPresented: Binding {
@@ -119,13 +119,13 @@ struct GroupListView: View {
                                     title: .localizable(.sidebarGroupListSectionHeaderICloud)
                                 )
                             )
-#endif
+// #endif
                     }
                     
                     // Local
                     VStack(alignment: .leading, spacing: spacing) {
                         LocalFoldersListView()
-#if os(macOS)
+//#if os(macOS)
                             .modifier(
                                 ContentHeaderCreateButtonHoverModifier(
                                     isCreateDialogPresented: $isCreateLocalFolderDialogPresented,
@@ -139,7 +139,7 @@ struct GroupListView: View {
                             ) { urls in
                                 importLocalFolders(urls: urls)
                             }
-#endif
+//#endif
                     }
                 }
                 .padding(8)
