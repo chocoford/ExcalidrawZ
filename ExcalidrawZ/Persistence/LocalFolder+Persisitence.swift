@@ -97,7 +97,7 @@ extension LocalFolder {
         try self.withSecurityScopedURL { url in
             let contents = try FileManager.default.contentsOfDirectory(
                 at: url,
-                includingPropertiesForKeys: []
+                includingPropertiesForKeys: [.nameKey]
             )
             try context.performAndWait {
                 let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
@@ -128,6 +128,8 @@ extension LocalFolder {
                 for case let subfolder as LocalFolder in self.children?.allObjects ?? [] {
                     try subfolder.refreshChildren(context: context)
                 }
+                
+                try context.save()
             }
         }
     }

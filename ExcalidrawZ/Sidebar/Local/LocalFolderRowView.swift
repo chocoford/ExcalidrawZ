@@ -67,7 +67,7 @@ struct LocalFolderRowView: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
         if folderStructStyle == .disclosureGroup {
-            Label(folder.url?.lastPathComponent ?? "Unknwon", systemSymbol: .folder)
+            Label(folder.url?.lastPathComponent ?? String(localizable: .generalUnknown), systemSymbol: .folder)
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .contentShape(Rectangle())
@@ -75,7 +75,7 @@ struct LocalFolderRowView: View {
             Button {
                 fileState.currentLocalFolder = folder
             } label: {
-                Label(folder.url?.lastPathComponent ?? "Unknwon", systemSymbol: .folder)
+                Label(folder.url?.lastPathComponent ?? String(localizable: .generalUnknown), systemSymbol: .folder)
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .contentShape(Rectangle())
@@ -218,6 +218,7 @@ struct LocalFolderRowView: View {
                         alertToast(error)
                     }
                 }
+                // LocalFolder creation will be in FSEventStream...
             }
         } catch {
             alertToast(error)
