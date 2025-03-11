@@ -32,14 +32,7 @@ struct LocalFolderRowView: View {
     @State private var isCreateSubfolderPresented = false
     @State private var newSubfolderName: String = String(localizable: .generalNewFolderName)
 
-    var isSelected: Bool {
-        fileState.currentLocalFolder == folder
-//        if let currentLocalFolder = fileState.currentLocalFolder {
-//            return currentLocalFolder.url == folder.url
-//        } else {
-//            return false
-//        }
-    }
+    var isSelected: Bool { fileState.currentLocalFolder == folder }
     
     @FetchRequest(
         sortDescriptors: [SortDescriptor(\.filePath, order: .forward)],

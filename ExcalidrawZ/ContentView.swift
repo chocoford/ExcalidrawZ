@@ -88,7 +88,6 @@ struct ContentView: View {
 #if os(iOS)
         .modifier(ApplePencilToolbarModifier())
 #endif
-        // .debugNotify()
         .environmentObject(fileState)
         .environmentObject(exportState)
         .environmentObject(toolState)
@@ -110,7 +109,6 @@ struct ContentView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .didOpenFromUrls)) { notification in
-            // guard window?.isKeyWindow == true else { return }
             if let urls = notification.object as? [URL] {
                 fileState.temporaryFiles.append(contentsOf: urls)
                 fileState.temporaryFiles = Array(Set(fileState.temporaryFiles))
