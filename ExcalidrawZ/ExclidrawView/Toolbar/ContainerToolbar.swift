@@ -254,7 +254,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             ) {
                 Text(file.name ?? String(localizable: .generalUntitled))
                     .font(.headline)
-                Text(file.createdAt?.formatted() ?? "Not modified")
+                Text(file.updatedAt?.formatted() ?? "Not modified")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
