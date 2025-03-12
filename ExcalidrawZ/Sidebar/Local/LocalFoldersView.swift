@@ -38,14 +38,7 @@ struct LocalFoldersView: View {
     
     let paddingBase: CGFloat = 14
     
-    var isSelected: Bool {
-        fileState.currentLocalFolder == folder
-//        if let currentLocalFolder = fileState.currentLocalFolder {
-//            return currentLocalFolder.url == folder.url
-//        } else {
-//            return false
-//        }
-    }
+    var isSelected: Bool { fileState.currentLocalFolder == folder }
     
     @State private var isExpanded = false
     

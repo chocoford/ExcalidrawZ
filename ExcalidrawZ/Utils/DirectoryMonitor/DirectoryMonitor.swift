@@ -77,122 +77,6 @@ final class DirectoryObserverObject: ObservableObject {
     let queue: DispatchQueue = .init(label: "DirectoryObserver")
 }
 
-/**
-public class DirectoryMonitor: NSObject, NSFilePresenter {
-    private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
-        category: "DirectoryMonitor"
-    )
-    
-    public lazy var presentedItemOperationQueue = OperationQueue.main
-    public var presentedItemURL: URL?
-    
-    private var eventsQueue: EventsQueue = EventsQueue()
-    
-    init(url: URL, onEvents: @escaping (Event) async -> Void) {
-        self.presentedItemURL = url
-        super.init()
-        self.start()
-        Task {
-            for await event in self.eventsQueue {
-                logger.info("[DirectoryMonitor] on event: \(String(describing: event))")
-                await onEvents(event)
-            }
-        }
-    }
-    
-    deinit {
-        self.stop()
-    }
-    
-    public func stop() {
-        NSFileCoordinator.removeFilePresenter(self)
-    }
-    
-    public func start() {
-        if NSFileCoordinator.filePresenters.contains(where: {
-            $0.presentedItemURL == self.presentedItemURL
-        }) {
-            logger.warning("[DirectoryMonitor] start failed, reason: existed.")
-            self.stop()
-        }
-        NSFileCoordinator.addFilePresenter(self)
-        logger.info("[DirectoryMonitor] started observe '\(self.presentedItemURL?.absoluteString ?? "unknown")'")
-    }
-    
-    public func presentedSubitemDidAppear(at url: URL) {
-        guard let directoryURL = self.presentedItemURL else {
-            logger.error("[DirectoryMonitor] presentedSubitemDidAppear error: presentedItemURL is nil")
-            return
-        }
-        self.eventsQueue.yield(.subitemDidAppear(directoryURL, url))
-        logger.info("[DirectoryMonitor] presentedSubitemDidAppear at \(url).")
-    }
-    
-    public func presentedSubitemDidChange(at url: URL) {
-        guard let directoryURL = self.presentedItemURL else {
-            logger.error("[DirectoryMonitor] presentedSubitemDidChange error: presentedItemURL is nil")
-            return
-        }
-        if let _ = try? FileManager.default.attributesOfItem(atPath: url.filePath) {
-            self.eventsQueue.yield(.subitemDidChange(directoryURL, url))
-        } else {
-            self.eventsQueue.yield(.subitemDidLose(directoryURL, url, nil))
-        }
-        logger.info("[DirectoryMonitor] presentedSubitemDidChange at \(url).")
-    }
-    
-    public func presentedSubitem(at url: URL, didLose version: NSFileVersion) {
-        guard let directoryURL = self.presentedItemURL else {
-            logger.error("[DirectoryMonitor] presentedSubitem error: presentedItemURL is nil")
-            return
-        }
-        self.eventsQueue.yield(.subitemDidLose(directoryURL, url, version))
-        logger.info("[DirectoryMonitor] presentedSubitem didLose at \(url).")
-    }
-    
-    public func accommodatePresentedSubitemDeletion(at url: URL) async throws {
-        logger.info("[DirectoryMonitor] accommodatePresentedSubitemDeletion at \(url).")
-    }
-}
-
-extension DirectoryMonitor {
-    public enum Event {
-        case subitemDidAppear(_ directoryURL: URL, _ url: URL)
-        case subitemDidChange(_ directoryURL: URL, _ url: URL)
-        case subitemDidLose(_ directoryURL: URL, _ url: URL, _ version: NSFileVersion?)
-    }
-    
-    public typealias EventHandler = (Event) async -> Void
-    
-    public class EventsQueue: AsyncSequence {
-        public typealias Element = DirectoryMonitor.Event
-        private var continuation: AsyncStream<Element>.Continuation?
-        
-        public init() {}
-        
-        public func yield(_ event: Element) {
-            continuation?.yield(event)
-        }
-        
-        deinit {
-            continuation?.finish()
-        }
-        
-        public func makeAsyncIterator() -> AsyncStream<Element>.Iterator {
-            return stream.makeAsyncIterator()
-        }
-        
-        public lazy var stream: AsyncStream<Element> = {
-             let stream = AsyncStream<Element> { c in
-                 self.continuation = c
-             }
-             return stream
-         }()
-    }
-}
-*/
-
 public class DirectoryMonitor {
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
@@ -326,5 +210,130 @@ private let eventCallback: @convention(c) (
         eventFlags: eventFlags,
         eventIds: eventIds
     )
+}
+
+#elseif os(iOS)
+public class DirectoryMonitor: NSObject, NSFilePresenter {
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier!,
+        category: "DirectoryMonitor"
+    )
+    
+    public lazy var presentedItemOperationQueue = OperationQueue.main
+    public var presentedItemURL: URL?
+    
+    private var eventsQueue: EventsQueue = EventsQueue()
+    
+    init(url: URL, onEvents: @escaping (Event) async -> Void) {
+        self.presentedItemURL = url
+        super.init()
+        self.start()
+        Task {
+            for await event in self.eventsQueue {
+                logger.info("[DirectoryMonitor] on event: \(String(describing: event))")
+                await onEvents(event)
+            }
+        }
+    }
+    
+    deinit {
+        self.stop()
+    }
+    
+    public func stop() {
+        logger.info("[DirectoryMonitor] stop observing '\(self.presentedItemURL?.absoluteString ?? "unknown")'")
+        NSFileCoordinator.removeFilePresenter(self)
+    }
+    
+    public func start() {
+        if NSFileCoordinator.filePresenters.contains(where: {
+            $0.presentedItemURL == self.presentedItemURL
+        }) {
+            logger.warning("[DirectoryMonitor] start failed, reason: existed.")
+            self.stop()
+        }
+        NSFileCoordinator.addFilePresenter(self)
+        logger.info("[DirectoryMonitor] started observe '\(self.presentedItemURL?.absoluteString ?? "unknown")'")
+    }
+    
+    public func presentedSubitemDidAppear(at url: URL) {
+        guard let directoryURL = self.presentedItemURL else {
+            logger.error("[DirectoryMonitor] presentedSubitemDidAppear error: presentedItemURL is nil")
+            return
+        }
+        self.eventsQueue.yield(.subitemDidAppear(directoryURL, url))
+        logger.info("[DirectoryMonitor] presentedSubitemDidAppear at \(url).")
+    }
+    
+    public func presentedSubitemDidChange(at url: URL) {
+        guard let directoryURL = self.presentedItemURL else {
+            logger.error("[DirectoryMonitor] presentedSubitemDidChange error: presentedItemURL is nil")
+            return
+        }
+        if let _ = try? FileManager.default.attributesOfItem(atPath: url.filePath) {
+            self.eventsQueue.yield(.subitemDidChange(directoryURL, url))
+        } else {
+            self.eventsQueue.yield(.subitemDidLose(directoryURL, url, nil))
+        }
+        logger.info("[DirectoryMonitor] presentedSubitemDidChange at \(url).")
+    }
+    
+    public func accommodatePresentedSubitemDeletion(at url: URL) async throws {
+        logger.info("[DirectoryMonitor] accommodatePresentedSubitemDeletion at \(url).")
+    }
+    
+    // MARK: - Version Changes
+    public func presentedSubitem(at url: URL, didGain version: NSFileVersion) {
+        guard let directoryURL = self.presentedItemURL else {
+            logger.error("[DirectoryMonitor] presentedSubitem error: presentedItemURL is nil")
+            return
+        }
+        logger.info("[DirectoryMonitor] presentedSubitem didGain version at \(url).")
+    }
+    public func presentedSubitem(at url: URL, didLose version: NSFileVersion) {
+        guard let directoryURL = self.presentedItemURL else {
+            logger.error("[DirectoryMonitor] presentedSubitem error: presentedItemURL is nil")
+            return
+        }
+        self.eventsQueue.yield(.subitemDidLose(directoryURL, url, version))
+        logger.info("[DirectoryMonitor] presentedSubitem didLose version at \(url).")
+    }
+    
+}
+
+extension DirectoryMonitor {
+    public enum Event {
+        case subitemDidAppear(_ directoryURL: URL, _ url: URL)
+        case subitemDidChange(_ directoryURL: URL, _ url: URL)
+        case subitemDidLose(_ directoryURL: URL, _ url: URL, _ version: NSFileVersion?)
+    }
+    
+    public typealias EventHandler = (Event) async -> Void
+    
+    public class EventsQueue: AsyncSequence {
+        public typealias Element = DirectoryMonitor.Event
+        private var continuation: AsyncStream<Element>.Continuation?
+        
+        public init() {}
+        
+        public func yield(_ event: Element) {
+            continuation?.yield(event)
+        }
+        
+        deinit {
+            continuation?.finish()
+        }
+        
+        public func makeAsyncIterator() -> AsyncStream<Element>.Iterator {
+            return stream.makeAsyncIterator()
+        }
+        
+        public lazy var stream: AsyncStream<Element> = {
+             let stream = AsyncStream<Element> { c in
+                 self.continuation = c
+             }
+             return stream
+         }()
+    }
 }
 #endif

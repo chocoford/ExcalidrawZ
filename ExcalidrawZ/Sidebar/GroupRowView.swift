@@ -114,11 +114,13 @@ struct GroupRowView: View {
             } message: {
                 Text(.localizable(.sidebarGroupRowDeleteMessage))
             }
-            .sheet(isPresented: $isRenameSheetPresented) {
-                RenameSheetView(text: group.name ?? "") { newName in
-                    fileState.renameGroup(group, newName: newName)
-                }
-            }
+            .modifier(
+                RenameSheetViewModifier(
+                    isPresented: $isRenameSheetPresented,
+                    name: group.name ?? "") { newName in
+                        fileState.renameGroup(group, newName: newName)
+                    }
+            )
             .sheet(isPresented: $isCreateSubfolderSheetPresented) {
                 createSubFolderSheetView()
             }

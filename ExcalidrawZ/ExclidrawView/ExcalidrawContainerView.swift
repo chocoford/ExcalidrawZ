@@ -15,6 +15,7 @@ import ChocofordUI
 struct ExcalidrawContainerView: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
+    @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var layoutState: LayoutState
 
@@ -138,7 +139,9 @@ struct ExcalidrawContainerView: View {
                 isProgressViewPresented = newVal
             }
             
-            selectFilePlaceholderView()
+            if containerHorizontalSizeClass != .compact {
+                selectFilePlaceholderView()
+            }
 
             if isProgressViewPresented {
                 VStack {
@@ -171,7 +174,9 @@ struct ExcalidrawContainerView: View {
         .animation(.default, value: isProgressViewPresented)
         .task {
             self.cloudContainerEventChangeListener?.cancel()
-            self.cloudContainerEventChangeListener = NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification).sink { notification in
+            self.cloudContainerEventChangeListener = NotificationCenter.default.publisher(
+                for: NSPersistentCloudKitContainer.eventChangedNotification
+            ).sink { notification in
                 if let userInfo = notification.userInfo {
                     if let event = userInfo["event"] as? NSPersistentCloudKitContainer.Event {
                         DispatchQueue.main.async {

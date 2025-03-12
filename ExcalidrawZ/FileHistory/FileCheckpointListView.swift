@@ -47,6 +47,20 @@ struct FileHistoryButton: View {
                 } else {
                     FileCheckpointListView(file: file)
                 }
+            } else if let localFile = fileState.currentLocalFile {
+                if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
+                    FileCheckpointListView(localFile: localFile)
+                        .presentationCompactAdaptation(.popover)
+                } else {
+                    FileCheckpointListView(localFile: localFile)
+                }
+            } else if let tempFile = fileState.currentTemporaryFile {
+                if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
+                    FileCheckpointListView(localFile: tempFile)
+                        .presentationCompactAdaptation(.popover)
+                } else {
+                    FileCheckpointListView(localFile: tempFile)
+                }
             }
         }
 #endif

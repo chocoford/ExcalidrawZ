@@ -106,6 +106,8 @@ struct CreateGroupSheetView: View {
         .labelsHidden()
 #if os(macOS)
         .padding()
+//#elseif os(iOS)
+//        .presentationDetents([.height(300)])
 #endif
     }
 }

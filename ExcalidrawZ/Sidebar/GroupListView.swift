@@ -49,6 +49,11 @@ struct GroupListView: View {
     
     @State private var createGroupType: CreateGroupSheetView.CreateGroupType = .group
     @State private var isCreateGroupDialogPresented = false
+#if os(iOS)
+    @State private var isCreateGroupConfirmationDialogPresented = false
+#endif
+    
+    @State private var isFirstAppear = true
     
     var body: some View {
         content
@@ -81,8 +86,11 @@ struct GroupListView: View {
                 }
             }
             .onAppear {
-                if fileState.currentGroup == nil, !fileState.isTemporaryGroupSelected, fileState.currentLocalFolder == nil {
-                    fileState.currentGroup = displayedGroups.first
+                defer { isFirstAppear = false }
+                if fileState.currentGroup == nil, !fileState.isTemporaryGroupSelected, fileState.currentLocalFolder == nil || isFirstAppear {
+                    Task {
+                        try? await fileState.setToDefaultGroup()
+                    }
                 }
                 initialNewGroupName = getNextGroupName()
             }
@@ -103,7 +111,6 @@ struct GroupListView: View {
                     // iCloud
                     VStack(alignment: .leading, spacing: spacing) {
                         databaseGroupsList()
-// #if os(macOS)
                             .modifier(
                                 ContentHeaderCreateButtonHoverModifier(
                                     isCreateDialogPresented: Binding {
@@ -119,13 +126,11 @@ struct GroupListView: View {
                                     title: .localizable(.sidebarGroupListSectionHeaderICloud)
                                 )
                             )
-// #endif
                     }
                     
                     // Local
                     VStack(alignment: .leading, spacing: spacing) {
                         LocalFoldersListView()
-//#if os(macOS)
                             .modifier(
                                 ContentHeaderCreateButtonHoverModifier(
                                     isCreateDialogPresented: $isCreateLocalFolderDialogPresented,
@@ -139,28 +144,74 @@ struct GroupListView: View {
                             ) { urls in
                                 importLocalFolders(urls: urls)
                             }
-//#endif
                     }
                 }
                 .padding(8)
             }
             .clipped()
 
-#if os(iOS)
             HStack {
-                Button {
-                    isCreateGroupDialogPresented.toggle()
-                    createGroupType = .group
+#if os(macOS)
+                Menu {
+                    SwiftUI.Group {
+                        Button {
+                            isCreateGroupDialogPresented.toggle()
+                            createGroupType = .group
+                        } label: {
+                            Text(.localizable(.sidebarGroupListCreateTitle))
+                        }
+                        
+                        Button {
+                            isCreateLocalFolderDialogPresented.toggle()
+                        } label: {
+                            Text(.localizable(.sidebarGroupListButtonAddObservation))
+                        }
+                    }
+                    .labelStyle(.titleAndIcon)
                 } label: {
-                    Label(.localizable(.sidebarGroupListNewFolder), systemSymbol: .plusCircle)
+                    Label(
+                        .localizable(.sidebarGroupListNewFolder),
+                        systemSymbol: .plusCircle
+                    )
+                }
+                .menuIndicator(.hidden)
+                .buttonStyle(.borderless)
+#elseif os(iOS)
+                Button {
+                    isCreateGroupConfirmationDialogPresented.toggle()
+                } label: {
+                    Label(
+                        .localizable(.sidebarGroupListNewFolder),
+                        systemSymbol: .plusCircle
+                    )
                 }
                 .buttonStyle(.borderless)
-                
+                .confirmationDialog(
+                    .localizable(.sidebarGroupListNewFolder),
+                    isPresented: $isCreateGroupConfirmationDialogPresented
+                ) {
+                    SwiftUI.Group {
+                        Button {
+                            isCreateGroupDialogPresented.toggle()
+                            createGroupType = .group
+                        } label: {
+                            Text(.localizable(.sidebarGroupListCreateTitle))
+                        }
+                        
+                        Button {
+                            isCreateLocalFolderDialogPresented.toggle()
+                        } label: {
+                            Text(.localizable(.sidebarGroupListButtonAddObservation))
+                        }
+                    }
+                    .labelStyle(.titleAndIcon)
+                }
+#endif
                 Spacer()
             }
             .padding(4)
-#endif
-        }
+  }
+
     }
     
     @MainActor @ViewBuilder
@@ -224,20 +275,22 @@ struct GroupListView: View {
     }
     
     private func importLocalFolders(urls: [URL]) {
+        print("[GroupListView] import local folders: \(urls)")
         let context = PersistenceController.shared.container.newBackgroundContext()
         Task.detached {
             do {
                 for url in urls {
-                    guard url.startAccessingSecurityScopedResource() else {
-                        continue
-                    }
+                    guard url.startAccessingSecurityScopedResource() else { continue }
                     
                     try await context.perform {
                         let localFolder = try LocalFolder(url: url, context: context)
                         context.insert(localFolder)
-                        
+                        try localFolder.refreshChildren(context: context)
                         // create checkpoints for every file in folder
-                        if let enumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: [.isDirectoryKey, .nameKey]) {
+                        if let enumerator = FileManager.default.enumerator(
+                            at: url,
+                            includingPropertiesForKeys: [.isDirectoryKey, .nameKey]
+                        ) {
                             for case let url as URL in enumerator {
                                 if url.pathExtension == "excalidraw" {
                                     let checkpoint = LocalFileCheckpoint(context: context)
@@ -248,7 +301,6 @@ struct GroupListView: View {
                                 }
                             }
                         }
-                        
                         try context.save()
                     }
                     
@@ -288,8 +340,11 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
                     Button {
                         isCreateDialogPresented.toggle()
                     } label: {
-                        Label(.localizable(.sidebarGroupListNewFolder), systemSymbol: .plusCircleFill)
-                            .labelStyle(.iconOnly)
+                        Label(
+                            .localizable(.sidebarGroupListNewFolder),
+                            systemSymbol: .plusCircleFill
+                        )
+                        .labelStyle(.iconOnly)
                     }
                     .buttonStyle(.borderless)
                 }

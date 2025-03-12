@@ -163,7 +163,7 @@ struct ExcalidrawZApp: App {
 
         Settings {
             SettingsView()
-                .swiftyAlert()
+                .swiftyAlert(logs: true)
                 .containerSizeClassInjection()
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)

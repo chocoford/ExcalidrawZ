@@ -33,7 +33,7 @@ struct MathInputSheetViewModifier: ViewModifier {
                         }
                     }
                 }
-                .swiftyAlert()
+                .swiftyAlert(logs: true)
             }
     }
 }

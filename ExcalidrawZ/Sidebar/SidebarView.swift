@@ -67,7 +67,13 @@ struct SidebarView: View {
         .border(.top, color: .separatorColor)
 #if os(iOS)
         .background {
-            List(selection: $fileState.currentFile) {}
+            if fileState.currentGroup != nil {
+                List(selection: $fileState.currentFile) {}
+            } else if fileState.currentLocalFolder != nil {
+                List(selection: $fileState.currentLocalFile) {}
+            } else if fileState.isTemporaryGroupSelected {
+                List(selection: $fileState.currentTemporaryFile) {}
+            }
         }
 #endif
         .environmentObject(localFolderState)

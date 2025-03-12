@@ -30,11 +30,7 @@ struct LocalFoldersListView: View {
     )
     var folders: FetchedResults<LocalFolder>
     
-    init() {
-//        let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-//        fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \LocalFolder.filePath, ascending: true)]
-//        try? print("[TEST] LocalFolder", fetchRequest.execute().count)
-    }
+    init() { }
     
 #if canImport(AppKit)
     typealias PlatformWindow = NSWindow
@@ -43,8 +39,11 @@ struct LocalFoldersListView: View {
 #endif
 
     @State private var window: PlatformWindow?
-    @State private var monitorTask: Task<Void, Never>?
+#if canImport(AppKit)
     @State private var monitorTasks: [LocalFolder : Task<Void, Never>] = [:]
+#elseif canImport(UIKit)
+    @State private var monitors: [LocalFolder : DirectoryMonitor] = [:]
+#endif
 
     @State private var folderUrlBeforeResignKey: URL?
 
@@ -114,7 +113,6 @@ struct LocalFoldersListView: View {
         }
         .onAppear {
             folders.forEach { try? $0.refreshChildren(context: viewContext) }
-            ICloudFileMonitor.shared.startMonitoring()
         }
     }
     
@@ -184,15 +182,15 @@ struct LocalFoldersListView: View {
                                             
                                             NotificationCenter.default.post(name: .fileXattrDidModified, object: path)
                                         }
-//                                           let url = URL(string: "file://\(path)") {
-//                                            NotificationCenter.default.post(name: .fileMetadataDidModified, object: url)
-//
-////                                            let resources = try url.resourceValues(forKeys: [
-////                                                .ubiquitousItemDownloadingStatusKey,
-////                                                .ubiquitousItemIsDownloadingKey
-////                                            ])
-////                                            print("[FSEventAsyncStream] downloading status >>>", resources.ubiquitousItemDownloadingStatus, resources.ubiquitousItemIsDownloading)
-//                                        }
+            //                                           let url = URL(string: "file://\(path)") {
+            //                                            NotificationCenter.default.post(name: .fileMetadataDidModified, object: url)
+            //
+            ////                                            let resources = try url.resourceValues(forKeys: [
+            ////                                                .ubiquitousItemDownloadingStatusKey,
+            ////                                                .ubiquitousItemIsDownloadingKey
+            ////                                            ])
+            ////                                            print("[FSEventAsyncStream] downloading status >>>", resources.ubiquitousItemDownloadingStatus, resources.ubiquitousItemIsDownloading)
+            //                                        }
                                     default:
                                         break
                                 }
@@ -221,9 +219,57 @@ struct LocalFoldersListView: View {
     }
 #elseif canImport(UIKit)
     private func handleFoldersObservation(folders newValue: FetchedResults<LocalFolder>) {
+        print("[LocalFoldersListView] handle folders observation, folders: \(newValue)")
+        for folder in newValue.filter({ folder in !monitors.contains(where: {$0.key == folder})}) {
+            guard let url = folder.url else {
+                continue
+            }
+            _ = url.startAccessingSecurityScopedResource()
+            
+            let monitor = DirectoryMonitor(url: url) { event in
+                print("[LocalFoldersListView] observe folder event >>>", event)
+                do {
+                    switch event {
+                        case .subitemDidChange(let dirURL, let url):
+                            if url.isDirectory {
+                                try refreshFoldersContent()
+                            } else {
+                                localFolderState.refreshFilesPublisher.send()
+                            }
+                        case .subitemDidLose(let dirURL, let url, _):
+                            if url.isDirectory {
+                                try refreshFoldersContent()
+                            } else {
+                                localFolderState.refreshFilesPublisher.send()
+                            }
+                        case .subitemDidAppear(let dirURL, let url):
+                            if url.isDirectory {
+                                try refreshFoldersContent()
+                            } else {
+                                localFolderState.refreshFilesPublisher.send()
+                            }
+                    }
+                } catch {
+                    alertToast(error)
+                }
+            }
+            
+            monitors.updateValue(monitor, forKey: folder)
+        }
+
+        // remove useless
+        for outdatedMonitor in monitors.filter({ monitor in
+            !newValue.contains(monitor.key)
+        }) {
+            outdatedMonitor.value.stop()
+            monitors.removeValue(forKey: outdatedMonitor.key)
+            outdatedMonitor.key.url?.stopAccessingSecurityScopedResource()
+        }
         
+        print("[LocalFoldersListView] update monitors<\(monitors.count)> ")
     }
 #endif
+
     private func redirectToCurrentFolder() throws {
         guard fileState.currentGroup == nil, let folderUrlBeforeResignKey else { return }
         let context = viewContext
@@ -231,6 +277,5 @@ struct LocalFoldersListView: View {
         let allFolders = try context.fetch(fetchRequest)
         
         fileState.currentLocalFolder = allFolders.first(where: {$0.url == folderUrlBeforeResignKey})
-        
     }
 }

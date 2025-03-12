@@ -44,7 +44,6 @@ extension LocalFolder {
             includingResourceValuesForKeys: [.nameKey],
             relativeTo: nil
         )
-        try self.refreshChildren(context: context)
     }
     
     public override func willSave() {

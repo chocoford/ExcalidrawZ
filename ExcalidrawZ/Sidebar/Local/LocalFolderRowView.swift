@@ -269,6 +269,12 @@ struct LocalFolderRowView: View {
                 await alertToast(error)
             }
         }
+        
+        if fileState.currentLocalFolder == folder {
+            Task {
+                try? await fileState.setToDefaultGroup()
+            }
+        }
     }
     
     private func moveLocalFolder(to targetFolderID: NSManagedObjectID) {

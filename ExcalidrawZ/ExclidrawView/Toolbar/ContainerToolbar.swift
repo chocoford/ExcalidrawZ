@@ -113,6 +113,8 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             if containerHorizontalSizeClass == .compact {
                 Button {
                     fileState.currentFile = nil
+                    fileState.currentLocalFile = nil
+                    fileState.currentTemporaryFile = nil
                 } label: {
                     Label(.localizable(.navigationButtonBack), systemSymbol: .chevronBackward)
                 }

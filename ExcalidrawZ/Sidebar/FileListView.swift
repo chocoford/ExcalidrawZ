@@ -47,7 +47,6 @@ struct FileListView: View {
         var files: [File]
     }
     
-    @State private var isFirstAppear = true
     
     var body: some View {
         ZStack {
@@ -139,7 +138,6 @@ struct FileListView: View {
             }
         }
         .onAppear {
-            defer { isFirstAppear = false }
             guard fileState.currentFile == nil else { return }
             if files.isEmpty {
                 do {
@@ -147,7 +145,7 @@ struct FileListView: View {
                 } catch {
                     alertToast(error)
                 }
-            } else if containerHorizontalSizeClass != .compact || isFirstAppear {
+            } else if containerHorizontalSizeClass != .compact {
                 fileState.currentFile = files.first
             }
         }

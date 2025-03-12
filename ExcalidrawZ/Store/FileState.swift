@@ -600,13 +600,6 @@ final class FileState: ObservableObject {
         }
     }
     
-//    public func moveLocalFiles(_ sourceFileIDs: [NSManagedObjectID], to targetFolderID: NSManagedObjectID) {
-//        
-//    }
-//    public func moveFiles(_ sourceFileIDs: [NSManagedObjectID], to targetGroupID: NSManagedObjectID) {
-//        
-//    }
-    
     public func expandToGroup(_ groupID: NSManagedObjectID) {
         let context = PersistenceController.shared.container.newBackgroundContext()
         Task.detached {
@@ -640,6 +633,25 @@ final class FileState: ObservableObject {
                         try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.2))
                     }
                 }
+            }
+        }
+    }
+    
+    @MainActor
+    public func setToDefaultGroup() async throws {
+        let viewContext = PersistenceController.shared.container.viewContext
+        try await viewContext.perform {
+            let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+            fetchRequest.predicate = NSPredicate(format: "type = %@", "default")
+            if let defaultGroup = try viewContext.fetch(fetchRequest).first {
+                self.currentGroup = defaultGroup
+                
+                let fileFetchRequest = NSFetchRequest<File>(entityName: "File")
+                fileFetchRequest.predicate = NSPredicate(format: "group = %@", defaultGroup)
+                fileFetchRequest.sortDescriptors = [
+                    NSSortDescriptor(keyPath: \File.updatedAt, ascending: false)
+                ]
+                self.currentFile = try viewContext.fetch(fileFetchRequest).first
             }
         }
     }

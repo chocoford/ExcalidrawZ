@@ -33,29 +33,30 @@ struct NewFileButton: View {
     
     var body: some View {
 #if os(iOS)
-        Button {
-            isFileImporterPresented.toggle()
-        } label: {
-            Label(.localizable(.menubarButtonImport), systemSymbol: .squareAndArrowDown)
-        }
-        .fileImporter(
-            isPresented: $isFileImporterPresented,
-            allowedContentTypes: [.excalidrawFile],
-            allowsMultipleSelection: true
-        ) { result in
-            if case .success(let urls) = result {
-                // Should hanlde here...
-                Task.detached {
-                    do {
-                        try await fileState.importFiles(urls)
-                    } catch {
-                        print(error)
-                        await alertToast(error)
+        if fileState.currentGroup != nil {
+            Button {
+                isFileImporterPresented.toggle()
+            } label: {
+                Label(.localizable(.menubarButtonImport), systemSymbol: .squareAndArrowDown)
+            }
+            .fileImporter(
+                isPresented: $isFileImporterPresented,
+                allowedContentTypes: [.excalidrawFile],
+                allowsMultipleSelection: true
+            ) { result in
+                if case .success(let urls) = result {
+                    // Should hanlde here...
+                    Task.detached {
+                        do {
+                            try await fileState.importFiles(urls)
+                        } catch {
+                            print(error)
+                            await alertToast(error)
+                        }
                     }
+                } else if case .failure(let error) = result {
+                    alertToast(error)
                 }
-                // NotificationCenter.default.post(name: .shouldHandleImport, object: urls)
-            } else if case .failure(let error) = result {
-                alertToast(error)
             }
         }
 #endif

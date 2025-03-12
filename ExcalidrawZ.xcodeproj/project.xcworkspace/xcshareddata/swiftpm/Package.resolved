@@ -1,5 +1,5 @@
 {
-  "originHash" : "668ab213a43db691b705087d301803d01b0a55627998ae0175f94a8dbd4b8068",
+  "originHash" : "c9bc7574db308c934a61cefb0f3e0973628631e36fe35a647f96a083b5903818",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swhitty/FlyingFox.git",
       "state" : {
-        "revision" : "5653d61252af7f2dd8b43a77fb2a03678290f393",
-        "version" : "0.20.0"
+        "revision" : "0285d3e846f48abad71d4cf143afacbc33b19b45",
+        "version" : "0.21.0"
       }
     },
     {
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SDWebImage/SDWebImage.git",
       "state" : {
-        "revision" : "10d06f6a33bafae8c164fbfd1f03391f6d4692b3",
-        "version" : "5.20.0"
+        "revision" : "cac9a55a3ae92478a2c95042dcc8d9695d2129ca",
+        "version" : "5.21.0"
       }
     },
     {
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle.git",
       "state" : {
-        "revision" : "0ef1ee0220239b3776f433314515fd849025673f",
-        "version" : "2.6.4"
+        "revision" : "0ca3004e98712ea2b39dd881d28448630cce1c99",
+        "version" : "2.7.0"
       }
     },
     {
@@ -142,7 +142,7 @@
       "location" : "https://github.com/chocoford/SwiftyAlert.git",
       "state" : {
         "branch" : "dev",
-        "revision" : "bbfd113deca9efce132200d1618ee7b7cabbee6c"
+        "revision" : "a079333861f767e14f6d32d8eb7110dcaee2db5d"
       }
     },
     {

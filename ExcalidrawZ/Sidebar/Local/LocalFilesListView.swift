@@ -12,6 +12,7 @@ import ChocofordUI
 struct LocalFilesListView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.alertToast) private var alertToast
+    @Environment(\.containerHorizontalSizeClass) private var horizontalSizeClass
     
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var localFolderState: LocalFolderState
@@ -43,7 +44,9 @@ struct LocalFilesListView: View {
         .watchImmediately(of: folder.url) { newValue in
             DispatchQueue.main.async {
                 getFolderContents()
-                fileState.currentLocalFile = files.first
+                if horizontalSizeClass != .compact {
+                    fileState.currentLocalFile = files.first
+                }
             }
         }
 #if os(macOS)
@@ -65,8 +68,10 @@ struct LocalFilesListView: View {
             if newValue == .active {
                 DispatchQueue.main.async {
                     getFolderContents()
-                    if fileState.currentLocalFile == nil || fileState.currentLocalFile?.deletingLastPathComponent() != folder.url {
-                        fileState.currentLocalFile = files.first
+                    if horizontalSizeClass != .compact {
+                        if fileState.currentLocalFile == nil || fileState.currentLocalFile?.deletingLastPathComponent() != folder.url {
+                            fileState.currentLocalFile = files.first
+                        }
                     }
                 }
             }
@@ -98,13 +103,15 @@ struct LocalFilesListView: View {
                     includingPropertiesForKeys: [.nameKey],
                     options: [.skipsSubdirectoryDescendants]
                 )
-                
-                self.files = contents
+                let files = contents
                     .filter({ $0.pathExtension == "excalidraw" })
                     .sorted {
                         ((try? FileManager.default.attributesOfItem(atPath: $0.filePath)[FileAttributeKey.modificationDate]) as? Date) ?? .distantPast > ((try? FileManager.default.attributesOfItem(atPath: $1.filePath)[FileAttributeKey.modificationDate]) as? Date) ?? .distantPast
                     }
-                self.updateFlags = self.files.map {
+                withAnimation {
+                    self.files = files
+                }
+                self.updateFlags = files.map {
                     [$0 : Date()]
                 }.merged()
             }

@@ -33,7 +33,7 @@ struct RenameSheetViewModifier: ViewModifier {
                     .frame(width: 300, height: 140)
                     .scrollDisabled(true)
 #if canImport(UIKit)
-                    .presentationSizing(.fitted)
+                     .presentationSizing(.fitted)
                     .presentationDragIndicator(.hidden)
                     .presentationCompactAdaptation(.sheet)
 #endif
