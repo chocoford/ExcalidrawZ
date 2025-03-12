@@ -1,3 +1,9 @@
+## 1.3.1
+
+- Fix issues occured in iOS.
+- Optimize sidebar UI - Adds `New Group` bottom button back.
+- Fix bugs in refresh folders content logic.
+
 ## 1.3.0
 
 - Local files support
