@@ -258,6 +258,18 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+        } else if let fileURL = fileState.currentLocalFile ?? fileState.currentTemporaryFile {
+            let filename = fileURL.deletingPathExtension().lastPathComponent
+            let updatedAt = (try? FileManager.default.attributesOfItem(atPath: fileURL.filePath))?[.modificationDate] as? Date
+            VStack(
+                alignment: .leading
+            ) {
+                Text(filename)
+                    .font(.headline)
+                Text(updatedAt?.formatted() ?? "Not modified")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
     
