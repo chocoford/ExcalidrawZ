@@ -10,7 +10,6 @@ import SwiftUI
 import ChocofordUI
 
 struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
-//    @Environment(\.dismiss) var dismiss
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
