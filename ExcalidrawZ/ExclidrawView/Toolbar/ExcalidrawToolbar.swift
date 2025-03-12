@@ -25,7 +25,10 @@ struct ExcalidrawToolbar: View {
     @State private var window: UIWindow?
 #endif
     @State private var windowFrameCancellable: AnyCancellable?
+    @State private var isApplePencilDisconnectConfirmationDialogPresented = false
     
+    @State private var isMathInputSheetPresented = false
+
     var minWidth: CGFloat {
         if #available(macOS 13.0, *) {
             if layoutState.isInspectorPresented,
@@ -85,8 +88,6 @@ struct ExcalidrawToolbar: View {
             }
     }
     
-    @State private var isApplePencilDisconnectConfirmationDialogPresented = false
-    
     @MainActor @ViewBuilder
     private func toolbar() -> some View {
 #if os(iOS)
@@ -118,7 +119,7 @@ struct ExcalidrawToolbar: View {
             }
         } else if toolState.inPenMode {
             HStack(spacing: 10) {
-                Text("Apple Pencil Connected")
+                Text("Pencil Mode")
             }
             .frame(maxWidth: 400)
             .padding(6)
@@ -543,35 +544,28 @@ struct ExcalidrawToolbar: View {
                 Text(.localizable(.toolbarWebEmbed)).tag(ExcalidrawTool.webEmbed)
                 Text(.localizable(.toolbarMagicFrame)).tag(ExcalidrawTool.magicFrame)
             } label: {
-                Text("Active tool")
+                Text(.localizable(.toolbarActiveToolTitle))
             }
             .pickerStyle(.menu)
             .fixedSize()
         }
     }
-    
-    @MainActor @ViewBuilder
-    private func applepencilContent() -> some View {
-        HStack {
-            
-        }
-    }
-    
+
     @MainActor @ViewBuilder
     private func activeShape() -> some View {
         switch toolState.activatedTool {
             case .rectangle:
-                Label("Rectangle", systemSymbol: .rectangle)
+                Label(.localizable(.toolbarRectangle), systemSymbol: .rectangle)
             case .diamond:
-                Label("Diamond", systemSymbol: .diamond)
+                Label(.localizable(.toolbarDiamond), systemSymbol: .diamond)
             case .ellipse:
-                Label("Ellips", systemSymbol: .ellipsis)
+                Label(.localizable(.toolbarEllipse), systemSymbol: .ellipsis)
             case .arrow:
-                Label("Arrow", systemSymbol: .lineDiagonalArrow)
+                Label(.localizable(.toolbarArrow), systemSymbol: .lineDiagonalArrow)
             case .line:
-                Label("Line", systemSymbol: .lineDiagonal)
+                Label(.localizable(.toolbarLine), systemSymbol: .lineDiagonal)
             default:
-                Label("Shapes", systemSymbol: .squareOnCircle)
+                Label(.localizable(.toolbarShapes), systemSymbol: .squareOnCircle)
         }
     }
     
@@ -592,9 +586,17 @@ struct ExcalidrawToolbar: View {
             } label: {
                 Text(.localizable(.toolbarMermaid))
             }
+            
+            Button {
+                isMathInputSheetPresented.toggle()
+            } label: {
+                Text(.localizable(.toolbarLatexMath))
+            }
         } label: {
             if #available(macOS 15.0, iOS 18.0, *) {
                 Label(.localizable(.toolbarMoreTools), systemImage: "xmark.triangle.circle.square")
+            } else if #available(macOS 13.0, iOS 16.0, *) {
+                Label(.localizable(.toolbarMoreTools), systemSymbol: .chartXyaxisLine)
             } else {
                 Label(.localizable(.toolbarMoreTools), systemSymbol: .chartXyaxisLine)
             }
@@ -603,6 +605,7 @@ struct ExcalidrawToolbar: View {
 #if os(iOS)
         .menuOrder(.fixed)
 #endif
+        .modifier(MathInputSheetViewModifier(isPresented: $isMathInputSheetPresented))
     }
 }
 

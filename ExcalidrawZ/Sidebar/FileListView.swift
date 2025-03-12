@@ -47,13 +47,13 @@ struct FileListView: View {
         var files: [File]
     }
     
-    @State private var isFirstAppear = true
     
     var body: some View {
         ZStack {
             if #available(macOS 14.0, iOS 17.0, *) {
                 content()
                     .onChange(of: fileState.currentGroup) { oldValue, newValue in
+                        guard newValue != nil else { return }
                         if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
                             if containerHorizontalSizeClass == .compact {
                                 // do not set file at iphone.
@@ -63,6 +63,7 @@ struct FileListView: View {
                         }
                     }
                     .onChange(of: fileState.currentFile) { _, newValue in
+                        guard fileState.currentGroup != nil else { return }
                         if newValue == nil {
                             if let file = files.first {
                                 if containerHorizontalSizeClass != .compact {
@@ -92,6 +93,7 @@ struct FileListView: View {
             } else {
                 content()
                     .onChange(of: fileState.currentGroup) { newValue in
+                        guard newValue != nil else { return }
                         if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
                             if containerHorizontalSizeClass == .compact {
                                 return
@@ -100,6 +102,7 @@ struct FileListView: View {
                         }
                     }
                     .onChange(of: fileState.currentFile) { newValue in
+                        guard fileState.currentGroup != nil else { return }
                         if newValue == nil {
                             if let file = files.first {
                                 if containerHorizontalSizeClass != .compact {
@@ -115,17 +118,17 @@ struct FileListView: View {
                         }
                     }
                     .onChange(of: files) { newValue in
-                    if newValue.isEmpty, containerHorizontalSizeClass == .compact {
-                        do {
-                            try fileState.createNewFile(active: false, context: managedObjectContext)
-                        } catch {
-                            alertToast(error)
+                        if newValue.isEmpty, containerHorizontalSizeClass == .compact {
+                            do {
+                                try fileState.createNewFile(active: false, context: managedObjectContext)
+                            } catch {
+                                alertToast(error)
+                            }
+                        } else if !newValue.contains(where: {$0.id == fileState.currentFile?.id}),
+                                  containerHorizontalSizeClass != .compact {
+                            fileState.currentFile = newValue.first
                         }
-                    } else if !newValue.contains(where: {$0.id == fileState.currentFile?.id}),
-                              containerHorizontalSizeClass != .compact {
-                        fileState.currentFile = newValue.first
                     }
-                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .didImportToExcalidrawZ)) { notification in
@@ -135,7 +138,6 @@ struct FileListView: View {
             }
         }
         .onAppear {
-            defer { isFirstAppear = false }
             guard fileState.currentFile == nil else { return }
             if files.isEmpty {
                 do {
@@ -143,7 +145,7 @@ struct FileListView: View {
                 } catch {
                     alertToast(error)
                 }
-            } else if containerHorizontalSizeClass != .compact || isFirstAppear {
+            } else if containerHorizontalSizeClass != .compact {
                 fileState.currentFile = files.first
             }
         }

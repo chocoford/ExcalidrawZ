@@ -12,7 +12,7 @@ struct RenameSheetViewModifier: ViewModifier {
     
     @Binding var isPresented: Bool
     var name: String
-    var callback: (String) -> Void
+    var callback: (_ newName: String) -> Void
     
     func body(content: Content) -> some View {
         content

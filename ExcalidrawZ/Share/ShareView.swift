@@ -12,9 +12,10 @@ import ChocofordUI
 import SwiftyAlert
 import SFSafeSymbols
 
-struct ShareViewModifier: ViewModifier {
+struct ShareFileModifier: ViewModifier {
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Binding var sharedFile: File?
+    @Binding var sharedFile: ExcalidrawFile?
     
     func body(content: Content) -> some View {
         content
@@ -32,7 +33,7 @@ struct ShareViewModifier: ViewModifier {
     }
     
     @MainActor @ViewBuilder
-    private func content(_ file: File) -> some View {
+    private func content(_ file: ExcalidrawFile) -> some View {
         ZStack {
             if #available(macOS 13.0, iOS 16.0, *) {
                 ShareView(sharedFile: file)
@@ -52,6 +53,7 @@ struct ShareViewModifier: ViewModifier {
 
 @available(macOS 13.0, iOS 16.0, *)
 struct ShareView: View {
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
 
@@ -61,9 +63,13 @@ struct ShareView: View {
     @EnvironmentObject var exportState: ExportState
 
     
-    var sharedFile: File
+    var sharedFile: ExcalidrawFile
     
     init(sharedFile: File) {
+        self.sharedFile = (try? ExcalidrawFile(from: sharedFile)) ?? ExcalidrawFile()
+    }
+    
+    init(sharedFile: ExcalidrawFile) {
         self.sharedFile = sharedFile
     }
     
@@ -76,7 +82,6 @@ struct ShareView: View {
     }
     
     @State private var route: NavigationPath = .init()
-    
     
 #if os(iOS)
     @State private var exportedPDFURL: URL?
@@ -92,7 +97,7 @@ struct ShareView: View {
                     SquareButton(title: .localizable(.exportSheetButtonImage), icon: .photo) {
                         route.append(Route.exportImage)
                     }
-                    .disabled((try? ExcalidrawFile(from: sharedFile).elements.isEmpty) != false)
+                    .disabled(sharedFile.elements.isEmpty != false)
                     
                     SquareButton(title: .localizable(.exportSheetButtonFile), icon: .doc) {
                         route.append(Route.exportFile)
@@ -122,13 +127,12 @@ struct ShareView: View {
 #if os(macOS)
                     SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
                         do {
-                            try archiveAllFiles()
+                            try archiveAllFiles(context: viewContext)
                         } catch {
                             alertToast(error)
                         }
                     }
 #endif
-
                 }
 
                 if horizontalSizeClass != .compact {
@@ -152,12 +156,11 @@ struct ShareView: View {
                         Text(.localizable(.generalButtonClose))
                     }
                 }
-                
             }
             .navigationDestination(for: Route.self) { route in
                 switch route {
                     case .exportImage:
-                        ExportImageView()
+                        ExportImageView(file: sharedFile)
                     case .exportFile:
                         ExportFileView(file: sharedFile)
 #if DEBUG
@@ -176,54 +179,20 @@ struct ShareView: View {
 #if DEBUG
     @MainActor @ViewBuilder
     private func svgPreviewView(url: URL) -> some View {
-        SVGPreviewWebView(svgURL: url)
+        SVGPreviewView(svgURL: url)
     }
 #endif
 }
 
-#if canImport(AppKit)
-struct SVGPreviewWebView: NSViewRepresentable {
-    var svgURL: URL
-    
-    func makeNSView(context: Context) -> WKWebView {
-        let webView = WKWebView()
-        if #available(macOS 13.3, *) {
-            webView.isInspectable = true
-        }
-        webView.loadFileURL(svgURL, allowingReadAccessTo: svgURL.deletingLastPathComponent())
-        return webView
-    }
-    
-    func updateNSView(_ nsView: WKWebView, context: Context) {
-        
-    }
-}
-#elseif canImport(UIKit)
-struct SVGPreviewWebView: UIViewRepresentable {
-    var svgURL: URL
-    
-    func makeUIView(context: Context) -> WKWebView {
-        let webView = WKWebView()
-        if #available(iOS 16.4, *) {
-            webView.isInspectable = true
-        }
-        webView.loadFileURL(svgURL, allowingReadAccessTo: svgURL.deletingLastPathComponent())
-        return webView
-    }
-    
-    func updateUIView(_ nsView: WKWebView, context: Context) {
-        
-    }
-}
-#endif
 
 struct ShareViewLagacy: View {
+    @Environment(\.managedObjectContext) var viewContext
     @Environment(\.dismiss) var dismiss
 
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var exportState: ExportState
 
-    var sharedFile: File
+    var sharedFile: ExcalidrawFile
     
     enum Route: Hashable {
         case exportImage
@@ -235,7 +204,7 @@ struct ShareViewLagacy: View {
     var body: some View {
         ZStack {
             if route.last == .exportImage {
-                ExportImageView {
+                ExportImageView(file: sharedFile) {
                     route.removeLast()
                 }
                 .transition(.fade)
@@ -251,7 +220,7 @@ struct ShareViewLagacy: View {
         }
         .animation(.default, value: route.last)
         .padding(.horizontal, 40)
-        .frame(width: 400, height: 300)
+        .frame(width: 460, height: 300)
     }
     
 #if os(iOS)
@@ -325,7 +294,7 @@ struct ShareViewLagacy: View {
 #if os(macOS)
                 SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
                     do {
-                        try archiveAllFiles()
+                        try archiveAllFiles(context: viewContext)
                     } catch {
                         alertToast(error)
                     }
@@ -453,7 +422,7 @@ struct ExportButtonStyle: PrimitiveButtonStyle {
 #if DEBUG
 #Preview {
     if #available(macOS 13.0, *) {
-        ShareView(sharedFile: .preview)
+        ShareView(sharedFile: ExcalidrawFile.preview)
             .environmentObject(ExportState())
     } else {
         ShareViewLagacy(sharedFile: .preview)

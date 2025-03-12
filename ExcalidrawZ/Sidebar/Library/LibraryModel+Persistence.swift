@@ -18,7 +18,7 @@ extension ExcalidrawLibrary {
                     id: item.id ?? UUID().uuidString,
                     status: .init(rawValue: item.status ?? "published") ?? .published,
                     createdAt: item.createdAt ?? .distantPast,
-                    name: item.name ?? "Untitled",
+                    name: item.name ?? String(localizable: .generalUntitled),
                     elements: (try? JSONDecoder().decode([ExcalidrawElement].self, from: item.elements ?? Data())) ?? []
                 )
             } ?? []

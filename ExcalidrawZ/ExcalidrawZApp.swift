@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import os.log
 #if os(macOS)
 import ServiceManagement
 #endif
@@ -26,12 +27,13 @@ extension Notification.Name {
 @main
 @MainActor
 struct ExcalidrawZApp: App {
+    @Environment(\.managedObjectContext) private var viewContext
 #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 #elseif os(iOS)
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 #endif
-    
+        
 #if os(macOS) && !APP_STORE
     private let updaterController: SPUStandardUpdaterController
 #endif
@@ -45,6 +47,11 @@ struct ExcalidrawZApp: App {
             userDriverDelegate: nil
         )
 #endif
+        
+        // Setting Folder Structure Type
+        if #available(macOS 13.0, *) {} else {
+            UserDefaults.standard.set(1, forKey: "FolderStructureStyle")
+        }
     }
     // Can not run agent in a sandboxed app.
     // let service = SMAppService.agent(plistName: "com.chocoford.excalidraw.ExcalidrawServer.agent.plist")
@@ -55,8 +62,10 @@ struct ExcalidrawZApp: App {
 #if os(macOS) && !APP_STORE
     @StateObject private var updateChecker = UpdateChecker()
 #endif
+    
     let server = ExcalidrawServer()
-        
+    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawApp")
+    
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -69,7 +78,12 @@ struct ExcalidrawZApp: App {
 #endif
                 }
         }
-        .handlesExternalEvents(matching: Set(arrayLiteral: "MainWindowGroup"))
+        .onChange(of: scenePhase) { newValue in
+            logger.info("On scene phase changed: \(String(describing: newValue), privacy: .public)")
+        }
+        // prevent window being open by urls.
+        .handlesExternalEvents(matching: ["*"])
+
 #if os(macOS) && !APP_STORE
         .commands {
             CommandGroup(after: .appInfo) {
@@ -80,6 +94,35 @@ struct ExcalidrawZApp: App {
 #if os(macOS)
         .defaultSizeIfAvailable(CGSize(width: 1200, height: 700))
         .commands {
+            CommandGroup(replacing: .newItem) {
+                Button {
+                    NotificationCenter.default.post(
+                        name: .shouldHandleNewDraw,
+                        object: nil
+                    )
+                } label: {
+                    Text(.localizable(.createNewFile))
+                }
+                .keyboardShortcut("N", modifiers: .command)
+                
+                Button {
+                    NotificationCenter.default.post(
+                        name: .shouldHandleNewDrawFromClipboard,
+                        object: nil
+                    )
+                } label: {
+                    Text(.localizable(.whatsNewNewDrawFromClipboardTitle))
+                }
+                .keyboardShortcut("N", modifiers: [.command, .option, .shift])
+                
+//                Divider()
+                
+//                Button("New Window") {
+//                    // openWindow(id: "Some ID")
+//                }
+//                .keyboardShortcut("N", modifiers: [.command, .shift])
+            }
+            
             CommandGroup(after: .printItem) {
                 Button {
                     NotificationCenter.default.post(name: .togglePrintModalSheet, object: nil)
@@ -99,7 +142,7 @@ struct ExcalidrawZApp: App {
                     Text(.localizable(.menubarButtonImport))
                 }
                 Button {
-                    try? archiveAllFiles()
+                    try? archiveAllFiles(context: viewContext)
                 } label: {
                     Text(.localizable(.menubarButtonExportAll))
                 }
@@ -116,11 +159,11 @@ struct ExcalidrawZApp: App {
 #endif
         
 #if os(macOS)
-        documentGroup()
+        // documentGroup()
 
         Settings {
             SettingsView()
-                .swiftyAlert()
+                .swiftyAlert(logs: true)
                 .containerSizeClassInjection()
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)

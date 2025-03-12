@@ -75,23 +75,26 @@ struct FileInfo: Equatable {
 }
 
 struct FileRowView: View {
-    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject var fileState: FileState
     
     var file: File
     @Binding var fileIDToBeRenamed: NSManagedObjectID?
+    
+    @FetchRequest(
+        sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],
+        predicate: NSPredicate(format: "parent = nil"),
+        animation: .default
+    )
+    var topLevelGroups: FetchedResults<Group>
         
     init(file: File, fileIDToBeRenamed: Binding<NSManagedObjectID?>) {
         self.file = file
         self._fileIDToBeRenamed = fileIDToBeRenamed
     }
     
-    @FetchRequest(sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)])
-    var groups: FetchedResults<Group>
-    
-//    @State private var renameMode: Bool = false
     @State private var showPermanentlyDeleteAlert: Bool = false
     @State private var isHovered = false
     
@@ -105,23 +108,10 @@ struct FileRowView: View {
         Button {
             fileState.currentFile = file
         } label: {
-            VStack(alignment: .leading) {
-                HStack {
-                    Text(file.name ?? "")
-                }
-                .foregroundColor(.secondary)
-                .font(.title3)
-                .lineLimit(1)
-                .padding(.bottom, 4)
-                
-                HStack {
-                    Text((file.updatedAt ?? .distantPast).formatted())
-                        .font(.footnote)
-                        .layoutPriority(1)
-                    Spacer()
-                }
-            }
-            .contentShape(Rectangle())
+            FileRowLabel(
+                name: file.name ?? "",
+                updatedAt: file.updatedAt ?? .distantPast
+            )
         }
         .onHover{ isHovered = $0 }
         .buttonStyle(ListButtonStyle(selected: isSelected))
@@ -131,7 +121,7 @@ struct FileRowView: View {
             isPresented: $showPermanentlyDeleteAlert
         ) {
             Button(role: .destructive) {
-                fileState.deleteFilePermanently(file)
+                deleteFilePermanently()
             } label: {
                 Text(.localizable(.sidebarFileRowDeletePermanentlyAlertButtonConfirm))
             }
@@ -152,7 +142,7 @@ struct FileRowView: View {
             
             Button {
                 do {
-                    let newFile = try fileState.duplicateFile(file, context: managedObjectContext)
+                    let newFile = try fileState.duplicateFile(file, context: viewContext)
                     if containerHorizontalSizeClass != .compact {
                         fileState.currentFile = newFile
                     }
@@ -163,26 +153,7 @@ struct FileRowView: View {
                 Label(.localizable(.sidebarFileRowContextMenuDuplicate), systemSymbol: .docOnDoc)
             }
              
-            if groups.filter({ $0.groupType != .trash }).count > 1 {
-                Menu {
-                    let groups: [Group] = groups
-                        .filter{ $0.groupType != .trash }
-                        .sorted { a, b in
-                            a.groupType == .default && b.groupType != .default ||
-                            a.groupType == b.groupType && b.groupType == .normal && a.createdAt ?? .distantPast < b.createdAt ?? .distantPast
-                        }
-                    ForEach(groups) { group in
-                        Button {
-                            fileState.moveFile(file, to: group)
-                        } label: {
-                            Text(group.name ?? "unknown")
-                        }
-                        .disabled(group.id == file.group?.id)
-                    }
-                } label: {
-                    Label(.localizable(.sidebarFileRowContextMenuMoveTo), systemSymbol: .trayAndArrowUp)
-                }
-            }
+            moveFileMenu()
             
             Button(role: .destructive) {
                 fileState.deleteFile(file)
@@ -240,6 +211,87 @@ struct FileRowView: View {
             .padding(.horizontal, 4)
         }
         .opacity(isHovered ? 1 : 0)
+    }
+    
+    @MainActor @ViewBuilder
+    private func moveFileMenu() -> some View {
+        if let sourceGroup = file.group {
+            Menu {
+                let groups: [Group] = topLevelGroups
+                    .filter{ $0.groupType != .trash }
+                    .sorted { a, b in
+                        a.groupType == .default && b.groupType != .default ||
+                        a.groupType == b.groupType && b.groupType == .normal && a.createdAt ?? .distantPast < b.createdAt ?? .distantPast
+                    }
+                ForEach(groups) { group in
+                    MoveToGroupMenu(
+                        destination: group,
+                        sourceGroup: sourceGroup,
+                        childrenSortKey: \Group.name,
+                        allowSubgroups: true
+                    ) { targetGroupID in
+                        moveFile(to: targetGroupID)
+                    }
+                }
+            } label: {
+                Label(.localizable(.sidebarFileRowContextMenuMoveTo), systemSymbol: .trayAndArrowUp)
+            }
+        }
+    }
+    
+    private func moveFile(to groupID: NSManagedObjectID) {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        let fileID = file.objectID
+        let currentFile = fileState.currentFile
+        Task.detached {
+            do {
+                try await context.perform {
+                    guard case let group as Group = context.object(with: groupID),
+                          case let file as File = context.object(with: fileID) else { return }
+                    file.group = group
+                    try context.save()
+                }
+                
+                if await file == currentFile {
+                    await MainActor.run {
+                        guard case let group as Group = viewContext.object(with: groupID),
+                              case let file as File = viewContext.object(with: fileID) else { return }
+                        fileState.currentGroup = group
+                        fileState.currentFile = file
+                        
+                        fileState.expandToGroup(group.objectID)
+                    }
+                }
+            } catch {
+                await alertToast(error)
+            }
+        }
+    }
+    
+    private func deleteFilePermanently() {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        let fileID = file.objectID
+        Task.detached {
+            do {
+                try await context.perform {
+                    guard case let file as File = context.object(with: fileID) else { return }
+                    
+                    // also delete checkpoints
+                    let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+                    checkpointsFetchRequest.predicate = NSPredicate(format: "file = %@", file)
+                    let fileCheckpoints = try context.fetch(checkpointsFetchRequest)
+                    let objectIDsToBeDeleted = fileCheckpoints.map{$0.objectID}
+                    if !objectIDsToBeDeleted.isEmpty {
+                        let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: objectIDsToBeDeleted)
+                        try context.executeAndMergeChanges(using: batchDeleteRequest)
+                    }
+                    context.delete(file)
+                    try context.save()
+                }
+            } catch {
+                await alertToast(error)
+            }
+        }
     }
 }
 

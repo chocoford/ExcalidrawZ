@@ -9,31 +9,61 @@ import Foundation
 import CoreData
 
 struct PersistenceController {
-    // A singleton for our entire app to use
     static let shared = PersistenceController(cloudKitEnabled: !UserDefaults.standard.bool(forKey: "DisableCloudSync"))
-
-    // Storage for Core Data
     let container: NSPersistentContainer
 
-    // An initializer to load Core Data, optionally able
-    // to use an in-memory store.
     /// Init function
     /// - Parameters:
     ///   - inMemory: inMemory
     ///   - cloudKitEnabled: Enabled status for app internal.
     init(inMemory: Bool = false, cloudKitEnabled: Bool = true) {
-        // If you didn't name your model Main you'll need
-        // to change this name below.
         print("[PersistenceController] init with\(cloudKitEnabled ? "" : "out") cloudKit")
         if cloudKitEnabled {
             container = NSPersistentCloudKitContainer(name: "Model")
         } else {
             container = NSPersistentContainer(name: "Model")
         }
-        
         let description = container.persistentStoreDescriptions.first
         description?.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
         
+        let storeDir = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        )[0].appendingPathComponent("ExcalidrawZ", conformingTo: .directory)
+        
+        if !FileManager.default.fileExists(at: storeDir) {
+            try? FileManager.default.createDirectory(at: storeDir, withIntermediateDirectories: false)
+        }
+        
+        let cloudStoreDescription: NSPersistentStoreDescription = if inMemory {
+            NSPersistentStoreDescription(url: URL(fileURLWithPath: "/dev/null"))
+        } else {
+            // Historical reason
+            NSPersistentStoreDescription(
+                url: container.persistentStoreDescriptions.first?.url ??
+                storeDir.appendingPathComponent("Model.sqlite")
+            )
+        }
+        cloudStoreDescription.configuration = "Cloud"
+        cloudStoreDescription.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
+            containerIdentifier: "iCloud.com.chocoford.excalidraw"
+        )
+        cloudStoreDescription.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+        
+        let localStoreLocation = storeDir
+            .appendingPathComponent("ExcalidrawZLocal.sqlite")
+        let localStoreDescription: NSPersistentStoreDescription = if inMemory {
+            NSPersistentStoreDescription(url: URL(fileURLWithPath: "/dev/null"))
+        } else {
+            NSPersistentStoreDescription(url: localStoreLocation)
+        }
+        localStoreDescription.configuration = "Local"
+        
+        container.persistentStoreDescriptions = [
+            cloudStoreDescription,
+            localStoreDescription
+        ]
+        print(container.persistentStoreDescriptions)
         container.viewContext.automaticallyMergesChangesFromParent = true
         /// Core Data 预设了四种合并冲突策略，分别为：
         /// * NSMergeByPropertyStoreTrumpMergePolicy
@@ -49,10 +79,6 @@ struct PersistenceController {
               try container.viewContext.setQueryGenerationFrom(.current)
         } catch {
              fatalError("Failed to pin viewContext to the current generation:\(error)")
-        }
-        
-        if inMemory {
-            container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
         }
 
         container.loadPersistentStores { description, error in
@@ -103,36 +129,63 @@ struct PersistenceController {
 }
 
 extension PersistenceController {
-    func listGroups() throws -> [Group] {
-        let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
-        fetchRequest.sortDescriptors = [.init(key: "createdAt", ascending: true)]
-        return try container.viewContext.fetch(fetchRequest)
+    struct ExcalidrawGroup: Hashable {
+        var group: Group
+        var ancestors: [Group]
+        var children: [ExcalidrawGroup]
     }
-    func listFiles(in group: Group) throws -> [File] {
+    
+    func listGroups(
+        context: NSManagedObjectContext,
+        ancestors: [Group] = []
+    ) throws -> [ExcalidrawGroup] {
+        let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+        if let parent = ancestors.last {
+            fetchRequest.predicate = NSPredicate(format: "parent = %@", parent)
+        } else {
+            fetchRequest.predicate = NSPredicate(format: "parent = nil")
+        }
+        fetchRequest.sortDescriptors = [.init(key: "createdAt", ascending: true)]
+        
+        let groups = try context.fetch(fetchRequest)
+        
+        return try groups.map {
+            try ExcalidrawGroup(
+                group: $0,
+                ancestors: ancestors,
+                children: listGroups(context: context, ancestors: ancestors + [$0])
+            )
+        }
+    }
+    func listFiles(in group: Group, context: NSManagedObjectContext) throws -> [File] {
         if group.groupType == .trash {
-            return try listTrashedFiles()
+            return try listTrashedFiles(context: context)
         }
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
         fetchRequest.predicate = NSPredicate(format: "group == %@ AND inTrash == NO", group)
-        fetchRequest.sortDescriptors = [ .init(key: "updatedAt", ascending: false),
-                                         .init(key: "createdAt", ascending: false)]
-        return try container.viewContext.fetch(fetchRequest)
+        fetchRequest.sortDescriptors = [
+            .init(key: "updatedAt", ascending: false),
+            .init(key: "createdAt", ascending: false)
+        ]
+        return try context.fetch(fetchRequest)
     }
-    func listTrashedFiles() throws -> [File] {
+    func listTrashedFiles(context: NSManagedObjectContext) throws -> [File] {
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
         fetchRequest.predicate = NSPredicate(format: "inTrash == YES")
-        fetchRequest.sortDescriptors = [.init(key: "deletedAt", ascending: false)] 
-        return try container.viewContext.fetch(fetchRequest)
+        fetchRequest.sortDescriptors = [
+            .init(key: "deletedAt", ascending: false)
+        ]
+        return try context.fetch(fetchRequest)
     }
     func findGroup(id: UUID) throws -> Group? {
         let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
         fetchRequest.predicate = NSPredicate(format: "id == %@", id.uuidString)
         return try container.viewContext.fetch(fetchRequest).first
     }
-    func getDefaultGroup() throws -> Group? {
+    func getDefaultGroup(context: NSManagedObjectContext) throws -> Group? {
         let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
         fetchRequest.predicate = NSPredicate(format: "type == %@", "default")
-        return try container.viewContext.fetch(fetchRequest).first
+        return try context.fetch(fetchRequest).first
     }
     func findFile(id: UUID) throws -> File? {
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
@@ -140,25 +193,27 @@ extension PersistenceController {
         return try container.viewContext.fetch(fetchRequest).first
     }
     
-    func listAllFiles() throws -> [String : [File]] {
-        let groups = try listGroups()
-        var results: [String : [File]] = [:]
+    func listAllFiles(
+        context: NSManagedObjectContext,
+        children: [ExcalidrawGroup]? = nil
+    ) throws -> [ExcalidrawGroup : [File]] {
+        let groups: [ExcalidrawGroup] = try children ?? listGroups(context: context)
+        var results: [ExcalidrawGroup : [File]] = [:]
         for group in groups {
-            guard let name = group.name else { continue }
-            var renameI = 1
-            var newName = name
-            while results[newName] != nil {
-                newName = "\(name) (\(renameI))"
-                renameI += 1
-            }
-            results[newName] = try listFiles(in: group)
+            results[group] = try listFiles(in: group.group, context: context)
+            results = try results.merging(
+                listAllFiles(context: context, children: group.children),
+                uniquingKeysWith: { lhs, _ in lhs }
+            )
         }
         return results
     }
-    
+
     @MainActor
     func createFile(in groupID: NSManagedObjectID, context: NSManagedObjectContext) throws -> File {
-        guard let templateURL = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else { throw AppError.fileError(.notFound) }
+        guard let templateURL = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else {
+            throw AppError.fileError(.notFound)
+        }
         
         let file = File(context: context)
         file.id = UUID()
@@ -278,7 +333,7 @@ extension PersistenceController {
                     }
 #if os(macOS)
                     do {
-                        try backupFiles()
+                        try backupFiles(context: context)
                     } catch {
                         print(error)
                     }

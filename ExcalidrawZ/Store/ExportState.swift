@@ -70,14 +70,6 @@ final class ExportState: ObservableObject {
     }
     
     func exportCurrentFileToImage(type: ImageType, embedScene: Bool, withBackground: Bool) async throws -> ExportedImageData {
-        guard let excalidrawWebCoordinator else {
-            struct NoWebCoordinatorError: LocalizedError {
-                var errorDescription: String? {
-                    "Miss web coordinator"
-                }
-            }
-            throw NoWebCoordinatorError()
-        }
         guard let file = await self.excalidrawWebCoordinator?.parent?.file else {
             struct NoFileError: LocalizedError {
                 var errorDescription: String? {
@@ -86,19 +78,44 @@ final class ExportState: ObservableObject {
             }
             throw NoFileError()
         }
+        return try await exportExcalidrawElementsToImage(
+            elements: file.elements,
+            type: type,
+            name: file.name ?? "Untitled",
+            embedScene: embedScene,
+            withBackground: withBackground
+        )
+    }
+    
+    func exportExcalidrawElementsToImage(
+        elements: [ExcalidrawElement],
+        type: ImageType,
+        name: String,
+        embedScene: Bool,
+        withBackground: Bool
+    ) async throws -> ExportedImageData {
+        guard let excalidrawWebCoordinator else {
+            struct NoWebCoordinatorError: LocalizedError {
+                var errorDescription: String? {
+                    "Miss web coordinator"
+                }
+            }
+            throw NoWebCoordinatorError()
+        }
+        
         let imageData: Data
         let utType: UTType
         switch type {
             case .png:
                 imageData = try await excalidrawWebCoordinator.exportElementsToPNGData(
-                    elements: file.elements,
+                    elements: elements,
                     embedScene: embedScene,
                     withBackground: withBackground
                 )
                 utType = embedScene ? .excalidrawPNG : .png
             case .svg:
                 imageData = try await excalidrawWebCoordinator.exportElementsToSVGData(
-                    elements: file.elements,
+                    elements: elements,
                     embedScene: embedScene,
                     withBackground: withBackground
                 )
@@ -106,7 +123,7 @@ final class ExportState: ObservableObject {
         }
         
         let directory: URL = try getTempDirectory()
-        let filename = await excalidrawWebCoordinator.parent?.file.name ?? "Untitled"
+        let filename = name
         let url = directory.appendingPathComponent(filename, conformingTo: utType)
         try imageData.write(to: url)
         

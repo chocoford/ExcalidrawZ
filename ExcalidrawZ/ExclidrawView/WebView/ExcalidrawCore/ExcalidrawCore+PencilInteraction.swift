@@ -12,23 +12,25 @@ import UIKit
 extension ExcalidrawCore: UIPencilInteractionDelegate {
     
     @available(iOS 17.5, *)
-    func pencilInteraction(_ interaction: UIPencilInteraction, didReceiveTap tap: UIPencilInteraction.Tap) {
-        print(#function, interaction, tap)
-        
+    func pencilInteraction(_ interaction: UIPencilInteraction, didReceiveTap tap: UIPencilInteraction.Tap) {        
         if self.parent?.toolState.inPenMode == false {
             Task {
-                try? await self.togglePenMode(enabled: true)
-                try? await self.toggleToolbarAction(key: 0)
-                self.parent?.toolState.inPenMode = true
+                try? await self.parent?.toolState.togglePenMode(enabled: true, pencilConnected: true)
+                try? await self.toggleToolbarAction(key: ExcalidrawTool.freedraw.rawValue)
             }
-        }
-        
-        let activeTool = self.parent?.toolState.activatedTool
-        Task {
-            if activeTool == .cursor {
-                try? await self.toggleToolbarAction(key: 0)
-            } else {
-                try? await self.toggleToolbarAction(key: 1)
+        } else {
+            let activeTool = self.parent?.toolState.activatedTool
+            let previousActiveTool = self.parent?.toolState.previousActivatedTool
+            Task {
+                if activeTool == .eraser {
+                    if self.parent?.toolState.pencilInteractionMode == .fingerSelect, previousActiveTool == .cursor {
+                        try? await self.toggleToolbarAction(key: ExcalidrawTool.freedraw.keyEquivalent!)
+                    } else {
+                        try? await self.toggleToolbarAction(key: previousActiveTool?.keyEquivalent ?? ExcalidrawTool.freedraw.keyEquivalent!)
+                    }
+                } else {
+                    try? await self.toggleToolbarAction(key: ExcalidrawTool.eraser.keyEquivalent!)
+                }
             }
         }
     }

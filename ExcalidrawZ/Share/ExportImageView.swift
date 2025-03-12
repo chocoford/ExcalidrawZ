@@ -22,8 +22,14 @@ struct ExportImageView: View {
     
     @EnvironmentObject var exportState: ExportState
     
+    var elements: [ExcalidrawElement]
+    
     private var _dismissAction: (() -> Void)?
-    init(dismissAction: (() -> Void)? = nil) {
+    init(
+        file: ExcalidrawFile,
+        dismissAction: (() -> Void)? = nil
+    ) {
+        self.elements = file.elements
         if let dismissAction {
             self._dismissAction = dismissAction
         }
@@ -434,7 +440,7 @@ class ExcalidrawFileWrapper: FileWrapper {
 
 #if DEBUG
 #Preview {
-    ExportImageView()
+    ExportImageView(file: .preview)
         .environmentObject(ExportState())
 }
 #endif

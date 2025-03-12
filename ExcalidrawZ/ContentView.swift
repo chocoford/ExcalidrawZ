@@ -9,16 +9,19 @@ import SwiftUI
 import CoreData
 import CloudKit
 import Combine
+import os.log
 
 import ChocofordUI
 import ChocofordEssentials
 import SwiftyAlert
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
+    
+    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ContentView")
     
     @State private var hideContent: Bool = false
     
@@ -89,7 +92,7 @@ struct ContentView: View {
         .environmentObject(exportState)
         .environmentObject(toolState)
         .environmentObject(layoutState)
-        .swiftyAlert()
+        .swiftyAlert(logs: true)
         .bindWindow($window)
         .containerSizeClassInjection()
         .onReceive(NotificationCenter.default.publisher(for: .shouldHandleImport)) { notification in
@@ -105,16 +108,30 @@ struct ContentView: View {
                 }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .didOpenFromUrls)) { notification in
+            if let urls = notification.object as? [URL] {
+                fileState.temporaryFiles.append(contentsOf: urls)
+                fileState.temporaryFiles = Array(Set(fileState.temporaryFiles))
+                if !fileState.isTemporaryGroupSelected || fileState.currentTemporaryFile == nil {
+                    fileState.isTemporaryGroupSelected = true
+                    fileState.currentTemporaryFile = fileState.temporaryFiles.first
+                }
+            }
+        }
+        .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
+        .onOpenURL { url in
+            onOpenURL(url)
+        }
         // Check if it is first launch by checking the files count.
         .task {
             do {
-                let isEmpty = try managedObjectContext.fetch(NSFetchRequest<File>(entityName: "File")).isEmpty
+                let isEmpty = try viewContext.fetch(NSFetchRequest<File>(entityName: "File")).isEmpty
                 isFirstImporting = isEmpty
                 if isFirstImporting == true, try await CKContainer.default().accountStatus() != .available {
                     isFirstImporting = false
                     return
                 } else if !isEmpty {
-                    try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: managedObjectContext)
+                    try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: viewContext)
                 }
             } catch {
                 alertToast(error)
@@ -134,7 +151,7 @@ struct ContentView: View {
                             Task { @MainActor in
                                 do {
                                     try? await Task.sleep(nanoseconds: UInt64(2 * 1e+9))
-                                    try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: managedObjectContext)
+                                    try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: viewContext)
                                 } catch {
                                     alertToast(error)
                                 }
@@ -169,6 +186,61 @@ struct ContentView: View {
             }
         }
         .padding(40)
+    }
+    
+    private func onOpenURL(_ url: URL) {
+        // check if it is already in LocalFolder
+        let context = viewContext
+        var canAddToTemp = true
+        do {
+            try context.performAndWait {
+                let folderFetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                folderFetchRequest.predicate = NSPredicate(format: "filePath == %@", url.deletingLastPathComponent().filePath)
+                guard let folder = try context.fetch(folderFetchRequest).first else {
+                    return
+                }
+                canAddToTemp = false
+                Task {
+                    await MainActor.run {
+                        fileState.currentLocalFolder = folder
+                        fileState.expandToGroup(folder.objectID)
+                    }
+                    try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.1))
+                    await MainActor.run {
+                        fileState.currentLocalFile = url
+                    }
+                }
+            }
+        } catch {
+            alertToast(error)
+        }
+        
+        guard canAddToTemp else { return }
+        
+        // logger.debug("on open url: \(url, privacy: .public)")
+        if !fileState.temporaryFiles.contains(where: {$0 == url}) {
+            fileState.temporaryFiles.append(url)
+        }
+        if !fileState.isTemporaryGroupSelected || fileState.currentTemporaryFile == nil {
+            fileState.isTemporaryGroupSelected = true
+            fileState.currentTemporaryFile = fileState.temporaryFiles.first
+        }
+        // save a checkpoint immediately.
+        Task.detached {
+            do {
+                try await context.perform {
+                    let newCheckpoint = LocalFileCheckpoint(context: context)
+                    newCheckpoint.url = url
+                    newCheckpoint.updatedAt = .now
+                    newCheckpoint.content = try Data(contentsOf: url)
+                    
+                    context.insert(newCheckpoint)
+                    try context.save()
+                }
+            } catch {
+                await alertToast(error)
+            }
+        }
     }
 }
 
@@ -225,7 +297,7 @@ struct PrintModifier: ViewModifier {
 
 @available(macOS 13.0, *)
 struct ContentViewModern: View {
-    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
@@ -276,24 +348,14 @@ struct ContentViewModern: View {
     private func sidebarToolbar() -> some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
             // create
-            Button {
-                do {
-                    try fileState.createNewFile(context: managedObjectContext)
-                } catch {
-                    alertToast(error)
-                }
-            } label: {
-                Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
-            }
-            .help(.localizable(.createNewFile))
-            .disabled(fileState.currentGroup?.groupType == .trash)
+            NewFileButton()
         }
         
 #if os(macOS)
         // in macOS 14.*, the horizontalSizeClass is not `.regular`
         // if horizontalSizeClass == .regular {
             ToolbarItemGroup(placement: .destructiveAction) {
-                sidebarToggle()
+                SidebarToggle(columnVisibility: $columnVisibility)
             }
         // }
 #elseif os(iOS)
@@ -301,7 +363,7 @@ struct ContentViewModern: View {
             Button {
                 isSettingsPresented.toggle()
             } label: {
-                Label("Settings", systemSymbol: .gear)
+                Label(.localizable(.settingsName), systemSymbol: .gear)
             }
         }
 #endif
@@ -326,46 +388,6 @@ struct ContentViewModern: View {
         }
 #endif
     }
-    
-    @MainActor @ViewBuilder
-    private func sidebarToggle() -> some View {
-        HStack(spacing: 0) {
-            Button {
-                withAnimation {
-                    if columnVisibility == .detailOnly {
-                        columnVisibility = .all
-                    } else {
-                        columnVisibility = .detailOnly
-                    }
-                }
-            } label: {
-                Image(systemSymbol: .sidebarLeading)
-            }
-            
-            Menu {
-                Button {
-                    withAnimation { columnVisibility = .all }
-                    appPreference.sidebarMode = .all
-                } label: {
-                    if appPreference.sidebarMode == .all && columnVisibility != .detailOnly {
-                        Image(systemSymbol: .checkmark)
-                    }
-                    Text(.localizable(.sidebarShowAll))
-                }
-                Button {
-                    withAnimation { columnVisibility = .all }
-                    appPreference.sidebarMode = .filesOnly
-                } label: {
-                    if appPreference.sidebarMode == .filesOnly && columnVisibility != .detailOnly {
-                        Image(systemSymbol: .checkmark)
-                    }
-                    Text(.localizable(.sidebarShowFilesOnly))
-                }
-            } label: {
-            }
-            .buttonStyle(.borderless)
-        }
-    }
 }
 
 struct ContentViewLagacy: View {
@@ -383,7 +405,7 @@ struct ContentViewLagacy: View {
             HStack {
                 if layoutState.isSidebarPresented {
                     SidebarView()
-                        .frame(width: 340)
+                        .frame(width: 374)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .background {
                             RoundedRectangle(cornerRadius: 12)

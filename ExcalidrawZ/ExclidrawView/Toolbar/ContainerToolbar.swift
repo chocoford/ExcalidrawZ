@@ -10,8 +10,7 @@ import SwiftUI
 import ChocofordUI
 
 struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
-//    @Environment(\.dismiss) var dismiss
-    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
     
@@ -20,7 +19,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var toolState: ToolState
 
-    @State private var sharedFile: File?
+    @State private var sharedFile: ExcalidrawFile?
     
     func body(content: Content) -> some View {
         ZStack {
@@ -51,7 +50,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
         .toolbarBackground(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline) // <- fix principal toolbar
 #endif
-        .modifier(ShareViewModifier(sharedFile: $sharedFile))
+        .modifier(ShareFileModifier(sharedFile: $sharedFile))
     }
     
     @ToolbarContentBuilder
@@ -85,7 +84,6 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             placement: containerHorizontalSizeClass == .regular ? .principal : .bottomBar
         ) {
             ExcalidrawToolbar()
-//                .offset(y: toolState.isBottomBarPresented || containerHorizontalSizeClass == .regular ? 100 : 0)
         }
 #endif
         
@@ -105,18 +103,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 #endif
 
             if #available(macOS 13.0, iOS 16.0, *) { } else {
-                // create
-                Button {
-                    do {
-                        try fileState.createNewFile(context: managedObjectContext)
-                    } catch {
-                        alertToast(error)
-                    }
-                } label: {
-                    Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
-                }
-                .help(.localizable(.createNewFile))
-                .disabled(fileState.currentGroup?.groupType == .trash)
+                NewFileButton()
             }
         }
         
@@ -125,6 +112,8 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             if containerHorizontalSizeClass == .compact {
                 Button {
                     fileState.currentFile = nil
+                    fileState.currentLocalFile = nil
+                    fileState.currentTemporaryFile = nil
                 } label: {
                     Label(.localizable(.navigationButtonBack), systemSymbol: .chevronBackward)
                 }
@@ -153,13 +142,30 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             FileHistoryButton()
             
             Button {
-                self.sharedFile = fileState.currentFile
+                do {
+                    if let file = fileState.currentFile {
+                        self.sharedFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
+                    } else if let folder = fileState.currentLocalFolder,
+                        let fileURL = fileState.currentLocalFile {
+                        try folder.withSecurityScopedURL { _ in
+                            self.sharedFile = try ExcalidrawFile(contentsOf: fileURL)
+                        }
+                    } else if fileState.isTemporaryGroupSelected,
+                              let fileURL = fileState.currentTemporaryFile {
+                        self.sharedFile = try ExcalidrawFile(contentsOf: fileURL)
+                    }
+                } catch {
+                    alertToast(error)
+                }
+                
             } label: {
                 Label(.localizable(.export), systemSymbol: .squareAndArrowUp)
             }
             .help(.localizable(.export))
-            .disabled(fileState.currentGroup?.groupType == .trash)
-
+            .disabled(
+                fileState.currentGroup?.groupType == .trash ||
+                (fileState.currentFile == nil && fileState.currentLocalFile == nil && fileState.currentTemporaryFile == nil)
+            )
 
             if #available(macOS 13.0, iOS 16.0, *), appPreference.inspectorLayout == .sidebar {
 #if os(iOS)
@@ -245,9 +251,21 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             VStack(
                 alignment: .leading
             ) {
-                Text(file.name ?? "")
+                Text(file.name ?? String(localizable: .generalUntitled))
                     .font(.headline)
-                Text(file.createdAt?.formatted() ?? "Not modified")
+                Text(file.updatedAt?.formatted() ?? "Not modified")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        } else if let fileURL = fileState.currentLocalFile ?? fileState.currentTemporaryFile {
+            let filename = fileURL.deletingPathExtension().lastPathComponent
+            let updatedAt = (try? FileManager.default.attributesOfItem(atPath: fileURL.filePath))?[.modificationDate] as? Date
+            VStack(
+                alignment: .leading
+            ) {
+                Text(filename)
+                    .font(.headline)
+                Text(updatedAt?.formatted() ?? "Not modified")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -262,6 +280,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                     toolState.inPenMode.toggle()
                     do {
                         try await toolState.excalidrawWebCoordinator?.togglePenMode(enabled: toolState.inPenMode)
+                        try await toolState.toggleTool(.freedraw)
                     } catch {
                         toolState.inPenMode.toggle()
                     }

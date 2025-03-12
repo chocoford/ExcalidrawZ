@@ -37,7 +37,7 @@ func loadResource<T: Decodable>(_ filename: String) -> T {
 
 
 #if canImport(AppKit)
-func archiveAllFiles() throws {
+func archiveAllFiles(context: NSManagedObjectContext) throws {
     let panel = ExcalidrawOpenPanel.exportPanel
     if panel.runModal() == .OK {
         if let url = panel.url {
@@ -45,8 +45,9 @@ func archiveAllFiles() throws {
             do {
                 let exportURL = url.appendingPathComponent("ExcalidrawZ exported at \(Date.now.formatted(date: .abbreviated, time: .shortened))", conformingTo: .directory)
                 try filemanager.createDirectory(at: exportURL, withIntermediateDirectories: false)
-                try archiveAllFiles(to: exportURL)
+                try archiveAllCloudFiles(to: exportURL, context: context)
             } catch {
+                print(error)
                 throw error
             }
         } else {
@@ -65,7 +66,7 @@ func getBackupsDir() throws -> URL {
     return backupsDir
 }
 
-func backupFiles() throws {
+func backupFiles(context: NSManagedObjectContext) throws {
     let fileManager = FileManager.default
     let backupsDir = try getBackupsDir()
     
@@ -73,16 +74,58 @@ func backupFiles() throws {
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy-MM-dd"
     let exportURL = backupsDir.appendingPathComponent(formatter.string(from: today), conformingTo: .directory)
-    
     if fileManager.fileExists(at: exportURL) { return }
-    print("--- backupFiles --- \(exportURL)")
+
     
-    try fileManager.createDirectory(at: exportURL, withIntermediateDirectories: true)
-    try archiveAllFiles(to: exportURL)
+    // Cloud
+    let cloudExportURL = exportURL.appendingPathComponent("Cloud", conformingTo: .directory)
+    do {
+        print("[Backup Files] Start... \(cloudExportURL)")
+        try fileManager.createDirectory(at: cloudExportURL, withIntermediateDirectories: true)
+        try archiveAllCloudFiles(to: cloudExportURL, context: context)
+    } catch {
+        print("[Backup Files] backup cloud files done, but with error: \(error)")
+    }
+    // Local
+    let localExportURL = exportURL.appendingPathComponent("Local", conformingTo: .directory)
+    Task {
+        do {
+            print("[Backup Files] Start... \(localExportURL)")
+            try fileManager.createDirectory(at: localExportURL, withIntermediateDirectories: true)
+            let context = PersistenceController.shared.container.newBackgroundContext()
+            try await context.perform {
+                let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                fetchRequest.predicate = NSPredicate(format: "parent = nil")
+                let allFolders = try context.fetch(fetchRequest)
+                
+                for folder in allFolders {
+                    try folder.withSecurityScopedURL { scopedURL in
+                        let fileCoordinator = NSFileCoordinator()
+                        fileCoordinator.coordinate(readingItemAt: scopedURL, error: nil) { url in
+                            do {
+                                try fileManager.copyItem(
+                                    at: url,
+                                    to: localExportURL.appendingPathComponent(url.lastPathComponent, conformingTo: .directory)
+                                )
+                            } catch {
+                                print("[Backup Files] error occured when copy local folder: \(url)")
+                            }
+                        }
+                    }
+                }
+            }
+        } catch {
+            print("[Backup Files] backup local files done, but with error: \(error)")
+        }
+    }
     
     // clean
-    let backupFolders: [URL] = try fileManager.contentsOfDirectory(at: backupsDir, includingPropertiesForKeys: [.creationDateKey], options: .skipsHiddenFiles)
-        .filter { $0.hasDirectoryPath && formatter.date(from: $0.lastPathComponent) != nil }
+    let backupFolders: [URL] = try fileManager.contentsOfDirectory(
+        at: backupsDir,
+        includingPropertiesForKeys: [.creationDateKey],
+        options: .skipsHiddenFiles
+    ).filter { $0.hasDirectoryPath && formatter.date(from: $0.lastPathComponent) != nil }
+    
     let sortedFolders = backupFolders.compactMap { folder -> (URL, Date)? in
         if let date = formatter.date(from: folder.lastPathComponent) {
             return (folder, date)
@@ -112,6 +155,7 @@ func backupFiles() throws {
         }
     }
     let foldersToDelete = Set(sortedFolders.map { $0.0 }).subtracting(foldersToKeep)
+    print("[Backup files] folder to keep: \(foldersToKeep.count), folder to delete: \(foldersToDelete.count)")
     for folder in foldersToDelete {
         do {
             try fileManager.removeItem(at: folder)
@@ -121,23 +165,31 @@ func backupFiles() throws {
     }
 }
 
-func archiveAllFiles(to url: URL) throws {
+func archiveAllCloudFiles(to url: URL, context: NSManagedObjectContext) throws {
     let filemanager = FileManager.default
-    let allFiles = try PersistenceController.shared.listAllFiles()
-    print("Archive all files: \(allFiles.map {[$0.key : $0.value.map{$0.name}]}.merged())")
+    let allFiles:  [PersistenceController.ExcalidrawGroup : [File]] = try PersistenceController.shared.listAllFiles(context: context)
     
     var errorDuringArchive: Error?
     
-    for files in allFiles {
-        let dir = url.appendingPathComponent(files.key, conformingTo: .directory)
-        try filemanager.createDirectory(at: dir, withIntermediateDirectories: false)
-        for file in files.value {
+    for groupFiles in allFiles {
+        let group = groupFiles.key
+        let files = groupFiles.value
+        var groupURL = url
+        for ancestor in group.ancestors {
+            groupURL = groupURL.appendingPathComponent(ancestor.name ?? "Untitled", conformingTo: .directory)
+        }
+        groupURL = groupURL.appendingPathComponent(group.group.name ?? "Untitled", conformingTo: .directory)
+        if !filemanager.fileExists(at: groupURL) {
+            try filemanager.createDirectory(at: groupURL, withIntermediateDirectories: true)
+        }
+        
+        for file in files {
             do {
                 var file = try ExcalidrawFile(from: file)
-                try file.syncFiles(context: PersistenceController.shared.container.viewContext)
+                try file.syncFiles(context: context)
                 var index = 1
                 var filename = file.name ?? String(localizable: .newFileNamePlaceholder)
-                var fileURL: URL = dir.appendingPathComponent(filename, conformingTo: .fileURL).appendingPathExtension("excalidraw")
+                var fileURL: URL = groupURL.appendingPathComponent(filename, conformingTo: .fileURL).appendingPathExtension("excalidraw")
                 var retryCount = 0
                 while filemanager.fileExists(at: fileURL), retryCount < 100 {
                     if filename.hasSuffix(" (\(index))") {
@@ -153,6 +205,8 @@ func archiveAllFiles(to url: URL) throws {
                 let filePath: String = fileURL.filePath
                 if !filemanager.createFile(atPath: filePath, contents: file.content) {
                     print("export file \(filePath) failed")
+                } else {
+                    print("Export file to url<\(filePath)> done")
                 }
             } catch {
                 errorDuringArchive = error

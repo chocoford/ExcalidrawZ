@@ -10,7 +10,10 @@ import UniformTypeIdentifiers
 
 import CoreData
 
-struct ExcalidrawFile: Codable, Hashable, Sendable {
+
+struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
+    static var localFileURLIDMapping: [URL : UUID] = [:]
+    
     var id = UUID()
     
     var source: String
@@ -157,7 +160,9 @@ struct ExcalidrawFile: Codable, Hashable, Sendable {
                 struct UnrecognizedURLError: Error {}
                 throw UnrecognizedURLError()
         }
-        try self.init(data: data)
+        let id = Self.localFileURLIDMapping[url] ?? UUID()
+        Self.localFileURLIDMapping[url] = id
+        try self.init(data: data, id: id)
         switch fileType {
             case .excalidrawFile:
                 self.name = url.deletingPathExtension().lastPathComponent

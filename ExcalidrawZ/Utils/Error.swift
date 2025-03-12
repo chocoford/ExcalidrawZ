@@ -25,6 +25,7 @@ enum AppError: LocalizedError, Equatable {
     case fileError(_ error: FileError)
     case groupError(_ error: GroupError)
     case exportError(_ error: ExportError)
+    case urlError(_ error: URLError)
     case unexpected(_ error: IdentifiableError)
     
     init(_ error: Error) {
@@ -40,6 +41,9 @@ enum AppError: LocalizedError, Equatable {
                 
             case let error as GroupError:
                 self = .groupError(error)
+            
+            case let error as URLError:
+                self = .urlError(error)
                 
             default:
                 self = .unexpected(.init(error))
@@ -57,6 +61,8 @@ enum AppError: LocalizedError, Equatable {
             case .exportError(let error):
                 return error.errorDescription
             case .groupError(let error):
+                return error.errorDescription
+            case .urlError(let error):
                 return error.errorDescription
         }
     }
@@ -137,6 +143,9 @@ enum DirMonitorError: LocalizedError, Equatable {
     }
 }
 
+enum URLError: LocalizedError, Equatable {
+    case startAccessingSecurityScopedResourceFailed
+}
 
 //struct ErrorBus {
 //    private var continuation: AsyncStream<Error>.Continuation? = nil

@@ -177,7 +177,13 @@ extension ExcalidrawCore {
         if self.webView.isLoading { return }
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleImageInvertSwitch(\(autoInvert)); 0;")
     }
-    
+    @MainActor
+    func applyAntiInvertImageSettings(payload: AntiInvertImageSettings) async throws {
+        if self.webView.isLoading { return }
+        let payload = try payload.jsonStringified()
+        // print("[applyAntiInvertImageSettings] payload: ", payload)
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleAntiInvertImageSettings(\(payload)); 0;")
+    }
     
     @MainActor
     func loadLibraryItem(item: ExcalidrawLibrary) async throws {
@@ -202,6 +208,7 @@ extension ExcalidrawCore {
         print(#function, key)
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction(\(key)); 0;")
     }
+    
     @MainActor
     func toggleToolbarAction(key: Character) async throws {
         guard !self.isLoading else { return }
@@ -400,12 +407,29 @@ extension ExcalidrawCore {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.redo(); 0;")
     }
     @MainActor
+    func connectPencil(enabled: Bool) async throws {
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.connectPencil(\(enabled)); 0;")
+    }
+    @MainActor
     func togglePenMode(enabled: Bool) async throws {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.togglePenMode(\(enabled)); 0;")
     }
     @MainActor
     public func toggleActionsMenu(isPresented: Bool) async throws {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleActionsMenu(\(isPresented)); 0;")
+    }
+    @MainActor
+    public func togglePencilInterationMode(mode: ToolState.PencilInteractionMode) async throws {
+        try await webView.evaluateJavaScript(
+            "window.excalidrawZHelper.togglePencilInterationMode(\(mode.rawValue)); 0;"
+        )
+    }
+    @MainActor
+    public func loadImageToExcalidrawCanvas(imageData: Data, type: String) async throws {
+        var buffer = [UInt8].init(repeating: 0, count: imageData.count)
+        imageData.copyBytes(to: &buffer, count: imageData.count)
+        let buf = buffer
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.loadImageBuffer(\(buf), '\(type)'); 0;")
     }
     
     @MainActor

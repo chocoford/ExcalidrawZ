@@ -63,8 +63,8 @@ extension ExcalidrawCore: WKNavigationDelegate {
                         self.parent?.onError(error)
                     }
                 }
+                self.isNavigating = false
             }
-            self.isNavigating = false
         }
     }
         

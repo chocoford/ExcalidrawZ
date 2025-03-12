@@ -29,6 +29,24 @@ struct PencilSettingsView: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
         Section {
+            Picker(selection: $toolState.pencilInteractionMode) {
+                Text(.localizable(.applePencilInterationModeOneFingerSelectTitle)).tag(ToolState.PencilInteractionMode.fingerSelect)
+                Text(.localizable(.applePencilInterationModeOneFingerMoveTitle)).tag(ToolState.PencilInteractionMode.fingerMove)
+            } label: {
+                
+            }
+            .pickerStyle(.inline)
+        } header: {
+            Text(.localizable(.applePencilInterationTitle))
+        } footer: {
+            VStack(spacing: 10) {
+                Text(.localizable(.applePencilInterationModeOneFingerSelectDescription))
+                Text(.localizable(.applePencilInterationModeOneFingerMoveDescription))
+            }
+        }
+        
+        
+        Section {
             Toggle(isOn: Binding {
                 toolState.inPenMode
             } set: {
@@ -36,11 +54,18 @@ struct PencilSettingsView: View {
                     toolState.inPenMode = false
                 }
             }) {
-                Text("Connect to pencil")
+                Text(.localizable(.applePencilConnectToPencil))
             }
             .disabled(!toolState.inPenMode)
+            .onChange(of: toolState.inPenMode) { newValue in
+                if !newValue {
+                    Task {
+                        try? await toolState.togglePenMode(enabled: false)
+                    }
+                }
+            }
         } footer: {
-            Text("You can activate pencil mode by tapping on the canvas with your Apple Pencil.")
+            Text(.localizable(.applePencilConnectionTips))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -48,5 +73,10 @@ struct PencilSettingsView: View {
 }
 
 #Preview {
-    PencilSettingsView()
+    if #available(macOS 13.0, *) {
+        NavigationStack {
+            PencilSettingsView()
+                .environmentObject(ToolState())
+        }
+    }
 }

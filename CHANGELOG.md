@@ -1,3 +1,19 @@
+## 1.3.1
+
+- Fix issues occured in iOS.
+- Optimize sidebar UI - Adds `New Group` bottom button back.
+- Fix bugs in refresh folders content logic.
+
+## 1.3.0
+
+- Local files support
+- Subfolders & subgroups support
+- Create drawing from clipboard (image)
+- Math (LaTeX) insertion support
+- New toolbar for iPadOS
+- Fixed backup logic issue
+- Improved backups UI
+
 ## 1.2.11
 
 Fixing data compatibility issues, which previously involved multiple aspects such as library imports, arrow head types, and compatibility for reading and writing old files.

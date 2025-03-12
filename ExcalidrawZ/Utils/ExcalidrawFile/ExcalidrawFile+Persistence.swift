@@ -33,7 +33,6 @@ extension ExcalidrawFile {
             struct EmptyContentError: Error {}
             throw EmptyContentError()
         }
-//        print(#function, persistenceFile.name, try? JSONSerialization.jsonObject(with: data))
         let file = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
         self = file
         self.id = persistenceFile.id ?? UUID()
@@ -62,6 +61,7 @@ extension ExcalidrawFile {
             .compactMap{ ExcalidrawFile.ResourceFile(mediaItem: $0) }
             .map{ [$0.id : $0] }
             .merged()
+            .merging(self.files, uniquingKeysWith: {$1})
         self.files = files
         
         // update content

@@ -87,7 +87,7 @@ struct ExcalidrawView {
         category: "WebView"
     )
     
-    @Binding var file: ExcalidrawFile
+    @Binding var file: ExcalidrawFile?
     @Binding var isLoading: Bool
     
     var savingType: UTType
@@ -96,7 +96,7 @@ struct ExcalidrawView {
     
     // TODO: isLoadingFile is not used yet.
     init(
-        file: Binding<ExcalidrawFile>,
+        file: Binding<ExcalidrawFile?>,
         savingType: UTType = .excalidrawFile,
         isLoadingPage: Binding<Bool>,
         isLoadingFile: Binding<Bool>? = nil,
@@ -132,15 +132,19 @@ extension ExcalidrawView {
             do {
                 if appPreference.autoInvertImage,
                    appPreference.excalidrawAppearance == .dark || colorScheme == .dark && appPreference.excalidrawAppearance == .auto {
+                    try await context.coordinator.applyAntiInvertImageSettings(payload: appPreference.antiInvertImageSettings)
                     try await context.coordinator.toggleInvertImageSwitch(autoInvert: true)
                 } else {
+                    try await context.coordinator.applyAntiInvertImageSettings(payload: appPreference.antiInvertImageSettings)
                     try await context.coordinator.toggleInvertImageSwitch(autoInvert: false)
                 }
             } catch {
                 self.onError(error)
             }
         }
-        context.coordinator.loadFile(from: file)
+        if let file {
+            context.coordinator.loadFile(from: file)
+        }
     }
 }
 

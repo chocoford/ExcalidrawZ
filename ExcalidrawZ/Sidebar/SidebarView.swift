@@ -16,12 +16,8 @@ struct SidebarView: View {
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var fileState: FileState
     
-    @FetchRequest(
-        sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)]
-    )
-    var groups: FetchedResults<Group>
-    
-    
+    @StateObject private var localFolderState = LocalFolderState()
+
     var body: some View {
         twoColumnSidebar()
     }
@@ -31,9 +27,9 @@ struct SidebarView: View {
     private func twoColumnSidebar() -> some View {
         HStack(spacing: 0) {
             if appPreference.sidebarMode == .all {
-                GroupListView(groups: groups)
+                GroupListView()
 #if os(macOS)
-                    .frame(minWidth: 150)
+                    .frame(minWidth: 174)
 #endif
                 Divider()
                     .ignoresSafeArea(edges: .bottom)
@@ -45,6 +41,15 @@ struct SidebarView: View {
                         currentGroupID: currentGroup.id,
                         groupType: currentGroup.groupType
                     )
+                } else if let currentLocalFolder = fileState.currentLocalFolder {
+                    if #available(macOS 13.0, *) {
+                        LocalFilesListView(folder: currentLocalFolder)
+                    } else {
+                        LocalFilesListView(folder: currentLocalFolder)
+                            .id(currentLocalFolder)
+                    }
+                } else if fileState.isTemporaryGroupSelected {
+                    TemporaryFileListView()
                 } else {
                     if #available(macOS 14.0, iOS 17.0, *) {
                         Text(.localizable(.sidebarFilesPlaceholder))
@@ -62,9 +67,16 @@ struct SidebarView: View {
         .border(.top, color: .separatorColor)
 #if os(iOS)
         .background {
-            List(selection: $fileState.currentFile) {}
+            if fileState.currentGroup != nil {
+                List(selection: $fileState.currentFile) {}
+            } else if fileState.currentLocalFolder != nil {
+                List(selection: $fileState.currentLocalFile) {}
+            } else if fileState.isTemporaryGroupSelected {
+                List(selection: $fileState.currentTemporaryFile) {}
+            }
         }
 #endif
+        .environmentObject(localFolderState)
     }
     
     @MainActor @ViewBuilder

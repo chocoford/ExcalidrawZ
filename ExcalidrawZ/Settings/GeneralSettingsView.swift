@@ -11,6 +11,15 @@ import ChocofordUI
 import Sparkle
 #endif
 
+enum FolderStructureStyle: Int {
+    case disclosureGroup
+    case tree
+}
+
+private struct FolderChildren: Identifiable, Hashable {
+    var id = UUID()
+}
+
 struct GeneralSettingsView: View {
     @Environment(\.colorScheme) var colorScheme
 #if os(macOS) && !APP_STORE
@@ -21,6 +30,15 @@ struct GeneralSettingsView: View {
     @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
     @State private var isDisableBySettingsDialogPresented: Bool = false
     @State private var isRestartAlertPresented: Bool = false
+    
+    @AppStorage("FolderStructureStyle") var folderStructStyle: FolderStructureStyle = .disclosureGroup
+    
+    @State private var isDisclosureGroupUnspportedAlertPresented = false
+    struct DisclosureGroupUnspportedError: LocalizedError {
+        var errorDescription: String? {
+            "Disclosure Group Style is unavailable below macOS 13.0."
+        }
+    }
 
     var body: some View {
         if #available(macOS 14.0, *) {
@@ -66,6 +84,91 @@ struct GeneralSettingsView: View {
                 Text(.localizable(.settingsAppAppearanceName))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+        }
+        
+        // Folder structure UI
+        Section {
+            HStack {
+                Text(.localizable(.settingsFolderStructureStyleTitle))
+                Spacer()
+                Picker(.localizable(.settingsFolderStructureStyleTitle), selection: $folderStructStyle) {
+                    Text(.localizable(.settingsFolderStructureStyleDisclosureGroup)).tag(FolderStructureStyle.disclosureGroup)
+                    Text(.localizable(.settingsFolderStructureStyleTreeStructure)).tag(FolderStructureStyle.tree)
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .fixedSize()
+                .onChange(of: folderStructStyle) { newValue in
+                    if #available(macOS 13.0, *) { } else {
+                        if newValue == .disclosureGroup {
+                            isDisclosureGroupUnspportedAlertPresented.toggle()
+                            folderStructStyle = .tree
+                        }
+                    }
+                }
+                .alert(
+                    isPresented: $isDisclosureGroupUnspportedAlertPresented,
+                    error: DisclosureGroupUnspportedError()
+                ) {
+                    
+                }
+            }
+        } footer: {
+            HStack {
+                VStack(spacing: 10) {
+                    Text(.localizable(.settingsFolderStructureDisclosureGroupStyleTitle)).font(.headline)
+                    VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 4) {
+                                Image(systemSymbol: .chevronDown).font(.footnote)
+                                Text(.localizable(.generalFolderName))
+                            }
+                            
+                            VStack(spacing: 4) {
+                                Text(.localizable(.generalSubfolderName))
+                                Text(.localizable(.generalSubfolderName))
+                            }
+                            .padding(.leading, 24)
+                        }
+                        
+                        HStack(spacing: 4) {
+                            Image(systemSymbol: .chevronDown).font(.footnote).opacity(0)
+                            Text(.localizable(.generalFolderName))
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxWidth: 160)
+                
+                Divider()
+                
+                VStack(spacing: 10) {
+                    let children: [FolderChildren] = [FolderChildren(), FolderChildren()]
+                    let children2: [FolderChildren] = []
+                    Text(.localizable(.settingsFolderStructureTreeStructureStyleTitle)).font(.headline)
+                    VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            TreeStructureView(children: children) {
+                                Text(.localizable(.generalFolderName))
+                            } childView: { child in
+                                TreeStructureView(children: children2) {
+                                    Text(.localizable(.generalSubfolderName))
+                                } childView: { child in
+                                    
+                                }
+                            }
+                        }
+                        TreeStructureView(children: children) {
+                            Text(.localizable(.generalFolderName)).padding(.vertical, 4)
+                        } childView: { _ in
+                            
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxWidth: 160)
+            }
+            .foregroundStyle(.secondary)
         }
         
 #if DEBUG
@@ -117,16 +220,8 @@ struct GeneralSettingsView: View {
         }
 #endif
         
-        Section {
-            Toggle(.localizable(.settingsExcalidrawPreventImageAutoInvert), isOn: $appPreference.autoInvertImage)
-        } header: {
-            if #available(macOS 14.0, *) {
-                Text(.localizable(.settingsExcalidraw))
-            } else {
-                Text(.localizable(.settingsExcalidraw))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
+        // Anti-Invert Image
+        AntiInvertImageSettingsSection()
         
 #if os(macOS) && !APP_STORE
         Section {
@@ -219,6 +314,41 @@ struct GeneralSettingsView: View {
     }
 }
 
+struct AntiInvertImageSettingsSection: View {
+    @EnvironmentObject private var appPreference: AppPreference
+    
+    var body: some View {
+        Section {
+            Toggle(.localizable(.settingsExcalidrawPreventImageAutoInvert), isOn: Binding {
+                appPreference.autoInvertImage
+            } set: { val in
+                withAnimation {
+                    appPreference.autoInvertImage = val
+                }
+            })
+            // Divider()
+            if appPreference.autoInvertImage {
+                VStack {
+                    Toggle("PNG", isOn: $appPreference.antiInvertImageSettings.png)
+                    Toggle("SVG", isOn: $appPreference.antiInvertImageSettings.svg)
+                }
+                .padding(.leading, 6)
+                .disabled(!appPreference.autoInvertImage)
+            }
+        } header: {
+            if #available(macOS 14.0, *) {
+                Text(.localizable(.settingsExcalidraw))
+            } else {
+                Text(.localizable(.settingsExcalidraw))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        } footer: {
+            Text("Need the precise settings for each individual file? Come to Discord and let me know!")
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
 #if DEBUG
 #Preview {
     GeneralSettingsView()
@@ -226,5 +356,16 @@ struct GeneralSettingsView: View {
 #if os(macOS) && !APP_STORE
         .environmentObject(UpdateChecker())
 #endif
+}
+
+
+#Preview {
+    if #available(macOS 13.0, *) {
+        Form {
+            AntiInvertImageSettingsSection()
+        }
+        .formStyle(.grouped)
+        .environmentObject(AppPreference())
+    }
 }
 #endif

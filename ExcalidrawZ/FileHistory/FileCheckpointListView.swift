@@ -14,6 +14,11 @@ struct FileHistoryButton: View {
     @EnvironmentObject var fileState: FileState
     
     @State private var isPresented = false
+    
+    private var disabled: Bool {
+        fileState.currentGroup?.groupType == .trash ||
+        (fileState.currentFile == nil && fileState.currentLocalFile == nil && fileState.currentTemporaryFile == nil)
+    }
 
     var body: some View {
         Button {
@@ -21,12 +26,16 @@ struct FileHistoryButton: View {
         } label: {
             Label(.localizable(.checkpoints), systemSymbol: .clockArrowCirclepath)
         }
-        .disabled(fileState.currentGroup?.groupType == .trash)
+        .disabled(disabled)
         .help(.localizable(.checkpoints))
 #if os(macOS)
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             if let file = fileState.currentFile {
                 FileCheckpointListView(file: file)
+            } else if let localFile = fileState.currentLocalFile {
+                FileCheckpointListView(localFile: localFile)
+            } else if let tempFile = fileState.currentTemporaryFile {
+                FileCheckpointListView(localFile: tempFile)
             }
         }
 #elseif os(iOS)
@@ -38,34 +47,51 @@ struct FileHistoryButton: View {
                 } else {
                     FileCheckpointListView(file: file)
                 }
+            } else if let localFile = fileState.currentLocalFile {
+                if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
+                    FileCheckpointListView(localFile: localFile)
+                        .presentationCompactAdaptation(.popover)
+                } else {
+                    FileCheckpointListView(localFile: localFile)
+                }
+            } else if let tempFile = fileState.currentTemporaryFile {
+                if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
+                    FileCheckpointListView(localFile: tempFile)
+                        .presentationCompactAdaptation(.popover)
+                } else {
+                    FileCheckpointListView(localFile: tempFile)
+                }
             }
         }
 #endif
     }
 }
 
-struct FileCheckpointListView: View {
+struct FileCheckpointListView<Checkpoint: FileCheckpointRepresentable>: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
     @Environment(\.dismiss) private var dismiss
 
     @FetchRequest
-    var fileCheckpoints: FetchedResults<FileCheckpoint>
-    
-//    @Binding var selection: FileCheckpoint?
-    
-    init(file: File/*, selection: Binding<FileCheckpoint?>*/) {
+    var fileCheckpoints: FetchedResults<Checkpoint>
+        
+    init(file: File) where Checkpoint == FileCheckpoint {
         self._fileCheckpoints = FetchRequest(
             sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)],
             predicate: NSPredicate(format: "file == %@", file)
         )
-//        self._selection = selection
     }
     
-    @State private var selection: FileCheckpoint?
+    init(localFile: URL) where Checkpoint == LocalFileCheckpoint {
+        self._fileCheckpoints = FetchRequest(
+            sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)],
+            predicate: NSPredicate(format: "url == %@", localFile as NSURL)
+        )
+    }
+    
+    @State private var selection: Checkpoint?
     
     var body: some View {
-//        if containerHorizontalSizeClass == .compact {
 #if os(iOS)
             NavigationStack {
                 List(selection: $selection) {
@@ -92,27 +118,10 @@ struct FileCheckpointListView: View {
                     FileCheckpointRowView(checkpoint: checkpoint)
                 }
             }
+            .onAppear {
+                print("[TEST] checkpoints: \(fileCheckpoints.count)")
+            }
 #endif
-//        } else {
-//            List {
-//                ForEach(fileCheckpoints) { checkpoint in
-//                    FileCheckpointRowView(checkpoint: checkpoint)
-//                }
-//            }
-//        }
     }
-    
-//    @MainActor @ViewBuilder
-//    private func content() -> some View {
-//       
-//    }
 }
 
-
-#if DEBUG
-//#Preview {
-//    FileCheckpointListView(store: .init(initialState: .init()) {
-//        FileCheckpointListStore()
-//    })
-//}
-#endif
