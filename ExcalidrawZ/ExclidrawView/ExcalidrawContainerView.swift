@@ -23,7 +23,7 @@ struct ExcalidrawContainerView: View {
     
     @EnvironmentObject private var fileState: FileState
     
-    @State private var isLoading = true
+    @State private var loadingState = ExcalidrawView.LoadingState.loading
     @State private var isProgressViewPresented = true
     
     @State private var isDropping: Bool = false
@@ -31,33 +31,25 @@ struct ExcalidrawContainerView: View {
 
     var fileBinding: Binding<ExcalidrawFile?> {
         Binding {
-            if let file = fileState.currentFile {
-                do {
+            do {
+                if let file = fileState.currentFile {
                     let excalidrawFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
                     return excalidrawFile
-                } catch {
-                    alertToast(error)
-                }
-            } else if let folder = fileState.currentLocalFolder,
-                      let file = fileState.currentLocalFile,
-                      let folderPath = folder.url?.filePath,
-                      file.filePath.contains(folderPath) {
-                do {
+                } else if let folder = fileState.currentLocalFolder,
+                          let file = fileState.currentLocalFile,
+                          let folderPath = folder.url?.filePath,
+                          file.filePath.contains(folderPath) {
                     // Should startAccessingSecurityScopedResource for folderURL
                     let file = try folder.withSecurityScopedURL { _ in
                         return try ExcalidrawFile(contentsOf: file)
                     }
                     return file
-                } catch {
-                    alertToast(error)
-                }
-            } else if fileState.isTemporaryGroupSelected,
-                      let file = fileState.currentTemporaryFile {
-                do {
+                } else if fileState.isTemporaryGroupSelected,
+                          let file = fileState.currentTemporaryFile {
                     return try ExcalidrawFile(contentsOf: file)
-                } catch {
-                    alertToast(error)
                 }
+            } catch {
+                alertToast(error)
             }
             return nil
         } set: { file in
@@ -129,14 +121,15 @@ struct ExcalidrawContainerView: View {
         ZStack(alignment: .center) {
             ExcalidrawView(
                 file: fileBinding,
-                isLoadingPage: $isLoading
+                loadingState: $loadingState,
+                interactionEnabled: !fileState.isInCollaborationSpace
             ) { error in
                 alertToast(error)
             }
             .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
             .opacity(isProgressViewPresented ? 0 : 1)
-            .onChange(of: isLoading, debounce: 1) { newVal in
-                isProgressViewPresented = newVal
+            .onChange(of: loadingState, debounce: 1) { newVal in
+                isProgressViewPresented = newVal == .loading
             }
             
             if containerHorizontalSizeClass != .compact {
@@ -155,7 +148,7 @@ struct ExcalidrawContainerView: View {
         }
         .ignoresSafeArea(.container, edges: .bottom)
         .overlay(alignment: .top) {
-            if isImporting, !isLoading {
+            if isImporting, loadingState == .loaded {
                 HStack {
                     ProgressView().controlSize(.small)
                     Text("Syncing data...")
@@ -260,7 +253,7 @@ struct ExcalidrawContainerView: View {
         }
         .animation(.default, value: isSelectFilePlaceholderPresented)
         .onChange(
-            of: fileState.currentLocalFile == nil && fileState.currentFile == nil && fileState.currentTemporaryFile == nil,
+            of: fileState.currentLocalFile == nil && fileState.currentFile == nil && fileState.currentTemporaryFile == nil && !fileState.isInCollaborationSpace,
             debounce: 0.1
         ) { newValue in
             isSelectFilePlaceholderPresented = newValue

@@ -55,6 +55,10 @@
 		39AF4DE12D0611E0009126C4 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 39AF4DE02D0611E0009126C4 /* CHANGELOG.md */; };
 		39AF4DE32D0611E0009126C4 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 39AF4DE02D0611E0009126C4 /* CHANGELOG.md */; };
 		39B142EA2CE9D2A100D3EEDA /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39B142E92CE9D2A100D3EEDA /* Zlib */; };
+		39B69A2E2D8422F0003369E8 /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = 39B69A2D2D8422F0003369E8 /* Secrets.plist */; };
+		39B69A332D8423C3003369E8 /* Overrides.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 39B69A322D8423C3003369E8 /* Overrides.xcconfig */; };
+		39B69ADA2D898B61003369E8 /* Content+OpenURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B69AD92D898B61003369E8 /* Content+OpenURL.swift */; };
+		39B69ADB2D898B62003369E8 /* Content+OpenURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B69AD92D898B61003369E8 /* Content+OpenURL.swift */; };
 		39BE12EE2CB7DD8C006781D5 /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39BE12ED2CB7DD8C006781D5 /* Zlib */; };
 		39BE12F12CB7DD97006781D5 /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39BE12F02CB7DD97006781D5 /* Zlib */; };
 		39DC11BB2C9195F60037C4AE /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03B2C6C7EAA00472AE7 /* ChocofordEssentials */; };
@@ -159,6 +163,9 @@
 		39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = FakeToggleColorMode.js; sourceTree = "<group>"; };
 		39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = FakeSaveCommand.js; sourceTree = "<group>"; };
 		39AF4DE02D0611E0009126C4 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = SOURCE_ROOT; };
+		39B69A2D2D8422F0003369E8 /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
+		39B69A322D8423C3003369E8 /* Overrides.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Overrides.xcconfig; sourceTree = "<group>"; };
+		39B69AD92D898B61003369E8 /* Content+OpenURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Content+OpenURL.swift"; sourceTree = "<group>"; };
 		39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		39ED18622D40FCBD00E437A0 /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/System/Library/Frameworks/AVKit.framework; sourceTree = DEVELOPER_DIR; };
 		500E089B2CF1BFB600392CC2 /* Project.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Project.xcconfig; sourceTree = "<group>"; };
@@ -186,13 +193,6 @@
 				Migration/MigrateToNewVersion.swift,
 			);
 			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
-		};
-		396603672D096D2900870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				ExcalidrawFile/ExcalidrawFile.swift,
-			);
-			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
 		};
 		396603882D096D3400870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -232,14 +232,23 @@
 			);
 			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
 		};
+		39B69A0A2D831503003369E8 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"ExcalidrawFile/ExcalidrawFile+Document.swift",
+				"ExcalidrawFile/ExcalidrawFile+Persistence.swift",
+				"ExcalidrawFile/ExcalidrawFile+Transferable.swift",
+			);
+			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		392CF8EA2C8EF1A700CC81B9 /* ci_scripts */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ci_scripts; sourceTree = "<group>"; };
 		3963A0342C6BD6B200472AE7 /* Sparkle */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A0352C6BD6B900472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Sparkle; sourceTree = "<group>"; };
-		3966034F2D096D2900870AC9 /* Utils */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (396603652D096D2900870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 396603662D096D2900870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 396603672D096D2900870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Utils; sourceTree = "<group>"; };
+		3966034F2D096D2900870AC9 /* Utils */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (396603652D096D2900870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 396603662D096D2900870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Utils; sourceTree = "<group>"; };
 		396603722D096D3400870AC9 /* Extensions */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (396603882D096D3400870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Extensions; sourceTree = "<group>"; };
-		396603912D096D3E00870AC9 /* Models */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Models; sourceTree = "<group>"; };
+		396603912D096D3E00870AC9 /* Models */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (39B69A0A2D831503003369E8 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Models; sourceTree = "<group>"; };
 		396603AE2D096D4500870AC9 /* Persistence */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Persistence; sourceTree = "<group>"; };
 		396603C42D096D4900870AC9 /* Store */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Store; sourceTree = "<group>"; };
 		396603D92D096D5700870AC9 /* Settings */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Settings; sourceTree = "<group>"; };
@@ -376,6 +385,7 @@
 				397F98DD295EE18E009BED55 /* AppDelegate.swift */,
 				394A7FAE2C515CB700D4918B /* RootView.swift */,
 				397E4658295838CF003B824B /* ContentView.swift */,
+				39B69AD92D898B61003369E8 /* Content+OpenURL.swift */,
 				396604052D096D7100870AC9 /* components */,
 				396604202D096D7400870AC9 /* Sidebar */,
 				3966044D2D096D7700870AC9 /* ExclidrawView */,
@@ -419,6 +429,8 @@
 			isa = PBXGroup;
 			children = (
 				500E089B2CF1BFB600392CC2 /* Project.xcconfig */,
+				39B69A322D8423C3003369E8 /* Overrides.xcconfig */,
+				39B69A2D2D8422F0003369E8 /* Secrets.plist */,
 			);
 			path = Config;
 			sourceTree = "<group>";
@@ -682,8 +694,10 @@
 			files = (
 				396661302C665D4300F863BC /* excalidraw-latest in Resources */,
 				39ED18542D3FDE1C00E437A0 /* Localizable.xcstrings in Resources */,
+				39B69A332D8423C3003369E8 /* Overrides.xcconfig in Resources */,
 				397E468729599DD4003B824B /* FakeDrop.js in Resources */,
 				39AF4DE12D0611E0009126C4 /* CHANGELOG.md in Resources */,
+				39B69A2E2D8422F0003369E8 /* Secrets.plist in Resources */,
 				397E468F295AAE5E003B824B /* template.excalidraw in Resources */,
 				397E465B295838D0003B824B /* Assets.xcassets in Resources */,
 				39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */,
@@ -725,6 +739,7 @@
 				3963A0462C6C7EAA00472AE7 /* RootView.swift in Sources */,
 				3963A0472C6C7EAA00472AE7 /* Model.xcdatamodeld in Sources */,
 				3963A0562C6C7EAA00472AE7 /* ContentView.swift in Sources */,
+				39B69ADA2D898B61003369E8 /* Content+OpenURL.swift in Sources */,
 				3963A0652C6C7EAA00472AE7 /* ExcalidrawZApp.swift in Sources */,
 				3963A06C2C6C7EAA00472AE7 /* AppDelegate.swift in Sources */,
 			);
@@ -739,6 +754,7 @@
 				397E4659295838CF003B824B /* ContentView.swift in Sources */,
 				397E4657295838CF003B824B /* ExcalidrawZApp.swift in Sources */,
 				397F98DE295EE18E009BED55 /* AppDelegate.swift in Sources */,
+				39B69ADB2D898B62003369E8 /* Content+OpenURL.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

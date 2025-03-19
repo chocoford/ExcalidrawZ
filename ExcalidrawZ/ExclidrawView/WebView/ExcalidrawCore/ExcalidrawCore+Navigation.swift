@@ -32,21 +32,16 @@ extension ExcalidrawCore: WKNavigationDelegate {
     
     
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        logger.error("didFail: \(error)")
+        logger.error("[ExcalidrawCore] didFail: \(error)")
     }
-    
-    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        
-    }
-    
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        logger.info("did finish navigation")
+        logger.info("[ExcalidrawCore] did finish navigation")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             if !self.hasInjectIndexedDBData {
                 // Should import medias as soon as possible.
                 // And It is required to reload after injected.
-                print("Start insert medias to IndexedDB.")
+                self.logger.info("[ExcalidrawCore] Start insert medias to IndexedDB.")
                 Task {
                     do {
                         let context = PersistenceController.shared.container.viewContext
@@ -59,11 +54,28 @@ extension ExcalidrawCore: WKNavigationDelegate {
                             }
                         )
                         self.hasInjectIndexedDBData = true
+                        
+                        // Open Collab mode if needed.
+                        if self.parent?.type == .collaboration,
+                           self.parent?.file?.roomID?.isEmpty != false,
+                           let file = self.parent?.file,
+                           let fileContent = file.content {
+                            // load file content
+                            try await self.webActor.loadFile(
+                                id: file.id,
+                                data: fileContent,
+                                force: true
+                            )
+                            // open collab mode
+                            try await self.openCollabMode()
+                        }
+                        
+                        self.isNavigating = false
                     } catch {
                         self.parent?.onError(error)
                     }
                 }
-                self.isNavigating = false
+                // self.isNavigating = false
             }
         }
     }
@@ -76,7 +88,15 @@ extension ExcalidrawCore: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-        print(#function)
+        self.parent?.loadingState = .loading
+        DispatchQueue.main.async {
+            self.isNavigating = true
+            self.isDocumentLoaded = false
+        }
+    }
+    
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        self.parent?.loadingState = .loading
         DispatchQueue.main.async {
             self.isNavigating = true
             self.isDocumentLoaded = false
@@ -84,6 +104,8 @@ extension ExcalidrawCore: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        // logger.error("[ExcalidrawCore] didFailProvisionalNavigation: \(error)")
+        self.parent?.loadingState = .error(error)
         self.publishError(error)
     }
 }

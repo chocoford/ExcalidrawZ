@@ -11,6 +11,7 @@ import Combine
 import os.log
 import UniformTypeIdentifiers
 import CoreData
+import ChocofordEssentials
 
 final class FileState: ObservableObject {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "FileState")
@@ -32,6 +33,8 @@ final class FileState: ObservableObject {
             currentLocalFolder = nil
             currentLocalFile = nil
             isTemporaryGroupSelected = false
+            currentTemporaryFile = nil
+            isInCollaborationSpace = false
         }
     }
     
@@ -57,6 +60,8 @@ final class FileState: ObservableObject {
                 currentLocalFolder = nil
                 currentLocalFile = nil
                 isTemporaryGroupSelected = false
+                currentTemporaryFile = nil
+                isInCollaborationSpace = false
             }
         }
     }
@@ -67,6 +72,8 @@ final class FileState: ObservableObject {
                 currentFile = nil
                 currentGroup = nil
                 isTemporaryGroupSelected = false
+                currentTemporaryFile = nil
+                isInCollaborationSpace = false
             }
         }
     }
@@ -77,6 +84,8 @@ final class FileState: ObservableObject {
                 currentFile = nil
                 currentGroup = nil
                 isTemporaryGroupSelected = false
+                currentTemporaryFile = nil
+                isInCollaborationSpace = false
             }
         }
     }
@@ -86,6 +95,8 @@ final class FileState: ObservableObject {
                 currentFile = nil
                 currentGroup = nil
                 isTemporaryGroupSelected = false
+                currentTemporaryFile = nil
+                isInCollaborationSpace = false
             }
         }
     }
@@ -97,6 +108,7 @@ final class FileState: ObservableObject {
                 currentGroup = nil
                 currentLocalFolder = nil
                 currentLocalFile = nil
+                isInCollaborationSpace = false
             }
         }
     }
@@ -112,7 +124,49 @@ final class FileState: ObservableObject {
         }
     }
     
+    // Collab
+    @Published var isInCollaborationSpace = false {
+        didSet {
+            if isInCollaborationSpace {
+                currentFile = nil
+                currentGroup = nil
+                currentLocalFolder = nil
+                currentLocalFile = nil
+                isTemporaryGroupSelected = false
+                currentTemporaryFile = nil
+            }
+        }
+    }
+    /// Files that is currently under collaboration.
+    @Published var collaboratingFiles: [CollaborationFile] = []
+    @Published var collaboratingFilesState: [CollaborationFile : ExcalidrawView.LoadingState] = [:]
+    @Published var collaborators: [CollaborationFile : [Collaborator]] = [:]
+    @Published var currentCollaborationFile: CollaborationFile? {
+        didSet {
+            if let file = currentCollaborationFile {
+                currentFile = nil
+                currentGroup = nil
+                currentLocalFolder = nil
+                currentLocalFile = nil
+                isTemporaryGroupSelected = false
+                currentTemporaryFile = nil
+                isInCollaborationSpace = true
+                if !collaboratingFiles.contains(where: {$0 == file}) {
+                    collaboratingFiles.append(file)
+                }
+            }
+        }
+    }
+    var currentCollaborators: [Collaborator] {
+        if let file = currentCollaborationFile {
+            collaborators[file] ?? []
+        } else {
+            []
+        }
+    }
+
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
+    var excalidrawCollaborationWebCoordinator: ExcalidrawView.Coordinator?
     
     var shouldIgnoreUpdate = true
     /// Indicate the file is being updated after being set as current file.
@@ -300,7 +354,7 @@ final class FileState: ObservableObject {
         guard !shouldIgnoreUpdate/*, let fileURL = self.currentLocalFile*/ else { return }
         let didUpdateFile = didUpdateFile
         var excalidrawFile = excalidrawFile
-        try excalidrawFile.syncFiles()
+        try excalidrawFile.updateContentFilesFromFiles()
         try JSONEncoder().encode(excalidrawFile).write(to: url)
         let bgContext = context // PersistenceController.shared.container.newBackgroundContext()
         try await bgContext.perform {
@@ -332,6 +386,55 @@ final class FileState: ObservableObject {
         }
     }
     
+    
+    func updateCurrentCollaborationFile(with excalidrawFile: ExcalidrawFile) {
+        guard !shouldIgnoreUpdate else {
+            return
+        }
+        let didUpdateFile = didUpdateFile
+        let id = excalidrawFile.id
+        let bgContext = PersistenceController.shared.container.newBackgroundContext()
+        
+        Task.detached {
+            do {
+                try await bgContext.perform {
+                    let fetchRequest = NSFetchRequest<CollaborationFile>(entityName: "CollaborationFile")
+                    fetchRequest.predicate = NSPredicate(format: "id = %@", id as CVarArg)
+                    
+                    
+                    guard let file = try bgContext.fetch(fetchRequest).first,
+                          let content = excalidrawFile.content else { return }
+                    
+                    try file.updateElements(
+                        with: content,
+                        newCheckpoint: !didUpdateFile
+                    )
+                    let newMedias = excalidrawFile.files.filter { (id, _) in
+                        file.medias?.contains(where: {
+                            ($0 as? MediaItem)?.id == id
+                        }) != true
+                    }
+                    
+                    // also update medias
+                    for (_, resource) in newMedias {
+                        let mediaItem = MediaItem(resource: resource, context: bgContext)
+                        mediaItem.collaborationFile = file
+                        bgContext.insert(mediaItem)
+                    }
+                    
+                    // update roomID
+                    file.roomID = excalidrawFile.roomID
+                    
+                    try bgContext.save()
+                }
+                await MainActor.run {
+                    self.didUpdateFile = true
+                }
+            } catch {
+                print(error)
+            }
+        }
+    }
     
     enum ImportGroupType: Hashable {
         case current
@@ -647,7 +750,7 @@ final class FileState: ObservableObject {
                 self.currentGroup = defaultGroup
                 
                 let fileFetchRequest = NSFetchRequest<File>(entityName: "File")
-                fileFetchRequest.predicate = NSPredicate(format: "group = %@", defaultGroup)
+                fileFetchRequest.predicate = NSPredicate(format: "group = %@ AND inTrash = false", defaultGroup)
                 fileFetchRequest.sortDescriptors = [
                     NSSortDescriptor(keyPath: \File.updatedAt, ascending: false)
                 ]

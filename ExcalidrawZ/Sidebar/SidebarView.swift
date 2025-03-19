@@ -50,6 +50,8 @@ struct SidebarView: View {
                     }
                 } else if fileState.isTemporaryGroupSelected {
                     TemporaryFileListView()
+                } else if fileState.isInCollaborationSpace {
+                    CollaborationFilesList()
                 } else {
                     if #available(macOS 14.0, iOS 17.0, *) {
                         Text(.localizable(.sidebarFilesPlaceholder))

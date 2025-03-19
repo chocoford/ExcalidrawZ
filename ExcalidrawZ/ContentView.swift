@@ -16,7 +16,7 @@ import ChocofordEssentials
 import SwiftyAlert
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.managedObjectContext) var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var appPreference: AppPreference
@@ -25,7 +25,7 @@ struct ContentView: View {
     
     @State private var hideContent: Bool = false
     
-    @StateObject private var fileState = FileState()
+    @StateObject var fileState = FileState()
     @StateObject private var exportState = ExportState()
     @StateObject private var toolState = ToolState()
     @StateObject private var layoutState = LayoutState()
@@ -85,6 +85,7 @@ struct ContentView: View {
         .navigationTitle("")
         .modifier(PrintModifier())
         .modifier(WhatsNewSheetViewModifier())
+        .modifier(NewRoomModifier())
 #if os(iOS)
         .modifier(ApplePencilToolbarModifier())
 #endif
@@ -187,61 +188,6 @@ struct ContentView: View {
         }
         .padding(40)
     }
-    
-    private func onOpenURL(_ url: URL) {
-        // check if it is already in LocalFolder
-        let context = viewContext
-        var canAddToTemp = true
-        do {
-            try context.performAndWait {
-                let folderFetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                folderFetchRequest.predicate = NSPredicate(format: "filePath == %@", url.deletingLastPathComponent().filePath)
-                guard let folder = try context.fetch(folderFetchRequest).first else {
-                    return
-                }
-                canAddToTemp = false
-                Task {
-                    await MainActor.run {
-                        fileState.currentLocalFolder = folder
-                        fileState.expandToGroup(folder.objectID)
-                    }
-                    try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.1))
-                    await MainActor.run {
-                        fileState.currentLocalFile = url
-                    }
-                }
-            }
-        } catch {
-            alertToast(error)
-        }
-        
-        guard canAddToTemp else { return }
-        
-        // logger.debug("on open url: \(url, privacy: .public)")
-        if !fileState.temporaryFiles.contains(where: {$0 == url}) {
-            fileState.temporaryFiles.append(url)
-        }
-        if !fileState.isTemporaryGroupSelected || fileState.currentTemporaryFile == nil {
-            fileState.isTemporaryGroupSelected = true
-            fileState.currentTemporaryFile = fileState.temporaryFiles.first
-        }
-        // save a checkpoint immediately.
-        Task.detached {
-            do {
-                try await context.perform {
-                    let newCheckpoint = LocalFileCheckpoint(context: context)
-                    newCheckpoint.url = url
-                    newCheckpoint.updatedAt = .now
-                    newCheckpoint.content = try Data(contentsOf: url)
-                    
-                    context.insert(newCheckpoint)
-                    try context.save()
-                }
-            } catch {
-                await alertToast(error)
-            }
-        }
-    }
 }
 
 struct PrintModifier: ViewModifier {
@@ -331,6 +277,12 @@ struct ContentViewModern: View {
         } detail: {
             ExcalidrawContainerView()
                 .modifier(ExcalidrawContainerToolbarContentModifier())
+                .opacity(fileState.isInCollaborationSpace ? 0 : 1)
+                .overlay {
+                    ExcalidrawCollabContainerView()
+                        .opacity(fileState.isInCollaborationSpace ? 1 : 0)
+                        .allowsHitTesting(fileState.isInCollaborationSpace)
+                }
         }
 #if os(macOS)
         .removeSettingsSidebarToggle()
@@ -399,8 +351,14 @@ struct ContentViewLagacy: View {
     var body: some View {
         ZStack {
             ExcalidrawContainerView()
-                .modifier(ExcalidrawContainerToolbarContentModifier())
                 .layoutPriority(1)
+                .modifier(ExcalidrawContainerToolbarContentModifier())
+                .opacity(fileState.isInCollaborationSpace ? 0 : 1)
+                .overlay {
+                    ExcalidrawCollabContainerView()
+                        .opacity(fileState.isInCollaborationSpace ? 1 : 0)
+                        .allowsHitTesting(fileState.isInCollaborationSpace)
+                }
             
             HStack {
                 if layoutState.isSidebarPresented {

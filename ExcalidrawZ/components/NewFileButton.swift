@@ -19,7 +19,10 @@ struct NewFileButton: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @Environment(\.alert) private var alert
+    @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
+
     @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var collaborationState: CollaborationState
     
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -61,6 +64,15 @@ struct NewFileButton: View {
         }
 #endif
         
+        if fileState.isInCollaborationSpace {
+            collaborationNewButton()
+        } else {
+            localNewButton()
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func localNewButton() -> some View {
         Menu {
             Button {
                 createNewFile()
@@ -94,6 +106,42 @@ struct NewFileButton: View {
 
             self.createNewFileFromClipboard()
         }
+    }
+    
+    @MainActor @ViewBuilder
+    private func collaborationNewButton() -> some View {
+//        if containerHorizontalSizeClass == .compact {
+//            Button {
+//                
+//            } label: {
+//                if #available(macOS 13.0, *) {
+//                    Label("New room", systemSymbol: .doorLeftHandOpen)
+//                } else {
+//                    Label("New room", systemSymbol: .plus)
+//                }
+//            }
+//        } else {
+        Menu {
+            Button {
+                collaborationState.isCreateRoomConfirmationDialogPresented.toggle()
+            } label: {
+                Label("Create a room", systemSymbol: .plus)
+            }
+            Button {
+                collaborationState.isJoinRoomSheetPresented.toggle()
+            } label: {
+                Label("Join a room", systemSymbol: .ipadAndArrowForward)
+            }
+        } label: {
+            if #available(macOS 13.0, *) {
+                Label("New room", systemSymbol: .doorLeftHandOpen)
+            } else {
+                Label("New room", systemSymbol: .plus)
+            }
+        }
+        .help("New room")
+        .disabled(collaborationState.userCollaborationInfo.username.isEmpty)
+//        }
     }
     
     private func createNewFile() {

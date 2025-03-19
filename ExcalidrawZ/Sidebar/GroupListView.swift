@@ -35,7 +35,7 @@ struct GroupListView: View {
                 a.groupType != .trash && b.groupType == .trash
             }
     }
-    
+
     @FetchRequest(
         sortDescriptors: [],
         predicate: NSPredicate(format: "inTrash == YES")
@@ -76,12 +76,17 @@ struct GroupListView: View {
                 }
             }
             .onChange(of: fileState.isTemporaryGroupSelected) { newValue in
-                if fileState.currentGroup == nil, !newValue, fileState.currentLocalFolder == nil {
+                if !newValue, fileState.currentGroup == nil, fileState.currentLocalFolder == nil, !fileState.isInCollaborationSpace {
                     fileState.currentGroup = displayedGroups.first
                 }
             }
             .onChange(of: fileState.currentLocalFolder) { newValue in
-                if fileState.currentGroup == nil, !fileState.isTemporaryGroupSelected, newValue == nil {
+                if newValue == nil, fileState.currentGroup == nil, !fileState.isTemporaryGroupSelected, !fileState.isInCollaborationSpace {
+                    fileState.currentGroup = displayedGroups.first
+                }
+            }
+            .onChange(of: fileState.currentGroup) { newValue in
+                if newValue == nil, fileState.currentLocalFolder == nil, !fileState.isTemporaryGroupSelected, !fileState.isInCollaborationSpace {
                     fileState.currentGroup = displayedGroups.first
                 }
             }
@@ -102,6 +107,15 @@ struct GroupListView: View {
             ScrollView {
                 LazyVStack(spacing: 8) {
                     let spacing: CGFloat = 4
+                    Button {
+                        fileState.isInCollaborationSpace = true
+                    } label: {
+                        Label("Collaboration", systemSymbol: .person3)
+                    }
+                    .buttonStyle(ListButtonStyle(selected: fileState.isInCollaborationSpace))
+                    
+                    Divider()
+
                     // Temporary
                     if !fileState.temporaryFiles.isEmpty {
                         VStack(alignment: .leading, spacing: spacing) {
@@ -217,7 +231,8 @@ struct GroupListView: View {
     @MainActor @ViewBuilder
     private func databaseGroupsList() -> some View {
         LazyVStack(alignment: .leading, spacing: 0) {
-            ForEach(displayedGroups) { group in
+            /// ❕❕❕use `id: \.self` can avoid multi-thread access crash when closing create-room-sheet...
+            ForEach(displayedGroups, id: \.self) { group in
                  GroupsView(group: group)
             }
         }
@@ -233,11 +248,6 @@ struct GroupListView: View {
                 fileState.currentGroup = displayedGroups.first
             }
             initialNewGroupName = getNextGroupName()
-        }
-        .watchImmediately(of: fileState.currentGroup) { newValue in
-            if newValue == nil && fileState.currentLocalFolder == nil && !fileState.isTemporaryGroupSelected {
-                fileState.currentGroup = displayedGroups.first
-            }
         }
     }
     

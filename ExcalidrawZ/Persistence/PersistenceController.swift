@@ -248,6 +248,12 @@ extension PersistenceController {
         fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
         return try viewContext.fetch(fetchRequest).first
     }
+    func getLatestCheckpoint(of file: CollaborationFile, context: NSManagedObjectContext) throws -> FileCheckpoint? {
+        let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+        fetchRequest.predicate = NSPredicate(format: "collaborationFile == %@", file)
+        fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
+        return try context.fetch(fetchRequest).first
+    }
     
     func getOldestCheckpoint(of file: File) throws -> FileCheckpoint? {
         let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
@@ -261,6 +267,12 @@ extension PersistenceController {
         fetchRequest.predicate = NSPredicate(format: "file == %@", file)
         fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
         return try viewContext.fetch(fetchRequest)
+    }    
+    func fetchFileCheckpoints(of file: CollaborationFile, context: NSManagedObjectContext) throws -> [FileCheckpoint] {
+        let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+        fetchRequest.predicate = NSPredicate(format: "collaborationFile == %@", file)
+        fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
+        return try context.fetch(fetchRequest)
     }
     
     func save() {

@@ -222,6 +222,7 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
 
 final class ToolState: ObservableObject {
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
+    var excalidrawCollaborationWebCoordinator: ExcalidrawView.Coordinator?
 
     @Published var activatedTool: ExcalidrawTool? = .cursor
     @Published var previousActivatedTool: ExcalidrawTool? = nil

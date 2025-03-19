@@ -47,7 +47,17 @@ struct ExcalidrawToolbar: View {
     }
     
     var body: some View {
-        toolbar()
+        if fileState.currentFile != nil ||
+            fileState.currentLocalFile != nil ||
+            fileState.currentTemporaryFile != nil ||
+            fileState.currentCollaborationFile != nil {
+            toolbar()
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func toolbar() -> some View {
+        toolbarContent()
             .animation(nil, value: layoutState.isExcalidrawToolbarDense)
             .bindWindow($window)
             .onChange(of: window) { newValue in
@@ -89,7 +99,7 @@ struct ExcalidrawToolbar: View {
     }
     
     @MainActor @ViewBuilder
-    private func toolbar() -> some View {
+    private func toolbarContent() -> some View {
 #if os(iOS)
         if horizontalSizeClass == .compact {
             compactContent()
@@ -377,8 +387,7 @@ struct ExcalidrawToolbar: View {
     @MainActor @ViewBuilder
     private func compactContent() -> some View {
         if toolState.inDragMode {
-            Button {
-            } label: {
+            Button { /* Do Nothing */ } label: {
                 Text(.localizable(.toolbarEdit))
             }
             .opacity(0)
