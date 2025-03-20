@@ -17,17 +17,17 @@ struct CreateRoomSheetView: View {
         self.onCreate = onCreate
     }
     
-    @State private var name: String = "My Room"
+    @State private var name: String = ""
     
     var body: some View {
         VStack {
             HStack {
-                Text("Create a room")
+                Text(.localizable(.collaborationCreateRoomSheetTitle))
                 Spacer()
             }
             .font(.title)
             
-            TextField("Room name", text: $name)
+            TextField(.localizable(.collaborationCreateRoomSheetNameFieldLabel), text: $name)
             
             Divider()
             
@@ -36,7 +36,7 @@ struct CreateRoomSheetView: View {
                 Button {
                     dismiss()
                 } label: {
-                    Text("Cancel")
+                    Text(.localizable(.generalButtonCancel))
                         .frame(width: 60)
                 }
                 
@@ -51,7 +51,7 @@ struct CreateRoomSheetView: View {
                     dismiss()
                     onCreate(name, true)
                 } label: {
-                    Text("Create")
+                    Text(.localizable(.generalButtonCreate))
                         .frame(width: 60)
                 }
                 .buttonStyle(.borderedProminent)
@@ -60,7 +60,7 @@ struct CreateRoomSheetView: View {
         .padding()
         .onAppear {
             if !collaborationState.userCollaborationInfo.username.isEmpty {
-                name = "\(collaborationState.userCollaborationInfo.username)'s room"
+                name = String(localizable: .collaborationCreateRoomSheetDefaultRoomName(collaborationState.userCollaborationInfo.username))
             }
         }
     }

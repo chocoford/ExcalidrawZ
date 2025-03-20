@@ -44,22 +44,22 @@ struct NewRoomModifier: ViewModifier {
                 }
             }
             .confirmationDialog(
-                "Create a New Room",
+                .localizable(.collaborationNewRoomConfirmationDialogTitle),
                 isPresented: $state.isCreateRoomConfirmationDialogPresented,
                 titleVisibility: .visible
             ) {
                 Button {
                     state.isCreateRoomSheetPresented.toggle()
                 } label: {
-                    Text("Create a blank room")
+                    Text(.localizable(.collaborationNewRoomConfirmationDialogButtonCreateBlankRoom))
                 }
                 Button {
                     state.isCreateRoomFromFileSheetPresented.toggle()
                 } label: {
-                    Text("Create from a file")
+                    Text(.localizable(.collaborationNewRoomConfirmationDialogButtonCreateFromFile))
                 }
             } message: {
-                Text("Choose how you’d like to start your collaborative space. You can begin with a blank room or import content from an existing file.")
+                Text(.localizable(.collaborationNewRoomConfirmationDialogMessage))
             }
             .sheet(isPresented: $state.isCreateRoomFromFileSheetPresented) {
                 ExcalidrawFileBrowser { selection in

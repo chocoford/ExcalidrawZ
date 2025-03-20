@@ -30,7 +30,7 @@ struct CollaborationFilesList: View {
             Button {
                 fileState.currentCollaborationFile = nil
             } label: {
-                Label("Home", systemSymbol: .house)
+                Label(.localizable(.sidebarCollaborationFileRowHomeTitle), systemSymbol: .house)
             }
             .buttonStyle(
                 .listCell(selected: fileState.currentCollaborationFile == nil && fileState.isInCollaborationSpace)

@@ -110,7 +110,7 @@ struct GroupListView: View {
                     Button {
                         fileState.isInCollaborationSpace = true
                     } label: {
-                        Label("Collaboration", systemSymbol: .person3)
+                        Label(.localizable(.sidebarGroupRowCollaborationTitle), systemSymbol: .person3)
                     }
                     .buttonStyle(ListButtonStyle(selected: fileState.isInCollaborationSpace))
                     
@@ -285,7 +285,6 @@ struct GroupListView: View {
     }
     
     private func importLocalFolders(urls: [URL]) {
-        print("[GroupListView] import local folders: \(urls)")
         let context = PersistenceController.shared.container.newBackgroundContext()
         Task.detached {
             do {

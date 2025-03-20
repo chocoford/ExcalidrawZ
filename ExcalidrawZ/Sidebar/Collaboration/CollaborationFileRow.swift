@@ -92,16 +92,10 @@ struct CollaborationFileRow: View {
                 .labelStyle(.titleAndIcon)
         }
         .confirmationDialog(
-            "Delete room",
+            .localizable(.sidebarCollaborationFileRowContextMenuDelete),
             isPresented: $isDeleteRoomConfirmationDialogPresented,
-            titleVisibility: .automatic
+            titleVisibility: .visible
         ) {
-//            Button(role: .cancel) {
-//                isDeleteRoomConfirmationDialogPresented.toggle()
-//            } label: {
-//                Text(.localizable(.generalButtonCancel))
-//            }
-            
             Button(role: .destructive) {
                 deleteCollaborationFile(file: file)
             } label: {
@@ -117,29 +111,19 @@ struct CollaborationFileRow: View {
             Button {
                 copyRoomShareLink(roomID: roomID, filename: file.name)
             } label: {
-                Label("Copy share link", systemSymbol: .link)
+                Label(
+                    .localizable(.sidebarCollaborationFileRowContextMenuCopyInvitationLink),
+                    systemSymbol: .link
+                )
             }
         }
-#if DEBUG
-//        Button {
-//                let link = "excalidrawz://collab/9b9a9392cc9ccf98939acf9e98cccf9a9a9e9c9a86d8d9d0d39b87e2eedfdde087c7879e98f3d0d9e6e8cd?name=hellow"
-//
-//                let url = URL(string: link)!
-//                guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-//                    return
-//                }
-//                // print(components.queryItems)
-//                if let nameItem = components.queryItems?.first(where: {$0.name == "name"}) {
-//                    nameItem.value
-//                }
-//        } label: {
-//            Text("Test accept share link")
-//        }
-#endif
         Button {
             fileToBeArchived = file
         } label: {
-            Label("Archive...", systemSymbol: .archivebox)
+            Label(
+                .localizable(.sidebarCollaborationFileRowContextMenuArchive),
+                systemSymbol: .archivebox
+            )
         }
         
         Button {
@@ -149,7 +133,10 @@ struct CollaborationFileRow: View {
                 fileState.currentCollaborationFile = nil
             }
         } label: {
-            Label("Disconnect", systemSymbol: .rectanglePortraitAndArrowRight)
+            Label(
+                .localizable(.sidebarCollaborationFileRowContextMenuDisconnect),
+                systemSymbol: .rectanglePortraitAndArrowRight
+            )
         }
 
         Divider()

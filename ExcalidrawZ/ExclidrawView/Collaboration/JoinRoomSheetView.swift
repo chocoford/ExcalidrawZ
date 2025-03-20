@@ -20,7 +20,7 @@ struct JoinRoomSheetView: View {
         var errorDescription: String? {
             switch self {
                 case .invalidLink:
-                    "Invalid link."
+                    String(localizable: .collaborationJoinRoomErrorDescriptionInvalidLink)
             }
         }
     }
@@ -32,10 +32,10 @@ struct JoinRoomSheetView: View {
     var body: some View {
         VStack {
             HStack {
-                Text("Join a room")
+                Text(.localizable(.collaborationJoinRoomSheetTitle))
                 Spacer()
             }
-            TextField("Invitation link", text: $invitationLink)
+            TextField(.localizable(.collaborationJoinRoomLinkFieldLabel), text: $invitationLink)
                 .onChange(of: invitationLink) { newValue in
                     DispatchQueue.main.async {
                         parseLink()
@@ -53,14 +53,14 @@ struct JoinRoomSheetView: View {
                 Button {
                     dismiss()
                 } label: {
-                    Text("Cancel")
+                    Text(.localizable(.generalButtonCancel))
                         .frame(width: 60)
                 }
                 Button {
                     dismiss()
                     joinRoom()
                 } label: {
-                    Text("Join")
+                    Text(.localizable(.collaborationJoinRoomButtonJoin))
                         .frame(width: 60)
                 }
                 .buttonStyle(.borderedProminent)

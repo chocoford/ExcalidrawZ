@@ -32,21 +32,21 @@ struct CollaborationHome: View {
             .overlay {
                 VStack(spacing: 40) {
                     VStack(spacing: 20) {
-                        Text("Live Collaboration")
+                        Text(.localizable(.collaborationHomeTitle))
                             .font(.largeTitle)
                         
-                        Text("Invite people to collaborate on your drawing.")
+                        Text(.localizable(.collaborationHomeSubtitle))
                         
-                        Text("Don't worry, the session is end-to-end encrypted, and fully private. Not even our server can see what you draw.")
+                        Text(.localizable(.collaborationHomeDescription))
                             .fixedSize(horizontal: false, vertical: true)
                             .multilineTextAlignment(.center)
                     }
 
                     VStack(spacing: 10) {
                         TextField(
-                            "Your name",
+                            .localizable(.collaborationHomeNameFieldLabel),
                             text: $collaborationState.userCollaborationInfo.username,
-                            prompt: Text("Your name")
+                            prompt: Text(.localizable(.collaborationHomeNameFieldPlaceholder))
                         )
                         .textFieldStyle(.outlined)
                         .focused($focusFied, equals: FocusField.username)
@@ -54,7 +54,7 @@ struct CollaborationHome: View {
                             isPresented: .constant(collaborationState.userCollaborationInfo.username.isEmpty),
                             arrowEdge: .top
                         ) {
-                            Text("Please fill your name")
+                            Text(.localizable(.collaborationHomeNameFieldRequiredPopover))
                                 .padding(10)
                         }
                         
@@ -64,7 +64,7 @@ struct CollaborationHome: View {
                             Button {
                                 collaborationState.isCreateRoomConfirmationDialogPresented.toggle()
                             } label: {
-                                Text("Create a new room")
+                                Text(.localizable(.collaborationButtonCreateNewRoom))
                                     .frame(width: 150)
                             }
                             .buttonStyle(.borderedProminent)
@@ -73,7 +73,7 @@ struct CollaborationHome: View {
                             Button {
                                 collaborationState.isJoinRoomSheetPresented.toggle()
                             } label: {
-                                Text("Join a room")
+                                Text(.localizable(.collaborationButtonJoinRoom))
                                     .frame(width: 150)
                             }
                             .buttonStyle(.borderedProminent)

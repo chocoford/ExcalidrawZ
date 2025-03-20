@@ -29,7 +29,7 @@ struct SidebarToggle: View {
             }
             .pickerStyle(.inline)
         } label: {
-            Label("Toggle sidebar", systemSymbol: .sidebarLeading)
+            Label(.localizable(.sidebarToggleName), systemSymbol: .sidebarLeading)
         } primaryAction: {
             toggleSidebar()
         }

@@ -125,21 +125,21 @@ struct NewFileButton: View {
             Button {
                 collaborationState.isCreateRoomConfirmationDialogPresented.toggle()
             } label: {
-                Label("Create a room", systemSymbol: .plus)
+                Label(.localizable(.collaborationButtonCreateNewRoom), systemSymbol: .plus)
             }
             Button {
                 collaborationState.isJoinRoomSheetPresented.toggle()
             } label: {
-                Label("Join a room", systemSymbol: .ipadAndArrowForward)
+                Label(.localizable(.collaborationButtonJoinRoom), systemSymbol: .ipadAndArrowForward)
             }
         } label: {
             if #available(macOS 13.0, *) {
-                Label("New room", systemSymbol: .doorLeftHandOpen)
+                Label(.localizable(.toolbarButtonCollaborationNewRoom), systemSymbol: .doorLeftHandOpen)
             } else {
-                Label("New room", systemSymbol: .plus)
+                Label(.localizable(.toolbarButtonCollaborationNewRoom), systemSymbol: .plus)
             }
         }
-        .help("New room")
+        .help(.localizable(.toolbarButtonCollaborationNewRoom))
         .disabled(collaborationState.userCollaborationInfo.username.isEmpty)
 //        }
     }
@@ -169,7 +169,7 @@ struct NewFileButton: View {
                 guard let pngData = NSPasteboard.general.data(forType: .png) else {
                     struct CanNotReadFromClipboardError: LocalizedError {
                         var errorDescription: String? {
-                            "Can not read from clipboard"
+                            String(localizable: .pasteboardErrorNoData)
                         }
                     }
                     throw CanNotReadFromClipboardError()
@@ -179,7 +179,7 @@ struct NewFileButton: View {
                 guard let pngData = image?.pngData() else {
                     struct CanNotReadFromClipboardError: LocalizedError {
                         var errorDescription: String? {
-                            "Can not read from clipboard"
+                            String(localizable: .pasteboardErrorNoData)
                         }
                     }
                     throw CanNotReadFromClipboardError()

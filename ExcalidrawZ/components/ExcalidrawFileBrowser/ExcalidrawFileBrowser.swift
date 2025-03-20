@@ -92,7 +92,7 @@ struct ExcalidrawFileBrowser: View {
                 Button(role: .cancel) {
                      dismiss()
                 } label: {
-                    Text("Cancel")
+                    Text(.localizable(.generalButtonCancel))
                         .padding(.horizontal)
                 }
                 Button {
@@ -104,7 +104,7 @@ struct ExcalidrawFileBrowser: View {
                     }
                     
                 } label: {
-                    Text("Create")
+                    Text(.localizable(.generalButtonCreate))
                         .padding(.horizontal)
                 }
                 .buttonStyle(.borderedProminent)

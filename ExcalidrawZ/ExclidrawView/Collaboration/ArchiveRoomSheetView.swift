@@ -39,7 +39,7 @@ struct ArchiveRoomSheetView: View {
     var body: some View {
         VStack {
             HStack {
-                Text("Archive Room")
+                Text(.localizable(.collaborationFileArchiveSheetTitle))
                     .font(.title)
                 Spacer()
             }
@@ -63,14 +63,14 @@ struct ArchiveRoomSheetView: View {
                 Button(role: .cancel) {
                     dismiss()
                 } label: {
-                    Text("Cancel")
+                    Text(.localizable(.generalButtonCancel))
                         .frame(width: 60)
                 }
                 
                 Button {
                     archiveCollaborationFile()
                 } label: {
-                    Text("Save")
+                    Text(.localizable(.generalButtonSave))
                         .frame(width: 60)
                 }
                 .buttonStyle(.borderedProminent)

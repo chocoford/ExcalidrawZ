@@ -26,7 +26,7 @@ struct LibrarySectionHeader: View {
     
     var body: some View {
         HStack {
-            Text(library.name ?? "Untitled")
+            Text(library.name ?? String(localizable: .generalUntitled))
                 .font(.title3.bold())
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -60,7 +60,7 @@ struct LibrarySectionHeader: View {
             Text(.localizable(.generalCannotUndoMessage))
         }
         .sheet(isPresented: $isEditLibrarySheetPresented) {
-            RenameSheetView(text: library.name ?? "Untitled") { newName in
+            RenameSheetView(text: library.name ?? String(localizable: .generalUntitled)) { newName in
                 PersistenceController.shared.container.viewContext.perform {
                     library.name = newName
                     try? PersistenceController.shared.container.viewContext.save()
