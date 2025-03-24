@@ -36,7 +36,8 @@ struct ExcalidrawCollaborationView: View {
             ExcalidrawView(
                 type: .collaboration,
                 file: $excalidrawFile,
-                loadingState: $loadingState
+                loadingState: $loadingState,
+                interactionEnabled: isActive
             ) { error in
                 alertToast(error)
             }

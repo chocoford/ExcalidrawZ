@@ -1,0 +1,23 @@
+{
+  "images" : [
+    {
+      "filename" : "ExcalidrawZ - Collaborator green.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "ExcalidrawZ - Collaborator green 2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "ExcalidrawZ - Collaborator green 3x.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

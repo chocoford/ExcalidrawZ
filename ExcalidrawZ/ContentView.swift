@@ -86,6 +86,7 @@ struct ContentView: View {
         .modifier(PrintModifier())
         .modifier(WhatsNewSheetViewModifier())
         .modifier(NewRoomModifier())
+        .modifier(PaywallModifier())
 #if os(iOS)
         .modifier(ApplePencilToolbarModifier())
 #endif

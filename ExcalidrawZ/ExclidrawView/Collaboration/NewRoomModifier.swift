@@ -8,12 +8,11 @@
 import SwiftUI
 
 class CollaborationState: ObservableObject {
-     @Published var isCreateRoomConfirmationDialogPresented = false
+    @Published var isCreateRoomConfirmationDialogPresented = false
     @Published var isCreateRoomFromFileSheetPresented = false
     @Published var isJoinRoomSheetPresented = false
     
     @Published var isCreateRoomSheetPresented = false
-    
     
     @AppStorage("userCollaborationName") private var userCollaborationName = ""
     var userCollaborationInfo: CollaborationInfo {

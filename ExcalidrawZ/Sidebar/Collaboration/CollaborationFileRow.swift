@@ -12,6 +12,7 @@ import ChocofordUI
 struct CollaborationFileRow: View {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.alert) private var alert
+    @EnvironmentObject private var store: Store
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var collaborationState: CollaborationState
 
@@ -46,9 +47,13 @@ struct CollaborationFileRow: View {
     var body: some View {
         Button {
             if collaborationState.userCollaborationInfo.username.isEmpty {
-                alert(title: "Name requeired") {
-                    Text("Please input your name to start collaboration.")
+                alert(title: .localizable(.collaborationAlertNameRequiredTitle)) {
+                    Text(.localizable(.collaborationAlertNameRequiredMessage))
                 }
+            } else if let limit = store.collaborationRoomLimits,
+                      fileState.collaboratingFiles.count >= limit,
+                      !fileState.collaboratingFiles.contains(file) {
+                store.togglePaywall(reason: .roomLimit)
             } else {
                 fileState.currentCollaborationFile = file
             }

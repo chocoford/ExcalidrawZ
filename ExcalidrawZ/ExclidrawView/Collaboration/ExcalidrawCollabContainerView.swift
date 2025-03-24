@@ -54,7 +54,7 @@ struct ExcalidrawCollabContainerView: View {
                 }
             }
             
-            if fileState.currentCollaborationFile == nil {
+            if fileState.currentCollaborationFile == nil && fileState.isInCollaborationSpace {
                 CollaborationHome()
             }
         }

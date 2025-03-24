@@ -21,6 +21,7 @@ struct NewFileButton: View {
     @Environment(\.alert) private var alert
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
 
+    @EnvironmentObject private var store: Store
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var collaborationState: CollaborationState
     
@@ -31,6 +32,9 @@ struct NewFileButton: View {
 #endif
     
     @State private var isFileImporterPresented = false
+    
+    @FetchRequest(sortDescriptors: [])
+    private var collaborationFiles: FetchedResults<CollaborationFile>
     
     init() {}
     
@@ -110,25 +114,22 @@ struct NewFileButton: View {
     
     @MainActor @ViewBuilder
     private func collaborationNewButton() -> some View {
-//        if containerHorizontalSizeClass == .compact {
-//            Button {
-//                
-//            } label: {
-//                if #available(macOS 13.0, *) {
-//                    Label("New room", systemSymbol: .doorLeftHandOpen)
-//                } else {
-//                    Label("New room", systemSymbol: .plus)
-//                }
-//            }
-//        } else {
         Menu {
             Button {
-                collaborationState.isCreateRoomConfirmationDialogPresented.toggle()
+                if let limit = store.collaborationRoomLimits, collaborationFiles.count >= limit {
+                    store.togglePaywall(reason: .roomLimit)
+                } else {
+                    collaborationState.isCreateRoomConfirmationDialogPresented.toggle()
+                }
             } label: {
                 Label(.localizable(.collaborationButtonCreateNewRoom), systemSymbol: .plus)
             }
             Button {
-                collaborationState.isJoinRoomSheetPresented.toggle()
+                if let limit = store.collaborationRoomLimits, collaborationFiles.count >= limit {
+                    store.togglePaywall(reason: .roomLimit)
+                } else {
+                    collaborationState.isJoinRoomSheetPresented.toggle()
+                }
             } label: {
                 Label(.localizable(.collaborationButtonJoinRoom), systemSymbol: .ipadAndArrowForward)
             }
@@ -141,7 +142,6 @@ struct NewFileButton: View {
         }
         .help(.localizable(.toolbarButtonCollaborationNewRoom))
         .disabled(collaborationState.userCollaborationInfo.username.isEmpty)
-//        }
     }
     
     private func createNewFile() {

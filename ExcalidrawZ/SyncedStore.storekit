@@ -9,64 +9,19 @@
       }
     ]
   },
-  "identifier" : "72453A7C",
+  "identifier" : "91D82D48",
   "nonRenewingSubscriptions" : [
 
   ],
   "products" : [
     {
-      "displayPrice" : "2.99",
-      "familyShareable" : false,
-      "internalID" : "E09EC37B",
-      "localizations" : [
-        {
-          "description" : "",
-          "displayName" : "",
-          "locale" : "en_US"
-        }
-      ],
-      "productID" : "Donation_Lv1",
-      "referenceName" : "Donation Lv1",
-      "type" : "Consumable"
-    },
-    {
-      "displayPrice" : "4.99",
-      "familyShareable" : false,
-      "internalID" : "C062BD3D",
-      "localizations" : [
-        {
-          "description" : "",
-          "displayName" : "",
-          "locale" : "en_US"
-        }
-      ],
-      "productID" : "Donation_Lv2",
-      "referenceName" : "Donation Lv2",
-      "type" : "Consumable"
-    },
-    {
-      "displayPrice" : "14.99",
-      "familyShareable" : false,
-      "internalID" : "F24E1F35",
-      "localizations" : [
-        {
-          "description" : "",
-          "displayName" : "",
-          "locale" : "en_US"
-        }
-      ],
-      "productID" : "Donation_Lv3",
-      "referenceName" : "Donation Lv3",
-      "type" : "Consumable"
-    },
-    {
       "displayPrice" : "29.99",
       "familyShareable" : false,
-      "internalID" : "1C5A5ABF",
+      "internalID" : "6736387708",
       "localizations" : [
         {
-          "description" : "",
-          "displayName" : "",
+          "description" : "Support the author with ten cups of coffee.",
+          "displayName" : "Buy me ten coffee",
           "locale" : "en_US"
         }
       ],
@@ -77,11 +32,11 @@
     {
       "displayPrice" : "49.99",
       "familyShareable" : false,
-      "internalID" : "A23667CD",
+      "internalID" : "6736387667",
       "localizations" : [
         {
-          "description" : "",
-          "displayName" : "",
+          "description" : "Give the author with a great support.",
+          "displayName" : "Give me a great support",
           "locale" : "en_US"
         }
       ],
@@ -92,21 +47,69 @@
     {
       "displayPrice" : "99.99",
       "familyShareable" : false,
-      "internalID" : "AFB64D84",
+      "internalID" : "6736387573",
       "localizations" : [
         {
-          "description" : "",
-          "displayName" : "",
+          "description" : "Give the author a ultimate support.",
+          "displayName" : "Ultimate support",
           "locale" : "en_US"
         }
       ],
       "productID" : "Donation_Lv6",
       "referenceName" : "Donation Lv6",
       "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "6723888978",
+      "localizations" : [
+        {
+          "description" : "Support the author with a cup of coffee.",
+          "displayName" : "Buy me a coffee",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "Donation_Lv1",
+      "referenceName" : "Donation-Lv1",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "6723889100",
+      "localizations" : [
+        {
+          "description" : "Support the author with two cups of coffee.",
+          "displayName" : "Buy me two coffee",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "Donation_Lv2",
+      "referenceName" : "Donation-Lv2",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "19.99",
+      "familyShareable" : false,
+      "internalID" : "6723888974",
+      "localizations" : [
+        {
+          "description" : "Support the author with five cups of coffee.",
+          "displayName" : "Buy me five coffee",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "Donation_Lv3",
+      "referenceName" : "Donation-Lv3",
+      "type" : "Consumable"
     }
   ],
   "settings" : {
+    "_applicationInternalID" : "6636493997",
+    "_developerTeamID" : "3XKM749Y3L",
     "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 764156074.49326599,
     "_locale" : "en_US",
     "_storefront" : "USA",
     "_storeKitErrors" : [
@@ -159,7 +162,7 @@
   },
   "subscriptionGroups" : [
     {
-      "id" : "4D88173A",
+      "id" : "21547734",
       "localizations" : [
 
       ],
@@ -174,12 +177,12 @@
           ],
           "displayPrice" : "2.99",
           "familyShareable" : false,
-          "groupNumber" : 2,
-          "internalID" : "3C6D700D",
+          "groupNumber" : 1,
+          "internalID" : "6736370182",
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "",
+              "description" : "Support the author with a coffee a month.",
               "displayName" : "One coffee a month",
               "locale" : "en_US"
             }
@@ -187,7 +190,7 @@
           "productID" : "Membership_Lv1_Monthly",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Lv1 Monthly",
-          "subscriptionGroupID" : "4D88173A",
+          "subscriptionGroupID" : "21547734",
           "type" : "RecurringSubscription",
           "winbackOffers" : [
 
@@ -200,87 +203,22 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "11.99",
+          "displayPrice" : "12.99",
           "familyShareable" : false,
-          "groupNumber" : 1,
-          "internalID" : "A760CDB1",
+          "groupNumber" : 2,
+          "internalID" : "6736370011",
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "",
+              "description" : "Give the author a \"one coffee a week\" support",
               "displayName" : "One coffee a week",
               "locale" : "en_US"
             }
           ],
           "productID" : "Membership_Lv2_Monthly",
           "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Lv2 Monthly",
-          "subscriptionGroupID" : "4D88173A",
-          "type" : "RecurringSubscription",
-          "winbackOffers" : [
-
-          ]
-        }
-      ]
-    },
-    {
-      "id" : "914DA4EE",
-      "localizations" : [
-
-      ],
-      "name" : "Plan",
-      "subscriptions" : [
-        {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "0.99",
-          "familyShareable" : false,
-          "groupNumber" : 2,
-          "internalID" : "CD6E119A",
-          "introductoryOffer" : null,
-          "localizations" : [
-            {
-              "description" : "Unlock essential premium features ideal for regular collaborators at a minimal price. Helping cover the operational costs.",
-              "displayName" : "Starter",
-              "locale" : "en_US"
-            }
-          ],
-          "productID" : "plan.starter",
-          "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Starter",
-          "subscriptionGroupID" : "914DA4EE",
-          "type" : "RecurringSubscription",
-          "winbackOffers" : [
-
-          ]
-        },
-        {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "2.99",
-          "familyShareable" : false,
-          "groupNumber" : 1,
-          "internalID" : "35A4E550",
-          "introductoryOffer" : null,
-          "localizations" : [
-            {
-              "description" : "Experience limitless collaboration and advanced features. Designed for professionals and teams with extensive collaborative needs.",
-              "displayName" : "Pro",
-              "locale" : "en_US"
-            }
-          ],
-          "productID" : "plan.pro",
-          "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Pro",
-          "subscriptionGroupID" : "914DA4EE",
+          "referenceName" : "Lv2 monthly",
+          "subscriptionGroupID" : "21547734",
           "type" : "RecurringSubscription",
           "winbackOffers" : [
 
