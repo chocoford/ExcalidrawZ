@@ -9,6 +9,8 @@ import SwiftUI
 import StoreKit
 import os.log
 
+import ChocofordUI
+
 fileprivate typealias Transaction = StoreKit.Transaction
 fileprivate typealias RenewalInfo = StoreKit.Product.SubscriptionInfo.RenewalInfo
 fileprivate typealias RenewalState = StoreKit.Product.SubscriptionInfo.RenewalState
@@ -20,43 +22,43 @@ public enum StoreError: Error {
 struct SubscriptionItem: Hashable, Identifiable, Comparable {
     static let free = SubscriptionItem(
         id: "free",
-        title: "Free",
+        title: String(localizable: .paywallPlanFreeTitle),
         // 免费的计划，可以享受绝大部分的功能
-        description: "Enjoy most of the app's powerful features for free. Perfect for personal use and occasional collaboration.",
+        description: String(localizable: .paywallPlanFreeDescription),
         features: [
-            "Unlimited draws",
-            "iCloud sync data",
-            "Lossless PDF export",
-            "Libraries",
-            "Collaborate with **1** room."
+            String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
+            String(localizable: .paywallPlanGeneralFeaturesICloudSync),
+            String(localizable: .paywallPlanGeneralFeaturesPDFExport),
+            String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
+            String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("1")),
         ]
     )
     
     static let starter = SubscriptionItem(
         id: "plan.starter",
-        title: "Starter",
+        title: String(localizable: .paywallPlanStarterTitle),
         // 基础计划，提供基础付费功能，收费方面也很低——$0.99，主要用来cover成本
-        description: "Unlock essential premium features ideal for regular collaborators at a minimal price. Helping cover the operational costs.",
+        description: String(localizable: .paywallPlanStarterTitle),
         features: [
-            "Unlimited draws",
-            "iCloud sync data",
-            "Lossless PDF export",
-            "Libraries",
-            "Collaborate with **3** room."
+            String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
+            String(localizable: .paywallPlanGeneralFeaturesICloudSync),
+            String(localizable: .paywallPlanGeneralFeaturesPDFExport),
+            String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
+            String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("3")),
         ]
     )
     
     static let pro = SubscriptionItem(
         id: "plan.pro",
-        title: "Pro",
+        title: String(localizable: .paywallPlanProTitle),
         // 无限制
-        description: "Experience limitless collaboration and advanced features. Designed for professionals and teams with extensive collaborative needs.",
+        description: String(localizable: .paywallPlanProTitle),
         features: [
-            "Unlimited draws",
-            "iCloud sync data",
-            "Lossless PDF export",
-            "Libraries",
-            "Collaborate with **unlimited** room."
+            String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
+            String(localizable: .paywallPlanGeneralFeaturesICloudSync),
+            String(localizable: .paywallPlanGeneralFeaturesPDFExport),
+            String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
+            String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("Unlimited")),
         ]
     )
     var id: String
@@ -77,7 +79,6 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
         }
         return false
     }
-    
 }
 
 // Define the app's subscription entitlements by level of service, with the highest level of service first.

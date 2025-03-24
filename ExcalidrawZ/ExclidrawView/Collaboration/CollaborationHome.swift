@@ -120,6 +120,22 @@ struct CollaborationHomeBackground: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var isPresented = false
     
+    var blueRegularX: CGFloat {
+#if os(macOS)
+        -220
+#elseif os(iOS)
+        UIDevice.current.userInterfaceIdiom == .pad ? -240 : -220
+#endif
+    }
+    
+    var redRegularY: CGFloat {
+#if os(macOS)
+        -86
+#elseif os(iOS)
+        UIDevice.current.userInterfaceIdiom == .pad ? -100 : -86
+#endif
+    }
+    
     var body: some View {
         ZStack {
             Image("Collaboration/hero-background")
@@ -130,7 +146,9 @@ struct CollaborationHomeBackground: View {
             
             Image("Collaboration/collaborator-blue")
                 .offset(
-                    x: isPresented ? (horizontalSizeClass == .compact ? -120 : -220) : -800,
+                    x: isPresented ? (
+                        horizontalSizeClass == .compact ? -120 : blueRegularX
+                    ) : -800,
                     y: isPresented ? (horizontalSizeClass == .compact ? 90 : 36) : 400
                 )
             Image("Collaboration/collaborator-green")
@@ -141,7 +159,7 @@ struct CollaborationHomeBackground: View {
             Image("Collaboration/collaborator-red")
                 .offset(
                     x: isPresented ? (horizontalSizeClass == .compact ? -120 : -150) : -1000,
-                    y: isPresented ? -86 : -1000
+                    y: isPresented ? redRegularY : -1000
                 )
             Image("Collaboration/collaborator-yellow")
                 .offset(
@@ -153,6 +171,7 @@ struct CollaborationHomeBackground: View {
         .opacity(0.7)
 #endif
         .onAppear {
+            print(horizontalSizeClass == .compact)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 withAnimation(.smooth(duration: 1.2)) {
                     isPresented = true

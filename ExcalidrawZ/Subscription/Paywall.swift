@@ -107,7 +107,6 @@ struct Paywall: View {
         SubscriptionStoreView(groupID: "914DA4EE")
     }
     
-    
     @MainActor @ViewBuilder
     private func lagacyView() -> some View {
         VStack(spacing: 20) {
@@ -117,7 +116,7 @@ struct Paywall: View {
                     Spacer()
                 }
                 HStack {
-                    Text("Upgrade your plan")
+                    Text(.localizable(.paywallTitle))
                         .font(.largeTitle)
                 }
             }
@@ -127,31 +126,28 @@ struct Paywall: View {
                     toolbar()
                 }
             }
-            .padding(.bottom, 60)
-            .overlay(alignment: .bottom) {
-                if let reason = store.reachPaywallReason {
-                    ZStack {
-                        if isPresented {
-                            Text(reason.description)
-                                .foregroundStyle(.red)
-                                .font(.footnote)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 4)
-                                .background {
-                                    Capsule().fill(Color.red)
-                                    Capsule().fill(.ultraThickMaterial)
-                                }
-                                .transition(.scale.animation(.bouncy.delay(0.2)))
-                                .multilineTextAlignment(.center)
-                        }
-                    }
-                    .animation(.bouncy(duration: 0.3, extraBounce: 0.6), value: isPresented)
-                }
-            }
             
-            if horizontalSizeClass != .compact {
-                Color.clear.frame(height: 20)
-            }
+            Color.clear.frame(height: 80)
+                .overlay(alignment: .top) {
+                    if let reason = store.reachPaywallReason {
+                        ZStack {
+                            if isPresented {
+                                Text(reason.description)
+                                    .foregroundStyle(.red)
+                                    .font(.footnote)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 4)
+                                    .background {
+                                        Capsule().fill(Color.red.opacity(0.5))
+                                        Capsule().fill(.ultraThickMaterial)
+                                    }
+                                    .transition(.scale.animation(.bouncy.delay(0.2)))
+                                    .multilineTextAlignment(.center)
+                            }
+                        }
+                        .animation(.bouncy(duration: 0.3, extraBounce: 0.6), value: isPresented)
+                    }
+                }
             
             if horizontalSizeClass == .compact {
                 CompactPlansView(selection: $selectedPlan, plans: displayedPlans)
@@ -226,7 +222,7 @@ struct Paywall: View {
                 route = .donation
             } label: {
                 HStack {
-                    Text("Sponsor author")
+                    Text(.localizable(.paywallButtonDonation))
                     Image(systemSymbol: .chevronRight2)
                 }
                 .foregroundStyle(.primary)
@@ -246,15 +242,15 @@ struct Paywall: View {
         } label: {
             ZStack {
                 if selectedPlan == store.purchasedPlans.first {
-                    Text("Current plan")
+                    Text(.localizable(.paywallButtonCurrentPlan))
                 } else if let selectedPlan {
                     let planName: String = store.plans.first(where: {$0.id == selectedPlan.id})?.title ?? selectedPlan.displayName
                     let period: String = selectedPlan.subscription?.subscriptionPeriod.formatted(selectedPlan.subscriptionPeriodFormatStyle) ?? ""
                     if horizontalSizeClass == .compact {
-                        Text("Get started with **\(planName)**")
+                        Text(.localizable(.paywallButtonSubscribe(planName)))
                     } else {
-                        Text("Subscribe **\(planName)**") +
-                        Text(" with \(selectedPlan.displayPrice) \(period)").font(.footnote)
+                        Text(.localizable(.paywallButtonSubscribe(planName))) +
+                        Text(" \(selectedPlan.displayPrice) \(period)").font(.footnote)
                     }
                 }
             }
@@ -276,11 +272,11 @@ struct Paywall: View {
     private func restorePurchasesButton() -> some View {
         AsyncButton {
             await store.updateCustomerProductStatus()
-            alert(title: "Restore purchases done") {
+            alert(title: .localizable(.paywallRestorePurchasesDoneAlertTitle)) {
                     
             }
         } label: {
-            Text("Restore purchases")
+            Text(.localizable(.paywallButtonRestorePurchases))
         }
         .buttonStyle(.borderless)
     }
@@ -288,7 +284,7 @@ struct Paywall: View {
     @MainActor @ViewBuilder
     private func privacyPolicyButton() -> some View {
         Link(destination: URL(string: "https://excalidrawz.chocoford.com/privacy/")!) {
-            Text("Privacy Policy")
+            Text(.localizable(.generalButtonPrivacyPolicy))
         }
         .foregroundStyle(.secondary)
     }
@@ -353,11 +349,11 @@ struct PlanCard: View {
                         let currencyFormatter = NumberFormatter()
                         currencyFormatter.numberStyle = .currency
                         currencyFormatter.minimumFractionDigits = 2
-                        currencyFormatter.locale = .current
+                        currencyFormatter.locale = product?.priceFormatStyle.locale ?? .current
                         return currencyFormatter.string(from: 0.00) ?? ""
                     }())
                     .font(.title.bold())
-                    Text("forever")
+                    Text(.localizable(.paywallPlanPeriodForever))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {
@@ -377,7 +373,7 @@ struct PlanCard: View {
             
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(plan.features, id: \.self) { feature in
-                    HStack {
+                    HStack(alignment: .firstTextBaseline) {
                         Image(systemSymbol: .checkmark)
                             .symbolVariant(.circle)
                             .foregroundStyle(.green)
@@ -388,7 +384,7 @@ struct PlanCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding()
-        .frame(width: 260, height: 340, alignment: .top)
+        .frame(width: 260, height: 380, alignment: .top)
         .background {
             let roundedRectangle = RoundedRectangle(cornerRadius: 12)
             
@@ -457,12 +453,12 @@ struct CompactPlansView: View {
                                 let currencyFormatter = NumberFormatter()
                                 currencyFormatter.numberStyle = .currency
                                 currencyFormatter.minimumFractionDigits = 2
-                                currencyFormatter.locale = .current
+                                currencyFormatter.locale = product?.priceFormatStyle.locale ?? .current
                                 return currencyFormatter.string(from: 0.00) ?? ""
                             }())
                             .font(.headline)
                             
-                            Text("forever")
+                            Text(.localizable(.paywallPlanPeriodForever))
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         } else {

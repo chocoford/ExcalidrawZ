@@ -19,7 +19,12 @@ struct SidebarView: View {
     @StateObject private var localFolderState = LocalFolderState()
 
     var body: some View {
-        twoColumnSidebar()
+        if #available(macOS 13.0, *) {
+            twoColumnSidebar()
+                .navigationSplitViewColumnWidth(min: 374, ideal: 400, max: 500)
+        } else {
+            twoColumnSidebar()
+        }
     }
     
     
@@ -28,9 +33,7 @@ struct SidebarView: View {
         HStack(spacing: 0) {
             if appPreference.sidebarMode == .all {
                 GroupListView()
-#if os(macOS)
                     .frame(minWidth: 174)
-#endif
                 Divider()
                     .ignoresSafeArea(edges: .bottom)
             }
@@ -62,9 +65,7 @@ struct SidebarView: View {
                     }
                 }
             }
-#if os(macOS)
-            .frame(minWidth: 200)
-#endif
+            .frame(minWidth:  200)
         }
         .border(.top, color: .separatorColor)
 #if os(iOS)
