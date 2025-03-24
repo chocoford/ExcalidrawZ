@@ -75,18 +75,19 @@ struct GroupListView: View {
                     createFolderSheetView()
                 }
             }
+            // Watch Group disappear
             .onChange(of: fileState.isTemporaryGroupSelected) { newValue in
-                if !newValue, fileState.currentGroup == nil, fileState.currentLocalFolder == nil, !fileState.isInCollaborationSpace {
+                if !newValue, !fileState.hasAnyActiveGroup {
                     fileState.currentGroup = displayedGroups.first
                 }
             }
             .onChange(of: fileState.currentLocalFolder) { newValue in
-                if newValue == nil, fileState.currentGroup == nil, !fileState.isTemporaryGroupSelected, !fileState.isInCollaborationSpace {
+                if newValue == nil, !fileState.hasAnyActiveGroup {
                     fileState.currentGroup = displayedGroups.first
                 }
             }
             .onChange(of: fileState.currentGroup) { newValue in
-                if newValue == nil, fileState.currentLocalFolder == nil, !fileState.isTemporaryGroupSelected, !fileState.isInCollaborationSpace {
+                if newValue == nil, !fileState.hasAnyActiveGroup {
                     fileState.currentGroup = displayedGroups.first
                 }
             }
@@ -109,6 +110,9 @@ struct GroupListView: View {
                     let spacing: CGFloat = 4
                     Button {
                         fileState.isInCollaborationSpace = true
+                        if containerHorizontalSizeClass != .compact {
+                            fileState.currentCollaborationFile = .home
+                        }
                     } label: {
                         Label(.localizable(.sidebarGroupRowCollaborationTitle), systemSymbol: .person3)
                     }

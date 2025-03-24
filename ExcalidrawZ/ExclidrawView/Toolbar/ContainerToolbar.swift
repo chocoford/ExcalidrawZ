@@ -151,23 +151,23 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                 FileHistoryButton()
                 
                 ShareToolbarButton()
-                
-                if #available(macOS 13.0, iOS 16.0, *), appPreference.inspectorLayout == .sidebar {
+            }
+            
+            if #available(macOS 13.0, iOS 16.0, *), appPreference.inspectorLayout == .sidebar {
 #if os(iOS)
-                    if !layoutState.isInspectorPresented {
-                        Button {
-                            layoutState.isInspectorPresented.toggle()
-                        } label: {
-                            Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
-                        }
-                    }
-#endif
-                } else {
+                if !layoutState.isInspectorPresented {
                     Button {
                         layoutState.isInspectorPresented.toggle()
                     } label: {
                         Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
                     }
+                }
+#endif
+            } else {
+                Button {
+                    layoutState.isInspectorPresented.toggle()
+                } label: {
+                    Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
                 }
             }
         }

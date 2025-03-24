@@ -44,7 +44,7 @@ struct Paywall: View {
                 }
             })
             .filter({
-                $0 != .free && horizontalSizeClass == .compact
+                $0 != .free || horizontalSizeClass != .compact
             })
     }
 
@@ -145,7 +145,7 @@ struct Paywall: View {
                                 .multilineTextAlignment(.center)
                         }
                     }
-                    .animation(.bouncy, value: isPresented)
+                    .animation(.bouncy(duration: 0.3, extraBounce: 0.6), value: isPresented)
                 }
             }
             
@@ -259,7 +259,7 @@ struct Paywall: View {
                 }
             }
             .padding(.horizontal)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: horizontalSizeClass == .compact ? .infinity : nil)
         }
         .controlSize({
             if #available(macOS 14.0, iOS 17.0, *) {
@@ -357,6 +357,9 @@ struct PlanCard: View {
                         return currencyFormatter.string(from: 0.00) ?? ""
                     }())
                     .font(.title.bold())
+                    Text("forever")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 } else {
                     Text(product?.displayPrice ?? "")
                         .font(.title.bold())
@@ -458,15 +461,15 @@ struct CompactPlansView: View {
                                 return currencyFormatter.string(from: 0.00) ?? ""
                             }())
                             .font(.headline)
+                            
+                            Text("forever")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
                         } else {
                             Text(product?.displayPrice ?? "")
                                 .font(.headline)
                             if let product, let subscription = product.subscription {
                                 Text(subscription.subscriptionPeriod.formatted(product.subscriptionPeriodFormatStyle))
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                Text("Forever")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
