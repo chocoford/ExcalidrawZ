@@ -9,6 +9,7 @@ import SwiftUI
 
 import ChocofordUI
 
+
 struct CollaborationFilesList: View {
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
@@ -17,9 +18,9 @@ struct CollaborationFilesList: View {
         sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)]
     )
     private var collaborationFiles: FetchedResults<CollaborationFile>
-    
+
     init() { }
-    
+
     var body: some View {
         content()
     }
@@ -28,12 +29,12 @@ struct CollaborationFilesList: View {
     private func content() -> some View {
         VStack(spacing: 0) {
             Button {
-                fileState.currentCollaborationFile = nil
+                fileState.currentCollaborationFile = .home
             } label: {
                 Label(.localizable(.sidebarCollaborationFileRowHomeTitle), systemSymbol: .house)
             }
             .buttonStyle(
-                .listCell(selected: fileState.currentCollaborationFile == nil && fileState.isInCollaborationSpace)
+                .listCell(selected: fileState.currentCollaborationFile == .home && fileState.isInCollaborationSpace)
             )
             
             Divider()

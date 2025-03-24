@@ -109,7 +109,7 @@ struct NewRoomModifier: ViewModifier {
                     Task {
                         await MainActor.run {
                             if let collabFile = viewContext.object(with: fileID) as? CollaborationFile {
-                                fileState.currentCollaborationFile = collabFile
+                                fileState.currentCollaborationFile = .room(collabFile)
                             }
                         }
                     }
@@ -124,9 +124,7 @@ struct NewRoomModifier: ViewModifier {
 
 func copyRoomShareLink(roomID: String, filename: String?) {
     let encodedRoomID = CollabRoomIDCoder.shared.encode(roomID: roomID)
-    NSPasteboard.general.clearContents()
     var url: URL
-#if os(macOS)
     if #available(macOS 13.0, *) {
         url = URL(string: "excalidrawz://collab/\(encodedRoomID)")!
         url.append(queryItems: [
@@ -135,8 +133,10 @@ func copyRoomShareLink(roomID: String, filename: String?) {
     } else {
         url = URL(string: "excalidrawz://collab/\(encodedRoomID)" + (filename?.isEmpty == false ? "?name=\(filename!)" : ""))!
     }
+#if os(macOS)
+    NSPasteboard.general.clearContents()
     NSPasteboard.general.setString(url.absoluteString, forType: .string)
 #elseif os(iOS)
-    
+    UIPasteboard.general.setObjects([url])
 #endif
 }

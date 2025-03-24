@@ -141,9 +141,22 @@ final class FileState: ObservableObject {
     @Published var collaboratingFiles: [CollaborationFile] = []
     @Published var collaboratingFilesState: [CollaborationFile : ExcalidrawView.LoadingState] = [:]
     @Published var collaborators: [CollaborationFile : [Collaborator]] = [:]
-    @Published var currentCollaborationFile: CollaborationFile? {
+    enum CollborationRoute: Hashable {
+        case home
+        case room(CollaborationFile)
+        
+        var room: CollaborationFile? {
+            switch self {
+                case .home:
+                    nil
+                case .room(let collaborationFile):
+                    collaborationFile
+            }
+        }
+    }
+    @Published var currentCollaborationFile: CollborationRoute? {
         didSet {
-            if let file = currentCollaborationFile {
+            if case .room(let file) = currentCollaborationFile {
                 currentFile = nil
                 currentGroup = nil
                 currentLocalFolder = nil
@@ -158,11 +171,25 @@ final class FileState: ObservableObject {
         }
     }
     var currentCollaborators: [Collaborator] {
-        if let file = currentCollaborationFile {
+        if case .room(let file) = currentCollaborationFile {
             collaborators[file] ?? []
         } else {
             []
         }
+    }
+    
+    var hasAnyActiveGroup: Bool {
+        currentGroup != nil || currentLocalFolder != nil || isTemporaryGroupSelected || isInCollaborationSpace
+    }
+    var hasAnyActiveFile: Bool {
+        if currentGroup != nil && currentFile != nil ||
+            currentLocalFolder != nil && currentLocalFile != nil ||
+            isTemporaryGroupSelected && currentTemporaryFile != nil {
+            return true
+        } else if case .room = currentCollaborationFile, isInCollaborationSpace {
+            return true
+        }
+        return false
     }
 
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?

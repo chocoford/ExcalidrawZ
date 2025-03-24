@@ -111,7 +111,7 @@ extension ContentView {
                             await MainActor.run {
                                 fileState.isInCollaborationSpace = true
                                 if case let room as CollaborationFile = viewContext.object(with: roomID) {
-                                    fileState.currentCollaborationFile = room
+                                    fileState.currentCollaborationFile = .room(room)
                                 }
                             }
                         }

@@ -41,7 +41,7 @@ struct FileHistoryButton: View {
                 FileCheckpointListView(localFile: localFile)
             } else if let tempFile = fileState.currentTemporaryFile {
                 FileCheckpointListView(localFile: tempFile)
-            } else if let file = fileState.currentCollaborationFile {
+            } else if case .room(let file) = fileState.currentCollaborationFile {
                 FileCheckpointListView(file: file)
             }
         }

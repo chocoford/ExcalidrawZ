@@ -49,8 +49,9 @@ struct ExcalidrawToolbar: View {
     var body: some View {
         if fileState.currentFile != nil ||
             fileState.currentLocalFile != nil ||
-            fileState.currentTemporaryFile != nil ||
-            fileState.currentCollaborationFile != nil {
+            fileState.currentTemporaryFile != nil {
+            toolbar()
+        } else if case .room = fileState.currentCollaborationFile {
             toolbar()
         }
     }

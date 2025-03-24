@@ -230,19 +230,19 @@ struct LocalFoldersListView: View {
                 print("[LocalFoldersListView] observe folder event >>>", event)
                 do {
                     switch event {
-                        case .subitemDidChange(let dirURL, let url):
+                        case .subitemDidChange(_, let url):
                             if url.isDirectory {
                                 try refreshFoldersContent()
                             } else {
                                 localFolderState.refreshFilesPublisher.send()
                             }
-                        case .subitemDidLose(let dirURL, let url, _):
+                        case .subitemDidLose(_, let url, _):
                             if url.isDirectory {
                                 try refreshFoldersContent()
                             } else {
                                 localFolderState.refreshFilesPublisher.send()
                             }
-                        case .subitemDidAppear(let dirURL, let url):
+                        case .subitemDidAppear(_, let url):
                             if url.isDirectory {
                                 try refreshFoldersContent()
                             } else {

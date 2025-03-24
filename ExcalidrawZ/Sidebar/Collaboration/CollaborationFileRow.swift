@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 import ChocofordUI
 
@@ -22,7 +23,13 @@ struct CollaborationFileRow: View {
         self.file = file
     }
     
-    var isSelected: Bool { fileState.currentCollaborationFile == file }
+    var isSelected: Bool {
+        if case .room(let room) = fileState.currentCollaborationFile {
+            return room == file
+        } else {
+            return false
+        }
+    }
     var isInCollaboration: Bool { fileState.collaboratingFiles.contains(where: {$0 == file}) }
     var collaboratingState: ExcalidrawView.LoadingState? {
         fileState.collaboratingFilesState[file]
@@ -55,7 +62,7 @@ struct CollaborationFileRow: View {
                       !fileState.collaboratingFiles.contains(file) {
                 store.togglePaywall(reason: .roomLimit)
             } else {
-                fileState.currentCollaborationFile = file
+                fileState.currentCollaborationFile = .room(file)
             }
         } label: {
             VStack(alignment: .leading) {
@@ -134,7 +141,7 @@ struct CollaborationFileRow: View {
         Button {
             fileState.collaboratingFiles.removeAll(where: {$0 == file})
             fileState.collaboratingFilesState[file] = nil
-            if fileState.currentCollaborationFile == file {
+            if fileState.currentCollaborationFile == .room(file) {
                 fileState.currentCollaborationFile = nil
             }
         } label: {
@@ -182,7 +189,7 @@ struct CollaborationFileRow: View {
         
         fileState.collaboratingFiles.removeAll(where: {$0 == file})
         fileState.collaboratingFilesState[file] = nil
-        if fileState.currentCollaborationFile == file {
+        if fileState.currentCollaborationFile == .room(file) {
             fileState.currentCollaborationFile = nil
         }
     }

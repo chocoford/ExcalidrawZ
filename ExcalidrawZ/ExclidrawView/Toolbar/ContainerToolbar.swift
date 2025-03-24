@@ -44,10 +44,18 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
         }
         .toolbar(content: toolbarContent)
 #if os(iOS)
-        .modifier(HideToolbarModifier(isPresented: toolState.isBottomBarPresented, placement: .bottomBar))
+        .modifier(
+            HideToolbarModifier(
+                isPresented: toolState.isBottomBarPresented,
+                placement: .bottomBar
+            )
+        )
         .animation(.default, value: toolState.isBottomBarPresented)
         .toolbarBackground(containerHorizontalSizeClass == .regular ? .automatic : .visible, for: .bottomBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarBackground(
+            fileState.isInCollaborationSpace && fileState.currentCollaborationFile == .home ? .hidden : .visible,
+            for: .navigationBar
+        )
         .navigationBarTitleDisplayMode(.inline) // <- fix principal toolbar
 #endif
     }
@@ -113,6 +121,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                     fileState.currentFile = nil
                     fileState.currentLocalFile = nil
                     fileState.currentTemporaryFile = nil
+                    fileState.currentCollaborationFile = nil
                 } label: {
                     Label(.localizable(.navigationButtonBack), systemSymbol: .chevronBackward)
                 }
@@ -134,29 +143,31 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 #endif
         
         ToolbarItemGroup(placement: .confirmationAction) {
+            if fileState.hasAnyActiveFile {
 #if os(iOS)
-            applePencilToggle()
+                applePencilToggle()
 #endif
-            
-            FileHistoryButton()
-            
-            ShareToolbarButton()
-
-            if #available(macOS 13.0, iOS 16.0, *), appPreference.inspectorLayout == .sidebar {
+                
+                FileHistoryButton()
+                
+                ShareToolbarButton()
+                
+                if #available(macOS 13.0, iOS 16.0, *), appPreference.inspectorLayout == .sidebar {
 #if os(iOS)
-                if !layoutState.isInspectorPresented {
+                    if !layoutState.isInspectorPresented {
+                        Button {
+                            layoutState.isInspectorPresented.toggle()
+                        } label: {
+                            Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
+                        }
+                    }
+#endif
+                } else {
                     Button {
                         layoutState.isInspectorPresented.toggle()
                     } label: {
                         Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
                     }
-                }
-#endif
-            } else {
-                Button {
-                    layoutState.isInspectorPresented.toggle()
-                } label: {
-                    Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
                 }
             }
         }
@@ -240,7 +251,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
-        } else if let collaborationFile = fileState.currentCollaborationFile {
+        } else if case .room(let collaborationFile) = fileState.currentCollaborationFile {
             HStack(spacing: 10) {
                 VStack(alignment: .leading) {
                     Text(collaborationFile.name ?? String(localizable: .generalUntitled))
@@ -299,6 +310,8 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 
 #if os(iOS)
 struct HideToolbarModifier: ViewModifier {
+    @EnvironmentObject private var fileState: FileState
+    
     var isPresented: Bool
     var placement: ToolbarPlacement
     
@@ -310,10 +323,10 @@ struct HideToolbarModifier: ViewModifier {
     func body(content: Content) -> some View {
         if #available(macOS 15.0, iOS 18.0, *) {
             content
-                .toolbarVisibility(isPresented ? .automatic : .hidden, for: placement)
+                .toolbarVisibility(isPresented && fileState.hasAnyActiveFile ? .automatic : .hidden, for: placement)
         } else {
             content
-                .toolbar(isPresented ? .automatic : .hidden, for: placement)
+                .toolbar(isPresented && fileState.hasAnyActiveFile ? .automatic : .hidden, for: placement)
         }
     }
 }

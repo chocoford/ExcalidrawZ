@@ -19,7 +19,7 @@ struct ShareToolbarButton: View {
     var body: some View {
         Button {
             do {
-                if let file = fileState.currentFile ?? fileState.currentCollaborationFile {
+                if let file = fileState.currentFile ?? fileState.currentCollaborationFile?.room {
                     self.sharedFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
                 } else if let folder = fileState.currentLocalFolder,
                     let fileURL = fileState.currentLocalFile {

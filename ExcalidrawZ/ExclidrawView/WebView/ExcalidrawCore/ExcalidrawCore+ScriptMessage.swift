@@ -102,7 +102,7 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                             }
                             return nil
                         }
-                        if let currentCollaborationFile = self.parent?.fileState.currentCollaborationFile {
+                        if case .room(let currentCollaborationFile) = self.parent?.fileState.currentCollaborationFile {
                             self.parent?.fileState.collaborators[currentCollaborationFile] = collaborators
                         }
                     }

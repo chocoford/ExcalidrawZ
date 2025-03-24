@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+import CoreData
+
 struct ExcalidrawFileBrowser: View {
     @Environment(\.dismiss) private var dismiss
     
@@ -44,7 +46,7 @@ struct ExcalidrawFileBrowser: View {
     private func sidebar() -> some View {
         ExcalidrawGroupBrowser()
         .background {
-            if #available(macOS 14.0, *) {
+            if #available(macOS 14.0, iOS 17.0, *) {
                 Rectangle().fill(.windowBackground)
             } else {
                 Rectangle().fill(Color.windowBackgroundColor)
@@ -146,7 +148,11 @@ struct ExcalidrawFileBrowserContentView: View {
                 },
                 filename: file.name ?? String(localizable: .generalUnknown)
             ) {
+#if canImport(AppKit)
                 NSWorkspace.shared.icon(for: .excalidrawFile)
+#elseif canImport(UIKit)
+                UIImage.icon(for: .excalidrawFile) ?? UIImage.icon(forPathExtension: "json")
+#endif
             } onDoubleClick: {
                 onDoubleClick?()
             }
@@ -180,7 +186,11 @@ struct ExcalidrawLocalFileBrowserContentView: View {
                 },
                 filename: url.lastPathComponent
             ) {
+#if canImport(AppKit)
                 NSWorkspace.shared.icon(forFile: url.filePath)
+#elseif canImport(UIKit)
+                UIImage.icon(forFileURL: url)
+#endif
             } onDoubleClick: {
                 onDoubleClick?()
             }
@@ -192,14 +202,20 @@ struct ExcalidrawFileItemView: View {
     
     @Binding var isSelected: Bool
     
+#if canImport(AppKit)
+    typealias PlatformImage = NSImage
+#elseif canImport(UIKit)
+    typealias PlatformImage = UIImage
+#endif
+    
     var filename: String
-    var fileIconGenerator: () -> NSImage
+    var fileIconGenerator: () -> PlatformImage
     var onDoubleClick: (() -> Void)?
     
     init(
         isSelected: Binding<Bool>,
         filename: String,
-        fileIconGenerator: @escaping () -> NSImage,
+        fileIconGenerator: @escaping () -> PlatformImage,
         onDoubleClick: (() -> Void)? = nil
     ) {
         self._isSelected = isSelected
@@ -248,7 +264,7 @@ struct ExcalidrawFileItemView: View {
         .opacity(fileIcon != nil ? 1 : 0)
         .onAppear {
             Task.detached {
-                let image = await Image(nsImage: fileIconGenerator())
+                let image = await Image(platformImage: fileIconGenerator())
                 await MainActor.run {
                     self.fileIcon = image
                 }
@@ -256,6 +272,64 @@ struct ExcalidrawFileItemView: View {
         }
     }
 }
+
+#if canImport(UIKit)
+extension UIImage {
+    public enum FileIconSize {
+        case smallest
+        case largest
+    }
+    
+    public class func icon(forFileURL fileURL: URL, preferredSize: FileIconSize = .smallest) -> UIImage {
+        let myInteractionController = UIDocumentInteractionController(url: fileURL)
+        let allIcons = myInteractionController.icons
+        
+        // allIcons is guaranteed to have at least one image
+        switch preferredSize {
+            case .smallest: return allIcons.first!
+            case .largest: return allIcons.last!
+        }
+    }
+    
+    public class func icon(forFileNamed fileName: String, preferredSize: FileIconSize = .smallest) -> UIImage {
+        return icon(forFileURL: URL(fileURLWithPath: fileName), preferredSize: preferredSize)
+    }
+    
+    public class func icon(forPathExtension pathExtension: String, preferredSize: FileIconSize = .smallest) -> UIImage {
+        let baseName = "Generic"
+        let fileName = (baseName as NSString).appendingPathExtension(pathExtension) ?? baseName
+        return icon(forFileNamed: fileName, preferredSize: preferredSize)
+    }
+}
+
+import MobileCoreServices
+import UniformTypeIdentifiers
+
+extension FileManager {
+    public func fileExtension(forUTI utiString: String) -> String? {
+        guard let cfFileExtension = UTType(utiString)?.preferredFilenameExtension else {
+            return nil
+        }
+
+        return cfFileExtension as String
+    }
+}
+
+extension UIImage {
+    public class func icon(forUTI utiString: String, preferredSize: FileIconSize = .smallest) -> UIImage? {
+        guard let fileExtension = FileManager.default.fileExtension(forUTI: utiString) else {
+            return nil
+        }
+        return icon(forPathExtension: fileExtension, preferredSize: preferredSize)
+    }
+    public class func icon(for type: UTType, preferredSize: FileIconSize = .smallest) -> UIImage? {
+        guard let fileExtension = FileManager.default.fileExtension(forUTI: type.identifier) else {
+            return nil
+        }
+        return icon(forPathExtension: fileExtension, preferredSize: preferredSize)
+    }
+}
+#endif
 
 #Preview {
     ExcalidrawFileBrowser { selection in

@@ -243,7 +243,7 @@ extension ExcalidrawView: NSViewRepresentable {
 #elseif os(iOS)
 extension ExcalidrawView: UIViewRepresentable {
     func makeUIView(context: Context) -> ExcalidrawWebView {
-        makeExcalidrawWebView(context: conntext)
+        makeExcalidrawWebView(context: context)
     }
     
     func updateUIView(_ uiView: ExcalidrawWebView, context: Context) {

@@ -23,7 +23,11 @@ struct ExcalidrawCollaborationView: View {
     }
     
     var isActive: Bool {
-        fileState.currentCollaborationFile == file
+        if case .room(let room) = fileState.currentCollaborationFile {
+            return room == file
+        } else {
+            return false
+        }
     }
     
     @State private var loadingState: ExcalidrawView.LoadingState = .idle

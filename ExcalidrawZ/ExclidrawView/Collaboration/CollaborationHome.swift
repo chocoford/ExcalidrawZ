@@ -53,21 +53,19 @@ struct CollaborationHome: View {
                     }
 
                     VStack(spacing: 10) {
-                        TextField(
-                            .localizable(.collaborationHomeNameFieldLabel),
-                            text: $collaborationState.userCollaborationInfo.username,
-                            prompt: Text(.localizable(.collaborationHomeNameFieldPlaceholder))
-                        )
-                        .textFieldStyle(.outlined)
-                        .focused($focusFied, equals: FocusField.username)
-                        .popover(
-                            isPresented: .constant(collaborationState.userCollaborationInfo.username.isEmpty),
-                            arrowEdge: .top
-                        ) {
-                            Text(.localizable(.collaborationHomeNameFieldRequiredPopover))
-                                .padding(10)
+                        if #available(macOS 13.3, iOS 16.4, *) {
+                            nameField()
+                                .popover(
+                                    isPresented: .constant(collaborationState.userCollaborationInfo.username.isEmpty && focusFied != .username),
+                                    arrowEdge: .top
+                                ) {
+                                    Text(.localizable(.collaborationHomeNameFieldRequiredPopover))
+                                        .padding(10)
+                                        .presentationCompactAdaptation(.popover)
+                                }
+                        } else {
+                            nameField()
                         }
-                        
                         Divider()
                         
                         SwiftUI.Group {
@@ -105,9 +103,21 @@ struct CollaborationHome: View {
             }
     }
     
+    @MainActor @ViewBuilder
+    private func nameField() -> some View {
+        TextField(
+            .localizable(.collaborationHomeNameFieldLabel),
+            text: $collaborationState.userCollaborationInfo.username,
+            prompt: Text(.localizable(.collaborationHomeNameFieldPlaceholder))
+        )
+        .textFieldStyle(.outlined)
+        .focused($focusFied, equals: FocusField.username)
+    }
+    
 }
 
 struct CollaborationHomeBackground: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var isPresented = false
     
     var body: some View {
@@ -119,14 +129,29 @@ struct CollaborationHomeBackground: View {
                 .scaleEffect(1.2)
             
             Image("Collaboration/collaborator-blue")
-                .offset(x: isPresented ? -220 : -800, y: isPresented ? 36 : 400)
+                .offset(
+                    x: isPresented ? (horizontalSizeClass == .compact ? -120 : -220) : -800,
+                    y: isPresented ? (horizontalSizeClass == .compact ? 90 : 36) : 400
+                )
             Image("Collaboration/collaborator-green")
-                .offset(x: isPresented ? 170 : 1000, y: isPresented ? -70 : -1000)
+                .offset(
+                    x: isPresented ? (horizontalSizeClass == .compact ? 130 : 170) : 1000,
+                    y: isPresented ? (horizontalSizeClass == .compact ? -50 : -70) : -1000
+                )
             Image("Collaboration/collaborator-red")
-                .offset(x: isPresented ? -150 : -1000, y: isPresented ? -86 : -1000)
+                .offset(
+                    x: isPresented ? (horizontalSizeClass == .compact ? -120 : -150) : -1000,
+                    y: isPresented ? -86 : -1000
+                )
             Image("Collaboration/collaborator-yellow")
-                .offset(x: isPresented ? 200 : 1000, y: isPresented ? 90 : 1000)
+                .offset(
+                    x: isPresented ? (horizontalSizeClass == .compact ? 150 : 200) : 1000,
+                    y: isPresented ? 90 : 1000
+                )
         }
+#if os(iOS)
+        .opacity(0.7)
+#endif
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 withAnimation(.smooth(duration: 1.2)) {

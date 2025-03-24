@@ -50,11 +50,11 @@ struct ExcalidrawCollabContainerView: View {
             ZStack {
                 ForEach(fileState.collaboratingFiles, id: \.self) { file in
                     ExcalidrawCollaborationView(file: file)
-                        .zIndex(fileState.currentCollaborationFile == file ? 1 : 0)
+                        .zIndex(fileState.currentCollaborationFile?.room == file ? 1 : 0)
                 }
             }
             
-            if fileState.currentCollaborationFile == nil && fileState.isInCollaborationSpace {
+            if fileState.currentCollaborationFile == .home && fileState.isInCollaborationSpace {
                 CollaborationHome()
             }
         }
@@ -70,3 +70,4 @@ struct ExcalidrawCollabContainerView: View {
         .environmentObject(FileState())
         .frame(width: 500)
 }
+

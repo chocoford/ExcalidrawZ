@@ -92,7 +92,7 @@ struct GroupListView: View {
             }
             .onAppear {
                 defer { isFirstAppear = false }
-                if fileState.currentGroup == nil, !fileState.isTemporaryGroupSelected, fileState.currentLocalFolder == nil || isFirstAppear {
+                if !fileState.hasAnyActiveGroup || isFirstAppear {
                     Task {
                         try? await fileState.setToDefaultGroup()
                     }

@@ -75,6 +75,8 @@ struct SidebarView: View {
                 List(selection: $fileState.currentLocalFile) {}
             } else if fileState.isTemporaryGroupSelected {
                 List(selection: $fileState.currentTemporaryFile) {}
+            } else if fileState.isInCollaborationSpace {
+                List(selection: $fileState.currentCollaborationFile) {}
             }
         }
 #endif

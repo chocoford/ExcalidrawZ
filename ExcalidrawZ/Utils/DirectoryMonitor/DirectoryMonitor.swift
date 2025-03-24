@@ -284,7 +284,7 @@ public class DirectoryMonitor: NSObject, NSFilePresenter {
     
     // MARK: - Version Changes
     public func presentedSubitem(at url: URL, didGain version: NSFileVersion) {
-        guard let directoryURL = self.presentedItemURL else {
+        guard let _ = self.presentedItemURL else {
             logger.error("[DirectoryMonitor] presentedSubitem error: presentedItemURL is nil")
             return
         }

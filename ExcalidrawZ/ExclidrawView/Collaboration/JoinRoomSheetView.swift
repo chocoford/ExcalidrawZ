@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 struct JoinRoomSheetView: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -119,7 +120,7 @@ struct JoinRoomSheetView: View {
                         await MainActor.run {
                             if let room = viewContext.object(with: roomID) as? CollaborationFile {
                                 fileState.isInCollaborationSpace = true
-                                fileState.currentCollaborationFile = room
+                                fileState.currentCollaborationFile = .room(room)
                             }
                         }
                     }

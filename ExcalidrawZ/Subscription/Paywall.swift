@@ -15,6 +15,7 @@ import Shimmer
 struct Paywall: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) private var alertToast
     @Environment(\.alert) private var alert
     
@@ -31,11 +32,30 @@ struct Paywall: View {
     
     @State private var route: Route = .plans
     @State private var isDonationHistoryPresented = false
+    
+    var displayedPlans: [SubscriptionItem] {
+        store.plans
+            .filter({ plan in
+                if store.purchasedPlans.isEmpty { return true }
+                if let activePlan = store.plans.first(where: {$0.id == store.purchasedPlans.first?.id}) {
+                    return plan >= activePlan
+                } else {
+                    return false
+                }
+            })
+            .filter({
+                $0 != .free && horizontalSizeClass == .compact
+            })
+    }
 
     var body: some View {
         content()
             .watchImmediately(of: store.purchasedPlans) { newValue in
-                self.selectedPlan = newValue.first
+                if let purchasedPlans = newValue.first {
+                    self.selectedPlan = purchasedPlans
+                } else if horizontalSizeClass == .compact {
+                    self.selectedPlan = store.subscriptions.first
+                }
             }
     }
     
@@ -49,6 +69,7 @@ struct Paywall: View {
                 SupportChocofordView(isAppStore: true)
                     .contentPadding(40)
                     .bindingSupportHistoryPresentedValue($isDonationHistoryPresented)
+                    .padding(.top, horizontalSizeClass == .compact ? 30 : 0)
                     .overlay(alignment: .topLeading) {
                         if !isDonationHistoryPresented {
                             Button {
@@ -66,6 +87,7 @@ struct Paywall: View {
                     .animation(.default, value: isDonationHistoryPresented)
                     .background {
                         Color.windowBackgroundColor
+                            .ignoresSafeArea()
                     }
                     .compositingGroup()
                     .transition(.move(edge: .trailing))
@@ -89,35 +111,23 @@ struct Paywall: View {
     @MainActor @ViewBuilder
     private func lagacyView() -> some View {
         VStack(spacing: 20) {
-            HStack {
-                Text("Upgrade your plan")
-                    .font(.largeTitle)
+            VStack(spacing: 10) {
+                if horizontalSizeClass == .compact {
+                    toolbar()
+                    Spacer()
+                }
+                HStack {
+                    Text("Upgrade your plan")
+                        .font(.largeTitle)
+                }
             }
             .frame(maxWidth: .infinity)
-            .overlay(alignment: .leading) {
-                Button {
-                    dismiss()
-                } label: {
-                    Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
-                        .labelStyle(.iconOnly)
+            .overlay {
+                if horizontalSizeClass != .compact {
+                    toolbar()
                 }
-                .buttonStyle(.text(square: true))
             }
-            .overlay(alignment: .trailing) {
-                Button {
-                    route = .donation
-                } label: {
-                    HStack {
-                        Text("Sponsor author")
-                        Image(systemSymbol: .chevronRight2)
-                    }
-                    .shimmering(
-                        animation: Animation.linear(duration: 1).delay(2).repeatForever(autoreverses: false)
-                    )
-                }
-                .buttonStyle(.borderless)
-            }
-            .padding(.bottom, 30)
+            .padding(.bottom, 60)
             .overlay(alignment: .bottom) {
                 if let reason = store.reachPaywallReason {
                     ZStack {
@@ -132,81 +142,44 @@ struct Paywall: View {
                                     Capsule().fill(.ultraThickMaterial)
                                 }
                                 .transition(.scale.animation(.bouncy.delay(0.2)))
+                                .multilineTextAlignment(.center)
                         }
                     }
                     .animation(.bouncy, value: isPresented)
                 }
             }
             
-            Color.clear.frame(height: 50)
-            
-            HStack(spacing: 20) {
-                ForEach(
-                    store.plans.filter({ plan in
-                        if store.purchasedPlans.isEmpty { return true }
-                        if let activePlan = store.plans.first(where: {$0.id == store.purchasedPlans.first?.id}) {
-                            return plan >= activePlan
-                        } else {
-                            return false
-                        }
-                    })
-                ) { item in
-                    PlanCard(
-                        isSelected: item == .free ? selectedPlan == nil : selectedPlan?.id == item.id,
-                        plan: item,
-                        product: store.subscriptions.first(where: {$0.id == item.id})
-                    )
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        withAnimation(.bouncy(duration: 0.2)) {
-                            selectedPlan = store.subscriptions.first(where: {$0.id == item.id})
-                        }
-                    }
-                }
+            if horizontalSizeClass != .compact {
+                Color.clear.frame(height: 20)
             }
             
-            HStack {
-                Spacer()
-                
-                AsyncButton {
-                    try await purchaseSelectedPlan()
-                } label: {
-                    ZStack {
-                        if selectedPlan == store.purchasedPlans.first {
-                            Text("Current plan")
-                        } else if let selectedPlan {
-                            let planName: String = store.plans.first(where: {$0.id == selectedPlan.id})?.title ?? selectedPlan.displayName
-                            let period: String = selectedPlan.subscription?.subscriptionPeriod.formatted(selectedPlan.subscriptionPeriodFormatStyle) ?? ""
-                            Text("Subscribe **\(planName)** with ") +
-                            Text("\(selectedPlan.displayPrice) \(period)").font(.footnote)
-                        } else {
-                            
-                        }
-                    }
-                    .padding(.horizontal)
-                }
-                .controlSize({
-                    if #available(macOS 14.0, *) {
-                        .extraLarge
-                    } else {
-                        .large
-                    }
-                }())
-                .buttonStyle(.borderedProminent)
-                .disabled(selectedPlan == store.purchasedPlans.first)
-                
-                Spacer()
+            if horizontalSizeClass == .compact {
+                CompactPlansView(selection: $selectedPlan, plans: displayedPlans)
+            } else {
+                RegularPlansView(selection: $selectedPlan, plans: displayedPlans)
             }
-            .overlay(alignment: .trailing) {
-                AsyncButton {
-                    await store.updateCustomerProductStatus()
-                    alert(title: "Restore purchases done") {
-                            
-                    }
-                } label: {
-                    Text("Restore purchases")
+            
+            if horizontalSizeClass != .compact {
+                HStack {
+                    Spacer()
+                    
+                    purchaseButton()
+                    
+                    Spacer()
                 }
-                .buttonStyle(.borderless)
+                .overlay(alignment: .trailing) {
+                    restorePurchasesButton()
+                }
+            } else {
+                VStack {
+                    purchaseButton()
+                    HStack {
+                        privacyPolicyButton()
+                        Spacer()
+                        restorePurchasesButton()
+                    }
+                    .font(.footnote)
+                }
             }
         }
         .padding(40)
@@ -215,12 +188,18 @@ struct Paywall: View {
                 LinearGradient(
                     stops: [
                         .init(color: .accent, location: 0),
-                        .init(color: colorScheme == .dark ? .black : .white, location: 0.4),
-                    ],
+                    ] + [{
+                        if horizontalSizeClass == .compact {
+                            .init(color: colorScheme == .dark ? .black : Color(red: 242/255.0, green: 242/255.0, blue: 242/255.0), location: 0.4)
+                        } else {
+                            .init(color: colorScheme == .dark ? .black : .white, location: 0.4)
+                        }
+                    }()],
                     startPoint: .top,
                     endPoint: .bottom
                 )
             }
+            .ignoresSafeArea()
         }
         .onAppear {
             isPresented = true
@@ -230,10 +209,119 @@ struct Paywall: View {
         }
     }
     
+    @MainActor @ViewBuilder
+    private func toolbar() -> some View {
+        HStack {
+            Button {
+                dismiss()
+            } label: {
+                Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
+                    .labelStyle(.iconOnly)
+            }
+            .buttonStyle(.text(square: true))
+            
+            Spacer()
+            
+            Button {
+                route = .donation
+            } label: {
+                HStack {
+                    Text("Sponsor author")
+                    Image(systemSymbol: .chevronRight2)
+                }
+                .foregroundStyle(.primary)
+                .shimmering(
+                    animation: Animation.linear(duration: 1).delay(2).repeatForever(autoreverses: false),
+                    gradient: Gradient(colors: [.white, .white.opacity(0.3), .white])
+                )
+            }
+            .buttonStyle(.borderless)
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func purchaseButton() -> some View {
+        AsyncButton {
+            try await purchaseSelectedPlan()
+        } label: {
+            ZStack {
+                if selectedPlan == store.purchasedPlans.first {
+                    Text("Current plan")
+                } else if let selectedPlan {
+                    let planName: String = store.plans.first(where: {$0.id == selectedPlan.id})?.title ?? selectedPlan.displayName
+                    let period: String = selectedPlan.subscription?.subscriptionPeriod.formatted(selectedPlan.subscriptionPeriodFormatStyle) ?? ""
+                    if horizontalSizeClass == .compact {
+                        Text("Get started with **\(planName)**")
+                    } else {
+                        Text("Subscribe **\(planName)**") +
+                        Text(" with \(selectedPlan.displayPrice) \(period)").font(.footnote)
+                    }
+                }
+            }
+            .padding(.horizontal)
+            .frame(maxWidth: .infinity)
+        }
+        .controlSize({
+            if #available(macOS 14.0, iOS 17.0, *) {
+                .extraLarge
+            } else {
+                .large
+            }
+        }())
+        .buttonStyle(.borderedProminent)
+        .disabled(selectedPlan == store.purchasedPlans.first)
+    }
+    
+    @MainActor @ViewBuilder
+    private func restorePurchasesButton() -> some View {
+        AsyncButton {
+            await store.updateCustomerProductStatus()
+            alert(title: "Restore purchases done") {
+                    
+            }
+        } label: {
+            Text("Restore purchases")
+        }
+        .buttonStyle(.borderless)
+    }
+    
+    @MainActor @ViewBuilder
+    private func privacyPolicyButton() -> some View {
+        Link(destination: URL(string: "https://excalidrawz.chocoford.com/privacy/")!) {
+            Text("Privacy Policy")
+        }
+        .foregroundStyle(.secondary)
+    }
+    
     private func purchaseSelectedPlan() async throws {
         if let product = store.subscriptions.first(where: {$0.id == selectedPlan?.id}) {
             if let _ = try await store.purchase(product) {
                 dismiss()
+            }
+        }
+    }
+}
+
+struct RegularPlansView: View {
+    @EnvironmentObject private var store: Store
+    
+    @Binding var selection: Product?
+    var plans: [SubscriptionItem]
+    
+    var body: some View {
+        HStack(spacing: 20) {
+            ForEach(plans) { item in
+                PlanCard(
+                    isSelected: item == .free ? selection == nil : selection?.id == item.id,
+                    plan: item,
+                    product: store.subscriptions.first(where: {$0.id == item.id})
+                )
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.bouncy(duration: 0.2)) {
+                        selection = store.subscriptions.first(where: {$0.id == item.id})
+                    }
+                }
             }
         }
     }
@@ -328,6 +416,85 @@ struct PlanCard: View {
         }
         .scaleEffect(isSelected ? 1.03 : 1, anchor: .bottom)
         // .animation(.bouncy(duration: 0.2), value: isSelected)
+    }
+}
+
+struct CompactPlansView: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var store: Store
+    
+    @Binding var selection: Product?
+    var plans: [SubscriptionItem]
+    
+    var body: some View {
+        VStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
+                let plan: SubscriptionItem = store.plans.first(where: {$0.id == selection?.id}) ?? .free
+                ForEach(plan.features, id: \.self) { feature in
+                    HStack {
+                        Image(systemSymbol: .checkmark)
+                            .symbolVariant(.circle)
+                            .foregroundStyle(.green)
+                        Text(try! AttributedString(markdown: feature))
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            
+            HStack(spacing: 10) {
+                ForEach(plans) { plan in
+                    let product: Product? = store.subscriptions.first(where: {$0.id == plan.id})
+                    VStack {
+                        Text(plan.title)
+                        
+                        if plan == .free {
+                            // Text(0.formatted(.currency(code: Locale.current.identifier)))
+                            Text({
+                                let currencyFormatter = NumberFormatter()
+                                currencyFormatter.numberStyle = .currency
+                                currencyFormatter.minimumFractionDigits = 2
+                                currencyFormatter.locale = .current
+                                return currencyFormatter.string(from: 0.00) ?? ""
+                            }())
+                            .font(.headline)
+                        } else {
+                            Text(product?.displayPrice ?? "")
+                                .font(.headline)
+                            if let product, let subscription = product.subscription {
+                                Text(subscription.subscriptionPeriod.formatted(product.subscriptionPeriodFormatStyle))
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text("Forever")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .frame(width: 100, height: 100)
+                    .background {
+                        let roundedRectangle = RoundedRectangle(cornerRadius: 12)
+                        if colorScheme == .light {
+                            roundedRectangle
+                                .fill(.white)
+                        } else {
+                            roundedRectangle
+                                .fill(.ultraThickMaterial)
+                        }
+                        if selection == product {
+                            roundedRectangle
+                                .stroke(Color.accentColor)
+                        }
+                    }
+                    .onTapGesture {
+                        withAnimation(.bouncy(duration: 0.2)) {
+                            selection = product
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
