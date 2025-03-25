@@ -50,8 +50,6 @@
 		3990F82D2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F82E2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F8362CACF4C500C94983 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3990F8352CACF4C500C94983 /* StoreKit.framework */; };
-		39A28C672D92770600B079B1 /* Content+UserActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A28C662D92770600B079B1 /* Content+UserActivity.swift */; };
-		39A28C682D92770600B079B1 /* Content+UserActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A28C662D92770600B079B1 /* Content+UserActivity.swift */; };
 		39A28C9A2D92AB1D00B079B1 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */; };
 		39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */ = {isa = PBXBuildFile; fileRef = 39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */; };
 		39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
@@ -59,8 +57,6 @@
 		39AF4DE32D0611E0009126C4 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 39AF4DE02D0611E0009126C4 /* CHANGELOG.md */; };
 		39B142EA2CE9D2A100D3EEDA /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39B142E92CE9D2A100D3EEDA /* Zlib */; };
 		39B69A2E2D8422F0003369E8 /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = 39B69A2D2D8422F0003369E8 /* Secrets.plist */; };
-		39B69ADA2D898B61003369E8 /* Content+OpenURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B69AD92D898B61003369E8 /* Content+OpenURL.swift */; };
-		39B69ADB2D898B62003369E8 /* Content+OpenURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B69AD92D898B61003369E8 /* Content+OpenURL.swift */; };
 		39B69BDD2D8C18A0003369E8 /* SyncedStore.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 39B69BDC2D8C18A0003369E8 /* SyncedStore.storekit */; };
 		39B69BDE2D8C18A0003369E8 /* SyncedStore.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 39B69BDC2D8C18A0003369E8 /* SyncedStore.storekit */; };
 		39BE12EE2CB7DD8C006781D5 /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39BE12ED2CB7DD8C006781D5 /* Zlib */; };
@@ -164,13 +160,11 @@
 		3987A5072CB54B200054D7D5 /* QuickLookPreviewExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QuickLookPreviewExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		3990F82B2CA9C55100C94983 /* Store.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Store.storekit; sourceTree = "<group>"; };
 		3990F8352CACF4C500C94983 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
-		39A28C662D92770600B079B1 /* Content+UserActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Content+UserActivity.swift"; sourceTree = "<group>"; };
 		39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = FakeToggleColorMode.js; sourceTree = "<group>"; };
 		39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = FakeSaveCommand.js; sourceTree = "<group>"; };
 		39AF4DE02D0611E0009126C4 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = SOURCE_ROOT; };
 		39B69A2D2D8422F0003369E8 /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
 		39B69A322D8423C3003369E8 /* Overrides.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Overrides.xcconfig; sourceTree = "<group>"; };
-		39B69AD92D898B61003369E8 /* Content+OpenURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Content+OpenURL.swift"; sourceTree = "<group>"; };
 		39B69BDC2D8C18A0003369E8 /* SyncedStore.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = SyncedStore.storekit; sourceTree = "<group>"; };
 		39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		39ED18622D40FCBD00E437A0 /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/System/Library/Frameworks/AVKit.framework; sourceTree = DEVELOPER_DIR; };
@@ -289,6 +283,7 @@
 		396604742D096D8700870AC9 /* ExcalidrawZTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ExcalidrawZTests; sourceTree = "<group>"; };
 		396604782D096D9200870AC9 /* ExcalidrawZUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ExcalidrawZUITests; sourceTree = "<group>"; };
 		3987A5092CB54B200054D7D5 /* QuickLookPreviewExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3987A51A2CB54B200054D7D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = QuickLookPreviewExtension; sourceTree = "<group>"; };
+		39A28CF92D92D8EA00B079B1 /* ContentView+ */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "ContentView+"; sourceTree = "<group>"; };
 		39B69BC52D8BD74C003369E8 /* Subscription */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Subscription; sourceTree = "<group>"; };
 		39ED18482D3FCECB00E437A0 /* Videos */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Videos; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -413,8 +408,7 @@
 				397F98DD295EE18E009BED55 /* AppDelegate.swift */,
 				394A7FAE2C515CB700D4918B /* RootView.swift */,
 				397E4658295838CF003B824B /* ContentView.swift */,
-				39B69AD92D898B61003369E8 /* Content+OpenURL.swift */,
-				39A28C662D92770600B079B1 /* Content+UserActivity.swift */,
+				39A28CF92D92D8EA00B079B1 /* ContentView+ */,
 				396604052D096D7100870AC9 /* components */,
 				396604202D096D7400870AC9 /* Sidebar */,
 				3966044D2D096D7700870AC9 /* ExclidrawView */,
@@ -498,6 +492,7 @@
 				396604202D096D7400870AC9 /* Sidebar */,
 				3966044D2D096D7700870AC9 /* ExclidrawView */,
 				396604702D096D8100870AC9 /* Preview Content */,
+				39A28CF92D92D8EA00B079B1 /* ContentView+ */,
 				39B69BC52D8BD74C003369E8 /* Subscription */,
 				39ED18482D3FCECB00E437A0 /* Videos */,
 			);
@@ -546,6 +541,7 @@
 				396604202D096D7400870AC9 /* Sidebar */,
 				3966044D2D096D7700870AC9 /* ExclidrawView */,
 				396604702D096D8100870AC9 /* Preview Content */,
+				39A28CF92D92D8EA00B079B1 /* ContentView+ */,
 				39B69BC52D8BD74C003369E8 /* Subscription */,
 				39ED18482D3FCECB00E437A0 /* Videos */,
 			);
@@ -774,9 +770,7 @@
 				3963A0462C6C7EAA00472AE7 /* RootView.swift in Sources */,
 				3963A0472C6C7EAA00472AE7 /* Model.xcdatamodeld in Sources */,
 				3963A0562C6C7EAA00472AE7 /* ContentView.swift in Sources */,
-				39B69ADA2D898B61003369E8 /* Content+OpenURL.swift in Sources */,
 				3963A0652C6C7EAA00472AE7 /* ExcalidrawZApp.swift in Sources */,
-				39A28C672D92770600B079B1 /* Content+UserActivity.swift in Sources */,
 				3963A06C2C6C7EAA00472AE7 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -788,10 +782,8 @@
 				394A7FAF2C515CB700D4918B /* RootView.swift in Sources */,
 				3908EB9929674DF60054A3ED /* Model.xcdatamodeld in Sources */,
 				397E4659295838CF003B824B /* ContentView.swift in Sources */,
-				39A28C682D92770600B079B1 /* Content+UserActivity.swift in Sources */,
 				397E4657295838CF003B824B /* ExcalidrawZApp.swift in Sources */,
 				397F98DE295EE18E009BED55 /* AppDelegate.swift in Sources */,
-				39B69ADB2D898B62003369E8 /* Content+OpenURL.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -109,9 +109,11 @@ struct GroupListView: View {
                 LazyVStack(spacing: 8) {
                     let spacing: CGFloat = 4
                     Button {
-                        fileState.isInCollaborationSpace = true
-                        if containerHorizontalSizeClass != .compact {
-                            fileState.currentCollaborationFile = .home
+                        if !fileState.isInCollaborationSpace {
+                            fileState.isInCollaborationSpace = true
+                            if containerHorizontalSizeClass != .compact {
+                                fileState.currentCollaborationFile = .home
+                            }
                         }
                     } label: {
                         Label(.localizable(.sidebarGroupRowCollaborationTitle), systemSymbol: .person3)

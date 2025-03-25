@@ -38,7 +38,7 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
         id: "plan.starter",
         title: String(localizable: .paywallPlanStarterTitle),
         // 基础计划，提供基础付费功能，收费方面也很低——$0.99，主要用来cover成本
-        description: String(localizable: .paywallPlanStarterTitle),
+        description: String(localizable: .paywallPlanStarterDescription),
         features: [
             String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
             String(localizable: .paywallPlanGeneralFeaturesICloudSync),
@@ -52,7 +52,7 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
         id: "plan.pro",
         title: String(localizable: .paywallPlanProTitle),
         // 无限制
-        description: String(localizable: .paywallPlanProTitle),
+        description: String(localizable: .paywallPlanProDescription),
         features: [
             String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
             String(localizable: .paywallPlanGeneralFeaturesICloudSync),

@@ -10,7 +10,12 @@ import CoreData
 import os.log
 
 class PersistenceController {
-    static let shared = PersistenceController(cloudKitEnabled: !UserDefaults.standard.bool(forKey: "DisableCloudSync"))
+    static let shared = {
+        let stack = PersistenceController(cloudKitEnabled: !UserDefaults.standard.bool(forKey: "DisableCloudSync"))
+        stack.prepare()
+        stack.migration()
+        return stack
+    }()
     
     let container: NSPersistentContainer
 
@@ -113,9 +118,6 @@ class PersistenceController {
         #if DEBUG
 //        log()
         #endif
-        
-        prepare()
-        migration()
     }
 }
 

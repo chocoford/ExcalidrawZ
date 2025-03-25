@@ -87,6 +87,7 @@ struct ContentView: View {
         .modifier(WhatsNewSheetViewModifier())
         .modifier(NewRoomModifier())
         .modifier(PaywallModifier())
+        .modifier(SearchableModifier())
         .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
         .modifier(OpenURLModifier())
         .modifier(UserActivityHandlerModifier())
