@@ -10,9 +10,21 @@ import CoreData
 
 import ChocofordUI
 
-extension ContentView {
+struct OpenURLModifier: ViewModifier {
+    @Environment(\.managedObjectContext) var viewContext
+    @Environment(\.alertToast) private var alertToast
+    
+    @EnvironmentObject private var fileState: FileState
+    
+    func body(content: Content) -> some View {
+        content
+            .onOpenURL { url in
+                onOpenURL(url)
+            }
+    }
+    
     // MARK: - Handle OpenURL
-    func onOpenURL(_ url: URL) {
+    private func onOpenURL(_ url: URL) {
         if url.isFileURL {
             onOpenLocalFile(url)
         } else if url.scheme == "excalidrawz" {

@@ -693,7 +693,7 @@ extension ExcalidrawFile {
         }
         
         var contentObject = try JSONSerialization.jsonObject(with: content) as! [String : Any]
-        print("[ExcalidrawFile] update with obj: \(contentObject)")
+        // print("[ExcalidrawFile] update with obj: \(contentObject)")
         guard let dataData = data.dataString.data(using: .utf8),
               let fileDataJson = try JSONSerialization.jsonObject(with: dataData) as? [String : Any] else {
             struct InvalidPayloadError: LocalizedError {

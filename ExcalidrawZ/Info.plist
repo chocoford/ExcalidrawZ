@@ -269,5 +269,9 @@
 			</dict>
 		</dict>
 	</array>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>com.apple.corespotlightitem</string>
+	</array>
 </dict>
 </plist>

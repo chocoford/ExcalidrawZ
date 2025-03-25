@@ -12,13 +12,13 @@
         <relationship name="checkpoints" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="FileCheckpoint" inverseName="collaborationFile" inverseEntity="FileCheckpoint"/>
         <relationship name="medias" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="MediaItem" inverseName="collaborationFile" inverseEntity="MediaItem"/>
     </entity>
-    <entity name="File" representedClassName="File" syncable="YES" codeGenerationType="class">
+    <entity name="File" representedClassName="File" syncable="YES" codeGenerationType="class" coreSpotlightDisplayNameExpression="name">
         <attribute name="content" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="deletedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="inTrash" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
-        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="name" optional="YES" attributeType="String" spotlightIndexingEnabled="YES"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="checkpoints" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="FileCheckpoint" inverseName="file" inverseEntity="FileCheckpoint"/>
         <relationship name="group" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Group" inverseName="files" inverseEntity="Group"/>

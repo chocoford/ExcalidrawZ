@@ -266,5 +266,9 @@
 	<string>ExcalidrawZ wants to use your camera for excalidraw image input.</string>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>com.apple.corespotlightitem</string>
+	</array>
 </dict>
 </plist>

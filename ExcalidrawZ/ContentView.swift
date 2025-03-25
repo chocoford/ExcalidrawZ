@@ -18,14 +18,14 @@ import SwiftyAlert
 struct ContentView: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.alertToast) var alertToast
+    @Environment(\.alertToast) private var alertToast
     @EnvironmentObject var appPreference: AppPreference
     
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ContentView")
     
     @State private var hideContent: Bool = false
     
-    @StateObject var fileState = FileState()
+    @StateObject private var fileState = FileState()
     @StateObject private var exportState = ExportState()
     @StateObject private var toolState = ToolState()
     @StateObject private var layoutState = LayoutState()
@@ -87,6 +87,9 @@ struct ContentView: View {
         .modifier(WhatsNewSheetViewModifier())
         .modifier(NewRoomModifier())
         .modifier(PaywallModifier())
+        .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
+        .modifier(OpenURLModifier())
+        .modifier(UserActivityHandlerModifier())
 #if os(iOS)
         .modifier(ApplePencilToolbarModifier())
 #endif
@@ -119,10 +122,6 @@ struct ContentView: View {
                     fileState.currentTemporaryFile = fileState.temporaryFiles.first
                 }
             }
-        }
-        .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
-        .onOpenURL { url in
-            onOpenURL(url)
         }
         // Check if it is first launch by checking the files count.
         .task {

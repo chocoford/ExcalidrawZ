@@ -742,14 +742,14 @@ final class FileState: ObservableObject {
                     var targetGroupID: NSManagedObjectID? = groupID
                     var parentGroup: (any ExcalidrawFileGroupRepresentable)? = targetGroup
                     while true {
-                        if let targetGroupID {
-                            groupIDs.insert(targetGroupID, at: 0)
-                        }
                         guard let parentGroupID = (parentGroup?.getParent() as? (any ExcalidrawFileGroupRepresentable))?.objectID else {
                             break
                         }
                         parentGroup = context.object(with: parentGroupID) as? (any ExcalidrawFileGroupRepresentable)
                         targetGroupID = parentGroup?.objectID
+                        if let targetGroupID {
+                            groupIDs.insert(targetGroupID, at: 0)
+                        }
                     }
                 }
                 Task { [groupIDs] in

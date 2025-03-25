@@ -52,6 +52,27 @@ struct ExcalidrawZApp: App {
         if #available(macOS 13.0, *) {} else {
             UserDefaults.standard.set(1, forKey: "FolderStructureStyle")
         }
+        
+        // refresh spotlight index if expiration
+        var shouldRefreshSpotlightIndex = false
+        let dateString = UserDefaults.standard.string(forKey: "LastSpotlightIndexRefreshTime")
+        if let dateString,
+           let date = try? Date(dateString, strategy: .iso8601),
+           date < Date.now - 20 * 24 * 60 * 60 {
+            shouldRefreshSpotlightIndex = true
+        } else if dateString == nil {
+            shouldRefreshSpotlightIndex = true
+        }
+        if shouldRefreshSpotlightIndex {
+            Task {
+                do {
+                    try await PersistenceController.shared.refreshIndices()
+                    UserDefaults.standard.set(Date.now.formatted(.iso8601), forKey: "LastSpotlightIndexRefreshTime")
+                } catch {
+                    print(error)
+                }
+            }
+        }
     }
     // Can not run agent in a sandboxed app.
     // let service = SMAppService.agent(plistName: "com.chocoford.excalidraw.ExcalidrawServer.agent.plist")

@@ -50,6 +50,9 @@
 		3990F82D2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F82E2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F8362CACF4C500C94983 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3990F8352CACF4C500C94983 /* StoreKit.framework */; };
+		39A28C672D92770600B079B1 /* Content+UserActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A28C662D92770600B079B1 /* Content+UserActivity.swift */; };
+		39A28C682D92770600B079B1 /* Content+UserActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A28C662D92770600B079B1 /* Content+UserActivity.swift */; };
+		39A28C9A2D92AB1D00B079B1 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */; };
 		39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */ = {isa = PBXBuildFile; fileRef = 39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */; };
 		39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
 		39AF4DE12D0611E0009126C4 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 39AF4DE02D0611E0009126C4 /* CHANGELOG.md */; };
@@ -162,6 +165,7 @@
 		3987A5072CB54B200054D7D5 /* QuickLookPreviewExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QuickLookPreviewExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		3990F82B2CA9C55100C94983 /* Store.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Store.storekit; sourceTree = "<group>"; };
 		3990F8352CACF4C500C94983 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		39A28C662D92770600B079B1 /* Content+UserActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Content+UserActivity.swift"; sourceTree = "<group>"; };
 		39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = FakeToggleColorMode.js; sourceTree = "<group>"; };
 		39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = FakeSaveCommand.js; sourceTree = "<group>"; };
 		39AF4DE02D0611E0009126C4 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = SOURCE_ROOT; };
@@ -203,6 +207,7 @@
 				"Excalidraw+Image/ExcalidrawImageDecoder.swift",
 				"Excalidraw+Image/ExcalidrawPNGDecoder.swift",
 				"Excalidraw+Image/ExcalidrawSVGDecoder.swift",
+				"URL+Extension.swift",
 			);
 			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
 		};
@@ -235,10 +240,30 @@
 			);
 			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
 		};
+		39A28CA22D92AB8700B079B1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Error.swift,
+			);
+			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
+		};
+		39A28CC02D92B04B00B079B1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"PersistenceController+PreviewExt.swift",
+			);
+			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ (AppStore) */;
+		};
+		39A28CC12D92B04C00B079B1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"PersistenceController+PreviewExt.swift",
+			);
+			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
+		};
 		39B69A0A2D831503003369E8 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"ExcalidrawFile/ExcalidrawFile+Document.swift",
 				"ExcalidrawFile/ExcalidrawFile+Persistence.swift",
 				"ExcalidrawFile/ExcalidrawFile+Transferable.swift",
 			);
@@ -249,10 +274,10 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		392CF8EA2C8EF1A700CC81B9 /* ci_scripts */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ci_scripts; sourceTree = "<group>"; };
 		3963A0342C6BD6B200472AE7 /* Sparkle */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A0352C6BD6B900472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Sparkle; sourceTree = "<group>"; };
-		3966034F2D096D2900870AC9 /* Utils */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (396603652D096D2900870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 396603662D096D2900870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Utils; sourceTree = "<group>"; };
+		3966034F2D096D2900870AC9 /* Utils */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (396603652D096D2900870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 396603662D096D2900870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39A28CA22D92AB8700B079B1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Utils; sourceTree = "<group>"; };
 		396603722D096D3400870AC9 /* Extensions */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (396603882D096D3400870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Extensions; sourceTree = "<group>"; };
 		396603912D096D3E00870AC9 /* Models */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (39B69A0A2D831503003369E8 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Models; sourceTree = "<group>"; };
-		396603AE2D096D4500870AC9 /* Persistence */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Persistence; sourceTree = "<group>"; };
+		396603AE2D096D4500870AC9 /* Persistence */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (39A28CC02D92B04B00B079B1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39A28CC12D92B04C00B079B1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Persistence; sourceTree = "<group>"; };
 		396603C42D096D4900870AC9 /* Store */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Store; sourceTree = "<group>"; };
 		396603D92D096D5700870AC9 /* Settings */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Settings; sourceTree = "<group>"; };
 		396603E72D096D6200870AC9 /* SingleEditorView */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SingleEditorView; sourceTree = "<group>"; };
@@ -390,6 +415,7 @@
 				394A7FAE2C515CB700D4918B /* RootView.swift */,
 				397E4658295838CF003B824B /* ContentView.swift */,
 				39B69AD92D898B61003369E8 /* Content+OpenURL.swift */,
+				39A28C662D92770600B079B1 /* Content+UserActivity.swift */,
 				396604052D096D7100870AC9 /* components */,
 				396604202D096D7400870AC9 /* Sidebar */,
 				3966044D2D096D7700870AC9 /* ExclidrawView */,
@@ -735,6 +761,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				39A28C9A2D92AB1D00B079B1 /* Localizable.xcstrings in Resources */,
 				3987A5D02CB63FB00054D7D5 /* overwrite_console.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -751,6 +778,7 @@
 				3963A0562C6C7EAA00472AE7 /* ContentView.swift in Sources */,
 				39B69ADA2D898B61003369E8 /* Content+OpenURL.swift in Sources */,
 				3963A0652C6C7EAA00472AE7 /* ExcalidrawZApp.swift in Sources */,
+				39A28C672D92770600B079B1 /* Content+UserActivity.swift in Sources */,
 				3963A06C2C6C7EAA00472AE7 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -762,6 +790,7 @@
 				394A7FAF2C515CB700D4918B /* RootView.swift in Sources */,
 				3908EB9929674DF60054A3ED /* Model.xcdatamodeld in Sources */,
 				397E4659295838CF003B824B /* ContentView.swift in Sources */,
+				39A28C682D92770600B079B1 /* Content+UserActivity.swift in Sources */,
 				397E4657295838CF003B824B /* ExcalidrawZApp.swift in Sources */,
 				397F98DE295EE18E009BED55 /* AppDelegate.swift in Sources */,
 				39B69ADB2D898B62003369E8 /* Content+OpenURL.swift in Sources */,
@@ -1444,9 +1473,12 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -1474,8 +1506,11 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -1503,8 +1538,11 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = "App Store";
 		};

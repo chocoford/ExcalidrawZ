@@ -62,7 +62,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     @Published var isNavigating = true
     @Published var isDocumentLoaded = false
     @Published var isCollabEnabled = false
-    @Published private(set) var isLoading: Bool = false // { isNavigating || !isDocumentLoaded }
+    @Published private(set) var isLoading: Bool = false
     
     var downloadCache: [String : Data] = [:]
     var downloads: [URLRequest : URL] = [:]
@@ -118,11 +118,12 @@ class ExcalidrawCore: NSObject, ObservableObject {
                 try? await self.toggleToolbarAction(key: char)
             }
         }
+#if DEBUG
         if #available(macOS 13.3, iOS 16.4, *) {
             self.webView.isInspectable = true
         } else {
         }
-        
+#endif
         self.webView.navigationDelegate = self
         self.webView.uiDelegate = self
         
