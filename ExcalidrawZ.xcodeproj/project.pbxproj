@@ -59,7 +59,6 @@
 		39AF4DE32D0611E0009126C4 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 39AF4DE02D0611E0009126C4 /* CHANGELOG.md */; };
 		39B142EA2CE9D2A100D3EEDA /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39B142E92CE9D2A100D3EEDA /* Zlib */; };
 		39B69A2E2D8422F0003369E8 /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = 39B69A2D2D8422F0003369E8 /* Secrets.plist */; };
-		39B69A332D8423C3003369E8 /* Overrides.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 39B69A322D8423C3003369E8 /* Overrides.xcconfig */; };
 		39B69ADA2D898B61003369E8 /* Content+OpenURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B69AD92D898B61003369E8 /* Content+OpenURL.swift */; };
 		39B69ADB2D898B62003369E8 /* Content+OpenURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B69AD92D898B61003369E8 /* Content+OpenURL.swift */; };
 		39B69BDD2D8C18A0003369E8 /* SyncedStore.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 39B69BDC2D8C18A0003369E8 /* SyncedStore.storekit */; };
@@ -653,7 +652,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 1610;
+				LastUpgradeCheck = 1620;
 				TargetAttributes = {
 					397E4652295838CF003B824B = {
 						CreatedOnToolsVersion = 14.2;
@@ -729,7 +728,6 @@
 			files = (
 				396661302C665D4300F863BC /* excalidraw-latest in Resources */,
 				39ED18542D3FDE1C00E437A0 /* Localizable.xcstrings in Resources */,
-				39B69A332D8423C3003369E8 /* Overrides.xcconfig in Resources */,
 				397E468729599DD4003B824B /* FakeDrop.js in Resources */,
 				39AF4DE12D0611E0009126C4 /* CHANGELOG.md in Resources */,
 				39B69A2E2D8422F0003369E8 /* Secrets.plist in Resources */,
