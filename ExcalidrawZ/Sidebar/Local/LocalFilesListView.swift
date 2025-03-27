@@ -18,8 +18,18 @@ struct LocalFilesListView: View {
     @EnvironmentObject private var localFolderState: LocalFolderState
     
     var folder: LocalFolder
+    var sortField: ExcalidrawFileSortField
+    
+    init(
+        folder: LocalFolder,
+        sortField: ExcalidrawFileSortField
+    ) {
+        self.folder = folder
+        self.sortField = sortField
+    }
     
     @State private var files: [URL] = []
+    
     @State private var updateFlags: [URL : Date] = [:]
     
 #if canImport(AppKit)
@@ -77,6 +87,9 @@ struct LocalFilesListView: View {
             }
         }
 #endif
+        .onChange(of: sortField) { newValue in
+            sortFiles(field: newValue)
+        }
         .onReceive(localFolderState.itemCreatedPublisher) { path in
             getFolderContents()
         }
@@ -105,11 +118,9 @@ struct LocalFilesListView: View {
                 )
                 let files = contents
                     .filter({ $0.pathExtension == "excalidraw" })
-                    .sorted {
-                        ((try? FileManager.default.attributesOfItem(atPath: $0.filePath)[FileAttributeKey.modificationDate]) as? Date) ?? .distantPast > ((try? FileManager.default.attributesOfItem(atPath: $1.filePath)[FileAttributeKey.modificationDate]) as? Date) ?? .distantPast
-                    }
                 withAnimation {
                     self.files = files
+                    self.sortFiles(field: self.sortField)
                 }
                 self.updateFlags = files.map {
                     [$0 : Date()]
@@ -118,6 +129,28 @@ struct LocalFilesListView: View {
             // debugPrint("[DEBUG] getFolderContents...", self.files)
         } catch {
             alertToast(error)
+        }
+    }
+
+    private func sortFiles(field: ExcalidrawFileSortField) {
+        switch field {
+            case .updatedAt, .rank:
+                files.sort {
+                    // createdAt
+                    let lhsAttrs = try? FileManager.default.attributesOfItem(atPath: $0.filePath)
+                    let rhsAttrs = try? FileManager.default.attributesOfItem(atPath: $1.filePath)
+                    return (lhsAttrs?[.creationDate] as? Date) ?? .distantPast < (rhsAttrs?[.creationDate] as? Date) ?? .distantPast
+                }
+                files.sort {
+                    // updatedAt
+                    let lhsAttrs = try? FileManager.default.attributesOfItem(atPath: $0.filePath)
+                    let rhsAttrs = try? FileManager.default.attributesOfItem(atPath: $1.filePath)
+                    return (lhsAttrs?[.modificationDate] as? Date) ?? .distantPast < (rhsAttrs?[.modificationDate] as? Date) ?? .distantPast
+                }
+            case .name:
+                files.sort {
+                    $0.deletingPathExtension().lastPathComponent < $1.deletingPathExtension().lastPathComponent
+                }
         }
     }
     

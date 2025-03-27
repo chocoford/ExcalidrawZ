@@ -178,6 +178,8 @@ final class FileState: ObservableObject {
         }
     }
     
+    @AppStorage("ExcalidrawFileSortField") var sortField: ExcalidrawFileSortField = .updatedAt
+    
     var hasAnyActiveGroup: Bool {
         currentGroup != nil || currentLocalFolder != nil || isTemporaryGroupSelected || isInCollaborationSpace
     }

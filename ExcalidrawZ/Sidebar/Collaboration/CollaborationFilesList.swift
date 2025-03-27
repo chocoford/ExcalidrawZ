@@ -14,12 +14,32 @@ struct CollaborationFilesList: View {
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
     
-    @FetchRequest(
-        sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)]
-    )
+    @FetchRequest
     private var collaborationFiles: FetchedResults<CollaborationFile>
 
-    init() { }
+    init(sortField: ExcalidrawFileSortField) {
+        let sortDescriptors: [SortDescriptor<CollaborationFile>] = {
+            switch sortField {
+                case .updatedAt:
+                    [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse)
+                    ]
+                case .name:
+                    [
+                        SortDescriptor(\.name, order: .reverse),
+                    ]
+                case .rank:
+                    [
+                        SortDescriptor(\.rank, order: .forward),
+                    ]
+            }
+        }()
+        self._collaborationFiles = FetchRequest<CollaborationFile>(
+            sortDescriptors: sortDescriptors,
+            animation: .smooth
+        )
+    }
 
     var body: some View {
         content()
@@ -47,15 +67,17 @@ struct CollaborationFilesList: View {
                         CollaborationFileRow(file: file)
                     }
                 }
+                .fileListDropFallback()
                 // ⬇️ cause `com.apple.SwiftUI.AsyncRenderer (22): EXC_BREAKPOINT` on iOS
                 // .animation(.smooth, value: files)
             }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 12)
+        .fileListDropFallback()
     }
 }
 
 #Preview {
-    CollaborationFilesList()
+    CollaborationFilesList(sortField: .name)
 }

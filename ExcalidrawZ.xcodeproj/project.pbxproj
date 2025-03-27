@@ -262,6 +262,13 @@
 			);
 			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
 		};
+		39E301D92D950D1600136064 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"FileRowView+DragMove.swift",
+			);
+			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ (AppStore) */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -277,7 +284,7 @@
 		396603ED2D096D6500870AC9 /* Share */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Share; sourceTree = "<group>"; };
 		396603F72D096D6800870AC9 /* FileHistory */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = FileHistory; sourceTree = "<group>"; };
 		396604052D096D7100870AC9 /* components */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = components; sourceTree = "<group>"; };
-		396604202D096D7400870AC9 /* Sidebar */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Sidebar; sourceTree = "<group>"; };
+		396604202D096D7400870AC9 /* Sidebar */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (39E301D92D950D1600136064 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Sidebar; sourceTree = "<group>"; };
 		3966044D2D096D7700870AC9 /* ExclidrawView */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3966046C2D096D7700870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 3966046D2D096D7700870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 3966046E2D096D7700870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ExclidrawView; sourceTree = "<group>"; };
 		396604702D096D8100870AC9 /* Preview Content */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Preview Content"; sourceTree = "<group>"; };
 		396604742D096D8700870AC9 /* ExcalidrawZTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ExcalidrawZTests; sourceTree = "<group>"; };

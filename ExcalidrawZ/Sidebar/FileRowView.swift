@@ -7,72 +7,9 @@
 
 import SwiftUI
 import CoreData
-import ChocofordUI
+import UniformTypeIdentifiers
 
-struct FileInfo: Equatable {
-    private(set) var fileEntity: File
-    
-    // file info
-    private(set) var id: UUID {
-        willSet { self.fileEntity.id = newValue }
-    }
-    private(set) var name: String {
-        willSet { self.fileEntity.name = newValue }
-    }
-    private(set) var createdAt: Date {
-        willSet { self.fileEntity.createdAt = newValue }
-    }
-    private(set) var updatedAt: Date {
-        willSet { self.fileEntity.updatedAt = newValue }
-    }
-    private(set) var deletedAt: Date? {
-        willSet { self.fileEntity.deletedAt = newValue }
-    }
-    private(set) var inTrash: Bool {
-        willSet { self.fileEntity.inTrash = newValue }
-    }
-    private(set) var content: Data? {
-        willSet { self.fileEntity.content = newValue }
-    }
-    
-    // relation
-    var group: Group? {
-        willSet { self.fileEntity.group = newValue }
-    }
-    
-    init(file fileEntity: File) {
-        self.fileEntity = fileEntity
-        
-        self.id = self.fileEntity.id ?? UUID()
-        self.name = self.fileEntity.name ?? String(localizable: .newFileNamePlaceholder)
-        self.createdAt = self.fileEntity.createdAt ?? .distantPast
-        self.updatedAt = self.fileEntity.updatedAt ?? self.createdAt
-        self.deletedAt = self.fileEntity.deletedAt
-        self.inTrash = self.fileEntity.inTrash
-        self.content = self.fileEntity.content
-        self.group = self.fileEntity.group
-    }
-    
-    
-    public mutating func setName(_ newName: String) {
-        self.name = newName
-    }
-    
-    public mutating func move(to group: Group) {
-        self.group = group
-        self.updatedAt = .now
-    }
-    
-    public mutating func delete() {
-        self.inTrash = true
-        self.deletedAt = .now
-    }
-    
-    public mutating func recover() {
-        self.inTrash = false
-        self.deletedAt = nil
-    }
-}
+import ChocofordUI
 
 struct FileRowView: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -96,7 +33,6 @@ struct FileRowView: View {
     }
     
     @State private var showPermanentlyDeleteAlert: Bool = false
-    @State private var isHovered = false
     
     @FocusState private var isFocused: Bool
     
@@ -105,16 +41,14 @@ struct FileRowView: View {
     }
     
     var body: some View {
-        Button {
+        FileRowButton(
+            name: (file.name ?? "")/* + " - \(file.rank ?? -1)"*/,
+            updatedAt: file.updatedAt,
+            isSelected: isSelected
+        ) {
             fileState.currentFile = file
-        } label: {
-            FileRowLabel(
-                name: file.name ?? "",
-                updatedAt: file.updatedAt ?? .distantPast
-            )
         }
-        .onHover{ isHovered = $0 }
-        .buttonStyle(ListButtonStyle(selected: isSelected))
+        .modifier(FileRowDragDropModifier(file: file, sortField: fileState.sortField))
         .contextMenu { listRowContextMenu.labelStyle(.titleAndIcon) }
         .confirmationDialog(
             LocalizedStringKey.localizable(.sidebarFileRowDeletePermanentlyAlertTitle(file.name ?? "")),
@@ -210,7 +144,7 @@ struct FileRowView: View {
             .frame(width: 20)
             .padding(.horizontal, 4)
         }
-        .opacity(isHovered ? 1 : 0)
+//        .opacity(isHovered ? 1 : 0)
     }
     
     @MainActor @ViewBuilder
@@ -294,7 +228,6 @@ struct FileRowView: View {
         }
     }
 }
-
 
 #if DEBUG
 //struct FileRowView_Previews: PreviewProvider {

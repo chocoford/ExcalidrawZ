@@ -10,6 +10,26 @@ import SwiftUI
 import ChocofordUI
 import SFSafeSymbols
 
+struct ExcalidrawSearchEnvrionmentKey: EnvironmentKey {
+    static let defaultValue: SearchExcalidrawAction = SearchExcalidrawAction(isSearchPresented: .constant(false))
+}
+
+extension EnvironmentValues {
+    var searchExcalidrawAction: SearchExcalidrawAction {
+        get { self[ExcalidrawSearchEnvrionmentKey.self] }
+        set { self[ExcalidrawSearchEnvrionmentKey.self] = newValue }
+    }
+}
+
+struct SearchExcalidrawAction {
+    @Binding var isSearchPresented: Bool
+    
+    func callAsFunction() {
+        isSearchPresented.toggle()
+    }
+}
+
+
 struct SearchableModifier: ViewModifier {
     @State private var isSearchSheetPresented = false
 
@@ -35,6 +55,7 @@ struct SearchableModifier: ViewModifier {
                     .swiftyAlert()
                     .frame(width: 500, height: 400)
             }
+            .environment(\.searchExcalidrawAction, SearchExcalidrawAction(isSearchPresented: $isSearchSheetPresented))
     }
 }
 

@@ -10,8 +10,16 @@ import CoreData
 
 import ChocofordUI
 
+enum ExcalidrawFileSortField: String, Hashable {
+    case updatedAt
+    case name
+    case rank
+}
+
+
 struct SidebarView: View {
     @Environment(\.alertToast) private var alertToast
+    @Environment(\.searchExcalidrawAction) private var searchExcalidraw
     
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var fileState: FileState
@@ -38,32 +46,51 @@ struct SidebarView: View {
                     .ignoresSafeArea(edges: .bottom)
             }
             
-            ZStack {
+            VStack(spacing: 0) {
                 if let currentGroup = fileState.currentGroup {
                     FileListView(
                         currentGroupID: currentGroup.id,
-                        groupType: currentGroup.groupType
+                        groupType: currentGroup.groupType,
+                        sortField: fileState.sortField
                     )
                 } else if let currentLocalFolder = fileState.currentLocalFolder {
                     if #available(macOS 13.0, *) {
-                        LocalFilesListView(folder: currentLocalFolder)
+                        LocalFilesListView(
+                            folder: currentLocalFolder,
+                            sortField: fileState.sortField
+                        )
                     } else {
-                        LocalFilesListView(folder: currentLocalFolder)
-                            .id(currentLocalFolder)
+                        LocalFilesListView(
+                            folder: currentLocalFolder,
+                            sortField: fileState.sortField
+                        )
+                        .id(currentLocalFolder)
                     }
                 } else if fileState.isTemporaryGroupSelected {
-                    TemporaryFileListView()
+                    TemporaryFileListView(sortField: fileState.sortField)
                 } else if fileState.isInCollaborationSpace {
-                    CollaborationFilesList()
+                    CollaborationFilesList(sortField: fileState.sortField)
                 } else {
-                    if #available(macOS 14.0, iOS 17.0, *) {
-                        Text(.localizable(.sidebarFilesPlaceholder))
-                            .foregroundStyle(.placeholder)
-                    } else {
-                        Text(.localizable(.sidebarFilesPlaceholder))
-                            .foregroundStyle(.secondary)
+                    ZStack {
+                        if #available(macOS 14.0, iOS 17.0, *) {
+                            Text(.localizable(.sidebarFilesPlaceholder))
+                                .foregroundStyle(.placeholder)
+                        } else {
+                            Text(.localizable(.sidebarFilesPlaceholder))
+                                .foregroundStyle(.secondary)
+                        }
                     }
+                    .frame(maxHeight: .infinity)
                 }
+                Divider()
+                if #available(macOS 14.0, *) {
+                    contentToolbar()
+                        .buttonStyle(.accessoryBar)
+                } else {
+                    contentToolbar()
+                        .buttonStyle(.text(size: .small, square: true))
+                }
+
             }
             .frame(minWidth:  200)
         }
@@ -89,6 +116,49 @@ struct SidebarView: View {
         List(selection: $fileState.currentFile) {
             
         }
+    }
+    
+    
+    @MainActor @ViewBuilder
+    private func contentToolbar() -> some View {
+        HStack {
+            Button {
+                searchExcalidraw()
+            } label: {
+                Label("Search", systemSymbol: .magnifyingglass)
+                    .labelStyle(.iconOnly)
+            }
+            Spacer()
+            Menu {
+                Picker(
+                    selection: Binding {
+                        fileState.sortField
+                    } set: { val in
+                        withAnimation {
+                            fileState.sortField = val
+                        }
+                    }
+                ) {
+                    Label("Name", systemSymbol: .textformat).tag(ExcalidrawFileSortField.name)
+                    Label("Updated At", systemSymbol: .clock).tag(ExcalidrawFileSortField.updatedAt)
+                } label: { }
+                    .pickerStyle(.inline)
+            } label: {
+                if #available(macOS 13.0, *) {
+                    Label("Order", systemSymbol: .arrowUpAndDownTextHorizontal)
+                        .labelStyle(.iconOnly)
+                } else {
+                    Label("Order", systemSymbol: .arrowUpAndDown)
+                        .labelStyle(.iconOnly)
+                }
+            }
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .disabled(fileState.isTemporaryGroupSelected || !fileState.hasAnyActiveGroup)
+        }
+        .padding(4)
+        .controlSize(.regular)
+        .background(.ultraThickMaterial)
     }
 }
 

@@ -52,7 +52,7 @@ struct CollaborationFileRow: View {
     
     
     var body: some View {
-        Button {
+        FileRowButton(isSelected: isSelected) {
             if collaborationState.userCollaborationInfo.username.isEmpty {
                 alert(title: .localizable(.collaborationAlertNameRequiredTitle)) {
                     Text(.localizable(.collaborationAlertNameRequiredMessage))
@@ -98,7 +98,8 @@ struct CollaborationFileRow: View {
                 .font(.footnote)
             }
         }
-        .buttonStyle(.listCell(selected: isSelected))
+        .modifier(FileRowDragDropModifier(file: file, sortField: fileState.sortField))
+        .modifier(ArchiveRoomModifier(collaborationFile: $fileToBeArchived))
         .contextMenu {
             contextMenu()
                 .labelStyle(.titleAndIcon)
@@ -114,7 +115,6 @@ struct CollaborationFileRow: View {
                 Text(.localizable(.generalButtonDelete))
             }
         }
-        .modifier(ArchiveRoomModifier(collaborationFile: $fileToBeArchived))
     }
     
     @MainActor @ViewBuilder
