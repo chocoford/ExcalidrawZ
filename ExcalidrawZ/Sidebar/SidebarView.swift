@@ -85,7 +85,9 @@ struct SidebarView: View {
                 Divider()
                 if #available(macOS 14.0, *) {
                     contentToolbar()
+#if canImport(AppKit)
                         .buttonStyle(.accessoryBar)
+#endif
                 } else {
                     contentToolbar()
                         .buttonStyle(.text(size: .small, square: true))

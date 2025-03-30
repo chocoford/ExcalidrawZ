@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import CoreData
+import UniformTypeIdentifiers
 
 protocol DragMovableFile: NSManagedObject {
     var rank: Int64 { get set }
@@ -39,7 +41,12 @@ extension Notification.Name {
     static let didDropFileRow = Notification.Name("DidDropFileRow")
 }
 
+extension UTType {
+    static let excalidrawFileRow = UTType("com.chocoford.excalidrawFileRow")!
+}
+
 struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
+    @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var fileState: FileState
     
     var file: DraggableFile
@@ -96,10 +103,9 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
                     ]
             }
         }()
-        var predicate: NSPredicate? = nil
         self._files = FetchRequest<CollaborationFile>(
             sortDescriptors: sortDescriptors,
-            predicate: predicate,
+            predicate: nil,
             animation: .smooth
         )
     }
@@ -108,24 +114,47 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(macOS 13.0, iOS 16.0, *), false {
+            // No
             content
                 .draggable(FileRowTransferable(objectID: file.objectID))
                 .dropDestination(for: FileRowTransferable.self) { items, location in
-                    true
+                    for item in items {
+                        guard let objectID = item.objectID else { continue }
+                        sortFiles(
+                            draggedItemID: objectID,
+                            droppedItemID: file.objectID,
+                            files: files.map{$0},
+                            container: PersistenceController.shared.container
+                        ) {
+                            if fileState.sortField != .rank {
+                                withAnimation {
+                                    fileState.sortField = .rank
+                                }
+                            }
+                        }
+                    }
+                    return true
+                } isTargeted: { isEntered in
+                    if isEntered {
+                        
+                    }
                 }
         } else {
             content
                 .opacity(isDragging ? 0.3 : 1)
                 .contentShape(Rectangle())
                 .onDrag {
-                    print("onDrag", file.objectID)
-                    withAnimation {
-                        isDragging = true
-                    }
-                    return NSItemProvider(object: file.objectID.uriRepresentation() as NSURL)
+                    let url = file.objectID.uriRepresentation()
+                    print("onDrag", url)
+                    withAnimation { isDragging = true }
+//                    return NSItemProvider(object: file.objectID.uriRepresentation() as NSURL)
+                    return NSItemProvider(
+                        item: url.dataRepresentation as NSData,
+                        typeIdentifier: UTType.excalidrawFileRow.identifier
+                    )
                 }
                 .onDrop(
-                    of: [.url],
+                    of: [.excalidrawFileRow],
                     delegate: FileRowDropDelegate(
                         item: file,
                         allFiles: files,
@@ -133,20 +162,14 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
                     )
                 )
                 .onReceive(NotificationCenter.default.publisher(for: .didDropFileRow)) { output in
-                    // print("didDropFileRow", output.object as? NSManagedObjectID, file.objectID)
-//                    if let objectID = output.object as? NSManagedObjectID,
-//                       objectID == file.objectID {
-//
-//                        withAnimation {
-//                            self.isDragging = false
-//                        }
-//                    }
                     withAnimation {
                         self.isDragging = false
                     }
                 }
         }
     }
+    
+    
 }
 
 fileprivate struct NotFoundError: Error {}
@@ -161,6 +184,7 @@ struct FileRowDropDelegate<File: DragMovableFile>: DropDelegate {
     @State private var draggedFileID: NSManagedObjectID?
     
     func dropEntered(info: DropInfo) {
+        print("dropEntered", item.name ?? "")
         performRank(info: info)
     }
 
@@ -183,57 +207,32 @@ struct FileRowDropDelegate<File: DragMovableFile>: DropDelegate {
     private func performRank(info: DropInfo) {
         let itemID = item.objectID
         let container = PersistenceController.shared.container
-        for provider in info.itemProviders(for: [.url]) {
-            _ = provider.loadObject(ofClass: URL.self) { url, error in
-                if let url,
-                   !url.isFileURL,
-                   let objectID = container.persistentStoreCoordinator.managedObjectID(
-                    forURIRepresentation: url
-                   ),
-                   itemID != objectID {
-                    Task { [context, allFiles, item] in
-                        await context.perform {
-                            let file = context.object(with: objectID) as? File
-                            if let file {
-                                // update rank
-                                let fromIndex = allFiles.firstIndex(of: file)!
-                                let toIndex = allFiles.firstIndex(of: item)!
-                                withAnimation {
-                                    /// If  move up to a certain cell, it is always considered that you are moving to the cell above it.
-                                    /// And vice versa.
-                                    if fromIndex < toIndex { // Move down ⬇️
-                                        for (i, file) in allFiles.enumerated() {
-                                            if i < fromIndex {
-                                                file.rank = Int64(i)
-                                            } else if i <= toIndex {
-                                                file.rank = Int64(i-1)
-                                            } else {
-                                                file.rank = Int64(i)
-                                            }
-                                        }
-                                        file.rank = Int64(toIndex)
-
-                                    } else if toIndex < fromIndex  { // Move up ⬆️
-                                        for (i, file) in allFiles.enumerated() {
-                                            if i < toIndex {
-                                                file.rank = Int64(i)
-                                            } else if i <= fromIndex {
-                                                file.rank = Int64(i+1)
-                                            } else {
-                                                file.rank = Int64(i)
-                                            }
-                                        }
-                                        file.rank = Int64(toIndex)
-                                    }
-                                }
-                            }
-                        }
-                        await MainActor.run {
-                            if sortField != .rank {
-                                withAnimation {
-                                    sortField = .rank
-                                }
-                            }
+        for provider in info.itemProviders(for: [UTType.excalidrawFileRow]) {
+            provider.loadItem(
+                forTypeIdentifier: UTType.excalidrawFileRow.identifier
+            ) { item, error in
+                if let error {
+                    print(error)
+                    return
+                }
+                guard let data = item as? Data,
+                      let url = URL(dataRepresentation: data, relativeTo: nil) else {
+                    return
+                }
+                print("Load Item: \(url)")
+                guard url.scheme == "x-coredata",
+                      let draggedObjectID = container.persistentStoreCoordinator.managedObjectID(forURIRepresentation: url) else {
+                    return
+                }
+                sortFiles(
+                    draggedItemID: draggedObjectID,
+                    droppedItemID: itemID,
+                    files: allFiles.map{$0},
+                    container: container
+                ) {
+                    if sortField != .rank {
+                        withAnimation {
+                            sortField = .rank
                         }
                     }
                 }
@@ -286,6 +285,61 @@ struct FileListDropDelegate: DropDelegate {
     }
 }
 
+fileprivate func sortFiles<File: DragMovableFile>(
+    draggedItemID draggedObjectID: NSManagedObjectID,
+    droppedItemID itemID: NSManagedObjectID,
+    files allFiles: [File],
+    container: NSPersistentContainer,
+    completionHandler: (() -> Void)? = nil
+) {
+    let context = container.viewContext
+    guard itemID != draggedObjectID else { return }
+    Task { [context, allFiles] in
+        await context.perform {
+            let targetFile = context.object(with: itemID) as? File
+            let draggedFile = context.object(with: draggedObjectID) as? File
+            if let draggedFile, let targetFile {
+                // update rank
+                let fromIndex = allFiles.firstIndex(of: draggedFile)!
+                let toIndex = allFiles.firstIndex(of: targetFile)!
+                withAnimation {
+                    /// If  move up to a certain cell, it is always considered that you are moving to the cell above it.
+                    /// And vice versa.
+                    if fromIndex < toIndex { // Move down ⬇️
+                        for (i, file) in allFiles.enumerated() {
+                            if i < fromIndex {
+                                file.rank = Int64(i)
+                            } else if i <= toIndex {
+                                file.rank = Int64(i-1)
+                            } else {
+                                file.rank = Int64(i)
+                            }
+                        }
+                        draggedFile.rank = Int64(toIndex)
+                        
+                    } else if toIndex < fromIndex  { // Move up ⬆️
+                        for (i, file) in allFiles.enumerated() {
+                            if i < toIndex {
+                                file.rank = Int64(i)
+                            } else if i <= fromIndex {
+                                file.rank = Int64(i+1)
+                            } else {
+                                file.rank = Int64(i)
+                            }
+                        }
+                        draggedFile.rank = Int64(toIndex)
+                    }
+                    
+                    print("perfrom rank. \(fromIndex) -> \(toIndex)")
+                }
+            }
+        }
+        
+        await MainActor.run {
+            completionHandler?()
+        }
+    }
+}
 
 extension View {
     @MainActor @ViewBuilder

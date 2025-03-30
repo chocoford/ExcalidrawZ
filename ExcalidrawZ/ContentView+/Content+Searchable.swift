@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 import ChocofordUI
 import SFSafeSymbols
@@ -53,7 +54,9 @@ struct SearchableModifier: ViewModifier {
             .sheet(isPresented: $isSearchSheetPresented) {
                 SerachContent()
                     .swiftyAlert()
+#if os(macOS)
                     .frame(width: 500, height: 400)
+#endif
             }
             .environment(\.searchExcalidrawAction, SearchExcalidrawAction(isSearchPresented: $isSearchSheetPresented))
     }
@@ -77,6 +80,11 @@ fileprivate struct SerachContent: View {
     @State private var isSearching = false
     
     @State private var selectionIndex: Int?
+#if os(iOS)
+    let tapSelectCount = 1
+#elseif os(macOS)
+    let tapSelectCount = 2
+#endif
     
     var body: some View {
         VStack(spacing: 0) {
@@ -119,6 +127,7 @@ fileprivate struct SerachContent: View {
             guard !isSearching else { return }
             fetchFiles()
         }
+#if canImport(AppKit)
         .onAppear {
             NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { nsevent in
                 let maxIndex = searchFiles.count + searchCollaborationFiles.count + searchLocalFiles.count - 1
@@ -134,6 +143,7 @@ fileprivate struct SerachContent: View {
                 return nsevent
             }
         }
+#endif
         .onDisappear {
             selectionIndex = nil
             isSearching = false
@@ -162,7 +172,7 @@ fileprivate struct SerachContent: View {
                         )
 #endif
                     }
-                    .onTapGesture(count: 2) {
+                    .onTapGesture(count: tapSelectCount) {
                         dismiss()
                         if let limit = store.collaborationRoomLimits,
                                   fileState.collaboratingFiles.count >= limit,
@@ -172,7 +182,6 @@ fileprivate struct SerachContent: View {
                             fileState.isInCollaborationSpace = true
                             fileState.currentCollaborationFile = .room(room)
                         }
-                        
                     }
                 }
             }
@@ -201,7 +210,7 @@ fileprivate struct SerachContent: View {
                         )
 #endif
                     }
-                    .onTapGesture(count: 2) {
+                    .onTapGesture(count: tapSelectCount) {
                         if let group = file.group {
                             fileState.currentGroup = group
                             fileState.currentFile = file
@@ -236,7 +245,7 @@ fileprivate struct SerachContent: View {
                         )
 #endif
                     }
-                    .onTapGesture(count: 2) {
+                    .onTapGesture(count: tapSelectCount) {
                         Task {
                             do {
                                 try await viewContext.perform {
@@ -434,7 +443,6 @@ fileprivate struct SearchItemRow: View {
     @State private var isHovered = false
     
     var body: some View {
-        
         HStack(spacing: 10) {
             if #available(macOS 15.0, iOS 18.0, *) {
                 icon ?? Image(systemSymbol: .document)
@@ -453,7 +461,6 @@ fileprivate struct SearchItemRow: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .contentShape(Rectangle())
-        .zIndex(isSelected ? 1 : 0)
         .background {
             if isHovered {
                 RoundedRectangle(cornerRadius: 8)
