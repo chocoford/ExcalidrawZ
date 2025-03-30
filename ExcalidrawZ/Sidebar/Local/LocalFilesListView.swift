@@ -121,6 +121,12 @@ struct LocalFilesListView: View {
                 withAnimation {
                     self.files = files
                     self.sortFiles(field: self.sortField)
+                    
+                    if let currentFile = fileState.currentLocalFile {
+                        if !self.files.contains(currentFile) {
+                            fileState.currentLocalFile = self.files.first
+                        }
+                    }
                 }
                 self.updateFlags = files.map {
                     [$0 : Date()]
