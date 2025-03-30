@@ -30,7 +30,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             } catch {
                 print(error)
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 if NSApp.windows.filter({$0.canBecomeMain}).isEmpty {
                     NSApp.terminate(nil)
                 }
