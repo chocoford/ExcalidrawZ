@@ -124,6 +124,7 @@ struct ContentView: View {
                 }
             }
         }
+        .withContainerSize()
         // Check if it is first launch by checking the files count.
         .task {
             do {
@@ -276,7 +277,7 @@ struct ContentViewModern: View {
                     .toolbar(content: sidebarToolbar)
             }
         } detail: {
-            ExcalidrawContainerView()
+             ExcalidrawContainerView()
                 .modifier(ExcalidrawContainerToolbarContentModifier())
                 .opacity(fileState.isInCollaborationSpace ? 0 : 1)
                 .overlay {
