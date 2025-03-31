@@ -147,19 +147,29 @@ struct ExcalidrawContainerView: View {
             }
         }
         .ignoresSafeArea(.container, edges: .bottom)
-        .overlay(alignment: .top) {
-            if isImporting, loadingState == .loaded {
-                HStack {
-                    ProgressView().controlSize(.small)
-                    Text("Syncing data...")
+        .overlay {
+            if isImporting, loadingState == .loaded, fileState.currentGroup != nil {
+                ZStack {
+                    Color.clear
+                    
+                    VStack(spacing: 10) {
+                        HStack {
+                            ProgressView()
+                            Text("Syncing data...")
+                        }
+                        .font(.largeTitle)
+                        .padding()
+                        
+                        Divider()
+                        
+                        Text("ExcalidrawZ is currently syncing data with iCloud. Please wait a moment.")
+                        Text("If you don’t need iCloud to sync your files, you can turn this off in the settings.")
+                    }
+                    .padding(80)
+                    .frame(maxWidth: 800)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background {
-                    Capsule().fill(.regularMaterial)
-                }
-                .padding()
-                .transition(.move(edge: .top))
+                .transition(.fade)
+                .background(.regularMaterial)
             }
         }
         .animation(.easeOut, value: isImporting)
