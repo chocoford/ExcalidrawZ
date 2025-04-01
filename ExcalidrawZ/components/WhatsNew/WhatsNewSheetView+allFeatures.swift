@@ -11,14 +11,26 @@ extension WhatsNewView {
     @MainActor @ViewBuilder
     func featuresContent() -> some View {
         WhatsNewFeatureRow(
-            title: "Live Collaboration",
-            description: "",
+            title: .localizable(.whatsNewLiveCollaborationTitle),
+            description: .localizable(.whatsNewLiveCollaborationDescription),
             icon: Image(systemSymbol: .person2CropSquareStack)
         )
         
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewSearchableAndSpotlightTitle),
+            description: .localizable(.whatsNewSearchableAndSpotlightDescription),
+            icon: Image(systemSymbol: .magnifyingglass)
+        )
+
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewCustomFileSortingTitle),
+            description: .localizable(.whatsNewCustomFileSortingDescription),
+            icon: Image(systemSymbol: {
+                if #available(macOS 13.0, *) { .arrowUpAndDownTextHorizontal } else { .arrowUpAndDownCircle }
+            }())
+        )
         
 #if os(iOS)
-        
         if UIDevice().userInterfaceIdiom == .pad {
             
         } else if UIDevice().userInterfaceIdiom == .phone {
