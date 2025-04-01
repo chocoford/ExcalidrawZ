@@ -211,6 +211,7 @@ struct ExcalidrawToolbar: View {
                         Picker(selection: $toolState.activatedTool) {
                             ForEach(secondaryPickerItems, id: \.self) { tool in
                                 densePickerItems(tool: tool)
+                                    .tag(tool)
                             }
                         } label: { }
                             .pickerStyle(.inline)
@@ -226,6 +227,9 @@ struct ExcalidrawToolbar: View {
                             size: size,
                             withFooter: false
                         )
+                        .foregroundStyle(
+                            toolState.activatedTool != nil && secondaryPickerItems.contains(toolState.activatedTool!) ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(HierarchicalShapeStyle.primary)
+                        )
                     } primaryAction: {
                         toolState.activatedTool = if let lastActivatedSecondaryTool,
                                                      secondaryPickerItems.contains(lastActivatedSecondaryTool) {
@@ -238,28 +242,30 @@ struct ExcalidrawToolbar: View {
                     .buttonStyle(.borderless)
                     .padding(size / 3)
                     .background {
+                        let isSelected = toolState.activatedTool != nil && secondaryPickerItems.contains(toolState.activatedTool!)
                         if #available(macOS 14.0, iOS 17.0, *) {
                             RoundedRectangle(cornerRadius: size / 1.6)
-                                .fill(.regularMaterial)
+                                .fill(
+                                    isSelected ? AnyShapeStyle(Color.accentColor.secondary) : AnyShapeStyle(Material.regularMaterial)
+                                )
                                 .stroke(.separator, lineWidth: 0.5)
                         } else {
                             RoundedRectangle(cornerRadius: size / 1.6)
-                                .fill(.regularMaterial)
+                                .fill(
+                                    isSelected ? AnyShapeStyle(Color.accentColor.opacity(0.3)) : AnyShapeStyle(Material.regularMaterial)
+                                )
                             RoundedRectangle(cornerRadius: size / 1.6)
                                 .stroke(.secondary, lineWidth: 0.5)
                         }
-                        if toolState.activatedTool != nil && secondaryPickerItems.contains(toolState.activatedTool!) {
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(.background)
-                                .shadow(radius: 1, y: 2)
-                                .padding(.trailing, 36)
-                                .padding(.vertical, 6)
-                                .padding(.leading, 6)
-                        }
+//                        if  {
+//                            RoundedRectangle(cornerRadius: 6)
+//                                .fill(.background)
+//                                .shadow(radius: 1, y: 2)
+//                                .padding(.trailing, 32)
+//                                .padding(.vertical, 6)
+//                                .padding(.leading, 6)
+//                        }
                     }
-                    .foregroundStyle(
-                        toolState.activatedTool != nil && secondaryPickerItems.contains(toolState.activatedTool!) ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(HierarchicalShapeStyle.primary)
-                    )
                     .onChange(of: toolState.activatedTool) { newValue in
                         if let newValue, secondaryPickerItems.contains(newValue) {
                             lastActivatedSecondaryTool = newValue
@@ -698,6 +704,7 @@ struct ExcalidrawToolbar: View {
             Picker(selection: $toolState.activatedTool) {
                 ForEach(ExcalidrawTool.allCases, id: \.self) { tool in
                     densePickerItems(tool: tool)
+                        .tag(tool)
                 }
             } label: {
                 Text(.localizable(.toolbarActiveToolTitle))
@@ -711,33 +718,33 @@ struct ExcalidrawToolbar: View {
     private func densePickerItems(tool: ExcalidrawTool) -> some View {
         switch tool {
             case .cursor:
-                Text(.localizable(.toolbarSelection)).tag(ExcalidrawTool.cursor)
+                Text(.localizable(.toolbarSelection))
             case .rectangle:
-                Text(.localizable(.toolbarRectangle)).tag(ExcalidrawTool.rectangle)
+                Text(.localizable(.toolbarRectangle))
             case .diamond:
-                Text(.localizable(.toolbarDiamond)).tag(ExcalidrawTool.diamond)
+                Text(.localizable(.toolbarDiamond))
             case .ellipse:
-                Text(.localizable(.toolbarEllipse)).tag(ExcalidrawTool.ellipse)
+                Text(.localizable(.toolbarEllipse))
             case .arrow:
-                Text(.localizable(.toolbarArrow)).tag(ExcalidrawTool.arrow)
+                Text(.localizable(.toolbarArrow))
             case .line:
-                Text(.localizable(.toolbarLine)).tag(ExcalidrawTool.line)
+                Text(.localizable(.toolbarLine))
             case .freedraw:
-                Text(.localizable(.toolbarDraw)).tag(ExcalidrawTool.freedraw)
+                Text(.localizable(.toolbarDraw))
             case .text:
-                Text(.localizable(.toolbarText)).tag(ExcalidrawTool.text)
+                Text(.localizable(.toolbarText))
             case .image:
-                Text(.localizable(.toolbarInsertImage)).tag(ExcalidrawTool.image)
+                Text(.localizable(.toolbarInsertImage))
             case .eraser:
-                Text(.localizable(.toolbarEraser)).tag(ExcalidrawTool.eraser)
+                Text(.localizable(.toolbarEraser))
             case .laser:
-                Text(.localizable(.toolbarLaser)).tag(ExcalidrawTool.laser)
+                Text(.localizable(.toolbarLaser))
             case .frame:
-                Text(.localizable(.toolbarFrame)).tag(ExcalidrawTool.frame)
+                Text(.localizable(.toolbarFrame))
             case .webEmbed:
-                Text(.localizable(.toolbarWebEmbed)).tag(ExcalidrawTool.webEmbed)
+                Text(.localizable(.toolbarWebEmbed))
             case .magicFrame:
-                Text(.localizable(.toolbarMagicFrame)).tag(ExcalidrawTool.magicFrame)
+                Text(.localizable(.toolbarMagicFrame))
         }
     }
 
