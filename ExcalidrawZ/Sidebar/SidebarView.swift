@@ -150,7 +150,7 @@ struct SidebarView: View {
                     Label("Order", systemSymbol: .arrowUpAndDownTextHorizontal)
                         .labelStyle(.iconOnly)
                 } else {
-                    Label("Order", systemSymbol: .arrowUpAndDown)
+                    Label("Order", systemSymbol: .arrowUpAndDownCircle)
                         .labelStyle(.iconOnly)
                 }
             }
