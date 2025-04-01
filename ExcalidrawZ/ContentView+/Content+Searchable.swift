@@ -88,7 +88,7 @@ fileprivate struct SerachContent: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            TextField("", text: $searchText, prompt: Text("Search"))
+            TextField("", text: $searchText, prompt: Text(.localizable(.searchFieldPropmtText)))
                 .textFieldStyle(SearchTextFieldStyle())
                 .submitLabel(.go)
                 .onSubmit {
@@ -153,7 +153,7 @@ fileprivate struct SerachContent: View {
     @MainActor @ViewBuilder
     private func collaborationFilesSection() -> some View {
         if !searchCollaborationFiles.isEmpty {
-            searchResultSection("Collaboration Rooms") {
+            searchResultSection(.localizable(.searchResultsSectionCollaborationFilesTitle)) {
                 ForEach(Array(searchCollaborationFiles.enumerated()), id: \.element) { i, room in
                     SwiftUI.Group {
 #if canImport(AppKit)
@@ -191,7 +191,7 @@ fileprivate struct SerachContent: View {
     @MainActor @ViewBuilder
     private func filesSection() -> some View {
         if !searchFiles.isEmpty {
-            searchResultSection("Files") {
+            searchResultSection(.localizable(.searchResultsSectionFilesTitle)) {
                 ForEach(Array(searchFiles.enumerated()), id: \.element) { i, file in
                     SwiftUI.Group {
 #if canImport(AppKit)
@@ -226,7 +226,7 @@ fileprivate struct SerachContent: View {
     @MainActor @ViewBuilder
     private func localFilesSection() -> some View {
         if !searchLocalFiles.isEmpty {
-            searchResultSection("Local Files") {
+            searchResultSection(.localizable(.searchResultsSectionLocalFilesTitle)) {
                 ForEach(Array(searchLocalFiles.enumerated()), id: \.element) { i, file in
                     SwiftUI.Group {
 #if canImport(AppKit)
@@ -271,7 +271,7 @@ fileprivate struct SerachContent: View {
     
     @MainActor @ViewBuilder
     private func searchResultSection<Content: View>(
-        _ header: String,
+        _ header: LocalizedStringKey,
         @ViewBuilder content: () -> Content
     ) -> some View {
         Section {

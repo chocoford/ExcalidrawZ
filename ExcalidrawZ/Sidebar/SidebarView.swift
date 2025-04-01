@@ -127,7 +127,7 @@ struct SidebarView: View {
             Button {
                 searchExcalidraw()
             } label: {
-                Label("Search", systemSymbol: .magnifyingglass)
+                Label(.localizable(.searchButtonTitle), systemSymbol: .magnifyingglass)
                     .labelStyle(.iconOnly)
             }
             Spacer()
@@ -141,16 +141,19 @@ struct SidebarView: View {
                         }
                     }
                 ) {
-                    Label("Name", systemSymbol: .textformat).tag(ExcalidrawFileSortField.name)
-                    Label("Updated At", systemSymbol: .clock).tag(ExcalidrawFileSortField.updatedAt)
+                    SwiftUI.Group {
+                        Label(.localizable(.sortFileKeyName), systemSymbol: .textformat).tag(ExcalidrawFileSortField.name)
+                        Label(.localizable(.sortFileKeyUpdatedAt), systemSymbol: .clock).tag(ExcalidrawFileSortField.updatedAt)
+                    }
+                    .labelStyle(.titleAndIcon)
                 } label: { }
                     .pickerStyle(.inline)
             } label: {
                 if #available(macOS 13.0, *) {
-                    Label("Order", systemSymbol: .arrowUpAndDownTextHorizontal)
+                    Label(.localizable(.sortFileButtonLabelTitle), systemSymbol: .arrowUpAndDownTextHorizontal)
                         .labelStyle(.iconOnly)
                 } else {
-                    Label("Order", systemSymbol: .arrowUpAndDownCircle)
+                    Label(.localizable(.sortFileButtonLabelTitle), systemSymbol: .arrowUpAndDownCircle)
                         .labelStyle(.iconOnly)
                 }
             }

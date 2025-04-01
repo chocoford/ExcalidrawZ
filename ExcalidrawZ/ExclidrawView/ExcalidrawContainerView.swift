@@ -155,15 +155,15 @@ struct ExcalidrawContainerView: View {
                     VStack(spacing: 10) {
                         HStack {
                             ProgressView()
-                            Text("Syncing data...")
+                            Text(.localizable(.iCloudSyncingDataTitle))
                         }
                         .font(.largeTitle)
                         .padding()
                         
                         Divider()
                         
-                        Text("ExcalidrawZ is currently syncing data with iCloud. Please wait a moment.")
-                        Text("If you don’t need iCloud to sync your files, you can turn this off in the settings.")
+                        Text(.localizable(.iCloudSyncingDataDescription))
+                        Text(.localizable(.iCloudSyncingDataDescription2))
                     }
                     .padding(80)
                     .frame(maxWidth: 800)
