@@ -254,6 +254,20 @@
 			);
 			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
 		};
+		39B2EBF52D9AFD9900B6CB47 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Store_NonAppStore.swift,
+			);
+			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ (AppStore) */;
+		};
+		39B2EC032D9AFFDB00B6CB47 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Store_NonAppStore.swift,
+			);
+			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
+		};
 		39B69A0A2D831503003369E8 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -291,7 +305,7 @@
 		396604782D096D9200870AC9 /* ExcalidrawZUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ExcalidrawZUITests; sourceTree = "<group>"; };
 		3987A5092CB54B200054D7D5 /* QuickLookPreviewExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3987A51A2CB54B200054D7D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = QuickLookPreviewExtension; sourceTree = "<group>"; };
 		39A28CF92D92D8EA00B079B1 /* ContentView+ */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "ContentView+"; sourceTree = "<group>"; };
-		39B69BC52D8BD74C003369E8 /* Subscription */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Subscription; sourceTree = "<group>"; };
+		39B69BC52D8BD74C003369E8 /* Subscription */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (39B2EBF52D9AFD9900B6CB47 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39B2EC032D9AFFDB00B6CB47 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Subscription; sourceTree = "<group>"; };
 		39ED18482D3FCECB00E437A0 /* Videos */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Videos; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
