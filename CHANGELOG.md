@@ -1,3 +1,21 @@
+## 1.4.1
+
+#### Features
+
+- Live Collaboration
+- Customize Files sort
+- Search & Spotlight support
+
+#### Optimizations
+
+- iCloud syncing mask
+- Adaptive toolbar
+
+#### Bugs fixed
+
+- nullfy webview when localfile is deleted outside.
+- Errors when backup local files.
+
 ## 1.3.1
 
 - Fix issues occured in iOS.
