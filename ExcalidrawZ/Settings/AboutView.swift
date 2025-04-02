@@ -14,11 +14,11 @@ struct AboutView: View {
         if #available(macOS 13.0, *) {
             Form {
                 content()
-//#if APP_STORE
+#if APP_STORE
                 AboutChocofordView(isAppStore: true)
-//#else
-//                AboutChocofordView(isAppStore: false)
-//#endif
+#else
+                AboutChocofordView(isAppStore: false)
+#endif
             }
             .formStyle(.grouped)
         } else {

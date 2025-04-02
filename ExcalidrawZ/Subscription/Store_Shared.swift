@@ -6,6 +6,29 @@
 //
 
 import Foundation
+#if APP_STORE
+import StoreKit
+#endif
+
+//struct ProductInfo: Hashable, Sendable {
+//#if APP_STORE
+//    var product: Product
+//#endif
+//    var displayPrice: String
+//    var subscriptionPeriod: String
+//    
+//#if APP_STORE
+//    init(product: Product) {
+//        self.product = product
+//        self.displayPrice = product.displayPrice
+//        self.subscriptionPeriod = product.subscriptionPeriod.formatted(product.subscriptionPeriodFormatStyle)
+//    }
+//#endif
+//    init(displayPrice: String, subscriptionPeriod: String) {
+//        self.displayPrice = displayPrice
+//        self.subscriptionPeriod = subscriptionPeriod
+//    }
+//}
 
 struct SubscriptionItem: Hashable, Identifiable, Comparable {
     static let free = SubscriptionItem(
@@ -19,9 +42,10 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
             String(localizable: .paywallPlanGeneralFeaturesPDFExport),
             String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
             String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("1")),
-        ]
+        ],
+        fallbackDisplayPrice: "Free",
+        fallbackDisplayPeriod: "Forever"
     )
-    
     static let starter = SubscriptionItem(
         id: "plan.starter",
         title: String(localizable: .paywallPlanStarterTitle),
@@ -33,9 +57,10 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
             String(localizable: .paywallPlanGeneralFeaturesPDFExport),
             String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
             String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("3")),
-        ]
+        ],
+        fallbackDisplayPrice: "$0.99",
+        fallbackDisplayPeriod: "a month"
     )
-    
     static let pro = SubscriptionItem(
         id: "plan.pro",
         title: String(localizable: .paywallPlanProTitle),
@@ -47,12 +72,21 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
             String(localizable: .paywallPlanGeneralFeaturesPDFExport),
             String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
             String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("Unlimited")),
-        ]
+        ],
+        fallbackDisplayPrice: "$2.99",
+        fallbackDisplayPeriod: "Forever"
     )
+    
     var id: String
     var title: String
     var description: String
     var features: [String]
+    
+    var fallbackDisplayPrice: String
+    var fallbackDisplayPeriod: String
+    
+//    // Product Info
+//    var productInfo: ProductInfo?
     
     static func < (lhs: SubscriptionItem, rhs: SubscriptionItem) -> Bool {
         if lhs == rhs { return false }

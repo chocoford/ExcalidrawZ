@@ -53,8 +53,6 @@ struct GroupListView: View {
     @State private var isCreateGroupConfirmationDialogPresented = false
 #endif
     
-    @State private var isFirstAppear = true
-    
     var body: some View {
         content
             .sheet(isPresented: $isCreateGroupDialogPresented) {
@@ -92,12 +90,6 @@ struct GroupListView: View {
                 }
             }
             .onAppear {
-                defer { isFirstAppear = false }
-                if !fileState.hasAnyActiveGroup || isFirstAppear {
-                    Task {
-                        try? await fileState.setToDefaultGroup()
-                    }
-                }
                 initialNewGroupName = getNextGroupName()
             }
     }
@@ -172,30 +164,13 @@ struct GroupListView: View {
 
             HStack {
 #if os(macOS)
-                Menu {
-                    SwiftUI.Group {
-                        Button {
-                            isCreateGroupDialogPresented.toggle()
-                            createGroupType = .group
-                        } label: {
-                            Text(.localizable(.sidebarGroupListCreateTitle))
-                        }
-                        
-                        Button {
-                            isCreateLocalFolderDialogPresented.toggle()
-                        } label: {
-                            Text(.localizable(.sidebarGroupListButtonAddObservation))
-                        }
-                    }
-                    .labelStyle(.titleAndIcon)
-                } label: {
-                    Label(
-                        .localizable(.sidebarGroupListNewFolder),
-                        systemSymbol: .plusCircle
-                    )
+                if #available(macOS 13.0, *) {
+                    createGroupMenuButton()
+                        .buttonStyle(.borderless)
+                } else {
+                    createGroupMenuButton()
+                        .menuStyle(.borderlessButton)
                 }
-                .menuIndicator(.hidden)
-                .buttonStyle(.borderless)
 #elseif os(iOS)
                 Button {
                     isCreateGroupConfirmationDialogPresented.toggle()
@@ -255,6 +230,33 @@ struct GroupListView: View {
             }
             initialNewGroupName = getNextGroupName()
         }
+    }
+    
+    @MainActor @ViewBuilder
+    private func createGroupMenuButton() -> some View {
+        Menu {
+            SwiftUI.Group {
+                Button {
+                    isCreateGroupDialogPresented.toggle()
+                    createGroupType = .group
+                } label: {
+                    Text(.localizable(.sidebarGroupListCreateTitle))
+                }
+                
+                Button {
+                    isCreateLocalFolderDialogPresented.toggle()
+                } label: {
+                    Text(.localizable(.sidebarGroupListButtonAddObservation))
+                }
+            }
+            .labelStyle(.titleAndIcon)
+        } label: {
+            Label(
+                .localizable(.sidebarGroupListNewFolder),
+                systemSymbol: .plusCircle
+            )
+        }
+        .menuIndicator(.hidden)
     }
     
     @State private var initialNewGroupName: String = ""

@@ -29,23 +29,6 @@ struct ExcalidrawToolbar: View {
     
     @State private var isMathInputSheetPresented = false
 
-    var minWidth: CGFloat {
-        if #available(macOS 13.0, *) {
-            if layoutState.isInspectorPresented,
-               layoutState.isSidebarPresented {
-                return 1760
-            } else if layoutState.isSidebarPresented {
-                return 1520
-            } else if layoutState.isInspectorPresented {
-                return 1620
-            } else {
-                return 1380
-            }
-        } else {
-            return 1380
-        }
-    }
-    @State private var isSegementedPickerCompact: Bool = false
     
     var body: some View {
         if fileState.currentFile != nil ||
@@ -59,34 +42,7 @@ struct ExcalidrawToolbar: View {
     
     @MainActor @ViewBuilder
     private func toolbar() -> some View {
-        let _ = Self._printChanges()
         toolbarContent()
-            .animation(nil, value: layoutState.isExcalidrawToolbarDense)
-            .bindWindow($window)
-            .onChange(of: window) { newValue in
-                guard let newValue else { return }
-                isSegementedPickerCompact = newValue.frame.width < 1024
-                layoutState.isExcalidrawToolbarDense = newValue.frame.width < minWidth
-                
-                // Window Resize Listener
-                windowFrameCancellable?.cancel()
-                windowFrameCancellable = newValue.publisher(for: \.frame).sink { frame in
-                    let shouldToolbarDense = frame.width < self.minWidth
-                    if layoutState.isExcalidrawToolbarDense != shouldToolbarDense {
-                        layoutState.isExcalidrawToolbarDense = shouldToolbarDense
-                    }
-                    let shouldPickerCompact = frame.width < 1024
-                    if isSegementedPickerCompact != shouldPickerCompact {
-                        isSegementedPickerCompact = shouldPickerCompact
-                    }
-                }
-            }
-            .onChange(of: layoutState.isSidebarPresented) { _ in
-                layoutState.isExcalidrawToolbarDense = (window?.frame.width ?? .zero) < minWidth
-            }
-            .onChange(of: layoutState.isInspectorPresented) { _ in
-                layoutState.isExcalidrawToolbarDense = (window?.frame.width ?? .zero) < minWidth
-            }
             .onChange(of: toolState.activatedTool, debounce: 0.05) { newValue in
                 if newValue == nil {
                     toolState.activatedTool = .cursor
@@ -232,11 +188,11 @@ struct ExcalidrawToolbar: View {
                             toolState.activatedTool != nil && secondaryPickerItems.contains(toolState.activatedTool!) ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(HierarchicalShapeStyle.primary)
                         )
                     } primaryAction: {
-                        toolState.activatedTool = if let lastActivatedSecondaryTool,
-                                                     secondaryPickerItems.contains(lastActivatedSecondaryTool) {
-                            lastActivatedSecondaryTool
+                         if let lastActivatedSecondaryTool,
+                            secondaryPickerItems.contains(lastActivatedSecondaryTool) {
+                             toolState.activatedTool = lastActivatedSecondaryTool
                         } else {
-                            secondaryPickerItems.first
+                            toolState.activatedTool = secondaryPickerItems.first
                         }
                     }
                     .menuIndicator(.visible)

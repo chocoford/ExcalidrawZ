@@ -1131,6 +1131,232 @@
         }
       }
     },
+    "archiveDoneWithErrorAlertSubtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive done. But with errors."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم الأرشفة. ولكن مع وجود أخطاء."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archiv abgeschlossen. Aber mit Fehlern."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivo completo. Pero con errores."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivage terminé. Mais avec des erreurs."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आर्काइव पूरा हुआ। लेकिन कुछ त्रुटियों के साथ।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archiviazione completata. Ma con errori."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アーカイブが完了しましたが、エラーが発生しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아카이브가 완료되었습니다. 그러나 오류가 발생했습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivering voltooid. Maar met fouten."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archiwum zakończone. Ale z błędami."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arquivo concluído. Mas com erros."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Архив создан. Но с ошибками."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การบันทึกเสร็จสิ้น แต่มีข้อผิดพลาด."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşiv tamamlandı. Ama hatalarla."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu trữ đã hoàn tất. Nhưng có lỗi."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "归档完成，但有错误。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "存檔完成，但發生錯誤。"
+          }
+        }
+      }
+    },
+    "archiveDoneWithErrorAlertTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please check the files in the archive."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرجى التحقق من الملفات في الأرشيف."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitte überprüfen Sie die Dateien im Archiv."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por favor, revise los archivos en el archivo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veuillez vérifier les fichiers dans l'archive."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कृपया आर्काइव में फ़ाइलों की जांच करें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si prega di controllare i file nell'archivio."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アーカイブ内のファイルを確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아카이브의 파일을 확인해 주세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controleer alstublieft de bestanden in het archief."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proszę sprawdzić pliki w archiwum."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por favor, verifique os arquivos no arquivo."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пожалуйста, проверьте файлы в архиве."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กรุณาตรวจสอบไฟล์ในที่เก็บข้อมูล."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lütfen arşivdeki dosyaları kontrol edin."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vui lòng kiểm tra các tệp trong lưu trữ."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请检查归档中的文件。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請檢查存檔中的文件。"
+          }
+        }
+      }
+    },
     "backupButtonDelete": {
       "extractionState": "manual",
       "localizations": {
@@ -8133,6 +8359,119 @@
           "stringUnit": {
             "state": "translated",
             "value": "完成"
+          }
+        }
+      }
+    },
+    "generalButtonDownload": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحميل"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herunterladen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Télécharger"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "डाउनलोड करें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scarica"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロード"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다운로드"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloaden"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pobierz"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baixar"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скачать"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ดาวน์โหลด"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İndir"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải xuống"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下載"
           }
         }
       }
@@ -19433,6 +19772,345 @@
           "stringUnit": {
             "state": "translated",
             "value": "恢復購買完成"
+          }
+        }
+      }
+    },
+    "paywallSwitchToAppStoreDialogTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Currently, the only payment method supported is through the App Store."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حالياً، الطريقة الوحيدة المدعومة للدفع هي من خلال متجر التطبيقات."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Derzeit ist die einzige unterstützte Zahlungsmethode über den App Store."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualmente, el único método de pago soportado es a través de la App Store."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actuellement, le seul mode de paiement pris en charge est via l'App Store."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वर्तमान में, केवल ऐप स्टोर के माध्यम से भुगतान विधि समर्थित है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attualmente, l'unico metodo di pagamento supportato è tramite l'App Store."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在、サポートされている唯一の支払い方法はApp Storeを通じてです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 지원되는 유일한 결제 방법은 App Store를 통한 것입니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Momenteel is de enige ondersteunde betaalmethode via de App Store."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obecnie jedyną obsługiwaną metodą płatności jest przez App Store."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atualmente, o único método de pagamento suportado é através da App Store."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В данный момент единственным поддерживаемым способом оплаты является App Store."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ตอนนี้วิธีการชำระเงินที่รองรับเพียงวิธีเดียวคือผ่าน App Store."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şu anda desteklenen tek ödeme yöntemi App Store üzerinden yapılan ödemelerdir."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện tại, phương thức thanh toán duy nhất được hỗ trợ là qua App Store."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前，唯一支持的付款方式是通过 App Store。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前唯一支持的付款方式是通過 App Store。"
+          }
+        }
+      }
+    },
+    "paywallSwitchToAppStoreStep2Description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The App Store version of ExcalidrawZ not only doesn't have any feature limitations compared to the non-App Store version, but it also offers a better app experience, including automatic updates and a more secure payment process."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نسخة ExcalidrawZ من متجر التطبيقات لا تحتوي فقط على أي قيود في الميزات مقارنةً بالنسخة غير المتوفرة في المتجر، بل تقدم أيضًا تجربة تطبيق أفضل، بما في ذلك التحديثات التلقائية وعملية دفع أكثر أمانًا."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die App-Store-Version von ExcalidrawZ hat nicht nur keine Funktionsbeschränkungen im Vergleich zur Nicht-App-Store-Version, sondern bietet auch ein besseres App-Erlebnis, einschließlich automatischer Updates und eines sichereren Zahlungsprozesses."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La versión de ExcalidrawZ en la App Store no solo no tiene limitaciones de características en comparación con la versión que no está en la App Store, sino que también ofrece una mejor experiencia de aplicación, incluyendo actualizaciones automáticas y un proceso de pago más seguro."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La version App Store d'ExcalidrawZ n'a non seulement aucune limitation de fonctionnalités par rapport à la version non-App Store, mais elle offre également une meilleure expérience utilisateur, y compris des mises à jour automatiques et un processus de paiement plus sécurisé."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ का ऐप स्टोर संस्करण न केवल गैर-ऐप स्टोर संस्करण की तुलना में किसी भी फीचर की सीमाओं में नहीं है, बल्कि यह स्वचालित अपडेट और एक अधिक सुरक्षित भुगतान प्रक्रिया सहित बेहतर ऐप अनुभव भी प्रदान करता है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La versione di ExcalidrawZ per l'App Store non ha alcuna limitazione di funzionalità rispetto alla versione non App Store, ma offre anche un'esperienza dell'app migliore, inclusi aggiornamenti automatici e un processo di pagamento più sicuro."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZのApp Store版は、非App Store版と比べて機能制限がないだけでなく、自動更新やより安全な支払いプロセスを含む、より良いアプリ体験を提供します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ의 App Store 버전은 비-App Store 버전에 비해 기능 제한이 없을 뿐만 아니라, 자동 업데이트 및 더 안전한 결제 프로세스를 포함하여 더 나은 앱 경험을 제공합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De App Store-versie van ExcalidrawZ heeft niet alleen geen functiebeperkingen in vergelijking met de niet-App Store-versie, maar biedt ook een betere app-ervaring, inclusief automatische updates en een veiliger betalingsproces."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wersja ExcalidrawZ w App Store nie tylko nie ma żadnych ograniczeń funkcjonalnych w porównaniu do wersji bez App Store, ale także oferuje lepsze doświadczenie aplikacji, w tym automatyczne aktualizacje i bezpieczniejszy proces płatności."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A versão do ExcalidrawZ na App Store não só não tem limitações de recursos em comparação com a versão fora da App Store, mas também oferece uma melhor experiência de aplicativo, incluindo atualizações automáticas e um processo de pagamento mais seguro."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версия ExcalidrawZ для App Store не только не имеет ограничений по функционалу по сравнению с версией вне App Store, но и предлагает лучший опыт использования приложения, включая автоматические обновления и более безопасный процесс оплаты."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เวอร์ชัน App Store ของ ExcalidrawZ ไม่เพียงแต่ไม่มีข้อจำกัดด้านฟีเจอร์เมื่อเปรียบเทียบกับเวอร์ชันที่ไม่ใช่ App Store แต่ยังมอบประสบการณ์การใช้งานแอปที่ดีกว่า รวมถึงการอัปเดตอัตโนมัติและกระบวนการชำระเงินที่ปลอดภัยยิ่งขึ้น."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ'nin App Store versiyonu, App Store dışındaki versiyonla kıyaslandığında hiçbir özellik kısıtlamasına sahip değildir ve ayrıca otomatik güncellemeler ve daha güvenli bir ödeme süreci dahil olmak üzere daha iyi bir uygulama deneyimi sunar."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phiên bản ExcalidrawZ trên App Store không chỉ không có giới hạn tính năng so với phiên bản không phải App Store, mà còn cung cấp trải nghiệm ứng dụng tốt hơn, bao gồm cập nhật tự động và quy trình thanh toán an toàn hơn."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "与非 App Store 版本相比，ExcalidrawZ 的 App Store 版本不仅没有任何功能限制，还提供了更好的应用体验，包括自动更新和更安全的支付流程。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 的 App Store 版本不僅在功能上與非 App Store 版本沒有任何限制，還提供更好的應用體驗，包括自動更新和更安全的付款流程。"
+          }
+        }
+      }
+    },
+    "paywallSwitchToAppStoreStep2Title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download the App-Store version"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قم بتحميل نسخة متجر التطبيقات"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lade die App-Store-Version herunter"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar la versión de la App Store"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Téléchargez la version App Store"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ऐप स्टोर संस्करण डाउनलोड करें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scarica la versione per l'App Store"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store版をダウンロード"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store 버전 다운로드"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download de App Store-versie"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pobierz wersję z App Store"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baixar a versão da App Store"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скачать версию для App Store"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ดาวน์โหลดเวอร์ชัน App Store"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store versiyonunu indir"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải xuống phiên bản App Store"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载 App Store 版本"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下載 App Store 版本"
           }
         }
       }

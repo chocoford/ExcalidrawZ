@@ -18,11 +18,10 @@ struct Paywall: View {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.alert) private var alert
     
-    @State private var selection: SubscriptionItem = .free
     @EnvironmentObject private var store: Store
-    
+
+    @State private var selection: SubscriptionItem = .free
     @State private var selectedPlan: Product?
-    
     @State private var isPresented = false
     
     enum Route: Hashable {
@@ -65,9 +64,15 @@ struct Paywall: View {
                 .offset(x: route == .plans ? 0 : -100)
             
             if route == .donation {
-                SupportChocofordView(isAppStore: true)
+#if APP_STORE
+                let isAppStore = true
+#else
+                let isAppStore = false
+#endif
+                SupportChocofordView(isAppStore: isAppStore)
                     .contentPadding(40)
                     .bindingSupportHistoryPresentedValue($isDonationHistoryPresented)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.top, horizontalSizeClass == .compact ? 30 : 0)
                     .overlay(alignment: .topLeading) {
                         if !isDonationHistoryPresented {
@@ -147,13 +152,12 @@ struct Paywall: View {
                         .animation(.bouncy(duration: 0.3, extraBounce: 0.6), value: isPresented)
                     }
                 }
-            
             if horizontalSizeClass == .compact {
                 CompactPlansView(selection: $selectedPlan, plans: displayedPlans)
             } else {
                 RegularPlansView(selection: $selectedPlan, plans: displayedPlans)
             }
-            
+ 
             if horizontalSizeClass != .compact {
                 HStack {
                     Spacer()
@@ -162,16 +166,20 @@ struct Paywall: View {
                     
                     Spacer()
                 }
+#if APP_STORE
                 .overlay(alignment: .trailing) {
                     restorePurchasesButton()
                 }
+#endif
             } else {
                 VStack {
                     purchaseButton()
                     HStack {
                         privacyPolicyButton()
                         Spacer()
+#if APP_STORE
                         restorePurchasesButton()
+#endif
                     }
                     .font(.footnote)
                 }
@@ -234,6 +242,7 @@ struct Paywall: View {
         }
     }
     
+#if APP_STORE
     @MainActor @ViewBuilder
     private func purchaseButton() -> some View {
         AsyncButton {
@@ -280,14 +289,6 @@ struct Paywall: View {
         .buttonStyle(.borderless)
     }
     
-    @MainActor @ViewBuilder
-    private func privacyPolicyButton() -> some View {
-        Link(destination: URL(string: "https://excalidrawz.chocoford.com/privacy/")!) {
-            Text(.localizable(.generalButtonPrivacyPolicy))
-        }
-        .foregroundStyle(.secondary)
-    }
-    
     private func purchaseSelectedPlan() async throws {
         if let product = store.subscriptions.first(where: {$0.id == selectedPlan?.id}) {
             if let _ = try await store.purchase(product) {
@@ -295,207 +296,39 @@ struct Paywall: View {
             }
         }
     }
-}
-
-struct RegularPlansView: View {
-    @EnvironmentObject private var store: Store
+#else
+    @State private var isSwitchToAppStoreSheetPresented = false
     
-    @Binding var selection: Product?
-    var plans: [SubscriptionItem]
-    
-    var body: some View {
-        HStack(spacing: 20) {
-            ForEach(plans) { item in
-                PlanCard(
-                    isSelected: item == .free ? selection == nil : selection?.id == item.id,
-                    plan: item,
-                    product: store.subscriptions.first(where: {$0.id == item.id})
-                )
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    withAnimation(.bouncy(duration: 0.2)) {
-                        selection = store.subscriptions.first(where: {$0.id == item.id})
-                    }
-                }
-            }
+    @MainActor @ViewBuilder
+    private func purchaseButton() -> some View {
+        Button {
+            isSwitchToAppStoreSheetPresented.toggle()
+        } label: {
+            Text("Install App Store version and purchase")
         }
+        .controlSize({
+            if #available(macOS 14.0, iOS 17.0, *) {
+                .extraLarge
+            } else {
+                .large
+            }
+        }())
+        .buttonStyle(.borderedProminent)
+        .modifier(SwitchAppStoreVersionViewViewModifier(isPresented: $isSwitchToAppStoreSheetPresented))
+    }
+#endif
+
+    @MainActor @ViewBuilder
+    private func privacyPolicyButton() -> some View {
+        Link(destination: URL(string: "https://excalidrawz.chocoford.com/privacy/")!) {
+            Text(.localizable(.generalButtonPrivacyPolicy))
+        }
+        .foregroundStyle(.secondary)
     }
 }
 
-struct PlanCard: View {
-    var isSelected: Bool
-    
-    var plan: SubscriptionItem
-    var product: Product?
-    
-    var body: some View {
-        VStack(spacing: 14) {
-            VStack(spacing: 10) {
-                
-                Text(plan.title)
-                    .font(.title)
-                
-                Text(plan.description)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .frame(height: 70, alignment: .top)
-            }
-            
-            HStack(alignment: .bottom) {
-                if plan == .free {
-                    // Text(0.formatted(.currency(code: Locale.current.identifier)))
-                    Text({
-                        let currencyFormatter = NumberFormatter()
-                        currencyFormatter.numberStyle = .currency
-                        currencyFormatter.minimumFractionDigits = 2
-                        currencyFormatter.locale = product?.priceFormatStyle.locale ?? .current
-                        return currencyFormatter.string(from: 0.00) ?? ""
-                    }())
-                    .font(.title.bold())
-                    Text(.localizable(.paywallPlanPeriodForever))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text(product?.displayPrice ?? "")
-                        .font(.title.bold())
-                    if let product, let subscription = product.subscription {
-                        Text(subscription.subscriptionPeriod.formatted(product.subscriptionPeriodFormatStyle))
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Spacer()
-            }
-            .frame(height: 30)
-            
-            Divider()
-            
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(plan.features, id: \.self) { feature in
-                    HStack(alignment: .firstTextBaseline) {
-                        Image(systemSymbol: .checkmark)
-                            .symbolVariant(.circle)
-                            .foregroundStyle(.green)
-                        Text(try! AttributedString(markdown: feature))
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding()
-        .frame(width: 260, height: 380, alignment: .top)
-        .background {
-            let roundedRectangle = RoundedRectangle(cornerRadius: 12)
-            
-            ZStack {
-                roundedRectangle.fill(.ultraThinMaterial)
-                if isSelected {
-//                    if #available(macOS 14.0, iOS 17.0, *) {
-//                        roundedRectangle.fill(.accent.secondary)
-//                    } else {
-//                        roundedRectangle.fill(.accent.opacity(0.4))
-//                    }
-                    if #available(macOS 13.0, iOS 17.0, *) {
-                        roundedRectangle.stroke(.accent)
-                    } else {
-                        roundedRectangle.stroke(.accent)
-                    }
-                } else {
-                    
-                    if #available(macOS 13.0, iOS 17.0, *) {
-                        roundedRectangle.stroke(.separator)
-                    } else {
-                        roundedRectangle.stroke(.secondary)
-                    }
-                }
-            }
-            .shadow(color: .accent, radius: isSelected ? 4 : 0)
-            .animation(.easeIn(duration: 0.2), value: isSelected)
-        }
-        .scaleEffect(isSelected ? 1.03 : 1, anchor: .bottom)
-        // .animation(.bouncy(duration: 0.2), value: isSelected)
-    }
-}
-
-struct CompactPlansView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject private var store: Store
-    
-    @Binding var selection: Product?
-    var plans: [SubscriptionItem]
-    
-    var body: some View {
-        VStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 6) {
-                let plan: SubscriptionItem = store.plans.first(where: {$0.id == selection?.id}) ?? .free
-                ForEach(plan.features, id: \.self) { feature in
-                    HStack {
-                        Image(systemSymbol: .checkmark)
-                            .symbolVariant(.circle)
-                            .foregroundStyle(.green)
-                        Text(try! AttributedString(markdown: feature))
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            
-            HStack(spacing: 10) {
-                ForEach(plans) { plan in
-                    let product: Product? = store.subscriptions.first(where: {$0.id == plan.id})
-                    VStack {
-                        Text(plan.title)
-                        
-                        if plan == .free {
-                            // Text(0.formatted(.currency(code: Locale.current.identifier)))
-                            Text({
-                                let currencyFormatter = NumberFormatter()
-                                currencyFormatter.numberStyle = .currency
-                                currencyFormatter.minimumFractionDigits = 2
-                                currencyFormatter.locale = product?.priceFormatStyle.locale ?? .current
-                                return currencyFormatter.string(from: 0.00) ?? ""
-                            }())
-                            .font(.headline)
-                            
-                            Text(.localizable(.paywallPlanPeriodForever))
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Text(product?.displayPrice ?? "")
-                                .font(.headline)
-                            if let product, let subscription = product.subscription {
-                                Text(subscription.subscriptionPeriod.formatted(product.subscriptionPeriodFormatStyle))
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    .frame(width: 100, height: 100)
-                    .background {
-                        let roundedRectangle = RoundedRectangle(cornerRadius: 12)
-                        if colorScheme == .light {
-                            roundedRectangle
-                                .fill(.white)
-                        } else {
-                            roundedRectangle
-                                .fill(.ultraThickMaterial)
-                        }
-                        if selection == product {
-                            roundedRectangle
-                                .stroke(Color.accentColor)
-                        }
-                    }
-                    .onTapGesture {
-                        withAnimation(.bouncy(duration: 0.2)) {
-                            selection = product
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 #Preview {
     Paywall()
 }
+

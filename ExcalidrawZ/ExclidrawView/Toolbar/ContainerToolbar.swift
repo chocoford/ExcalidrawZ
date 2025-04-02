@@ -83,7 +83,6 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                 .padding(.vertical, 2)
             } else {
                 ExcalidrawToolbar()
-                    .offset(y: layoutState.isExcalidrawToolbarDense ? 0 : 6)
             }
         }
 #elseif os(iOS)

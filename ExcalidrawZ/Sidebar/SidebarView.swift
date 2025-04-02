@@ -131,39 +131,50 @@ struct SidebarView: View {
                     .labelStyle(.iconOnly)
             }
             Spacer()
-            Menu {
-                Picker(
-                    selection: Binding {
-                        fileState.sortField
-                    } set: { val in
-                        withAnimation {
-                            fileState.sortField = val
-                        }
-                    }
-                ) {
-                    SwiftUI.Group {
-                        Label(.localizable(.sortFileKeyName), systemSymbol: .textformat).tag(ExcalidrawFileSortField.name)
-                        Label(.localizable(.sortFileKeyUpdatedAt), systemSymbol: .clock).tag(ExcalidrawFileSortField.updatedAt)
-                    }
-                    .labelStyle(.titleAndIcon)
-                } label: { }
-                    .pickerStyle(.inline)
-            } label: {
-                if #available(macOS 13.0, *) {
-                    Label(.localizable(.sortFileButtonLabelTitle), systemSymbol: .arrowUpAndDownTextHorizontal)
-                        .labelStyle(.iconOnly)
-                } else {
-                    Label(.localizable(.sortFileButtonLabelTitle), systemSymbol: .arrowUpAndDownCircle)
-                        .labelStyle(.iconOnly)
-                }
+            if #available(macOS 13.0, *) {
+                sortMenuButton()
+            } else {
+                sortMenuButton()
+                    .menuStyle(.borderlessButton)
+                    .buttonStyle(.text(size: .small, square: true))
             }
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .disabled(fileState.isTemporaryGroupSelected || !fileState.hasAnyActiveGroup)
         }
         .padding(4)
         .controlSize(.regular)
         .background(.ultraThickMaterial)
+    }
+    
+    @MainActor @ViewBuilder
+    private func sortMenuButton() -> some View {
+        Menu {
+            Picker(
+                selection: Binding {
+                    fileState.sortField
+                } set: { val in
+                    withAnimation {
+                        fileState.sortField = val
+                    }
+                }
+            ) {
+                SwiftUI.Group {
+                    Label(.localizable(.sortFileKeyName), systemSymbol: .textformat).tag(ExcalidrawFileSortField.name)
+                    Label(.localizable(.sortFileKeyUpdatedAt), systemSymbol: .clock).tag(ExcalidrawFileSortField.updatedAt)
+                }
+                .labelStyle(.titleAndIcon)
+            } label: { }
+                .pickerStyle(.inline)
+        } label: {
+            if #available(macOS 13.0, *) {
+                Label(.localizable(.sortFileButtonLabelTitle), systemSymbol: .arrowUpAndDownTextHorizontal)
+                    .labelStyle(.iconOnly)
+            } else {
+                Label(.localizable(.sortFileButtonLabelTitle), systemSymbol: .arrowUpAndDownCircle)
+                    .labelStyle(.iconOnly)
+            }
+        }
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .disabled(fileState.isTemporaryGroupSelected || !fileState.hasAnyActiveGroup)
     }
 }
 

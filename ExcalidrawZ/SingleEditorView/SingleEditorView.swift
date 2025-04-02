@@ -154,7 +154,6 @@ struct SingleEditorView: View {
                 .padding(.vertical, 2)
             } else {
                 ExcalidrawToolbar()
-                    .offset(y: layoutState.isExcalidrawToolbarDense ? 0 : 6)
             }
         }
         

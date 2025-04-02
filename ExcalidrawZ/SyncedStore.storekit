@@ -109,7 +109,7 @@
     "_applicationInternalID" : "6636493997",
     "_developerTeamID" : "3XKM749Y3L",
     "_failTransactionsEnabled" : false,
-    "_lastSynchronizedDate" : 764156074.49326599,
+    "_lastSynchronizedDate" : 765266128.181916,
     "_locale" : "en_US",
     "_storefront" : "USA",
     "_storeKitErrors" : [
@@ -217,7 +217,7 @@
           ],
           "productID" : "Membership_Lv2_Monthly",
           "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Lv2 monthly",
+          "referenceName" : "Lv2 Monthly",
           "subscriptionGroupID" : "21547734",
           "type" : "RecurringSubscription",
           "winbackOffers" : [

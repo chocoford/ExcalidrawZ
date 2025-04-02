@@ -46,9 +46,9 @@ struct SearchableModifier: ViewModifier {
                 if #available(macOS 14.0, *) { } else {
                     Button {
                         isSearchSheetPresented = false
-                    } label: {}
-                        .opacity(0.01)
-                        .keyboardShortcut(.escape)
+                    } label: { }
+                    .opacity(0.01)
+                    .keyboardShortcut(.escape)
                 }
             }
             .sheet(isPresented: $isSearchSheetPresented) {
@@ -94,6 +94,20 @@ fileprivate struct SerachContent: View {
                 .onSubmit {
                     guard let selectionIndex else { return }
                     onSelect(selectionIndex)
+                }
+                .overlay(alignment: .trailing) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Label(.localizable(.generalButtonCancel), systemSymbol: .xmarkCircleFill)
+                            .labelStyle(.iconOnly)
+                            .foregroundStyle(.secondary)
+                            .padding()
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.borderless)
+                    .keyboardShortcut(.escape)
+                    .padding(.trailing, 20)
                 }
             
             Divider()

@@ -50,7 +50,6 @@ struct CollaborationFileRow: View {
     @State private var isDeleteRoomConfirmationDialogPresented = false
     @State private var fileToBeArchived: CollaborationFile?
     
-    
     var body: some View {
         FileRowButton(isSelected: isSelected) {
             if collaborationState.userCollaborationInfo.username.isEmpty {

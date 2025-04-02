@@ -22,13 +22,7 @@ extension WhatsNewView {
             icon: Image(systemSymbol: .magnifyingglass)
         )
 
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewCustomFileSortingTitle),
-            description: .localizable(.whatsNewCustomFileSortingDescription),
-            icon: Image(systemSymbol: {
-                if #available(macOS 13.0, *) { .arrowUpAndDownTextHorizontal } else { .arrowUpAndDownCircle }
-            }())
-        )
+
         
 #if os(iOS)
         if UIDevice().userInterfaceIdiom == .pad {
@@ -36,6 +30,14 @@ extension WhatsNewView {
         } else if UIDevice().userInterfaceIdiom == .phone {
             
         }
+#else
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewCustomFileSortingTitle),
+            description: .localizable(.whatsNewCustomFileSortingDescription),
+            icon: Image(systemSymbol: {
+                if #available(macOS 13.0, *) { .arrowUpAndDownTextHorizontal } else { .arrowUpAndDownCircle }
+            }())
+        )
 #endif
     }
     
@@ -75,51 +77,59 @@ extension WhatsNewView {
                     }
                     // MARK: - v1.3.1
                     VStack(alignment: .leading, spacing: 10) {
-                        WhatsNewFeatureRow(
-                            title: .localizable(.whatsNewSubgroupsSupportTitle),
-                            description: .localizable(.whatsNewSubgroupsSupportDescription)
-                        ) {
-                            Image(systemSymbol: .listBulletIndent)
-                                .resizable()
-                                .scaledToFit()
-                                .padding(.leading, 2)
-                        }
-                        
-                        WhatsNewFeatureRow(
-                            title: .localizable(.whatsNewSupportLocalFoldersTitle),
-                            description: .localizable(.whatsNewSupportLocalFoldersDescription),
-                            icon: Image(systemSymbol: .folder)
-                        )
-                        
-                        
-                        WhatsNewFeatureRow(
-                            title: .localizable(.whatsNewSupportMathTitle),
-                            description: .localizable(.whatsNewSupportMathDescription),
-                            icon: Image(systemSymbol: .xSquareroot)
-                        )
-                        
-                        WhatsNewFeatureRow(
-                            title: .localizable(.whatsNewNewDrawFromClipboardTitle),
-                            description: .localizable(.whatsNewNewDrawFromClipboardDescription),
-                            icon: Image(systemSymbol: .docOnClipboard)
-                        )
-                        
-                        
-                #if os(iOS)
-                        if #available(iOS 17.0, *) {
+                        Section {
                             WhatsNewFeatureRow(
-                                title: .localizable(.whatsNewApplePencilToolbarTitle),
-                                description: .localizable(.whatsNewApplePencilToolbarDescrition),
-                                icon: Image(systemSymbol: .applepencilTip)
-                            )
-                        } else {
+                                title: .localizable(.whatsNewSubgroupsSupportTitle),
+                                description: .localizable(.whatsNewSubgroupsSupportDescription)
+                            ) {
+                                Image(systemSymbol: .listBulletIndent)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .padding(.leading, 2)
+                            }
+                            
                             WhatsNewFeatureRow(
-                                title: .localizable(.whatsNewApplePencilToolbarTitle),
-                                description: .localizable(.whatsNewApplePencilToolbarDescrition),
-                                icon: Image(systemSymbol: .pencilTip)
+                                title: .localizable(.whatsNewSupportLocalFoldersTitle),
+                                description: .localizable(.whatsNewSupportLocalFoldersDescription),
+                                icon: Image(systemSymbol: .folder)
                             )
+                            
+                            
+                            WhatsNewFeatureRow(
+                                title: .localizable(.whatsNewSupportMathTitle),
+                                description: .localizable(.whatsNewSupportMathDescription),
+                                icon: Image(systemSymbol: .xSquareroot)
+                            )
+                            
+                            WhatsNewFeatureRow(
+                                title: .localizable(.whatsNewNewDrawFromClipboardTitle),
+                                description: .localizable(.whatsNewNewDrawFromClipboardDescription),
+                                icon: Image(systemSymbol: .docOnClipboard)
+                            )
+                            
+                            
+#if os(iOS)
+                            if #available(iOS 17.0, *) {
+                                WhatsNewFeatureRow(
+                                    title: .localizable(.whatsNewApplePencilToolbarTitle),
+                                    description: .localizable(.whatsNewApplePencilToolbarDescrition),
+                                    icon: Image(systemSymbol: .applepencilTip)
+                                )
+                            } else {
+                                WhatsNewFeatureRow(
+                                    title: .localizable(.whatsNewApplePencilToolbarTitle),
+                                    description: .localizable(.whatsNewApplePencilToolbarDescrition),
+                                    icon: Image(systemSymbol: .pencilTip)
+                                )
+                            }
+#endif
+                        } header: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("v1.3.1")
+                                    .font(.headline)
+                                Divider()
+                            }
                         }
-                #endif
                     }
                     // MARK: - v1.2.9
                     VStack(alignment: .leading, spacing: 10) {

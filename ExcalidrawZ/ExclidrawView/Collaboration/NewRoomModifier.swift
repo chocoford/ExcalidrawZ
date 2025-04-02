@@ -125,18 +125,20 @@ struct NewRoomModifier: ViewModifier {
 func copyRoomShareLink(roomID: String, filename: String?) {
     let encodedRoomID = CollabRoomIDCoder.shared.encode(roomID: roomID)
     var url: URL
+    let urlString: String
     if #available(macOS 13.0, *) {
         url = URL(string: "excalidrawz://collab/\(encodedRoomID)")!
         url.append(queryItems: [
             URLQueryItem(name: "name", value: filename?.isEmpty == false ? filename : nil)
         ])
+        urlString = url.absoluteString
     } else {
-        url = URL(string: "excalidrawz://collab/\(encodedRoomID)" + (filename?.isEmpty == false ? "?name=\(filename!)" : ""))!
+        urlString = "excalidrawz://collab/\(encodedRoomID)" + (filename?.isEmpty == false ? "?name=\(filename!)" : "")
     }
 #if os(macOS)
     NSPasteboard.general.clearContents()
-    NSPasteboard.general.setString(url.absoluteString, forType: .string)
+    NSPasteboard.general.setString(urlString, forType: .string)
 #elseif os(iOS)
-    UIPasteboard.general.setObjects([url])
+    UIPasteboard.general.setObjects([urlString])
 #endif
 }

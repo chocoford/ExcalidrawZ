@@ -12,9 +12,7 @@ import SwiftyAlert
 
 struct PaywallModifier: ViewModifier {
     @Environment(\.scenePhase) private var scenePhase
-//#if APP_STORE
     @EnvironmentObject private var store: Store
-//#endif
     
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -25,7 +23,7 @@ struct PaywallModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-//#if APP_STORE
+#if APP_STORE
 #if canImport(AppKit)
             .bindWindow($window)
             .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
@@ -40,14 +38,14 @@ struct PaywallModifier: ViewModifier {
                 }
             }
 #endif
+#endif
             .sheet(isPresented: $store.isPaywallPresented) {
                 Paywall()
                     .swiftyAlert()
             }
-//#endif
     }
     
-//#if APP_STORE
+#if APP_STORE
     private func updateProductStatus() {
         DispatchQueue.main.async {
             let now = Date()
@@ -62,5 +60,5 @@ struct PaywallModifier: ViewModifier {
             }
         }
     }
-//#endif
+#endif
 }
