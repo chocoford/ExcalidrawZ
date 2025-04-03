@@ -97,19 +97,22 @@ func backupFiles(context: NSManagedObjectContext) throws {
                 let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
                 fetchRequest.predicate = NSPredicate(format: "parent = nil")
                 let allFolders = try context.fetch(fetchRequest)
-                
                 for folder in allFolders {
+                    // Files in iCloud will not be copied if not downloaded...
                     try folder.withSecurityScopedURL { scopedURL in
-                        let fileCoordinator = NSFileCoordinator()
-                        fileCoordinator.coordinate(readingItemAt: scopedURL, error: nil) { url in
-                            do {
-                                try fileManager.copyItem(
-                                    at: url,
-                                    to: localExportURL.appendingPathComponent(url.lastPathComponent, conformingTo: .directory)
-                                )
-                            } catch {
-                                print("[Backup Files] error occured when copy local folder: \(url)")
+                        Task {
+                            let fileCoordinator = NSFileCoordinator()
+                            fileCoordinator.coordinate(readingItemAt: scopedURL, error: nil) { url in
+                                do {
+                                    try fileManager.copyItem(
+                                        at: url,
+                                        to: localExportURL.appendingPathComponent(url.lastPathComponent, conformingTo: .directory)
+                                    )
+                                } catch {
+                                    print("[Backup Files] error occured when copy local folder: \(url)")
+                                }
                             }
+                            
                         }
                     }
                 }

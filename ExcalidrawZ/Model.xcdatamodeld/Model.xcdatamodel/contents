@@ -1,12 +1,26 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23605" systemVersion="24D70" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
-    <entity name="File" representedClassName="File" syncable="YES" codeGenerationType="class">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23605" systemVersion="24D81" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="CollaborationFile" representedClassName="CollaborationFile" syncable="YES" codeGenerationType="class">
+        <attribute name="content" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="inTrash" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="isOwner" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="rank" optional="YES" attributeType="Integer 64" usesScalarValueType="YES"/>
+        <attribute name="roomID" optional="YES" attributeType="String"/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="checkpoints" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="FileCheckpoint" inverseName="collaborationFile" inverseEntity="FileCheckpoint"/>
+        <relationship name="medias" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="MediaItem" inverseName="collaborationFile" inverseEntity="MediaItem"/>
+    </entity>
+    <entity name="File" representedClassName="File" syncable="YES" codeGenerationType="class" coreSpotlightDisplayNameExpression="name">
         <attribute name="content" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="deletedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="inTrash" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
-        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="name" optional="YES" attributeType="String" spotlightIndexingEnabled="YES"/>
+        <attribute name="rank" optional="YES" attributeType="Integer 64" usesScalarValueType="YES"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="checkpoints" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="FileCheckpoint" inverseName="file" inverseEntity="FileCheckpoint"/>
         <relationship name="group" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Group" inverseName="files" inverseEntity="Group"/>
@@ -17,6 +31,7 @@
         <attribute name="filename" optional="YES" attributeType="String"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="collaborationFile" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CollaborationFile" inverseName="checkpoints" inverseEntity="CollaborationFile"/>
         <relationship name="file" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="File" inverseName="checkpoints" inverseEntity="File"/>
     </entity>
     <entity name="Group" representedClassName="Group" syncable="YES" codeGenerationType="class">
@@ -68,6 +83,7 @@
         <attribute name="id" optional="YES" attributeType="String"/>
         <attribute name="lastRetrievedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="mimeType" optional="YES" attributeType="String"/>
+        <relationship name="collaborationFile" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CollaborationFile" inverseName="medias" inverseEntity="CollaborationFile"/>
         <relationship name="file" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="File" inverseName="medias" inverseEntity="File"/>
     </entity>
     <configuration name="Cloud" usedWithCloudKit="YES">
@@ -77,6 +93,7 @@
         <memberEntity name="Library"/>
         <memberEntity name="LibraryItem"/>
         <memberEntity name="MediaItem"/>
+        <memberEntity name="CollaborationFile"/>
     </configuration>
     <configuration name="Local">
         <memberEntity name="LocalFileCheckpoint"/>

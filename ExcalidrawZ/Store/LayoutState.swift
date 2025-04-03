@@ -10,7 +10,6 @@ import SwiftUI
 final class LayoutState: ObservableObject {
     @Published var isSidebarPresented: Bool = true
     @Published var isInspectorPresented: Bool = false
-    @Published var isExcalidrawToolbarDense: Bool = false
     
     @Published var isResotreAlertIsPresented: Bool = false
 }

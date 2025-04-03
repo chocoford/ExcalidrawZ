@@ -8,8 +8,17 @@
 import Foundation
 import CoreData
 
+protocol ExcalidrawFileRepresentable {
+    var id: UUID? { get }
+    var content: Data? { get }
+    var name: String? { get }
+}
+
+extension File: ExcalidrawFileRepresentable {}
+extension CollaborationFile: ExcalidrawFileRepresentable {}
+
 extension ExcalidrawFile {
-    init(from persistenceFile: File) throws {
+    init(from persistenceFile: ExcalidrawFileRepresentable) throws {
         guard let data = persistenceFile.content else {
             struct EmptyContentError: Error {}
             throw EmptyContentError()
@@ -19,27 +28,21 @@ extension ExcalidrawFile {
         self.id = persistenceFile.id ?? UUID()
         self.content = persistenceFile.content
         self.name = persistenceFile.name
+        if let persistenceFile = persistenceFile as? CollaborationFile {
+            self.roomID = persistenceFile.roomID
+        }
     }
     
     init(
         from persistenceFileID: NSManagedObjectID,
         context: NSManagedObjectContext
     ) throws {
-        guard let persistenceFile = context.object(with: persistenceFileID) as? File else {
+        guard let persistenceFile = context.object(with: persistenceFileID) as? ExcalidrawFileRepresentable else {
             struct FileNotFoundError: Error {}
             throw FileNotFoundError()
         }
-        guard let data = persistenceFile.content else {
-            struct EmptyContentError: Error {}
-            throw EmptyContentError()
-        }
-        let file = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
-        self = file
-        self.id = persistenceFile.id ?? UUID()
-        self.content = persistenceFile.content
-        self.name = persistenceFile.name
+        try self.init(from: persistenceFile)
     }
-    
     
     init(from checkpoint: FileCheckpoint) throws {
         guard let data = checkpoint.content else {
@@ -64,17 +67,10 @@ extension ExcalidrawFile {
             .merging(self.files, uniquingKeysWith: {$1})
         self.files = files
         
-        // update content
-        if let content = self.content,
-           var contentObject = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
-            contentObject["files"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(files))
-            self.content = try JSONSerialization.data(withJSONObject: contentObject)
-        }
+        try self.updateContentFilesFromFiles()
     }
     
-    
 }
-
 
 extension ExcalidrawFile.ResourceFile {
     init?(mediaItem: MediaItem) {

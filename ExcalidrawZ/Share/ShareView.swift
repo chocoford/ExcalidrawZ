@@ -123,16 +123,22 @@ struct ShareView: View {
 #if os(iOS)
                     .activitySheet(item: $exportedPDFURL)
 #endif
-                    
-#if os(macOS)
-                    SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
-                        do {
-                            try archiveAllFiles(context: viewContext)
-                        } catch {
-                            alertToast(error)
+                    if let roomID = self.sharedFile.roomID {
+                        SquareButton(title: "Invite", icon: .link) {
+                            copyRoomShareLink(roomID: roomID, filename: sharedFile.name)
+                            alertToast(.init(displayMode: .hud, type: .complete(.green), title: "Copied"))
                         }
-                    }
+                    } else {
+#if os(macOS)
+                        SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
+                            do {
+                                try archiveAllFiles(context: viewContext)
+                            } catch {
+                                alertToast(error)
+                            }
+                        }
 #endif
+                    }
                 }
 
                 if horizontalSizeClass != .compact {

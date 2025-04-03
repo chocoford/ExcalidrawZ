@@ -33,6 +33,7 @@ struct MigrateToNewVersionSheetViewModifier: ViewModifier {
 }
 
 fileprivate struct MigrateToNewVersionSheetView: View {
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) var dismiss
     @State private var window: NSWindow?
     
@@ -76,7 +77,7 @@ fileprivate struct MigrateToNewVersionSheetView: View {
                         }
                         .frame(maxHeight: .infinity, alignment: .top)
                         AsyncButton { @MainActor in
-                            try archiveAllFiles()
+                            try archiveAllFiles(context: viewContext)
                             didArchive = true
                         } label: {
                             Text(.localizable(.migrationSheetButtonArchive))

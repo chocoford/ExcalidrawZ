@@ -86,7 +86,7 @@ struct ExcalidrawLibrary: Codable, Hashable {
             self.status = try container.decode(Status.self, forKey: .status)
             let ts = try container.decode(Int.self, forKey: .createdAt)
             self.createdAt = Date(timeIntervalSince1970: Double(ts) / 1000)
-            self.name = try container.decodeIfPresent(String.self, forKey: .name) ?? "Untitled"
+            self.name = try container.decodeIfPresent(String.self, forKey: .name) ?? String(localizable: .generalUntitled)
             self.elements = try container.decode([ExcalidrawElement].self, forKey: .elements)
         }
         

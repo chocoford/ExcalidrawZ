@@ -5,7 +5,7 @@
   <h3>Excalidraw app for mac. Powered by pure SwiftUI.</h3>
 </div>
 
-![GitHub](https://img.shields.io/github/license/chocoford/ExcalidrawZ) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40Chocoford)](https://twitter.com/dove_zachary)
+![GitHub](https://img.shields.io/github/license/chocoford/ExcalidrawZ) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40Chocoford)](https://twitter.com/dove_zachary) ![Discord](https://img.shields.io/discord/944160092914319361)
 
 <a href="https://www.chocoford.com/donation" target="_blank"><img src="https://github.com/chocoford/chocoford/blob/main/public/Donation%20Button.png?raw=true" alt="Donation to Chocoford" style="height: 60px !important;"></a>
 
@@ -15,7 +15,7 @@
 
 [![Download Link - App Store](assets/README/Download_on_the_App_Store_Badge_US-UK.svg)](https://apps.apple.com/app/excalidrawz/id6636493997) 
 
-**Non-App Store version**
+**Non-App Store version (Not Recommended)**
 
 1. Download the latest image file (.dmg) from [Releases](https://github.com/chocoford/ExcalidrawZ/releases)
 2. Click the `.dmg` to install it
@@ -29,6 +29,17 @@
 
 By using the `Create folder` button located in the bottom left corner of the app, you can create new folders to organize your work.
 
+- [x] Database groups
+  - [x] Customize file sort
+- [x] Local Folders
+- [x] Temporaray files (Directly open an `.excalidraw` file)
+
+#### Collaboration
+
+ExcalidrawZ also supports collaboration.
+
+![Collaboration](assets/README/ExcalidrawZ%20-%20Collaboration.gif)
+
 #### `.excalidraw` file import
 
 You can import any file ending with excalidraw into the app through the menu bar.
@@ -39,6 +50,7 @@ Sharing allows you to make your work output more seamless. ExcalidrawZ supports 
 
 * export image
 * export file
+* export to PDF Lossless
 * archive all files
 
 ![Export editable image](assets/README/Export%20editable%20image.gif)
@@ -69,21 +81,11 @@ ExcalidrawZ for iOS&iPadOS is now available. All data are synchronised by iCloud
 - Tap with two fingers to undo.
 - Tap with three fingers to redo. 
 
-
-
-#### ~~Multiple hand-writing fonts supported~~ (Fallback to Excalifont)
-
-> ~~If you need more languages support, please do not hesitate to contact me.~~
-
-- [x] ~~English (Native excalidraw font)~~
-- [x] ~~简体中文（杨任东竹书体）~~
-- [x] ~~日本語（瀬戸体）~~
-- [x] ~~[한국어 (빙그레 싸만코체)](http://www.bingfont.co.kr/license.html)~~
-
 ## RoadMap
 
 - [x] iCloud synchronization
 - [x] iOS support.
+- [ ] Support deep links.
 
 ## Contact me
 

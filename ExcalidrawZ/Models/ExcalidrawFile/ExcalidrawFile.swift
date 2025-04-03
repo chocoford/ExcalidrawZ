@@ -28,6 +28,9 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
     var content: Data?
     var name: String?
     
+    // Collab
+    var roomID: String?
+    
     struct AppState: Codable, Hashable, Sendable {
         var gridSize: Int?
         var viewBackgroundColor: String?
@@ -96,6 +99,7 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
         case elements
         case appState
         case type
+        // case roomID
     }
     
     init(from decoder: any Decoder) throws {
@@ -107,6 +111,7 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
         self.elements = try container.decodeIfPresent([ExcalidrawElement].self, forKey: .elements) ?? []
         self.appState = try container.decode(ExcalidrawFile.AppState.self, forKey: .appState)
         self.type = try container.decode(String.self, forKey: .type)
+        // self.roomID = try container.decodeIfPresent(String.self, forKey: .roomID)
     }
     
     func encode(to encoder: any Encoder) throws {
@@ -117,6 +122,7 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
         try container.encode(self.elements, forKey: .elements)
         try container.encode(self.appState, forKey: .appState)
         try container.encode(self.type, forKey: .type)
+        // try container.encode(self.roomID, forKey: .roomID)
     }
     
     init() {

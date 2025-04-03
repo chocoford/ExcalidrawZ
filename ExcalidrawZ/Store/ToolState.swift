@@ -222,6 +222,7 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
 
 final class ToolState: ObservableObject {
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
+    var excalidrawCollaborationWebCoordinator: ExcalidrawView.Coordinator?
 
     @Published var activatedTool: ExcalidrawTool? = .cursor
     @Published var previousActivatedTool: ExcalidrawTool? = nil
@@ -288,7 +289,7 @@ final class ToolState: ObservableObject {
     }
     
     func togglePenMode(enabled: Bool, pencilConnected: Bool = false) async throws {
-        DispatchQueue.main.async {
+        await MainActor.run {
             self.inPenMode = enabled
         }
         try await excalidrawWebCoordinator?.togglePenMode(enabled: enabled)

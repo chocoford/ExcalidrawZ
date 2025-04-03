@@ -17,7 +17,12 @@ struct FileHistoryButton: View {
     
     private var disabled: Bool {
         fileState.currentGroup?.groupType == .trash ||
-        (fileState.currentFile == nil && fileState.currentLocalFile == nil && fileState.currentTemporaryFile == nil)
+        (
+            fileState.currentFile == nil &&
+            fileState.currentLocalFile == nil &&
+            fileState.currentTemporaryFile == nil &&
+            fileState.currentCollaborationFile == nil
+        )
     }
 
     var body: some View {
@@ -36,6 +41,8 @@ struct FileHistoryButton: View {
                 FileCheckpointListView(localFile: localFile)
             } else if let tempFile = fileState.currentTemporaryFile {
                 FileCheckpointListView(localFile: tempFile)
+            } else if case .room(let file) = fileState.currentCollaborationFile {
+                FileCheckpointListView(file: file)
             }
         }
 #elseif os(iOS)
@@ -79,6 +86,13 @@ struct FileCheckpointListView<Checkpoint: FileCheckpointRepresentable>: View {
         self._fileCheckpoints = FetchRequest(
             sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)],
             predicate: NSPredicate(format: "file == %@", file)
+        )
+    }
+    
+    init(file: CollaborationFile) where Checkpoint == FileCheckpoint {
+        self._fileCheckpoints = FetchRequest(
+            sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)],
+            predicate: NSPredicate(format: "collaborationFile == %@", file)
         )
     }
     

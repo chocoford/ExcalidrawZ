@@ -10,6 +10,8 @@ import WebKit
 import OSLog
 import Combine
 
+typealias CollaborationInfo = ExcalidrawCore.CollaborationInfo
+
 class ExcalidrawCore: NSObject, ObservableObject {
 #if canImport(AppKit)
     typealias PlatformImage = NSImage
@@ -37,16 +39,30 @@ class ExcalidrawCore: NSObject, ObservableObject {
         super.init()
         self.configWebView()
         
-        Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
-            .map { isNavigating, isDocumentLoaded in
-                isNavigating || !isDocumentLoaded
-            }
-            .assign(to: &$isLoading)
+        switch parent?.type {
+            case .normal:
+                Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
+                    .map { isNavigating, isDocumentLoaded in
+                        isNavigating || !isDocumentLoaded
+                    }
+                    .assign(to: &$isLoading)
+            case .collaboration:
+                Publishers.CombineLatest(
+                    Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
+                        .map { $0 || !$1 },
+                    $isCollabEnabled
+                )
+                .map { $0 || !$1 }
+                .assign(to: &$isLoading)
+            default:
+                break
+        }
     }
     
     @Published var isNavigating = true
     @Published var isDocumentLoaded = false
-    @Published private(set) var isLoading: Bool = false // { isNavigating || !isDocumentLoaded }
+    @Published var isCollabEnabled = false
+    @Published private(set) var isLoading: Bool = false
     
     var downloadCache: [String : Data] = [:]
     var downloads: [URLRequest : URL] = [:]
@@ -90,7 +106,10 @@ class ExcalidrawCore: NSObject, ObservableObject {
         
         config.userContentController = userContentController
         
-        self.webView = ExcalidrawWebView(frame: .zero, configuration: config) { num in
+        self.webView = ExcalidrawWebView(
+            frame: .zero,
+            configuration: config
+        ) { num in
             Task {
                 try? await self.toggleToolbarAction(key: num)
             }
@@ -99,11 +118,12 @@ class ExcalidrawCore: NSObject, ObservableObject {
                 try? await self.toggleToolbarAction(key: char)
             }
         }
+#if DEBUG
         if #available(macOS 13.3, iOS 16.4, *) {
             self.webView.isInspectable = true
         } else {
         }
-        
+#endif
         self.webView.navigationDelegate = self
         self.webView.uiDelegate = self
         
@@ -114,14 +134,36 @@ class ExcalidrawCore: NSObject, ObservableObject {
 #endif
         
         DispatchQueue.main.async {
-            let request: URLRequest
+            self.refresh()
+        }
+    }
+    
+    public func refresh() {
+        let request: URLRequest
+        switch self.parent?.type {
+            case .normal:
 #if DEBUG
-            request = URLRequest(url: URL(string: "http://127.0.0.1:8486/index.html")!)
+                request = URLRequest(url: URL(string: "http://127.0.0.1:8486/index.html")!)
 #else
-            request = URLRequest(url: URL(string: "http://127.0.0.1:8487/index.html")!)
+                request = URLRequest(url: URL(string: "http://127.0.0.1:8487/index.html")!)
 #endif
-            self.webView.load(request)
-
+                self.webView.load(request)
+            case .collaboration:
+                var url = Secrets.shared.collabURL
+                if let roomID = self.parent?.file?.roomID,
+                   !roomID.isEmpty {
+                    var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+                    components?.fragment = "room=\(roomID)"
+                    if let newURL = components?.url {
+                        url = newURL
+                    }
+                    self.isCollabEnabled = true
+                }
+                request = URLRequest(url: url)
+                self.logger.info("[ExcalidrawCore] navigate to \(url), roomID: \(String(describing: self.parent?.file?.roomID))")
+                self.webView.load(request)
+            case nil:
+                break
         }
     }
 }
@@ -432,9 +474,48 @@ extension ExcalidrawCore {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.loadImageBuffer(\(buf), '\(type)'); 0;")
     }
     
+    // Collab
+    @MainActor
+    public func openCollabMode() async throws {
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.openCollabMode(); 0;")
+    }
+    
+    struct CollaborationInfo: Codable, Hashable {
+        var username: String
+    }
+    
+    @MainActor
+    public func getCollaborationInfo() async throws -> CollaborationInfo {
+        let res = try await webView.evaluateJavaScript("window.excalidrawZHelper.getExcalidrawCollabInfo();")
+        if JSONSerialization.isValidJSONObject(res) {
+            let data = try JSONSerialization.data(withJSONObject: res)
+            return try JSONDecoder().decode(CollaborationInfo.self, from: data)
+        } else {
+            return CollaborationInfo(username: "")
+        }
+    }
+    
+    
+    @MainActor
+    public func setCollaborationInfo(_ info: CollaborationInfo) async throws {
+        try await webView.evaluateJavaScript(
+            "window.excalidrawZHelper.setExcalidrawCollabInfo(\(info.jsonStringified())); 0;"
+        )
+    }
+    
+    @MainActor
+    public func followCollborator(_ collaborator: Collaborator) async throws {
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.followCollaborator(\(collaborator.jsonStringified())); 0;")
+    }
+    
     @MainActor
     func reload() {
          webView.evaluateJavaScript("location.reload(); 0;")
+    }
+    
+    @MainActor
+    func toggleWebPointerEvents(enabled: Bool) async throws {
+        try await webView.evaluateJavaScript("document.body.style = '\(enabled ? "" : "pointer-events: none;")'; 0;")
     }
 }
 

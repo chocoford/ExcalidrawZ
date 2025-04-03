@@ -19,7 +19,11 @@ struct NewFileButton: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @Environment(\.alert) private var alert
+    @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
+
+    @EnvironmentObject private var store: Store
     @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var collaborationState: CollaborationState
     
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -28,6 +32,9 @@ struct NewFileButton: View {
 #endif
     
     @State private var isFileImporterPresented = false
+    
+    @FetchRequest(sortDescriptors: [])
+    private var collaborationFiles: FetchedResults<CollaborationFile>
     
     init() {}
     
@@ -61,6 +68,15 @@ struct NewFileButton: View {
         }
 #endif
         
+        if fileState.isInCollaborationSpace {
+            collaborationNewButton()
+        } else {
+            localNewButton()
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func localNewButton() -> some View {
         Menu {
             Button {
                 createNewFile()
@@ -96,6 +112,38 @@ struct NewFileButton: View {
         }
     }
     
+    @MainActor @ViewBuilder
+    private func collaborationNewButton() -> some View {
+        Menu {
+            Button {
+                if let limit = store.collaborationRoomLimits, collaborationFiles.count >= limit {
+                    store.togglePaywall(reason: .roomLimit)
+                } else {
+                    collaborationState.isCreateRoomConfirmationDialogPresented.toggle()
+                }
+            } label: {
+                Label(.localizable(.collaborationButtonCreateNewRoom), systemSymbol: .plus)
+            }
+            Button {
+                if let limit = store.collaborationRoomLimits, collaborationFiles.count >= limit {
+                    store.togglePaywall(reason: .roomLimit)
+                } else {
+                    collaborationState.isJoinRoomSheetPresented.toggle()
+                }
+            } label: {
+                Label(.localizable(.collaborationButtonJoinRoom), systemSymbol: .ipadAndArrowForward)
+            }
+        } label: {
+            if #available(macOS 13.0, *) {
+                Label(.localizable(.toolbarButtonCollaborationNewRoom), systemSymbol: .doorLeftHandOpen)
+            } else {
+                Label(.localizable(.toolbarButtonCollaborationNewRoom), systemSymbol: .plus)
+            }
+        }
+        .help(.localizable(.toolbarButtonCollaborationNewRoom))
+        .disabled(collaborationState.userCollaborationInfo.username.isEmpty)
+    }
+    
     private func createNewFile() {
         do {
             if fileState.currentGroup != nil {
@@ -121,7 +169,7 @@ struct NewFileButton: View {
                 guard let pngData = NSPasteboard.general.data(forType: .png) else {
                     struct CanNotReadFromClipboardError: LocalizedError {
                         var errorDescription: String? {
-                            "Can not read from clipboard"
+                            String(localizable: .pasteboardErrorNoData)
                         }
                     }
                     throw CanNotReadFromClipboardError()
@@ -131,7 +179,7 @@ struct NewFileButton: View {
                 guard let pngData = image?.pngData() else {
                     struct CanNotReadFromClipboardError: LocalizedError {
                         var errorDescription: String? {
-                            "Can not read from clipboard"
+                            String(localizable: .pasteboardErrorNoData)
                         }
                     }
                     throw CanNotReadFromClipboardError()

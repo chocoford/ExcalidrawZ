@@ -29,40 +29,20 @@ struct ExcalidrawToolbar: View {
     
     @State private var isMathInputSheetPresented = false
 
-    var minWidth: CGFloat {
-        if #available(macOS 13.0, *) {
-            if layoutState.isInspectorPresented,
-               layoutState.isSidebarPresented {
-                return 1760
-            } else if layoutState.isSidebarPresented {
-                return 1520
-            } else if layoutState.isInspectorPresented {
-                return 1620
-            } else {
-                return 1380
-            }
-        } else {
-            return 1380
+    
+    var body: some View {
+        if fileState.currentFile != nil ||
+            fileState.currentLocalFile != nil ||
+            fileState.currentTemporaryFile != nil {
+            toolbar()
+        } else if case .room = fileState.currentCollaborationFile {
+            toolbar()
         }
     }
     
-    var body: some View {
-        toolbar()
-            .animation(nil, value: layoutState.isExcalidrawToolbarDense)
-            .bindWindow($window)
-            .onChange(of: window) { newValue in
-                guard let newValue else { return }
-                layoutState.isExcalidrawToolbarDense = newValue.frame.width < minWidth
-                windowFrameCancellable = newValue.publisher(for: \.frame).sink { frame in
-                    layoutState.isExcalidrawToolbarDense = newValue.frame.width < self.minWidth
-                }
-            }
-            .onChange(of: layoutState.isSidebarPresented) { _ in
-                layoutState.isExcalidrawToolbarDense = (window?.frame.width ?? .zero) < minWidth
-            }
-            .onChange(of: layoutState.isInspectorPresented) { _ in
-                layoutState.isExcalidrawToolbarDense = (window?.frame.width ?? .zero) < minWidth
-            }
+    @MainActor @ViewBuilder
+    private func toolbar() -> some View {
+        toolbarContent()
             .onChange(of: toolState.activatedTool, debounce: 0.05) { newValue in
                 if newValue == nil {
                     toolState.activatedTool = .cursor
@@ -89,7 +69,7 @@ struct ExcalidrawToolbar: View {
     }
     
     @MainActor @ViewBuilder
-    private func toolbar() -> some View {
+    private func toolbarContent() -> some View {
 #if os(iOS)
         if horizontalSizeClass == .compact {
             compactContent()
@@ -135,250 +115,225 @@ struct ExcalidrawToolbar: View {
             }
         }
 #elseif os(macOS)
-        if layoutState.isExcalidrawToolbarDense {
-            denseContent()
-        } else {
-            content()
+        ExcalidrawToolbarToolContainer { sizeClass in
+            let _ = print("[DEBUG] ExcalidrawToolbarToolContainer content reload")
+            if sizeClass == .dense {
+                denseContent()
+            } else {
+                content()
+            }
         }
-        
+
         moreTools()
 #endif
     }
     
+    @State private var lastActivatedSecondaryTool: ExcalidrawTool?
+    
     @MainActor @ViewBuilder
     private func content(size: CGFloat = 20, withFooter: Bool = true) -> some View {
         HStack(spacing: size / 2) {
-            SegmentedPicker(selection: $toolState.activatedTool) {
-                SegmentedPickerItem(value: ExcalidrawTool.cursor) {
-                    Cursor()
-                        .stroke(.primary, lineWidth: 1.5)
-                        .aspectRatio(1, contentMode: .fit)
-                        .modifier(
-                            ExcalidrawToolbarItemModifer(size: size, labelType: .svg) {
-                                if withFooter {
-                                    Text("1")
-                                }
-                            }
-                        )
-                }
-                .help("\(String(localizable: .toolbarSelection)) - V \(String(localizable: .toolbarOr)) 1")
-                
-                SegmentedPickerItem(value: ExcalidrawTool.rectangle) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .stroke(.primary, lineWidth: 1.5)
-                        .modifier(
-                            ExcalidrawToolbarItemModifer(size: size, labelType: .nativeShape) {
-                                if withFooter {
-                                    Text("2")
-                                }
-                            }
-                        )
+            ExcalidrawToolbarToolContainer { sizeClass in
+                SegmentedPicker(selection: $toolState.activatedTool) {
+                    primaryToolPikcerItems(size: size, withFooter: withFooter)
                     
-                }
-                .help("\(String(localizable: .toolbarRectangle)) — R \(String(localizable: .toolbarOr)) 2")
-                
-                SegmentedPickerItem(value: ExcalidrawTool.diamond) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .stroke(.primary, lineWidth: 1.5)
-                        .rotationEffect(.degrees(45))
-                        .modifier(
-                            ExcalidrawToolbarItemModifer(size: size, labelType: .nativeShape) {
-                                if withFooter {
-                                    Text("3")
-                                }
-                            }
-                        )
-                }
-                .help("\(String(localizable: .toolbarDiamond)) — D \(String(localizable: .toolbarOr)) 3")
-                
-                SegmentedPickerItem(value: ExcalidrawTool.ellipse) {
-                    Circle()
-                        .stroke(.primary, lineWidth: 1.5)
-                        .modifier(
-                            ExcalidrawToolbarItemModifer(size: size, labelType: .nativeShape) {
-                                if withFooter {
-                                    Text("4")
-                                }
-                            }
-                        )
-                }
-                .help("\(String(localizable: .toolbarEllipse)) — O \(String(localizable: .toolbarOr)) 4")
-                
-                SegmentedPickerItem(value: ExcalidrawTool.arrow) {
-                    Image(systemSymbol: .arrowRight)
-                        .resizable()
-                        .scaledToFit()
-                        .font(.body.weight(.semibold))
-                        .modifier(
-                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
-                                if withFooter {
-                                    Text("5")
-                                }
-                            }
-                        )
-                }
-                .help("\(String(localizable: .toolbarArrow)) — A \(String(localizable: .toolbarOr)) 5")
-                
-                SegmentedPickerItem(value: ExcalidrawTool.line) {
-                    Capsule()
-                        .stroke(.primary, lineWidth: 1.5)
-                        .frame(height: 1)
-                        .modifier(
-                            ExcalidrawToolbarItemModifer(size: size, labelType: .nativeShape) {
-                                if withFooter {
-                                    Text("6")
-                                }
-                            }
-                        )
-                }
-                .help("\(String(localizable: .toolbarLine)) — L \(String(localizable: .toolbarOr)) 6")
-                
-                SegmentedPickerItem(value: ExcalidrawTool.freedraw) {
-                    Image(systemSymbol: .pencil)
-                        .resizable()
-                        .scaledToFit()
-                        .font(.body.weight(.semibold))
-                        .modifier(
-                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
-                                if withFooter {
-                                    Text("7")
-                                }
-                            }
-                        )
-                }
-                .help("\(String(localizable: .toolbarDraw)) — P \(String(localizable: .toolbarOr)) 7")
-                
-                SegmentedPickerItem(value: ExcalidrawTool.text) {
-                    Image(systemSymbol: .character)
-                        .resizable()
-                        .scaledToFit()
-                        .font(.body.weight(.semibold))
-                        .modifier(
-                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
-                                if withFooter {
-                                    Text("8")
-                                }
-                            }
-                        )
-                }
-                .help("\(String(localizable: .toolbarText)) — T \(String(localizable: .toolbarOr)) 8")
-                
-                SegmentedPickerItem(value: ExcalidrawTool.image) {
-                    Image(systemSymbol: .photo)
-                        .resizable()
-                        .scaledToFit()
-                        .font(.body.weight(.semibold))
-                        .modifier(
-                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
-                                if withFooter {
-                                    Text("9")
-                                }
-                            }
-                        )
-                }
-                .help("\(String(localizable: .toolbarInsertImage)) — 9")
-                
-                SegmentedPickerItem(value: ExcalidrawTool.eraser) {
-                    if #available(macOS 13.0, *) {
-                        Image(systemSymbol: .eraserLineDashed)
-                            .resizable()
-                            .scaledToFit()
-                            .font(.body.weight(.semibold))
-                            .modifier(
-                                ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
-                                    if withFooter {
-                                        Text("0")
-                                    }
-                                }
-                            )
-                    } else {
-                        Image(systemSymbol: .pencilSlash)
-                            .resizable()
-                            .scaledToFit()
-                            .font(.body.weight(.semibold))
-                            .modifier(
-                                ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
-                                    if withFooter {
-                                        Text("0")
-                                    }
-                                }
-                            )
+                    if sizeClass == .expanded {
+                        secondaryToolPikcerItems(size: size, withFooter: withFooter)
                     }
                 }
-                .help("\(String(localizable: .toolbarEraser)) — E \(String(localizable: .toolbarOr)) 0")
+                .padding(size / 3)
+                .background {
+                    if #available(macOS 14.0, iOS 17.0, *) {
+                        RoundedRectangle(cornerRadius: size / 1.6)
+                            .fill(.regularMaterial)
+                            .stroke(.separator, lineWidth: 0.5)
+                    } else {
+                        RoundedRectangle(cornerRadius: size / 1.6)
+                            .fill(.regularMaterial)
+                    }
+                }
+                .onChange(of: sizeClass) { newValue in
+                    if newValue == .compact {
+                        primaryPickerItems = [.cursor, .rectangle, .diamond, .ellipse, .arrow, .line]
+                        secondaryPickerItems = [.freedraw, .text, .image, .eraser, .laser, .frame, .webEmbed, .magicFrame]
+                    } else if newValue == .regular {
+                        primaryPickerItems = [.cursor, .rectangle, .diamond, .ellipse, .arrow, .line, .freedraw, .text, .image]
+                        secondaryPickerItems = [.eraser, .laser, .frame, .webEmbed, .magicFrame]
+                    }
+                }
                 
-                SegmentedPickerItem(value: ExcalidrawTool.laser) {
-                    Image(systemSymbol: .cursorarrowRays)
-                        .resizable()
-                        .scaledToFit()
-                        .font(.body.weight(.semibold))
-                        .modifier(
-                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
-                                if withFooter {
-                                    Text("K")
-                                }
+                if sizeClass != .expanded,
+                   let tool = toolState.activatedTool {
+                    Menu {
+                        Picker(selection: $toolState.activatedTool) {
+                            ForEach(secondaryPickerItems, id: \.self) { tool in
+                                densePickerItems(tool: tool)
+                                    .tag(tool)
                             }
+                        } label: { }
+                            .pickerStyle(.inline)
+                    } label: {
+                        SegmentedToolPickerItemView(
+                            tool: {
+                                if let lastActivatedSecondaryTool, secondaryPickerItems.contains(lastActivatedSecondaryTool) {
+                                    return lastActivatedSecondaryTool
+                                } else {
+                                    return (secondaryPickerItems.contains(tool) ? tool : secondaryPickerItems.first!)
+                                }
+                            }(),
+                            size: size,
+                            withFooter: false
                         )
+                        .foregroundStyle(
+                            toolState.activatedTool != nil && secondaryPickerItems.contains(toolState.activatedTool!) ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(HierarchicalShapeStyle.primary)
+                        )
+                    } primaryAction: {
+                         if let lastActivatedSecondaryTool,
+                            secondaryPickerItems.contains(lastActivatedSecondaryTool) {
+                             toolState.activatedTool = lastActivatedSecondaryTool
+                        } else {
+                            toolState.activatedTool = secondaryPickerItems.first
+                        }
+                    }
+                    .menuIndicator(.visible)
+                    .buttonStyle(.borderless)
+                    .padding(size / 3)
+                    .background {
+                        let isSelected = toolState.activatedTool != nil && secondaryPickerItems.contains(toolState.activatedTool!)
+                        if #available(macOS 14.0, iOS 17.0, *) {
+                            RoundedRectangle(cornerRadius: size / 1.6)
+                                .fill(
+                                    isSelected ? AnyShapeStyle(Color.accentColor.secondary) : AnyShapeStyle(Material.regularMaterial)
+                                )
+                                .stroke(.separator, lineWidth: 0.5)
+                        } else {
+                            RoundedRectangle(cornerRadius: size / 1.6)
+                                .fill(
+                                    isSelected ? AnyShapeStyle(Color.accentColor.opacity(0.3)) : AnyShapeStyle(Material.regularMaterial)
+                                )
+                            RoundedRectangle(cornerRadius: size / 1.6)
+                                .stroke(.secondary, lineWidth: 0.5)
+                        }
+//                        if  {
+//                            RoundedRectangle(cornerRadius: 6)
+//                                .fill(.background)
+//                                .shadow(radius: 1, y: 2)
+//                                .padding(.trailing, 32)
+//                                .padding(.vertical, 6)
+//                                .padding(.leading, 6)
+//                        }
+                    }
+                    .onChange(of: toolState.activatedTool) { newValue in
+                        if let newValue, secondaryPickerItems.contains(newValue) {
+                            lastActivatedSecondaryTool = newValue
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    @State private var primaryPickerItems: [ExcalidrawTool] = [
+        .cursor, .rectangle, .diamond, .ellipse, .arrow, .line, .freedraw, .text, .image
+    ]
+    @State private var secondaryPickerItems: [ExcalidrawTool] = [.eraser, .laser, .frame, .webEmbed, .magicFrame]
+    
+    @MainActor @ViewBuilder
+    private func primaryToolPikcerItems(size: CGFloat, withFooter: Bool) -> some View {
+        ForEach(primaryPickerItems, id: \.self) { tool in
+            toolPickerItemView(tool: tool, size: size, withFooter: withFooter)
+                .tag(tool)
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func secondaryToolPikcerItems(size: CGFloat, withFooter: Bool) -> some View {
+        ForEach(secondaryPickerItems, id: \.self) { tool in
+            toolPickerItemView(tool: tool, size: size, withFooter: withFooter)
+                .tag(tool)
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func toolPickerItemView(tool: ExcalidrawTool, size: CGFloat, withFooter: Bool) -> some View {
+        switch tool {
+            case .cursor:
+                SegmentedPickerItem(value: ExcalidrawTool.cursor) {
+                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
+                }
+                .help("\(String(localizable: .toolbarSelection)) - V \(String(localizable: .toolbarOr)) 1")
+            case .rectangle:
+                SegmentedPickerItem(value: ExcalidrawTool.rectangle) {
+                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
+                }
+                .help("\(String(localizable: .toolbarRectangle)) — R \(String(localizable: .toolbarOr)) 2")
+            case .diamond:
+                SegmentedPickerItem(value: ExcalidrawTool.diamond) {
+                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
+                }
+                .help("\(String(localizable: .toolbarDiamond)) — D \(String(localizable: .toolbarOr)) 3")
+            case .ellipse:
+                SegmentedPickerItem(value: ExcalidrawTool.ellipse) {
+                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
+                }
+                .help("\(String(localizable: .toolbarEllipse)) — O \(String(localizable: .toolbarOr)) 4")
+            case .arrow:
+                SegmentedPickerItem(value: ExcalidrawTool.arrow) {
+                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
+                }
+                .help("\(String(localizable: .toolbarArrow)) — A \(String(localizable: .toolbarOr)) 5")
+            case .line:
+                SegmentedPickerItem(value: ExcalidrawTool.line) {
+                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
+                }
+                .help("\(String(localizable: .toolbarLine)) — L \(String(localizable: .toolbarOr)) 6")
+            case .freedraw:
+                SegmentedPickerItem(value: ExcalidrawTool.freedraw) {
+                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
+                }
+                .help("\(String(localizable: .toolbarDraw)) — P \(String(localizable: .toolbarOr)) 7")
+            case .text:
+                SegmentedPickerItem(value: ExcalidrawTool.text) {
+                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
+                }
+                .help("\(String(localizable: .toolbarText)) — T \(String(localizable: .toolbarOr)) 8")
+            case .image:
+                SegmentedPickerItem(value: ExcalidrawTool.image) {
+                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
+                }
+                .help("\(String(localizable: .toolbarInsertImage)) — 9")
+            case .eraser:
+                SegmentedPickerItem(value: ExcalidrawTool.eraser) {
+                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
+                }
+                .help("\(String(localizable: .toolbarEraser)) — E \(String(localizable: .toolbarOr)) 0")
+            case .laser:
+                SegmentedPickerItem(value: ExcalidrawTool.laser) {
+                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
                 }
                 .help("\(String(localizable: .toolbarLaser)) — K")
-                
+            case .frame:
                 SegmentedPickerItem(value: ExcalidrawTool.frame) {
-                    Image(systemSymbol: .grid)
-                        .resizable()
-                        .scaledToFit()
-                        .font(.body.weight(.semibold))
-                        .modifier(
-                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
-                                if withFooter {
-                                    Text("F")
-                                }
-                            }
-                        )
+                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
                 }
                 .help("\(String(localizable: .toolbarFrame)) - F")
-                
+            case .webEmbed:
                 SegmentedPickerItem(value: ExcalidrawTool.webEmbed) {
-                    Image(systemSymbol: .chevronLeftForwardslashChevronRight)
-                        .resizable()
-                        .scaledToFit()
-                        .font(.body.weight(.semibold))
-                        .modifier(
-                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {}
-                        )
-                            
+                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
                 }
                 .help("\(String(localizable: .toolbarWebEmbed))")
-                
+            case .magicFrame:
                 SegmentedPickerItem(value: ExcalidrawTool.magicFrame) {
-                    Image(systemSymbol: .wandAndStarsInverse)
-                        .resizable()
-                        .scaledToFit()
-                        .font(.body.weight(.semibold))
-                        .modifier(
-                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {}
-                        )
+                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
                 }
                 .help("\(String(localizable: .toolbarMagicFrame))")
-            }
-            .padding(size / 3)
-            .background {
-                if #available(macOS 14.0, iOS 17.0, *) {
-                    RoundedRectangle(cornerRadius: size / 1.6)
-                        .fill(.regularMaterial)
-                        .stroke(.separator, lineWidth: 0.5)
-                } else {
-                    RoundedRectangle(cornerRadius: size / 1.6)
-                        .fill(.regularMaterial)
-                }
-            }
         }
     }
     
     @MainActor @ViewBuilder
     private func compactContent() -> some View {
         if toolState.inDragMode {
-            Button {
-            } label: {
+            Button { /* Do Nothing */ } label: {
                 Text(.localizable(.toolbarEdit))
             }
             .opacity(0)
@@ -529,25 +484,49 @@ struct ExcalidrawToolbar: View {
     private func denseContent() -> some View {
         HStack {
             Picker(selection: $toolState.activatedTool) {
-                Text(.localizable(.toolbarSelection)).tag(ExcalidrawTool.cursor)
-                Text(.localizable(.toolbarRectangle)).tag(ExcalidrawTool.rectangle)
-                Text(.localizable(.toolbarDiamond)).tag(ExcalidrawTool.diamond)
-                Text(.localizable(.toolbarEllipse)).tag(ExcalidrawTool.ellipse)
-                Text(.localizable(.toolbarArrow)).tag(ExcalidrawTool.arrow)
-                Text(.localizable(.toolbarLine)).tag(ExcalidrawTool.line)
-                Text(.localizable(.toolbarDraw)).tag(ExcalidrawTool.freedraw)
-                Text(.localizable(.toolbarText)).tag(ExcalidrawTool.text)
-                Text(.localizable(.toolbarInsertImage)).tag(ExcalidrawTool.image)
-                Text(.localizable(.toolbarEraser)).tag(ExcalidrawTool.eraser)
-                Text(.localizable(.toolbarLaser)).tag(ExcalidrawTool.laser)
-                Text(.localizable(.toolbarFrame)).tag(ExcalidrawTool.frame)
-                Text(.localizable(.toolbarWebEmbed)).tag(ExcalidrawTool.webEmbed)
-                Text(.localizable(.toolbarMagicFrame)).tag(ExcalidrawTool.magicFrame)
+                ForEach(ExcalidrawTool.allCases, id: \.self) { tool in
+                    densePickerItems(tool: tool)
+                        .tag(tool)
+                }
             } label: {
                 Text(.localizable(.toolbarActiveToolTitle))
             }
             .pickerStyle(.menu)
             .fixedSize()
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func densePickerItems(tool: ExcalidrawTool) -> some View {
+        switch tool {
+            case .cursor:
+                Text(.localizable(.toolbarSelection))
+            case .rectangle:
+                Text(.localizable(.toolbarRectangle))
+            case .diamond:
+                Text(.localizable(.toolbarDiamond))
+            case .ellipse:
+                Text(.localizable(.toolbarEllipse))
+            case .arrow:
+                Text(.localizable(.toolbarArrow))
+            case .line:
+                Text(.localizable(.toolbarLine))
+            case .freedraw:
+                Text(.localizable(.toolbarDraw))
+            case .text:
+                Text(.localizable(.toolbarText))
+            case .image:
+                Text(.localizable(.toolbarInsertImage))
+            case .eraser:
+                Text(.localizable(.toolbarEraser))
+            case .laser:
+                Text(.localizable(.toolbarLaser))
+            case .frame:
+                Text(.localizable(.toolbarFrame))
+            case .webEmbed:
+                Text(.localizable(.toolbarWebEmbed))
+            case .magicFrame:
+                Text(.localizable(.toolbarMagicFrame))
         }
     }
 
@@ -568,6 +547,7 @@ struct ExcalidrawToolbar: View {
                 Label(.localizable(.toolbarShapes), systemSymbol: .squareOnCircle)
         }
     }
+    
     
     @MainActor @ViewBuilder
     private func moreTools() -> some View {
@@ -606,6 +586,288 @@ struct ExcalidrawToolbar: View {
         .menuOrder(.fixed)
 #endif
         .modifier(MathInputSheetViewModifier(isPresented: $isMathInputSheetPresented))
+    }
+}
+
+enum ExcalidrawToolbarToolSizeClass {
+    case dense
+    case compact
+    case regular
+    case expanded
+}
+
+struct ExcalidrawToolbarToolContainer<Content: View>: View {
+    @EnvironmentObject private var layoutState: LayoutState
+    
+    var content: (_ size: ExcalidrawToolbarToolSizeClass) -> Content
+    
+    init(
+        @ViewBuilder content: @escaping (_ size: ExcalidrawToolbarToolSizeClass) -> Content
+    ) {
+        self.content = content
+    }
+    
+    @State private var sizeClass: ExcalidrawToolbarToolSizeClass = .dense
+    
+    var body: some View {
+        content(sizeClass)
+            .background {
+                WithContainerSize { containerSize in
+                    let _ = print(containerSize)
+                    Color.clear
+                    // , throttle: 0.3, latest: true
+                        .watchImmediately(of: containerSize) { newValue in
+                            let newSizeClass = getSizeClass(containerSize.width)
+                            if newSizeClass != sizeClass {
+                                self.sizeClass = newSizeClass
+                            }
+                        }
+                        .onChange(of: layoutState.isInspectorPresented) { _ in
+                            DispatchQueue.main.async {
+                                self.sizeClass = getSizeClass(containerSize.width)
+                            }
+                        }
+                        .onChange(of: layoutState.isSidebarPresented) { _ in
+                            DispatchQueue.main.async {
+                                self.sizeClass = getSizeClass(containerSize.width)
+                            }
+                        }
+                }
+            }
+    }
+    
+    private func getSizeClass(_ width: CGFloat) -> ExcalidrawToolbarToolSizeClass {
+        if #available(macOS 13.0, *) {
+            if layoutState.isInspectorPresented,
+               layoutState.isSidebarPresented {
+                switch width {
+                    case ..<1450:
+                        return .dense
+                    case ..<1600:
+                        return .compact
+                    default:
+                        return .regular
+                }
+            } else if layoutState.isSidebarPresented {
+                switch width {
+                    case ..<1260:
+                        return .dense
+                    case ..<1420:
+                        return .compact
+                    case ..<1580:
+                        return .regular
+                    default:
+                        return .expanded
+                }
+            } else if layoutState.isInspectorPresented {
+                switch width {
+                    case ..<1380:
+                        return .dense
+                    case ..<1540:
+                        return .compact
+                    case ..<1680:
+                        return .regular
+                    default:
+                        return .expanded
+                }
+            }
+        }
+        switch width {
+            case ..<1130:
+                return .dense
+            case ..<1300:
+                return .compact
+            case ..<1400:
+                return .regular
+            default:
+                return .expanded
+        }
+    }
+}
+
+struct SegmentedToolPickerItemView: View {
+    var tool: ExcalidrawTool
+    var size: CGFloat
+    var withFooter: Bool
+    
+    init(tool: ExcalidrawTool, size: CGFloat, withFooter: Bool) {
+        self.tool = tool
+        self.size = size
+        self.withFooter = withFooter
+    }
+    
+    var body: some View {
+        switch tool {
+            case .cursor:
+                Cursor()
+                    .stroke(.primary, lineWidth: 1.5)
+                    .aspectRatio(1, contentMode: .fit)
+                    .modifier(
+                        ExcalidrawToolbarItemModifer(size: size, labelType: .svg) {
+                            if withFooter {
+                                Text("1")
+                            }
+                        }
+                    )
+            case .rectangle:
+                RoundedRectangle(cornerRadius: 3)
+                    .stroke(.primary, lineWidth: 1.5)
+                    .modifier(
+                        ExcalidrawToolbarItemModifer(size: size, labelType: .nativeShape) {
+                            if withFooter {
+                                Text("2")
+                            }
+                        }
+                    )
+                
+            case .diamond:
+                RoundedRectangle(cornerRadius: 3)
+                    .stroke(.primary, lineWidth: 1.5)
+                    .rotationEffect(.degrees(45))
+                    .modifier(
+                        ExcalidrawToolbarItemModifer(size: size, labelType: .nativeShape) {
+                            if withFooter {
+                                Text("3")
+                            }
+                        }
+                    )
+            case .ellipse:
+                Circle()
+                    .stroke(.primary, lineWidth: 1.5)
+                    .modifier(
+                        ExcalidrawToolbarItemModifer(size: size, labelType: .nativeShape) {
+                            if withFooter {
+                                Text("4")
+                            }
+                        }
+                    )
+            case .arrow:
+                Image(systemSymbol: .arrowRight)
+                    .resizable()
+                    .scaledToFit()
+                    .font(.body.weight(.semibold))
+                    .modifier(
+                        ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                            if withFooter {
+                                Text("5")
+                            }
+                        }
+                    )
+            case .line:
+                Capsule()
+                    .stroke(.primary, lineWidth: 1.5)
+                    .frame(height: 1)
+                    .modifier(
+                        ExcalidrawToolbarItemModifer(size: size, labelType: .nativeShape) {
+                            if withFooter {
+                                Text("6")
+                            }
+                        }
+                    )
+            case .freedraw:
+                Image(systemSymbol: .pencil)
+                    .resizable()
+                    .scaledToFit()
+                    .font(.body.weight(.semibold))
+                    .modifier(
+                        ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                            if withFooter {
+                                Text("7")
+                            }
+                        }
+                    )
+            case .text:
+                Image(systemSymbol: .character)
+                    .resizable()
+                    .scaledToFit()
+                    .font(.body.weight(.semibold))
+                    .modifier(
+                        ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                            if withFooter {
+                                Text("8")
+                            }
+                        }
+                    )
+            case .image:
+                Image(systemSymbol: .photo)
+                    .resizable()
+                    .scaledToFit()
+                    .font(.body.weight(.semibold))
+                    .modifier(
+                        ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                            if withFooter {
+                                Text("9")
+                            }
+                        }
+                    )
+            case .eraser:
+                if #available(macOS 13.0, *) {
+                    Image(systemSymbol: .eraserLineDashed)
+                        .resizable()
+                        .scaledToFit()
+                        .font(.body.weight(.semibold))
+                        .modifier(
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                                if withFooter {
+                                    Text("0")
+                                }
+                            }
+                        )
+                } else {
+                    Image(systemSymbol: .pencilSlash)
+                        .resizable()
+                        .scaledToFit()
+                        .font(.body.weight(.semibold))
+                        .modifier(
+                            ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                                if withFooter {
+                                    Text("0")
+                                }
+                            }
+                        )
+                }
+            case .laser:
+                Image(systemSymbol: .cursorarrowRays)
+                    .resizable()
+                    .scaledToFit()
+                    .font(.body.weight(.semibold))
+                    .modifier(
+                        ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                            if withFooter {
+                                Text("K")
+                            }
+                        }
+                    )
+            case .frame:
+                Image(systemSymbol: .grid)
+                    .resizable()
+                    .scaledToFit()
+                    .font(.body.weight(.semibold))
+                    .modifier(
+                        ExcalidrawToolbarItemModifer(size: size, labelType: .image) {
+                            if withFooter {
+                                Text("F")
+                            }
+                        }
+                    )
+            case .webEmbed:
+                Image(systemSymbol: .chevronLeftForwardslashChevronRight)
+                    .resizable()
+                    .scaledToFit()
+                    .font(.body.weight(.semibold))
+                    .modifier(
+                        ExcalidrawToolbarItemModifer(size: size, labelType: .image) {}
+                    )
+                
+            case .magicFrame:
+                Image(systemSymbol: .wandAndStarsInverse)
+                    .resizable()
+                    .scaledToFit()
+                    .font(.body.weight(.semibold))
+                    .modifier(
+                        ExcalidrawToolbarItemModifer(size: size, labelType: .image) {}
+                    )
+        }
     }
 }
 

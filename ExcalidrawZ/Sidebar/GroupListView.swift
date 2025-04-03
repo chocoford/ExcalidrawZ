@@ -35,7 +35,7 @@ struct GroupListView: View {
                 a.groupType != .trash && b.groupType == .trash
             }
     }
-    
+
     @FetchRequest(
         sortDescriptors: [],
         predicate: NSPredicate(format: "inTrash == YES")
@@ -52,8 +52,6 @@ struct GroupListView: View {
 #if os(iOS)
     @State private var isCreateGroupConfirmationDialogPresented = false
 #endif
-    
-    @State private var isFirstAppear = true
     
     var body: some View {
         content
@@ -75,23 +73,23 @@ struct GroupListView: View {
                     createFolderSheetView()
                 }
             }
+            // Watch Group disappear
             .onChange(of: fileState.isTemporaryGroupSelected) { newValue in
-                if fileState.currentGroup == nil, !newValue, fileState.currentLocalFolder == nil {
+                if !newValue, !fileState.hasAnyActiveGroup {
                     fileState.currentGroup = displayedGroups.first
                 }
             }
             .onChange(of: fileState.currentLocalFolder) { newValue in
-                if fileState.currentGroup == nil, !fileState.isTemporaryGroupSelected, newValue == nil {
+                if newValue == nil, !fileState.hasAnyActiveGroup {
+                    fileState.currentGroup = displayedGroups.first
+                }
+            }
+            .onChange(of: fileState.currentGroup) { newValue in
+                if newValue == nil, !fileState.hasAnyActiveGroup {
                     fileState.currentGroup = displayedGroups.first
                 }
             }
             .onAppear {
-                defer { isFirstAppear = false }
-                if fileState.currentGroup == nil, !fileState.isTemporaryGroupSelected, fileState.currentLocalFolder == nil || isFirstAppear {
-                    Task {
-                        try? await fileState.setToDefaultGroup()
-                    }
-                }
                 initialNewGroupName = getNextGroupName()
             }
     }
@@ -102,6 +100,20 @@ struct GroupListView: View {
             ScrollView {
                 LazyVStack(spacing: 8) {
                     let spacing: CGFloat = 4
+                    Button {
+                        if !fileState.isInCollaborationSpace {
+                            fileState.isInCollaborationSpace = true
+                            if containerHorizontalSizeClass != .compact {
+                                fileState.currentCollaborationFile = .home
+                            }
+                        }
+                    } label: {
+                        Label(.localizable(.sidebarGroupRowCollaborationTitle), systemSymbol: .person3)
+                    }
+                    .buttonStyle(ListButtonStyle(selected: fileState.isInCollaborationSpace))
+                    
+                    Divider()
+
                     // Temporary
                     if !fileState.temporaryFiles.isEmpty {
                         VStack(alignment: .leading, spacing: spacing) {
@@ -152,30 +164,13 @@ struct GroupListView: View {
 
             HStack {
 #if os(macOS)
-                Menu {
-                    SwiftUI.Group {
-                        Button {
-                            isCreateGroupDialogPresented.toggle()
-                            createGroupType = .group
-                        } label: {
-                            Text(.localizable(.sidebarGroupListCreateTitle))
-                        }
-                        
-                        Button {
-                            isCreateLocalFolderDialogPresented.toggle()
-                        } label: {
-                            Text(.localizable(.sidebarGroupListButtonAddObservation))
-                        }
-                    }
-                    .labelStyle(.titleAndIcon)
-                } label: {
-                    Label(
-                        .localizable(.sidebarGroupListNewFolder),
-                        systemSymbol: .plusCircle
-                    )
+                if #available(macOS 13.0, *) {
+                    createGroupMenuButton()
+                        .buttonStyle(.borderless)
+                } else {
+                    createGroupMenuButton()
+                        .menuStyle(.borderlessButton)
                 }
-                .menuIndicator(.hidden)
-                .buttonStyle(.borderless)
 #elseif os(iOS)
                 Button {
                     isCreateGroupConfirmationDialogPresented.toggle()
@@ -217,7 +212,8 @@ struct GroupListView: View {
     @MainActor @ViewBuilder
     private func databaseGroupsList() -> some View {
         LazyVStack(alignment: .leading, spacing: 0) {
-            ForEach(displayedGroups) { group in
+            /// ❕❕❕use `id: \.self` can avoid multi-thread access crash when closing create-room-sheet...
+            ForEach(displayedGroups, id: \.self) { group in
                  GroupsView(group: group)
             }
         }
@@ -234,11 +230,33 @@ struct GroupListView: View {
             }
             initialNewGroupName = getNextGroupName()
         }
-        .watchImmediately(of: fileState.currentGroup) { newValue in
-            if newValue == nil && fileState.currentLocalFolder == nil && !fileState.isTemporaryGroupSelected {
-                fileState.currentGroup = displayedGroups.first
+    }
+    
+    @MainActor @ViewBuilder
+    private func createGroupMenuButton() -> some View {
+        Menu {
+            SwiftUI.Group {
+                Button {
+                    isCreateGroupDialogPresented.toggle()
+                    createGroupType = .group
+                } label: {
+                    Text(.localizable(.sidebarGroupListCreateTitle))
+                }
+                
+                Button {
+                    isCreateLocalFolderDialogPresented.toggle()
+                } label: {
+                    Text(.localizable(.sidebarGroupListButtonAddObservation))
+                }
             }
+            .labelStyle(.titleAndIcon)
+        } label: {
+            Label(
+                .localizable(.sidebarGroupListNewFolder),
+                systemSymbol: .plusCircle
+            )
         }
+        .menuIndicator(.hidden)
     }
     
     @State private var initialNewGroupName: String = ""
@@ -275,7 +293,6 @@ struct GroupListView: View {
     }
     
     private func importLocalFolders(urls: [URL]) {
-        print("[GroupListView] import local folders: \(urls)")
         let context = PersistenceController.shared.container.newBackgroundContext()
         Task.detached {
             do {

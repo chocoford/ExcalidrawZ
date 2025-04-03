@@ -295,6 +295,14 @@ struct GeneralSettingsView: View {
         } header: {
             Text(.localizable(.settingsICloudTitle))
         }
+        
+        Section {} footer: {
+            AsyncButton {
+                try await PersistenceController.shared.refreshIndices()
+            } label: {
+                Text("Refresh Spotlight Indices")
+            }
+        }
     }
     
     @MainActor @ViewBuilder

@@ -14,6 +14,8 @@ protocol AnyExcalidrawZMessage: Codable {
     var data: D { get set }
 }
 
+typealias Collaborator = ExcalidrawCore.CollaboratorsChangedMessage.Collobrator
+
 extension ExcalidrawCore: WKScriptMessageHandler {
     func userContentController(
         _ userContentController: WKUserContentController,
@@ -85,6 +87,26 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                             self.parent?.toolState.isBottomBarPresented = true
                         }
                     }
+                    
+                // Collab
+                case .didOpenLiveCollaboration(let message):
+                    DispatchQueue.main.async {
+                        self.isCollabEnabled = true
+                        self.parent?.file?.roomID = message.data.hash.replacingOccurrences(of: "#room=", with: "")
+                    }
+                case .onCollaboratorsChanged(let message):
+                    DispatchQueue.main.async {
+                        let collaborators = message.data.compactMap {
+                            if case .collaborator(let collaborator) = $0 {
+                                return collaborator
+                            }
+                            return nil
+                        }
+                        if case .room(let currentCollaborationFile) = self.parent?.fileState.currentCollaborationFile {
+                            self.parent?.fileState.collaborators[currentCollaborationFile] = collaborators
+                        }
+                    }
+                    
                 case .log(let logMessage):
                     self.onWebLog(message: logMessage)
             }
@@ -102,11 +124,12 @@ extension ExcalidrawCore {
     
     func onStateChanged(_ data: StateChangedMessageData) {
         guard !(self.isLoading) else { return }
+        let type = self.parent?.type
         let currentFileID = self.parent?.file?.id
         let onError = self.publishError
         Task {
             do {
-                guard await self.webActor.loadedFileID == currentFileID else {
+                guard await self.webActor.loadedFileID == currentFileID || type == .collaboration else {
                     return
                 }
 
@@ -268,7 +291,6 @@ extension ExcalidrawCore {
         }
         
     }
-    
 }
 
 extension ExcalidrawCore {
@@ -291,6 +313,10 @@ extension ExcalidrawCore {
         case didSelectElements
         case didUnselectAllElements
         
+        // Collab
+        case didOpenLiveCollaboration
+        case onCollaboratorsChanged
+        
         case log
     }
     
@@ -311,6 +337,10 @@ extension ExcalidrawCore {
         case didPenDown
         case didSelectElements(DidSelectElementsMessage)
         case didUnselectAllElements
+        
+        // Collab
+        case didOpenLiveCollaboration(DidOpenLiveCollaborationMessage)
+        case onCollaboratorsChanged(CollaboratorsChangedMessage)
         
         case log(LogMessage)
         
@@ -356,6 +386,12 @@ extension ExcalidrawCore {
                 case .didUnselectAllElements:
                     self = .didUnselectAllElements
                     
+                // Collab
+                case .didOpenLiveCollaboration:
+                    self = .didOpenLiveCollaboration(try DidOpenLiveCollaborationMessage(from: decoder))
+                case .onCollaboratorsChanged:
+                    self = .onCollaboratorsChanged(try CollaboratorsChangedMessage(from: decoder))
+                    
                 case .log:
                     self = .log(try LogMessage(from: decoder))
             }
@@ -392,7 +428,8 @@ extension ExcalidrawCore {
         let exportEmbedScene, exportWithDarkMode: Bool
 //        let gridSize: JSONNull?
         let defaultSidebarDockedPreference: Bool?
-        let lastPointerDownWith, name: String
+        let lastPointerDownWith: String
+        let name: String?
 //        let openMenu, openSidebar: JSONNull?
         let previousSelectedElementIDS: IDS
         let scrolledOutside: Bool
@@ -548,6 +585,96 @@ extension ExcalidrawCore {
         var data: [ExcalidrawElement]
     }
     
+    struct DidOpenLiveCollaborationMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: DidOpenLiveCollaborationMessageData
+        
+        struct DidOpenLiveCollaborationMessageData: Codable {
+            var hash: String
+            var href: String
+        }
+    }
+    
+    struct CollaboratorsChangedMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: [CollaboratorsChangedMessageData]
+        
+        enum CollaboratorsChangedMessageData: Codable {
+            enum CodingKeys: String, CodingKey {
+                case isCurrentUser
+            }
+            
+            case currentUser
+            case collaborator(Collobrator)
+            case invalid(PartialCollobrator)
+            
+            init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                let isCurrentUser = try container.decode(Bool.self, forKey: .isCurrentUser)
+                do {
+                    if isCurrentUser {
+                        self = .currentUser
+                    } else {
+                        self = try .collaborator(Collobrator(from: decoder))
+                    }
+                } catch {
+                    self = try .invalid(PartialCollobrator(from: decoder))
+                }
+            }
+            
+            func encode(to encoder: any Encoder) throws {
+                switch self {
+                    case .currentUser:
+                        struct CurrentUserPayload: Codable {
+                            var isCurrentUser: Bool
+                        }
+                        try CurrentUserPayload(isCurrentUser: true).encode(to: encoder)
+                    case .collaborator(let collobrator):
+                        try collobrator.encode(to: encoder)
+                    case .invalid(let partialCollaborator):
+                        try partialCollaborator.encode(to: encoder)
+                }
+            }
+        }
+        
+            
+        struct Collobrator: Codable, Hashable {
+            enum UserState: String, Codable {
+                case active, away, idle
+            }
+            
+            enum CodingKeys: String, CodingKey {
+                case isCurrentUser
+                case socketID = "socketId"
+                case userState
+                case username
+            }
+            
+            var isCurrentUser: Bool
+             var socketID: String
+            var userState: UserState
+            var username: String
+        }
+        
+        struct PartialCollobrator: Codable {
+            enum UserState: String, Codable {
+                case active, away, idle
+            }
+            
+            enum CodingKeys: String, CodingKey {
+                case isCurrentUser
+                case socketID = "socketId"
+                case userState
+                case username
+            }
+            
+            var isCurrentUser: Bool?
+            var socketID: String?
+            var userState: UserState?
+            var username: String?
+        }
+    }
+    
     // Log
     struct LogMessage: Codable {
         var event: String
@@ -555,7 +682,6 @@ extension ExcalidrawCore {
         var args: [String?]
     }
 }
-
 
 extension ExcalidrawFile {
     mutating func update(data: ExcalidrawView.Coordinator.ExcalidrawFileData) throws {
@@ -567,6 +693,7 @@ extension ExcalidrawFile {
         }
         
         var contentObject = try JSONSerialization.jsonObject(with: content) as! [String : Any]
+        // print("[ExcalidrawFile] update with obj: \(contentObject)")
         guard let dataData = data.dataString.data(using: .utf8),
               let fileDataJson = try JSONSerialization.jsonObject(with: dataData) as? [String : Any] else {
             struct InvalidPayloadError: LocalizedError {

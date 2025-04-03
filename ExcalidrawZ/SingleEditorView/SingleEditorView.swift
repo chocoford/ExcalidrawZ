@@ -44,7 +44,7 @@ struct SingleEditorView: View {
     @StateObject private var toolState = ToolState()
     @StateObject private var layoutState = LayoutState()
     
-    @State private var isLoading = true
+    @State private var loadingState: ExcalidrawView.LoadingState = .loading
     @State private var isProgressViewPresented = true
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -120,11 +120,11 @@ struct SingleEditorView: View {
                     fileDocument
                 } set: { doc in
                     guard var doc = doc else { return }
-                    try? doc.syncFiles()
+                    try? doc.updateContentFilesFromFiles()
                     fileDocument = doc
                 },
                 savingType: fileType,
-                isLoadingPage: $isLoading
+                loadingState: $loadingState
             ) { error in
                 alertToast(error)
                 print(error)
@@ -132,8 +132,8 @@ struct SingleEditorView: View {
             .toolbar(content: toolbar)
             .opacity(isProgressViewPresented ? 0 : 1)
             .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
-            .onChange(of: isLoading, debounce: 1) { newVal in
-                isProgressViewPresented = newVal
+            .onChange(of: loadingState, debounce: 1) { newVal in
+                isProgressViewPresented = newVal == .loading
             }
             if isProgressViewPresented {
                 VStack {
@@ -154,7 +154,6 @@ struct SingleEditorView: View {
                 .padding(.vertical, 2)
             } else {
                 ExcalidrawToolbar()
-                    .offset(y: layoutState.isExcalidrawToolbarDense ? 0 : 6)
             }
         }
         

@@ -18,8 +18,8 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
     @EnvironmentObject var layoutState: LayoutState
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var toolState: ToolState
-
-    @State private var sharedFile: ExcalidrawFile?
+    
+    @State private var isCollaboratorPopoverPresented = false
     
     func body(content: Content) -> some View {
         ZStack {
@@ -44,13 +44,20 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
         }
         .toolbar(content: toolbarContent)
 #if os(iOS)
-        .modifier(HideToolbarModifier(isPresented: toolState.isBottomBarPresented, placement: .bottomBar))
+        .modifier(
+            HideToolbarModifier(
+                isPresented: toolState.isBottomBarPresented,
+                placement: .bottomBar
+            )
+        )
         .animation(.default, value: toolState.isBottomBarPresented)
         .toolbarBackground(containerHorizontalSizeClass == .regular ? .automatic : .visible, for: .bottomBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarBackground(
+            fileState.isInCollaborationSpace && fileState.currentCollaborationFile == .home ? .hidden : .visible,
+            for: .navigationBar
+        )
         .navigationBarTitleDisplayMode(.inline) // <- fix principal toolbar
 #endif
-        .modifier(ShareFileModifier(sharedFile: $sharedFile))
     }
     
     @ToolbarContentBuilder
@@ -76,7 +83,6 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                 .padding(.vertical, 2)
             } else {
                 ExcalidrawToolbar()
-                    .offset(y: layoutState.isExcalidrawToolbarDense ? 0 : 6)
             }
         }
 #elseif os(iOS)
@@ -114,6 +120,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                     fileState.currentFile = nil
                     fileState.currentLocalFile = nil
                     fileState.currentTemporaryFile = nil
+                    fileState.currentCollaborationFile = nil
                 } label: {
                     Label(.localizable(.navigationButtonBack), systemSymbol: .chevronBackward)
                 }
@@ -135,38 +142,16 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 #endif
         
         ToolbarItemGroup(placement: .confirmationAction) {
+            if fileState.hasAnyActiveFile {
 #if os(iOS)
-            applePencilToggle()
+                applePencilToggle()
 #endif
-            
-            FileHistoryButton()
-            
-            Button {
-                do {
-                    if let file = fileState.currentFile {
-                        self.sharedFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
-                    } else if let folder = fileState.currentLocalFolder,
-                        let fileURL = fileState.currentLocalFile {
-                        try folder.withSecurityScopedURL { _ in
-                            self.sharedFile = try ExcalidrawFile(contentsOf: fileURL)
-                        }
-                    } else if fileState.isTemporaryGroupSelected,
-                              let fileURL = fileState.currentTemporaryFile {
-                        self.sharedFile = try ExcalidrawFile(contentsOf: fileURL)
-                    }
-                } catch {
-                    alertToast(error)
-                }
                 
-            } label: {
-                Label(.localizable(.export), systemSymbol: .squareAndArrowUp)
+                FileHistoryButton()
+                
+                ShareToolbarButton()
             }
-            .help(.localizable(.export))
-            .disabled(
-                fileState.currentGroup?.groupType == .trash ||
-                (fileState.currentFile == nil && fileState.currentLocalFile == nil && fileState.currentTemporaryFile == nil)
-            )
-
+            
             if #available(macOS 13.0, iOS 16.0, *), appPreference.inspectorLayout == .sidebar {
 #if os(iOS)
                 if !layoutState.isInspectorPresented {
@@ -248,9 +233,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
     @MainActor @ViewBuilder
     private func title() -> some View {
         if let file = fileState.currentFile {
-            VStack(
-                alignment: .leading
-            ) {
+            VStack(alignment: .leading) {
                 Text(file.name ?? String(localizable: .generalUntitled))
                     .font(.headline)
                 Text(file.updatedAt?.formatted() ?? "Not modified")
@@ -260,15 +243,46 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
         } else if let fileURL = fileState.currentLocalFile ?? fileState.currentTemporaryFile {
             let filename = fileURL.deletingPathExtension().lastPathComponent
             let updatedAt = (try? FileManager.default.attributesOfItem(atPath: fileURL.filePath))?[.modificationDate] as? Date
-            VStack(
-                alignment: .leading
-            ) {
+            VStack(alignment: .leading) {
                 Text(filename)
                     .font(.headline)
                 Text(updatedAt?.formatted() ?? "Not modified")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+        } else if case .room(let collaborationFile) = fileState.currentCollaborationFile {
+            HStack(spacing: 10) {
+                VStack(alignment: .leading) {
+                    Text(collaborationFile.name ?? String(localizable: .generalUntitled))
+                        .font(.headline)
+                    Text(collaborationFile.updatedAt?.formatted() ?? "Not modified")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                
+                HStack(spacing: 0) {
+                    Button {
+                        isCollaboratorPopoverPresented.toggle()
+                    } label: {
+                        Label("Collborators", systemSymbol: .person2)
+                    }
+                    .disabled(fileState.currentCollaborators.isEmpty)
+                    .popover(isPresented: $isCollaboratorPopoverPresented, arrowEdge: .bottom) {
+                        if #available(macOS 13.0, *) {
+                            CollaboratorsList()
+                                .scrollContentBackground(.hidden)
+                        } else {
+                            CollaboratorsList()
+                        }
+                        
+                    }
+                    
+                    Text("\(fileState.currentCollaborators.count)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+           
         }
     }
     
@@ -295,6 +309,8 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 
 #if os(iOS)
 struct HideToolbarModifier: ViewModifier {
+    @EnvironmentObject private var fileState: FileState
+    
     var isPresented: Bool
     var placement: ToolbarPlacement
     
@@ -306,10 +322,10 @@ struct HideToolbarModifier: ViewModifier {
     func body(content: Content) -> some View {
         if #available(macOS 15.0, iOS 18.0, *) {
             content
-                .toolbarVisibility(isPresented ? .automatic : .hidden, for: placement)
+                .toolbarVisibility(isPresented && fileState.hasAnyActiveFile ? .automatic : .hidden, for: placement)
         } else {
             content
-                .toolbar(isPresented ? .automatic : .hidden, for: placement)
+                .toolbar(isPresented && fileState.hasAnyActiveFile ? .automatic : .hidden, for: placement)
         }
     }
 }

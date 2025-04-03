@@ -102,4 +102,5 @@ WebPage
 Design
 Resources/*
 Config/Overrides.xcconfig
+Config/Secrets.plist
 PRIVATE_TIPS.md

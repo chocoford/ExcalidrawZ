@@ -38,7 +38,7 @@ extension ExcalidrawFile: FileDocument {
         return FileWrapper(regularFileWithContents: content ?? Data())
     }
     
-    mutating func syncFiles() throws {
+    mutating func updateContentFilesFromFiles() throws {
         if let content = self.content,
            var contentObject = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
             contentObject["files"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(self.files))

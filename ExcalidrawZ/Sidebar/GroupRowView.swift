@@ -85,10 +85,10 @@ struct GroupRowView: View {
         if group.groupType != .trash {
             if #available(macOS 13.0, *) {
                 content
-                    .dropDestination(for: FileLocalizable.self) { fileInfos, location in
-                        guard let _ = fileInfos.first else { return false }
-                        return true
-                    }
+//                    .dropDestination(for: FileLocalizable.self) { fileInfos, location in
+//                        guard let _ = fileInfos.first else { return false }
+//                        return true
+//                    }
             } else {
                 content
             }

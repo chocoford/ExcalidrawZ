@@ -21,12 +21,27 @@ struct FileListView: View {
     @FetchRequest
     private var files: FetchedResults<File>
     
-    init(currentGroupID: Group.ID, groupType: Group.GroupType?) {
+    init(currentGroupID: Group.ID, groupType: Group.GroupType?, sortField: ExcalidrawFileSortField) {
+        let sortDescriptors: [SortDescriptor<File>] = {
+            switch sortField {
+                case .updatedAt:
+                    [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse)
+                    ]
+                case .name:
+                    [
+                        SortDescriptor(\.name, order: .reverse),
+                    ]
+                case .rank:
+                    [
+                        SortDescriptor(\.rank, order: .forward),
+                    ]
+            }
+        }()
+        
         self._files = FetchRequest<File>(
-            sortDescriptors: [
-                SortDescriptor(\.updatedAt, order: .reverse),
-                SortDescriptor(\.createdAt, order: .reverse)
-            ],
+            sortDescriptors: sortDescriptors,
             predicate: groupType == .trash ? NSPredicate(
                 format: "inTrash == YES"
             ) : NSPredicate(
@@ -155,7 +170,7 @@ struct FileListView: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
         ScrollView {
-            LazyVStack(alignment: .leading) {
+            LazyVStack(alignment: .leading, spacing: 10) {
                 ForEach(files) { file in
                     FileRowView(file: file, fileIDToBeRenamed: $fileIDToBeRenamed)
                 }
@@ -164,6 +179,7 @@ struct FileListView: View {
             // .animation(.smooth, value: files)
             .padding(.horizontal, 8)
             .padding(.vertical, 12)
+            .fileListDropFallback()
         }
         .modifier(RenameSheetViewModifier(isPresented: Binding {
             fileIDToBeRenamed != nil

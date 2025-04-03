@@ -87,24 +87,60 @@ struct ExcalidrawView {
         category: "WebView"
     )
     
+    var roomIDBinding: Binding<String>?
     @Binding var file: ExcalidrawFile?
-    @Binding var isLoading: Bool
+    
+    enum LoadingState: Equatable {
+        case idle
+        case loading
+        case loaded
+        case error(Error)
+        
+        static func == (lhs: LoadingState, rhs: LoadingState) -> Bool {
+            if case .idle = lhs, case .idle = rhs {
+                return true
+            }
+            if case .loading = lhs, case .loading = rhs {
+                return true
+            }
+            if case .loaded = lhs, case .loaded = rhs {
+                return true
+            }
+            if case .error = lhs, case .error = rhs {
+                return true
+            }
+            return false
+        }
+    }
+    @Binding var loadingState: LoadingState
     
     var savingType: UTType
-    
     var onError: (Error) -> Void
+    
+    var interactionEnabled: Bool
+    
+    enum ExcalidrawType {
+        case normal
+        case collaboration
+    }
+    var type: ExcalidrawType
     
     // TODO: isLoadingFile is not used yet.
     init(
+        type: ExcalidrawType = .normal,
+        roomID: Binding<String>? = nil,
         file: Binding<ExcalidrawFile?>,
         savingType: UTType = .excalidrawFile,
-        isLoadingPage: Binding<Bool>,
-        isLoadingFile: Binding<Bool>? = nil,
+        loadingState: Binding<LoadingState>,
+        interactionEnabled: Bool = true,
         onError: @escaping (Error) -> Void
     ) {
+        self.type = type
+        self.roomIDBinding = roomID
         self._file = file
         self.savingType = savingType
-        self._isLoading = isLoadingPage
+        self._loadingState = loadingState
+        self.interactionEnabled = interactionEnabled
         self.onError = onError
     }
     
@@ -112,13 +148,48 @@ struct ExcalidrawView {
 }
 
 extension ExcalidrawView {
+    func makeExcalidrawWebView(context: Context) -> ExcalidrawWebView {
+        DispatchQueue.main.async {
+            cancellables.insert(
+                context.coordinator.$isLoading.sink { newValue in
+                    DispatchQueue.main.async {
+                        self.loadingState = newValue ? .loading : .loaded
+#if os(iOS)
+                        if !newValue/*, horizontalSizeClass == .compact*/ {
+                            Task { @MainActor in
+                                try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.5))
+                                try? await context.coordinator.toggleToolbarAction(key: "h")
+                            }
+                        }
+#endif
+                    }
+                }
+            )
+            Task {
+                for await error in context.coordinator.errorStream {
+                    self.onError(error)
+                }
+            }
+        }
+        return context.coordinator.webView
+    }
+    
     func updateExcalidrawWebView(_ webView: ExcalidrawWebView, context: Context) {
-        let webView = context.coordinator.webView
+        Task {
+            try? await context.coordinator.toggleWebPointerEvents(enabled: interactionEnabled)
+        }
         context.coordinator.parent = self
-        exportState.excalidrawWebCoordinator = context.coordinator
-        fileState.excalidrawWebCoordinator = context.coordinator
-        toolState.excalidrawWebCoordinator = context.coordinator
-        guard !webView.isLoading, !isLoading else { return }
+        switch self.type {
+            case .normal:
+                exportState.excalidrawWebCoordinator = context.coordinator
+                fileState.excalidrawWebCoordinator = context.coordinator
+                toolState.excalidrawWebCoordinator = context.coordinator
+            case .collaboration:
+                exportState.excalidrawCollaborationWebCoordinator = context.coordinator
+                fileState.excalidrawCollaborationWebCoordinator = context.coordinator
+                toolState.excalidrawCollaborationWebCoordinator = context.coordinator
+        }
+        guard !webView.isLoading, case .loaded = loadingState else { return }
         Task {
             do {
                 if appPreference.excalidrawAppearance == .auto {
@@ -142,9 +213,19 @@ extension ExcalidrawView {
                 self.onError(error)
             }
         }
-        if let file {
+        if type == .collaboration {
+            if file?.roomID?.isEmpty == false {
+                // has roomID
+            } else {
+                // context.coordinator.loadFile(from: file)
+            }
+        } else if let file {
             context.coordinator.loadFile(from: file)
         }
+    }
+    
+    func makeCoordinator() -> ExcalidrawCore {
+        ExcalidrawCore(self)
     }
 }
 
@@ -152,65 +233,21 @@ extension ExcalidrawView {
 extension ExcalidrawView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> ExcalidrawWebView {
-        DispatchQueue.main.async {
-            cancellables.insert(
-                context.coordinator.$isLoading.sink { newValue in
-                    DispatchQueue.main.async {
-                        self.isLoading = newValue
-                    }
-                }
-            )
-            Task {
-                for await error in context.coordinator.errorStream {
-                    self.onError(error)
-                }
-            }
-        }
-        return context.coordinator.webView
+        makeExcalidrawWebView(context: context)
     }
     
     func updateNSView(_ nsView: ExcalidrawWebView, context: Context) {
         updateExcalidrawWebView(nsView, context: context)
     }
-
-    func makeCoordinator() -> ExcalidrawCore {
-        ExcalidrawCore(self)
-    }
 }
 #elseif os(iOS)
 extension ExcalidrawView: UIViewRepresentable {
     func makeUIView(context: Context) -> ExcalidrawWebView {
-        DispatchQueue.main.async {
-            cancellables.insert(
-                context.coordinator.$isLoading.sink { newValue in
-                    DispatchQueue.main.async {
-                        self.isLoading = newValue
-                        if !newValue/*, horizontalSizeClass == .compact*/ {
-                            Task { @MainActor in
-                                try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.5))
-                                try? await context.coordinator.toggleToolbarAction(key: "h")
-                            }
-                        }
-                    }
-                }
-            )
-            Task {
-                for await error in context.coordinator.errorStream {
-                    self.onError(error)
-                }
-            }
-        }
-        return context.coordinator.webView
+        makeExcalidrawWebView(context: context)
     }
     
     func updateUIView(_ uiView: ExcalidrawWebView, context: Context) {
         updateExcalidrawWebView(uiView, context: context)
-    }
-    
-    func makeCoordinator() -> ExcalidrawCore {
-        ExcalidrawCore(
-            self
-        )
     }
 }
 #endif

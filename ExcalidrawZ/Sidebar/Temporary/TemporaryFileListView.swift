@@ -13,6 +13,10 @@ import ChocofordUI
 struct TemporaryFileListView: View {
     @EnvironmentObject private var fileState: FileState
     
+    init(sortField: ExcalidrawFileSortField) {
+        // self.sortField = sortField
+    }
+    
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading) {
@@ -267,5 +271,5 @@ struct TemporaryFileRowView: View {
 }
 
 #Preview {
-    TemporaryFileListView()
+    TemporaryFileListView(sortField: .name)
 }

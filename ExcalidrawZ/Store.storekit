@@ -174,7 +174,7 @@
           ],
           "displayPrice" : "2.99",
           "familyShareable" : false,
-          "groupNumber" : 1,
+          "groupNumber" : 2,
           "internalID" : "3C6D700D",
           "introductoryOffer" : null,
           "localizations" : [
@@ -216,6 +216,71 @@
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Lv2 Monthly",
           "subscriptionGroupID" : "4D88173A",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    },
+    {
+      "id" : "914DA4EE",
+      "localizations" : [
+
+      ],
+      "name" : "Plan",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "0.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "CD6E119A",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlock essential premium features ideal for regular collaborators at a minimal price. Helping cover the operational costs.",
+              "displayName" : "Starter",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plan.starter",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Starter",
+          "subscriptionGroupID" : "914DA4EE",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "2.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "35A4E550",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Experience limitless collaboration and advanced features. Designed for professionals and teams with extensive collaborative needs.",
+              "displayName" : "Pro",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plan.pro",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pro",
+          "subscriptionGroupID" : "914DA4EE",
           "type" : "RecurringSubscription",
           "winbackOffers" : [
 
