@@ -47,21 +47,30 @@ struct ExcalidrawToolbar: View {
                 if newValue == nil {
                     toolState.activatedTool = .cursor
                 }
-                
-                if let tool = newValue, tool != toolState.excalidrawWebCoordinator?.lastTool {
-                    Task {
-                        do {
-                            if let key = tool.keyEquivalent {
-                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: key)
-                            } else if tool == .webEmbed {
-                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(tool: .webEmbed)
-                            } else if tool == .magicFrame {
-                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(tool: .magicFrame)
-                            } else {
-                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: tool.rawValue)
+                if let tool = newValue {
+                    let webCoordinator: ExcalidrawView.Coordinator?
+                    
+                    if !fileState.isInCollaborationSpace {
+                        webCoordinator = toolState.excalidrawWebCoordinator
+                    } else  {
+                        webCoordinator = toolState.excalidrawCollaborationWebCoordinator
+                    }
+                     
+                    if tool != webCoordinator?.lastTool {
+                        Task {
+                            do {
+                                if let key = tool.keyEquivalent {
+                                    try await webCoordinator?.toggleToolbarAction(key: key)
+                                } else if tool == .webEmbed {
+                                    try await webCoordinator?.toggleToolbarAction(tool: .webEmbed)
+                                } else if tool == .magicFrame {
+                                    try await webCoordinator?.toggleToolbarAction(tool: .magicFrame)
+                                } else {
+                                    try await webCoordinator?.toggleToolbarAction(key: tool.rawValue)
+                                }
+                            } catch {
+                                alertToast(error)
                             }
-                        } catch {
-                            alertToast(error)
                         }
                     }
                 }
