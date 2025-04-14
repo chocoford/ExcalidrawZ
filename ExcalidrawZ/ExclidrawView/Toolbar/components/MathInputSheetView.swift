@@ -39,6 +39,7 @@ struct MathInputSheetViewModifier: ViewModifier {
 }
 
 struct MathInputSheetView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
     @Environment(\.alertToast) private var alertToast
     
@@ -56,7 +57,7 @@ struct MathInputSheetView: View {
     var body: some View {
         VStack {
             HStack {
-                Text("Insert Math")
+                Text(.localizable(.toolbarLatexMathInsertSheetTitle))
                     .font(.title.italic())
                 Spacer()
             }
@@ -77,9 +78,15 @@ struct MathInputSheetView: View {
                         }
                         .foregroundStyle(.red)
                     } else if let previewSVGURL {
-                        SVGPreviewView(svgURL: previewSVGURL)
+                        if colorScheme == .light {
+                            SVGPreviewView(svgURL: previewSVGURL)
+                        } else {
+                            SVGPreviewView(svgURL: previewSVGURL)
+                                .colorInvert()
+                                .hueRotation(.degrees(180))
+                        }
                     } else {
-                        Text("Preview here")
+                        Text(.localizable(.toolbarLatexMathInsertSheetPreviewTitle))
                             .font(.title3)
                             .foregroundStyle(.secondary)
                     }
@@ -91,7 +98,7 @@ struct MathInputSheetView: View {
                 Button {
                     dismiss()
                 } label: {
-                    Text("Cancel")
+                    Text(.localizable(.generalButtonCancel))
                 }
                 Button {
                     if let svgContent {
@@ -99,7 +106,7 @@ struct MathInputSheetView: View {
                         dismiss()
                     }
                 } label: {
-                    Text("Insert")
+                    Text(.localizable(.toolbarLatexMathButtonInsert))
                 }
                 .buttonStyle(.borderedProminent)
             }
