@@ -222,9 +222,10 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
 
 final class ToolState: ObservableObject {
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
-    var excalidrawCollaborationWebCoordinator: ExcalidrawView.Coordinator?
+    // var excalidrawCollaborationWebCoordinator: ExcalidrawView.Coordinator?
 
     @Published var activatedTool: ExcalidrawTool? = .cursor
+    @Published var isToolLocked: Bool = false
     @Published var previousActivatedTool: ExcalidrawTool? = nil
     @Published var inDragMode: Bool = false
     
@@ -249,8 +250,14 @@ final class ToolState: ObservableObject {
             default:
                 if let key = tool.keyEquivalent {
                     try await self.excalidrawWebCoordinator?.toggleToolbarAction(key: key)
+                } else {
+                    try await self.excalidrawWebCoordinator?.toggleToolbarAction(key: tool.rawValue)
                 }
         }
+    }
+    
+    func toggleToolLock(_ locked: Bool) async throws {
+        
     }
     
     enum ExtraTool {
@@ -295,6 +302,16 @@ final class ToolState: ObservableObject {
         try await excalidrawWebCoordinator?.togglePenMode(enabled: enabled)
         if pencilConnected || !enabled {
             try await excalidrawWebCoordinator?.connectPencil(enabled: enabled)
+        }
+    }
+    
+    func toggleToolLock() {
+        Task {
+            do {
+                try await self.excalidrawWebCoordinator?.toggleToolbarAction(key: "q")
+            } catch {
+                
+            }
         }
     }
 }

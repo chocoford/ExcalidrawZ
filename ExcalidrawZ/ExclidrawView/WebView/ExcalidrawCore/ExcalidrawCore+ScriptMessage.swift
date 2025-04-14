@@ -56,6 +56,8 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                         self.parent?.toolState.activatedTool = tool
                         self.parent?.toolState.inDragMode = false
                     }
+                case .didToggleToolLock(let message):
+                    self.parent?.toolState.isToolLocked = message.data
                 case .getElementsBlob(let blobData):
                     self.flyingBlobsRequest[blobData.data.id]?(blobData.data.blobData)
                 case .getElementsSVG(let svgData):
@@ -304,6 +306,7 @@ extension ExcalidrawCore {
         case onFocus
         case onBlur
         case didSetActiveTool
+        case didToggleToolLock
         case getElementsBlob
         case getElementsSVG
         case addLibrary
@@ -329,6 +332,7 @@ extension ExcalidrawCore {
         case onFocus
         case onBlur
         case didSetActiveTool(SetActiveToolMessage)
+        case didToggleToolLock(DidtoggleToolLockMessage)
         case getElementsBlob(ExcalidrawElementsBlobData)
         case getElementsSVG(ExcalidrawElementsSVGData)
         case addLibrary(AddLibraryItemMessage)
@@ -369,6 +373,8 @@ extension ExcalidrawCore {
                     self = .onBlur
                 case .didSetActiveTool:
                     self = .didSetActiveTool(try SetActiveToolMessage(from: decoder))
+                case .didToggleToolLock:
+                    self = .didToggleToolLock(try DidtoggleToolLockMessage(from: decoder))
                 case .getElementsBlob:
                     self = .getElementsBlob(try ExcalidrawElementsBlobData(from: decoder))
                 case .getElementsSVG:
@@ -548,6 +554,11 @@ extension ExcalidrawCore {
                 case magicFrame = "magicframe"
             }
         }
+    }
+    
+    struct DidtoggleToolLockMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: Bool
     }
 
     struct AddLibraryItemMessage: AnyExcalidrawZMessage {

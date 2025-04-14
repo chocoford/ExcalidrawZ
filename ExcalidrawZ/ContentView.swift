@@ -27,7 +27,6 @@ struct ContentView: View {
     
     @StateObject private var fileState = FileState()
     @StateObject private var exportState = ExportState()
-    @StateObject private var toolState = ToolState()
     @StateObject private var layoutState = LayoutState()
     
 #if canImport(AppKit)
@@ -58,7 +57,6 @@ struct ContentView: View {
 #endif
             .environmentObject(fileState)
             .environmentObject(exportState)
-            .environmentObject(toolState)
             .environmentObject(layoutState)
             .swiftyAlert(logs: true)
             .bindWindow($window)

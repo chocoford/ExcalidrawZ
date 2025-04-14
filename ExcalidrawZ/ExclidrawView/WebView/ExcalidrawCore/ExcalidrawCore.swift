@@ -30,7 +30,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
         }
     }()
     internal var publishError: (_ error: Error) -> Void
-    var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in } toolbarActionHandler2: { _ in }
+    var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in }
     lazy var webActor = ExcalidrawWebActor(coordinator: self)
     
     init(_ parent: ExcalidrawView?) {
@@ -109,13 +109,24 @@ class ExcalidrawCore: NSObject, ObservableObject {
         self.webView = ExcalidrawWebView(
             frame: .zero,
             configuration: config
-        ) { num in
-            Task {
-                try? await self.toggleToolbarAction(key: num)
-            }
-        } toolbarActionHandler2: { char in
-            Task {
-                try? await self.toggleToolbarAction(key: char)
+        ) { key in
+            switch key {
+                case .number(let int):
+                    Task {
+                        try? await self.toggleToolbarAction(key: int)
+                    }
+                case .char(let character):
+                    Task {
+                        try? await self.toggleToolbarAction(key: character)
+                    }
+                case .space:
+                    Task {
+                        try? await self.toggleToolbarAction(key: " ")
+                    }
+                case .escape:
+                    Task {
+                        try? await self.toggleToolbarAction(key: "\u{1B}")
+                    }
             }
         }
 #if DEBUG
@@ -257,8 +268,8 @@ extension ExcalidrawCore {
         print(#function, key)
         if key == "\u{1B}" {
             try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Escape'); 0;")
-//        } else if key == " " {
-//            try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Space'); 0;")
+        } else if key == " " {
+            try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Space'); 0;")
         } else {
             try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
         }

@@ -58,6 +58,13 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
         )
         .navigationBarTitleDisplayMode(.inline) // <- fix principal toolbar
 #endif
+        .onChange(of: self.fileState.isInCollaborationSpace) { newValue in
+            if newValue {
+                
+            } else {
+                
+            }
+        }
     }
     
     @ToolbarContentBuilder

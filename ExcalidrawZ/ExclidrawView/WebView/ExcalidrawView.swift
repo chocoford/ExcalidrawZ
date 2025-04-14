@@ -14,18 +14,21 @@ import QuartzCore
 import UniformTypeIdentifiers
 
 class ExcalidrawWebView: WKWebView {
-    var shouldHandleInput = false
-    var toolbarActionHandler: (Int) -> Void
-    var toolbarActionHandler2: (Character) -> Void
+    var shouldHandleInput = true
+    
+    enum ToolbarActionKey {
+        case number(Int)
+        case char(Character)
+        case space, escape
+    }
+    var toolbarActionHandler: (ToolbarActionKey) -> Void
     
     init(
         frame: CGRect,
         configuration: WKWebViewConfiguration,
-        toolbarActionHandler: @escaping (Int) -> Void,
-        toolbarActionHandler2: @escaping (Character) -> Void
+        toolbarActionHandler: @escaping (ToolbarActionKey) -> Void
     ) {
         self.toolbarActionHandler = toolbarActionHandler
-        self.toolbarActionHandler2 = toolbarActionHandler2
         super.init(frame: frame, configuration: configuration)
 #if canImport(UIKit)
         self.scrollView.isScrollEnabled = false
@@ -42,27 +45,15 @@ class ExcalidrawWebView: WKWebView {
         if shouldHandleInput,
            let char = event.characters {
             if let num = Int(char), num >= 0, num <= 9 {
-                self.toolbarActionHandler(num)
+                self.toolbarActionHandler(.number(num))
             } else if ExcalidrawTool.allCases.compactMap({$0.keyEquivalent}).contains(where: {$0 == Character(char)}), !char.isEmpty {
-                self.toolbarActionHandler2(Character(char))
+                self.toolbarActionHandler(.char(Character(char)))
             } else if Character(char) == Character(" ") {
                 // TODO: migrate to excalidrawZHelper
-                self.evaluateJavaScript("""
-(() => {
-const spaceKeydownEvent = {
-    key: " ",
-    code: "Space",
-    altKey: false,
-    shiftKey: false,
-    composed: true,
-    keyCode: 32, // Space 对应的 keyCode 是 32
-    which: 32,
-};
-document.dispatchEvent(new KeyboardEvent("keydown", spaceKeydownEvent));
-})();
-0;
-""")
-                // self.toolbarActionHandler2(Character(" ")) <-- not a toolbar action actually.
+                self.toolbarActionHandler(.space)
+            } else if Character(char) == Character("q") {
+                // TODO: migrate to excalidrawZHelper
+                self.toolbarActionHandler(.char("q"))
             } else {
                 super.keyDown(with: event)
             }
@@ -179,15 +170,20 @@ extension ExcalidrawView {
             try? await context.coordinator.toggleWebPointerEvents(enabled: interactionEnabled)
         }
         context.coordinator.parent = self
+        // Move to `ContentViewDetail`
+        if self.interactionEnabled {
+            toolState.excalidrawWebCoordinator = context.coordinator
+        }
         switch self.type {
             case .normal:
                 exportState.excalidrawWebCoordinator = context.coordinator
                 fileState.excalidrawWebCoordinator = context.coordinator
                 toolState.excalidrawWebCoordinator = context.coordinator
             case .collaboration:
-                exportState.excalidrawCollaborationWebCoordinator = context.coordinator
-                fileState.excalidrawCollaborationWebCoordinator = context.coordinator
-                toolState.excalidrawCollaborationWebCoordinator = context.coordinator
+                if self.interactionEnabled {
+                    exportState.excalidrawCollaborationWebCoordinator = context.coordinator
+                    fileState.excalidrawCollaborationWebCoordinator = context.coordinator
+                }
         }
         guard !webView.isLoading, case .loaded = loadingState else { return }
         Task {
