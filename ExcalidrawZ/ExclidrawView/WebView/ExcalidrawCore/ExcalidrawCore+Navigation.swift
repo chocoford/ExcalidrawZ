@@ -53,6 +53,7 @@ extension ExcalidrawCore: WKNavigationDelegate {
                                 .init(mediaItem: $0)
                             }
                         )
+                        try await Task.sleep(nanoseconds: UInt64(1e+9 * 0.2))
                         self.hasInjectIndexedDBData = true
                         
                         // Open Collab mode if needed.

@@ -282,6 +282,7 @@
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		392CF8EA2C8EF1A700CC81B9 /* ci_scripts */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ci_scripts; sourceTree = "<group>"; };
+		394EF5032DAD358A005C18E7 /* Debug */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Debug; sourceTree = "<group>"; };
 		3963A0342C6BD6B200472AE7 /* Sparkle */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3963A0352C6BD6B900472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Sparkle; sourceTree = "<group>"; };
 		3966034F2D096D2900870AC9 /* Utils */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (396603652D096D2900870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 396603662D096D2900870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39A28CA22D92AB8700B079B1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Utils; sourceTree = "<group>"; };
 		396603722D096D3400870AC9 /* Extensions */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (396603882D096D3400870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Extensions; sourceTree = "<group>"; };
@@ -433,6 +434,7 @@
 				39B69BC52D8BD74C003369E8 /* Subscription */,
 				396603E72D096D6200870AC9 /* SingleEditorView */,
 				396603D92D096D5700870AC9 /* Settings */,
+				394EF5032DAD358A005C18E7 /* Debug */,
 				3963A0342C6BD6B200472AE7 /* Sparkle */,
 				396603C42D096D4900870AC9 /* Store */,
 				396603AE2D096D4500870AC9 /* Persistence */,
@@ -495,6 +497,7 @@
 				3987A5142CB54B200054D7D5 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
+				394EF5032DAD358A005C18E7 /* Debug */,
 				3966034F2D096D2900870AC9 /* Utils */,
 				396603722D096D3400870AC9 /* Extensions */,
 				396603912D096D3E00870AC9 /* Models */,
@@ -544,6 +547,7 @@
 				3987A51E2CB54B840054D7D5 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
+				394EF5032DAD358A005C18E7 /* Debug */,
 				3966034F2D096D2900870AC9 /* Utils */,
 				396603722D096D3400870AC9 /* Extensions */,
 				396603912D096D3E00870AC9 /* Models */,
