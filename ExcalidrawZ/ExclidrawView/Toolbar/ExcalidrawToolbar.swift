@@ -123,7 +123,6 @@ struct ExcalidrawToolbar: View {
             }
             .foregroundStyle(toolState.isToolLocked ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(HierarchicalShapeStyle.primary))
             .animation(.default, value: toolState.isToolLocked)
-            
         }
         .help("\(String(localizable: .toolbarButtonLockToolHelp)) - Q")
         

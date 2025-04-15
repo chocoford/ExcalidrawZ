@@ -24,15 +24,6 @@ struct ContentViewDetail: View {
                    .allowsHitTesting(fileState.isInCollaborationSpace)
            }
            .environmentObject(toolState)
-//           .onChange(of: fileState.currentCollaborationFile) { newValue in
-//               applyToolStateWebCoordinator()
-//           }
-//           .onChange(of: fileState.isInCollaborationSpace) { newValue in
-//               applyToolStateWebCoordinator()
-//           }
-//           .onAppear {
-//               applyToolStateWebCoordinator()
-//           }
     }
     
     private func applyToolStateWebCoordinator() {
