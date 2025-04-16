@@ -8,12 +8,28 @@
 import Foundation
 import WebKit
 
+extension Notification.Name {
+    static let shouldOpenExternalURL = Notification.Name("ShouldOpenExternalURL")
+}
+
+extension Notification {
+    static func shouldOpenExternalURL(url: URL) -> Notification {
+        Notification(name: .shouldOpenExternalURL, object: url)
+    }
+}
+
 extension ExcalidrawCore: WKUIDelegate {
-    func webView(_ webView: WKWebView,
-                 createWebViewWith configuration: WKWebViewConfiguration,
-                 for navigationAction: WKNavigationAction,
-                 windowFeatures: WKWindowFeatures) -> WKWebView? {
-        dump(navigationAction)
+    func webView(
+        _ webView: WKWebView,
+        createWebViewWith configuration: WKWebViewConfiguration,
+        for navigationAction: WKNavigationAction,
+        windowFeatures: WKWindowFeatures
+    ) -> WKWebView? {
+//        dump(navigationAction)
+        print(navigationAction.targetFrame, navigationAction.request)
+        if let url = navigationAction.request.url {
+            NotificationCenter.default.post(.shouldOpenExternalURL(url: url))
+        }
         return nil
     }
     

@@ -37,7 +37,7 @@ extension ExcalidrawCore: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         logger.info("[ExcalidrawCore] did finish navigation")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             if !self.hasInjectIndexedDBData {
                 // Should import medias as soon as possible.
                 // And It is required to reload after injected.
@@ -53,7 +53,7 @@ extension ExcalidrawCore: WKNavigationDelegate {
                                 .init(mediaItem: $0)
                             }
                         )
-                        try await Task.sleep(nanoseconds: UInt64(1e+9 * 0.2))
+                        try await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
                         self.hasInjectIndexedDBData = true
                         
                         // Open Collab mode if needed.

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreData
+import WebKit
 
 import ChocofordUI
 
@@ -16,10 +17,35 @@ struct OpenURLModifier: ViewModifier {
     
     @EnvironmentObject private var fileState: FileState
     
+    @State private var externalURLToBeOpen: URL?
+    
     func body(content: Content) -> some View {
         content
             .onOpenURL { url in
                 onOpenURL(url)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .shouldOpenExternalURL)) { notification in
+                guard let url = notification.object as? URL else { return }
+                
+                if url.scheme == "excalidrawz" || url.isFileURL && url.pathExtension == "excalidraw" {
+                    self.onOpenURL(url)
+                } else {
+                    self.externalURLToBeOpen = url
+                }
+            }
+            .sheet(
+                isPresented: Binding(
+                    get: {
+                        externalURLToBeOpen != nil
+                    },
+                    set: { val in
+                        if !val {
+                            externalURLToBeOpen = nil
+                        }
+                    }
+                )
+            ) {
+                OpenURLSheetView(url: externalURLToBeOpen!)
             }
     }
     
@@ -33,6 +59,8 @@ struct OpenURLModifier: ViewModifier {
             }
             if components.host == "collab" {
                 onOpenCollabURL(url, components: components)
+            } else {
+                self.externalURLToBeOpen = url
             }
         }
     }
@@ -135,3 +163,174 @@ struct OpenURLModifier: ViewModifier {
         }
     }
 }
+
+
+struct OpenURLSheetView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+
+    var url: URL
+    
+    @State private var isPreviewWebView: Bool = false
+    @State private var isPreviewWebViewLoading: Bool = false
+    @State private var window: NSWindow?
+    
+    @State private var viewWidth: CGFloat = 400
+    @State private var viewHeight: CGFloat = 240
+    
+    var body: some View {
+        VStack {
+            Text("Open External Link?")
+                .font(.title)
+            
+            Text("You're about to visit:")
+            Text(url.absoluteString)
+                .fontWeight(.semibold)
+            
+            
+#if os(macOS)
+            if isPreviewWebView {
+                ZStack {
+                    PreviewWebView(url: url, isLoading: $isPreviewWebViewLoading)
+                    
+                    if isPreviewWebViewLoading {
+                        Rectangle()
+                            .fill(.regularMaterial)
+                            .overlay {
+                                ProgressView()
+                            }
+                    }
+                }
+                .animation(.default, value: isPreviewWebViewLoading)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay {
+                    if #available(macOS 13.0, iOS 17.0, *) {
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(.separator)
+                    } else {
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(.secondary)
+                    }
+                }
+                .background {
+                    RoundedRectangle(cornerRadius: 12)
+                        .shadow(radius: 2)
+                }
+            }
+#endif
+            
+            VStack {
+                Button {
+                    openURL(url)
+                } label: {
+                    Text("Continue to site")
+                        .frame(width: 160)
+                }
+                .buttonStyle(.borderedProminent)
+                
+                Button {
+                    dismiss()
+                } label: {
+                    Text(.localizable(.generalButtonCancel))
+                        .frame(width: 160)
+                }
+            }
+            .controlSize({
+                if #available(macOS 14.0, *) {
+                    .extraLarge
+                } else {
+                    .large
+                }
+            }())
+        }
+        .padding(40)
+        .frame(width: viewWidth, height: viewHeight)
+        .overlay(alignment: .topTrailing) {
+            if url.scheme?.starts(with: "http") == true {
+                Button {
+                    isPreviewWebView.toggle()
+                } label: {
+                    Label("Preview", systemSymbol: .eye)
+                        .symbolVariant(isPreviewWebView ? .none : .slash)
+                        .labelStyle(.iconOnly)
+                        .animation(nil, value: isPreviewWebView)
+                }
+                .buttonStyle(.text)
+                .padding(40)
+            }
+        }
+        .animation(.smooth, value: isPreviewWebView)
+        .bindWindow($window)
+        .onChange(of: isPreviewWebView) { newValue in
+            changeViewSize(isPreviewWebView: newValue, window: window)
+        }
+        .watchImmediately(of: window) { newValue in
+            changeViewSize(isPreviewWebView: isPreviewWebView, window: newValue)
+        }
+    }
+    
+    private func changeViewSize(isPreviewWebView: Bool, window: NSWindow?) {
+        guard let window else { return }
+        let newWidth: CGFloat = isPreviewWebView ? 900 : 360
+        let newHeight: CGFloat = isPreviewWebView ? 600 : 240
+        window.setFrame(
+            NSRect(
+                origin: window.frame.origin,
+                size: CGSize.init(
+                    width: newWidth, height: newHeight
+                )
+            ),
+            display: true,
+            animate: true
+        )
+        withAnimation(.smooth) {
+            viewWidth = newWidth
+            viewHeight = newHeight
+        }
+    }
+}
+
+
+#if os(macOS)
+struct PreviewWebView: NSViewRepresentable {
+    var url: URL
+    
+    @Binding var isLoading: Bool
+    
+    func makeNSView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        
+        webView.load(URLRequest(url: url))
+        DispatchQueue.main.async {
+            self.isLoading = true
+        }
+        
+        webView.navigationDelegate = context.coordinator
+        
+        return webView
+    }
+    
+    func updateNSView(_ nsView: WKWebView, context: Context) {
+        
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+    
+    class Coordinator: NSObject, WKNavigationDelegate {
+        var parent: PreviewWebView
+        
+        init(parent: PreviewWebView) {
+            self.parent = parent
+        }
+        
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            DispatchQueue.main.async {
+                self.parent.isLoading = false
+            }
+        }
+    }
+}
+
+#endif
