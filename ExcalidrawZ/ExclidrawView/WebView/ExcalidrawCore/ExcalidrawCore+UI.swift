@@ -25,8 +25,6 @@ extension ExcalidrawCore: WKUIDelegate {
         for navigationAction: WKNavigationAction,
         windowFeatures: WKWindowFeatures
     ) -> WKWebView? {
-//        dump(navigationAction)
-        print(navigationAction.targetFrame, navigationAction.request)
         if let url = navigationAction.request.url {
             NotificationCenter.default.post(.shouldOpenExternalURL(url: url))
         }
