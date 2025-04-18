@@ -17,6 +17,9 @@ struct ContentViewDetail: View {
     var body: some View {
         ExcalidrawContainerView()
            .modifier(ExcalidrawContainerToolbarContentModifier())
+#if os(iOS)
+           .modifier(ApplePencilToolbarModifier())
+#endif
            .opacity(fileState.isInCollaborationSpace ? 0 : 1)
            .overlay {
                ExcalidrawCollabContainerView()

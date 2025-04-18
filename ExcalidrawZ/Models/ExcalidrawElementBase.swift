@@ -110,7 +110,7 @@ protocol ExcalidrawElementBase: Codable, Identifiable, Hashable {
 }
 
 
-enum AnyCodable: Codable, Hashable {
+enum AnyCodable: Codable, Hashable, Sendable {
     case string(String)
     case bool(Bool)
     case int(Int)

@@ -46,6 +46,9 @@ struct OpenURLModifier: ViewModifier {
                 )
             ) {
                 OpenURLSheetView(url: externalURLToBeOpen!)
+#if os(iOS)
+                    .presentationDetents([.fraction(0.35)])
+#endif
             }
     }
     
@@ -173,17 +176,23 @@ struct OpenURLSheetView: View {
     
     @State private var isPreviewWebView: Bool = false
     @State private var isPreviewWebViewLoading: Bool = false
-    @State private var window: NSWindow?
+#if canImport(AppKit)
+    typealias PlatformWindow = NSWindow
+#elseif canImport(UIKit)
+    typealias PlatformWindow = UIWindow
+#endif
+    
+    @State private var window: PlatformWindow?
     
     @State private var viewWidth: CGFloat = 400
     @State private var viewHeight: CGFloat = 240
     
     var body: some View {
         VStack {
-            Text("Open External Link?")
+            Text(.localizable(.externalLinkOpenSheetTitle))
                 .font(.title)
             
-            Text("You're about to visit:")
+            Text(.localizable(.externalLinkOpenSheetDescription))
             Text(url.absoluteString)
                 .fontWeight(.semibold)
             
@@ -223,7 +232,7 @@ struct OpenURLSheetView: View {
                 Button {
                     openURL(url)
                 } label: {
-                    Text("Continue to site")
+                    Text(.localizable(.externalLinkOpenSheetButtonContinue))
                         .frame(width: 160)
                 }
                 .buttonStyle(.borderedProminent)
@@ -236,13 +245,14 @@ struct OpenURLSheetView: View {
                 }
             }
             .controlSize({
-                if #available(macOS 14.0, *) {
+                if #available(macOS 14.0, iOS 17.0, *) {
                     .extraLarge
                 } else {
                     .large
                 }
             }())
         }
+#if os(macOS)
         .padding(40)
         .frame(width: viewWidth, height: viewHeight)
         .overlay(alignment: .topTrailing) {
@@ -259,17 +269,20 @@ struct OpenURLSheetView: View {
                 .padding(40)
             }
         }
+#endif
         .animation(.smooth, value: isPreviewWebView)
         .bindWindow($window)
+#if os(macOS)
         .onChange(of: isPreviewWebView) { newValue in
             changeViewSize(isPreviewWebView: newValue, window: window)
         }
         .watchImmediately(of: window) { newValue in
             changeViewSize(isPreviewWebView: isPreviewWebView, window: newValue)
         }
+#endif
     }
-    
-    private func changeViewSize(isPreviewWebView: Bool, window: NSWindow?) {
+#if os(macOS)
+    private func changeViewSize(isPreviewWebView: Bool, window: PlatformWindow?) {
         guard let window else { return }
         let newWidth: CGFloat = isPreviewWebView ? 900 : 360
         let newHeight: CGFloat = isPreviewWebView ? 600 : 240
@@ -288,6 +301,7 @@ struct OpenURLSheetView: View {
             viewHeight = newHeight
         }
     }
+#endif
 }
 
 

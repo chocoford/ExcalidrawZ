@@ -524,7 +524,9 @@ extension ExcalidrawCore {
     
     @MainActor
     public func getCollaborationInfo() async throws -> CollaborationInfo {
-        let res = try await webView.evaluateJavaScript("window.excalidrawZHelper.getExcalidrawCollabInfo();")
+        guard let res = try await webView.evaluateJavaScript("window.excalidrawZHelper.getExcalidrawCollabInfo();") else {
+            return CollaborationInfo(username: "")
+        }
         if JSONSerialization.isValidJSONObject(res) {
             let data = try JSONSerialization.data(withJSONObject: res)
             return try JSONDecoder().decode(CollaborationInfo.self, from: data)

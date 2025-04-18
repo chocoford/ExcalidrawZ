@@ -39,7 +39,6 @@ struct ContentView: View {
     @State private var cloudContainerEventChangeListener: AnyCancellable?
     
     @State private var isFirstAppear = true
-
     
     var body: some View {
         content()
@@ -52,9 +51,6 @@ struct ContentView: View {
             .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
             .modifier(OpenURLModifier())
             .modifier(UserActivityHandlerModifier())
-#if os(iOS)
-            .modifier(ApplePencilToolbarModifier())
-#endif
             .environmentObject(fileState)
             .environmentObject(exportState)
             .environmentObject(layoutState)

@@ -15,15 +15,17 @@ struct SwitchAppStoreVersionViewViewModifier: ViewModifier {
     
     func body(content: Content) -> some View {
         content
+#if os(macOS)
             .sheet(isPresented: $isPresented) {
                 SwitchAppStoreVersionView()
                     .padding(40)
                     .frame(width: 660, height: 540)
                     .swiftyAlert()
             }
+#endif
     }
 }
-
+#if os(macOS)
 struct SwitchAppStoreVersionView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
@@ -187,3 +189,4 @@ struct SwitchAppStoreVersionView: View {
 #Preview {
     SwitchAppStoreVersionView()
 }
+#endif

@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum ExcalidrawElement: Codable, Hashable {
+enum ExcalidrawElement: Codable, Hashable, Sendable {
     case generic(ExcalidrawGenericElement)
     case text(ExcalidrawTextElement)
     case linear(ExcalidrawLinearElement)
