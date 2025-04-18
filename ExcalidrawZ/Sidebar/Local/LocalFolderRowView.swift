@@ -96,6 +96,11 @@ struct LocalFolderRowView: View {
             Label(.localizable(.sidebarLocalFolderRowContextMenuAddSubfolder), systemSymbol: .folderBadgePlus)
         }
         
+        Button {
+            copyEntityURLToClipboard(objectID: folder.objectID)
+        } label: {
+            Label(.localizable(.sidebarLocalFolderRowContextMenuCopyFolderLink), systemSymbol: .link)
+        }
         
         if let url = self.folder.url {
 #if os(macOS)

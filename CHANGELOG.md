@@ -1,3 +1,18 @@
+## 1.4.2
+
+#### New Features
+
+- External links support
+
+#### Optimizations
+
+- support tool lock
+- optimize syncing indicator
+
+#### Bugs fixed
+
+- fix toolbar not working in collaboration room.
+
 ## 1.4.1
 
 #### Features

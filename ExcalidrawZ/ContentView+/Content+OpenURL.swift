@@ -45,10 +45,19 @@ struct OpenURLModifier: ViewModifier {
                     }
                 )
             ) {
-                OpenURLSheetView(url: externalURLToBeOpen!)
+//                if #available(iOS 18.0, *) {
+//                    OpenURLSheetView(url: externalURLToBeOpen!)
+//#if os(iOS)
+//                        .presentationSizing(.fitted)
+//                        .presentationDragIndicator(.visible)
+//#endif
+//                } else {
+                    OpenURLSheetView(url: externalURLToBeOpen!)
 #if os(iOS)
-                    .presentationDetents([.fraction(0.35)])
+                        .presentationDetents([.fraction(0.3)])
+                        .presentationDragIndicator(.visible)
 #endif
+//                }
             }
     }
     
@@ -62,6 +71,8 @@ struct OpenURLModifier: ViewModifier {
             }
             if components.host == "collab" {
                 onOpenCollabURL(url, components: components)
+            } else if components.host == "entity" {
+                onOpenDatabaseEntity(components: components)
             } else {
                 self.externalURLToBeOpen = url
             }
@@ -165,6 +176,40 @@ struct OpenURLModifier: ViewModifier {
             }
         }
     }
+    
+    private func onOpenDatabaseEntity(components: URLComponents) {
+        // excalidrawz://entity?objectURI=<...>
+        let coordinator = PersistenceController.shared.container.persistentStoreCoordinator
+        guard let objectURIEncoded = components.queryItems?.first(where: {$0.name == "objectURI"})?.value,
+              let decoded = objectURIEncoded.removingPercentEncoding,
+              let url = URL(string: decoded),
+              url.scheme == "x-coredata",
+              let objectID = coordinator.managedObjectID(forURIRepresentation: url) else {
+            return
+        }
+        
+        let context = viewContext
+        
+        Task {
+            await context.perform {
+                let object = context.object(with: objectID)
+                
+                if let file = object as? File {
+                    if let group = file.group {
+                        fileState.expandToGroup(group.objectID)
+                        fileState.currentGroup = group
+                    }
+                    fileState.currentFile = file
+                } else if let group = object as? Group {
+                    fileState.expandToGroup(group.objectID)
+                    fileState.currentGroup = group
+                } else if let folder = object as? LocalFolder {
+                    fileState.expandToGroup(folder.objectID)
+                    fileState.currentLocalFolder = folder
+                }
+            }
+        }
+    }
 }
 
 
@@ -173,6 +218,25 @@ struct OpenURLSheetView: View {
     @Environment(\.openURL) private var openURL
 
     var url: URL
+    
+    enum URLType {
+        case web
+        case mail
+        case file
+        case app
+    }
+    var urlType: URLType {
+        if url.scheme?.hasPrefix("http") == true {
+            .web
+        } else if url.scheme == "mailto" {
+            .mail
+        } else if url.isFileURL {
+            .file
+        } else {
+            .app
+        }
+    }
+    
     
     @State private var isPreviewWebView: Bool = false
     @State private var isPreviewWebViewLoading: Bool = false
@@ -188,15 +252,59 @@ struct OpenURLSheetView: View {
     @State private var viewHeight: CGFloat = 240
     
     var body: some View {
-        VStack {
-            Text(.localizable(.externalLinkOpenSheetTitle))
-                .font(.title)
+        VStack(spacing: 10) {
+            VStack(spacing: 6) {
+                switch urlType {
+                    case .web:
+                        Text(.localizable(.externalLinkOpenSheetWebLinkTitle))
+                            .font(.title)
+                        Text(.localizable(.externalLinkOpenSheetWebLinkDescription))
+                    case .mail:
+                        Text(.localizable(.externalLinkOpenSheetMailLinkTitle))
+                            .font(.title)
+                        Text(.localizable(.externalLinkOpenSheetMailLinkDescription))
+                    case .file:
+                        Text(.localizable(.externalLinkOpenSheetLocalURLTitle))
+                            .font(.title)
+                        Text(.localizable(.externalLinkOpenSheetLocalURLDescription))
+                    case .app:
+                        Text(.localizable(.externalLinkOpenSheetExternalAppLinkTitle))
+                            .font(.title)
+                        Text(.localizable(.externalLinkOpenSheetExternalAppLinkDescription))
+                }
+            }
             
-            Text(.localizable(.externalLinkOpenSheetDescription))
-            Text(url.absoluteString)
-                .fontWeight(.semibold)
+            Spacer(minLength: 0)
             
-            
+            VStack(spacing: 4) {
+                switch urlType {
+                    case .web:
+                        Image(systemSymbol: .globe)
+                    case .mail:
+                        Image(systemSymbol: .envelope)
+                    case .file:
+#if os(macOS)
+                        Image(platformImage: NSWorkspace.shared.icon(forFile: url.filePath))
+#elseif os(iOS)
+                    Image(platformImage: UIImage.icon(forFileURL: url))
+#endif
+                    case .app:
+                        EmptyView()
+                }
+                
+                switch urlType {
+                    case .mail:
+                        Text(
+                            URLComponents(url: url, resolvingAgainstBaseURL: false)?.path ?? String(localizable: .generalUnknown)
+                        )
+                    case .file:
+                        Text(url.lastPathComponent)
+                    default:
+                        Text(url.absoluteString)
+                            .fontWeight(.semibold)
+                }
+
+            }
 #if os(macOS)
             if isPreviewWebView {
                 ZStack {
@@ -228,21 +336,40 @@ struct OpenURLSheetView: View {
             }
 #endif
             
+            Spacer(minLength: 0)
+            
             VStack {
                 Button {
                     openURL(url)
                 } label: {
-                    Text(.localizable(.externalLinkOpenSheetButtonContinue))
-                        .frame(width: 160)
+                    SwiftUI.Group {
+                        switch urlType {
+                            case .web:
+                                Text(.localizable(.externalLinkOpenSheetButtonOpenWebLink))
+                            case .mail:
+                                Text(.localizable(.externalLinkOpenSheetButtonOpenMailLink))
+                            case .file:
+                                Text(.localizable(.externalLinkOpenSheetButtonOpenLocalURL))
+                            case .app:
+                                Text(.localizable(.externalLinkOpenSheetButtonOpenExternalApp))
+                        }
+                    }
+#if os(macOS)
+                    .frame(width: 160)
+#else
+                    .frame(maxWidth: .infinity)
+#endif
                 }
                 .buttonStyle(.borderedProminent)
-                
+            
+#if os(macOS)
                 Button {
                     dismiss()
                 } label: {
                     Text(.localizable(.generalButtonCancel))
                         .frame(width: 160)
                 }
+#endif
             }
             .controlSize({
                 if #available(macOS 14.0, iOS 17.0, *) {
@@ -269,6 +396,9 @@ struct OpenURLSheetView: View {
                 .padding(40)
             }
         }
+#else
+        .padding(.top, 20)
+        .padding(.horizontal, 20)
 #endif
         .animation(.smooth, value: isPreviewWebView)
         .bindWindow($window)
@@ -284,7 +414,7 @@ struct OpenURLSheetView: View {
 #if os(macOS)
     private func changeViewSize(isPreviewWebView: Bool, window: PlatformWindow?) {
         guard let window else { return }
-        let newWidth: CGFloat = isPreviewWebView ? 900 : 360
+        let newWidth: CGFloat = isPreviewWebView ? 900 : 400
         let newHeight: CGFloat = isPreviewWebView ? 600 : 240
         window.setFrame(
             NSRect(

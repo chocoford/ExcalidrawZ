@@ -651,9 +651,9 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
             if layoutState.isInspectorPresented,
                layoutState.isSidebarPresented {
                 switch width {
-                    case ..<1480:
+                    case ..<1510:
                         return .dense
-                    case ..<1630:
+                    case ..<1650:
                         return .compact
                     default:
                         return .regular
@@ -683,11 +683,11 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
             }
         }
         switch width {
-            case ..<1160:
+            case ..<1170:
                 return .dense
             case ..<1330:
                 return .compact
-            case ..<1430:
+            case ..<1460:
                 return .regular
             default:
                 return .expanded

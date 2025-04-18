@@ -119,11 +119,11 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                 NewFileButton()
             }
             
-#if DEBUG
-            if #available(macOS 15.0, iOS 18.0, *) {
-                DebugButton()
-            }
-#endif
+//#if DEBUG
+//            if #available(macOS 15.0, iOS 18.0, *) {
+//                DebugButton()
+//            }
+//#endif
         }
         
 #if os(iOS)
