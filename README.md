@@ -32,7 +32,7 @@ By using the `Create folder` button located in the bottom left corner of the app
 - [x] Database groups
   - [x] Customize file sort
 - [x] Local Folders
-- [x] Temporaray files (Directly open an `.excalidraw` file)
+- [x] Temporary files (Directly open an `.excalidraw` file)
 
 #### Collaboration
 
