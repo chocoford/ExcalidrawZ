@@ -562,6 +562,7 @@ struct ExcalidrawToolbar: View {
     @MainActor @ViewBuilder
     private func moreTools() -> some View {
         Menu {
+#if DEBUG
             Button {
                 Task {
                     try? await toolState.excalidrawWebCoordinator?.toggleToolbarAction(tool: .text2Diagram)
@@ -569,6 +570,7 @@ struct ExcalidrawToolbar: View {
             } label: {
                 Text(.localizable(.toolbarText2Diagram))
             }
+#endif
             Button {
                 Task {
                     try? await toolState.excalidrawWebCoordinator?.toggleToolbarAction(tool: .mermaid)

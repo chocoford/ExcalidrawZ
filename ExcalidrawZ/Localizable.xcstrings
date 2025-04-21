@@ -38647,6 +38647,458 @@
         }
       }
     },
+    "whatsNewElementLinksDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الآن يمكنك إرفاق روابط بعناصر Excalidraw، مما يربطها بمواقع ويب خارجية، أو عناصر أخرى، أو ملفات مختلفة، أو حتى تطبيقات أخرى."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt können Sie Links zu Excalidraw-Elementen hinzufügen, die mit externen Websites, anderen Elementen, verschiedenen Dateien oder sogar anderen Apps verbunden sind."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now you can attach links to Excalidraw elements, connecting to external websites, other elements, different files, or even other apps."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora puedes adjuntar enlaces a los elementos de Excalidraw, conectando con sitios web externos, otros elementos, diferentes archivos o incluso otras aplicaciones."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez désormais ajouter des liens aux éléments Excalidraw, en les connectant à des sites externes, d'autres éléments, différents fichiers ou même d'autres applications."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अब आप Excalidraw तत्वों के लिए लिंक संलग्न कर सकते हैं, बाहरी वेबसाइटों, अन्य तत्वों, विभिन्न फ़ाइलों, या यहां तक कि अन्य ऐप्स से जोड़कर।"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ora puoi allegare link agli elementi di Excalidraw, collegandoti a siti web esterni, ad altri elementi, a file diversi o persino ad altre app."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excalidraw の要素にリンクを添付できるようになり、外部ウェブサイト、他の要素、異なるファイル、さらには他のアプリに接続できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이제 Excalidraw 요소에 링크를 첨부하여 외부 웹사이트, 다른 요소, 다른 파일 또는 다른 앱에 연결할 수 있습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nu kunt u links toevoegen aan Excalidraw-elementen, die verbinden met externe websites, andere elementen, verschillende bestanden of zelfs andere apps."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teraz możesz dołączać linki do elementów Excalidraw, łącząc je z zewnętrznymi stronami internetowymi, innymi elementami, różnymi plikami, a nawet innymi aplikacjami."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora você pode anexar links a elementos do Excalidraw, conectando a sites externos, outros elementos, diferentes arquivos ou até mesmo outros aplicativos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Теперь вы можете прикреплять ссылки к элементам Excalidraw, связывая их с внешними веб-сайтами, другими элементами, различными файлами или даже другими приложениями."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ตอนนี้คุณสามารถแนบลิงก์กับองค์ประกอบของ Excalidraw เชื่อมต่อกับเว็บไซต์ภายนอก องค์ประกอบอื่น ๆ ไฟล์ต่าง ๆ หรือแม้แต่แอปอื่น ๆ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artık Excalidraw öğelerine dış bağlantılar ekleyebilirsiniz; harici web sitelerine, diğer öğelere, farklı dosyalara veya hatta diğer uygulamalara bağlayabilirsiniz."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bây giờ bạn có thể đính kèm liên kết vào các phần tử Excalidraw, kết nối đến các trang web bên ngoài, các phần tử khác, các tệp khác, hoặc thậm chí là các ứng dụng khác."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "现在，你可以为 Excalidraw 中的元素添加链接，快速跳转到外部网站、其他元素、不同文件，甚至其他应用。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在您可以將鏈接附加到 Excalidraw 元素，連接到外部網站、其他元素、不同的文件或甚至其他應用程式。"
+          }
+        }
+      }
+    },
+    "whatsNewElementLinksTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "روابط عناصر Excalidraw"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excalidraw-Elementlinks"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excalidraw Element Links"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enlaces de Elementos de Excalidraw"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liens d'éléments Excalidraw"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excalidraw तत्व लिंक"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link agli Elementi di Excalidraw"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excalidraw 要素リンク"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excalidraw 요소 링크"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excalidraw Elementlinks"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Linki do elementów Excalidraw"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links de Elementos do Excalidraw"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ссылки на элементы Excalidraw"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ลิงก์องค์ประกอบ Excalidraw"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excalidraw Öğeleri Bağlantıları"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liên Kết Phần Tử Excalidraw"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excalidraw元素链接"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excalidraw 元素鏈接"
+          }
+        }
+      }
+    },
+    "whatsNewExportDarkPNGDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "قم بتصدير صور PNG في وضع الألوان المفضل لديك - فاتح أو داكن - لتناسب أي سياق أو بيئة بشكل مثالي."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportieren Sie PNG-Bilder in Ihrem bevorzugten Farbmodus – hell oder dunkel – um perfekt zu jedem Kontext oder Umfeld zu passen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export PNG images in your preferred color mode—light or dark—to perfectly suit any context or environment."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exporta imágenes PNG en tu modo de color preferido: claro u oscuro, para adaptarse perfectamente a cualquier contexto o entorno."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exporte des images PNG dans le mode de couleur de votre choix—clair ou sombre—pour s'adapter parfaitement à tout contexte ou environnement."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अपने पसंदीदा रंग मोड—हल्का या डार्क—में PNG चित्रों का निर्यात करें, ताकि किसी भी संदर्भ या वातावरण के लिए पूरी तरह से उपयुक्त हो सके।"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esporta immagini PNG nel tuo colore preferito—chiaro o scuro—per adattarsi perfettamente a qualsiasi contesto o ambiente."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お好みのカラー モード（ライトまたはダーク）で PNG 画像をエクスポートし、あらゆるコンテキストや環境に完璧に適応させることができます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "원하는 색상 모드인 라이트 또는 다크로 PNG 이미지를 내보내어 어떤 맥락이나 환경에도 완벽하게 맞출 수 있습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exporteer PNG-afbeeldingen in uw voorkeurkleurmodus—licht of donker—om perfect aan te sluiten bij elke context of omgeving."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eksportuj obrazy PNG w preferowanym trybie kolorystycznym—jasnym lub ciemnym—aby idealnie pasowały do każdego kontekstu lub środowiska."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exporte imagens PNG no seu modo de cor preferido—claro ou escuro—para se adequar perfeitamente a qualquer contexto ou ambiente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспортируйте PNG-изображения в предпочитаемом цветовом режиме — светлом или темном — чтобы идеально подходить для любого контекста или окружения."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ส่งออกภาพ PNG ในโหมดสีที่คุณต้องการ—โหมดสว่างหรือโหมดมืด—เพื่อให้เหมาะสมกับบริบทหรือสภาพแวดล้อมใด ๆ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tercih ettiğiniz renk modunda—aydınlık veya karanlık—PNG görüntüleri dışa aktarın, her bağlama veya ortama mükemmel uyum sağlamak için."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xuất hình ảnh PNG theo chế độ màu bạn thích - sáng hoặc tối - để hoàn hảo phù hợp với bất kỳ ngữ cảnh hoặc môi trường nào."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出 PNG 图片时，支持自由切换浅色或深色模式，更好地适应各种使用场景。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以您喜愛的顏色模式（淺色或深色）導出 PNG 圖像，以完美適應任何上下文或環境。"
+          }
+        }
+      }
+    },
+    "whatsNewExportDarkPNGTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تصدير PNG في وضع الظلام"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dunkelmodus PNG-Export"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dark Mode PNG Export"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportación de PNG en Modo Oscuro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportation PNG en mode sombre"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "डार्क मोड PNG निर्यात"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esportazione PNG in Modalità Scura"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ダークモード PNG エクスポート"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다크 모드 PNG 내보내기"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Donkere Mode PNG Export"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eksport PNG w trybie ciemnym"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportação de PNG em Modo Escuro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспорт PNG в темном режиме"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "การส่งออก PNG โหมดมืด"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karanlık Mod PNG Dışa Aktarımı"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xuất PNG Chế Độ Tối"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PNG 导出支持深色模式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色模式 PNG 導出"
+          }
+        }
+      }
+    },
     "whatsnewExportImageWithoutBackgroundDescription" : {
       "extractionState" : "manual",
       "localizations" : {

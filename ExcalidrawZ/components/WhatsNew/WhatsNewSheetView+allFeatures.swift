@@ -15,14 +15,18 @@ extension WhatsNewView {
             description: .localizable(.whatsNewLiveCollaborationDescription),
             icon: Image(systemSymbol: .person2CropSquareStack)
         )
-        
+
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewSearchableAndSpotlightTitle),
-            description: .localizable(.whatsNewSearchableAndSpotlightDescription),
-            icon: Image(systemSymbol: .magnifyingglass)
+            title: .localizable(.whatsNewElementLinksTitle),
+            description: .localizable(.whatsNewElementLinksDescription),
+            icon: Image(systemSymbol: .link)
         )
 
-
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewExportDarkPNGTitle),
+            description: .localizable(.whatsNewExportDarkPNGDescription),
+            icon: Image(systemSymbol: .photoFillOnRectangleFill)
+        )
         
 #if os(iOS)
         if UIDevice().userInterfaceIdiom == .pad {
@@ -64,20 +68,30 @@ extension WhatsNewView {
             // Content
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Section {
-                            featuresContent()
-                        } header: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String)
-                                    .font(.headline)
-                                Divider()
-                            }
-                        }
+                    WhatsNewVersionSection(
+                        version: Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
+                    ) {
+                        featuresContent()
+                    }
+                    // MARK: - v1.4.1
+                    WhatsNewVersionSection(version: "v1.4.1") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewSearchableAndSpotlightTitle),
+                            description: .localizable(.whatsNewSearchableAndSpotlightDescription),
+                            icon: Image(systemSymbol: .magnifyingglass)
+                        )
+#if os(macOS)
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewCustomFileSortingTitle),
+                            description: .localizable(.whatsNewCustomFileSortingDescription),
+                            icon: Image(systemSymbol: {
+                                if #available(macOS 13.0, *) { .arrowUpAndDownTextHorizontal } else { .arrowUpAndDownCircle }
+                            }())
+                        )
+#endif
                     }
                     // MARK: - v1.3.1
-                    VStack(alignment: .leading, spacing: 10) {
-                        Section {
+                    WhatsNewVersionSection(version: "v1.3.1") {
                             WhatsNewFeatureRow(
                                 title: .localizable(.whatsNewSubgroupsSupportTitle),
                                 description: .localizable(.whatsNewSubgroupsSupportDescription)
@@ -123,157 +137,120 @@ extension WhatsNewView {
                                 )
                             }
 #endif
-                        } header: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("v1.3.1")
-                                    .font(.headline)
-                                Divider()
-                            }
-                        }
                     }
                     // MARK: - v1.2.9
-                    VStack(alignment: .leading, spacing: 10) {
-                        Section {
-                            WhatsNewFeatureRow(
-                                title: .localizable(.whatsNewFallbackExcalifontTitle),
-                                description: .localizable(.whatsNewFallbackExcalifontDescription),
-                                icon: Image(systemSymbol: .characterCursorIbeam)
-                            ) {
-                                if let url = Bundle.main.url(forResource: "Fallback Excalifont 720p", withExtension: "mov") {
-                                    if #available(macOS 13.0, iOS 16.0, *) {
-                                        NavigationLink(value: Route.video(url)) {
-                                            WhatsNewRowMediaPreviewView(url: url)
-                                        }
-                                        .buttonStyle(.borderless)
-                                    } else {
-                                        Button {
-                                            route = .video(url)
-                                        } label: {
-                                            WhatsNewRowMediaPreviewView(url: url)
-                                        }
-                                        .buttonStyle(.borderless)
+                    WhatsNewVersionSection(version: "v1.2.9") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewFallbackExcalifontTitle),
+                            description: .localizable(.whatsNewFallbackExcalifontDescription),
+                            icon: Image(systemSymbol: .characterCursorIbeam)
+                        ) {
+                            if let url = Bundle.main.url(forResource: "Fallback Excalifont 720p", withExtension: "mov") {
+                                if #available(macOS 13.0, iOS 16.0, *) {
+                                    NavigationLink(value: Route.video(url)) {
+                                        WhatsNewRowMediaPreviewView(url: url)
                                     }
-                                }
-                            }
-                            
-                            WhatsNewFeatureRow(
-                                title: .localizable(.whatsNewMoreToolsSupportTitle),
-                                description: .localizable(.whatsNewMoreToolsSupportDescription)
-                            ) {
-                                if #available(macOS 15.0, iOS 18.0, *) {
-                                    Image(systemName: "xmark.triangle.circle.square")
-                                        .resizable()
+                                    .buttonStyle(.borderless)
                                 } else {
-                                    Image(systemSymbol: .shippingbox)
-                                        .resizable()
+                                    Button {
+                                        route = .video(url)
+                                    } label: {
+                                        WhatsNewRowMediaPreviewView(url: url)
+                                    }
+                                    .buttonStyle(.borderless)
                                 }
                             }
-                            
-                            WhatsNewFeatureRow(
-                                title: .localizable(.whatsNewLosslessPDFExportTitle),
-                                description: .localizable(.whatsNewLosslessPDFExportDescription),
-                                icon: Image(systemSymbol: .scribble)
-                            )
-                        } header: {
-                            Text("v1.2.9")
-                                .font(.headline)
-                            Divider()
                         }
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewMoreToolsSupportTitle),
+                            description: .localizable(.whatsNewMoreToolsSupportDescription)
+                        ) {
+                            if #available(macOS 15.0, iOS 18.0, *) {
+                                Image(systemName: "xmark.triangle.circle.square")
+                                    .resizable()
+                            } else {
+                                Image(systemSymbol: .shippingbox)
+                                    .resizable()
+                            }
+                        }
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewLosslessPDFExportTitle),
+                            description: .localizable(.whatsNewLosslessPDFExportDescription),
+                            icon: Image(systemSymbol: .scribble)
+                        )
                     }
                     // MARK: - v1.2.8
-                    VStack(alignment: .leading, spacing: 10) {
-                        Section {
-                            WhatsNewFeatureRow(
-                                title: .localizable(.whatsNewMoreI18nSupportTitle),
-                                description: .localizable(.whatsNewMoreI18nSupportDescription),
-                                icon: Image(systemSymbol: .docRichtext)
-                            )
-                        } header: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("v1.2.8")
-                                    .font(.headline)
-                                Divider()
-                            }
-                        }
+                    WhatsNewVersionSection(version: "v1.2.8") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewMoreI18nSupportTitle),
+                            description: .localizable(.whatsNewMoreI18nSupportDescription),
+                            icon: Image(systemSymbol: .docRichtext)
+                        )
                     }
                     // MARK: - v1.2.7
-                    VStack(alignment: .leading, spacing: 10) {
-                        Section {
-                            WhatsNewFeatureRow(
-                                title: .localizable(.whatsnewMultiTouchTitle),
-                                // 当使用两根手指触碰屏幕，将进行一次undo操作；当使用三根手指触碰屏幕，将进行一次redo操作
-                                description: .localizable(.whatsnewMultiTouchDescription),
-                                icon: Image(systemSymbol: .handTapFill)
-                            )
-                            WhatsNewFeatureRow(
-                                title: .localizable(.whatsnewExportPDFTitle),
-                                description: .localizable(.whatsnewExportPDFDescription),
-                                icon: Image(systemSymbol: .docRichtext)
-                            )
-                            
-                            WhatsNewFeatureRow(
-                                title: .localizable(.whatsnewExportImageWithoutBackgroundTitle),
-                                description: .localizable(.whatsnewExportImageWithoutBackgroundDescription),
-                                icon: Image(systemSymbol: .photoOnRectangle)
-                            )
-                            WhatsNewFeatureRow(
-                                title: .localizable(.whatsnewApplePencilSupportTitle),
-                                description: .localizable(.whatsnewApplePencilSupportDescription),
-                                icon: Image(systemSymbol: .applepencil)
-                            )
-                            WhatsNewFeatureRow(
-                                title: .localizable(.whatsnewAccesibleWithoutNetworkTitle),
-                                description: .localizable(.whatsnewAccesibleWithoutNetworkDescription),
-                                icon: Image(systemSymbol: .wifiSlash)
-                            )
-                        } header: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("v1.2.7")
-                                    .font(.headline)
-                                Divider()
-                            }
-                        }
+                    WhatsNewVersionSection(version: "v1.2.7") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsnewMultiTouchTitle),
+                            // 当使用两根手指触碰屏幕，将进行一次undo操作；当使用三根手指触碰屏幕，将进行一次redo操作
+                            description: .localizable(.whatsnewMultiTouchDescription),
+                            icon: Image(systemSymbol: .handTapFill)
+                        )
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsnewExportPDFTitle),
+                            description: .localizable(.whatsnewExportPDFDescription),
+                            icon: Image(systemSymbol: .docRichtext)
+                        )
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsnewExportImageWithoutBackgroundTitle),
+                            description: .localizable(.whatsnewExportImageWithoutBackgroundDescription),
+                            icon: Image(systemSymbol: .photoOnRectangle)
+                        )
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsnewApplePencilSupportTitle),
+                            description: .localizable(.whatsnewApplePencilSupportDescription),
+                            icon: Image(systemSymbol: .applepencil)
+                        )
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsnewAccesibleWithoutNetworkTitle),
+                            description: .localizable(.whatsnewAccesibleWithoutNetworkDescription),
+                            icon: Image(systemSymbol: .wifiSlash)
+                        )
                     }
                     // MARK: - v1.2.3
-                    VStack(alignment: .leading, spacing: 10) {
-                        Section {
-                            WhatsNewFeatureRow(
-                                title: .localizable(.whatsNewItemMultiplatformTitle),
-                                description: .localizable(.whatsNewItemMultiplatformDescription)
-                            ) {
-                                if #available(macOS 13.0, iOS 16.1, *) {
-                                    Image(systemSymbol: .macbookAndIphone)
-                                        .resizable()
-                                } else {
-                                    Image(systemSymbol: .ipadAndIphone)
-                                        .resizable()
-                                }
-                            }
-                            
-                            WhatsNewFeatureRow(
-                                title: .localizable(.whatsNewItemPreventImageAutoInvertTitle),
-                                description: .localizable(.whatsNewItemPreventImageAutoInvertDescription),
-                                icon: Image(systemSymbol: .photoOnRectangle)
-                            )
-                            
-                            WhatsNewFeatureRow(
-                                title: .localizable(.whatsNewItemFileLoadPerformanceTitle),
-                                description: .localizable(.whatsNewItemFileLoadPerformanceDescription),
-                                icon: Image(systemSymbol: .timer)
-                            )
-                            
-                            WhatsNewFeatureRow(
-                                title: .localizable(.whatsNewIcloudSyncTitle),
-                                description: .localizable(.whatsNewIcloudSyncDescription),
-                                icon: Image(systemSymbol: .icloud)
-                            )
-                        } header: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("v1.2.3")
-                                    .font(.headline)
-                                Divider()
+                    WhatsNewVersionSection(version: "v1.2.3") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewItemMultiplatformTitle),
+                            description: .localizable(.whatsNewItemMultiplatformDescription)
+                        ) {
+                            if #available(macOS 13.0, iOS 16.1, *) {
+                                Image(systemSymbol: .macbookAndIphone)
+                                    .resizable()
+                            } else {
+                                Image(systemSymbol: .ipadAndIphone)
+                                    .resizable()
                             }
                         }
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewItemPreventImageAutoInvertTitle),
+                            description: .localizable(.whatsNewItemPreventImageAutoInvertDescription),
+                            icon: Image(systemSymbol: .photoOnRectangle)
+                        )
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewItemFileLoadPerformanceTitle),
+                            description: .localizable(.whatsNewItemFileLoadPerformanceDescription),
+                            icon: Image(systemSymbol: .timer)
+                        )
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewIcloudSyncTitle),
+                            description: .localizable(.whatsNewIcloudSyncDescription),
+                            icon: Image(systemSymbol: .icloud)
+                        )
                     }
                 }
                 .padding(.top, 20)
@@ -296,6 +273,33 @@ extension WhatsNewView {
         }
     }
     
+}
+
+struct WhatsNewVersionSection: View {
+    var version: String
+    var content: AnyView
+    
+    init<Content: View>(
+        version: String,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.version = version
+        self.content = AnyView(content())
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Section {
+                content
+            } header: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(version)
+                        .font(.headline)
+                    Divider()
+                }
+            }
+        }
+    }
 }
 
 #Preview {
