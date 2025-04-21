@@ -108,7 +108,8 @@ struct ShareView: View {
                             let imageData = try await exportState.exportCurrentFileToImage(
                                 type: .svg,
                                 embedScene: false,
-                                withBackground: true
+                                withBackground: true,
+                                colorScheme: .light
                             )
 #if os(macOS)
                             await exportPDF(name: imageData.name, svgURL: imageData.url)
@@ -253,7 +254,8 @@ struct ShareViewLagacy: View {
                         let imageData = try await exportState.exportCurrentFileToImage(
                             type: .png,
                             embedScene: false,
-                            withBackground: true
+                            withBackground: true,
+                            colorScheme: .light
                         ).data
                         if let image = NSImage(dataIgnoringOrientation: imageData) {
                             exportPDF(image: image, name: sharedFile.name)

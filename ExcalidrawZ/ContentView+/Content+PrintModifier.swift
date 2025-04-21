@@ -38,7 +38,8 @@ struct PrintModifier: ViewModifier {
                             let imageData = try await exportState.exportCurrentFileToImage(
                                 type: .png,
                                 embedScene: false,
-                                withBackground: true
+                                withBackground: true,
+                                colorScheme: .light
                             ).data
                             await MainActor.run {
                                 if let image = NSImage(dataIgnoringOrientation: imageData) {

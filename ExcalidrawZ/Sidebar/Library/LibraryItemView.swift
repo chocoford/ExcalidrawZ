@@ -219,7 +219,8 @@ struct LibraryItemContentView: View {
                         image = Image(platformImage: platformImage)
                     } else {
                         let nsImage = try await webCoordinator.exportElementsToPNG(
-                            elements: item.libraryItems[0].elements
+                            elements: item.libraryItems[0].elements,
+                            colorScheme: .light
                         )
                         excalidrawLibItemsCache.setObject(nsImage, forKey: NSString(string: item.libraryItems[0].id))
                         image = Image(platformImage: nsImage)

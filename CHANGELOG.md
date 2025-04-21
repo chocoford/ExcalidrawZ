@@ -6,12 +6,13 @@
 
 #### Optimizations
 
-- support tool lock
-- optimize syncing indicator
+- Support tool lock
+- Optimize syncing indicator
 
 #### Bugs fixed
 
-- fix toolbar not working in collaboration room.
+- Fix toolbar not working in collaboration room.
+- Fix the UI issue of the `Mermaid to Excalidraw` dialog on the iOS side.
 
 ## 1.4.1
 
