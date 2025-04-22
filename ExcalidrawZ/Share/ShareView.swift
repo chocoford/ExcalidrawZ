@@ -264,7 +264,8 @@ struct ShareViewLagacy: View {
                         let imageData = try await exportState.exportCurrentFileToImage(
                             type: .png,
                             embedScene: false,
-                            withBackground: true
+                            withBackground: true,
+                            colorScheme: .light
                         ).data
                         if let image = UIImage(data: imageData) {
                             self.exportedPDFURL = try exportPDF(image: image, name: sharedFile.name)
