@@ -28,6 +28,7 @@ struct ContentView: View {
     @StateObject private var fileState = FileState()
     @StateObject private var exportState = ExportState()
     @StateObject private var layoutState = LayoutState()
+    @StateObject private var shareFileState = ShareFileState()
     
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -51,9 +52,11 @@ struct ContentView: View {
             .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
             .modifier(OpenURLModifier())
             .modifier(UserActivityHandlerModifier())
+            .modifier(ShareFileModifier())
             .environmentObject(fileState)
             .environmentObject(exportState)
             .environmentObject(layoutState)
+            .environmentObject(shareFileState)
             .swiftyAlert(logs: true)
             .bindWindow($window)
             .containerSizeClassInjection()

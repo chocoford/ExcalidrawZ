@@ -94,11 +94,11 @@ struct AboutView: View {
             HStack {
                 Spacer()
                 if let privacyPolicy = URL(string: "https://excalidrawz.chocoford.com/privacy/") {
-                    Link("Privacy Policy", destination: privacyPolicy)
+                    Link(.localizable(.generalButtonPrivacyPolicy), destination: privacyPolicy)
                 }
                 Text("·")
                 if let termsOfUse = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/") {
-                    Link("Terms of Use", destination: termsOfUse)
+                    Link(.localizable(.generalButtonTermsOfUse), destination: termsOfUse)
                 }
                 
             }

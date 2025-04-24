@@ -15,11 +15,11 @@ import SFSafeSymbols
 struct ShareFileModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Binding var sharedFile: ExcalidrawFile?
+    @EnvironmentObject private var shareFileState: ShareFileState
     
     func body(content: Content) -> some View {
         content
-            .sheet(item: $sharedFile) { file in
+            .sheet(item: $shareFileState.currentSharedFile) { file in
                 if horizontalSizeClass == .compact {
                     self.content(file)
 #if os(iOS)
@@ -125,9 +125,9 @@ struct ShareView: View {
                     .activitySheet(item: $exportedPDFURL)
 #endif
                     if let roomID = self.sharedFile.roomID {
-                        SquareButton(title: "Invite", icon: .link) {
+                        SquareButton(title: .localizable(.exportActionInvite), icon: .link) {
                             copyRoomShareLink(roomID: roomID, filename: sharedFile.name)
-                            alertToast(.init(displayMode: .hud, type: .complete(.green), title: "Copied"))
+                            alertToast(.init(displayMode: .hud, type: .complete(.green), title: String(localizable: .exportActionCopied)))
                         }
                     } else {
 #if os(macOS)
@@ -214,12 +214,12 @@ struct ShareViewLagacy: View {
                 ExportImageView(file: sharedFile) {
                     route.removeLast()
                 }
-                .transition(.fade)
+                .transition(.opacity)
             } else if route.last == .exportFile {
                 ExportFileView(file: sharedFile) {
                     route.removeLast()
                 }
-                .transition(.fade)
+                .transition(.opacity)
             } else {
                 homepage()
                     .transition(.identity)

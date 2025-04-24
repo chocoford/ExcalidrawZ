@@ -76,7 +76,10 @@ final class ExportState: ObservableObject {
         withBackground: Bool,
         colorScheme: ColorScheme
     ) async throws -> ExportedImageData {
-        guard let file = await self.excalidrawWebCoordinator?.parent?.file else {
+        let dbFile = await self.excalidrawWebCoordinator?.parent?.file
+        let collaborationFile = await self.excalidrawCollaborationWebCoordinator?.parent?.file
+        
+        guard let file = dbFile ?? collaborationFile else {
             struct NoFileError: LocalizedError {
                 var errorDescription: String? {
                     "Miss current file"

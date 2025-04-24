@@ -47,6 +47,7 @@ struct ExcalidrawToolbar: View {
                 if newValue == nil {
                     toolState.activatedTool = .cursor
                 }
+                
                 if let tool = newValue {
                     let webCoordinator = toolState.excalidrawWebCoordinator
 

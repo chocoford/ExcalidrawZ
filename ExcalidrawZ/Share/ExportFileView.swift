@@ -81,7 +81,7 @@ struct ExportFileView: View {
                     Image(systemSymbol: .chevronLeft)
                 }
                 .transition(
-                    .offset(x: -10).combined(with: .fade)
+                    .offset(x: -10).combined(with: .opacity)
                 )
             }
         }
