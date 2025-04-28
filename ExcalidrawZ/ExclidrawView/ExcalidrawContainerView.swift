@@ -128,12 +128,17 @@ struct ExcalidrawContainerView: View {
             }
             .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
             .opacity(isProgressViewPresented ? 0 : 1)
+            .opacity(fileBinding.wrappedValue == nil ? 0 : 1)
             .onChange(of: loadingState, debounce: 1) { newVal in
                 isProgressViewPresented = newVal == .loading
             }
             
             if containerHorizontalSizeClass != .compact {
                 selectFilePlaceholderView()
+            }
+            
+            if fileBinding.wrappedValue == nil {
+                emptyFilePlaceholderview()
             }
 
             if isProgressViewPresented {
@@ -268,6 +273,11 @@ struct ExcalidrawContainerView: View {
             isSelectFilePlaceholderPresented = newValue
         }
         .contentShape(Rectangle())
+    }
+    
+    @MainActor @ViewBuilder
+    private func emptyFilePlaceholderview() -> some View {
+        selectFilePlaceholderView()
     }
 }
 

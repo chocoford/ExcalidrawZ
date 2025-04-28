@@ -1,3 +1,7 @@
+## 1.4.3
+
+Fix the issue where the toolbar does not display correctly in the file sharing sheet on macOS 14.
+
 ## 1.4.2
 
 #### New Features
