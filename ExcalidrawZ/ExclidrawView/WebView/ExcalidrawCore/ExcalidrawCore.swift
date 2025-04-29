@@ -129,38 +129,11 @@ class ExcalidrawCore: NSObject, ObservableObject {
                 forMainFrameOnly: false
             )
             userContentController.addUserScript(consoleHandlerScript)
-            userContentController.add(self, name: "consoleHandler")
+            userContentController.add(self, name: "consoleHandler") // it is necessary
             logger.info("Enable console handler.")
         } catch {
             logger.error("Config consoleHandler failed: \(error)")
         }
-        
-//        
-//        do {
-//            let jsCode = """
-//            (function() {
-//                const originalWindowOpen = window.open;
-//                window.open = function(url, name, features) {
-//                    console.log(url);
-//                    if (!url || url.trim() === "") {
-//                        console.log("拦截到空 URL 的 window.open 调用");
-//
-//                        return null;
-//                    }
-//                    return originalWindowOpen.call(window, url, name, features);
-//                };
-//            })();
-//            """
-//            let openURLHandlerScript = WKUserScript(
-//                source: jsCode,
-//                injectionTime: .atDocumentStart,
-//                forMainFrameOnly: false
-//            )
-//            userContentController.addUserScript(openURLHandlerScript)
-//            userContentController.add(self, name: "openURLHandler")
-//        } catch {
-//            logger.error("Config openURLHandler failed: \(error)")
-//        }
         
         config.userContentController = userContentController
         
