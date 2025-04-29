@@ -12,6 +12,37 @@ import Combine
 
 typealias CollaborationInfo = ExcalidrawCore.CollaborationInfo
 
+actor ExportImageManager {
+    var flyingRequests: [String : (String) -> Void] = [:]
+    
+    public func requestExport(id: String) async -> String {
+        await withCheckedContinuation { continuation in
+            self.flyingRequests[id] = { data in
+                continuation.resume(returning: data)
+            }
+        }
+    }
+    
+    public func responseExport(id: String, blobString: String) {
+        self.flyingRequests[id]?(blobString)
+    }
+}
+actor AllMediaTransferManager {
+    var flyingRequests: [String : ([ExcalidrawFile.ResourceFile]) -> Void] = [:]
+    
+    public func requestExport(id: String) async -> [ExcalidrawFile.ResourceFile] {
+        await withCheckedContinuation { continuation in
+            self.flyingRequests[id] = { data in
+                continuation.resume(returning: data)
+            }
+        }
+    }
+    
+    public func responseExport(id: String, resourceFiles: [ExcalidrawFile.ResourceFile]) {
+        self.flyingRequests[id]?(resourceFiles)
+    }
+}
+
 class ExcalidrawCore: NSObject, ObservableObject {
 #if canImport(AppKit)
     typealias PlatformImage = NSImage
@@ -68,9 +99,9 @@ class ExcalidrawCore: NSObject, ObservableObject {
     var downloads: [URLRequest : URL] = [:]
     
     let blobRequestQueue = DispatchQueue(label: "BlobRequestQueue", qos: .background)
-    var flyingBlobsRequest: [String : (String) -> Void] = [:]
-    var flyingSVGRequests: [String : (String) -> Void] = [:]
-    var flyingAllMediasRequests: [String : ([ExcalidrawFile.ResourceFile]) -> Void] = [:]
+    var exportImageManager = ExportImageManager()
+    var allMediaTransferManager = AllMediaTransferManager()
+    
     @Published var canUndo = false
     @Published var canRedo = false
     
@@ -337,14 +368,15 @@ extension ExcalidrawCore {
                 self.logger.error("\(String(describing: error))")
             }
         }
-        let dataString: String = await withCheckedContinuation { continuation in
-            blobRequestQueue.async {
-                self.flyingBlobsRequest[id] = { data in
-                    continuation.resume(returning: data)
-                    self.flyingBlobsRequest.removeValue(forKey: id)
-                }
-            }
-        }
+//        let dataString: String = await withCheckedContinuation { continuation in
+//            blobRequestQueue.async {
+//                self.flyingBlobsRequest[id] = { data in
+//                    continuation.resume(returning: data)
+//                    self.flyingBlobsRequest.removeValue(forKey: id)
+//                }
+//            }
+//        }
+        let dataString = await exportImageManager.requestExport(id: id)
         guard let data = Data(base64Encoded: dataString) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
@@ -387,12 +419,7 @@ extension ExcalidrawCore {
                 self.logger.error("\(String(describing: error))")
             }
         }
-        let svg: String = await withCheckedContinuation { continuation in
-            self.flyingSVGRequests[id] = { svg in
-                continuation.resume(returning: svg)
-                self.flyingSVGRequests.removeValue(forKey: id)
-            }
-        }
+        let svg = await exportImageManager.requestExport(id: id)
         let minisizedSvg = removeWidthAndHeight(from: svg).trimmingCharacters(in: .whitespacesAndNewlines)
         
         func removeWidthAndHeight(from svgContent: String) -> String {
@@ -462,21 +489,13 @@ extension ExcalidrawCore {
         
         Task { @MainActor in
             do {
-                try await webView.evaluateJavaScript("window.excalidrawZHelper.getAllMedias(); 0;")
+                try await webView.evaluateJavaScript("window.excalidrawZHelper.getAllMedias('\(id)'); 0;")
             } catch {
                 self.logger.error("\(String(describing: error))")
             }
         }
         
-        let files: [ExcalidrawFile.ResourceFile] = await withCheckedContinuation { continuation in
-            blobRequestQueue.async {
-                self.flyingAllMediasRequests[id] = { data in
-                    continuation.resume(returning: data)
-                    self.flyingAllMediasRequests.removeValue(forKey: id)
-                }
-            }
-        }
-        
+        let files: [ExcalidrawFile.ResourceFile] = await allMediaTransferManager.requestExport(id: id)
         return files
     }
     

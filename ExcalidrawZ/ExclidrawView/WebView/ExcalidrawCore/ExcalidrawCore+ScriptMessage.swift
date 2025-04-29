@@ -59,13 +59,19 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                 case .didToggleToolLock(let message):
                     self.parent?.toolState.isToolLocked = message.data
                 case .getElementsBlob(let blobData):
-                    self.flyingBlobsRequest[blobData.data.id]?(blobData.data.blobData)
+                    Task {
+                        await self.exportImageManager.responseExport(id: blobData.data.id, blobString: blobData.data.blobData)
+                    }
                 case .getElementsSVG(let svgData):
-                    self.flyingSVGRequests[svgData.data.id]?(svgData.data.svg)
+                    Task {
+                        await self.exportImageManager.responseExport(id: svgData.data.id, blobString: svgData.data.svg)
+                    }
                 case .addLibrary(let message):
                     self.addLibrary(item: message.data)
                 case .getAllMedias(let data):
-                    self.flyingAllMediasRequests[data.data.id]?(data.data.files)
+                    Task {
+                        await self.allMediaTransferManager.responseExport(id: data.data.id, resourceFiles: data.data.files)
+                    }
                 case .historyStateChanged(let message):
                     switch message.data.type {
                         case .redo:
