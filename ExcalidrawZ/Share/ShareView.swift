@@ -27,7 +27,11 @@ struct ShareFileModifier: ViewModifier {
                         .presentationDragIndicator(.visible)
 #endif
                 } else {
+//                    if #available(macOS 13.0, iOS 18.0, *) {
+//                        self.content(file)
+//                    } else {
                     self.content(file)
+//                    }
                 }
             }
     }

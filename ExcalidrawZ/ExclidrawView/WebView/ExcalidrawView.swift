@@ -178,7 +178,7 @@ extension ExcalidrawView {
             case .normal:
                 exportState.excalidrawWebCoordinator = context.coordinator
                 fileState.excalidrawWebCoordinator = context.coordinator
-                toolState.excalidrawWebCoordinator = context.coordinator
+                // toolState.excalidrawWebCoordinator = context.coordinator
             case .collaboration:
                 if self.interactionEnabled {
                     exportState.excalidrawCollaborationWebCoordinator = context.coordinator

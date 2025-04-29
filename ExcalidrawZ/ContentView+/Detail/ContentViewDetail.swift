@@ -12,20 +12,30 @@ import ChocofordUI
 struct ContentViewDetail: View {
     @EnvironmentObject var fileState: FileState
     
+    @Binding var isSettingsPresented: Bool
+    
     @StateObject private var toolState = ToolState()
 
     var body: some View {
         ExcalidrawContainerView()
            .modifier(ExcalidrawContainerToolbarContentModifier())
-#if os(iOS)
-           .modifier(ApplePencilToolbarModifier())
-#endif
            .opacity(fileState.isInCollaborationSpace ? 0 : 1)
            .overlay {
                ExcalidrawCollabContainerView()
                    .opacity(fileState.isInCollaborationSpace ? 1 : 0)
                    .allowsHitTesting(fileState.isInCollaborationSpace)
            }
+#if os(iOS)
+           .modifier(ApplePencilToolbarModifier())
+           .sheet(isPresented: $isSettingsPresented) {
+               if #available(macOS 13.0, iOS 16.4, *) {
+                   SettingsView()
+                       .presentationContentInteraction(.scrolls)
+               } else {
+                   SettingsView()
+               }
+           }
+#endif
            .environmentObject(toolState)
     }
     

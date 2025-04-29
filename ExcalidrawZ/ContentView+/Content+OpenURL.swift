@@ -13,12 +13,20 @@ import ChocofordUI
 
 struct OpenURLModifier: ViewModifier {
     @Environment(\.managedObjectContext) var viewContext
+    @Environment(\.openURL) private var openURL
     @Environment(\.alertToast) private var alertToast
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     
     @EnvironmentObject private var fileState: FileState
     
     @State private var externalURLToBeOpen: URL?
+    @State private var isCommandKeyDown = false
     
+//#if canImport(AppKit)
+//    @State private var keyDownMonitor: Any?
+//    @State private var keyUpMonitor: Any?
+//#endif
+
     func body(content: Content) -> some View {
         content
             .onOpenURL { url in
@@ -30,7 +38,16 @@ struct OpenURLModifier: ViewModifier {
                 if url.scheme == "excalidrawz" || url.isFileURL && url.pathExtension == "excalidraw" {
                     self.onOpenURL(url)
                 } else {
+#if canImport(AppKit)
+                    let flags = NSEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                    if flags.contains(.command) {
+                        openURL(url)
+                    } else {
+                        self.externalURLToBeOpen = url
+                    }
+#else
                     self.externalURLToBeOpen = url
+#endif
                 }
             }
             .sheet(
@@ -45,19 +62,19 @@ struct OpenURLModifier: ViewModifier {
                     }
                 )
             ) {
-//                if #available(iOS 18.0, *) {
-//                    OpenURLSheetView(url: externalURLToBeOpen!)
-//#if os(iOS)
-//                        .presentationSizing(.fitted)
-//                        .presentationDragIndicator(.visible)
-//#endif
-//                } else {
+                if verticalSizeClass == .compact {
                     OpenURLSheetView(url: externalURLToBeOpen!)
 #if os(iOS)
                         .presentationDetents([.fraction(0.3)])
                         .presentationDragIndicator(.visible)
 #endif
-//                }
+                } else {
+                    OpenURLSheetView(url: externalURLToBeOpen!)
+#if os(iOS)
+                        .presentationDetents([.height(240)])
+                        .padding(.bottom)
+#endif
+                }
             }
     }
     
@@ -361,7 +378,7 @@ struct OpenURLSheetView: View {
 #endif
                 }
                 .buttonStyle(.borderedProminent)
-            
+                .keyboardShortcut(.return)
 #if os(macOS)
                 Button {
                     dismiss()
@@ -369,6 +386,7 @@ struct OpenURLSheetView: View {
                     Text(.localizable(.generalButtonCancel))
                         .frame(width: 160)
                 }
+                .keyboardShortcut(.escape)
 #endif
             }
             .controlSize({
@@ -395,6 +413,13 @@ struct OpenURLSheetView: View {
                 .buttonStyle(.text)
                 .padding(40)
             }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Text("Don't want to see this pop-up?")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .padding(6)
+                .popoverHelp("You can directly open the link by holding down the ⌘ key.")
         }
 #else
         .padding(.top, 20)

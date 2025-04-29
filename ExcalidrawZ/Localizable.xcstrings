@@ -6106,12 +6106,6 @@
     "exportActionInvite": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Invite"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -6122,6 +6116,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Einladen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite"
           }
         },
         "es": {
@@ -8472,6 +8472,232 @@
           "stringUnit": {
             "state": "translated",
             "value": "繼續到外部應用程式"
+          }
+        }
+      }
+    },
+    "externalLinkOpenSheetHideTips": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Don't want to see this pop-up?"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا تريد رؤية هذه النافذة المنبثقة؟"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Möchten Sie dieses Pop-up nicht sehen?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿No quieres ver este aviso?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous ne voulez pas voir cette fenêtre pop-up ?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "क्या आप इस पॉप-अप को नहीं देखना चाहते?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non vuoi vedere questo pop-up?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このポップアップを表示したくありませんか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 팝업을 보고 싶지 않으신가요?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wil je deze pop-up niet zien?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie chcesz widzieć tego okna pop-up?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não quer ver este pop-up?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не хотите видеть это всплывающее окно?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่ต้องการเห็นป๊อปอัพนี้ใช่ไหม?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu açılır pencereyi görmek istemiyor musunuz?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn không muốn thấy pop-up này?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不想看到这个弹出窗口吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不想看到這個彈出視窗嗎？"
+          }
+        }
+      }
+    },
+    "externalLinkOpenSheetHideTipsHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can directly open the link by holding down the ⌘ key."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكنك فتح الرابط مباشرةً عن طريق الضغط مع الاستمرار على مفتاح ⌘."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sie können den Link direkt öffnen, indem Sie die ⌘-Taste gedrückt halten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puedes abrir el enlace directamente manteniendo presionada la tecla ⌘."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous pouvez ouvrir le lien directement en maintenant la touche ⌘ enfoncée."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आप ⌘ कुंजी को दबाए रखते हुए सीधे लिंक खोल सकते हैं।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puoi aprire direttamente il link tenendo premuto il tasto ⌘."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌘キーを押しながらリンクを直接開くことができます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌘ 키를 누른 채로 링크를 직접 열 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je kunt de link rechtstreeks openen door de ⌘ toets ingedrukt te houden."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Możesz bezpośrednio otworzyć link, przytrzymując klawisz ⌘."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você pode abrir o link diretamente segurando a tecla ⌘."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы можете открыть ссылку напрямую, удерживая клавишу ⌘."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คุณสามารถเปิดลิงค์ได้โดยตรงโดยการกดคีย์ ⌘ ค้างไว้."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlantıyı ⌘ tuşuna basılı tutarak doğrudan açabilirsiniz."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn có thể mở liên kết trực tiếp bằng cách giữ phím ⌘."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您可以按住 ⌘ 键直接打开链接。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您可以按住 ⌘ 鍵直接打開鏈接。"
           }
         }
       }

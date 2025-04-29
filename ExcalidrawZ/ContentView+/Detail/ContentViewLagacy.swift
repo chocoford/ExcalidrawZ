@@ -14,7 +14,7 @@ struct ContentViewLagacy: View {
     
     var body: some View {
         ZStack {
-            ContentViewDetail()
+            ContentViewDetail(isSettingsPresented: .constant(false))
                 .layoutPriority(1)
             
             HStack {

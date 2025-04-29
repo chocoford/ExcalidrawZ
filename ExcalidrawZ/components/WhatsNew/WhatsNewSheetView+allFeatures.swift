@@ -255,7 +255,6 @@ extension WhatsNewView {
                 }
                 .padding(.top, 20)
                 .padding(.bottom, 40)
-                .padding(.horizontal, containerHorizontalSizeClass == .compact ? 10 : 40)
             }
 #if os(macOS)
             .frame(width: navigationSize.width, height: max(0, navigationSize.height - 40))
@@ -276,6 +275,8 @@ extension WhatsNewView {
 }
 
 struct WhatsNewVersionSection: View {
+    @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
+
     var version: String
     var content: AnyView
     
@@ -291,10 +292,12 @@ struct WhatsNewVersionSection: View {
         VStack(alignment: .leading, spacing: 10) {
             Section {
                 content
+                    .padding(.horizontal, containerHorizontalSizeClass == .compact ? 10 : 40)
             } header: {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(version)
                         .font(.headline)
+                        .padding(.horizontal, containerHorizontalSizeClass == .compact ? 10 : 20)
                     Divider()
                 }
             }
