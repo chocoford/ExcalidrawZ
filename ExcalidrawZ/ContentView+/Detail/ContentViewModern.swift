@@ -49,6 +49,17 @@ struct ContentViewModern: View {
         .onChange(of: columnVisibility) { newValue in
             layoutState.isSidebarPresented = newValue != .detailOnly
         }
+        .onChange(of: layoutState.isSidebarPresented) { newValue in
+            if newValue {
+                withAnimation {
+                    columnVisibility = .all
+                }
+            } else {
+                withAnimation {
+                    columnVisibility = .detailOnly
+                }
+            }
+        }
     }
     
     @ToolbarContentBuilder

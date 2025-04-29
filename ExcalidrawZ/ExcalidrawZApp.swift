@@ -22,6 +22,9 @@ extension Notification.Name {
     static let didImportToExcalidrawZ = Notification.Name("DidImportToExcalidrawZ")
     static let toggleWhatsNewSheet = Notification.Name("ToggleWhatsNewSheet")
     static let togglePrintModalSheet = Notification.Name("TogglePrintModalSheet")
+    static let toggleSidebar = Notification.Name("ToggleSidebar")
+    static let toggleInspector = Notification.Name("ToggleInspector")
+    static let toggleShare = Notification.Name("ToggleShare")
 }
 
 @main
@@ -169,6 +172,30 @@ struct ExcalidrawZApp: App {
                 } label: {
                     Text(.localizable(.menubarButtonExportAll))
                 }
+            }
+            
+            // MARK: View
+            CommandGroup(before: .sidebar) {
+                Button {
+                    NotificationCenter.default.post(name: .toggleSidebar, object: nil)
+                } label: {
+                    Text("Toggle Sidebar")
+                }
+                .keyboardShortcut("0", modifiers: [.command])
+                
+                Button {
+                    NotificationCenter.default.post(name: .toggleInspector, object: nil)
+                } label: {
+                    Text("Toggle Library")
+                }
+                .keyboardShortcut("0", modifiers: [.command, .option])
+                
+                Button {
+                    NotificationCenter.default.post(name: .toggleShare, object: nil)
+                } label: {
+                    Text("Toggle Share")
+                }
+                .keyboardShortcut("S", modifiers: [.command, .shift])
             }
             
             CommandGroup(after: .help) {

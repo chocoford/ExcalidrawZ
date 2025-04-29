@@ -66,6 +66,12 @@ struct ContentView: View {
             .onReceive(NotificationCenter.default.publisher(for: .didOpenFromUrls)) { notification in
                 handleOpenFromURLs(notification)
             }
+            .onReceive(NotificationCenter.default.publisher(for: .toggleSidebar)) { notification in
+                handleToggleSidebar(notification)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .toggleInspector)) { notification in
+                handleToggleInspector(notification)
+            }
             .withContainerSize()
             .task { await prepare() }
     }
@@ -170,6 +176,15 @@ struct ContentView: View {
                 fileState.currentTemporaryFile = fileState.temporaryFiles.first
             }
         }
+    }
+    
+    private func handleToggleSidebar(_ notification: Notification) {
+        guard window?.isKeyWindow == true else { return }
+        layoutState.isSidebarPresented.toggle()
+    }
+    private func handleToggleInspector(_ notification: Notification) {
+        guard window?.isKeyWindow == true else { return }
+        layoutState.isInspectorPresented.toggle()
     }
     
     // Check if it is first launch by checking the files count.

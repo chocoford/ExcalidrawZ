@@ -7,8 +7,9 @@
 
 import SwiftUI
 
+import ChocofordUI
+
 class ShareFileState: ObservableObject {
-    // TODO: ...
     @Published var currentSharedFile: ExcalidrawFile?
 }
 
@@ -18,33 +19,21 @@ struct ShareToolbarButton: View {
 
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject private var shareFileState: ShareFileState
-
-    // should be outer, otherwise not stable
-    // @Binding private var sharedFile: ExcalidrawFile?
-
-    // Maybe a share file state
+    
+#if canImport(AppKit)
+    @State private var window: NSWindow?
+#elseif canImport(UIKit)
+    @State private var window: UIWindow?
+#endif
     
     var body: some View {
         Button {
-            do {
-                if let file = fileState.currentFile ?? fileState.currentCollaborationFile?.room {
-                    self.shareFileState.currentSharedFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
-                } else if let folder = fileState.currentLocalFolder,
-                    let fileURL = fileState.currentLocalFile {
-                    try folder.withSecurityScopedURL { _ in
-                        self.shareFileState.currentSharedFile = try ExcalidrawFile(contentsOf: fileURL)
-                    }
-                } else if fileState.isTemporaryGroupSelected,
-                          let fileURL = fileState.currentTemporaryFile {
-                    self.shareFileState.currentSharedFile = try ExcalidrawFile(contentsOf: fileURL)
-                }
-            } catch {
-                alertToast(error)
-            }
+            performShareFile()
         } label: {
             Label(.localizable(.export), systemSymbol: .squareAndArrowUp)
         }
-        .help(.localizable(.export))
+        .help(String(localizable: .export))
+        .keyboardShortcut("s", modifiers: [.command, .shift])
         .disabled(
             fileState.currentGroup?.groupType == .trash ||
             (
@@ -54,6 +43,31 @@ struct ShareToolbarButton: View {
                 fileState.currentCollaborationFile == nil
             )
         )
+        .bindWindow($window)
+        .onReceive(NotificationCenter.default.publisher(for: .toggleShare)) { notification in
+            guard window?.isKeyWindow == true else { return }
+            performShareFile()
+        }
+    }
+    
+    @MainActor
+    private func performShareFile() {
+        print("[performShareFile] Thread: \(Thread.current)")
+        do {
+            if let file = fileState.currentFile ?? fileState.currentCollaborationFile?.room {
+                self.shareFileState.currentSharedFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
+            } else if let folder = fileState.currentLocalFolder,
+                let fileURL = fileState.currentLocalFile {
+                try folder.withSecurityScopedURL { _ in
+                    self.shareFileState.currentSharedFile = try ExcalidrawFile(contentsOf: fileURL)
+                }
+            } else if fileState.isTemporaryGroupSelected,
+                      let fileURL = fileState.currentTemporaryFile {
+                self.shareFileState.currentSharedFile = try ExcalidrawFile(contentsOf: fileURL)
+            }
+        } catch {
+            alertToast(error)
+        }
     }
 }
 

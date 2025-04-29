@@ -16,7 +16,9 @@ struct ShareFileModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var shareFileState: ShareFileState
+    @EnvironmentObject private var fileState: FileState
     
+
     func body(content: Content) -> some View {
         content
             .sheet(item: $shareFileState.currentSharedFile) { file in
@@ -27,11 +29,7 @@ struct ShareFileModifier: ViewModifier {
                         .presentationDragIndicator(.visible)
 #endif
                 } else {
-//                    if #available(macOS 13.0, iOS 18.0, *) {
-//                        self.content(file)
-//                    } else {
                     self.content(file)
-//                    }
                 }
             }
     }

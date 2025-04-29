@@ -164,6 +164,7 @@ struct LibraryView: View {
             } label: {
                 Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
             }
+            .keyboardShortcut("0", modifiers: [.command, .option])
         }
 #elseif os(iOS)
         ToolbarItem(placement: .principal) {
