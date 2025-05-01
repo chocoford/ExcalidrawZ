@@ -33,6 +33,7 @@ struct NewRoomModifier: ViewModifier {
     
     func body(content: Content) -> some View {
         content
+#if os(iOS)
             .sheet(isPresented: Binding {
                 UIDevice.current.userInterfaceIdiom == .pad ? state.isCreateRoomConfirmationDialogPresented : false
             } set: { val in
@@ -71,14 +72,23 @@ struct NewRoomModifier: ViewModifier {
                 .presentationDetents([.height(300)])
                 .padding()
             }
+#endif
             .confirmationDialog(
                 .localizable(.collaborationNewRoomConfirmationDialogTitle),
                 isPresented: Binding {
+#if os(iOS)
                     UIDevice.current.userInterfaceIdiom != .pad ? state.isCreateRoomConfirmationDialogPresented : false
+#elseif os(macOS)
+                    state.isCreateRoomConfirmationDialogPresented
+#endif
                 } set: { val in
+#if os(iOS)
                     if UIDevice.current.userInterfaceIdiom != .pad {
                         state.isCreateRoomConfirmationDialogPresented = val
                     }
+#elseif os(macOS)
+                    state.isCreateRoomConfirmationDialogPresented = val
+#endif
                 },
                 titleVisibility: .visible
             ) {

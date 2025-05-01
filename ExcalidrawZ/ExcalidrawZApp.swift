@@ -193,7 +193,7 @@ struct ExcalidrawZApp: App {
                 Button {
                     NotificationCenter.default.post(name: .toggleShare, object: nil)
                 } label: {
-                    Text(.menubarToggleShare)
+                    Text(.localizable(.menubarToggleShare))
                 }
                 .keyboardShortcut("S", modifiers: [.command, .shift])
             }
