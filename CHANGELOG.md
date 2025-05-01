@@ -5,6 +5,10 @@
 - Disable auto capitalization
 - Optimize the loading logic for library items.
 - Add shortcuts for buttons (sidebar toggle, library toggle, share...)
+  - Sidebar - `⌘ 0`
+  - Library - `⌘ ⌥ 0`
+  - share - `⌘ ⇧ S`
+
 
 #### Fixes
 
