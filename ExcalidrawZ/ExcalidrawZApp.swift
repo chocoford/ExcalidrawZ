@@ -179,21 +179,21 @@ struct ExcalidrawZApp: App {
                 Button {
                     NotificationCenter.default.post(name: .toggleSidebar, object: nil)
                 } label: {
-                    Text("Toggle Sidebar")
+                    Text(.localizable(.menubarToggleSidebar))
                 }
                 .keyboardShortcut("0", modifiers: [.command])
                 
                 Button {
                     NotificationCenter.default.post(name: .toggleInspector, object: nil)
                 } label: {
-                    Text("Toggle Library")
+                    Text(.localizable(.menubarToggleLibrary))
                 }
                 .keyboardShortcut("0", modifiers: [.command, .option])
                 
                 Button {
                     NotificationCenter.default.post(name: .toggleShare, object: nil)
                 } label: {
-                    Text("Toggle Share")
+                    Text(.menubarToggleShare)
                 }
                 .keyboardShortcut("S", modifiers: [.command, .shift])
             }
