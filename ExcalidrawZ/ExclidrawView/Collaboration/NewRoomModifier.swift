@@ -33,18 +33,53 @@ struct NewRoomModifier: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .sheet(isPresented: $state.isCreateRoomSheetPresented) {
-                CreateRoomSheetView { name, isBlank in
-                    if isBlank {
-                        createRoom(name: name)
-                    } else {
-                        state.isCreateRoomFromFileSheetPresented.toggle()
+            .sheet(isPresented: Binding {
+                UIDevice.current.userInterfaceIdiom == .pad ? state.isCreateRoomConfirmationDialogPresented : false
+            } set: { val in
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    state.isCreateRoomConfirmationDialogPresented = val
+                }
+            }) {
+                // Confirmation Dialog will crash on iPadOS
+                VStack(spacing: 16) {
+                    Text(.localizable(.collaborationNewRoomConfirmationDialogTitle))
+                        .font(.title2)
+                    Text(.localizable(.collaborationNewRoomConfirmationDialogMessage))
+                        .frame(maxWidth: 400)
+                        .multilineTextAlignment(.center)
+                    
+                    VStack(spacing: 8) {
+                        Button {
+                            state.isCreateRoomConfirmationDialogPresented.toggle()
+                            state.isCreateRoomSheetPresented.toggle()
+                        } label: {
+                            Text(.localizable(.collaborationNewRoomConfirmationDialogButtonCreateBlankRoom))
+                                .frame(width: 200)
+                        }
+                        .buttonStyle(.bordered)
+                        
+                        Button {
+                            state.isCreateRoomConfirmationDialogPresented.toggle()
+                            state.isCreateRoomFromFileSheetPresented.toggle()
+                        } label: {
+                            Text(.localizable(.collaborationNewRoomConfirmationDialogButtonCreateFromFile))
+                                .frame(width: 200)
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
                 }
+                .presentationDetents([.height(300)])
+                .padding()
             }
             .confirmationDialog(
                 .localizable(.collaborationNewRoomConfirmationDialogTitle),
-                isPresented: $state.isCreateRoomConfirmationDialogPresented,
+                isPresented: Binding {
+                    UIDevice.current.userInterfaceIdiom != .pad ? state.isCreateRoomConfirmationDialogPresented : false
+                } set: { val in
+                    if UIDevice.current.userInterfaceIdiom != .pad {
+                        state.isCreateRoomConfirmationDialogPresented = val
+                    }
+                },
                 titleVisibility: .visible
             ) {
                 Button {
@@ -59,6 +94,18 @@ struct NewRoomModifier: ViewModifier {
                 }
             } message: {
                 Text(.localizable(.collaborationNewRoomConfirmationDialogMessage))
+            }
+            .sheet(isPresented: $state.isCreateRoomSheetPresented) {
+                CreateRoomSheetView { name, isBlank in
+                    if isBlank {
+                        createRoom(name: name)
+                    } else {
+                        state.isCreateRoomFromFileSheetPresented.toggle()
+                    }
+                }
+#if os(iOS)
+                .presentationDetents([.height(160)])
+#endif
             }
             .sheet(isPresented: $state.isCreateRoomFromFileSheetPresented) {
                 ExcalidrawFileBrowser { selection in
@@ -84,9 +131,15 @@ struct NewRoomModifier: ViewModifier {
                         alertToast(error)
                     }
                 }
+//#if os(iOS)
+//                .presentationDetents([.height(400)])
+//#endif
             }
             .sheet(isPresented: $state.isJoinRoomSheetPresented) {
                 JoinRoomSheetView()
+#if os(iOS)
+                    .presentationDetents([.height(160)])
+#endif
             }
             .environmentObject(state)
     }

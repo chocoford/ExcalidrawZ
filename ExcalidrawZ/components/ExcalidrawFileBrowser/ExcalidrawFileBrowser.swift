@@ -10,6 +10,7 @@ import SwiftUI
 import CoreData
 
 struct ExcalidrawFileBrowser: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.dismiss) private var dismiss
     
     @StateObject private var fileState = FileState()
@@ -27,13 +28,17 @@ struct ExcalidrawFileBrowser: View {
     var body: some View {
         HStack(spacing: 0) {
             sidebar()
-                .frame(width: 200)
+                .frame(width: horizontalSizeClass == .compact ? nil : 200)
             Divider()
             
             content()
-                .frame(width: 460)
+                .frame(width: horizontalSizeClass == .compact ? nil : 460)
         }
+#if os(macOS)
         .frame(height: 400)
+#elseif os(iOS)
+        .ignoresSafeArea()
+#endif
         .environmentObject(fileState)
         .onAppear {
             Task {

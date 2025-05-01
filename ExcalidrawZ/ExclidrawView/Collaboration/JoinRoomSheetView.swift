@@ -65,7 +65,7 @@ struct JoinRoomSheetView: View {
                         .frame(width: 60)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(error != nil)
+                .disabled(error != nil || roomID == nil)
             }
         }
         .padding()
