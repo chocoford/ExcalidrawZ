@@ -1,3 +1,16 @@
+## 1.4.4
+
+#### Optimization
+
+- disable auto capitalization
+- Optimize the loading logic for library items.
+- Add shortcuts for buttons (sidebar toggle, library toggle, share...)
+
+#### Fixes
+
+- Fix the issue of automatically adding `https` to external links incorrectly.
+- Fix the incorrect display issues related to collaboration UI on iOS.
+
 ## 1.4.3
 
 Fix the issue where the toolbar does not display correctly in the file sharing sheet on macOS 14.
