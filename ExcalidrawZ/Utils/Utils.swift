@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import CoreData
 #if canImport(AppKit)
 import AppKit
 #endif
@@ -222,7 +223,7 @@ func archiveAllCloudFiles(to url: URL, context: NSManagedObjectContext) throws {
     }
 }
 
-// MARK: Export PDF
+// MARK: - Export PDF
 func exportPDF<Content: View>(@ViewBuilder content: () -> Content) {
     let printInfo = NSPrintInfo.shared
     printInfo.topMargin = 0
@@ -363,6 +364,22 @@ func exportPDF(image: UIImage, name: String? = nil, to url: URL? = nil) throws -
 
 
 #endif
+
+// MARK: - Clipboard
+func copyEntityURLToClipboard(objectID: NSManagedObjectID) {
+    let uri = objectID.uriRepresentation().absoluteString
+    guard let encodedURI = uri.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+          let url = URL(string: "excalidrawz://entity?objectURI=\(encodedURI)") else {
+        return
+    }
+    
+#if canImport(AppKit)
+    NSPasteboard.general.clearContents()
+    NSPasteboard.general.setString(url.absoluteString, forType: .string)
+#elseif canImport(UIKit)
+    UIPasteboard.general.setObjects([url.absoluteString])
+#endif
+}
 
 func getTempDirectory() throws -> URL {
     let fileManager: FileManager = FileManager.default

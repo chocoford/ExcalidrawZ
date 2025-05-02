@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ExcalidrawGenericElement: ExcalidrawElementBase {
+struct ExcalidrawGenericElement: ExcalidrawElementBase, Sendable {
     var type: ExcalidrawElementType
     
     var id: String

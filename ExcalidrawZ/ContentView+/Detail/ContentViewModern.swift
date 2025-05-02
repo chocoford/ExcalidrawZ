@@ -41,17 +41,24 @@ struct ContentViewModern: View {
                     .toolbar(content: sidebarToolbar)
             }
         } detail: {
-            ContentViewDetail()
+            ContentViewDetail(isSettingsPresented: $isSettingsPresented)
         }
 #if os(macOS)
         .removeSettingsSidebarToggle()
-#elseif os(iOS)
-        .sheet(isPresented: $isSettingsPresented) {
-            SettingsView()
-        }
 #endif
         .onChange(of: columnVisibility) { newValue in
             layoutState.isSidebarPresented = newValue != .detailOnly
+        }
+        .onChange(of: layoutState.isSidebarPresented) { newValue in
+            if newValue {
+                withAnimation {
+                    columnVisibility = .all
+                }
+            } else {
+                withAnimation {
+                    columnVisibility = .detailOnly
+                }
+            }
         }
     }
     

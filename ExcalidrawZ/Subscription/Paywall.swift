@@ -166,6 +166,9 @@ struct Paywall: View {
                     
                     Spacer()
                 }
+                .overlay(alignment: .leading) {
+                    privacyPolicyButton()
+                }
 #if APP_STORE
                 .overlay(alignment: .trailing) {
                     restorePurchasesButton()
@@ -320,10 +323,17 @@ struct Paywall: View {
 
     @MainActor @ViewBuilder
     private func privacyPolicyButton() -> some View {
-        Link(destination: URL(string: "https://excalidrawz.chocoford.com/privacy/")!) {
-            Text(.localizable(.generalButtonPrivacyPolicy))
+        HStack {
+            if let privacyPolicy = URL(string: "https://excalidrawz.chocoford.com/privacy/") {
+                Link(.localizable(.generalButtonPrivacyPolicy), destination: privacyPolicy)
+            }
+            Text("·")
+            if let termsOfUse = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/") {
+                Link(.localizable(.generalButtonTermsOfUse), destination: termsOfUse)
+            }
         }
         .foregroundStyle(.secondary)
+        .buttonStyle(.borderless)
     }
 }
 

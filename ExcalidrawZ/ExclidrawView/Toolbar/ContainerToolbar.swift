@@ -58,6 +58,13 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
         )
         .navigationBarTitleDisplayMode(.inline) // <- fix principal toolbar
 #endif
+        .onChange(of: self.fileState.isInCollaborationSpace) { newValue in
+            if newValue {
+                
+            } else {
+                
+            }
+        }
     }
     
     @ToolbarContentBuilder
@@ -111,6 +118,12 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             if #available(macOS 13.0, iOS 16.0, *) { } else {
                 NewFileButton()
             }
+            
+//#if DEBUG
+//            if #available(macOS 15.0, iOS 18.0, *) {
+//                DebugButton()
+//            }
+//#endif
         }
         
 #if os(iOS)
@@ -131,7 +144,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             title()
         }
 #endif
-        
+
 #if os(macOS)
         ToolbarItemGroup(placement: .cancellationAction) {
             SettingsButton(useDefaultLabel: true) {

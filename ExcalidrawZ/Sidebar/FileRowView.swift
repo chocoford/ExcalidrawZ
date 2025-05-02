@@ -89,6 +89,12 @@ struct FileRowView: View {
              
             moveFileMenu()
             
+            Button {
+                copyEntityURLToClipboard(objectID: file.objectID)
+            } label: {
+                Label(.localizable(.sidebarFileRowContextMenuCopyFileLink), systemSymbol: .link)
+            }
+            
             Button(role: .destructive) {
                 fileState.deleteFile(file)
             } label: {

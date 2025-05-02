@@ -70,8 +70,16 @@ final class ExportState: ObservableObject {
         case svg
     }
     
-    func exportCurrentFileToImage(type: ImageType, embedScene: Bool, withBackground: Bool) async throws -> ExportedImageData {
-        guard let file = await self.excalidrawWebCoordinator?.parent?.file else {
+    func exportCurrentFileToImage(
+        type: ImageType,
+        embedScene: Bool,
+        withBackground: Bool,
+        colorScheme: ColorScheme
+    ) async throws -> ExportedImageData {
+        let dbFile = await self.excalidrawWebCoordinator?.parent?.file
+        let collaborationFile = await self.excalidrawCollaborationWebCoordinator?.parent?.file
+        
+        guard let file = dbFile ?? collaborationFile else {
             struct NoFileError: LocalizedError {
                 var errorDescription: String? {
                     "Miss current file"
@@ -84,7 +92,8 @@ final class ExportState: ObservableObject {
             type: type,
             name: file.name ?? "Untitled",
             embedScene: embedScene,
-            withBackground: withBackground
+            withBackground: withBackground,
+            colorScheme: colorScheme
         )
     }
     
@@ -93,7 +102,8 @@ final class ExportState: ObservableObject {
         type: ImageType,
         name: String,
         embedScene: Bool,
-        withBackground: Bool
+        withBackground: Bool,
+        colorScheme: ColorScheme
     ) async throws -> ExportedImageData {
         guard let excalidrawWebCoordinator else {
             struct NoWebCoordinatorError: LocalizedError {
@@ -111,14 +121,16 @@ final class ExportState: ObservableObject {
                 imageData = try await excalidrawWebCoordinator.exportElementsToPNGData(
                     elements: elements,
                     embedScene: embedScene,
-                    withBackground: withBackground
+                    withBackground: withBackground,
+                    colorScheme: colorScheme
                 )
                 utType = embedScene ? .excalidrawPNG : .png
             case .svg:
                 imageData = try await excalidrawWebCoordinator.exportElementsToSVGData(
                     elements: elements,
                     embedScene: embedScene,
-                    withBackground: withBackground
+                    withBackground: withBackground,
+                    colorScheme: colorScheme
                 )
                 utType = embedScene ? .excalidrawSVG :.svg
         }

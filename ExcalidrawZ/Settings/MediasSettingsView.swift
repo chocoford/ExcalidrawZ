@@ -118,6 +118,20 @@ struct MediasSettingsView: View {
                     DataImage(data: imageData)
                         .scaledToFit()
                         .frame(maxHeight: .infinity)
+                        .contextMenu {
+                            Button {
+#if canImport(AppKit)
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setData(imageData, forType: .png)
+#elseif canImport(UIKit)
+                                if let image = UIImage(data: imageData) {
+                                    UIPasteboard.general.setObjects([image])
+                                }
+#endif
+                            } label: {
+                                Text("Copy")
+                            }
+                        }
 
                     VStack(alignment: .leading) {
                         Text(item.id ?? String(localizable: .generalUntitled))

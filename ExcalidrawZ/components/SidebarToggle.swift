@@ -37,6 +37,14 @@ struct SidebarToggle: View {
         .onChange(of: appPreference.sidebarMode) { _ in
             withAnimation { columnVisibility = .all }
         }
+        .background {
+            Button {
+                toggleSidebar()
+            } label: { }
+            .keyboardShortcut("0", modifiers: .command)
+            .opacity(0)
+            .allowsTightening(false)
+        }
     }
     
     private func toggleSidebar() {

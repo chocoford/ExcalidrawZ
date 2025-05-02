@@ -130,23 +130,41 @@ struct LibraryView: View {
     @MainActor @ToolbarContentBuilder
     private func toolbar() -> some ToolbarContent {
 #if os(macOS)
+        ToolbarItem(placement: .destructiveAction) {
+            Color.clear
+        }
+        
         /// This is the key to make sidebar toggle at the right side.
-        ToolbarItem(placement: .status) {
+        /// The `status` is work well in macOS 15.0+. But not well in macOS 14.0
+        ToolbarItemGroup(placement: {
+            if #available(macOS 15.0, iOS 18.0, *) {
+                .status
+            } else {
+                .cancellationAction
+            }
+        }()) {
             if layoutState.isInspectorPresented {
+                if #available(macOS 15.0, iOS 18.0, *) {} else {
+                    Spacer()
+                }
                 Text(.localizable(.librariesTitle))
                     .foregroundStyle(.secondary)
                     .font(.headline)
+                if #available(macOS 15.0, iOS 18.0, *) {} else {
+                    Spacer()
+                }
             } else {
                 Color.clear
                     .frame(width: 1)
             }
         }
-        ToolbarItem(placement: .automatic) {
+        ToolbarItem(placement: .confirmationAction) {
             Button {
                 layoutState.isInspectorPresented.toggle()
             } label: {
                 Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
             }
+            .keyboardShortcut("0", modifiers: [.command, .option])
         }
 #elseif os(iOS)
         ToolbarItem(placement: .principal) {

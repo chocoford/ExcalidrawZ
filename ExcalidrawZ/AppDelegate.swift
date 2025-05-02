@@ -40,7 +40,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        
+        // disable auto capitalization
+        UserDefaults.standard.set(false, forKey: "NSAutomaticCapitalizationEnabled")
     }
     
     func application(_ sender: NSApplication, openFile filename: String) -> Bool {

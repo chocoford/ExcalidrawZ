@@ -233,6 +233,12 @@ struct GroupRowView: View {
                 }
             }
             
+            Button {
+                copyEntityURLToClipboard(objectID: group.objectID)
+            } label: {
+                Label(.localizable(.sidebarGroupRowContextMenuCopyGroupLink), systemSymbol: .link)
+            }
+            
             if group.groupType != .default {
                 Button(role: .destructive) {
                     isDeleteConfirmPresented.toggle()

@@ -27,8 +27,8 @@ struct ContentView: View {
     
     @StateObject private var fileState = FileState()
     @StateObject private var exportState = ExportState()
-    @StateObject private var toolState = ToolState()
     @StateObject private var layoutState = LayoutState()
+    @StateObject private var shareFileState = ShareFileState()
     
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -40,7 +40,6 @@ struct ContentView: View {
     @State private var cloudContainerEventChangeListener: AnyCancellable?
     
     @State private var isFirstAppear = true
-
     
     var body: some View {
         content()
@@ -53,13 +52,11 @@ struct ContentView: View {
             .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
             .modifier(OpenURLModifier())
             .modifier(UserActivityHandlerModifier())
-#if os(iOS)
-            .modifier(ApplePencilToolbarModifier())
-#endif
+            .modifier(ShareFileModifier())
             .environmentObject(fileState)
             .environmentObject(exportState)
-            .environmentObject(toolState)
             .environmentObject(layoutState)
+            .environmentObject(shareFileState)
             .swiftyAlert(logs: true)
             .bindWindow($window)
             .containerSizeClassInjection()
@@ -68,6 +65,12 @@ struct ContentView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .didOpenFromUrls)) { notification in
                 handleOpenFromURLs(notification)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .toggleSidebar)) { notification in
+                handleToggleSidebar(notification)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .toggleInspector)) { notification in
+                handleToggleInspector(notification)
             }
             .withContainerSize()
             .task { await prepare() }
@@ -173,6 +176,15 @@ struct ContentView: View {
                 fileState.currentTemporaryFile = fileState.temporaryFiles.first
             }
         }
+    }
+    
+    private func handleToggleSidebar(_ notification: Notification) {
+        guard window?.isKeyWindow == true else { return }
+        layoutState.isSidebarPresented.toggle()
+    }
+    private func handleToggleInspector(_ notification: Notification) {
+        guard window?.isKeyWindow == true else { return }
+        layoutState.isInspectorPresented.toggle()
     }
     
     // Check if it is first launch by checking the files count.

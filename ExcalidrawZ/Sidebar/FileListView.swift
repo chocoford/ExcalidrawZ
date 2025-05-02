@@ -171,7 +171,9 @@ struct FileListView: View {
     private func content() -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 10) {
-                ForEach(files) { file in
+                // `id: \.self` - Prevent crashes caused by closing the Share Sheet that was opened from the app menu.
+                // MultiThread access
+                ForEach(files, id: \.self) { file in
                     FileRowView(file: file, fileIDToBeRenamed: $fileIDToBeRenamed)
                 }
             }

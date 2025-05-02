@@ -56,14 +56,22 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                         self.parent?.toolState.activatedTool = tool
                         self.parent?.toolState.inDragMode = false
                     }
+                case .didToggleToolLock(let message):
+                    self.parent?.toolState.isToolLocked = message.data
                 case .getElementsBlob(let blobData):
-                    self.flyingBlobsRequest[blobData.data.id]?(blobData.data.blobData)
+                    Task {
+                        await self.exportImageManager.responseExport(id: blobData.data.id, blobString: blobData.data.blobData)
+                    }
                 case .getElementsSVG(let svgData):
-                    self.flyingSVGRequests[svgData.data.id]?(svgData.data.svg)
+                    Task {
+                        await self.exportImageManager.responseExport(id: svgData.data.id, blobString: svgData.data.svg)
+                    }
                 case .addLibrary(let message):
                     self.addLibrary(item: message.data)
                 case .getAllMedias(let data):
-                    self.flyingAllMediasRequests[data.data.id]?(data.data.files)
+                    Task {
+                        await self.allMediaTransferManager.responseExport(id: data.data.id, resourceFiles: data.data.files)
+                    }
                 case .historyStateChanged(let message):
                     switch message.data.type {
                         case .redo:
@@ -136,12 +144,20 @@ extension ExcalidrawCore {
                 let elements = data.data.elements
                 switch self.parent?.savingType {
                     case .excalidrawPNG, .png:
-                        let data = try await self.exportElementsToPNGData(elements: elements ?? [], embedScene: true)
+                        let data = try await self.exportElementsToPNGData(
+                            elements: elements ?? [],
+                            embedScene: true,
+                            colorScheme: .light
+                        )
                         await MainActor.run {
                             self.parent?.file?.content = data
                         }
                     case .excalidrawSVG, .svg:
-                        let data = try await self.exportElementsToSVGData(elements: elements ?? [], embedScene: true)
+                        let data = try await self.exportElementsToSVGData(
+                            elements: elements ?? [],
+                            embedScene: true,
+                            colorScheme: .light
+                        )
                         await MainActor.run {
                             self.parent?.file?.content = data
                         }
@@ -304,6 +320,7 @@ extension ExcalidrawCore {
         case onFocus
         case onBlur
         case didSetActiveTool
+        case didToggleToolLock
         case getElementsBlob
         case getElementsSVG
         case addLibrary
@@ -329,6 +346,7 @@ extension ExcalidrawCore {
         case onFocus
         case onBlur
         case didSetActiveTool(SetActiveToolMessage)
+        case didToggleToolLock(DidtoggleToolLockMessage)
         case getElementsBlob(ExcalidrawElementsBlobData)
         case getElementsSVG(ExcalidrawElementsSVGData)
         case addLibrary(AddLibraryItemMessage)
@@ -369,6 +387,8 @@ extension ExcalidrawCore {
                     self = .onBlur
                 case .didSetActiveTool:
                     self = .didSetActiveTool(try SetActiveToolMessage(from: decoder))
+                case .didToggleToolLock:
+                    self = .didToggleToolLock(try DidtoggleToolLockMessage(from: decoder))
                 case .getElementsBlob:
                     self = .getElementsBlob(try ExcalidrawElementsBlobData(from: decoder))
                 case .getElementsSVG:
@@ -548,6 +568,11 @@ extension ExcalidrawCore {
                 case magicFrame = "magicframe"
             }
         }
+    }
+    
+    struct DidtoggleToolLockMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: Bool
     }
 
     struct AddLibraryItemMessage: AnyExcalidrawZMessage {

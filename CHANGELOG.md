@@ -1,3 +1,40 @@
+## 1.4.4
+
+#### Optimization
+
+- Disable auto capitalization
+- Optimize the loading logic for library items.
+- Add shortcuts for buttons (sidebar toggle, library toggle, share...)
+  - Sidebar - `⌘ 0`
+  - Library - `⌘ ⌥ 0`
+  - share - `⌘ ⇧ S`
+
+
+#### Fixes
+
+- Fix the issue of automatically adding `https` to external links incorrectly.
+- Fix the incorrect display issues related to collaboration UI on iOS.
+
+## 1.4.3
+
+Fix the issue where the toolbar does not display correctly in the file sharing sheet on macOS 14.
+
+## 1.4.2
+
+#### New Features
+
+- External links support
+
+#### Optimizations
+
+- Support tool lock
+- Optimize syncing indicator
+
+#### Bugs fixed
+
+- Fix toolbar not working in collaboration room.
+- Fix the UI issue of the `Mermaid to Excalidraw` dialog on the iOS side.
+
 ## 1.4.1
 
 #### Features

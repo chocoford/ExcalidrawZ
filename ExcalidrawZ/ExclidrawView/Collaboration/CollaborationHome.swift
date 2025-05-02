@@ -27,7 +27,6 @@ struct CollaborationHome: View {
     @FetchRequest(sortDescriptors: [])
     private var collaborationFiles: FetchedResults<CollaborationFile>
     
-
     var body: some View {
         Color.clear
             .contentShape(Rectangle())

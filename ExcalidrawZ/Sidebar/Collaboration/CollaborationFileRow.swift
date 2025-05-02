@@ -104,7 +104,9 @@ struct CollaborationFileRow: View {
                 .labelStyle(.titleAndIcon)
         }
         .confirmationDialog(
-            .localizable(.sidebarCollaborationFileRowContextMenuDelete),
+            .localizable(
+                .sidebarCollaborationFileRowDeleteConfirmationTitle(file.name ?? String(localizable: .generalUntitled))
+            ),
             isPresented: $isDeleteRoomConfirmationDialogPresented,
             titleVisibility: .visible
         ) {

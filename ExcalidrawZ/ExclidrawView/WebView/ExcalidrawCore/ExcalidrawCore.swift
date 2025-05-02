@@ -12,6 +12,37 @@ import Combine
 
 typealias CollaborationInfo = ExcalidrawCore.CollaborationInfo
 
+actor ExportImageManager {
+    var flyingRequests: [String : (String) -> Void] = [:]
+    
+    public func requestExport(id: String) async -> String {
+        await withCheckedContinuation { continuation in
+            self.flyingRequests[id] = { data in
+                continuation.resume(returning: data)
+            }
+        }
+    }
+    
+    public func responseExport(id: String, blobString: String) {
+        self.flyingRequests[id]?(blobString)
+    }
+}
+actor AllMediaTransferManager {
+    var flyingRequests: [String : ([ExcalidrawFile.ResourceFile]) -> Void] = [:]
+    
+    public func requestExport(id: String) async -> [ExcalidrawFile.ResourceFile] {
+        await withCheckedContinuation { continuation in
+            self.flyingRequests[id] = { data in
+                continuation.resume(returning: data)
+            }
+        }
+    }
+    
+    public func responseExport(id: String, resourceFiles: [ExcalidrawFile.ResourceFile]) {
+        self.flyingRequests[id]?(resourceFiles)
+    }
+}
+
 class ExcalidrawCore: NSObject, ObservableObject {
 #if canImport(AppKit)
     typealias PlatformImage = NSImage
@@ -30,7 +61,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
         }
     }()
     internal var publishError: (_ error: Error) -> Void
-    var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in } toolbarActionHandler2: { _ in }
+    var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in }
     lazy var webActor = ExcalidrawWebActor(coordinator: self)
     
     init(_ parent: ExcalidrawView?) {
@@ -68,9 +99,9 @@ class ExcalidrawCore: NSObject, ObservableObject {
     var downloads: [URLRequest : URL] = [:]
     
     let blobRequestQueue = DispatchQueue(label: "BlobRequestQueue", qos: .background)
-    var flyingBlobsRequest: [String : (String) -> Void] = [:]
-    var flyingSVGRequests: [String : (String) -> Void] = [:]
-    var flyingAllMediasRequests: [String : ([ExcalidrawFile.ResourceFile]) -> Void] = [:]
+    var exportImageManager = ExportImageManager()
+    var allMediaTransferManager = AllMediaTransferManager()
+    
     @Published var canUndo = false
     @Published var canRedo = false
     
@@ -98,7 +129,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
                 forMainFrameOnly: false
             )
             userContentController.addUserScript(consoleHandlerScript)
-            userContentController.add(self, name: "consoleHandler")
+            userContentController.add(self, name: "consoleHandler") // it is necessary
             logger.info("Enable console handler.")
         } catch {
             logger.error("Config consoleHandler failed: \(error)")
@@ -109,13 +140,24 @@ class ExcalidrawCore: NSObject, ObservableObject {
         self.webView = ExcalidrawWebView(
             frame: .zero,
             configuration: config
-        ) { num in
-            Task {
-                try? await self.toggleToolbarAction(key: num)
-            }
-        } toolbarActionHandler2: { char in
-            Task {
-                try? await self.toggleToolbarAction(key: char)
+        ) { key in
+            switch key {
+                case .number(let int):
+                    Task {
+                        try? await self.toggleToolbarAction(key: int)
+                    }
+                case .char(let character):
+                    Task {
+                        try? await self.toggleToolbarAction(key: character)
+                    }
+                case .space:
+                    Task {
+                        try? await self.toggleToolbarAction(key: " ")
+                    }
+                case .escape:
+                    Task {
+                        try? await self.toggleToolbarAction(key: "\u{1B}")
+                    }
             }
         }
 #if DEBUG
@@ -241,7 +283,7 @@ extension ExcalidrawCore {
         guard let file = await self.parent?.file else {
             return nil
         }
-        let imageData = try await self.exportElementsToPNGData(elements: file.elements)
+        let imageData = try await self.exportElementsToPNGData(elements: file.elements, colorScheme: .light)
         return imageData //NSImage(data: imageData)
     }
     
@@ -257,8 +299,8 @@ extension ExcalidrawCore {
         print(#function, key)
         if key == "\u{1B}" {
             try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Escape'); 0;")
-//        } else if key == " " {
-//            try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Space'); 0;")
+        } else if key == " " {
+            try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Space'); 0;")
         } else {
             try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
         }
@@ -286,10 +328,11 @@ extension ExcalidrawCore {
     func exportElementsToPNGData(
         elements: [ExcalidrawElement],
         embedScene: Bool = false,
-        withBackground: Bool = true
+        withBackground: Bool = true,
+        colorScheme: ColorScheme
     ) async throws -> Data {
         let id = UUID().uuidString
-        let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified()), \(embedScene), \(withBackground)); 0;"
+        let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified()), \(embedScene), \(withBackground), \(colorScheme == .dark)); 0;"
         self.logger.debug("\(#function), script:\n\(script)")
         Task { @MainActor in
             do {
@@ -298,14 +341,15 @@ extension ExcalidrawCore {
                 self.logger.error("\(String(describing: error))")
             }
         }
-        let dataString: String = await withCheckedContinuation { continuation in
-            blobRequestQueue.async {
-                self.flyingBlobsRequest[id] = { data in
-                    continuation.resume(returning: data)
-                    self.flyingBlobsRequest.removeValue(forKey: id)
-                }
-            }
-        }
+//        let dataString: String = await withCheckedContinuation { continuation in
+//            blobRequestQueue.async {
+//                self.flyingBlobsRequest[id] = { data in
+//                    continuation.resume(returning: data)
+//                    self.flyingBlobsRequest.removeValue(forKey: id)
+//                }
+//            }
+//        }
+        let dataString = await exportImageManager.requestExport(id: id)
         guard let data = Data(base64Encoded: dataString) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
@@ -316,9 +360,15 @@ extension ExcalidrawCore {
     func exportElementsToPNG(
         elements: [ExcalidrawElement],
         embedScene: Bool = false,
-        withBackground: Bool = true
+        withBackground: Bool = true,
+        colorScheme: ColorScheme
     ) async throws -> PlatformImage {
-        let data = try await self.exportElementsToPNGData(elements: elements, embedScene: embedScene, withBackground: withBackground)
+        let data = try await self.exportElementsToPNGData(
+            elements: elements,
+            embedScene: embedScene,
+            withBackground: withBackground,
+            colorScheme: colorScheme
+        )
         guard let image = PlatformImage(data: data) else {
             struct DecodeImageFailed: Error {}
             throw DecodeImageFailed()
@@ -329,10 +379,11 @@ extension ExcalidrawCore {
     func exportElementsToSVGData(
         elements: [ExcalidrawElement],
         embedScene: Bool = false,
-        withBackground: Bool = true
+        withBackground: Bool = true,
+        colorScheme: ColorScheme
     ) async throws -> Data {
         let id = UUID().uuidString
-        let script = try "window.excalidrawZHelper.exportElementsToSvg('\(id)', \(elements.jsonStringified()), \(embedScene), \(withBackground)); 0;"
+        let script = try "window.excalidrawZHelper.exportElementsToSvg('\(id)', \(elements.jsonStringified()), \(embedScene), \(withBackground), \(colorScheme == .dark)); 0;"
         self.logger.debug("\(#function)")
         Task { @MainActor in
             do {
@@ -341,12 +392,7 @@ extension ExcalidrawCore {
                 self.logger.error("\(String(describing: error))")
             }
         }
-        let svg: String = await withCheckedContinuation { continuation in
-            self.flyingSVGRequests[id] = { svg in
-                continuation.resume(returning: svg)
-                self.flyingSVGRequests.removeValue(forKey: id)
-            }
-        }
+        let svg = await exportImageManager.requestExport(id: id)
         let minisizedSvg = removeWidthAndHeight(from: svg).trimmingCharacters(in: .whitespacesAndNewlines)
         
         func removeWidthAndHeight(from svgContent: String) -> String {
@@ -391,12 +437,14 @@ extension ExcalidrawCore {
     func exportElementsToSVG(
         elements: [ExcalidrawElement],
         embedScene: Bool = false,
-        withBackground: Bool = true
+        withBackground: Bool = true,
+        colorScheme: ColorScheme
     ) async throws -> PlatformImage {
         let data = try await exportElementsToSVGData(
             elements: elements,
             embedScene: embedScene,
-            withBackground: withBackground
+            withBackground: withBackground,
+            colorScheme: colorScheme
         )
         guard let image = PlatformImage(data: data) else {
             struct DecodeImageFailed: Error {}
@@ -414,21 +462,13 @@ extension ExcalidrawCore {
         
         Task { @MainActor in
             do {
-                try await webView.evaluateJavaScript("window.excalidrawZHelper.getAllMedias(); 0;")
+                try await webView.evaluateJavaScript("window.excalidrawZHelper.getAllMedias('\(id)'); 0;")
             } catch {
                 self.logger.error("\(String(describing: error))")
             }
         }
         
-        let files: [ExcalidrawFile.ResourceFile] = await withCheckedContinuation { continuation in
-            blobRequestQueue.async {
-                self.flyingAllMediasRequests[id] = { data in
-                    continuation.resume(returning: data)
-                    self.flyingAllMediasRequests.removeValue(forKey: id)
-                }
-            }
-        }
-        
+        let files: [ExcalidrawFile.ResourceFile] = await allMediaTransferManager.requestExport(id: id)
         return files
     }
     
@@ -486,7 +526,9 @@ extension ExcalidrawCore {
     
     @MainActor
     public func getCollaborationInfo() async throws -> CollaborationInfo {
-        let res = try await webView.evaluateJavaScript("window.excalidrawZHelper.getExcalidrawCollabInfo();")
+        guard let res = try await webView.evaluateJavaScript("window.excalidrawZHelper.getExcalidrawCollabInfo();") else {
+            return CollaborationInfo(username: "")
+        }
         if JSONSerialization.isValidJSONObject(res) {
             let data = try JSONSerialization.data(withJSONObject: res)
             return try JSONDecoder().decode(CollaborationInfo.self, from: data)

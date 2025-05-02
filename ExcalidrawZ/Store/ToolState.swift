@@ -221,10 +221,12 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
 }
 
 final class ToolState: ObservableObject {
+    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ToolState")
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
-    var excalidrawCollaborationWebCoordinator: ExcalidrawView.Coordinator?
+    // var excalidrawCollaborationWebCoordinator: ExcalidrawView.Coordinator?
 
     @Published var activatedTool: ExcalidrawTool? = .cursor
+    @Published var isToolLocked: Bool = false
     @Published var previousActivatedTool: ExcalidrawTool? = nil
     @Published var inDragMode: Bool = false
     
@@ -241,6 +243,7 @@ final class ToolState: ObservableObject {
     @AppStorage("PencilInteractionMode") var pencilInteractionMode: PencilInteractionMode = .fingerSelect
     
     func toggleTool(_ tool: ExcalidrawTool) async throws {
+        logger.info("Toggle tool: \(String(describing: tool))")
         switch tool {
             case .webEmbed:
                 try await self.excalidrawWebCoordinator?.toggleToolbarAction(tool: .webEmbed)
@@ -249,8 +252,14 @@ final class ToolState: ObservableObject {
             default:
                 if let key = tool.keyEquivalent {
                     try await self.excalidrawWebCoordinator?.toggleToolbarAction(key: key)
+                } else {
+                    try await self.excalidrawWebCoordinator?.toggleToolbarAction(key: tool.rawValue)
                 }
         }
+    }
+    
+    func toggleToolLock(_ locked: Bool) async throws {
+        
     }
     
     enum ExtraTool {
@@ -295,6 +304,16 @@ final class ToolState: ObservableObject {
         try await excalidrawWebCoordinator?.togglePenMode(enabled: enabled)
         if pencilConnected || !enabled {
             try await excalidrawWebCoordinator?.connectPencil(enabled: enabled)
+        }
+    }
+    
+    func toggleToolLock() {
+        Task {
+            do {
+                try await self.excalidrawWebCoordinator?.toggleToolbarAction(key: "q")
+            } catch {
+                
+            }
         }
     }
 }

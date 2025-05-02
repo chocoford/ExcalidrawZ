@@ -48,20 +48,16 @@ struct ExcalidrawToolbar: View {
                     toolState.activatedTool = .cursor
                 }
                 
-                if let tool = newValue, tool != toolState.excalidrawWebCoordinator?.lastTool {
-                    Task {
-                        do {
-                            if let key = tool.keyEquivalent {
-                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: key)
-                            } else if tool == .webEmbed {
-                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(tool: .webEmbed)
-                            } else if tool == .magicFrame {
-                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(tool: .magicFrame)
-                            } else {
-                                try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: tool.rawValue)
+                if let tool = newValue {
+                    let webCoordinator = toolState.excalidrawWebCoordinator
+
+                    if tool != webCoordinator?.lastTool {
+                        Task {
+                            do {
+                                try await toolState.toggleTool(tool)
+                            } catch {
+                                alertToast(error)
                             }
-                        } catch {
-                            alertToast(error)
                         }
                     }
                 }
@@ -115,8 +111,23 @@ struct ExcalidrawToolbar: View {
             }
         }
 #elseif os(macOS)
+        Button {
+            toolState.toggleToolLock()
+        } label: {
+            SwiftUI.Group {
+                if #available(macOS 14.0, *) {
+                    Label(.localizable(.toolbarButtonLockToolLabel), systemSymbol: toolState.isToolLocked ? .lock : .lockOpen)
+                        .contentTransition(.symbolEffect(.replace))
+                } else {
+                    Label(.localizable(.toolbarButtonLockToolLabel), systemSymbol: toolState.isToolLocked ? .lock : .lockOpen)
+                }
+            }
+            .foregroundStyle(toolState.isToolLocked ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(HierarchicalShapeStyle.primary))
+            .animation(.default, value: toolState.isToolLocked)
+        }
+        .help("\(String(localizable: .toolbarButtonLockToolHelp)) - Q")
+        
         ExcalidrawToolbarToolContainer { sizeClass in
-            let _ = print("[DEBUG] ExcalidrawToolbarToolContainer content reload")
             if sizeClass == .dense {
                 denseContent()
             } else {
@@ -552,6 +563,7 @@ struct ExcalidrawToolbar: View {
     @MainActor @ViewBuilder
     private func moreTools() -> some View {
         Menu {
+#if DEBUG
             Button {
                 Task {
                     try? await toolState.excalidrawWebCoordinator?.toggleToolbarAction(tool: .text2Diagram)
@@ -559,6 +571,7 @@ struct ExcalidrawToolbar: View {
             } label: {
                 Text(.localizable(.toolbarText2Diagram))
             }
+#endif
             Button {
                 Task {
                     try? await toolState.excalidrawWebCoordinator?.toggleToolbarAction(tool: .mermaid)
@@ -641,31 +654,31 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
             if layoutState.isInspectorPresented,
                layoutState.isSidebarPresented {
                 switch width {
-                    case ..<1450:
+                    case ..<1510:
                         return .dense
-                    case ..<1600:
+                    case ..<1650:
                         return .compact
                     default:
                         return .regular
                 }
             } else if layoutState.isSidebarPresented {
                 switch width {
-                    case ..<1260:
+                    case ..<1295:
                         return .dense
-                    case ..<1420:
+                    case ..<1450:
                         return .compact
-                    case ..<1580:
+                    case ..<1610:
                         return .regular
                     default:
                         return .expanded
                 }
             } else if layoutState.isInspectorPresented {
                 switch width {
-                    case ..<1380:
+                    case ..<1410:
                         return .dense
-                    case ..<1540:
+                    case ..<1570:
                         return .compact
-                    case ..<1680:
+                    case ..<1710:
                         return .regular
                     default:
                         return .expanded
@@ -673,11 +686,11 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
             }
         }
         switch width {
-            case ..<1130:
+            case ..<1170:
                 return .dense
-            case ..<1300:
+            case ..<1330:
                 return .compact
-            case ..<1400:
+            case ..<1460:
                 return .regular
             default:
                 return .expanded

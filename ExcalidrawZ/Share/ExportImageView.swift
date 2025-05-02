@@ -57,6 +57,7 @@ struct ExportImageView: View {
     @State private var keepEditable = false
     @State private var exportWithBackground = true
     @State private var imageType: Int = 0
+    @State private var exportColorScheme: ColorScheme = .light
     
     var exportType: UTType {
         switch imageType {
@@ -83,7 +84,7 @@ struct ExportImageView: View {
                         Image(systemSymbol: .chevronLeft)
                     }
                     .transition(
-                        .offset(x: -10).combined(with: .fade)
+                        .offset(x: -10).combined(with: .opacity)
                     )
                 }
             }
@@ -95,10 +96,16 @@ struct ExportImageView: View {
             exportImageData()
         }
         .onChange(of: exportWithBackground) { newValue in
-            exportImageData()
+            exportImageData(initial: true)
         }
         .onChange(of: imageType) { newValue in
             exportImageData()
+        }
+        .onChange(of: exportColorScheme) { _ in
+            exportImageData(initial: true)
+        }
+        .onChange(of: exportType) { _ in
+            exportColorScheme = .light
         }
         .onAppear {
             if isPreview {
@@ -195,7 +202,14 @@ struct ExportImageView: View {
             }
 
             HStack {
-                Spacer()
+                if exportType == .png {
+                    Picker(.localizable(.exportImagePickerColorSchemeLabel), selection: $exportColorScheme) {
+                        Text(.localizable(.generalColorSchemeLight)).tag(ColorScheme.light)
+                        Text(.localizable(.generalColorSchemeDark)).tag(ColorScheme.dark)
+                    }
+                } else {
+                    Spacer()
+                }
 #if os(macOS)
                 Toggle(.localizable(.exportImageToggleWithBackground), isOn: $exportWithBackground)
                     .toggleStyle(.checkboxStyle)
@@ -336,10 +350,15 @@ struct ExportImageView: View {
         Task.detached {
             do {
                 if initial {
+                    await MainActor.run {
+                        self.image = nil
+                        self.exportedImageData = nil
+                    }
                     let imageData = try await exportState.exportCurrentFileToImage(
                         type: .png,
                         embedScene: false,
-                        withBackground: self.exportWithBackground
+                        withBackground: self.exportWithBackground,
+                        colorScheme: self.exportColorScheme
                     )
                     await MainActor.run {
                         self.image = PlatformImage(data: imageData.data)?
@@ -351,7 +370,8 @@ struct ExportImageView: View {
                     let imageData = try await exportState.exportCurrentFileToImage(
                         type: self.imageType == 0 ? .png : .svg,
                         embedScene: self.keepEditable,
-                        withBackground: self.exportWithBackground
+                        withBackground: self.exportWithBackground,
+                        colorScheme: self.exportColorScheme
                     )
                     await MainActor.run {
                         self.exportedImageData = imageData

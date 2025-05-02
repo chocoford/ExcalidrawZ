@@ -124,7 +124,7 @@ struct ApplePencilToolbarModifier: ViewModifier {
                                 .hoverEffect(.lift)
                                 .padding(.horizontal, 90)
                                 .padding(.vertical, 60)
-                                .transition(.asymmetric(insertion: .fade.animation(.default.delay(0.5)), removal: .fade))
+                                .transition(.asymmetric(insertion: .opacity.animation(.default.delay(0.5)), removal: .opacity))
                             }
                         }
                         .animation(.default, value: isDragging)
@@ -165,7 +165,7 @@ struct ApplePencilToolbarModifier: ViewModifier {
                                         .padding(.vertical, 10)
                                     }
                                 }
-                                .transition(.asymmetric(insertion: .fade.animation(.default.delay(0.5)), removal: .fade))
+                                .transition(.asymmetric(insertion: .opacity.animation(.default.delay(0.5)), removal: .opacity))
                             }
                         }
                         .animation(.default, value: isDragging)
@@ -220,6 +220,7 @@ struct ApplePencilToolbarModifier: ViewModifier {
             }
             .readSize($viewSize)
             .watchImmediately(of: toolState.pencilInteractionMode) { mode in
+                guard toolState.inPenMode else { return }
                 Task {
                     do {
                         switch mode {

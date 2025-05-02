@@ -128,12 +128,17 @@ struct ExcalidrawContainerView: View {
             }
             .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
             .opacity(isProgressViewPresented ? 0 : 1)
+            .opacity(fileBinding.wrappedValue == nil ? 0 : 1)
             .onChange(of: loadingState, debounce: 1) { newVal in
                 isProgressViewPresented = newVal == .loading
             }
             
             if containerHorizontalSizeClass != .compact {
                 selectFilePlaceholderView()
+            }
+            
+            if fileBinding.wrappedValue == nil {
+                emptyFilePlaceholderview()
             }
 
             if isProgressViewPresented {
@@ -147,29 +152,19 @@ struct ExcalidrawContainerView: View {
             }
         }
         .ignoresSafeArea(.container, edges: .bottom)
-        .overlay {
+        .overlay(alignment: .top) {
             if isImporting, loadingState == .loaded, fileState.currentGroup != nil {
-                ZStack {
-                    Color.clear
-                    
-                    VStack(spacing: 10) {
-                        HStack {
-                            ProgressView()
-                            Text(.localizable(.iCloudSyncingDataTitle))
-                        }
-                        .font(.largeTitle)
-                        .padding()
-                        
-                        Divider()
-                        
-                        Text(.localizable(.iCloudSyncingDataDescription))
-                        Text(.localizable(.iCloudSyncingDataDescription2))
-                    }
-                    .padding(80)
-                    .frame(maxWidth: 800)
+                HStack {
+                    ProgressView().controlSize(.small)
+                    Text(.localizable(.iCloudSyncingDataTitle))
                 }
-                .transition(.fade)
-                .background(.regularMaterial)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background {
+                    Capsule().fill(.regularMaterial)
+                }
+                .padding()
+                .transition(.move(edge: .top))
             }
         }
         .animation(.easeOut, value: isImporting)
@@ -186,16 +181,25 @@ struct ExcalidrawContainerView: View {
                             if event.type == .import, !event.succeeded {
                                 isImporting = true
                                 if let file = fileState.currentFile {
-                                    self.fileBeforeImporting = try? ExcalidrawFile(from: file.objectID, context: viewContext)
+                                    self.fileBeforeImporting = try? ExcalidrawFile(
+                                        from: file.objectID,
+                                        context: viewContext
+                                    )
                                 }
                             }
                             if event.type == .import, event.succeeded, isImporting {
                                 isImporting = false
                                 if let file = fileState.currentFile,
-                                   let fileAfterImporting = try? ExcalidrawFile(from: file.objectID, context: viewContext),
-                                   fileAfterImporting.elements != fileBeforeImporting?.elements {
-                                    // force reload current file.
-                                    fileState.excalidrawWebCoordinator?.loadFile(from: fileState.currentFile, force: true)
+                                   let fileAfterImporting = try? ExcalidrawFile(from: file.objectID, context: viewContext) {
+                                     
+                                    if fileBeforeImporting?.elements == fileAfterImporting.elements {
+                                      // do nothing
+                                    } else if Set(fileAfterImporting.elements).isSubset(of: Set(fileBeforeImporting?.elements ?? [])) {
+                                        // if local changes is all beyond cloud, do nothing
+                                    } else {
+                                        // force reload current file.
+                                        fileState.excalidrawWebCoordinator?.loadFile(from: fileState.currentFile, force: true)
+                                    }
                                 }
                             }
                         }
@@ -269,6 +273,11 @@ struct ExcalidrawContainerView: View {
             isSelectFilePlaceholderPresented = newValue
         }
         .contentShape(Rectangle())
+    }
+    
+    @MainActor @ViewBuilder
+    private func emptyFilePlaceholderview() -> some View {
+        selectFilePlaceholderView()
     }
 }
 
