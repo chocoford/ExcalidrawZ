@@ -50,7 +50,7 @@ struct ContentView: View {
             .modifier(PaywallModifier())
             .modifier(SearchableModifier())
             .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
-            .modifier(OpenURLModifier())
+            .modifier(OpenFromURLModifier())
             .modifier(UserActivityHandlerModifier())
             .modifier(ShareFileModifier())
             .environmentObject(fileState)

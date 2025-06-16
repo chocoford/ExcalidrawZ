@@ -1,5 +1,5 @@
 //
-//  Content+OpenURL.swift
+//  Content+OpenFromURL.swift
 //  ExcalidrawZ
 //
 //  Created by Dove Zachary on 3/18/25.
@@ -8,10 +8,13 @@
 import SwiftUI
 import CoreData
 import WebKit
+import UniformTypeIdentifiers
+import os.log
 
 import ChocofordUI
 
-struct OpenURLModifier: ViewModifier {
+
+struct OpenFromURLModifier: ViewModifier {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.openURL) private var openURL
     @Environment(\.alertToast) private var alertToast
@@ -19,13 +22,10 @@ struct OpenURLModifier: ViewModifier {
     
     @EnvironmentObject private var fileState: FileState
     
+    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "OpenFromURLModifier")
+    
     @State private var externalURLToBeOpen: URL?
     @State private var isCommandKeyDown = false
-    
-//#if canImport(AppKit)
-//    @State private var keyDownMonitor: Any?
-//    @State private var keyUpMonitor: Any?
-//#endif
 
     func body(content: Content) -> some View {
         content
@@ -34,7 +34,6 @@ struct OpenURLModifier: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: .shouldOpenExternalURL)) { notification in
                 guard let url = notification.object as? URL else { return }
-                
                 if url.scheme == "excalidrawz" || url.isFileURL && url.pathExtension == "excalidraw" {
                     self.onOpenURL(url)
                 } else {
@@ -97,16 +96,18 @@ struct OpenURLModifier: ViewModifier {
     }
     
     private func onOpenLocalFile(_ url: URL) {
+        var targetURL = url
+        
         // check if it is already in LocalFolder
         let context = viewContext
         var canAddToTemp = true
         do {
-            try context.performAndWait {
+            let folder: LocalFolder? = try context.performAndWait {
                 let folderFetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
                 folderFetchRequest.predicate = NSPredicate(format: "filePath == %@", url.deletingLastPathComponent().filePath)
-                guard let folder = try context.fetch(folderFetchRequest).first else {
-                    return
-                }
+                return try context.fetch(folderFetchRequest).first
+            }
+            if let folder {
                 canAddToTemp = false
                 Task {
                     await MainActor.run {
@@ -119,15 +120,38 @@ struct OpenURLModifier: ViewModifier {
                     }
                 }
             }
+            
         } catch {
             alertToast(error)
         }
         
         guard canAddToTemp else { return }
         
-        // logger.debug("on open url: \(url, privacy: .public)")
-        if !fileState.temporaryFiles.contains(where: {$0 == url}) {
-            fileState.temporaryFiles.append(url)
+        logger.debug("on open url: \(url)")
+        
+        if UTType(filenameExtension: url.pathExtension)?.conforms(to: .png) == true ||
+            UTType(filenameExtension: url.pathExtension)?.conforms(to: .svg) == true {
+            do {
+                // Create a new temp file
+                let tempURL = try FileManager.default.url(
+                    for: .itemReplacementDirectory,
+                    in: .userDomainMask,
+                    appropriateFor: url,
+                    create: true
+                ).appendingPathComponent(
+                    url.deletingPathExtension().lastPathComponent
+                ).appendingPathExtension(UTType.excalidrawFile.preferredFilenameExtension ?? "excalidraw")
+                let file = try ExcalidrawFile(contentsOf: url)
+                try file.content?.write(to: tempURL)
+                targetURL = tempURL
+            } catch {
+                self.logger.error("Failed to create ExcalidrawFile from URL: \(url, privacy: .public), error: \(error, privacy: .public)")
+            }
+        }
+        
+        
+        if !fileState.temporaryFiles.contains(where: {$0 == targetURL}) {
+            fileState.temporaryFiles.append(targetURL)
         }
         if !fileState.isTemporaryGroupSelected || fileState.currentTemporaryFile == nil {
             fileState.isTemporaryGroupSelected = true
@@ -138,9 +162,9 @@ struct OpenURLModifier: ViewModifier {
             do {
                 try await context.perform {
                     let newCheckpoint = LocalFileCheckpoint(context: context)
-                    newCheckpoint.url = url
+                    newCheckpoint.url = targetURL
                     newCheckpoint.updatedAt = .now
-                    newCheckpoint.content = try Data(contentsOf: url)
+                    newCheckpoint.content = try Data(contentsOf: targetURL)
                     
                     context.insert(newCheckpoint)
                     try context.save()

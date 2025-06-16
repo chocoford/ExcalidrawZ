@@ -199,8 +199,6 @@ struct TemporaryGroupRowView: View {
                 await alertToast(error)
             }
         }
-        
-        
     }
     
     private func updateLocalFileCheckpoints(oldURL: URL, newURL: URL) {
