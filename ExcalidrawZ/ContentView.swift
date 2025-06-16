@@ -122,9 +122,12 @@ struct ContentView: View {
         }
         .onAppear {
             defer { isFirstAppear = false }
-            if !fileState.hasAnyActiveGroup || isFirstAppear {
-                Task {
-                    try? await fileState.setToDefaultGroup()
+            // Wait for on open URL.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if !fileState.hasAnyActiveGroup && isFirstAppear {
+                    Task {
+                        try? await fileState.setToDefaultGroup()
+                    }
                 }
             }
         }
