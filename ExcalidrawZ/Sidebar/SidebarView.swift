@@ -23,7 +23,7 @@ struct SidebarView: View {
     
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var fileState: FileState
-    
+
     @StateObject private var localFolderState = LocalFolderState()
 
     var body: some View {
@@ -40,60 +40,13 @@ struct SidebarView: View {
     private func twoColumnSidebar() -> some View {
         HStack(spacing: 0) {
             if appPreference.sidebarMode == .all {
-                GroupListView()
+                GroupsSidebar()
                     .frame(minWidth: 174)
                 Divider()
                     .ignoresSafeArea(edges: .bottom)
             }
             
-            VStack(spacing: 0) {
-                if let currentGroup = fileState.currentGroup {
-                    FileListView(
-                        currentGroupID: currentGroup.id,
-                        groupType: currentGroup.groupType,
-                        sortField: fileState.sortField
-                    )
-                } else if let currentLocalFolder = fileState.currentLocalFolder {
-                    if #available(macOS 13.0, *) {
-                        LocalFilesListView(
-                            folder: currentLocalFolder,
-                            sortField: fileState.sortField
-                        )
-                    } else {
-                        LocalFilesListView(
-                            folder: currentLocalFolder,
-                            sortField: fileState.sortField
-                        )
-                        .id(currentLocalFolder)
-                    }
-                } else if fileState.isTemporaryGroupSelected {
-                    TemporaryFileListView(sortField: fileState.sortField)
-                } else if fileState.isInCollaborationSpace {
-                    CollaborationFilesList(sortField: fileState.sortField)
-                } else {
-                    ZStack {
-                        if #available(macOS 14.0, iOS 17.0, *) {
-                            Text(.localizable(.sidebarFilesPlaceholder))
-                                .foregroundStyle(.placeholder)
-                        } else {
-                            Text(.localizable(.sidebarFilesPlaceholder))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .frame(maxHeight: .infinity)
-                }
-                Divider()
-                if #available(macOS 14.0, *) {
-                    contentToolbar()
-#if canImport(AppKit)
-                        .buttonStyle(.accessoryBar)
-#endif
-                } else {
-                    contentToolbar()
-                        .buttonStyle(.text(size: .small, square: true))
-                }
-
-            }
+            FilesSidebar()
             .frame(minWidth:  200)
         }
         .border(.top, color: .separatorColor)
@@ -112,14 +65,69 @@ struct SidebarView: View {
 #endif
         .environmentObject(localFolderState)
     }
+}
+
+struct GroupsSidebar: View {
+    var body: some View {
+        GroupListView()
+    }
+}
+
+struct FilesSidebar: View {
+    @Environment(\.searchExcalidrawAction) private var searchExcalidraw
+
+    @EnvironmentObject var fileState: FileState
     
-    @MainActor @ViewBuilder
-    private func singleColumnSidebar() -> some View {
-        List(selection: $fileState.currentFile) {
-            
+    var body: some View {
+        VStack(spacing: 0) {
+            if let currentGroup = fileState.currentGroup {
+                FileListView(
+                    currentGroupID: currentGroup.id,
+                    groupType: currentGroup.groupType,
+                    sortField: fileState.sortField
+                )
+            } else if let currentLocalFolder = fileState.currentLocalFolder {
+                if #available(macOS 13.0, *) {
+                    LocalFilesListView(
+                        folder: currentLocalFolder,
+                        sortField: fileState.sortField
+                    )
+                } else {
+                    LocalFilesListView(
+                        folder: currentLocalFolder,
+                        sortField: fileState.sortField
+                    )
+                    .id(currentLocalFolder)
+                }
+            } else if fileState.isTemporaryGroupSelected {
+                TemporaryFileListView(sortField: fileState.sortField)
+            } else if fileState.isInCollaborationSpace {
+                CollaborationFilesList(sortField: fileState.sortField)
+            } else {
+                ZStack {
+                    if #available(macOS 14.0, iOS 17.0, *) {
+                        Text(.localizable(.sidebarFilesPlaceholder))
+                            .foregroundStyle(.placeholder)
+                    } else {
+                        Text(.localizable(.sidebarFilesPlaceholder))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(maxHeight: .infinity)
+            }
+            Divider()
+            if #available(macOS 14.0, *) {
+                contentToolbar()
+#if canImport(AppKit)
+                    .buttonStyle(.accessoryBar)
+#endif
+            } else {
+                contentToolbar()
+                    .buttonStyle(.text(size: .small, square: true))
+            }
+
         }
     }
-    
     
     @MainActor @ViewBuilder
     private func contentToolbar() -> some View {
@@ -177,6 +185,7 @@ struct SidebarView: View {
         .disabled(fileState.isTemporaryGroupSelected || !fileState.hasAnyActiveGroup)
     }
 }
+
 
 #Preview {
     SidebarView()

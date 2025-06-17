@@ -186,17 +186,31 @@ struct NewRoomModifier: ViewModifier {
 
 
 func copyRoomShareLink(roomID: String, filename: String?) {
-    let encodedRoomID = CollabRoomIDCoder.shared.encode(roomID: roomID)
+    // let encodedRoomID = CollabRoomIDCoder.shared.encode(roomID: roomID)
     var url: URL
     let urlString: String
-    if #available(macOS 13.0, *) {
-        url = URL(string: "excalidrawz://collab/\(encodedRoomID)")!
+    
+    let scheme = "https" // "excalidrawz"
+    let path = "collab"
+        
+    let useExcalidrawScheme = true // Use Excalidraw scheme if needed
+    if useExcalidrawScheme {
+        url = URL(string: "https://excalidraw.com/#room=\(roomID)")!
+        
+        if let filename, !filename.isEmpty, #available(macOS 13.0, *) {
+            url.append(queryItems: [
+                URLQueryItem(name: "name", value: filename)
+            ])
+        }
+        urlString = url.absoluteString
+    } else if #available(macOS 13.0, *) {
+        url = URL(string: "excalidrawz://collab/\(roomID)")!
         url.append(queryItems: [
             URLQueryItem(name: "name", value: filename?.isEmpty == false ? filename : nil)
         ])
         urlString = url.absoluteString
     } else {
-        urlString = "excalidrawz://collab/\(encodedRoomID)" + (filename?.isEmpty == false ? "?name=\(filename!)" : "")
+        urlString = "excalidrawz://collab/\(roomID)" + (filename?.isEmpty == false ? "?name=\(filename!)" : "")
     }
 #if os(macOS)
     NSPasteboard.general.clearContents()
