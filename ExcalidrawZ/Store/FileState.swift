@@ -35,6 +35,7 @@ final class FileState: ObservableObject {
             isTemporaryGroupSelected = false
             currentTemporaryFile = nil
             isInCollaborationSpace = false
+            resetSelections()
         }
     }
     
@@ -44,6 +45,7 @@ final class FileState: ObservableObject {
             shouldIgnoreUpdate = true
             recoverWatchUpdate()
             currentFilePublisherCancellables.forEach{$0.cancel()}
+            resetSelections()
             if let currentFile {
                 currentFilePublisherCancellables = [
                     currentFile.publisher(for: \.name).sink { [weak self] _ in
@@ -62,12 +64,17 @@ final class FileState: ObservableObject {
                 isTemporaryGroupSelected = false
                 currentTemporaryFile = nil
                 isInCollaborationSpace = false
+                // selectedFiles = [currentFile]
             }
         }
     }
+    @Published var selectedFiles: Set<File> = []
+    @Published var selectedStartFile: File?
     
     @Published var currentLocalFolder: LocalFolder? {
         didSet {
+            resetSelections()
+
             if currentLocalFolder != nil {
                 currentFile = nil
                 currentGroup = nil
@@ -80,12 +87,15 @@ final class FileState: ObservableObject {
 
     @Published var currentLocalFile: URL? {
         didSet {
+            resetSelections()
+
             if currentLocalFile != nil {
                 currentFile = nil
                 currentGroup = nil
                 isTemporaryGroupSelected = false
                 currentTemporaryFile = nil
                 isInCollaborationSpace = false
+                // selectedLocalFiles = [currentLocalFile]
             }
         }
     }
@@ -100,9 +110,11 @@ final class FileState: ObservableObject {
             }
         }
     }
+    @Published var selectedLocalFiles: Set<URL> = []
     
     @Published var isTemporaryGroupSelected = false {
         didSet {
+            resetSelections()
             if isTemporaryGroupSelected {
                 currentFile = nil
                 currentGroup = nil
@@ -115,14 +127,17 @@ final class FileState: ObservableObject {
     @Published var temporaryFiles: [URL] = []
     @Published var currentTemporaryFile: URL? {
         didSet {
+            resetSelections()
             if currentTemporaryFile != nil {
                 currentFile = nil
                 currentGroup = nil
                 currentLocalFolder = nil
                 currentLocalFile = nil
+                // selectedTemporaryFiles = [currentTemporaryFile]
             }
         }
     }
+    @Published var selectedTemporaryFiles: Set<URL> = []
     
     // Collab
     @Published var isInCollaborationSpace = false {
@@ -786,5 +801,12 @@ final class FileState: ObservableObject {
                 self.currentFile = try viewContext.fetch(fileFetchRequest).first
             }
         }
+    }
+    
+    
+    public func resetSelections() {
+        self.selectedFiles = []
+        self.selectedLocalFiles = []
+        self.selectedTemporaryFiles = []
     }
 }
