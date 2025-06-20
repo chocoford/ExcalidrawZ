@@ -111,7 +111,8 @@ final class FileState: ObservableObject {
         }
     }
     @Published var selectedLocalFiles: Set<URL> = []
-    
+    @Published var selectedStartLocalFile: URL?
+
     @Published var isTemporaryGroupSelected = false {
         didSet {
             resetSelections()
@@ -138,7 +139,7 @@ final class FileState: ObservableObject {
         }
     }
     @Published var selectedTemporaryFiles: Set<URL> = []
-    
+    @Published var selectedStartTemporaryFile: URL?
     // Collab
     @Published var isInCollaborationSpace = false {
         didSet {
@@ -806,7 +807,9 @@ final class FileState: ObservableObject {
     
     public func resetSelections() {
         self.selectedFiles = []
+        self.selectedStartFile = nil
         self.selectedLocalFiles = []
+        self.selectedStartLocalFile = nil
         self.selectedTemporaryFiles = []
     }
 }

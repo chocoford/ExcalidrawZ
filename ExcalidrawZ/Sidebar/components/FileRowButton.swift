@@ -20,7 +20,8 @@ struct FileRowButton: View {
         updatedAt: Date?,
         isSelected: Bool,
         isMultiSelected: Bool,
-        onTap: @escaping () -> Void
+        onTap: @escaping () -> Void,
+        
     ) {
         self.isSelected = isSelected
         self.isMultiSelected = isMultiSelected
@@ -71,7 +72,7 @@ struct FileRowButton: View {
                         )
                 }
             }
-            .animation(.easeOut(duration: 0.2), value: isMultiSelected)
+            .animation(.easeOut(duration: 0.1), value: isMultiSelected)
             .simultaneousGesture(
                 TapGesture().onEnded {
                     onTap()

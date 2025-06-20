@@ -79,7 +79,7 @@ struct TemporaryGroupRowView: View {
                     }
                 }
             } label: {
-                Label(.localizable(.sidebarTemporaryGroupRowContextMenuMoveTo), systemSymbol: .trayAndArrowUp)
+                Label(.localizable(.generalMoveTo), systemSymbol: .trayAndArrowUp)
             }
             
             Divider()

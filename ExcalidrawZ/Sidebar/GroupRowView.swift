@@ -226,7 +226,7 @@ struct GroupRowView: View {
                         }
                     } label: {
                         Label(
-                            .localizable(.sidebarFileRowContextMenuMoveTo),
+                            .localizable(.generalMoveTo),
                             systemSymbol: .trayAndArrowUp
                         )
                     }

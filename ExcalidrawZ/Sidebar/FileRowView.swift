@@ -29,7 +29,6 @@ struct FileRowView: View {
     
     @FetchRequest
     private var files: FetchedResults<File>
-    private var sortField: ExcalidrawFileSortField
 
     init(
         file: File,
@@ -51,10 +50,14 @@ struct FileRowView: View {
                     ]
                 case .name:
                     [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
                         SortDescriptor(\.name, order: .reverse),
                     ]
                 case .rank:
                     [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
                         SortDescriptor(\.rank, order: .forward),
                     ]
             }
@@ -69,7 +72,6 @@ struct FileRowView: View {
             ),
             animation: .smooth
         )
-        self.sortField = sortField
     }
     
     @State private var showPermanentlyDeleteAlert: Bool = false
@@ -141,39 +143,28 @@ struct FileRowView: View {
             Button {
                 fileIDToBeRenamed = self.file.objectID
             } label: {
-                Label(.localizable(.sidebarFileRowContextMenuRename), systemSymbol: .pencil)
+                Label(
+                    .localizable(
+                        .sidebarFileRowContextMenuRename
+                    ),
+                    systemSymbol: .pencil
+                )
             }
             .disabled(!fileState.selectedFiles.isEmpty)
             
             Button {
-                do {
-                    if fileState.selectedFiles.isEmpty {
-                        let newFile = try fileState.duplicateFile(
-                            file,
-                            context: viewContext
-                        )
-                        
-                        if containerHorizontalSizeClass != .compact {
-                            fileState.currentFile = newFile
-                        }
-                    } else if fileState.selectedFiles.contains(file) {
-                        for selectedFile in fileState.selectedFiles {
-                            _ = try fileState.duplicateFile(
-                                selectedFile,
-                                context: viewContext
-                            )
-                        }
-                    }
-                } catch {
-                    alertToast(error)
-                }
+                duplicateFile()
             } label: {
-                Label(.localizable(.sidebarFileRowContextMenuDuplicate), systemSymbol: .docOnDoc)
+                Label(
+                    .localizable(
+                        fileState.selectedFiles.isEmpty
+                        ? .sidebarFileRowContextMenuDuplicate
+                        : .sidebarFileRowContextMenuDuplicateFiles(fileState.selectedFiles.count)
+                    ),
+                    systemSymbol: .docOnDoc
+                )
             }
-            .disabled(
-                !fileState.selectedFiles.isEmpty && !fileState.selectedFiles.contains(file)
-            )
-             
+            
             moveFileMenu()
             
             Button {
@@ -184,46 +175,48 @@ struct FileRowView: View {
             .disabled(!fileState.selectedFiles.isEmpty)
 
             Button(role: .destructive) {
-                if fileState.selectedFiles.isEmpty {
-                    fileState.deleteFile(file)
-                } else {
-                    for selectedFile in fileState.selectedFiles {
-                        fileState.deleteFile(selectedFile)
-                    }
-                }
+                deleteFile()
             } label: {
-                Label(.localizable(.sidebarFileRowContextMenuDelete), systemSymbol: .trash)
+                Label(.localizable(
+                    fileState.selectedFiles.isEmpty
+                    ? .sidebarFileRowContextMenuDelete
+                    : .sidebarFileRowContextMenuDeleteFiles(fileState.selectedFiles.count)
+                ), systemSymbol: .trash)
             }
-            .disabled(
-                !fileState.selectedFiles.isEmpty && !fileState.selectedFiles.contains(file)
-            )
-            
         } else {
             Button {
-                fileState.recoverFile(file)
+                let filesToRecover: [File] = if fileState.selectedFiles.contains(file) {
+                    Array(fileState.selectedFiles)
+                } else {
+                    [file]
+                }
+                for file in filesToRecover {
+                    fileState.recoverFile(file)
+                }
             } label: {
                 Label(
-                    .localizable(.sidebarFileRowContextMenuRecover),
+                    .localizable(
+                        fileState.selectedFiles.isEmpty
+                        ? .sidebarFileRowContextMenuRecover
+                        : .sidebarFileRowContextMenuRecoverFiles(fileState.selectedFiles.count)
+                    ),
                     systemSymbol: .arrowshapeTurnUpBackward
                 )
                 .symbolVariant(.fill)
             }
             
-            .disabled(
-                !fileState.selectedFiles.isEmpty && !fileState.selectedFiles.contains(file)
-            )
-            
             Button {
                 showPermanentlyDeleteAlert.toggle()
             } label: {
                 Label(
-                    .localizable(.sidebarFileRowContextMenuDeletePermanently),
+                    .localizable(
+                        fileState.selectedFiles.isEmpty
+                        ? .sidebarFileRowContextMenuDeletePermanently
+                        : .sidebarFileRowContextMenuDeleteFilesPermanently(fileState.selectedFiles.count)
+                    ),
                     systemSymbol: .trash
                 )
             }
-            .disabled(
-                !fileState.selectedFiles.isEmpty && !fileState.selectedFiles.contains(file)
-            )
         }
     }
     
@@ -278,7 +271,14 @@ struct FileRowView: View {
                     }
                 }
             } label: {
-                Label(.localizable(.sidebarFileRowContextMenuMoveTo), systemSymbol: .trayAndArrowUp)
+                Label(
+                    .localizable(
+                        fileState.selectedFiles.isEmpty
+                        ? .generalMoveTo
+                        : .generalMoveFilesTo(fileState.selectedFiles.count)
+                    ),
+                    systemSymbol: .trayAndArrowUp
+                )
             }
             .disabled(
                 !fileState.selectedFiles.isEmpty && !fileState.selectedFiles.contains(file)
@@ -324,7 +324,6 @@ struct FileRowView: View {
             let currentFileID = fileState.currentFile?.objectID
 
             
-            
             Task.detached {
                 do {
                     try await context.perform {
@@ -354,7 +353,9 @@ struct FileRowView: View {
                             fileState.expandToGroup(group.objectID)
                         }
                     }
-                    
+                    await MainActor.run {
+                        fileState.resetSelections()
+                    }
                 } catch {
                     await alertToast(error)
                 }
@@ -362,29 +363,80 @@ struct FileRowView: View {
         }
     }
     
+    private func duplicateFile() {
+        do {
+            if fileState.selectedFiles.contains(file) {
+                for selectedFile in fileState.selectedFiles {
+                    _ = try fileState.duplicateFile(
+                        selectedFile,
+                        context: viewContext
+                    )
+                }
+            } else {
+                let newFile = try fileState.duplicateFile(
+                    file,
+                    context: viewContext
+                )
+                
+                if containerHorizontalSizeClass != .compact {
+                    fileState.currentFile = newFile
+                }
+            }
+            fileState.resetSelections()
+        } catch {
+            alertToast(error)
+        }
+    }
+    
+    private func deleteFile() {
+        let filesToBeDelete: [File] = if fileState.selectedFiles.contains(file) {
+            Array(fileState.selectedFiles)
+        } else {
+            [file]
+        }
+        for selectedFile in filesToBeDelete {
+            fileState.deleteFile(selectedFile)
+        }
+        fileState.resetSelections()
+    }
+    
     private func deleteFilePermanently() {
+        let fileIDsToDelete: [NSManagedObjectID] = if fileState.selectedFiles.contains(file) {
+            fileState.selectedFiles.map {
+                $0.objectID
+            }
+        } else {
+            [file.objectID]
+        }
+        
         let context = PersistenceController.shared.container.newBackgroundContext()
-        let fileID = file.objectID
         Task.detached {
             do {
                 try await context.perform {
-                    guard case let file as File = context.object(with: fileID) else { return }
-                    
-                    // also delete checkpoints
-                    let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
-                    checkpointsFetchRequest.predicate = NSPredicate(format: "file = %@", file)
-                    let fileCheckpoints = try context.fetch(checkpointsFetchRequest)
-                    let objectIDsToBeDeleted = fileCheckpoints.map{$0.objectID}
-                    if !objectIDsToBeDeleted.isEmpty {
-                        let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: objectIDsToBeDeleted)
-                        try context.executeAndMergeChanges(using: batchDeleteRequest)
+                    for fileID in fileIDsToDelete {
+                        guard case let file as File = context.object(with: fileID) else {
+                            return
+                        }
+                        
+                        // also delete checkpoints
+                        let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+                        checkpointsFetchRequest.predicate = NSPredicate(format: "file = %@", file)
+                        let fileCheckpoints = try context.fetch(checkpointsFetchRequest)
+                        let objectIDsToBeDeleted = fileCheckpoints.map{$0.objectID}
+                        if !objectIDsToBeDeleted.isEmpty {
+                            let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: objectIDsToBeDeleted)
+                            try context.executeAndMergeChanges(using: batchDeleteRequest)
+                        }
+                        context.delete(file)
+                        try context.save()
                     }
-                    context.delete(file)
-                    try context.save()
                 }
+                await fileState.resetSelections()
             } catch {
                 await alertToast(error)
             }
+            
+            await fileState.resetSelections()
         }
     }
 }

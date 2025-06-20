@@ -22,10 +22,12 @@ struct LocalFileRowView: View {
     
     var file: URL
     var updateFlag: Date?
+    var files: [URL]
     
-    init(file: URL, updateFlag: Date?) {
+    init(file: URL, updateFlag: Date?, files: [URL]) {
         self.file = file
         self.updateFlag = updateFlag
+        self.files = files
     }
     
     struct ICloudState {
@@ -51,7 +53,10 @@ struct LocalFileRowView: View {
     private var topLevelLocalFolders: FetchedResults<LocalFolder>
     
     var body: some View {
-        Button {
+        FileRowButton(
+            isSelected: fileState.currentLocalFile == file || isWaitingForOpeningFile,
+            isMultiSelected: fileState.selectedLocalFiles.contains(file)
+        ) {
             if let iCloudState, iCloudState.downloadStatus != .current {
                 // request iCloud download first
                 do {
@@ -60,6 +65,29 @@ struct LocalFileRowView: View {
                 } catch {
                     alertToast(error)
                 }
+            } else if NSEvent.modifierFlags.contains(.shift) {
+                // 1. If this is the first shift-click, remember it and select that file.
+                if fileState.selectedStartLocalFile == nil {
+                    fileState.selectedStartLocalFile = file
+                    fileState.selectedLocalFiles.insert(file)
+                } else {
+                    guard let startFile = fileState.selectedStartLocalFile,
+                        let startIdx = files.firstIndex(of: startFile),
+                          let endIdx = files.firstIndex(of: file) else {
+                        return
+                    }
+                    let range = startIdx <= endIdx
+                        ? startIdx...endIdx
+                        : endIdx...startIdx
+                    let sliceItems = files[range]
+                    let sliceSet = Set(sliceItems)
+                    fileState.selectedLocalFiles = sliceSet
+                }
+            } else if NSEvent.modifierFlags.contains(.command) {
+                if fileState.selectedLocalFiles.isEmpty {
+                    fileState.selectedStartLocalFile = file
+                }
+                fileState.selectedLocalFiles.insertOrRemove(file)
             } else {
                 fileState.currentLocalFile = file
             }
@@ -99,9 +127,6 @@ struct LocalFileRowView: View {
                 }
             }
         }
-        .buttonStyle(ListButtonStyle(
-            selected: fileState.currentLocalFile == file || isWaitingForOpeningFile
-        ))
         .contextMenu {
             contextMenu()
                 .labelStyle(.titleAndIcon)
@@ -158,12 +183,26 @@ struct LocalFileRowView: View {
             Label(.localizable(.sidebarFileRowContextMenuRename), systemSymbol: .squareAndPencil)
                 .foregroundStyle(.red)
         }
+        .disabled(
+            fileState.selectedLocalFiles.count > 1 &&
+            fileState.selectedLocalFiles.contains(file)
+        )
+
 
         Button {
             duplicateFile()
         } label: {
-            Label(.localizable(.sidebarFileRowContextMenuDuplicate), systemSymbol: .docOnDoc)
-                .foregroundStyle(.red)
+            Label(
+                .localizable(
+                    fileState.selectedLocalFiles.isEmpty
+                    ? .sidebarFileRowContextMenuDuplicate
+                    : .sidebarFileRowContextMenuDuplicateFiles(
+                        fileState.selectedLocalFiles.count
+                    )
+                ),
+                systemSymbol: .docOnDoc
+            )
+            .foregroundStyle(.red)
         }
 
         moveLocalFileMenu()
@@ -180,11 +219,25 @@ struct LocalFileRowView: View {
             Label(.localizable(.sidebarLocalFileRowContextMenuCopyPath), systemSymbol: .arrowRightDocOnClipboard)
                 .foregroundStyle(.red)
         }
-        
+        .disabled(
+            fileState.selectedLocalFiles.count > 1 &&
+            fileState.selectedLocalFiles.contains(file)
+        )
+
         Button {
-            NSWorkspace.shared.activateFileViewerSelecting([self.file])
+            let filesToReveal: [URL] = if fileState.selectedLocalFiles.contains(file) {
+                Array(fileState.selectedLocalFiles)
+            } else {
+                [file]
+            }
+            NSWorkspace.shared.activateFileViewerSelecting(filesToReveal)
         } label: {
-            Label(.localizable(.generalButtonRevealInFinder), systemSymbol: .docViewfinder)
+            Label(
+                .localizable(
+                    .generalButtonRevealInFinder
+                ),
+                systemSymbol: .docViewfinder
+            )
                 .foregroundStyle(.red)
         }
 #endif
@@ -194,8 +247,17 @@ struct LocalFileRowView: View {
         Button {
             moveToTrash()
         } label: {
-            Label(.localizable(.generalButtonMoveToTrash), systemSymbol: .trash)
-                .foregroundStyle(.red)
+            Label(
+                .localizable(
+                    fileState.selectedLocalFiles.isEmpty
+                    ? .generalButtonMoveToTrash
+                    : .generalButtonMoveFilesToTrash(
+                        fileState.selectedLocalFiles.count
+                    )
+                ),
+                systemSymbol: .trash
+            )
+            .foregroundStyle(.red)
         }
     }
     
@@ -214,7 +276,17 @@ struct LocalFileRowView: View {
                     }
                 }
             } label: {
-                Label(.localizable(.sidebarFileRowContextMenuMoveTo), systemSymbol: .trayAndArrowUp)
+                Label(
+                    .localizable(
+                        fileState.selectedLocalFiles.isEmpty
+                        ? .generalMoveTo
+                        : .generalMoveFilesTo(
+                            fileState.selectedLocalFiles.count
+                        )
+                            
+                    ),
+                    systemSymbol: .trayAndArrowUp
+                )
             }
         }
     }
@@ -245,32 +317,50 @@ struct LocalFileRowView: View {
     }
     
     private func duplicateFile() {
+        let filesToDuplicate: [URL] = if fileState.selectedLocalFiles.contains(file) {
+            Array(fileState.selectedLocalFiles)
+        } else {
+            [file]
+        }
+        var fileToBeActive: URL? = nil
+        
         do {
             guard let folder = fileState.currentLocalFolder else { return }
             try folder.withSecurityScopedURL { scopedURL in
-                let file = try ExcalidrawFile(contentsOf: file)
                 
-                var newFileName = self.file.deletingPathExtension().lastPathComponent
-                while FileManager.default.fileExists(at: scopedURL.appendingPathComponent(newFileName, conformingTo: .excalidrawFile)) {
-                    let components = newFileName.components(separatedBy: "-")
-                    if components.count == 2, let numComponent = components.last, let index = Int(numComponent) {
-                        newFileName = "\(components[0])-\(index+1)"
-                    } else {
-                        newFileName = "\(newFileName)-1"
+                for file in filesToDuplicate {
+                    
+                    let file = try ExcalidrawFile(contentsOf: file)
+                    
+                    var newFileName = self.file.deletingPathExtension().lastPathComponent
+                    while FileManager.default.fileExists(at: scopedURL.appendingPathComponent(newFileName, conformingTo: .excalidrawFile)) {
+                        let components = newFileName.components(separatedBy: "-")
+                        if components.count == 2, let numComponent = components.last, let index = Int(numComponent) {
+                            newFileName = "\(components[0])-\(index+1)"
+                        } else {
+                            newFileName = "\(newFileName)-1"
+                        }
+                    }
+                    
+                    let newURL = self.file.deletingLastPathComponent().appendingPathComponent(newFileName, conformingTo: .excalidrawFile)
+                    
+                    let fileCoordinator = NSFileCoordinator()
+                    fileCoordinator.coordinate(writingItemAt: newURL, options: .forReplacing, error: nil) { url in
+                        do {
+                            try file.content?.write(to: url)
+                        } catch {
+                            alertToast(error)
+                        }
+                    }
+                    
+                    if filesToDuplicate.count == 1,
+                       filesToDuplicate[0] == self.file {
+                        fileToBeActive = newURL
                     }
                 }
-                
-                let newURL = self.file.deletingLastPathComponent().appendingPathComponent(newFileName, conformingTo: .excalidrawFile)
-                
-                let fileCoordinator = NSFileCoordinator()
-                fileCoordinator.coordinate(writingItemAt: newURL, options: .forReplacing, error: nil) { url in
-                    do {
-                        try file.content?.write(to: url)
-                    } catch {
-                        alertToast(error)
-                    }
+                if let fileToBeActive {
+                    fileState.currentLocalFile = fileToBeActive
                 }
-                fileState.currentLocalFile = newURL
             }
         } catch {
             alertToast(error)
@@ -279,7 +369,11 @@ struct LocalFileRowView: View {
     
     private func moveLocalFile(to targetFolderID: NSManagedObjectID) {
         let context = PersistenceController.shared.container.newBackgroundContext()
-        let file = self.file
+        let filesToMove: [URL] = if fileState.selectedLocalFiles.contains(file) {
+            Array(fileState.selectedLocalFiles)
+        } else {
+            [file]
+        }
         Task.detached {
             do {
                 try await context.perform {
@@ -287,47 +381,54 @@ struct LocalFileRowView: View {
                     
                     try folder.withSecurityScopedURL { scopedURL in
                         let fileCoordinator = NSFileCoordinator()
-                        fileCoordinator.coordinate(writingItemAt: scopedURL, options: .forMoving, error: nil) { url in
+                        fileCoordinator.coordinate(
+                            writingItemAt: scopedURL,
+                            options: .forMoving,
+                            error: nil
+                        ) { url in
                             do {
-                                try FileManager.default.moveItem(
-                                    at: file,
-                                    to: url.appendingPathComponent(
+                                for file in filesToMove {
+                                    try FileManager.default.moveItem(
+                                        at: file,
+                                        to: url.appendingPathComponent(
+                                            file.lastPathComponent,
+                                            conformingTo: .excalidrawFile
+                                        )
+                                    )
+                                    
+                                    // Update URL ID Mapping
+                                    let newURL = scopedURL.appendingPathComponent(
                                         file.lastPathComponent,
                                         conformingTo: .excalidrawFile
                                     )
-                                )
+                                    // Update local file ID mapping
+                                    ExcalidrawFile.localFileURLIDMapping[newURL] = ExcalidrawFile.localFileURLIDMapping[file]
+                                    ExcalidrawFile.localFileURLIDMapping[file] = nil
+                                    
+                                    // Also update checkpoints
+                                    Task {
+                                        await MainActor.run {
+                                            updateCheckpoints(oldURL: file, newURL: newURL)
+                                        }
+                                    }
+                                    Task {
+                                        await MainActor.run {
+                                            if fileState.currentLocalFile == file {
+                                                DispatchQueue.main.async {
+                                                    fileState.currentLocalFolder = viewContext.object(with: targetFolderID) as? LocalFolder
+                                                    fileState.currentLocalFile = newURL
+                                                    fileState.expandToGroup(targetFolderID)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             } catch {
                                 alertToast(error)
                             }
                         }
                     }
                     
-                    if let newURL = folder.url?.appendingPathComponent(
-                        file.lastPathComponent,
-                        conformingTo: .excalidrawFile
-                    ) {
-                        // Update local file ID mapping
-                        ExcalidrawFile.localFileURLIDMapping[newURL] = ExcalidrawFile.localFileURLIDMapping[file]
-                        ExcalidrawFile.localFileURLIDMapping[file] = nil
-                        
-                        // Also update checkpoints
-                        Task {
-                            await MainActor.run {
-                                updateCheckpoints(oldURL: file, newURL: newURL)
-                            }
-                        }
-                        Task {
-                            await MainActor.run {
-                                if fileState.currentLocalFile == file {
-                                    DispatchQueue.main.async {
-                                        fileState.currentLocalFolder = viewContext.object(with: targetFolderID) as? LocalFolder
-                                        fileState.currentLocalFile = newURL
-                                        fileState.expandToGroup(targetFolderID)
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             } catch {
                 await alertToast(error)
@@ -408,23 +509,34 @@ struct LocalFileRowView: View {
     }
     
     private func moveToTrash() {
+        let filesToDelete: [URL] = if fileState.selectedLocalFiles.contains(file) {
+            Array(fileState.selectedLocalFiles)
+        } else {
+            [file]
+        }
+//        var fileToBeActive: URL? = nil
+        
+        
         do {
             if let folder = fileState.currentLocalFolder {
                 try folder.withSecurityScopedURL { _ in
                     // Item removed will be handled in `LocalFilesListView`
                     let fileCoordinator = NSFileCoordinator()
-                    fileCoordinator.coordinate(
-                        writingItemAt: self.file,
-                        options: .forDeleting,
-                        error: nil
-                    ) { url in
-                        do {
-                            try FileManager.default.trashItem(
-                                at: url,
-                                resultingItemURL: nil
-                            )
-                        } catch {
-                            alertToast(error)
+                    
+                    for file in filesToDelete {
+                        fileCoordinator.coordinate(
+                            writingItemAt: file,
+                            options: .forDeleting,
+                            error: nil
+                        ) { url in
+                            do {
+                                try FileManager.default.trashItem(
+                                    at: url,
+                                    resultingItemURL: nil
+                                )
+                            } catch {
+                                alertToast(error)
+                            }
                         }
                     }
                 }
@@ -452,14 +564,18 @@ class ICloudFileMonitor: NSObject {
         query?.searchScopes = [NSMetadataQueryUbiquitousDataScope]
 
         // 监听查询状态更新
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(queryUpdated(_:)),
-                                               name: .NSMetadataQueryDidUpdate,
-                                               object: query)
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(queryUpdated(_:)),
-                                               name: .NSMetadataQueryDidFinishGathering,
-                                               object: query)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(queryUpdated(_:)),
+            name: .NSMetadataQueryDidUpdate,
+            object: query
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(queryUpdated(_:)),
+            name: .NSMetadataQueryDidFinishGathering,
+            object: query
+        )
 
         query?.start()
     }

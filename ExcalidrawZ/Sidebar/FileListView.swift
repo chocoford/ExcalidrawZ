@@ -35,10 +35,14 @@ struct FileListView: View {
                     ]
                 case .name:
                     [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
                         SortDescriptor(\.name, order: .reverse),
                     ]
                 case .rank:
                     [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
                         SortDescriptor(\.rank, order: .forward),
                     ]
             }
@@ -194,16 +198,24 @@ struct FileListView: View {
                 Color.clear
                     .contentShape(Rectangle())
                     .onTapGesture {
+                        if NSEvent.modifierFlags.contains(.command) || NSEvent.modifierFlags.contains(.shift) {
+                            return
+                        }
                         fileState.resetSelections()
                     }
             }
         }
-        .modifier(RenameSheetViewModifier(isPresented: Binding {
-            fileIDToBeRenamed != nil
-        } set: { _ in
-            fileIDToBeRenamed = nil
-        }, name: fileToBeRenamed?.name ?? "") {
-            fileState.renameFile(fileIDToBeRenamed!, context: managedObjectContext, newName: $0)
+        .modifier(
+            RenameSheetViewModifier(isPresented: Binding {
+                fileIDToBeRenamed != nil
+            } set: { _ in
+                fileIDToBeRenamed = nil
+            }, name: fileToBeRenamed?.name ?? "") {
+                fileState.renameFile(
+                    fileIDToBeRenamed!,
+                    context: managedObjectContext,
+                    newName: $0
+                )
         })
     }
 }

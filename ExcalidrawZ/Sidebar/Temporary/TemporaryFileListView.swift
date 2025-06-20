@@ -28,6 +28,9 @@ struct TemporaryFileListView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 12)
         }
+        .onAppear {
+            fileState.currentTemporaryFile = fileState.temporaryFiles.first
+        }
     }
 }
 
@@ -57,15 +60,39 @@ struct TemporaryFileRowView: View {
     @State private var modifiedDate: Date = .distantPast
     
     var body: some View {
-        Button {
-            fileState.currentTemporaryFile = file
-        } label: {
-            FileRowLabel(
-                name: file.deletingPathExtension().lastPathComponent,
-                updatedAt: modifiedDate
-            )
+        FileRowButton(
+            name: file.deletingPathExtension().lastPathComponent,
+            updatedAt: modifiedDate,
+            isSelected: fileState.currentTemporaryFile == file,
+            isMultiSelected: fileState.selectedTemporaryFiles.contains(file)
+        ) {
+            if NSEvent.modifierFlags.contains(.shift) {
+                let files = fileState.temporaryFiles
+                if fileState.selectedStartTemporaryFile == nil {
+                    fileState.selectedStartTemporaryFile = file
+                    fileState.selectedTemporaryFiles.insert(file)
+                } else {
+                    guard let startFile = fileState.selectedStartTemporaryFile,
+                        let startIdx = files.firstIndex(of: startFile),
+                          let endIdx = files.firstIndex(of: file) else {
+                        return
+                    }
+                    let range = startIdx <= endIdx
+                        ? startIdx...endIdx
+                        : endIdx...startIdx
+                    let sliceItems = files[range]
+                    let sliceSet = Set(sliceItems)
+                    fileState.selectedTemporaryFiles = sliceSet
+                }
+            } else if NSEvent.modifierFlags.contains(.command) {
+                if fileState.selectedTemporaryFiles.isEmpty {
+                    fileState.selectedStartTemporaryFile = file
+                }
+                fileState.selectedTemporaryFiles.insertOrRemove(file)
+            } else {
+                fileState.currentTemporaryFile = file
+            }
         }
-        .buttonStyle(ListButtonStyle(selected: fileState.currentTemporaryFile == file))
         .contextMenu {
             contextMenu()
                 .labelStyle(.titleAndIcon)
@@ -96,7 +123,13 @@ struct TemporaryFileRowView: View {
             }
         } label: {
             Label(
-                .localizable(.sidebarTemporaryGroupRowContextMenuSaveTo),
+                .localizable(
+                    fileState.selectedTemporaryFiles.isEmpty
+                    ? .sidebarTemporaryGroupRowContextMenuSaveTo
+                    : .sidebarTemporaryGroupRowContextMenuSaveFilesTo(
+                        fileState.selectedTemporaryFiles.count
+                    )
+                ),
                 systemSymbol: .trayAndArrowDown
             )
         }
@@ -114,7 +147,13 @@ struct TemporaryFileRowView: View {
             }
         } label: {
             Label(
-                .localizable(.sidebarTemporaryGroupRowContextMenuMoveTo),
+                .localizable(
+                    fileState.selectedTemporaryFiles.isEmpty
+                    ? .generalMoveTo
+                    : .generalMoveFilesTo(
+                        fileState.selectedTemporaryFiles.count
+                    )
+                ),
                 systemSymbol: .trayAndArrowUp
             )
         }
@@ -123,8 +162,17 @@ struct TemporaryFileRowView: View {
         Divider()
         
         Button {
+            let filesToClose: [URL] = if fileState.selectedTemporaryFiles.contains(file) {
+                Array(fileState.selectedTemporaryFiles)
+            } else {
+                [file]
+            }
+            
             fileState.currentTemporaryFile = nil
-            fileState.temporaryFiles.removeAll(where: {$0 == file})
+            
+            for file in filesToClose {
+                fileState.temporaryFiles.removeAll(where: {$0 == file})
+            }
             
             if fileState.temporaryFiles.isEmpty {
                 fileState.isTemporaryGroupSelected = false
@@ -132,7 +180,13 @@ struct TemporaryFileRowView: View {
                 fileState.currentTemporaryFile = fileState.temporaryFiles.first
             }
         } label: {
-            Label(.localizable(.sidebarTemporaryFileRowContextMenuCloseFile), systemSymbol: .xmarkCircle)
+            Label(.localizable(
+                fileState.selectedTemporaryFiles.isEmpty
+                ? .sidebarTemporaryFileRowContextMenuCloseFile
+                : .sidebarTemporaryFileRowContextMenuCloseFiles(
+                    fileState.selectedTemporaryFiles.count
+                )
+            ), systemSymbol: .xmarkCircle)
         }
     }
     
@@ -153,21 +207,28 @@ struct TemporaryFileRowView: View {
     
     private func moveFile(to groupID: NSManagedObjectID) {
         let currentFileURL = fileState.currentTemporaryFile
-        let file = self.file
         let context = PersistenceController.shared.container.newBackgroundContext()
+        let filesToMove: [URL] = if fileState.selectedTemporaryFiles.contains(file) {
+            Array(fileState.selectedTemporaryFiles)
+        } else {
+            [file]
+        }
+        
         Task.detached {
             do {
                 var currentTemporaryFileID: NSManagedObjectID?
                 try await context.perform {
-                    let newFile = try File(url: file, context: context)
                     guard case let group as Group = context.object(with: groupID) else { return }
-                    newFile.group = group
-                    context.insert(newFile)
                     
-                    try context.save()
-                    if file == currentFileURL {
-                        currentTemporaryFileID = newFile.objectID
+                    for file in filesToMove {
+                        let newFile = try File(url: file, context: context)
+                        newFile.group = group
+                        context.insert(newFile)
+                        if file == currentFileURL {
+                            currentTemporaryFileID = newFile.objectID
+                        }
                     }
+                    try context.save()
                 }
                 
                 await MainActor.run { [currentTemporaryFileID] in
@@ -190,7 +251,11 @@ struct TemporaryFileRowView: View {
     
     private func moveLocalFile(to targetFolderID: NSManagedObjectID) {
         let context = PersistenceController.shared.container.newBackgroundContext()
-        let file = self.file
+        let filesToMove: [URL] = if fileState.selectedTemporaryFiles.contains(file) {
+            Array(fileState.selectedTemporaryFiles)
+        } else {
+            [file]
+        }
         Task.detached {
             do {
                 try await context.perform {
@@ -198,50 +263,57 @@ struct TemporaryFileRowView: View {
                     
                     try folder.withSecurityScopedURL { scopedURL in
                         let fileCoordinator = NSFileCoordinator()
-                        fileCoordinator.coordinate(writingItemAt: scopedURL, options: .forMoving, error: nil) { url in
+                        fileCoordinator.coordinate(
+                            writingItemAt: scopedURL,
+                            options: .forMoving,
+                            error: nil
+                        ) { url in
                             do {
-                                try FileManager.default.moveItem(
-                                    at: file,
-                                    to: url.appendingPathComponent(
+                                for file in filesToMove {
+                                    try FileManager.default.moveItem(
+                                        at: file,
+                                        to: url.appendingPathComponent(
+                                            file.lastPathComponent,
+                                            conformingTo: .excalidrawFile
+                                        )
+                                    )
+                                    
+                                    let newURL = scopedURL.appendingPathComponent(
                                         file.lastPathComponent,
                                         conformingTo: .excalidrawFile
                                     )
-                                )
+                                    // Update local file ID mapping
+                                    ExcalidrawFile.localFileURLIDMapping[newURL] = ExcalidrawFile.localFileURLIDMapping[file]
+                                    ExcalidrawFile.localFileURLIDMapping[file] = nil
+                                    
+                                    // Also update checkpoints
+                                    Task {
+                                        await MainActor.run {
+                                            updateLocalFileCheckpoints(oldURL: file, newURL: newURL)
+                                        }
+                                    }
+                                    
+                                    Task {
+                                        await MainActor.run {
+                                            fileState.temporaryFiles.removeAll(where: {$0 == file})
+                                            if fileState.temporaryFiles.isEmpty {
+                                                fileState.isTemporaryGroupSelected = false
+                                            }
+                                            if fileState.currentTemporaryFile == file {
+                                                fileState.currentLocalFolder = viewContext.object(with: targetFolderID) as? LocalFolder
+                                                fileState.currentLocalFile = newURL
+                                                // auto expand
+                                                fileState.expandToGroup(folder.objectID)
+                                            }
+                                        }
+                                    }
+                                }
                             } catch {
                                 alertToast(error)
                             }
                         }
                     }
-                    if let newURL = folder.url?.appendingPathComponent(
-                        file.lastPathComponent,
-                        conformingTo: .excalidrawFile
-                    ) {
-                        // Update local file ID mapping
-                        ExcalidrawFile.localFileURLIDMapping[newURL] = ExcalidrawFile.localFileURLIDMapping[file]
-                        ExcalidrawFile.localFileURLIDMapping[file] = nil
-                        
-                        // Also update checkpoints
-                        Task {
-                            await MainActor.run {
-                                updateLocalFileCheckpoints(oldURL: file, newURL: newURL)
-                            }
-                        }
-                        
-                        Task {
-                            await MainActor.run {
-                                fileState.temporaryFiles.removeAll(where: {$0 == file})
-                                if fileState.temporaryFiles.isEmpty {
-                                    fileState.isTemporaryGroupSelected = false
-                                }
-                                if fileState.currentTemporaryFile == file {
-                                    fileState.currentLocalFolder = viewContext.object(with: targetFolderID) as? LocalFolder
-                                    fileState.currentLocalFile = newURL
-                                    // auto expand
-                                    fileState.expandToGroup(folder.objectID)
-                                }
-                            }
-                        }
-                    }
+                   
                 }
             } catch {
                 await alertToast(error)
