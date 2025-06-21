@@ -26,10 +26,52 @@ struct FileRowView: View {
         animation: .default
     )
     var topLevelGroups: FetchedResults<Group>
-        
-    init(file: File, fileIDToBeRenamed: Binding<NSManagedObjectID?>) {
+    
+    @FetchRequest
+    private var files: FetchedResults<File>
+
+    init(
+        file: File,
+        fileIDToBeRenamed: Binding<NSManagedObjectID?>,
+        sortField: ExcalidrawFileSortField,
+    ) {
+        let group = file.group
+        let groupType = group?.groupType ?? .normal
         self.file = file
         self._fileIDToBeRenamed = fileIDToBeRenamed
+        
+        // Files
+        let sortDescriptors: [SortDescriptor<File>] = {
+            switch sortField {
+                case .updatedAt:
+                    [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse)
+                    ]
+                case .name:
+                    [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
+                        SortDescriptor(\.name, order: .reverse),
+                    ]
+                case .rank:
+                    [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
+                        SortDescriptor(\.rank, order: .forward),
+                    ]
+            }
+        }()
+        
+        self._files = FetchRequest<File>(
+            sortDescriptors: sortDescriptors,
+            predicate: groupType == .trash ? NSPredicate(
+                format: "inTrash == YES"
+            ) : NSPredicate(
+                format: "group.id == %@ AND inTrash == NO", (group?.id ?? UUID()) as CVarArg
+            ),
+            animation: .smooth
+        )
     }
     
     @State private var showPermanentlyDeleteAlert: Bool = false
@@ -44,9 +86,39 @@ struct FileRowView: View {
         FileRowButton(
             name: (file.name ?? "")/* + " - \(file.rank ?? -1)"*/,
             updatedAt: file.updatedAt,
-            isSelected: isSelected
+            isSelected: isSelected,
+            isMultiSelected: fileState.selectedFiles.contains(file)
         ) {
-            fileState.currentFile = file
+            if fileState.selectedFiles.isEmpty {
+                fileState.selectedStartFile = nil
+            }
+            
+            if NSEvent.modifierFlags.contains(.shift) {
+                // 1. If this is the first shift-click, remember it and select that file.
+                if fileState.selectedStartFile == nil {
+                    fileState.selectedStartFile = file
+                    fileState.selectedFiles.insert(file)
+                } else {
+                    guard let startFile = fileState.selectedStartFile,
+                        let startIdx = files.firstIndex(of: startFile),
+                          let endIdx = files.firstIndex(of: file) else {
+                        return
+                    }
+                    let range = startIdx <= endIdx
+                        ? startIdx...endIdx
+                        : endIdx...startIdx
+                    let sliceItems = files[range]
+                    let sliceSet = Set(sliceItems)
+                    fileState.selectedFiles = sliceSet
+                }
+            } else if NSEvent.modifierFlags.contains(.command) {
+                if fileState.selectedFiles.isEmpty {
+                    fileState.selectedStartFile = file
+                }
+                fileState.selectedFiles.insertOrRemove(file)
+            } else {
+                fileState.currentFile = file
+            }
         }
         .modifier(FileRowDragDropModifier(file: file, sortField: fileState.sortField))
         .contextMenu { listRowContextMenu.labelStyle(.titleAndIcon) }
@@ -71,22 +143,28 @@ struct FileRowView: View {
             Button {
                 fileIDToBeRenamed = self.file.objectID
             } label: {
-                Label(.localizable(.sidebarFileRowContextMenuRename), systemSymbol: .pencil)
+                Label(
+                    .localizable(
+                        .sidebarFileRowContextMenuRename
+                    ),
+                    systemSymbol: .pencil
+                )
             }
+            .disabled(!fileState.selectedFiles.isEmpty)
             
             Button {
-                do {
-                    let newFile = try fileState.duplicateFile(file, context: viewContext)
-                    if containerHorizontalSizeClass != .compact {
-                        fileState.currentFile = newFile
-                    }
-                } catch {
-                    alertToast(error)
-                }
+                duplicateFile()
             } label: {
-                Label(.localizable(.sidebarFileRowContextMenuDuplicate), systemSymbol: .docOnDoc)
+                Label(
+                    .localizable(
+                        fileState.selectedFiles.isEmpty
+                        ? .sidebarFileRowContextMenuDuplicate
+                        : .sidebarFileRowContextMenuDuplicateFiles(fileState.selectedFiles.count)
+                    ),
+                    systemSymbol: .docOnDoc
+                )
             }
-             
+            
             moveFileMenu()
             
             Button {
@@ -94,19 +172,34 @@ struct FileRowView: View {
             } label: {
                 Label(.localizable(.sidebarFileRowContextMenuCopyFileLink), systemSymbol: .link)
             }
-            
+            .disabled(!fileState.selectedFiles.isEmpty)
+
             Button(role: .destructive) {
-                fileState.deleteFile(file)
+                deleteFile()
             } label: {
-                Label(.localizable(.sidebarFileRowContextMenuDelete), systemSymbol: .trash)
+                Label(.localizable(
+                    fileState.selectedFiles.isEmpty
+                    ? .sidebarFileRowContextMenuDelete
+                    : .sidebarFileRowContextMenuDeleteFiles(fileState.selectedFiles.count)
+                ), systemSymbol: .trash)
             }
-            
         } else {
             Button {
-                fileState.recoverFile(file)
+                let filesToRecover: [File] = if fileState.selectedFiles.contains(file) {
+                    Array(fileState.selectedFiles)
+                } else {
+                    [file]
+                }
+                for file in filesToRecover {
+                    fileState.recoverFile(file)
+                }
             } label: {
                 Label(
-                    .localizable(.sidebarFileRowContextMenuRecover),
+                    .localizable(
+                        fileState.selectedFiles.isEmpty
+                        ? .sidebarFileRowContextMenuRecover
+                        : .sidebarFileRowContextMenuRecoverFiles(fileState.selectedFiles.count)
+                    ),
                     systemSymbol: .arrowshapeTurnUpBackward
                 )
                 .symbolVariant(.fill)
@@ -116,7 +209,11 @@ struct FileRowView: View {
                 showPermanentlyDeleteAlert.toggle()
             } label: {
                 Label(
-                    .localizable(.sidebarFileRowContextMenuDeletePermanently),
+                    .localizable(
+                        fileState.selectedFiles.isEmpty
+                        ? .sidebarFileRowContextMenuDeletePermanently
+                        : .sidebarFileRowContextMenuDeleteFilesPermanently(fileState.selectedFiles.count)
+                    ),
                     systemSymbol: .trash
                 )
             }
@@ -174,63 +271,172 @@ struct FileRowView: View {
                     }
                 }
             } label: {
-                Label(.localizable(.sidebarFileRowContextMenuMoveTo), systemSymbol: .trayAndArrowUp)
+                Label(
+                    .localizable(
+                        fileState.selectedFiles.isEmpty
+                        ? .generalMoveTo
+                        : .generalMoveFilesTo(fileState.selectedFiles.count)
+                    ),
+                    systemSymbol: .trayAndArrowUp
+                )
             }
+            .disabled(
+                !fileState.selectedFiles.isEmpty && !fileState.selectedFiles.contains(file)
+            )
         }
     }
     
     private func moveFile(to groupID: NSManagedObjectID) {
         let context = PersistenceController.shared.container.newBackgroundContext()
-        let fileID = file.objectID
-        let currentFile = fileState.currentFile
-        Task.detached {
-            do {
-                try await context.perform {
-                    guard case let group as Group = context.object(with: groupID),
-                          case let file as File = context.object(with: fileID) else { return }
-                    file.group = group
-                    try context.save()
-                }
-                
-                if await file == currentFile {
-                    await MainActor.run {
-                        guard case let group as Group = viewContext.object(with: groupID),
-                              case let file as File = viewContext.object(with: fileID) else { return }
-                        fileState.currentGroup = group
-                        fileState.currentFile = file
-                        
-                        fileState.expandToGroup(group.objectID)
+        
+        
+        if fileState.selectedFiles.isEmpty {
+            let fileID = file.objectID
+            let currentFileID = fileState.currentFile?.objectID
+            
+            Task.detached {
+                do {
+                    try await context.perform {
+                        guard case let group as Group = context.object(with: groupID),
+                              case let file as File = context.object(with: fileID) else { return }
+                        file.group = group
+                        try context.save()
                     }
+                    
+                    if fileID == currentFileID {
+                        await MainActor.run {
+                            guard case let group as Group = viewContext.object(with: groupID),
+                                  case let file as File = viewContext.object(with: fileID) else { return }
+                            fileState.currentGroup = group
+                            fileState.currentFile = file
+                            
+                            fileState.expandToGroup(group.objectID)
+                        }
+                    }
+                } catch {
+                    await alertToast(error)
                 }
-            } catch {
-                await alertToast(error)
+            }
+        } else {
+            let fileIDs = fileState.selectedFiles.map {
+                $0.objectID
+            }
+            let currentFileID = fileState.currentFile?.objectID
+
+            
+            Task.detached {
+                do {
+                    try await context.perform {
+                        guard case let group as Group = context.object(with: groupID) else {
+                            return
+                        }
+                        for fileID in fileIDs {
+                            if case let file as File = context.object(with: fileID) {
+                                file.group = group
+                            }
+                        }
+                        try context.save()
+                    }
+                    
+                    let fileID: NSManagedObjectID? = if let currentFileID {
+                        fileIDs.first { $0 == currentFileID }
+                    } else {
+                        fileIDs.first
+                    }
+                    if let fileID {
+                        await MainActor.run {
+                            guard case let group as Group = viewContext.object(with: groupID),
+                                  case let file as File = viewContext.object(with: fileID) else { return }
+                            fileState.currentGroup = group
+                            fileState.currentFile = file
+                            
+                            fileState.expandToGroup(group.objectID)
+                        }
+                    }
+                    await MainActor.run {
+                        fileState.resetSelections()
+                    }
+                } catch {
+                    await alertToast(error)
+                }
             }
         }
     }
     
+    private func duplicateFile() {
+        do {
+            if fileState.selectedFiles.contains(file) {
+                for selectedFile in fileState.selectedFiles {
+                    _ = try fileState.duplicateFile(
+                        selectedFile,
+                        context: viewContext
+                    )
+                }
+            } else {
+                let newFile = try fileState.duplicateFile(
+                    file,
+                    context: viewContext
+                )
+                
+                if containerHorizontalSizeClass != .compact {
+                    fileState.currentFile = newFile
+                }
+            }
+            fileState.resetSelections()
+        } catch {
+            alertToast(error)
+        }
+    }
+    
+    private func deleteFile() {
+        let filesToBeDelete: [File] = if fileState.selectedFiles.contains(file) {
+            Array(fileState.selectedFiles)
+        } else {
+            [file]
+        }
+        for selectedFile in filesToBeDelete {
+            fileState.deleteFile(selectedFile)
+        }
+        fileState.resetSelections()
+    }
+    
     private func deleteFilePermanently() {
+        let fileIDsToDelete: [NSManagedObjectID] = if fileState.selectedFiles.contains(file) {
+            fileState.selectedFiles.map {
+                $0.objectID
+            }
+        } else {
+            [file.objectID]
+        }
+        
         let context = PersistenceController.shared.container.newBackgroundContext()
-        let fileID = file.objectID
         Task.detached {
             do {
                 try await context.perform {
-                    guard case let file as File = context.object(with: fileID) else { return }
-                    
-                    // also delete checkpoints
-                    let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
-                    checkpointsFetchRequest.predicate = NSPredicate(format: "file = %@", file)
-                    let fileCheckpoints = try context.fetch(checkpointsFetchRequest)
-                    let objectIDsToBeDeleted = fileCheckpoints.map{$0.objectID}
-                    if !objectIDsToBeDeleted.isEmpty {
-                        let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: objectIDsToBeDeleted)
-                        try context.executeAndMergeChanges(using: batchDeleteRequest)
+                    for fileID in fileIDsToDelete {
+                        guard case let file as File = context.object(with: fileID) else {
+                            return
+                        }
+                        
+                        // also delete checkpoints
+                        let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+                        checkpointsFetchRequest.predicate = NSPredicate(format: "file = %@", file)
+                        let fileCheckpoints = try context.fetch(checkpointsFetchRequest)
+                        let objectIDsToBeDeleted = fileCheckpoints.map{$0.objectID}
+                        if !objectIDsToBeDeleted.isEmpty {
+                            let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: objectIDsToBeDeleted)
+                            try context.executeAndMergeChanges(using: batchDeleteRequest)
+                        }
+                        context.delete(file)
+                        try context.save()
                     }
-                    context.delete(file)
-                    try context.save()
                 }
+                await fileState.resetSelections()
             } catch {
                 await alertToast(error)
             }
+            
+            await fileState.resetSelections()
         }
     }
 }

@@ -11,21 +11,9 @@ extension WhatsNewView {
     @MainActor @ViewBuilder
     func featuresContent() -> some View {
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewLiveCollaborationTitle),
-            description: .localizable(.whatsNewLiveCollaborationDescription),
+            title: .localizable(.whatsNewLiveCollaborationCompabilityTitle),
+            description: .localizable(.whatsNewLiveCollaborationCompabilityDescription),
             icon: Image(systemSymbol: .person2CropSquareStack)
-        )
-
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewElementLinksTitle),
-            description: .localizable(.whatsNewElementLinksDescription),
-            icon: Image(systemSymbol: .link)
-        )
-
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewExportDarkPNGTitle),
-            description: .localizable(.whatsNewExportDarkPNGDescription),
-            icon: Image(systemSymbol: .photoFillOnRectangleFill)
         )
         
 #if os(iOS)
@@ -36,11 +24,9 @@ extension WhatsNewView {
         }
 #else
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewCustomFileSortingTitle),
-            description: .localizable(.whatsNewCustomFileSortingDescription),
-            icon: Image(systemSymbol: {
-                if #available(macOS 13.0, *) { .arrowUpAndDownTextHorizontal } else { .arrowUpAndDownCircle }
-            }())
+            title: .localizable(.whatsNewSidebarFilesMultiSelectTitle),
+            description: .localizable(.whatsNewSidebarFilesMultiSelectDescription),
+            icon: Image(systemSymbol: .filemenuAndSelection)
         )
 #endif
     }
@@ -72,6 +58,36 @@ extension WhatsNewView {
                         version: Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
                     ) {
                         featuresContent()
+                    }
+                    // MARK: - v1.4.4
+                    WhatsNewVersionSection(version: "v1.4.4") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewLiveCollaborationTitle),
+                            description: .localizable(.whatsNewLiveCollaborationDescription),
+                            icon: Image(systemSymbol: .person2CropSquareStack)
+                        )
+
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewElementLinksTitle),
+                            description: .localizable(.whatsNewElementLinksDescription),
+                            icon: Image(systemSymbol: .link)
+                        )
+
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewExportDarkPNGTitle),
+                            description: .localizable(.whatsNewExportDarkPNGDescription),
+                            icon: Image(systemSymbol: .photoFillOnRectangleFill)
+                        )
+                        
+#if os(macOS)
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewCustomFileSortingTitle),
+                            description: .localizable(.whatsNewCustomFileSortingDescription),
+                            icon: Image(systemSymbol: {
+                                if #available(macOS 13.0, *) { .arrowUpAndDownTextHorizontal } else { .arrowUpAndDownCircle }
+                            }())
+                        )
+#endif
                     }
                     // MARK: - v1.4.1
                     WhatsNewVersionSection(version: "v1.4.1") {

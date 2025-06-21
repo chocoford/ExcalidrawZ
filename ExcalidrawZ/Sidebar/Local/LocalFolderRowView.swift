@@ -171,7 +171,7 @@ struct LocalFolderRowView: View {
                 }
             }
         } label: {
-            Label(.localizable(.sidebarFileRowContextMenuMoveTo), systemSymbol: .trayAndArrowUp)
+            Label(.localizable(.generalMoveTo), systemSymbol: .trayAndArrowUp)
         }
     }
     

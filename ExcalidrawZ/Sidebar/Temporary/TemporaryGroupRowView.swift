@@ -79,7 +79,7 @@ struct TemporaryGroupRowView: View {
                     }
                 }
             } label: {
-                Label(.localizable(.sidebarTemporaryGroupRowContextMenuMoveTo), systemSymbol: .trayAndArrowUp)
+                Label(.localizable(.generalMoveTo), systemSymbol: .trayAndArrowUp)
             }
             
             Divider()
@@ -199,8 +199,6 @@ struct TemporaryGroupRowView: View {
                 await alertToast(error)
             }
         }
-        
-        
     }
     
     private func updateLocalFileCheckpoints(oldURL: URL, newURL: URL) {

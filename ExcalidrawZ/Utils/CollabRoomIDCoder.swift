@@ -44,3 +44,12 @@ class CollabRoomIDCoder {
     }
 }
 
+
+class CollabRoomIDTransformer {
+    // 把任意字符串转换为Excalidraw的room链接
+    
+    static func encodeToRoomLink(_ roomID: String) -> String {
+        let encoded = CollabRoomIDCoder.shared.encode(roomID: roomID)
+        return "excalidraw://collab/\(encoded)"
+    }
+}

@@ -23,7 +23,8 @@ struct SidebarToggle: View {
         Menu {
             Picker(selection: $appPreference.sidebarMode) {
                 Text(.localizable(.sidebarShowAll)).tag(AppPreference.SidebarMode.all)
-                Text(.localizable(.sidebarShowFilesOnly)).tag(AppPreference.SidebarMode.filesOnly)
+                Text(.localizable(.sidebarShowFilesOnly))
+                    .tag(AppPreference.SidebarMode.filesOnly)
             } label: {
                 EmptyView()
             }

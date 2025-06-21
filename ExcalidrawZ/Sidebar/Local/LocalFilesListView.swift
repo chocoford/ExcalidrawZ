@@ -42,13 +42,27 @@ struct LocalFilesListView: View {
         ScrollView {
             LazyVStack(alignment: .leading) {
                 ForEach(files, id: \.self) { file in
-                    LocalFileRowView(file: file, updateFlag: updateFlags[file])
-                        .id(updateFlags[file])
+                    LocalFileRowView(
+                        file: file,
+                        updateFlag: updateFlags[file],
+                        files: files
+                    )
+                    .id(updateFlags[file])
                 }
             }
             .animation(.default, value: files)
             .padding(.horizontal, 8)
             .padding(.vertical, 12)
+            .background {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if NSEvent.modifierFlags.contains(.command) || NSEvent.modifierFlags.contains(.shift) {
+                            return
+                        }
+                        fileState.resetSelections()
+                    }
+            }
         }
         .bindWindow($window)
         .watchImmediately(of: folder.url) { newValue in
@@ -66,6 +80,7 @@ struct LocalFilesListView: View {
             if let window = notification.object as? NSWindow,
                window == self.window {
                 DispatchQueue.main.async {
+                    guard fileState.currentLocalFolder != nil else { return }
                     getFolderContents()
                     if fileState.currentLocalFile == nil || fileState.currentLocalFile?.deletingLastPathComponent() != folder.url {
                         fileState.currentLocalFile = files.first

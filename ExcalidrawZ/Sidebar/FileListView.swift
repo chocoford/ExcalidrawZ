@@ -17,11 +17,15 @@ struct FileListView: View {
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
-
+    var sortField: ExcalidrawFileSortField
     @FetchRequest
     private var files: FetchedResults<File>
     
-    init(currentGroupID: Group.ID, groupType: Group.GroupType?, sortField: ExcalidrawFileSortField) {
+    init(
+        currentGroupID: Group.ID,
+        groupType: Group.GroupType?,
+        sortField: ExcalidrawFileSortField
+    ) {
         let sortDescriptors: [SortDescriptor<File>] = {
             switch sortField {
                 case .updatedAt:
@@ -31,15 +35,19 @@ struct FileListView: View {
                     ]
                 case .name:
                     [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
                         SortDescriptor(\.name, order: .reverse),
                     ]
                 case .rank:
                     [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
                         SortDescriptor(\.rank, order: .forward),
                     ]
             }
         }()
-        
+        self.sortField = sortField
         self._files = FetchRequest<File>(
             sortDescriptors: sortDescriptors,
             predicate: groupType == .trash ? NSPredicate(
@@ -174,7 +182,11 @@ struct FileListView: View {
                 // `id: \.self` - Prevent crashes caused by closing the Share Sheet that was opened from the app menu.
                 // MultiThread access
                 ForEach(files, id: \.self) { file in
-                    FileRowView(file: file, fileIDToBeRenamed: $fileIDToBeRenamed)
+                    FileRowView(
+                        file: file,
+                        fileIDToBeRenamed: $fileIDToBeRenamed,
+                        sortField: sortField
+                    )
                 }
             }
             // ⬇️ cause `com.apple.SwiftUI.AsyncRenderer (22): EXC_BREAKPOINT` on iOS
@@ -182,13 +194,28 @@ struct FileListView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 12)
             .fileListDropFallback()
+            .background {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if NSEvent.modifierFlags.contains(.command) || NSEvent.modifierFlags.contains(.shift) {
+                            return
+                        }
+                        fileState.resetSelections()
+                    }
+            }
         }
-        .modifier(RenameSheetViewModifier(isPresented: Binding {
-            fileIDToBeRenamed != nil
-        } set: { _ in
-            fileIDToBeRenamed = nil
-        }, name: fileToBeRenamed?.name ?? "") {
-            fileState.renameFile(fileIDToBeRenamed!, context: managedObjectContext, newName: $0)
+        .modifier(
+            RenameSheetViewModifier(isPresented: Binding {
+                fileIDToBeRenamed != nil
+            } set: { _ in
+                fileIDToBeRenamed = nil
+            }, name: fileToBeRenamed?.name ?? "") {
+                fileState.renameFile(
+                    fileIDToBeRenamed!,
+                    context: managedObjectContext,
+                    newName: $0
+                )
         })
     }
 }

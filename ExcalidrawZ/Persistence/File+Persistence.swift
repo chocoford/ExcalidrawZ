@@ -19,7 +19,15 @@ extension File {
     }
     
     convenience init(url: URL, context: NSManagedObjectContext) throws {
-        self.init(name: url.deletingPathExtension().lastPathComponent, context: context)
+        let lastPathComponent = url.lastPathComponent
+
+        var fileNameURL = url
+        for _ in 0..<lastPathComponent.count(where: {$0 == "."}) {
+            fileNameURL.deletePathExtension()
+        }
+        let filename: String = fileNameURL.lastPathComponent
+        
+        self.init(name: filename, context: context)
         self.content = try Data(contentsOf: url)
     }
     
@@ -33,10 +41,6 @@ extension File {
         obj["elements"] = fileDataJson["elements"]
         obj.removeValue(forKey: "files")
         let contentData = try JSONSerialization.data(withJSONObject: obj)
-//        print("[updateElements]", contentData, self.content, contentData == self.content)
-//        if contentData == self.content {
-//            return false
-//        }
         
         self.content = contentData
         self.updatedAt = .now

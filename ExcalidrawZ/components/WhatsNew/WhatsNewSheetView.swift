@@ -131,6 +131,7 @@ struct WhatsNewView: View {
                     .padding(.horizontal, 40)
             }
         }
+        .readSize($navigationSize)
         .toolbar {
 #if os(macOS)
             ToolbarItem(placement: .cancellationAction) {
@@ -165,13 +166,6 @@ struct WhatsNewView: View {
         .navigationTitle(Text(.localizable(.whatsNewTitle)))
         .navigationBarTitleDisplayMode(.large)
 #endif
-        .background {
-            GeometryReader { geometry in
-                Color.clear.onAppear {
-                    navigationSize = geometry.size
-                }
-            }
-        }
     }
     
     @MainActor @ViewBuilder
@@ -192,7 +186,7 @@ struct WhatsNewView: View {
                         .padding(.horizontal, 80)
 #endif
                     
-                    featuresContent()
+                     featuresContent()
                 }
                 .padding(.vertical)
                 .fixedSize(horizontal: false, vertical: true)

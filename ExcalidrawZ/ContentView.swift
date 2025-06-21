@@ -50,7 +50,7 @@ struct ContentView: View {
             .modifier(PaywallModifier())
             .modifier(SearchableModifier())
             .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
-            .modifier(OpenURLModifier())
+            .modifier(OpenFromURLModifier())
             .modifier(UserActivityHandlerModifier())
             .modifier(ShareFileModifier())
             .environmentObject(fileState)
@@ -121,10 +121,13 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            defer { isFirstAppear = false }
-            if !fileState.hasAnyActiveGroup || isFirstAppear {
-                Task {
-                    try? await fileState.setToDefaultGroup()
+            // Wait for on open URL.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                defer { isFirstAppear = false }
+                if !fileState.hasAnyActiveGroup && isFirstAppear {
+                    Task {
+                        try? await fileState.setToDefaultGroup()
+                    }
                 }
             }
         }

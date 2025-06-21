@@ -51,7 +51,7 @@ struct CollaborationFileRow: View {
     @State private var fileToBeArchived: CollaborationFile?
     
     var body: some View {
-        FileRowButton(isSelected: isSelected) {
+        FileRowButton(isSelected: isSelected, isMultiSelected: false) {
             if collaborationState.userCollaborationInfo.username.isEmpty {
                 alert(title: .localizable(.collaborationAlertNameRequiredTitle)) {
                     Text(.localizable(.collaborationAlertNameRequiredMessage))

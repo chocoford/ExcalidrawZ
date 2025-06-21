@@ -225,7 +225,10 @@ struct GroupListView: View {
         .onChange(of: displayedGroups) { newValue in
             if fileState.currentGroup == nil {
                 fileState.currentGroup = displayedGroups.first
-            } else if !displayedGroups.contains(where: {$0 == fileState.currentGroup}) {
+            } else if fileState.currentLocalFolder == nil,
+                      !fileState.isTemporaryGroupSelected,
+                      !fileState.isInCollaborationSpace,
+                      !displayedGroups.contains(where: {$0 == fileState.currentGroup}) {
                 fileState.currentGroup = displayedGroups.first
             }
             initialNewGroupName = getNextGroupName()
