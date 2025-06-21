@@ -10513,12 +10513,6 @@
     "generalButtonMoveFilesToTrash": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Move ^[%d file](inflect: true) to Trash"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -10529,6 +10523,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bewege ^[%d Datei](inflect: true) in den Papierkorb"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move ^[%d file](inflect: true) to Trash"
           }
         },
         "es": {
@@ -12208,12 +12208,6 @@
     "generalMoveFilesTo": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Move ^[%d file](inflect: true) to..."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -12224,6 +12218,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bewege ^[%d Datei](inflect: true) zu..."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move ^[%d file](inflect: true) to..."
           }
         },
         "es": {
@@ -28935,12 +28935,6 @@
     "sidebarFileRowContextMenuDeleteFiles": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete ^[%d file](inflect: true)"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -28951,6 +28945,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lösche ^[%d Datei](inflect: true)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete ^[%d file](inflect: true)"
           }
         },
         "es": {
@@ -29048,12 +29048,6 @@
     "sidebarFileRowContextMenuDeleteFilesPermanently": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete ^[%d file](inflect: true) permanently"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -29064,6 +29058,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lösche ^[%d Datei](inflect: true) dauerhaft"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete ^[%d file](inflect: true) permanently"
           }
         },
         "es": {
@@ -29387,12 +29387,6 @@
     "sidebarFileRowContextMenuDuplicateFiles": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Duplicate ^[%d file](inflect: true)"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -29403,6 +29397,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dupliziere ^[%d Datei](inflect: true)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicate ^[%d file](inflect: true)"
           }
         },
         "es": {
@@ -29726,12 +29726,6 @@
     "sidebarFileRowContextMenuRecoverFiles": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recover ^[%d file](inflect: true)"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -29742,6 +29736,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stelle ^[%d Datei](inflect: true) wieder her"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recover ^[%d file](inflect: true)"
           }
         },
         "es": {
@@ -34246,12 +34246,6 @@
     "sidebarTemporaryFileRowContextMenuCloseFiles": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Close ^[%d file](inflect: true)"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -34262,6 +34256,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Schließe ^[%d Datei](inflect: true)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close ^[%d file](inflect: true)"
           }
         },
         "es": {
@@ -34585,12 +34585,6 @@
     "sidebarTemporaryGroupRowContextMenuSaveFilesTo": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save ^[%d file](inflect: true) to..."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -34601,6 +34595,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Speichere ^[%d Datei](inflect: true) in..."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save ^[%d file](inflect: true) to..."
           }
         },
         "es": {
@@ -42718,6 +42718,232 @@
         }
       }
     },
+    "whatsNewLiveCollaborationCompabilityDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collaboration is now integrated with excalidraw.com."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم دمج التعاون الآن مع excalidraw.com."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Zusammenarbeit ist jetzt mit excalidraw.com integriert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La colaboración ahora está integrada con excalidraw.com."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La collaboration est maintenant intégrée à excalidraw.com."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अब सहयोग excalidraw.com के साथ एकीकृत है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La collaborazione è ora integrata con excalidraw.com."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "コラボレーションがexcalidraw.comと統合されました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이제 excalidraw.com과 협업이 통합되었습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De samenwerking is nu geïntegreerd met excalidraw.com."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Współpraca jest teraz zintegrowana z excalidraw.com."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A colaboração agora está integrada com excalidraw.com."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Теперь совместная работа интегрирована с excalidraw.com."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การทำงานร่วมกันได้ถูกบูรณาการเข้ากับ excalidraw.com แล้ว"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Artık excalidraw.com ile işbirliği entegre edildi."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chức năng hợp tác hiện đã được tích hợp với excalidraw.com."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "协作现在与excalidraw.com集成。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "協作功能現在已與 excalidraw.com 整合。"
+          }
+        }
+      }
+    },
+    "whatsNewLiveCollaborationCompabilityTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collaborate with others"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التعاون مع الآخرين"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit anderen zusammenarbeiten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colabora con otros"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collaborez avec d'autres"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "दूसरों के साथ सहयोग करें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collabora con altri"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "他の人と共同作業を行う"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 사람과 협업하기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samenwerken met anderen"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Współpraca z innymi"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colabore com outros"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Совместная работа с другими"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ทำงานร่วมกับผู้อื่น"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğerleriyle işbirliği yapın"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hợp tác với người khác"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "与他人协作"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "與他人協作"
+          }
+        }
+      }
+    },
     "whatsNewLiveCollaborationDescription": {
       "extractionState": "manual",
       "localizations": {
@@ -44296,6 +44522,232 @@
           "stringUnit": {
             "state": "translated",
             "value": "搜尋與 Spotlight 整合"
+          }
+        }
+      }
+    },
+    "whatsNewSidebarFilesMultiSelectDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can now select multiple files at once and perform actions on them."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكنك الآن تحديد ملفات متعددة في وقت واحد وتنفيذ إجراءات عليها."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sie können jetzt mehrere Dateien auf einmal auswählen und Aktionen mit ihnen durchführen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora puedes seleccionar múltiples archivos a la vez y realizar acciones sobre ellos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous pouvez maintenant sélectionner plusieurs fichiers à la fois et effectuer des actions sur eux."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अब आप एक साथ कई फ़ाइलें चुन सकते हैं और उन पर क्रियाएँ कर सकते हैं।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ora puoi selezionare più file contemporaneamente e eseguire azioni su di essi."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複数のファイルを同時に選択し、それらに対してアクションを実行できるようになりました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이제 여러 파일을 동시에 선택하고 작업을 수행할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je kunt nu meerdere bestanden tegelijk selecteren en acties op ze uitvoeren."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Możesz teraz wybrać wiele plików jednocześnie i wykonać na nich akcje."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agora você pode selecionar vários arquivos ao mesmo tempo e realizar ações sobre eles."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Теперь вы можете выбирать несколько файлов одновременно и выполнять действия с ними."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คุณสามารถเลือกไฟล์หลายไฟล์พร้อมกันและทำการดำเนินการกับไฟล์เหล่านั้นได้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Artık birden fazla dosyayı aynı anda seçebilir ve onlarla işlemler gerçekleştirebilirsiniz."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bây giờ bạn có thể chọn nhiều tệp cùng một lúc và thực hiện các hành động trên chúng."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您现在可以一次选择多个文件并对它们执行操作。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您現在可以一次選擇多個文件並對其執行操作。"
+          }
+        }
+      }
+    },
+    "whatsNewSidebarFilesMultiSelectTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multi-Select support"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دعم التحديد المتعدد"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unterstützung für Mehrfachauswahl"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soporte para selección múltiple"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Support de la sélection multiple"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मल्टी-सेलेक्ट समर्थन"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supporto per la selezione multipla"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マルチセレクトのサポート"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다중 선택 지원"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ondersteuning voor meervoudige selectie"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wsparcie dla wielokrotnego wyboru"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suporte a seleção múltipla"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поддержка множественного выбора"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การสนับสนุนการเลือกหลายรายการ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çoklu Seçim desteği"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hỗ trợ chọn nhiều tệp"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多选支持"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多選支持"
           }
         }
       }

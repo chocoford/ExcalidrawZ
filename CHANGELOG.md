@@ -1,3 +1,18 @@
+## 1.4.5
+
+#### New Features
+
+- The sidebar of files supports multi-selection operations.
+
+#### Optimizations
+
+- Collaboration is now integrated with [excalidraw.com](https://excalidraw.com).
+
+#### Fixes
+
+- Fix the issue of failing to open image files. 
+  - `.excalidraw.png`, `.excalidraw.svg`, `png`, `svg`
+
 ## 1.4.4
 
 #### Optimization
