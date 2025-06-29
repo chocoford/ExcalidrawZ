@@ -436,7 +436,8 @@ extension ExcalidrawCore {
         let showWelcomeScreen: Bool
         let theme, currentChartType, currentItemBackgroundColor, currentItemEndArrowhead: String
         let currentItemFillStyle: String
-        let currentItemFontFamily, currentItemFontSize, currentItemOpacity, currentItemRoughness: Int
+        let currentItemFontFamily: FontFamily
+        let currentItemFontSize, currentItemOpacity, currentItemRoughness: Int
 //        let currentItemStartArrowhead: JSONNull?
         let currentItemStrokeColor, currentItemRoundness, currentItemStrokeStyle: String
         let currentItemStrokeWidth: Int

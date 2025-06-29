@@ -156,8 +156,10 @@ struct SettingsView: View {
                 
             case .backups:
                 BackupsSettingsView()
-                
-#if os(iOS)
+#if os(macOS)
+            case .fonts:
+                FontsSettingsView()
+#elseif os(iOS)
             case .pencil:
                 PencilSettingsView()
                 
@@ -177,7 +179,9 @@ extension SettingsView {
 //        case fileHistory
         case medias
         case backups
-#if os(iOS)
+#if os(macOS)
+        case fonts
+#elseif os(iOS)
         case pencil
         case whatsNews
 #endif
@@ -196,7 +200,10 @@ extension SettingsView {
                     
                 case .backups:
                     return .localizable(.settingsBackupsName)
-#if os(iOS)
+#if os(macOS)
+                case .fonts:
+                    return "Fonts"
+#elseif os(iOS)
                 case .pencil:
                     return "Apple Pencil"
                 case .whatsNews:
@@ -217,7 +224,10 @@ extension SettingsView {
                     "medias"
                 case .backups:
                     "backups"
-#if os(iOS)
+#if os(macOS)
+                case .fonts:
+                    "fonts"
+#elseif os(iOS)
                 case .pencil:
                     "pencil"
                 case .whatsNews:

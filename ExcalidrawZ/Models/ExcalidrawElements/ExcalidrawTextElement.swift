@@ -6,11 +6,6 @@
 //
 
 import Foundation
-enum FontFamily: Int, Codable {
-    case virgil = 1
-    case helvetica = 2
-    case cascadia = 3
-}
 
 enum TextAlign: String, Codable {
     case left, right, center
@@ -20,9 +15,34 @@ enum VerticalAlign: String, Codable {
     case top, bottom, middle
 }
 
+enum FontFamily: Codable, Hashable {
+    case int(Int)
+    case name(String)
+    
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let intValue = try? container.decode(Int.self) {
+            self = .int(intValue)
+        } else {
+            let stringValue = try container.decode(String.self)
+            self = .name(stringValue)
+        }
+    }
+    
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+            case .int(let value):
+                try container.encode(value)
+            case .name(let value):
+                try container.encode(value)
+        }
+    }
+}
+
 protocol ExcalidrawTextElementBase: ExcalidrawElementBase {
     var fontSize: Double { get }
-    var fontFamily: Int { get }
+    var fontFamily: FontFamily { get }
     var text: String { get }
     var textAlign: TextAlign { get }
     var verticalAlign: VerticalAlign { get }
@@ -69,7 +89,7 @@ struct ExcalidrawTextElement: ExcalidrawTextElementBase {
     var customData: [String : AnyCodable]?
     
     var fontSize: Double
-    var fontFamily: Int
+    var fontFamily: FontFamily// Int
     var text: String
     var textAlign: TextAlign
     var verticalAlign: VerticalAlign
@@ -77,6 +97,7 @@ struct ExcalidrawTextElement: ExcalidrawTextElementBase {
     var originalText: String?
     var autoResize: Bool
     var lineHeight: Double?
+
     
     static func == (lhs: Self, rhs: Self) -> Bool {
         return lhs.type == rhs.type &&
@@ -143,7 +164,7 @@ struct ExcalidrawTextElement: ExcalidrawTextElementBase {
         self.locked = try container.decodeIfPresent(Bool.self, forKey: .locked)
         self.customData = try container.decodeIfPresent([String : AnyCodable].self, forKey: .customData)
         self.fontSize = try container.decode(Double.self, forKey: .fontSize)
-        self.fontFamily = try container.decode(Int.self, forKey: .fontFamily)
+        self.fontFamily = try container.decode(FontFamily.self, forKey: .fontFamily)
         self.text = try container.decode(String.self, forKey: .text)
         self.textAlign = try container.decode(TextAlign.self, forKey: .textAlign)
         self.verticalAlign = try container.decode(VerticalAlign.self, forKey: .verticalAlign)
