@@ -427,7 +427,6 @@ struct ExcalidrawToolbar: View {
                     Text(.localizable(.generalButtonCancel))
                 }
             }
-
         }
     }
     
@@ -538,7 +537,7 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
         content(sizeClass)
             .background {
                 WithContainerSize { containerSize in
-//                    let _ = print(containerSize)
+                    // let _ = print(containerSize)
                     Color.clear
                         .watchImmediately(of: containerSize) { newValue in
                             let newSizeClass = getSizeClass(containerSize.width)
@@ -577,16 +576,18 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
                         return .dense
                     case ..<1650:
                         return .compact
-                    default:
+                    case ..<1870:
                         return .regular
+                    default:
+                        return .expanded
                 }
             } else if layoutState.isSidebarPresented {
                 switch width {
-                    case ..<1295:
+                    case ..<1310:
                         return .dense
-                    case ..<1450:
+                    case ..<1460:
                         return .compact
-                    case ..<1610:
+                    case ..<1660:
                         return .regular
                     default:
                         return .expanded
@@ -597,7 +598,7 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
                         return .dense
                     case ..<1570:
                         return .compact
-                    case ..<1710:
+                    case ..<1760:
                         return .regular
                     default:
                         return .expanded
@@ -609,7 +610,7 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
                 return .dense
             case ..<1330:
                 return .compact
-            case ..<1460:
+            case ..<1510:
                 return .regular
             default:
                 return .expanded

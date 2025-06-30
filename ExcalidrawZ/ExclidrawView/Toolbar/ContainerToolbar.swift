@@ -141,12 +141,12 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
         }
 #endif
         
-        ToolbarItemGroup(placement: .confirmationAction) {
+//        ToolbarItemGroup(placement: .confirmationAction) {
+        ToolbarItemGroup(placement: .primaryAction) {
             if fileState.hasAnyActiveFile {
 #if os(iOS)
                 applePencilToggle()
 #endif
-                
                 FileHistoryButton()
                 
                 ShareToolbarButton()

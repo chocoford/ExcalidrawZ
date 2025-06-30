@@ -194,6 +194,7 @@ struct FileListView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 12)
             .fileListDropFallback()
+#if os(macOS)
             .background {
                 Color.clear
                     .contentShape(Rectangle())
@@ -204,6 +205,7 @@ struct FileListView: View {
                         fileState.resetSelections()
                     }
             }
+#endif
         }
         .modifier(
             RenameSheetViewModifier(isPresented: Binding {

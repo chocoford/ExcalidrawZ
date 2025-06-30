@@ -53,6 +53,7 @@ struct LocalFilesListView: View {
             .animation(.default, value: files)
             .padding(.horizontal, 8)
             .padding(.vertical, 12)
+#if os(macOS)
             .background {
                 Color.clear
                     .contentShape(Rectangle())
@@ -63,6 +64,7 @@ struct LocalFilesListView: View {
                         fileState.resetSelections()
                     }
             }
+#endif
         }
         .bindWindow($window)
         .watchImmediately(of: folder.url) { newValue in
