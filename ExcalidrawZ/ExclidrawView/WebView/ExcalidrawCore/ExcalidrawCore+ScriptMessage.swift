@@ -49,6 +49,8 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     guard !self.isLoading else { return }
                     if message.data.type == .hand {
                         self.parent?.toolState.inDragMode = true
+                        self.lastTool = .hand
+                        self.parent?.toolState.activatedTool = .hand
                     } else {
                         self.parent?.toolState.previousActivatedTool = self.parent?.toolState.activatedTool
                         let tool = ExcalidrawTool(from: message.data.type)
@@ -436,7 +438,8 @@ extension ExcalidrawCore {
         let showWelcomeScreen: Bool
         let theme, currentChartType, currentItemBackgroundColor, currentItemEndArrowhead: String
         let currentItemFillStyle: String
-        let currentItemFontFamily, currentItemFontSize, currentItemOpacity, currentItemRoughness: Int
+        let currentItemFontFamily: FontFamily
+        let currentItemFontSize, currentItemOpacity, currentItemRoughness: Int
 //        let currentItemStartArrowhead: JSONNull?
         let currentItemStrokeColor, currentItemRoundness, currentItemStrokeStyle: String
         let currentItemStrokeWidth: Int

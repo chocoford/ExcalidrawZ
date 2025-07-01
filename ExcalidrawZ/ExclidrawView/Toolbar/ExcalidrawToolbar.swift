@@ -128,10 +128,13 @@ struct ExcalidrawToolbar: View {
         .help("\(String(localizable: .toolbarButtonLockToolHelp)) - Q")
         
         ExcalidrawToolbarToolContainer { sizeClass in
-            if sizeClass == .dense {
-                denseContent()
-            } else {
-                content()
+            ZStack {
+                Color.clear
+                if sizeClass == .dense {
+                    denseContent()
+                } else {
+                    content(sizeClass: sizeClass)
+                }
             }
         }
 
@@ -142,112 +145,109 @@ struct ExcalidrawToolbar: View {
     @State private var lastActivatedSecondaryTool: ExcalidrawTool?
     
     @MainActor @ViewBuilder
-    private func content(size: CGFloat = 20, withFooter: Bool = true) -> some View {
+    private func content(sizeClass: ExcalidrawToolbarToolSizeClass, size: CGFloat = 20, withFooter: Bool = true) -> some View {
         HStack(spacing: size / 2) {
-            ExcalidrawToolbarToolContainer { sizeClass in
-                SegmentedPicker(selection: $toolState.activatedTool) {
-                    primaryToolPikcerItems(size: size, withFooter: withFooter)
-                    
-                    if sizeClass == .expanded {
-                        secondaryToolPikcerItems(size: size, withFooter: withFooter)
+            SegmentedPicker(selection: $toolState.activatedTool) {
+                primaryToolPikcerItems(size: size, withFooter: withFooter)
+                
+                if sizeClass == .expanded {
+                    secondaryToolPikcerItems(size: size, withFooter: withFooter)
+                }
+            }
+            .padding(size / 3)
+            .background {
+                if #available(macOS 14.0, iOS 17.0, *) {
+                    RoundedRectangle(cornerRadius: size / 1.6)
+                        .fill(.regularMaterial)
+                        .stroke(.separator, lineWidth: 0.5)
+                } else {
+                    RoundedRectangle(cornerRadius: size / 1.6)
+                        .fill(.regularMaterial)
+                }
+            }
+            .watchImmediately(of: sizeClass) { newValue in
+                if newValue == .compact {
+                    primaryPickerItems = [.cursor, .rectangle, .diamond, .ellipse, .arrow, .line]
+                    secondaryPickerItems = [.freedraw, .text, .image, .eraser, .laser, .hand, .frame, .webEmbed, .magicFrame]
+                } else {
+                    primaryPickerItems = [.cursor, .rectangle, .diamond, .ellipse, .arrow, .line, .freedraw, .text, .image]
+                    secondaryPickerItems = [.eraser, .laser, .hand, .frame, .webEmbed, .magicFrame,]
+                }
+            }
+            
+            if !secondaryPickerItems.isEmpty,
+               sizeClass != .expanded,
+               let tool = toolState.activatedTool {
+                Menu {
+                    Picker(selection: $toolState.activatedTool) {
+                        ForEach(secondaryPickerItems, id: \.self) { tool in
+                            densePickerItems(tool: tool)
+                                .tag(tool)
+                        }
+                    } label: { }
+                        .pickerStyle(.inline)
+                } label: {
+                    SegmentedToolPickerItemView(
+                        tool: {
+                            if let lastActivatedSecondaryTool, secondaryPickerItems.contains(lastActivatedSecondaryTool) {
+                                return lastActivatedSecondaryTool
+                            } else {
+                                return (secondaryPickerItems.contains(tool) ? tool : secondaryPickerItems.first!)
+                            }
+                        }(),
+                        size: size,
+                        withFooter: false
+                    )
+                    .foregroundStyle(
+                        toolState.activatedTool != nil && secondaryPickerItems.contains(toolState.activatedTool!) ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(HierarchicalShapeStyle.primary)
+                    )
+                } primaryAction: {
+                    if let lastActivatedSecondaryTool,
+                       secondaryPickerItems.contains(lastActivatedSecondaryTool) {
+                        toolState.activatedTool = lastActivatedSecondaryTool
+                    } else {
+                        toolState.activatedTool = secondaryPickerItems.first
                     }
                 }
+                .menuIndicator(.visible)
+                .buttonStyle(.borderless)
                 .padding(size / 3)
                 .background {
+                    let isSelected = toolState.activatedTool != nil && secondaryPickerItems.contains(toolState.activatedTool!)
                     if #available(macOS 14.0, iOS 17.0, *) {
                         RoundedRectangle(cornerRadius: size / 1.6)
-                            .fill(.regularMaterial)
+                            .fill(
+                                isSelected ? AnyShapeStyle(Color.accentColor.secondary) : AnyShapeStyle(Material.regularMaterial)
+                            )
                             .stroke(.separator, lineWidth: 0.5)
                     } else {
                         RoundedRectangle(cornerRadius: size / 1.6)
-                            .fill(.regularMaterial)
+                            .fill(
+                                isSelected ? AnyShapeStyle(Color.accentColor.opacity(0.3)) : AnyShapeStyle(Material.regularMaterial)
+                            )
+                        RoundedRectangle(cornerRadius: size / 1.6)
+                            .stroke(.secondary, lineWidth: 0.5)
                     }
+                    //                        if  {
+                    //                            RoundedRectangle(cornerRadius: 6)
+                    //                                .fill(.background)
+                    //                                .shadow(radius: 1, y: 2)
+                    //                                .padding(.trailing, 32)
+                    //                                .padding(.vertical, 6)
+                    //                                .padding(.leading, 6)
+                    //                        }
                 }
-                .onChange(of: sizeClass) { newValue in
-                    if newValue == .compact {
-                        primaryPickerItems = [.cursor, .rectangle, .diamond, .ellipse, .arrow, .line]
-                        secondaryPickerItems = [.freedraw, .text, .image, .eraser, .laser, .frame, .webEmbed, .magicFrame]
-                    } else if newValue == .regular {
-                        primaryPickerItems = [.cursor, .rectangle, .diamond, .ellipse, .arrow, .line, .freedraw, .text, .image]
-                        secondaryPickerItems = [.eraser, .laser, .frame, .webEmbed, .magicFrame]
-                    }
-                }
-                
-                if sizeClass != .expanded,
-                   let tool = toolState.activatedTool {
-                    Menu {
-                        Picker(selection: $toolState.activatedTool) {
-                            ForEach(secondaryPickerItems, id: \.self) { tool in
-                                densePickerItems(tool: tool)
-                                    .tag(tool)
-                            }
-                        } label: { }
-                            .pickerStyle(.inline)
-                    } label: {
-                        SegmentedToolPickerItemView(
-                            tool: {
-                                if let lastActivatedSecondaryTool, secondaryPickerItems.contains(lastActivatedSecondaryTool) {
-                                    return lastActivatedSecondaryTool
-                                } else {
-                                    return (secondaryPickerItems.contains(tool) ? tool : secondaryPickerItems.first!)
-                                }
-                            }(),
-                            size: size,
-                            withFooter: false
-                        )
-                        .foregroundStyle(
-                            toolState.activatedTool != nil && secondaryPickerItems.contains(toolState.activatedTool!) ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(HierarchicalShapeStyle.primary)
-                        )
-                    } primaryAction: {
-                         if let lastActivatedSecondaryTool,
-                            secondaryPickerItems.contains(lastActivatedSecondaryTool) {
-                             toolState.activatedTool = lastActivatedSecondaryTool
-                        } else {
-                            toolState.activatedTool = secondaryPickerItems.first
-                        }
-                    }
-                    .menuIndicator(.visible)
-                    .buttonStyle(.borderless)
-                    .padding(size / 3)
-                    .background {
-                        let isSelected = toolState.activatedTool != nil && secondaryPickerItems.contains(toolState.activatedTool!)
-                        if #available(macOS 14.0, iOS 17.0, *) {
-                            RoundedRectangle(cornerRadius: size / 1.6)
-                                .fill(
-                                    isSelected ? AnyShapeStyle(Color.accentColor.secondary) : AnyShapeStyle(Material.regularMaterial)
-                                )
-                                .stroke(.separator, lineWidth: 0.5)
-                        } else {
-                            RoundedRectangle(cornerRadius: size / 1.6)
-                                .fill(
-                                    isSelected ? AnyShapeStyle(Color.accentColor.opacity(0.3)) : AnyShapeStyle(Material.regularMaterial)
-                                )
-                            RoundedRectangle(cornerRadius: size / 1.6)
-                                .stroke(.secondary, lineWidth: 0.5)
-                        }
-//                        if  {
-//                            RoundedRectangle(cornerRadius: 6)
-//                                .fill(.background)
-//                                .shadow(radius: 1, y: 2)
-//                                .padding(.trailing, 32)
-//                                .padding(.vertical, 6)
-//                                .padding(.leading, 6)
-//                        }
-                    }
-                    .onChange(of: toolState.activatedTool) { newValue in
-                        if let newValue, secondaryPickerItems.contains(newValue) {
-                            lastActivatedSecondaryTool = newValue
-                        }
+                .onChange(of: toolState.activatedTool) { newValue in
+                    if let newValue, secondaryPickerItems.contains(newValue) {
+                        lastActivatedSecondaryTool = newValue
                     }
                 }
             }
         }
     }
     
-    @State private var primaryPickerItems: [ExcalidrawTool] = [
-        .cursor, .rectangle, .diamond, .ellipse, .arrow, .line, .freedraw, .text, .image
-    ]
-    @State private var secondaryPickerItems: [ExcalidrawTool] = [.eraser, .laser, .frame, .webEmbed, .magicFrame]
+    @State private var primaryPickerItems: [ExcalidrawTool] = []
+    @State private var secondaryPickerItems: [ExcalidrawTool] = []
     
     @MainActor @ViewBuilder
     private func primaryToolPikcerItems(size: CGFloat, withFooter: Bool) -> some View {
@@ -266,79 +266,19 @@ struct ExcalidrawToolbar: View {
     }
     
     @MainActor @ViewBuilder
-    private func toolPickerItemView(tool: ExcalidrawTool, size: CGFloat, withFooter: Bool) -> some View {
-        switch tool {
-            case .cursor:
-                SegmentedPickerItem(value: ExcalidrawTool.cursor) {
-                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
-                }
-                .help("\(String(localizable: .toolbarSelection)) - V \(String(localizable: .toolbarOr)) 1")
-            case .rectangle:
-                SegmentedPickerItem(value: ExcalidrawTool.rectangle) {
-                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
-                }
-                .help("\(String(localizable: .toolbarRectangle)) — R \(String(localizable: .toolbarOr)) 2")
-            case .diamond:
-                SegmentedPickerItem(value: ExcalidrawTool.diamond) {
-                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
-                }
-                .help("\(String(localizable: .toolbarDiamond)) — D \(String(localizable: .toolbarOr)) 3")
-            case .ellipse:
-                SegmentedPickerItem(value: ExcalidrawTool.ellipse) {
-                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
-                }
-                .help("\(String(localizable: .toolbarEllipse)) — O \(String(localizable: .toolbarOr)) 4")
-            case .arrow:
-                SegmentedPickerItem(value: ExcalidrawTool.arrow) {
-                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
-                }
-                .help("\(String(localizable: .toolbarArrow)) — A \(String(localizable: .toolbarOr)) 5")
-            case .line:
-                SegmentedPickerItem(value: ExcalidrawTool.line) {
-                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
-                }
-                .help("\(String(localizable: .toolbarLine)) — L \(String(localizable: .toolbarOr)) 6")
-            case .freedraw:
-                SegmentedPickerItem(value: ExcalidrawTool.freedraw) {
-                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
-                }
-                .help("\(String(localizable: .toolbarDraw)) — P \(String(localizable: .toolbarOr)) 7")
-            case .text:
-                SegmentedPickerItem(value: ExcalidrawTool.text) {
-                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
-                }
-                .help("\(String(localizable: .toolbarText)) — T \(String(localizable: .toolbarOr)) 8")
-            case .image:
-                SegmentedPickerItem(value: ExcalidrawTool.image) {
-                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
-                }
-                .help("\(String(localizable: .toolbarInsertImage)) — 9")
-            case .eraser:
-                SegmentedPickerItem(value: ExcalidrawTool.eraser) {
-                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
-                }
-                .help("\(String(localizable: .toolbarEraser)) — E \(String(localizable: .toolbarOr)) 0")
-            case .laser:
-                SegmentedPickerItem(value: ExcalidrawTool.laser) {
-                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
-                }
-                .help("\(String(localizable: .toolbarLaser)) — K")
-            case .frame:
-                SegmentedPickerItem(value: ExcalidrawTool.frame) {
-                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
-                }
-                .help("\(String(localizable: .toolbarFrame)) - F")
-            case .webEmbed:
-                SegmentedPickerItem(value: ExcalidrawTool.webEmbed) {
-                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
-                }
-                .help("\(String(localizable: .toolbarWebEmbed))")
-            case .magicFrame:
-                SegmentedPickerItem(value: ExcalidrawTool.magicFrame) {
-                    SegmentedToolPickerItemView(tool: tool, size: size, withFooter: withFooter)
-                }
-                .help("\(String(localizable: .toolbarMagicFrame))")
+    private func toolPickerItemView(
+        tool: ExcalidrawTool,
+        size: CGFloat,
+        withFooter: Bool
+    ) -> some View {
+        SegmentedPickerItem(value: tool) {
+            SegmentedToolPickerItemView(
+                tool: tool,
+                size: size,
+                withFooter: withFooter
+            )
         }
+        .help(tool.help)
     }
     
     @MainActor @ViewBuilder
@@ -487,7 +427,6 @@ struct ExcalidrawToolbar: View {
                     Text(.localizable(.generalButtonCancel))
                 }
             }
-
         }
     }
     
@@ -509,36 +448,7 @@ struct ExcalidrawToolbar: View {
     
     @MainActor @ViewBuilder
     private func densePickerItems(tool: ExcalidrawTool) -> some View {
-        switch tool {
-            case .cursor:
-                Text(.localizable(.toolbarSelection))
-            case .rectangle:
-                Text(.localizable(.toolbarRectangle))
-            case .diamond:
-                Text(.localizable(.toolbarDiamond))
-            case .ellipse:
-                Text(.localizable(.toolbarEllipse))
-            case .arrow:
-                Text(.localizable(.toolbarArrow))
-            case .line:
-                Text(.localizable(.toolbarLine))
-            case .freedraw:
-                Text(.localizable(.toolbarDraw))
-            case .text:
-                Text(.localizable(.toolbarText))
-            case .image:
-                Text(.localizable(.toolbarInsertImage))
-            case .eraser:
-                Text(.localizable(.toolbarEraser))
-            case .laser:
-                Text(.localizable(.toolbarLaser))
-            case .frame:
-                Text(.localizable(.toolbarFrame))
-            case .webEmbed:
-                Text(.localizable(.toolbarWebEmbed))
-            case .magicFrame:
-                Text(.localizable(.toolbarMagicFrame))
-        }
+        Text(tool.localization)
     }
 
     @MainActor @ViewBuilder
@@ -611,6 +521,7 @@ enum ExcalidrawToolbarToolSizeClass {
 
 struct ExcalidrawToolbarToolContainer<Content: View>: View {
     @EnvironmentObject private var layoutState: LayoutState
+    @EnvironmentObject private var fileState: FileState
     
     var content: (_ size: ExcalidrawToolbarToolSizeClass) -> Content
     
@@ -626,9 +537,8 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
         content(sizeClass)
             .background {
                 WithContainerSize { containerSize in
-                    let _ = print(containerSize)
+                    // let _ = print(containerSize)
                     Color.clear
-                    // , throttle: 0.3, latest: true
                         .watchImmediately(of: containerSize) { newValue in
                             let newSizeClass = getSizeClass(containerSize.width)
                             if newSizeClass != sizeClass {
@@ -650,6 +560,14 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
     }
     
     private func getSizeClass(_ width: CGFloat) -> ExcalidrawToolbarToolSizeClass {
+        let collaborationExtraWidth: CGFloat = 90
+        
+        let width: CGFloat = if fileState.currentCollaborationFile != nil {
+            width - collaborationExtraWidth
+        } else {
+            width
+        }
+        
         if #available(macOS 13.0, *) {
             if layoutState.isInspectorPresented,
                layoutState.isSidebarPresented {
@@ -658,16 +576,18 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
                         return .dense
                     case ..<1650:
                         return .compact
-                    default:
+                    case ..<1870:
                         return .regular
+                    default:
+                        return .expanded
                 }
             } else if layoutState.isSidebarPresented {
                 switch width {
-                    case ..<1295:
+                    case ..<1310:
                         return .dense
-                    case ..<1450:
+                    case ..<1460:
                         return .compact
-                    case ..<1610:
+                    case ..<1660:
                         return .regular
                     default:
                         return .expanded
@@ -678,7 +598,7 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
                         return .dense
                     case ..<1570:
                         return .compact
-                    case ..<1710:
+                    case ..<1760:
                         return .regular
                     default:
                         return .expanded
@@ -690,7 +610,7 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
                 return .dense
             case ..<1330:
                 return .compact
-            case ..<1460:
+            case ..<1510:
                 return .regular
             default:
                 return .expanded
@@ -711,6 +631,14 @@ struct SegmentedToolPickerItemView: View {
     
     var body: some View {
         switch tool {
+            case .hand:
+                tool.icon()
+                    .modifier(
+                        ExcalidrawToolbarItemModifer(
+                            size: size,
+                            labelType: .image
+                        ) { }
+                    )
             case .cursor:
                 Cursor()
                     .stroke(.primary, lineWidth: 1.5)

@@ -29,12 +29,16 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
     case webEmbed
     case magicFrame
     
+    case hand
+    
     // extra tool
 //    case text2Diagram
 //    case mermaid
     
     
-    init?(from tool: ExcalidrawView.Coordinator.SetActiveToolMessage.SetActiveToolMessageData.Tool) {
+    init?(
+        from tool: ExcalidrawView.Coordinator.SetActiveToolMessage.SetActiveToolMessageData.Tool
+    ) {
         switch tool {
             case .selection:
                 self = .cursor
@@ -64,8 +68,9 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
                 self = .webEmbed
             case .magicFrame:
                 self = .magicFrame
-            default:
-                return nil
+                
+            case .hand:
+                self = .hand
         }
     }
     
@@ -95,6 +100,8 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
                 Character("f")
             case .image:
                 Character("9")
+            case .hand:
+                Character("h")
             case .webEmbed, .magicFrame/*, .text2Diagram, .mermaid*/:
                 nil
         }
@@ -102,6 +109,8 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
     
     var localization: LocalizedStringKey {
         switch self {
+            case .hand:
+                    .localizable(.toolbarHand)
             case .eraser:
                     .localizable(.toolbarEraser)
             case .cursor:
@@ -130,10 +139,46 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
                     .localizable(.toolbarFrame)
             case .magicFrame:
                     .localizable(.toolbarMagicFrame)
+
 //            case .text2Diagram:
 //                    .localizable(.toolbarText2Diagram)
 //            case .mermaid:
 //                    .localizable(.toolbarMermaid)
+        }
+    }
+    
+    var help: String {
+        switch self {
+            case .eraser:
+                "\(String(localizable: .toolbarEraser)) — E \(String(localizable: .toolbarOr)) 0"
+            case .cursor:
+                "\(String(localizable: .toolbarSelection)) - V \(String(localizable: .toolbarOr)) 1"
+            case .rectangle:
+                "\(String(localizable: .toolbarRectangle)) — R \(String(localizable: .toolbarOr)) 2"
+            case .diamond:
+                "\(String(localizable: .toolbarDiamond)) — D \(String(localizable: .toolbarOr)) 3"
+            case .ellipse:
+                "\(String(localizable: .toolbarEllipse)) — O \(String(localizable: .toolbarOr)) 4"
+            case .arrow:
+                "\(String(localizable: .toolbarArrow)) — A \(String(localizable: .toolbarOr)) 5"
+            case .line:
+                "\(String(localizable: .toolbarLine)) — L \(String(localizable: .toolbarOr)) 6"
+            case .freedraw:
+                "\(String(localizable: .toolbarDraw)) — P \(String(localizable: .toolbarOr)) 7"
+            case .text:
+                "\(String(localizable: .toolbarText)) — T \(String(localizable: .toolbarOr)) 8"
+            case .image:
+                "\(String(localizable: .toolbarInsertImage)) — 9"
+            case .laser:
+                "\(String(localizable: .toolbarLaser)) — K"
+            case .frame:
+                "\(String(localizable: .toolbarFrame)) - F"
+            case .webEmbed:
+                "\(String(localizable: .toolbarWebEmbed))"
+            case .magicFrame:
+                "\(String(localizable: .toolbarMagicFrame))"
+            case .hand:
+                "\(String(localizable: .toolbarHand)) - H"
         }
     }
     
@@ -211,6 +256,11 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
                     .font(.body.weight(.semibold))
             case .magicFrame:
                 Image(systemSymbol: .wandAndStarsInverse)
+                    .resizable()
+                    .scaledToFit()
+                    .font(.body.weight(.semibold))
+            case .hand:
+                Image(systemSymbol: .handRaised)
                     .resizable()
                     .scaledToFit()
                     .font(.body.weight(.semibold))

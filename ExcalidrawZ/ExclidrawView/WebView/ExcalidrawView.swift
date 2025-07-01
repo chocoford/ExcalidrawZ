@@ -68,6 +68,8 @@ struct ExcalidrawView {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
+    @AppStorage("addedFontsData") private var addedFontsData: Data = Data()
+    
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var exportState: ExportState
@@ -135,6 +137,10 @@ struct ExcalidrawView {
         self.onError = onError
     }
     
+    var addedFonts: [String] {
+        (try? JSONDecoder().decode([String].self, from: addedFontsData)) ?? []
+    }
+    
     @State private var cancellables = Set<AnyCancellable>()
 }
 
@@ -187,6 +193,14 @@ extension ExcalidrawView {
         }
         guard !webView.isLoading, case .loaded = loadingState else { return }
         Task {
+            // inject fonts
+            do {
+                let fontFamilies = addedFonts
+                try await context.coordinator.setAvailableFonts(fontFamilies: fontFamilies)
+            } catch {
+                self.onError(error)
+            }
+            
             do {
                 if appPreference.excalidrawAppearance == .auto {
                     try await context.coordinator.changeColorMode(dark: colorScheme == .dark)

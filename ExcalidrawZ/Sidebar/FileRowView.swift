@@ -89,6 +89,7 @@ struct FileRowView: View {
             isSelected: isSelected,
             isMultiSelected: fileState.selectedFiles.contains(file)
         ) {
+#if os(macOS)
             if fileState.selectedFiles.isEmpty {
                 fileState.selectedStartFile = nil
             }
@@ -100,13 +101,13 @@ struct FileRowView: View {
                     fileState.selectedFiles.insert(file)
                 } else {
                     guard let startFile = fileState.selectedStartFile,
-                        let startIdx = files.firstIndex(of: startFile),
+                          let startIdx = files.firstIndex(of: startFile),
                           let endIdx = files.firstIndex(of: file) else {
                         return
                     }
                     let range = startIdx <= endIdx
-                        ? startIdx...endIdx
-                        : endIdx...startIdx
+                    ? startIdx...endIdx
+                    : endIdx...startIdx
                     let sliceItems = files[range]
                     let sliceSet = Set(sliceItems)
                     fileState.selectedFiles = sliceSet
@@ -119,6 +120,9 @@ struct FileRowView: View {
             } else {
                 fileState.currentFile = file
             }
+#else
+            fileState.currentFile = file
+#endif
         }
         .modifier(FileRowDragDropModifier(file: file, sortField: fileState.sortField))
         .contextMenu { listRowContextMenu.labelStyle(.titleAndIcon) }
@@ -157,9 +161,9 @@ struct FileRowView: View {
             } label: {
                 Label(
                     .localizable(
-                        fileState.selectedFiles.isEmpty
-                        ? .sidebarFileRowContextMenuDuplicate
-                        : .sidebarFileRowContextMenuDuplicateFiles(fileState.selectedFiles.count)
+                        !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file)
+                        ? .sidebarFileRowContextMenuDuplicateFiles(fileState.selectedFiles.count)
+                        : .sidebarFileRowContextMenuDuplicate
                     ),
                     systemSymbol: .docOnDoc
                 )
@@ -178,9 +182,9 @@ struct FileRowView: View {
                 deleteFile()
             } label: {
                 Label(.localizable(
-                    fileState.selectedFiles.isEmpty
-                    ? .sidebarFileRowContextMenuDelete
-                    : .sidebarFileRowContextMenuDeleteFiles(fileState.selectedFiles.count)
+                    !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file)
+                    ? .sidebarFileRowContextMenuDeleteFiles(fileState.selectedFiles.count)
+                    : .sidebarFileRowContextMenuDelete
                 ), systemSymbol: .trash)
             }
         } else {
@@ -196,9 +200,9 @@ struct FileRowView: View {
             } label: {
                 Label(
                     .localizable(
-                        fileState.selectedFiles.isEmpty
-                        ? .sidebarFileRowContextMenuRecover
-                        : .sidebarFileRowContextMenuRecoverFiles(fileState.selectedFiles.count)
+                        !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file)
+                        ? .sidebarFileRowContextMenuRecoverFiles(fileState.selectedFiles.count)
+                        : .sidebarFileRowContextMenuRecover
                     ),
                     systemSymbol: .arrowshapeTurnUpBackward
                 )
@@ -210,9 +214,9 @@ struct FileRowView: View {
             } label: {
                 Label(
                     .localizable(
-                        fileState.selectedFiles.isEmpty
-                        ? .sidebarFileRowContextMenuDeletePermanently
-                        : .sidebarFileRowContextMenuDeleteFilesPermanently(fileState.selectedFiles.count)
+                        !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file)
+                        ? .sidebarFileRowContextMenuDeleteFilesPermanently(fileState.selectedFiles.count)
+                        : .sidebarFileRowContextMenuDeletePermanently
                     ),
                     systemSymbol: .trash
                 )
@@ -273,9 +277,9 @@ struct FileRowView: View {
             } label: {
                 Label(
                     .localizable(
-                        fileState.selectedFiles.isEmpty
-                        ? .generalMoveTo
-                        : .generalMoveFilesTo(fileState.selectedFiles.count)
+                        !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file)
+                        ? .generalMoveFilesTo(fileState.selectedFiles.count)
+                        : .generalMoveTo
                     ),
                     systemSymbol: .trayAndArrowUp
                 )

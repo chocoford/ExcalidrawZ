@@ -514,6 +514,14 @@ extension ExcalidrawCore {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.loadImageBuffer(\(buf), '\(type)'); 0;")
     }
     
+    // Font
+    @MainActor
+    public func setAvailableFonts(fontFamilies: [String]) async throws {
+        // NSFontManager.shared.availableFontFamilies.sorted()
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.setAvailableFonts(\(fontFamilies)); 0;")
+    }
+    
+    
     // Collab
     @MainActor
     public func openCollabMode() async throws {
@@ -549,6 +557,8 @@ extension ExcalidrawCore {
     public func followCollborator(_ collaborator: Collaborator) async throws {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.followCollaborator(\(collaborator.jsonStringified())); 0;")
     }
+    
+    
     
     @MainActor
     func reload() {

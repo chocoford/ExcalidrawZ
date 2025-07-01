@@ -1,3 +1,18 @@
+## 1.5.0
+
+#### New Features
+
+- Custom Fonts
+
+#### Optimizations
+
+- Add back `hand` tool on the toolbar.
+
+#### Fixes
+
+- Fix some issues with the wording for operations when selecting multiple files.
+- Fix the issue where the buttons on the right side of the toolbar do not display on macOS 13.
+
 ## 1.4.5
 
 #### New Features

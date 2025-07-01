@@ -27,6 +27,18 @@ struct TemporaryFileListView: View {
             .animation(.default, value: fileState.temporaryFiles)
             .padding(.horizontal, 8)
             .padding(.vertical, 12)
+#if os(macOS)
+            .background {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if NSEvent.modifierFlags.contains(.command) || NSEvent.modifierFlags.contains(.shift) {
+                            return
+                        }
+                        fileState.resetSelections()
+                    }
+            }
+#endif
         }
         .onAppear {
             fileState.currentTemporaryFile = fileState.temporaryFiles.first
@@ -56,7 +68,6 @@ struct TemporaryFileRowView: View {
     )
     private var topLevelLocalFolders: FetchedResults<LocalFolder>
     
-    
     @State private var modifiedDate: Date = .distantPast
     
     var body: some View {
@@ -66,6 +77,7 @@ struct TemporaryFileRowView: View {
             isSelected: fileState.currentTemporaryFile == file,
             isMultiSelected: fileState.selectedTemporaryFiles.contains(file)
         ) {
+#if os(macOS)
             if NSEvent.modifierFlags.contains(.shift) {
                 let files = fileState.temporaryFiles
                 if fileState.selectedStartTemporaryFile == nil {
@@ -73,13 +85,13 @@ struct TemporaryFileRowView: View {
                     fileState.selectedTemporaryFiles.insert(file)
                 } else {
                     guard let startFile = fileState.selectedStartTemporaryFile,
-                        let startIdx = files.firstIndex(of: startFile),
+                          let startIdx = files.firstIndex(of: startFile),
                           let endIdx = files.firstIndex(of: file) else {
                         return
                     }
                     let range = startIdx <= endIdx
-                        ? startIdx...endIdx
-                        : endIdx...startIdx
+                    ? startIdx...endIdx
+                    : endIdx...startIdx
                     let sliceItems = files[range]
                     let sliceSet = Set(sliceItems)
                     fileState.selectedTemporaryFiles = sliceSet
@@ -92,6 +104,9 @@ struct TemporaryFileRowView: View {
             } else {
                 fileState.currentTemporaryFile = file
             }
+#else
+            fileState.currentTemporaryFile = file
+#endif
         }
         .contextMenu {
             contextMenu()
@@ -124,11 +139,11 @@ struct TemporaryFileRowView: View {
         } label: {
             Label(
                 .localizable(
-                    fileState.selectedTemporaryFiles.isEmpty
-                    ? .sidebarTemporaryGroupRowContextMenuSaveTo
-                    : .sidebarTemporaryGroupRowContextMenuSaveFilesTo(
+                    !fileState.selectedTemporaryFiles.isEmpty && fileState.selectedTemporaryFiles.contains(file)
+                    ? .sidebarTemporaryGroupRowContextMenuSaveFilesTo(
                         fileState.selectedTemporaryFiles.count
                     )
+                    : .sidebarTemporaryGroupRowContextMenuSaveTo
                 ),
                 systemSymbol: .trayAndArrowDown
             )
@@ -148,11 +163,11 @@ struct TemporaryFileRowView: View {
         } label: {
             Label(
                 .localizable(
-                    fileState.selectedTemporaryFiles.isEmpty
-                    ? .generalMoveTo
-                    : .generalMoveFilesTo(
+                    !fileState.selectedTemporaryFiles.isEmpty && fileState.selectedTemporaryFiles.contains(file)
+                    ? .generalMoveFilesTo(
                         fileState.selectedTemporaryFiles.count
                     )
+                    : .generalMoveTo
                 ),
                 systemSymbol: .trayAndArrowUp
             )
@@ -181,11 +196,11 @@ struct TemporaryFileRowView: View {
             }
         } label: {
             Label(.localizable(
-                fileState.selectedTemporaryFiles.isEmpty
-                ? .sidebarTemporaryFileRowContextMenuCloseFile
-                : .sidebarTemporaryFileRowContextMenuCloseFiles(
+                !fileState.selectedTemporaryFiles.isEmpty && fileState.selectedTemporaryFiles.contains(file)
+                ? .sidebarTemporaryFileRowContextMenuCloseFiles(
                     fileState.selectedTemporaryFiles.count
                 )
+                : .sidebarTemporaryFileRowContextMenuCloseFile
             ), systemSymbol: .xmarkCircle)
         }
     }

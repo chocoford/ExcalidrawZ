@@ -57,6 +57,7 @@ struct LocalFileRowView: View {
             isSelected: fileState.currentLocalFile == file || isWaitingForOpeningFile,
             isMultiSelected: fileState.selectedLocalFiles.contains(file)
         ) {
+#if os(macOS)
             if let iCloudState, iCloudState.downloadStatus != .current {
                 // request iCloud download first
                 do {
@@ -72,13 +73,13 @@ struct LocalFileRowView: View {
                     fileState.selectedLocalFiles.insert(file)
                 } else {
                     guard let startFile = fileState.selectedStartLocalFile,
-                        let startIdx = files.firstIndex(of: startFile),
+                          let startIdx = files.firstIndex(of: startFile),
                           let endIdx = files.firstIndex(of: file) else {
                         return
                     }
                     let range = startIdx <= endIdx
-                        ? startIdx...endIdx
-                        : endIdx...startIdx
+                    ? startIdx...endIdx
+                    : endIdx...startIdx
                     let sliceItems = files[range]
                     let sliceSet = Set(sliceItems)
                     fileState.selectedLocalFiles = sliceSet
@@ -91,6 +92,9 @@ struct LocalFileRowView: View {
             } else {
                 fileState.currentLocalFile = file
             }
+#else
+            fileState.currentLocalFile = file
+#endif
         } label: {
             FileRowLabel(
                 name: file.deletingPathExtension().lastPathComponent,
@@ -194,11 +198,11 @@ struct LocalFileRowView: View {
         } label: {
             Label(
                 .localizable(
-                    fileState.selectedLocalFiles.isEmpty
-                    ? .sidebarFileRowContextMenuDuplicate
-                    : .sidebarFileRowContextMenuDuplicateFiles(
+                    !fileState.selectedLocalFiles.isEmpty && fileState.selectedLocalFiles.contains(file)
+                    ? .sidebarFileRowContextMenuDuplicateFiles(
                         fileState.selectedLocalFiles.count
                     )
+                    : .sidebarFileRowContextMenuDuplicate
                 ),
                 systemSymbol: .docOnDoc
             )
@@ -238,7 +242,7 @@ struct LocalFileRowView: View {
                 ),
                 systemSymbol: .docViewfinder
             )
-                .foregroundStyle(.red)
+            .foregroundStyle(.red)
         }
 #endif
         Divider()
@@ -249,11 +253,11 @@ struct LocalFileRowView: View {
         } label: {
             Label(
                 .localizable(
-                    fileState.selectedLocalFiles.isEmpty
-                    ? .generalButtonMoveToTrash
-                    : .generalButtonMoveFilesToTrash(
+                    !fileState.selectedLocalFiles.isEmpty && fileState.selectedLocalFiles.contains(file)
+                    ? .generalButtonMoveFilesToTrash(
                         fileState.selectedLocalFiles.count
                     )
+                    : .generalButtonMoveToTrash
                 ),
                 systemSymbol: .trash
             )
@@ -278,11 +282,11 @@ struct LocalFileRowView: View {
             } label: {
                 Label(
                     .localizable(
-                        fileState.selectedLocalFiles.isEmpty
-                        ? .generalMoveTo
-                        : .generalMoveFilesTo(
+                        !fileState.selectedLocalFiles.isEmpty && fileState.selectedLocalFiles.contains(file)
+                        ? .generalMoveFilesTo(
                             fileState.selectedLocalFiles.count
                         )
+                        : .generalMoveTo
                             
                     ),
                     systemSymbol: .trayAndArrowUp
