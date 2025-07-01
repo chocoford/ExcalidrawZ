@@ -68,7 +68,6 @@ struct TemporaryFileRowView: View {
     )
     private var topLevelLocalFolders: FetchedResults<LocalFolder>
     
-    
     @State private var modifiedDate: Date = .distantPast
     
     var body: some View {

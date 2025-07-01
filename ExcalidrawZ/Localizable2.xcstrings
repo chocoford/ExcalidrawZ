@@ -37520,6 +37520,17 @@
         }
       }
     },
+    "toolbarHand" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hand (Panding Tool)"
+          }
+        }
+      }
+    },
     "toolbarInsertImage" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -41365,10 +41376,112 @@
     "whatsNewCustomFontDescription" : {
       "extractionState" : "manual",
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تدعم ExcalidrawZ الآن الخطوط المخصصة! يمكنك إضافة خطوطك الخاصة إلى التطبيق واستخدامها في رسوماتك."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ unterstützt jetzt benutzerdefinierte Schriftarten! Sie können Ihre eigenen Schriftarten zur App hinzufügen und in Ihren Zeichnungen verwenden."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "ExcalidrawZ now supports custom fonts! You can add your own fonts to the app and use them in your drawings."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡ExcalidrawZ ahora admite fuentes personalizadas! Puedes agregar tus propias fuentes a la aplicación y usarlas en tus dibujos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ prend désormais en charge les polices personnalisées ! Vous pouvez ajouter vos propres polices à l'application et les utiliser dans vos dessins."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ अब कस्टम फ़ॉन्ट का समर्थन करता है! आप ऐप में अपने फ़ॉन्ट जोड़ सकते हैं और उन्हें अपने चित्रों में उपयोग कर सकते हैं।"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ ora supporta i font personalizzati! Puoi aggiungere i tuoi font all'app e utilizzarli nei tuoi disegni."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZはカスタムフォントをサポートしました！アプリに自分のフォントを追加し、描画に使用できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ는 이제 맞춤형 글꼴을 지원합니다! 앱에 자신의 글꼴을 추가하고 그림에 사용할 수 있습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ ondersteunt nu aangepaste lettertypen! Je kunt je eigen lettertypen aan de app toevoegen en deze gebruiken in je tekeningen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ teraz obsługuje czcionki niestandardowe! Możesz dodać własne czcionki do aplikacji i używać ich w swoich rysunkach."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ agora suporta fontes personalizadas! Você pode adicionar suas próprias fontes ao aplicativo e usá-las em seus desenhos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ теперь поддерживает пользовательские шрифты! Вы можете добавить свои шрифты в приложение и использовать их в своих рисунках."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ รองรับฟอนต์ที่กำหนดเองแล้ว! คุณสามารถเพิ่มฟอนต์ของคุณเองในแอปและใช้ฟอนต์เหล่านั้นในภาพวาดของคุณได้"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ artık özel yazı tiplerini destekliyor! Uygulamaya kendi yazı tiplerinizi ekleyebilir ve bunları çizimlerinizde kullanabilirsiniz."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ hiện hỗ trợ phông chữ tùy chỉnh! Bạn có thể thêm phông chữ của riêng mình vào ứng dụng và sử dụng chúng trong các bản vẽ của bạn."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ 现在支持自定义字体！您可以将自己的字体添加到应用程序中，并在您的绘图中使用它们。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ 現在支持自定義字型！您可以將自己的字型添加到應用程式中，並在繪圖中使用它們。"
           }
         }
       }
@@ -41376,10 +41489,112 @@
     "whatsNewCustomFontTitle" : {
       "extractionState" : "manual",
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الخطوط المخصصة"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benutzerdefinierte Schriftarten"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Custom Fonts"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuentes Personalizadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Polices personnalisées"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "कस्टम फ़ॉन्ट"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Font Personalizzati"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カスタムフォント"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "맞춤형 글꼴"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aangepaste Lettertypen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czcionki niestandardowe"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fontes Personalizadas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пользовательские шрифты"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ฟอนต์ที่กำหนดเอง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Özel Yazı Tipleri"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phông Chữ Tùy Chỉnh"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自定义字体"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自定義字型"
           }
         }
       }
