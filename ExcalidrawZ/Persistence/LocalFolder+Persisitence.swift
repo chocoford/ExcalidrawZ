@@ -96,14 +96,14 @@ extension LocalFolder {
         try self.withSecurityScopedURL { url in
             let contents = try FileManager.default.contentsOfDirectory(
                 at: url,
-                includingPropertiesForKeys: [.nameKey]
+                includingPropertiesForKeys: [.nameKey, .isHiddenKey]
             )
             try context.performAndWait {
                 let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
                 fetchRequest.predicate = NSPredicate(format: "parent = %@", self)
                 let childeren = try context.fetch(fetchRequest)
                 var mismatchedFolders = childeren
-                for url in contents.filter({$0.isDirectory}) {
+                for url in contents.filter({$0.isDirectory && (try? $0.resourceValues(forKeys: [.isHiddenKey]))?.isHidden == false}) {
                     mismatchedFolders.removeAll(where: {$0.url == url})
                     if self.children?.contains(where: {
                         if let child = $0 as? LocalFolder {
