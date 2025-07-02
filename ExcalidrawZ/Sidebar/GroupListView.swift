@@ -14,6 +14,7 @@ struct GroupListView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) var alertToast
+    @Environment(\.alert) var alert
     @EnvironmentObject var fileState: FileState
     
     @FetchRequest(
@@ -302,23 +303,47 @@ struct GroupListView: View {
                 for url in urls {
                     guard url.startAccessingSecurityScopedResource() else { continue }
                     
+                    guard let enumerator = FileManager.default.enumerator(
+                        at: url,
+                        includingPropertiesForKeys: [.isDirectoryKey, .nameKey, .isHiddenKey]
+                    ) else {
+                        return
+                    }
+                    
+                    // Check the folder is too large (too many subfolders)
+                    var count = 0
+                    for case let url as URL in enumerator.allObjects {
+                        let isHidden = (try? url.resourceValues(forKeys: [.isHiddenKey]).isHidden) ?? false
+                        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                        if !isHidden && isDirectory {
+                            count += 1
+                        }
+                    }
+                    
+                    if count > 1000 {
+                        await MainActor.run {
+                            struct FolderTooLargeError: LocalizedError {
+                                var errorDescription: String? {
+                                    "Please choose a smaller folder."
+                                }
+                            }
+                            alert(title: "Folder is too large", error: FolderTooLargeError())
+                        }
+                        return
+                    }
+                    
                     try await context.perform {
                         let localFolder = try LocalFolder(url: url, context: context)
                         context.insert(localFolder)
                         try localFolder.refreshChildren(context: context)
                         // create checkpoints for every file in folder
-                        if let enumerator = FileManager.default.enumerator(
-                            at: url,
-                            includingPropertiesForKeys: [.isDirectoryKey, .nameKey]
-                        ) {
-                            for case let url as URL in enumerator {
-                                if url.pathExtension == "excalidraw" {
-                                    let checkpoint = LocalFileCheckpoint(context: context)
-                                    checkpoint.url = url
-                                    checkpoint.content = try Data(contentsOf: url)
-                                    checkpoint.updatedAt = .now
-                                    context.insert(checkpoint)
-                                }
+                        for case let url as URL in enumerator {
+                            if url.pathExtension == "excalidraw" {
+                                let checkpoint = LocalFileCheckpoint(context: context)
+                                checkpoint.url = url
+                                checkpoint.content = try Data(contentsOf: url)
+                                checkpoint.updatedAt = .now
+                                context.insert(checkpoint)
                             }
                         }
                         try context.save()
