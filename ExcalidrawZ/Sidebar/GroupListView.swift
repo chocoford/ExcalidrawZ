@@ -324,10 +324,10 @@ struct GroupListView: View {
                         await MainActor.run {
                             struct FolderTooLargeError: LocalizedError {
                                 var errorDescription: String? {
-                                    "Please choose a smaller folder."
+                                    .init(localizable: .sidebarLocalFolderTooLargeAlertDescription)
                                 }
                             }
-                            alert(title: "Folder is too large", error: FolderTooLargeError())
+                            alert(title: .localizable(.sidebarLocalFolderTooLargeAlertTitle), error: FolderTooLargeError())
                         }
                         return
                     }
