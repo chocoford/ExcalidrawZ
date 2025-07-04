@@ -1,3 +1,14 @@
+## 1.5.1
+
+#### Optimizations
+
+- Optimize the loading performance of local folders.
+- No longer display hidden folders.
+
+#### Fixes
+
+- Issue with Some Custom Fonts Not Working
+
 ## 1.5.0
 
 #### New Features
