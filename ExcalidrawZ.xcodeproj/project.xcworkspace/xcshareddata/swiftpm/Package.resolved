@@ -16,7 +16,7 @@
       "location" : "https://github.com/chocoford/ChocofordKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "872084d27ff0101c04f03a156f14226428da58f7"
+        "revision" : "9a096449be3b4974faa42e94658dfc3f02afe465"
       }
     },
     {
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swhitty/FlyingFox.git",
       "state" : {
-        "revision" : "3ad076e081749cef043e25ac01719a503b772113",
-        "version" : "0.22.0"
+        "revision" : "de429870282bed7b01bf6c384f5f29d55907aa10",
+        "version" : "0.24.1"
       }
     },
     {
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/onevcat/Kingfisher.git",
       "state" : {
-        "revision" : "7deda23bbdca612076c5c315003d8638a08ed0f1",
-        "version" : "8.3.2"
+        "revision" : "ef40458c27ccc65aec62c0cc65da296e07264ffd",
+        "version" : "8.4.0"
       }
     },
     {
@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle.git",
       "state" : {
-        "revision" : "0ca3004e98712ea2b39dd881d28448630cce1c99",
-        "version" : "2.7.0"
+        "revision" : "df074165274afaa39539c05d57b0832620775b11",
+        "version" : "2.7.1"
       }
     },
     {

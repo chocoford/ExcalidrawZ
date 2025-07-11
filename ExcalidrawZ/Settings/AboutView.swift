@@ -76,6 +76,18 @@ struct AboutView: View {
                 Text(Bundle.main.infoDictionary!["CFBundleVersion"] as! String)
                     .foregroundColor(.secondary)
             }
+            
+            WithAsyncValue(isChinaAppStore) { isChina, error in
+                if let isChina {
+                    HStack {
+                        Spacer()
+                        Link(destination: URL(string: "https://beian.miit.gov.cn/")!) {
+                            Text("粤ICP备2023139330号-5A")
+                        }
+                    }
+                }
+            }
+            
         } header: {
             HStack {
                 Spacer(minLength: 0)
