@@ -30,6 +30,7 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
     case magicFrame
     
     case hand
+//    case lasso
     
     // extra tool
 //    case text2Diagram
@@ -71,6 +72,8 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
                 
             case .hand:
                 self = .hand
+            case .lasso:
+                return nil
         }
     }
     
@@ -102,7 +105,7 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
                 Character("9")
             case .hand:
                 Character("h")
-            case .webEmbed, .magicFrame/*, .text2Diagram, .mermaid*/:
+            case .webEmbed, .magicFrame:
                 nil
         }
     }
@@ -139,7 +142,8 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
                     .localizable(.toolbarFrame)
             case .magicFrame:
                     .localizable(.toolbarMagicFrame)
-
+//            case .lasso:
+//                    .localizable(.toolbarLasso)
 //            case .text2Diagram:
 //                    .localizable(.toolbarText2Diagram)
 //            case .mermaid:
@@ -179,6 +183,8 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
                 "\(String(localizable: .toolbarMagicFrame))"
             case .hand:
                 "\(String(localizable: .toolbarHand)) - H"
+//            case .lasso:
+//                ""
         }
     }
     

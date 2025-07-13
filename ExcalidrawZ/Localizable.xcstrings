@@ -38085,6 +38085,17 @@
         }
       }
     },
+    "toolbarLasso" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lasso selection"
+          }
+        }
+      }
+    },
     "toolbarLatexMath" : {
       "extractionState" : "manual",
       "localizations" : {

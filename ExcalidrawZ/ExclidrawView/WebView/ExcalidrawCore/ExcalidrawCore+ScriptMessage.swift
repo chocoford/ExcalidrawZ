@@ -47,6 +47,7 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     self.webView.shouldHandleInput = true
                 case .didSetActiveTool(let message):
                     guard !self.isLoading else { return }
+                    if message.data.type == .lasso { return }
                     if message.data.type == .hand {
                         self.parent?.toolState.inDragMode = true
                         self.lastTool = .hand
@@ -569,6 +570,7 @@ extension ExcalidrawCore {
                 case frame
                 case webEmbed = "embeddable"
                 case magicFrame = "magicframe"
+                case lasso
             }
         }
     }
