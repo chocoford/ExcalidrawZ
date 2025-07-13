@@ -76,9 +76,9 @@ struct AboutView: View {
                 Text(Bundle.main.infoDictionary!["CFBundleVersion"] as! String)
                     .foregroundColor(.secondary)
             }
-            
+
             WithAsyncValue(isChinaAppStore) { isChina, error in
-                if let isChina {
+                if isChina == true {
                     HStack {
                         Spacer()
                         Link(destination: URL(string: "https://beian.miit.gov.cn/")!) {
@@ -87,7 +87,7 @@ struct AboutView: View {
                     }
                 }
             }
-            
+
         } header: {
             HStack {
                 Spacer(minLength: 0)
