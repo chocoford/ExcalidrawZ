@@ -5,7 +5,7 @@
   <h3>Excalidraw app for mac. Powered by pure SwiftUI.</h3>
 </div>
 
-![GitHub](https://img.shields.io/github/license/chocoford/ExcalidrawZ) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40Chocoford)](https://twitter.com/dove_zachary) ![Discord](https://img.shields.io/discord/944160092914319361)
+![GitHub](https://img.shields.io/github/license/chocoford/ExcalidrawZ) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40Chocoford)](https://twitter.com/dove_zachary) [![Discord](https://img.shields.io/discord/944160092914319361)](https://discord.gg/aCv6w4HxDg)
 
 <a href="https://www.chocoford.com/donation" target="_blank"><img src="https://github.com/chocoford/chocoford/blob/main/public/Donation%20Button.png?raw=true" alt="Donation to Chocoford" style="height: 60px !important;"></a>
 
