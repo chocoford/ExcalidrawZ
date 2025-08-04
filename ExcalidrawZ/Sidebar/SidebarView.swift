@@ -28,11 +28,32 @@ struct SidebarView: View {
 
     var body: some View {
         if #available(macOS 13.0, *) {
-            twoColumnSidebar()
-                .navigationSplitViewColumnWidth(min: 374, ideal: 400, max: 500)
+            oneColumnSidebar()
+                .navigationSplitViewColumnWidth(min: 240, ideal: 240, max: 340)
         } else {
-            twoColumnSidebar()
+            oneColumnSidebar()
+                .frame(minWidth: 240)
         }
+    }
+    
+    @MainActor @ViewBuilder
+    private func oneColumnSidebar() -> some View {
+        GroupsSidebar()
+            .border(.top, color: .separatorColor)
+#if os(iOS)
+        .background {
+            if fileState.currentGroup != nil {
+                List(selection: $fileState.currentFile) {}
+            } else if fileState.currentLocalFolder != nil {
+                List(selection: $fileState.currentLocalFile) {}
+            } else if fileState.isTemporaryGroupSelected {
+                List(selection: $fileState.currentTemporaryFile) {}
+            } else if fileState.isInCollaborationSpace {
+                List(selection: $fileState.currentCollaborationFile) {}
+            }
+        }
+#endif
+        .environmentObject(localFolderState)
     }
     
     

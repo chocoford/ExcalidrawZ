@@ -18,7 +18,6 @@ struct FileRowView: View {
     @EnvironmentObject var fileState: FileState
     
     var file: File
-    @Binding var fileIDToBeRenamed: NSManagedObjectID?
     
     @FetchRequest(
         sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],
@@ -29,16 +28,16 @@ struct FileRowView: View {
     
     @FetchRequest
     private var files: FetchedResults<File>
+    
+    @State private var isRenameSheetPresented = false
 
     init(
         file: File,
-        fileIDToBeRenamed: Binding<NSManagedObjectID?>,
         sortField: ExcalidrawFileSortField,
     ) {
         let group = file.group
         let groupType = group?.groupType ?? .normal
         self.file = file
-        self._fileIDToBeRenamed = fileIDToBeRenamed
         
         // Files
         let sortDescriptors: [SortDescriptor<File>] = {
@@ -86,6 +85,7 @@ struct FileRowView: View {
         FileRowButton(
             name: (file.name ?? "")/* + " - \(file.rank ?? -1)"*/,
             updatedAt: file.updatedAt,
+            isInTrash: file.inTrash == true,
             isSelected: isSelected,
             isMultiSelected: fileState.selectedFiles.contains(file)
         ) {
@@ -125,6 +125,18 @@ struct FileRowView: View {
 #endif
         }
         .modifier(FileRowDragDropModifier(file: file, sortField: fileState.sortField))
+        .modifier(
+            RenameSheetViewModifier(
+                isPresented: $isRenameSheetPresented,
+                name: self.file.name ?? ""
+            ) {
+                fileState.renameFile(
+                    self.file.objectID,
+                    context: viewContext,
+                    newName: $0
+                )
+            }
+        )
         .contextMenu { listRowContextMenu.labelStyle(.titleAndIcon) }
         .confirmationDialog(
             LocalizedStringKey.localizable(.sidebarFileRowDeletePermanentlyAlertTitle(file.name ?? "")),
@@ -145,7 +157,8 @@ struct FileRowView: View {
     private var listRowContextMenu: some View {
         if !file.inTrash {
             Button {
-                fileIDToBeRenamed = self.file.objectID
+                // fileIDToBeRenamed = self.file.objectID
+                isRenameSheetPresented.toggle()
             } label: {
                 Label(
                     .localizable(

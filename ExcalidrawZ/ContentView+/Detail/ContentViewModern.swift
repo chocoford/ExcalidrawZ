@@ -51,12 +51,10 @@ struct ContentViewModern: View {
 #if os(macOS)
                 SidebarView()
                     .toolbar(content: sidebarToolbar)
-                    .toolbar(removing: .sidebarToggle)
 #elseif os(iOS)
                 if horizontalSizeClass == .compact {
                     SidebarView()
                         .toolbar(content: sidebarToolbar)
-                        .toolbar(removing: .sidebarToggle)
                 } else {
                     SidebarView()
                         .toolbar(content: sidebarToolbar)
@@ -69,10 +67,6 @@ struct ContentViewModern: View {
         } detail: {
             ContentViewDetail(isSettingsPresented: $isSettingsPresented)
         }
-
-#if os(macOS)
-        .removeSettingsSidebarToggle()
-#endif
     }
     
     
@@ -115,11 +109,11 @@ struct ContentViewModern: View {
 #if os(macOS)
         // in macOS 14.*, the horizontalSizeClass is not `.regular`
         // if horizontalSizeClass == .regular {
-            ToolbarItemGroup(placement: .destructiveAction) {
-                SidebarToggle(columnVisibility: $columnVisibility)
+//            ToolbarItemGroup(placement: .destructiveAction) {
+//                SidebarToggle(columnVisibility: $columnVisibility)
                 
 //                NewFileButton()
-            }
+//            }
         // }
 #elseif os(iOS)
         ToolbarItemGroup(placement: .topBarLeading) {

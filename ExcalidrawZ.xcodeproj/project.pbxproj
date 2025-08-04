@@ -80,7 +80,7 @@
 		39ED18542D3FDE1C00E437A0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */; };
 		39ED18552D3FDE1C00E437A0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */; };
 		39ED18632D40FCBD00E437A0 /* AVKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 39ED18622D40FCBD00E437A0 /* AVKit.framework */; };
-		39ED18642D40FCC400E437A0 /* AVKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 39ED18622D40FCBD00E437A0 /* AVKit.framework */; };
+		39ED18642D40FCC400E437A0 /* AVKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 39ED18622D40FCBD00E437A0 /* AVKit.framework */; platformFilter = ios; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -169,6 +169,7 @@
 		39B69A2D2D8422F0003369E8 /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
 		39B69A322D8423C3003369E8 /* Overrides.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Overrides.xcconfig; sourceTree = "<group>"; };
 		39B69BDC2D8C18A0003369E8 /* SyncedStore.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = SyncedStore.storekit; sourceTree = "<group>"; };
+		39C024C72E409F82005E515C /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/WebKit.framework; sourceTree = DEVELOPER_DIR; };
 		39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		39ED18622D40FCBD00E437A0 /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/System/Library/Frameworks/AVKit.framework; sourceTree = DEVELOPER_DIR; };
 		500E089B2CF1BFB600392CC2 /* Project.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Project.xcconfig; sourceTree = "<group>"; };
@@ -385,6 +386,7 @@
 		397152D52C85D02500A65ADF /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				39C024C72E409F82005E515C /* WebKit.framework */,
 				39ED18622D40FCBD00E437A0 /* AVKit.framework */,
 				3915C9AB2CB54A6800B860E7 /* QuickLookUI.framework */,
 				3990F8352CACF4C500C94983 /* StoreKit.framework */,
@@ -548,7 +550,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				390716E42C6F15E3002D7834 /* PBXTargetDependency */,
+				39A3FE602E40A43700DF6AD0 /* PBXTargetDependency */,
 				3987A51E2CB54B840054D7D5 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -843,10 +845,6 @@
 			isa = PBXTargetDependency;
 			productRef = 390716E12C6F15DE002D7834 /* XCStringsToolPlugin */;
 		};
-		390716E42C6F15E3002D7834 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			productRef = 390716E32C6F15E3002D7834 /* XCStringsToolPlugin */;
-		};
 		397E4666295838D0003B824B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
@@ -876,6 +874,10 @@
 		3987A57F2CB558B40054D7D5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			productRef = 3987A57E2CB558B40054D7D5 /* XCStringsToolPlugin */;
+		};
+		39A3FE602E40A43700DF6AD0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 39A3FE5F2E40A43700DF6AD0 /* XCStringsToolPlugin */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1729,11 +1731,6 @@
 			package = 390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */;
 			productName = "plugin:XCStringsToolPlugin";
 		};
-		390716E32C6F15E3002D7834 /* XCStringsToolPlugin */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */;
-			productName = "plugin:XCStringsToolPlugin";
-		};
 		391087822DFFCC1A0057F493 /* Logging */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 391087702DFFCB900057F493 /* XCRemoteSwiftPackageReference "swift-log" */;
@@ -1862,6 +1859,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 398F14492CF7379C0061CCF9 /* XCRemoteSwiftPackageReference "ChocofordKit" */;
 			productName = ChocofordEssentials;
+		};
+		39A3FE5F2E40A43700DF6AD0 /* XCStringsToolPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */;
+			productName = "plugin:XCStringsToolPlugin";
 		};
 		39B142E92CE9D2A100D3EEDA /* Zlib */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -137,10 +137,12 @@ struct GroupRowView: View {
                 }
                 Spacer()
             }
+            .padding(.vertical, 2)
             .contentShape(Rectangle())
         } else {
             Button {
                 fileState.currentGroup = group
+                fileState.currentFile = nil
             } label: {
                 HStack {
                     Label {
@@ -152,20 +154,24 @@ struct GroupRowView: View {
                 }
                 .contentShape(Rectangle())
             }
+            .padding(.vertical, 2)
             .buttonStyle(ListButtonStyle(selected: isSelected))
         }
     }
     
     @MainActor @ViewBuilder
     private var groupIcon: some View {
-        switch group.groupType {
-            case .`default`:
-                Image(systemSymbol: .folder)
-            case .trash:
-                Image(systemSymbol: .trash)
-            case .normal:
-                Image(systemSymbol: .init(rawValue: group.icon ?? "folder"))
+        HStack {
+            switch group.groupType {
+                case .`default`:
+                    Image(systemSymbol: .folder)
+                case .trash:
+                    Image(systemSymbol: .trash)
+                case .normal:
+                    Image(systemSymbol: .init(rawValue: group.icon ?? "folder"))
+            }
         }
+        .frame(width: 24, alignment: .center)
     }
     
     // MARK: - Context Menu

@@ -18,19 +18,60 @@ struct GroupsView: View {
     @EnvironmentObject var fileState: FileState
 
     var group: Group
+    var sortField: ExcalidrawFileSortField
     
     @FetchRequest
     private var children: FetchedResults<Group>
     
-    init(group: Group) {
+    @FetchRequest
+    private var files: FetchedResults<File>
+    
+    init(
+        group: Group,
+        sortField: ExcalidrawFileSortField
+    ) {
         self.group = group
         let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
         fetchRequest.predicate = NSPredicate(format: "parent = %@", group)
         fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \Group.name, ascending: true)]
         self._children = FetchRequest(fetchRequest: fetchRequest, animation: .default)
+        
+        
+        let sortDescriptors: [SortDescriptor<File>] = {
+            switch sortField {
+                case .updatedAt:
+                    [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse)
+                    ]
+                case .name:
+                    [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
+                        SortDescriptor(\.name, order: .reverse),
+                    ]
+                case .rank:
+                    [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
+                        SortDescriptor(\.rank, order: .forward),
+                    ]
+            }
+        }()
+         self.sortField = sortField
+        
+        self._files = FetchRequest(
+            sortDescriptors: sortDescriptors,
+            predicate: group.groupType == .trash ? NSPredicate(
+                format: "inTrash == YES"
+            ) : NSPredicate(
+                format: "group == %@ AND inTrash == NO", group
+            ),
+            animation: .smooth
+        )
     }
     
-    var isSelected: Bool { fileState.currentGroup == group }
+    var isSelected: Bool { fileState.currentGroup == group && fileState.currentFile == nil }
     
     @State private var isExpanded = false
 
@@ -56,21 +97,32 @@ struct GroupsView: View {
                 isSelected
             } set: { val in
                 DispatchQueue.main.async {
-                    if val { fileState.currentGroup = group }
+                    if val {
+                        fileState.currentGroup = group
+                        fileState.currentFile = nil
+                    }
                 }
             },
             isExpanded: $isExpanded
         ) {
             ForEach(children) { group in
-                GroupsView(group: group)
+                GroupsView(group: group, sortField: sortField)
             }
+            
+            ForEach(files) { file in
+                FileRowView(
+                    file: file,
+                    sortField: sortField,
+                )
+            }
+            
         } label: {
             GroupRowView(
                 group: group,
                 isExpanded: $isExpanded
             )
         }
-        .disclosureGroupIndicatorVisibility(children.isEmpty ? .hidden : .visible)
+        .disclosureGroupIndicatorVisibility(children.isEmpty && files.isEmpty ? .hidden : .visible)
         .onReceive(NotificationCenter.default.publisher(for: .shouldExpandGroup)) { notification in
             guard let targetGroupID = notification.object as? NSManagedObjectID,
                   targetGroupID == self.group.objectID else { return }
@@ -88,7 +140,7 @@ struct GroupsView: View {
                 isExpanded: $isExpanded
             )
         } childView: { child in
-            GroupsView(group: child)
+            GroupsView(group: child, sortField: sortField)
         }
     }
 }

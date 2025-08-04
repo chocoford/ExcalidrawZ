@@ -60,18 +60,30 @@ struct LocalFolderRowView: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
         if folderStructStyle == .disclosureGroup {
-            Label(folder.url?.lastPathComponent ?? String(localizable: .generalUnknown), systemSymbol: .folder)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .contentShape(Rectangle())
+            Label {
+                Text(folder.url?.lastPathComponent ?? String(localizable: .generalUnknown))
+            } icon: {
+                Image(systemSymbol: .folderFill)
+                    .foregroundStyle(Color(red: 12/255.0, green: 157/255.0, blue: 229/255.0))
+            }
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .padding(.vertical, 2)
+            .contentShape(Rectangle())
         } else {
             Button {
                 fileState.currentLocalFolder = folder
             } label: {
-                Label(folder.url?.lastPathComponent ?? String(localizable: .generalUnknown), systemSymbol: .folder)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .contentShape(Rectangle())
+                Label {
+                    Text(folder.url?.lastPathComponent ?? String(localizable: .generalUnknown))
+                } icon: {
+                    Image(systemSymbol: .folderFill)
+                        .foregroundStyle(Color(red: 12/255.0, green: 157/255.0, blue: 229/255.0))
+                }
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .padding(.vertical, 2)
+                .contentShape(Rectangle())
             }
             .buttonStyle(ListButtonStyle(selected: isSelected))
         }

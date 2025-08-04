@@ -15,6 +15,8 @@ struct GroupListView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @Environment(\.alert) var alert
+    @Environment(\.searchExcalidrawAction) private var searchExcalidraw
+
     @EnvironmentObject var fileState: FileState
     
     @FetchRequest(
@@ -74,22 +76,6 @@ struct GroupListView: View {
                     createFolderSheetView()
                 }
             }
-            // Watch Group disappear
-            .onChange(of: fileState.isTemporaryGroupSelected) { newValue in
-                if !newValue, !fileState.hasAnyActiveGroup {
-                    fileState.currentGroup = displayedGroups.first
-                }
-            }
-            .onChange(of: fileState.currentLocalFolder) { newValue in
-                if newValue == nil, !fileState.hasAnyActiveGroup {
-                    fileState.currentGroup = displayedGroups.first
-                }
-            }
-            .onChange(of: fileState.currentGroup) { newValue in
-                if newValue == nil, !fileState.hasAnyActiveGroup {
-                    fileState.currentGroup = displayedGroups.first
-                }
-            }
             .onAppear {
                 initialNewGroupName = getNextGroupName()
             }
@@ -97,22 +83,47 @@ struct GroupListView: View {
     
     @MainActor @ViewBuilder
     private var content: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 0) {
             ScrollView {
                 LazyVStack(spacing: 8) {
                     let spacing: CGFloat = 4
-                    Button {
-                        if !fileState.isInCollaborationSpace {
-                            fileState.isInCollaborationSpace = true
-                            if containerHorizontalSizeClass != .compact {
-                                fileState.currentCollaborationFile = .home
+                    VStack(spacing: 0) {
+                        Button {
+                            fileState.currentFile = nil
+                            fileState.currentGroup = nil
+                            fileState.currentLocalFile = nil
+                            fileState.currentLocalFolder = nil
+                            fileState.currentTemporaryFile = nil
+                            fileState.isTemporaryGroupSelected = false
+                            fileState.isInCollaborationSpace = false
+                            fileState.currentCollaborationFile = nil
+                        } label: {
+                            HStack {
+                                Image(systemSymbol: .house)
+                                    .frame(width: 30, alignment: .leading)
+                                Text("Home")
                             }
+                            .padding(.vertical, 2)
                         }
-                    } label: {
-                        Label(.localizable(.sidebarGroupRowCollaborationTitle), systemSymbol: .person3)
+                        .buttonStyle(ListButtonStyle(selected: !fileState.hasAnyActiveFile && !fileState.hasAnyActiveGroup))
+                        
+                        Button {
+                            if !fileState.isInCollaborationSpace {
+                                fileState.isInCollaborationSpace = true
+                                if containerHorizontalSizeClass != .compact {
+                                    fileState.currentCollaborationFile = .home
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemSymbol: .person3)
+                                    .frame(width: 30, alignment: .leading)
+                                Text(.localizable(.sidebarGroupRowCollaborationTitle))
+                            }
+                            .padding(.vertical, 2)
+                        }
+                        .buttonStyle(ListButtonStyle(selected: fileState.isInCollaborationSpace))
                     }
-                    .buttonStyle(ListButtonStyle(selected: fileState.isInCollaborationSpace))
-                    
                     Divider()
 
                     // Temporary
@@ -161,52 +172,19 @@ struct GroupListView: View {
                 }
                 .padding(8)
             }
-            .clipped()
+            
+            Divider()
 
-            HStack {
-#if os(macOS)
-                if #available(macOS 13.0, *) {
-                    createGroupMenuButton()
-                        .buttonStyle(.borderless)
-                } else {
-                    createGroupMenuButton()
-                        .menuStyle(.borderlessButton)
-                }
-#elseif os(iOS)
-                Button {
-                    isCreateGroupConfirmationDialogPresented.toggle()
-                } label: {
-                    Label(
-                        .localizable(.sidebarGroupListNewFolder),
-                        systemSymbol: .plusCircle
-                    )
-                }
-                .buttonStyle(.borderless)
-                .confirmationDialog(
-                    .localizable(.sidebarGroupListNewFolder),
-                    isPresented: $isCreateGroupConfirmationDialogPresented
-                ) {
-                    SwiftUI.Group {
-                        Button {
-                            isCreateGroupDialogPresented.toggle()
-                            createGroupType = .group
-                        } label: {
-                            Text(.localizable(.sidebarGroupListCreateTitle))
-                        }
-                        
-                        Button {
-                            isCreateLocalFolderDialogPresented.toggle()
-                        } label: {
-                            Text(.localizable(.sidebarGroupListButtonAddObservation))
-                        }
-                    }
-                    .labelStyle(.titleAndIcon)
-                }
+            if #available(macOS 14.0, *) {
+                contentToolbar()
+#if canImport(AppKit)
+                    .buttonStyle(.accessoryBar)
 #endif
-                Spacer()
+            } else {
+                contentToolbar()
+                    .buttonStyle(.text(size: .small, square: true))
             }
-            .padding(4)
-  }
+        }
 
     }
     
@@ -215,7 +193,7 @@ struct GroupListView: View {
         LazyVStack(alignment: .leading, spacing: 0) {
             /// ❕❕❕use `id: \.self` can avoid multi-thread access crash when closing create-room-sheet...
             ForEach(displayedGroups, id: \.self) { group in
-                 GroupsView(group: group)
+                GroupsView(group: group, sortField: .updatedAt)
             }
         }
         .onChange(of: trashedFilesCount) { count in
@@ -283,6 +261,62 @@ struct GroupListView: View {
                 }
             }
         }
+    }
+    
+    @MainActor @ViewBuilder
+    private func contentToolbar() -> some View {
+        HStack {
+            Button {
+                searchExcalidraw()
+            } label: {
+                Label(.localizable(.searchButtonTitle), systemSymbol: .magnifyingglass)
+                    .labelStyle(.iconOnly)
+            }
+            Spacer()
+            if #available(macOS 13.0, *) {
+                sortMenuButton()
+            } else {
+                sortMenuButton()
+                    .menuStyle(.borderlessButton)
+                    .buttonStyle(.text(size: .small, square: true))
+            }
+        }
+        .padding(4)
+        .controlSize(.regular)
+        .background(.ultraThickMaterial)
+    }
+    
+    @MainActor @ViewBuilder
+    private func sortMenuButton() -> some View {
+        Menu {
+            Picker(
+                selection: Binding {
+                    fileState.sortField
+                } set: { val in
+                    withAnimation {
+                        fileState.sortField = val
+                    }
+                }
+            ) {
+                SwiftUI.Group {
+                    Label(.localizable(.sortFileKeyName), systemSymbol: .textformat).tag(ExcalidrawFileSortField.name)
+                    Label(.localizable(.sortFileKeyUpdatedAt), systemSymbol: .clock).tag(ExcalidrawFileSortField.updatedAt)
+                }
+                .labelStyle(.titleAndIcon)
+            } label: { }
+                .pickerStyle(.inline)
+        } label: {
+            if #available(macOS 13.0, *) {
+                Label(.localizable(.sortFileButtonLabelTitle), systemSymbol: .arrowUpAndDownTextHorizontal)
+                    .labelStyle(.iconOnly)
+            } else {
+                Label(.localizable(.sortFileButtonLabelTitle), systemSymbol: .arrowUpAndDownCircle)
+                    .labelStyle(.iconOnly)
+            }
+        }
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .disabled(fileState.isTemporaryGroupSelected || !fileState.hasAnyActiveGroup)
     }
     
     func getNextGroupName() -> String {

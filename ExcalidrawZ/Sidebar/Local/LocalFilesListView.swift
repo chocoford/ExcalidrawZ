@@ -28,9 +28,43 @@ struct LocalFilesListView: View {
         self.sortField = sortField
     }
     
+    var body: some View {
+        ScrollView {
+            LocalFilesListContentView(folder: folder, sortField: sortField)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 12)
+#if os(macOS)
+                .background {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if NSEvent.modifierFlags.contains(.command) || NSEvent.modifierFlags.contains(.shift) {
+                                return
+                            }
+                            fileState.resetSelections()
+                        }
+                }
+#endif
+        }
+    }
+}
+
+
+struct LocalFilesListContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.alertToast) private var alertToast
+    @Environment(\.containerHorizontalSizeClass) private var horizontalSizeClass
+
+    @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var localFolderState: LocalFolderState
+
+    var folder: LocalFolder
+    var sortField: ExcalidrawFileSortField
+    
     @State private var files: [URL] = []
     
     @State private var updateFlags: [URL : Date] = [:]
+
     
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -39,33 +73,17 @@ struct LocalFilesListView: View {
 #endif
     
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading) {
-                ForEach(files, id: \.self) { file in
-                    LocalFileRowView(
-                        file: file,
-                        updateFlag: updateFlags[file],
-                        files: files
-                    )
-                    .id(updateFlags[file])
-                }
+        LazyVStack(alignment: .leading, spacing: 0) {
+            ForEach(files, id: \.self) { file in
+                LocalFileRowView(
+                    file: file,
+                    updateFlag: updateFlags[file],
+                    files: files
+                )
+                .id(updateFlags[file])
             }
-            .animation(.default, value: files)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 12)
-#if os(macOS)
-            .background {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        if NSEvent.modifierFlags.contains(.command) || NSEvent.modifierFlags.contains(.shift) {
-                            return
-                        }
-                        fileState.resetSelections()
-                    }
-            }
-#endif
         }
+        .animation(.default, value: files)
         .bindWindow($window)
         .watchImmediately(of: folder.url) { newValue in
             DispatchQueue.main.async {
@@ -124,7 +142,7 @@ struct LocalFilesListView: View {
             fileState.currentLocalFile = files.first
         }
     }
-
+    
     private func getFolderContents() {
         do {
             try folder.withSecurityScopedURL { folderURL in

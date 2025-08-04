@@ -53,7 +53,7 @@ struct LocalFoldersListView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     // Local folder view
                     Section {
-                        LocalFoldersView(folder: folder) {
+                        LocalFoldersView(folder: folder, sortField: .updatedAt) {
                             // switch current folder first if necessary.
                             if fileState.currentLocalFolder == folder {
                                 guard let index = folders.firstIndex(of: folder) else {

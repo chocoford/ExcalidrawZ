@@ -18,13 +18,18 @@ struct LocalFoldersView: View {
     @EnvironmentObject private var fileState: FileState
     
     var folder: LocalFolder
+    var sortField: ExcalidrawFileSortField
     var onDeleteSelected: () -> Void
         
     @FetchRequest
     private var folderChildren: FetchedResults<LocalFolder>
     
-    init(folder: LocalFolder, onDeleteSelected: @escaping () -> Void) {
+    init(folder: LocalFolder,
+         sortField: ExcalidrawFileSortField,
+         onDeleteSelected: @escaping () -> Void
+    ) {
         self.folder = folder
+        self.sortField = sortField
         self._folderChildren = FetchRequest(
             sortDescriptors: [
                 NSSortDescriptor(keyPath: \LocalFolder.filePath, ascending: true),
@@ -65,10 +70,12 @@ struct LocalFoldersView: View {
             isExpanded: $isExpanded
         ) {
             ForEach(folderChildren) { folder in
-                LocalFoldersView(folder: folder) {
+                LocalFoldersView(folder: folder, sortField: sortField) {
                     handleSelectedDeletion()
                 }
             }
+            
+            LocalFilesListContentView(folder: folder, sortField: sortField)
         } label: {
             LocalFolderRowView(folder: folder, onDelete: onDeleteSelected)
         }
@@ -90,7 +97,7 @@ struct LocalFoldersView: View {
         ) {
             LocalFolderRowView(folder: folder, onDelete: onDeleteSelected)
         } childView: { child in
-            LocalFoldersView(folder: child) {
+            LocalFoldersView(folder: child, sortField: sortField) {
                 handleSelectedDeletion()
             }
         }

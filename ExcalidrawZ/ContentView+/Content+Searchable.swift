@@ -33,22 +33,22 @@ struct SearchExcalidrawAction {
 
 struct SearchableModifier: ViewModifier {
     @State private var isSearchSheetPresented = false
-
+    
     func body(content: Content) -> some View {
         content
             .background {
                 Button {
                     isSearchSheetPresented.toggle()
                 } label: { }
-                .opacity(0.01)
-                .keyboardShortcut("f", modifiers: .command)
+                    .opacity(0.01)
+                    .keyboardShortcut("f", modifiers: .command)
                 
                 if #available(macOS 14.0, *) { } else {
                     Button {
                         isSearchSheetPresented = false
                     } label: { }
-                    .opacity(0.01)
-                    .keyboardShortcut(.escape)
+                        .opacity(0.01)
+                        .keyboardShortcut(.escape)
                 }
             }
             .sheet(isPresented: $isSearchSheetPresented) {
@@ -62,7 +62,7 @@ struct SearchableModifier: ViewModifier {
     }
 }
 
-fileprivate struct SerachContent: View {
+struct SerachContent: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.alertToast) private var alertToast
@@ -70,8 +70,16 @@ fileprivate struct SerachContent: View {
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var fileState: FileState
     
+    var withDismissButton: Bool
+    
+    init(
+        withDismissButton: Bool = true
+    ) {
+        self.withDismissButton = withDismissButton
+    }
+    
     @State private var searchText = ""
-
+    
     @State private var searchFiles: [File] = []
     @State private var searchFilesPath: [String] = []
     @State private var searchCollaborationFiles: [CollaborationFile] = []
@@ -96,21 +104,24 @@ fileprivate struct SerachContent: View {
                     onSelect(selectionIndex)
                 }
                 .overlay(alignment: .trailing) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Label(.localizable(.generalButtonCancel), systemSymbol: .xmarkCircleFill)
-                            .labelStyle(.iconOnly)
-                            .foregroundStyle(.secondary)
-                            .padding()
-                            .contentShape(Rectangle())
+                    if withDismissButton {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Label(.localizable(.generalButtonCancel), systemSymbol: .xmarkCircleFill)
+                                .labelStyle(.iconOnly)
+                                .foregroundStyle(.secondary)
+                                .padding()
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.borderless)
+                        .keyboardShortcut(.escape)
+                        .padding(.trailing, 20)
                     }
-                    .buttonStyle(.borderless)
-                    .keyboardShortcut(.escape)
-                    .padding(.trailing, 20)
                 }
-            
+
             Divider()
+
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
@@ -189,8 +200,8 @@ fileprivate struct SerachContent: View {
                     .onTapGesture(count: tapSelectCount) {
                         dismiss()
                         if let limit = store.collaborationRoomLimits,
-                                  fileState.collaboratingFiles.count >= limit,
-                                  !fileState.collaboratingFiles.contains(room) {
+                           fileState.collaboratingFiles.count >= limit,
+                           !fileState.collaboratingFiles.contains(room) {
                             store.togglePaywall(reason: .roomLimit)
                         } else {
                             fileState.isInCollaborationSpace = true
@@ -373,8 +384,8 @@ fileprivate struct SerachContent: View {
             dismiss()
             let file = searchCollaborationFiles[index]
             if let limit = store.collaborationRoomLimits,
-                      fileState.collaboratingFiles.count >= limit,
-                      !fileState.collaboratingFiles.contains(file) {
+               fileState.collaboratingFiles.count >= limit,
+               !fileState.collaboratingFiles.contains(file) {
                 store.togglePaywall(reason: .roomLimit)
             } else {
                 fileState.isInCollaborationSpace = true
@@ -421,8 +432,6 @@ fileprivate struct SearchTextFieldStyle: TextFieldStyle {
                 .focused($isFocused)
                 .textFieldStyle(.plain)
         }
-        .padding(10)
-        .font(.title)
     }
 }
 

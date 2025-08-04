@@ -17,26 +17,50 @@ struct ContentViewDetail: View {
     @StateObject private var toolState = ToolState()
 
     var body: some View {
-        ExcalidrawContainerView()
-           .modifier(ExcalidrawContainerToolbarContentModifier())
-           .opacity(fileState.isInCollaborationSpace ? 0 : 1)
-           .overlay {
-               ExcalidrawCollabContainerView()
-                   .opacity(fileState.isInCollaborationSpace ? 1 : 0)
-                   .allowsHitTesting(fileState.isInCollaborationSpace)
-           }
+        ZStack {
+            ExcalidrawContainerView()
+                .opacity(fileState.hasAnyActiveFile ? 1 : 0)
+                .allowsHitTesting(fileState.hasAnyActiveFile)
+            
+            if !fileState.hasAnyActiveFile && !fileState.hasAnyActiveGroup {
+                // Home View
+                HomeView()
+            }
+            
+            if fileState.currentGroup != nil && fileState.currentFile == nil,
+               let group = fileState.currentGroup {
+                // File Home View
+                FileHomeView(group: group)
+            }
+            
+            if fileState.currentLocalFolder != nil && fileState.currentLocalFile == nil {
+                // Local File Home View
+            }
+            
+            if fileState.isTemporaryGroupSelected && fileState.currentTemporaryFile == nil {
+                // Temporary File Home View
+            }
+            
+        }
+        .modifier(ExcalidrawContainerToolbarContentModifier())
+        .opacity(fileState.isInCollaborationSpace ? 0 : 1)
+        .overlay {
+            ExcalidrawCollabContainerView()
+                .opacity(fileState.isInCollaborationSpace ? 1 : 0)
+                .allowsHitTesting(fileState.isInCollaborationSpace)
+        }
 #if os(iOS)
-           .modifier(ApplePencilToolbarModifier())
-           .sheet(isPresented: $isSettingsPresented) {
-               if #available(macOS 13.0, iOS 16.4, *) {
-                   SettingsView()
-                       .presentationContentInteraction(.scrolls)
-               } else {
-                   SettingsView()
-               }
-           }
+        .modifier(ApplePencilToolbarModifier())
+        .sheet(isPresented: $isSettingsPresented) {
+            if #available(macOS 13.0, iOS 16.4, *) {
+                SettingsView()
+                    .presentationContentInteraction(.scrolls)
+            } else {
+                SettingsView()
+            }
+        }
 #endif
-           .environmentObject(toolState)
+        .environmentObject(toolState)
     }
     
     private func applyToolStateWebCoordinator() {
@@ -51,3 +75,5 @@ struct ContentViewDetail: View {
 //        }
     }
 }
+
+

@@ -120,17 +120,6 @@ struct ContentView: View {
                 }
             }
         }
-        .onAppear {
-            // Wait for on open URL.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                defer { isFirstAppear = false }
-                if !fileState.hasAnyActiveGroup && isFirstAppear {
-                    Task {
-                        try? await fileState.setToDefaultGroup()
-                    }
-                }
-            }
-        }
     }
     
     @MainActor @ViewBuilder

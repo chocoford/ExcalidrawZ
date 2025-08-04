@@ -28,7 +28,7 @@ struct ExcalidrawGroupBrowser: View {
                         .font(.headline)
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(groups) { group in
-                            GroupsView(group: group)
+                            GroupsView(group: group, sortField: .updatedAt)
                         }
                     }
                 }

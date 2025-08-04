@@ -18,6 +18,7 @@ struct FileRowButton: View {
     init(
         name: String,
         updatedAt: Date?,
+        isInTrash: Bool = false,
         isSelected: Bool,
         isMultiSelected: Bool,
         onTap: @escaping () -> Void,
@@ -28,7 +29,8 @@ struct FileRowButton: View {
         self.label = AnyView(
             FileRowLabel(
                 name: name,
-                updatedAt: updatedAt ?? .distantPast
+                updatedAt: updatedAt ?? .distantPast,
+                isInTrash: isInTrash
             )
         )
         self.onTap = onTap
@@ -50,8 +52,6 @@ struct FileRowButton: View {
     
     var body: some View {
         label
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
             .contentShape(Rectangle())
             .onHover { isHovered in
                 withAnimation {

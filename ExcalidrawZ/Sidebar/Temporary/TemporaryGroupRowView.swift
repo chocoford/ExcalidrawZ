@@ -42,6 +42,7 @@ struct TemporaryGroupRowView: View {
                 }
                 Spacer()
             }
+            .padding(.vertical, 2)
             .contentShape(Rectangle())
         }
         .buttonStyle(ListButtonStyle(selected: fileState.isTemporaryGroupSelected))
