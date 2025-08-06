@@ -176,6 +176,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		391459BA2E3A18B000A45CA7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				FlexibleSplitView/components/EdgeHoverView.swift,
+			);
+			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ (AppStore) */;
+		};
 		3963A0352C6BD6B900472AE7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -296,7 +303,7 @@
 		396603E72D096D6200870AC9 /* SingleEditorView */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SingleEditorView; sourceTree = "<group>"; };
 		396603ED2D096D6500870AC9 /* Share */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Share; sourceTree = "<group>"; };
 		396603F72D096D6800870AC9 /* FileHistory */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = FileHistory; sourceTree = "<group>"; };
-		396604052D096D7100870AC9 /* components */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = components; sourceTree = "<group>"; };
+		396604052D096D7100870AC9 /* components */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (391459BA2E3A18B000A45CA7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = components; sourceTree = "<group>"; };
 		396604202D096D7400870AC9 /* Sidebar */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Sidebar; sourceTree = "<group>"; };
 		3966044D2D096D7700870AC9 /* ExclidrawView */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3966046C2D096D7700870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 3966046D2D096D7700870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 3966046E2D096D7700870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ExclidrawView; sourceTree = "<group>"; };
 		396604702D096D8100870AC9 /* Preview Content */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Preview Content"; sourceTree = "<group>"; };
@@ -891,7 +898,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 50;
+				CURRENT_PROJECT_VERSION = 51;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -936,7 +943,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 50;
+				CURRENT_PROJECT_VERSION = 51;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1042,7 +1049,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 50;
+				CURRENT_PROJECT_VERSION = 51;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;

@@ -6,10 +6,17 @@
 //
 
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 import ChocofordUI
+import SplitView
+
 
 struct ContentViewDetail: View {
+    @Environment(\.alertToast) var alertToast
+
     @EnvironmentObject var fileState: FileState
     
     @Binding var isSettingsPresented: Bool
@@ -45,6 +52,18 @@ struct ContentViewDetail: View {
             }
 #endif
             .environmentObject(toolState)
+
+        // splitViewsContent()
+        //     .environmentObject(toolState)
+    }
+    
+    @MainActor @ViewBuilder
+    private func splitViewsContent() -> some View {
+        if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *) {
+            ExcalidrawSplitViewsContainer()
+        } else if fileState.currentFiles.count > 0 {
+            ExcalidrawContainerWrapper(activeFile: $fileState.currentFiles[0])
+        }
     }
     
     private func applyToolStateWebCoordinator() {
@@ -213,8 +232,150 @@ struct ContentDetailNavigationView: View {
             } else {
                 currentGroups.removeAll()
             }
+extension FileState.ActiveFile: FlexibleItem {
+    var title: String {
+        name ?? .init(localizable: .generalUntitled)
+    }
+}
+
+@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
+struct ExcalidrawSplitViewsContainer: View {
+    @Environment(\.managedObjectContext) var viewContext
+    @Environment(\.alertToast) var alertToast
+
+    @EnvironmentObject var fileState: FileState
+    
+    var body: some View {
+        FlexibleSplitView(items: $fileState.currentFiles) { file in
+            withAnimation {
+                fileState.currentFiles.removeAll(where: {$0.id == file.id})
+            }
+        } subView: { activeFile in
+            ExcalidrawContainerWrapper(activeFile: activeFile)
         }
     }
 }
 
+
+struct ExcalidrawContainerWrapper: View {
+    @Environment(\.managedObjectContext) var viewContext
+    @Environment(\.alertToast) var alertToast
+
+    @EnvironmentObject var fileState: FileState
+
+    @Binding var activeFile: FileState.ActiveFile
+    
+    var body: some View {
+        ExcalidrawContainerView(
+            file: Binding<ExcalidrawFile?> {
+                switch activeFile {
+                    case .file(let file):
+                        return try? ExcalidrawFile(from: file.objectID, context: viewContext)
+                    case .localFile(let url):
+                        return try? ExcalidrawFile(contentsOf: url)
+                    case .temporaryFile(let url):
+                        return try? ExcalidrawFile(contentsOf: url)
+                    case .collaborationFile(let file):
+                        return try? ExcalidrawFile(from: file.objectID, context: viewContext)
+                }
+            } set: { val in
+                guard let val else { return }
+                do {
+                    switch activeFile {
+                        case .file(let file):
+                            if file.id?.uuidString == activeFile.id {
+                                // Everytime load a new file will cause an actual update.
+                                let oldElements = try ExcalidrawFile(
+                                    from: file.objectID,
+                                    context: viewContext
+                                ).elements
+                                if val.elements == oldElements {
+                                    print("[updateCurrentFile] no updates, ignored.")
+                                    return
+                                } else {
+                                    print("[updateCurrentFile] elements changed.")
+                                }
+                                fileState.updateFile(file, with: val)
+                            }
+                        case .localFile(let url):
+                            guard let folder = fileState.currentLocalFolder else { return }
+                            Task {
+                                try folder.withSecurityScopedURL { _ in
+                                    do {
+                                        let oldElements = try ExcalidrawFile(contentsOf: url).elements
+                                        if val.elements == oldElements {
+                                            print("[updateCurrentFile] no updates, ignored.")
+                                            return
+                                        } else {
+                                            print("[updateCurrentFile] elements changed.")
+                                        }
+                                        try await fileState.updateLocalFile(
+                                            to: url,
+                                            with: val,
+                                            context: viewContext
+                                        )
+                                    } catch {
+                                        alertToast(error)
+                                    }
+                                }
+                            }
+                        case .temporaryFile(let url):
+                            Task {
+                                do {
+                                    let oldElements = try ExcalidrawFile(contentsOf: url).elements
+                                    if val.elements == oldElements {
+                                        print("[updateCurrentFile] no updates, ignored.")
+                                        return
+                                    } else {
+                                        print("[updateCurrentFile] elements changed.")
+                                    }
+                                    try await fileState.updateLocalFile(
+                                        to: url,
+                                        with: val,
+                                        context: viewContext
+                                    )
+                                } catch {
+                                    alertToast(error)
+                                }
+                            }
+                        case .collaborationFile(let file):
+                            print("Not support yet...")
+                    }
+                } catch {
+                    
+                }
+            }
+        )
+        .modifier(ExcalidrawContainerToolbarContentModifier())
+        .opacity(fileState.isInCollaborationSpace ? 0 : 1)
+        .overlay {
+            ExcalidrawCollabContainerView()
+                .opacity(fileState.isInCollaborationSpace ? 1 : 0)
+                .allowsHitTesting(fileState.isInCollaborationSpace)
+        }
+#if os(iOS)
+        .modifier(ApplePencilToolbarModifier())
+        .sheet(isPresented: $isSettingsPresented) {
+            if #available(macOS 13.0, iOS 16.4, *) {
+                SettingsView()
+                    .presentationContentInteraction(.scrolls)
+            } else {
+                SettingsView()
+            }
+        }
+#endif
+//        .environmentObject(toolState)
+//        .overlay {
+//            splitViewsContent()
+//        }
+    }
+}
+
+#Preview {
+    if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *) {
+        
+    } else {
+        EmptyView()
+    }
+}
 

@@ -13,6 +13,7 @@ import UniformTypeIdentifiers
 import CoreData
 import ChocofordEssentials
 
+
 final class FileState: ObservableObject {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "FileState")
     
@@ -44,27 +45,14 @@ final class FileState: ObservableObject {
             print("freeze watchUpdate: \(Date.now.formatted(date: .omitted, time: .complete))")
             shouldIgnoreUpdate = true
             recoverWatchUpdate()
-            currentFilePublisherCancellables.forEach{$0.cancel()}
             resetSelections()
+            resetCurrentFileChangesListener()
             if let currentFile {
-                currentFilePublisherCancellables = [
-                    currentFile.publisher(for: \.name).sink { [weak self] _ in
-                        DispatchQueue.main.async {
-                            self?.objectWillChange.send()
-                        }
-                    },
-                    currentFile.publisher(for: \.updatedAt).sink { [weak self] _ in
-                        DispatchQueue.main.async {
-                            self?.objectWillChange.send()
-                        }
-                    }
-                ]
                 currentLocalFolder = nil
                 currentLocalFile = nil
                 isTemporaryGroupSelected = false
                 currentTemporaryFile = nil
                 isInCollaborationSpace = false
-                // selectedFiles = [currentFile]
             }
             
 //            Task {
@@ -75,6 +63,69 @@ final class FileState: ObservableObject {
 //            }
         }
     }
+    
+    enum ActiveFile: Identifiable, Equatable {
+        case file(File)
+        case localFile(URL)
+        case temporaryFile(URL)
+        case collaborationFile(CollaborationFile)
+        
+        var id: String {
+            switch self {
+                case .file(let file):
+                    (file.id ?? UUID()).uuidString
+                case .localFile(let url):
+                    url.absoluteString
+                case .temporaryFile(let url):
+                    url.absoluteString
+                case .collaborationFile(let collaborationFile):
+                    collaborationFile.id?.uuidString ?? UUID().uuidString
+            }
+        }
+        
+        var name: String? {
+            switch self {
+                case .file(let file):
+                    file.name
+                case .localFile(let url):
+                    url.deletingPathExtension().lastPathComponent
+                case .temporaryFile(let url):
+                    url.deletingPathExtension().lastPathComponent
+                case .collaborationFile(let file):
+                    file.name
+            }
+        }
+    }
+    
+    @Published var activeFileIndex: Int?
+    @Published var currentFiles: [ActiveFile] = [] {
+        willSet {
+            guard let activeFileIndex else { return }
+            self.activeFileIndex = min(newValue.endIndex - 1, activeFileIndex)
+        }
+        didSet {
+            
+        }
+    }
+    var currentActiveFile: ActiveFile? {
+        get {
+            if let activeFileIndex, activeFileIndex < currentFiles.count {
+                return currentFiles[activeFileIndex]
+            }
+            return nil
+        }
+        
+        set {
+            if let activeFileIndex, activeFileIndex < currentFiles.count {
+                if let newValue {
+                    currentFiles[activeFileIndex] = newValue
+                } else {
+                    currentFiles.remove(at: activeFileIndex)
+                }
+            }
+        }
+    }
+    
     @Published var selectedFiles: Set<File> = []
     @Published var selectedStartFile: File?
     
@@ -223,6 +274,7 @@ final class FileState: ObservableObject {
     var shouldIgnoreUpdate = true
     /// Indicate the file is being updated after being set as current file.
     var didUpdateFile = false
+    var didUpdateFileState: [NSManagedObjectID : Bool] = [:]
     var isCreatingFile = false
     
     var recoverWatchUpdateWorkItem: DispatchWorkItem?
@@ -319,48 +371,48 @@ final class FileState: ObservableObject {
     }
     
     func updateCurrentFile(with excalidrawFile: ExcalidrawFile) {
-        guard !shouldIgnoreUpdate, currentFile?.inTrash != true else {
-            return
-        }
         if let file = self.currentFile {
-            let didUpdateFile = didUpdateFile
-            let id = file.objectID
-            let bgContext = PersistenceController.shared.container.newBackgroundContext()
-            
-            Task.detached {
-                do {
-                    try await bgContext.perform {
-                        guard let file = bgContext.object(with: id) as? File,
-                              let content = excalidrawFile.content else { return }
-                        
-                        try file.updateElements(
-                            with: content,
-                            newCheckpoint: !didUpdateFile
-                        )
-                        let newMedias = excalidrawFile.files.filter { (id, _) in
-                            file.medias?.contains(where: {
-                                ($0 as? MediaItem)?.id == id
-                            }) != true
-                        }
-                        
-                        // also update medias
-                        for (_, resource) in newMedias {
-                            let mediaItem = MediaItem(resource: resource, context: bgContext)
-                            mediaItem.file = file
-                            bgContext.insert(mediaItem)
-                        }
-                        
-                        try bgContext.save()
+            updateFile(file, with: excalidrawFile)
+        }
+    }
+    
+    func updateFile(_ file: File, with excalidrawFile: ExcalidrawFile) {
+        guard !shouldIgnoreUpdate, !file.inTrash else { return }
+        let didUpdateFile = didUpdateFileState[file.objectID] ?? false
+        let id = file.objectID
+        let bgContext = PersistenceController.shared.container.newBackgroundContext()
+        
+        Task.detached {
+            do {
+                try await bgContext.perform {
+                    guard let file = bgContext.object(with: id) as? File,
+                          let content = excalidrawFile.content else { return }
+                    
+                    try file.updateElements(
+                        with: content,
+                        newCheckpoint: !didUpdateFile
+                    )
+                    let newMedias = excalidrawFile.files.filter { (id, _) in
+                        file.medias?.contains(where: {
+                            ($0 as? MediaItem)?.id == id
+                        }) != true
                     }
-                    await MainActor.run {
-                        self.didUpdateFile = true
+                    
+                    // also update medias
+                    for (_, resource) in newMedias {
+                        let mediaItem = MediaItem(resource: resource, context: bgContext)
+                        mediaItem.file = file
+                        bgContext.insert(mediaItem)
                     }
-                } catch {
-                    print(error)
+                    
+                    try bgContext.save()
                 }
+                await MainActor.run {
+                    self.didUpdateFileState[id] = true
+                }
+            } catch {
+                print(error)
             }
-        } else if !isCreatingFile {
-            
         }
     }
     
@@ -823,7 +875,28 @@ final class FileState: ObservableObject {
         }
     }
     
+    /// Reset the current file changes listener.
+    /// Everytime the current file changes, the listeners will send a `objectWillChange` event.
+    private func resetCurrentFileChangesListener() {
+        currentFilePublisherCancellables.forEach{$0.cancel()}
+        
+        if let currentFile {
+            currentFilePublisherCancellables = [
+                currentFile.publisher(for: \.name).sink { [weak self] _ in
+                    DispatchQueue.main.async {
+                        self?.objectWillChange.send()
+                    }
+                },
+                currentFile.publisher(for: \.updatedAt).sink { [weak self] _ in
+                    DispatchQueue.main.async {
+                        self?.objectWillChange.send()
+                    }
+                }
+            ]
+        }
+    }
     
+    /// Reset all selections to empty.
     public func resetSelections() {
         self.selectedFiles = []
         self.selectedStartFile = nil

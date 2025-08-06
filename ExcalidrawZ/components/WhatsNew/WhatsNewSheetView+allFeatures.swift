@@ -16,11 +16,6 @@ extension WhatsNewView {
             icon: Image(systemSymbol: .person2CropSquareStack)
         )
         
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewCustomFontTitle),
-            description: .localizable(.whatsNewCustomFontDescription),
-            icon: Image(systemSymbol: .character)
-        )
         
 #if os(iOS)
         if UIDevice().userInterfaceIdiom == .pad {
@@ -30,9 +25,9 @@ extension WhatsNewView {
         }
 #else
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewSidebarFilesMultiSelectTitle),
-            description: .localizable(.whatsNewSidebarFilesMultiSelectDescription),
-            icon: Image(systemSymbol: .filemenuAndSelection)
+            title: .localizable(.whatsNewCustomFontTitle),
+            description: .localizable(.whatsNewCustomFontDescription),
+            icon: Image(systemSymbol: .character)
         )
 #endif
     }

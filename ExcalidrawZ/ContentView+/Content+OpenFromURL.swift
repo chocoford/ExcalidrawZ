@@ -119,7 +119,7 @@ struct OpenFromURLModifier: ViewModifier {
                     }
                     try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.1))
                     await MainActor.run {
-                        fileState.currentLocalFile = url
+                        fileState.currentActiveFile = .localFile(url)
                     }
                 }
             }

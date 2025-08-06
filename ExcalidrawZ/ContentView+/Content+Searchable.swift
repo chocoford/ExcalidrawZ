@@ -290,7 +290,7 @@ struct SerachContent: View {
                                     fetchRequest.predicate = NSPredicate(format: "filePath = %@", file.deletingLastPathComponent().filePath)
                                     if let folder = try viewContext.fetch(fetchRequest).first {
                                         fileState.currentLocalFolder = folder
-                                        fileState.currentLocalFile = file
+                                        fileState.currentActiveFile = .localFile(file)
                                         fileState.expandToGroup(folder.objectID)
                                         dismiss()
                                     }
@@ -420,7 +420,7 @@ struct SerachContent: View {
                         fetchRequest.predicate = NSPredicate(format: "filePath = %@", file.deletingLastPathComponent().filePath)
                         if let folder = try viewContext.fetch(fetchRequest).first {
                             fileState.currentLocalFolder = folder
-                            fileState.currentLocalFile = file
+                            fileState.currentActiveFile = .localFile(file)
                             fileState.expandToGroup(folder.objectID)
                             dismiss()
                         }

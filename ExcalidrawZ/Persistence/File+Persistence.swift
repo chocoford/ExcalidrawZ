@@ -67,6 +67,32 @@ extension File {
         
 //        return true
     }
+    
+//    func update(file: ExcalidrawFile, context: NSManagedObjectContext) async throws {
+//        try await context.perform {
+//            guard let file = context.object(with: id) as? File,
+//                  let content = excalidrawFile.content else { return }
+//            
+//            try file.updateElements(
+//                with: content,
+//                newCheckpoint: !didUpdateFile
+//            )
+//            let newMedias = excalidrawFile.files.filter { (id, _) in
+//                file.medias?.contains(where: {
+//                    ($0 as? MediaItem)?.id == id
+//                }) != true
+//            }
+//            
+//            // also update medias
+//            for (_, resource) in newMedias {
+//                let mediaItem = MediaItem(resource: resource, context: bgContext)
+//                mediaItem.file = file
+//                bgContext.insert(mediaItem)
+//            }
+//            
+//            try bgContext.save()
+//        }
+//    }
 }
 
 struct FileLocalizable: Codable {

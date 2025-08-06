@@ -54,7 +54,7 @@ struct LocalFileRowView: View {
     
     var body: some View {
         FileRowButton(
-            isSelected: fileState.currentLocalFile == file || isWaitingForOpeningFile,
+            isSelected: fileState.currentActiveFile == .localFile(file) || isWaitingForOpeningFile,
             isMultiSelected: fileState.selectedLocalFiles.contains(file)
         ) {
 #if os(macOS)
@@ -90,10 +90,10 @@ struct LocalFileRowView: View {
                 }
                 fileState.selectedLocalFiles.insertOrRemove(file)
             } else {
-                fileState.currentLocalFile = file
+                fileState.currentActiveFile = .localFile(file)
             }
 #else
-            fileState.currentLocalFile = file
+            fileState.currentActiveFile = .localFile(file)
 #endif
         } label: {
             FileRowLabel(
@@ -171,8 +171,10 @@ struct LocalFileRowView: View {
             updateModifiedDate()
             updateICloudFileState()
         }
-        .onChange(of: fileState.currentLocalFile) { newValue in
-            if newValue != file && isWaitingForOpeningFile {
+        .onChange(of: fileState.currentActiveFile) { newValue in
+            if case .localFile(let localFile) = newValue,
+               localFile != file,
+               isWaitingForOpeningFile {
                 isWaitingForOpeningFile = false
             }
         }
@@ -308,7 +310,7 @@ struct LocalFileRowView: View {
                     
                     // Update local file ID mapping
                     ExcalidrawFile.localFileURLIDMapping[newURL] = ExcalidrawFile.localFileURLIDMapping[file]
-                    self.fileState.currentLocalFile = newURL
+                    self.fileState.currentActiveFile = .localFile(newURL)
                     ExcalidrawFile.localFileURLIDMapping[file] = nil
                     
                     // Also update checkpoints
@@ -363,7 +365,7 @@ struct LocalFileRowView: View {
                     }
                 }
                 if let fileToBeActive {
-                    fileState.currentLocalFile = fileToBeActive
+                    fileState.currentActiveFile = .localFile(fileToBeActive)
                 }
             }
         } catch {
@@ -417,10 +419,10 @@ struct LocalFileRowView: View {
                                     }
                                     Task {
                                         await MainActor.run {
-                                            if fileState.currentLocalFile == file {
+                                            if fileState.currentActiveFile == .localFile(file) {
                                                 DispatchQueue.main.async {
                                                     fileState.currentLocalFolder = viewContext.object(with: targetFolderID) as? LocalFolder
-                                                    fileState.currentLocalFile = newURL
+                                                    fileState.currentActiveFile = .localFile(newURL)
                                                     fileState.expandToGroup(targetFolderID)
                                                 }
                                             }
@@ -502,7 +504,7 @@ struct LocalFileRowView: View {
                 
                 if isWaitingForOpeningFile, iCloudState.downloadStatus == .current {
                     isWaitingForOpeningFile = false
-                    fileState.currentLocalFile = file
+                    fileState.currentActiveFile = .localFile(file)
                 }
             } else {
                 iCloudState = nil
@@ -549,7 +551,7 @@ struct LocalFileRowView: View {
                 let folderURL = self.file.deletingLastPathComponent()
                 let contents = try FileManager.default.contentsOfDirectory(at: folderURL, includingPropertiesForKeys: [.nameKey])
                 let file = contents.first(where: {$0.pathExtension == "excalidraw"})
-                fileState.currentLocalFile = file
+                fileState.currentActiveFile = file == nil ? nil : .localFile(file!)
             }
         } catch {
             alertToast(error)

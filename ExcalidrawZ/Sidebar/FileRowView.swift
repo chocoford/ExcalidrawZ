@@ -118,10 +118,10 @@ struct FileRowView: View {
                 }
                 fileState.selectedFiles.insertOrRemove(file)
             } else {
-                fileState.currentFile = file
+                fileState.currentActiveFile = .file(file)
             }
 #else
-            fileState.currentFile = file
+            fileState.currentActiveFile = .file(file)
 #endif
         }
         .modifier(FileRowDragDropModifier(file: file, sortField: fileState.sortField))
