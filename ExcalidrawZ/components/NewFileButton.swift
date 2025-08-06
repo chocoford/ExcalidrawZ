@@ -25,6 +25,16 @@ struct NewFileButton: View {
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var collaborationState: CollaborationState
     
+    
+    var openWithDelay: Bool
+    
+    init(
+        openWithDelay: Bool = false
+    ) {
+        self.openWithDelay = openWithDelay
+    }
+
+    
 #if canImport(AppKit)
     @State private var window: NSWindow?
 #elseif canImport(UIKit)
@@ -35,8 +45,6 @@ struct NewFileButton: View {
     
     @FetchRequest(sortDescriptors: [])
     private var collaborationFiles: FetchedResults<CollaborationFile>
-    
-    init() {}
     
     var body: some View {
 #if os(iOS)
@@ -93,10 +101,20 @@ struct NewFileButton: View {
             }
             .keyboardShortcut("n", modifiers: [.command, .option, .shift])
         } label: {
-            Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
+            ZStack {
+                Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
+                    .opacity(isCreatingFile ? 0.0 : 1.0)
+                
+                if isCreatingFile {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .controlSize(.small)
+                }
+            }
         } primaryAction: {
             createNewFile()
         }
+        .fixedSize()
         .bindWindow($window)
         .help(.localizable(.createNewFile))
         .disabled(fileState.currentGroup?.groupType == .trash || fileState.isTemporaryGroupSelected)
@@ -144,14 +162,40 @@ struct NewFileButton: View {
         .disabled(collaborationState.userCollaborationInfo.username.isEmpty)
     }
     
+    @State private var isCreatingFile = false
+    
     private func createNewFile() {
+        guard !isCreatingFile else { return }
+        
+        isCreatingFile = true
+        
         do {
             if fileState.currentGroup != nil {
-                try fileState.createNewFile(context: viewContext)
+                let fileID = try withAnimation(.smooth) {
+                    try fileState.createNewFile(active: !openWithDelay, context: viewContext)
+                }
+                Task {
+                    do {
+                        try await viewContext.perform {
+                            if let file = viewContext.object(with: fileID) as? File {
+                                file.visitedAt = .now
+                            }
+                            try viewContext.save()
+                        }
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                            fileState.currentFile = viewContext.object(with: fileID) as? File
+                            isCreatingFile = false
+                        }
+                    } catch {
+                        alertToast(error)
+                    }
+                }
             } else if let folder = fileState.currentLocalFolder {
                 try folder.withSecurityScopedURL { scopedURL in
                     do {
-                        try await fileState.createNewLocalFile(folderURL: scopedURL)
+                        try await fileState.createNewLocalFile(active: !openWithDelay, folderURL: scopedURL)
+                        isCreatingFile = false
                     } catch {
                         alertToast(error)
                     }

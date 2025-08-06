@@ -23,6 +23,14 @@ struct ExcalidrawContainerView: View {
     
     @EnvironmentObject private var fileState: FileState
     
+    var interactionEnabled: Bool
+    
+    init(
+        interactionEnabled: Bool = true
+    ) {
+        self.interactionEnabled = interactionEnabled
+    }
+    
     @State private var loadingState = ExcalidrawView.LoadingState.loading
     @State private var isProgressViewPresented = true
     
@@ -122,7 +130,7 @@ struct ExcalidrawContainerView: View {
             ExcalidrawView(
                 file: fileBinding,
                 loadingState: $loadingState,
-                interactionEnabled: !fileState.isInCollaborationSpace
+                interactionEnabled: interactionEnabled,
             ) { error in
                 alertToast(error)
             }

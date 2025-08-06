@@ -52,10 +52,12 @@ struct SearchableModifier: ViewModifier {
                 }
             }
             .sheet(isPresented: $isSearchSheetPresented) {
-                SerachContent()
-                    .swiftyAlert()
+                SerachContent {
+                    isSearchSheetPresented = false
+                }
+                .swiftyAlert()
 #if os(macOS)
-                    .frame(width: 500, height: 400)
+                .frame(width: 500, height: 400)
 #endif
             }
             .environment(\.searchExcalidrawAction, SearchExcalidrawAction(isSearchPresented: $isSearchSheetPresented))
@@ -64,18 +66,20 @@ struct SearchableModifier: ViewModifier {
 
 struct SerachContent: View {
     @Environment(\.managedObjectContext) private var viewContext
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.alertToast) private var alertToast
     
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var fileState: FileState
     
     var withDismissButton: Bool
+    var dismiss: () -> Void
     
     init(
-        withDismissButton: Bool = true
+        withDismissButton: Bool = true,
+        dismissAction: @escaping () -> Void
     ) {
         self.withDismissButton = withDismissButton
+        self.dismiss = dismissAction
     }
     
     @State private var searchText = ""
@@ -88,37 +92,44 @@ struct SerachContent: View {
     @State private var isSearching = false
     
     @State private var selectionIndex: Int?
+    
+    @FocusState private var isFocused: Bool
 #if os(iOS)
     let tapSelectCount = 1
 #elseif os(macOS)
-    let tapSelectCount = 2
+    let tapSelectCount = 1
 #endif
     
     var body: some View {
         VStack(spacing: 0) {
-            TextField("", text: $searchText, prompt: Text(.localizable(.searchFieldPropmtText)))
-                .textFieldStyle(SearchTextFieldStyle())
-                .submitLabel(.go)
-                .onSubmit {
-                    guard let selectionIndex else { return }
-                    onSelect(selectionIndex)
-                }
-                .overlay(alignment: .trailing) {
-                    if withDismissButton {
-                        Button {
-                            dismiss()
-                        } label: {
-                            Label(.localizable(.generalButtonCancel), systemSymbol: .xmarkCircleFill)
-                                .labelStyle(.iconOnly)
-                                .foregroundStyle(.secondary)
-                                .padding()
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.borderless)
-                        .keyboardShortcut(.escape)
-                        .padding(.trailing, 20)
+            TextField(
+                "",
+                text: $searchText,
+                prompt: Text(.localizable(.searchFieldPropmtText))
+            )
+            .textFieldStyle(SearchTextFieldStyle())
+            .focused($isFocused)
+            .submitLabel(.go)
+            .onSubmit {
+                guard let selectionIndex else { return }
+                onSelect(selectionIndex)
+            }
+            .overlay(alignment: .trailing) {
+                if withDismissButton {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Label(.localizable(.generalButtonCancel), systemSymbol: .xmarkCircleFill)
+                            .labelStyle(.iconOnly)
+                            .foregroundStyle(.secondary)
+                            .padding()
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.borderless)
+                    .keyboardShortcut(.escape)
+                    .padding(.trailing, 20)
                 }
+            }
 
             Divider()
 
@@ -167,6 +178,7 @@ struct SerachContent: View {
                 }
                 return nsevent
             }
+            isFocused = true
         }
 #endif
         .onDisappear {
@@ -432,6 +444,7 @@ fileprivate struct SearchTextFieldStyle: TextFieldStyle {
                 .focused($isFocused)
                 .textFieldStyle(.plain)
         }
+        .padding(10)
     }
 }
 
@@ -514,5 +527,7 @@ fileprivate struct SearchItemRow: View {
 }
 
 #Preview {
-    SerachContent()
+    SerachContent() {
+        
+    }
 }

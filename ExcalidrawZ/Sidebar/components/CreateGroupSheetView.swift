@@ -7,6 +7,87 @@
 
 import SwiftUI
 
+struct CreateGroupModifier: ViewModifier {
+    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.alertToast) private var alertToast
+    @EnvironmentObject var fileState: FileState
+    
+    
+    @FetchRequest(
+        sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],
+        predicate: NSPredicate(format: "parent = nil")
+    )
+    var groups: FetchedResults<Group>
+    
+    @Binding var isPresented: Bool
+    
+    init(isPresented: Binding<Bool>) {
+        self._isPresented = isPresented
+    }
+    
+    @State private var initialNewGroupName = ""
+    
+    func body(content: Content) -> some View {
+        content
+        .sheet(isPresented: $isPresented) {
+            if containerHorizontalSizeClass == .compact {
+                createFolderSheetView()
+#if os(iOS)
+                    .presentationDetents([.height(140)])
+                    .presentationDragIndicator(.visible)
+#endif
+            } else if #available(iOS 18.0, macOS 13.0, *) {
+                createFolderSheetView()
+                    .scrollDisabled(true)
+                    .frame(width: 400, height: 140)
+#if os(iOS)
+                    .presentationSizing(.fitted)
+#endif
+            } else {
+                createFolderSheetView()
+            }
+        }
+        .onChange(of: groups.count) { _ in
+            initialNewGroupName = getNextGroupName()
+        }
+        .onAppear {
+            initialNewGroupName = getNextGroupName()
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func createFolderSheetView() -> some View {
+        CreateGroupSheetView(
+            name: $initialNewGroupName,
+            createType: .group
+        ) { name in
+            Task {
+                do {
+                    try await fileState.createNewGroup(
+                        name: name,
+                        activate: true,
+                        context: viewContext
+                    )
+                } catch {
+                    alertToast(error)
+                }
+            }
+        }
+    }
+    
+    func getNextGroupName() -> String {
+        let name = String(localizable: .sidebarGroupListCreateNewGroupNamePlaceholder)
+        var result = name
+        var i = 1
+        while groups.first(where: {$0.name == result}) != nil {
+            result = "\(name) \(i)"
+            i += 1
+        }
+        return result
+    }
+}
+
 struct CreateGroupSheetView: View {
     @Environment(\.dismiss) var dismiss
     

@@ -21,13 +21,16 @@ struct HomeView: View {
     @EnvironmentObject private var fileState: FileState
     
     @FetchRequest(
-        sortDescriptors: [.init(keyPath: \File.updatedAt, ascending: false)],
+        sortDescriptors: [
+            .init(keyPath: \File.updatedAt, ascending: false),
+            .init(keyPath: \File.visitedAt, ascending: false)
+        ],
         predicate: NSPredicate(format: "inTrash == false"),
         animation: .default
     )
     private var files: FetchedResults<File>
     
-    @FocusState private var inputTextFieldFocused: Bool
+    @State private var isSearchPresented: Bool = false
     
     @State private var inputText: String = ""
     
@@ -37,7 +40,7 @@ struct HomeView: View {
         Color.clear
             .contentShape(Rectangle())
             .onTapGesture {
-                inputTextFieldFocused = false
+                isSearchPresented = false
                 selectedRecntlyFiles.removeAll()
             }
             .overlay {
@@ -53,23 +56,37 @@ struct HomeView: View {
                 Text("Welcome to ExcalidrawZ")
                     .font(.largeTitle)
                 
-                TextField("", text: $inputText)
-                    .textFieldStyle(.outlined(prepend: {
-                        Image(systemSymbol: .magnifyingglass)
-                            .foregroundStyle(.secondary)
-                    }))
-                    .focused($inputTextFieldFocused)
-                    .frame(maxWidth: 500)
-                    .background {
-                        Color.clear
-                            .anchorPreference(
-                                key: BoundsPreferenceKey.self,
-                                value: .bounds
-                            ) {
-                                ["InputField" : $0]
-                            }
+                HStack(spacing: 8) {
+                    Image(systemSymbol: .magnifyingglass)
+                    Text(.localizable(.searchFieldPropmtText))
+                        .foregroundStyle(.secondary.opacity(0.4))
+                    Spacer()
+                }
+                .padding(10)
+                .frame(maxWidth: 500)
+                .hoverCursor(.iBeam)
+                .contentShape(Rectangle())
+                .simultaneousGesture(TapGesture().onEnded {
+                    isSearchPresented.toggle()
+                })
+                .background {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.textBackgroundColor)
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.separatorColor, lineWidth: 0.5)
                     }
-                    
+                    .compositingGroup()
+                    .shadow(radius: 0.5, y: 0.5)
+                    .padding(1)
+                    .anchorPreference(
+                        key: BoundsPreferenceKey.self,
+                        value: .bounds
+                    ) {
+                        ["InputField" : $0]
+                    }
+                }
+                
                 
                 ZStack {
                     VStack(spacing: 30) {
@@ -88,7 +105,6 @@ struct HomeView: View {
                                                 selectedRecntlyFiles.contains(file)
                                             } set: { val in
                                                 if val {
-                                                    //                                        selectedRecntlyFiles.insert(file)
                                                     selectedRecntlyFiles = [file]
                                                 } else {
                                                     selectedRecntlyFiles.remove(file)
@@ -119,17 +135,25 @@ struct HomeView: View {
                             }
                         }
                     }
-                    .opacity(inputText.isEmpty ? 1 : 0)
+                    // .opacity(inputText.isEmpty ? 1 : 0)
                 }
             }
             .frame(maxWidth: 720)
             .padding(40)
             .overlayPreferenceValue(BoundsPreferenceKey.self) { key in
-                if inputTextFieldFocused, let anchor = key["InputField"] {
-                    GeometryReader { geomerty in
-                        let rect = geomerty[anchor]
-                        
-                        SerachContent(withDismissButton: false)
+                if isSearchPresented, let anchor = key["InputField"] {
+                    ZStack {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                isSearchPresented = false
+                            }
+                        GeometryReader { geomerty in
+                            let rect = geomerty[anchor]
+                            
+                            SerachContent(withDismissButton: false) {
+                                isSearchPresented = false
+                            }
                             .background {
                                 RoundedRectangle(cornerRadius: 6)
                                     .fill(.background)
@@ -138,6 +162,7 @@ struct HomeView: View {
                             .frame(width: rect.width, height: 500)
                             .offset(x: rect.minX, y: rect.minY)
                             .animation(.bouncy, value: rect)
+                        }
                     }
                 }
             }
@@ -149,13 +174,10 @@ struct HomeView: View {
 private struct APreviewView: View {
     var body: some View {
         VStack {
-            
-                Image(systemName: "globe")
-                    .imageScale(.large)
-                    .foregroundStyle(.tint)
-                Text("Hello, world!")
-                
-                
+            Image(systemName: "globe")
+                .imageScale(.large)
+                .foregroundStyle(.tint)
+            Text("Hello, world!")
         }
         .padding()
     }
@@ -166,5 +188,5 @@ private struct APreviewView: View {
         .environmentObject(FileState())
         .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }
-#endif
+#endif // DEBUG
 

@@ -58,27 +58,7 @@ struct GroupListView: View {
     
     var body: some View {
         content
-            .sheet(isPresented: $isCreateGroupDialogPresented) {
-                if containerHorizontalSizeClass == .compact {
-                    createFolderSheetView()
-#if os(iOS)
-                        .presentationDetents([.height(140)])
-                        .presentationDragIndicator(.visible)
-#endif
-                } else if #available(iOS 18.0, macOS 13.0, *) {
-                    createFolderSheetView()
-                        .scrollDisabled(true)
-                        .frame(width: 400, height: 140)
-#if os(iOS)
-                        .presentationSizing(.fitted)
-#endif
-                } else {
-                    createFolderSheetView()
-                }
-            }
-            .onAppear {
-                initialNewGroupName = getNextGroupName()
-            }
+            .modifier(CreateGroupModifier(isPresented: $isCreateGroupDialogPresented))
     }
     
     @MainActor @ViewBuilder
@@ -210,7 +190,6 @@ struct GroupListView: View {
                       !displayedGroups.contains(where: {$0 == fileState.currentGroup}) {
                 fileState.currentGroup = displayedGroups.first
             }
-            initialNewGroupName = getNextGroupName()
         }
     }
     
@@ -239,28 +218,6 @@ struct GroupListView: View {
             )
         }
         .menuIndicator(.hidden)
-    }
-    
-    @State private var initialNewGroupName: String = ""
-    
-    @MainActor @ViewBuilder
-    private func createFolderSheetView() -> some View {
-        CreateGroupSheetView(
-            name: $initialNewGroupName,
-            createType: createGroupType
-        ) { name in
-            Task {
-                do {
-                    try await fileState.createNewGroup(
-                        name: name,
-                        activate: true,
-                        context: viewContext
-                    )
-                } catch {
-                    alertToast(error)
-                }
-            }
-        }
     }
     
     @MainActor @ViewBuilder
@@ -317,17 +274,6 @@ struct GroupListView: View {
         .menuIndicator(.hidden)
         .fixedSize()
         .disabled(fileState.isTemporaryGroupSelected || !fileState.hasAnyActiveGroup)
-    }
-    
-    func getNextGroupName() -> String {
-        let name = String(localizable: .sidebarGroupListCreateNewGroupNamePlaceholder)
-        var result = name
-        var i = 1
-        while groups.first(where: {$0.name == result}) != nil {
-            result = "\(name) \(i)"
-            i += 1
-        }
-        return result
     }
     
     private func importLocalFolders(urls: [URL]) {

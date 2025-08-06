@@ -105,7 +105,18 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             }
             
 #if os(macOS)
-            title()
+            if fileState.currentGroup != nil {
+                Button {
+                    if fileState.currentFile != nil {
+                        fileState.currentFile = nil
+                    } else {
+                        fileState.currentGroup = fileState.currentGroup?.parent
+                    }
+                } label: {
+                    Label(.localizable(.navigationButtonBack), systemSymbol: .chevronBackward)
+                }
+                title()
+            }
 #endif
 
             if #available(macOS 13.0, iOS 16.0, *) { } else {

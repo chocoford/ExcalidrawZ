@@ -16,8 +16,11 @@ struct HomeFolderItemView: View {
     var itemsCount: Int
     
     var body: some View {
-        HStack {
+        HStack(spacing: 10) {
             Image(systemSymbol: .folderFill)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 24)
                 .foregroundStyle(Color(red: 12/255.0, green: 157/255.0, blue: 229/255.0))
             
             VStack(alignment: .leading) {
@@ -35,8 +38,9 @@ struct HomeFolderItemView: View {
         .padding(.vertical, 12)
         .background {
             RoundedRectangle(cornerRadius: 12)
-                .fill(.regularMaterial)
+                .fill(.background)
                 .shadow(color: Color.gray.opacity(0.2), radius: 4)
+            
             RoundedRectangle(cornerRadius: 12)
                 .stroke(
                     isSelected

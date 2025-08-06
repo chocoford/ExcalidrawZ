@@ -66,6 +66,13 @@ final class FileState: ObservableObject {
                 isInCollaborationSpace = false
                 // selectedFiles = [currentFile]
             }
+            
+//            Task {
+//                try? await PersistenceController.shared.container.viewContext.perform {
+//                    self.currentFile?.visitedAt = .now
+//                    try PersistenceController.shared.container.viewContext.save()
+//                }
+//            }
         }
     }
     @Published var selectedFiles: Set<File> = []
@@ -260,7 +267,8 @@ final class FileState: ObservableObject {
         }
     }
     
-    func createNewFile(active: Bool = true, context: NSManagedObjectContext) throws {
+    @discardableResult
+    func createNewFile(active: Bool = true, context: NSManagedObjectContext) throws -> NSManagedObjectID {
         guard let currentGroup else { throw AppError.stateError(.currentGroupNil) }
         let file = File(name: String(localizable: .newFileNamePlaceholder), context: context)
         guard let group = context.object(with: currentGroup.objectID) as? Group else {
@@ -276,6 +284,8 @@ final class FileState: ObservableObject {
             currentFile = file
         }
         try context.save()
+        
+        return file.objectID
     }
     
     func updateCurrentFileData(data: Data) {
@@ -748,7 +758,7 @@ final class FileState: ObservableObject {
         }
     }
     
-    public func expandToGroup(_ groupID: NSManagedObjectID) {
+    public func expandToGroup(_ groupID: NSManagedObjectID, expandSelf: Bool = true) {
         let context = PersistenceController.shared.container.newBackgroundContext()
         Task.detached {
             await context.perform {
@@ -770,7 +780,8 @@ final class FileState: ObservableObject {
                         }
                     }
                 }
-                Task { [groupIDs] in
+                print("expandToGroup: \(groupIDs.map { $0.description })")
+                Task { [groupIDs, expandSelf] in
                     for groupId in groupIDs {
                         await MainActor.run {
                             NotificationCenter.default.post(
@@ -779,6 +790,14 @@ final class FileState: ObservableObject {
                             )
                         }
                         try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.2))
+                    }
+                    if expandSelf {
+                        await MainActor.run {
+                            NotificationCenter.default.post(
+                                name: .shouldExpandGroup,
+                                object: groupID
+                            )
+                        }
                     }
                 }
             }

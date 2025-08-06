@@ -172,6 +172,7 @@ extension ExcalidrawView {
     }
     
     func updateExcalidrawWebView(_ webView: ExcalidrawWebView, context: Context) {
+        
         Task {
             try? await context.coordinator.toggleWebPointerEvents(enabled: interactionEnabled)
         }
