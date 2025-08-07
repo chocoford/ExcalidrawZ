@@ -195,7 +195,7 @@ struct SingleEditorView: View {
                     }
                     NotificationCenter.default.post(
                         name: .didImportToExcalidrawZ,
-                        object: fileState.currentFile?.id
+                        object: fileState.currentActiveFile?.id
                     )
                 }
             } catch {

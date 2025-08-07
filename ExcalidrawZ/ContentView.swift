@@ -160,12 +160,12 @@ struct ContentView: View {
     }
     
     private func handleOpenFromURLs(_ notification: Notification) {
-        if let urls = notification.object as? [URL] {
+        if let urls = notification.object as? [URL], !urls.isEmpty {
             fileState.temporaryFiles.append(contentsOf: urls)
             fileState.temporaryFiles = Array(Set(fileState.temporaryFiles))
-            if !fileState.isTemporaryGroupSelected || fileState.currentTemporaryFile == nil {
-                fileState.isTemporaryGroupSelected = true
-                fileState.currentTemporaryFile = fileState.temporaryFiles.first
+            if fileState.currentActiveFile == nil || fileState.currentActiveGroup != .temporary {
+                fileState.currentActiveGroup = .temporary
+                fileState.currentActiveFile = .localFile(fileState.temporaryFiles.first!)
             }
         }
     }

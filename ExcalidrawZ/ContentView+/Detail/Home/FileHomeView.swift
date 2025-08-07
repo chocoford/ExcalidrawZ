@@ -173,7 +173,7 @@ struct FileHomeView: View {
                                     itemsCount: group.files?.count ?? 0
                                 )
                                 .simultaneousGesture(TapGesture(count: 2).onEnded {
-                                    fileState.currentGroup = group
+                                    fileState.currentActiveGroup = .group(group)
                                     fileState.expandToGroup(group.objectID)
                                 })
                                 .simultaneousGesture(TapGesture().onEnded {

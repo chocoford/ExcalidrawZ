@@ -158,13 +158,13 @@ struct ExcalidrawContainerView: View {
                         .progressViewStyle(.circular)
                     Text(.localizable(.webViewLoadingText))
                 }
-            } else if fileState.currentFile?.inTrash == true {
+            } else if case .file(let file) = fileState.currentActiveFile, file.inTrash {
                 recoverOverlayView
             }
         }
         .ignoresSafeArea(.container, edges: .bottom)
         .overlay(alignment: .top) {
-            if isImporting, loadingState == .loaded, fileState.currentGroup != nil {
+            if isImporting, loadingState == .loaded, fileState.currentActiveGroup != nil {
                 HStack {
                     ProgressView().controlSize(.small)
                     Text(.localizable(.iCloudSyncingDataTitle))
@@ -191,7 +191,7 @@ struct ExcalidrawContainerView: View {
                         DispatchQueue.main.async {
                             if event.type == .import, !event.succeeded {
                                 isImporting = true
-                                if let file = fileState.currentFile {
+                                if case .file(let file) = fileState.currentActiveFile {
                                     self.fileBeforeImporting = try? ExcalidrawFile(
                                         from: file.objectID,
                                         context: viewContext
@@ -200,7 +200,7 @@ struct ExcalidrawContainerView: View {
                             }
                             if event.type == .import, event.succeeded, isImporting {
                                 isImporting = false
-                                if let file = fileState.currentFile,
+                                if case .file(let file) = fileState.currentActiveFile,
                                    let fileAfterImporting = try? ExcalidrawFile(from: file.objectID, context: viewContext) {
                                      
                                     if fileBeforeImporting?.elements == fileAfterImporting.elements {
@@ -209,7 +209,10 @@ struct ExcalidrawContainerView: View {
                                         // if local changes is all beyond cloud, do nothing
                                     } else {
                                         // force reload current file.
-                                        fileState.excalidrawWebCoordinator?.loadFile(from: fileState.currentFile, force: true)
+                                        fileState.excalidrawWebCoordinator?.loadFile(
+                                            from: file,
+                                            force: true
+                                        )
                                     }
                                 }
                             }
@@ -240,8 +243,15 @@ struct ExcalidrawContainerView: View {
                 
                 Button {
                     // Recover file
-                    if let currentFile = fileState.currentFile {
-                        fileState.recoverFile(currentFile)
+                    if case .file(let currentFile) = fileState.currentActiveFile {
+                        Task.detached {
+                            let context = PersistenceController.shared.container.newBackgroundContext()
+                            do {
+                                try await fileState.recoverFile(fileID: currentFile.objectID, context: context)
+                            } catch {
+                                await alertToast(error)
+                            }
+                        }
                     }
                 } label: {
                     Text(.localizable(.deletedFileRecoverAlertButtonRecover))
@@ -277,10 +287,7 @@ struct ExcalidrawContainerView: View {
             }
         }
         .animation(.default, value: isSelectFilePlaceholderPresented)
-        .onChange(
-            of: fileState.currentLocalFile == nil && fileState.currentFile == nil && fileState.currentTemporaryFile == nil && !fileState.isInCollaborationSpace,
-            debounce: 0.1
-        ) { newValue in
+        .onChange(of: fileState.currentActiveFile == nil, debounce: 0.1) { newValue in
             isSelectFilePlaceholderPresented = newValue
         }
         .contentShape(Rectangle())

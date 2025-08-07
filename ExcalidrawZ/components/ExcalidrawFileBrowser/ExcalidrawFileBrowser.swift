@@ -64,7 +64,7 @@ struct ExcalidrawFileBrowser: View {
         VStack(spacing: 0) {
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 100, maximum: 100))], spacing: 0) {
-                    if let group = fileState.currentGroup {
+                    if case .group(let group) = fileState.currentActiveGroup {
                         ExcalidrawFileBrowserContentView(group: group) {
                             if case .file(let file) = fileState.currentActiveFile {
                                 dismiss()
@@ -72,7 +72,7 @@ struct ExcalidrawFileBrowser: View {
                                 
                             }
                         }
-                    } else if let folder = fileState.currentLocalFolder {
+                    } else if case .localFolder(let folder) = fileState.currentActiveGroup {
                         ExcalidrawLocalFileBrowserContentView(folder: folder) {
                             if case .localFile(let file) = fileState.currentActiveFile {
                                 dismiss()

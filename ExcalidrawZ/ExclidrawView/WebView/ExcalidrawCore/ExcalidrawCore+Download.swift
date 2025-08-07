@@ -13,13 +13,6 @@ extension ExcalidrawCore: WKDownloadDelegate {
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
         switch suggestedFilename.components(separatedBy: ".").last {
             case .some("excalidraw"):
-                /*
-                return onDownloadExcalidrawFile(
-                    download,
-                    decideDestinationUsing: response,
-                    suggestedFilename: suggestedFilename
-                )
-                 */
                 return nil
                 
             case .some("png"):
@@ -38,21 +31,6 @@ extension ExcalidrawCore: WKDownloadDelegate {
         self.parent?.exportState.finishExport(download: download)
         downloads.removeValue(forKey: request)
     }
-
-    /*
-    func onDownloadExcalidrawFile(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) -> URL? {
-        let fileManager: FileManager = FileManager.default
-
-        do {
-            guard var directory: URL = try getTempDirectory() else { return nil }
-            directory = directory.appendingPathComponent("file_downloads", conformingTo: .directory)
-            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-        } catch {
-            self.parent.onError(error)
-        }
-        return nil
-    }
-    */
     
     func onExportPNG(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) -> URL? {
         self.logger.info("on export png.")
@@ -60,7 +38,7 @@ extension ExcalidrawCore: WKDownloadDelegate {
         do {
             let directory: URL = try getTempDirectory()
             let fileExtension = suggestedFilename.components(separatedBy: ".").last ?? "png"
-            let fileName = self.parent?.fileState.currentFile?.name?.appending(".\(fileExtension)") ?? suggestedFilename
+            let fileName = self.parent?.fileState.currentActiveFile?.name?.appending(".\(fileExtension)") ?? suggestedFilename
             let url = directory.appendingPathComponent(fileName, conformingTo: .image)
             if fileManager.fileExists(atPath: url.absoluteString) {
                 try fileManager.removeItem(at: url)

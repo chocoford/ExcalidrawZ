@@ -79,7 +79,7 @@ struct GroupRowView: View {
     @State private var isRenameSheetPresented = false
     @State private var isCreateSubfolderSheetPresented = false
 
-    var isSelected: Bool { fileState.currentGroup == group }
+    var isSelected: Bool { fileState.currentActiveGroup == .group(group) }
 
     var body: some View {
         if group.groupType != .trash {
@@ -141,8 +141,8 @@ struct GroupRowView: View {
             .contentShape(Rectangle())
         } else {
             Button {
-                fileState.currentGroup = group
-                fileState.currentFile = nil
+                fileState.currentActiveGroup = .group(group)
+                fileState.currentActiveFile = nil
             } label: {
                 HStack {
                     Label {
@@ -265,7 +265,7 @@ struct GroupRowView: View {
     
     private func mergeWithGroup(_ group: Group) {
         guard let files = self.group.files?.allObjects as? [File] else { return }
-        fileState.currentGroup = group
+        fileState.currentActiveGroup = .group(group)
         PersistenceController.shared.container.viewContext.performAndWait {
             for file in files {
                 file.group = group
@@ -339,22 +339,27 @@ struct GroupRowView: View {
         let fileState = fileState
         Task.detached {
             do {
-                try await context.perform {
+                let target: NSManagedObjectID? = try await context.perform {
                     guard let sourceGroup = context.object(with: source) as? Group else {
-                        return
+                        return nil
                     }
                     let targetGroup: Group? = if let target { context.object(with: target) as? Group } else { nil }
                     
                     sourceGroup.parent = targetGroup
                     try context.save()
                     
+                    return target
+                }
+                
+                
+                await MainActor.run {
                     if let target {
                         fileState.expandToGroup(target)
                     }
-                }
-                await MainActor.run {
                     // IMPORTANT -- viewContext fetch group
-                    fileState.currentGroup = viewContext.object(with: source) as? Group
+                    if let group = viewContext.object(with: source) as? Group {
+                        fileState.currentActiveGroup = .group(group)
+                    }
                 }
             } catch {
                 await alertToast(error)
@@ -375,8 +380,12 @@ struct GroupRowView: View {
                     
                     Task {
                         for subGroup in subGroups {
+                            let id = subGroup.objectID
                             await MainActor.run {
-                                NotificationCenter.default.post(name: .shouldExpandGroup, object: subGroup.objectID)
+                                NotificationCenter.default.post(
+                                    name: .shouldExpandGroup,
+                                    object: id
+                                )
                             }
                             
                             try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.2))
@@ -460,8 +469,8 @@ struct GroupRowView: View {
                 }
 
                 await MainActor.run {
-                    if group == fileState.currentGroup {
-                        fileState.currentGroup = nil
+                    if case .group = fileState.currentActiveGroup {
+                        fileState.currentActiveGroup = nil
                     }
                 }
             } catch {

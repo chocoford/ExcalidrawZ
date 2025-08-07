@@ -95,6 +95,7 @@ func backupFiles(context: NSManagedObjectContext) throws {
             try fileManager.createDirectory(at: localExportURL, withIntermediateDirectories: true)
             let context = PersistenceController.shared.container.newBackgroundContext()
             try await context.perform {
+                let fileManager = FileManager.default
                 let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
                 fetchRequest.predicate = NSPredicate(format: "parent = nil")
                 let allFolders = try context.fetch(fetchRequest)

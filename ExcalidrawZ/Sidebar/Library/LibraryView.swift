@@ -420,12 +420,13 @@ struct LibraryView: View {
         let context = PersistenceController.shared.container.newBackgroundContext()
         let selectedItems = selectedItems
         let targetLibraryID = library.objectID
+        let selectedItemIDs = selectedItems.map{$0.objectID}
         Task.detached {
             context.perform {
                 guard let targetLibrary = context.object(with: targetLibraryID) as? Library else { return }
                 do {
-                    for selectedItem in selectedItems {
-                        guard let item = context.object(with: selectedItem.objectID) as? LibraryItem else { continue }
+                    for selectedItemID in selectedItemIDs {
+                        guard let item = context.object(with: selectedItemID) as? LibraryItem else { continue }
                         
                         if targetLibrary == item.library {
                             // do nothing...

@@ -55,18 +55,19 @@ struct LocalFoldersListView: View {
                     Section {
                         LocalFoldersView(folder: folder, sortField: .updatedAt) {
                             // switch current folder first if necessary.
-                            if fileState.currentLocalFolder == folder {
+                            if case .localFolder(let localFolder) = fileState.currentActiveGroup,
+                               localFolder == folder {
                                 guard let index = folders.firstIndex(of: folder) else {
                                     return
                                 }
                                 if index == 0 {
                                     if folders.count > 1 {
-                                        fileState.currentLocalFolder = folders[1]
+                                        fileState.currentActiveGroup = .localFolder(folders[1])
                                     } else {
-                                        fileState.currentLocalFolder = nil
+                                        fileState.currentActiveGroup = nil
                                     }
                                 } else {
-                                    fileState.currentLocalFolder = folders[0]
+                                    fileState.currentActiveGroup = .localFolder(folders[0])
                                 }
                             }
                         }
@@ -93,7 +94,9 @@ struct LocalFoldersListView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { notification in
             if let window = notification.object as? NSWindow,
                window == self.window {
-                self.folderUrlBeforeResignKey = fileState.currentLocalFolder?.url
+                if case .localFolder(let localFolder) = fileState.currentActiveGroup {
+                    self.folderUrlBeforeResignKey = localFolder.url
+                }
             }
         }
 #elseif os(iOS)
@@ -271,11 +274,13 @@ struct LocalFoldersListView: View {
 #endif
 
     private func redirectToCurrentFolder() throws {
-        guard fileState.currentGroup == nil, let folderUrlBeforeResignKey else { return }
+        guard fileState.currentActiveGroup == nil, let folderUrlBeforeResignKey else { return }
         let context = viewContext
         let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
         let allFolders = try context.fetch(fetchRequest)
         
-        fileState.currentLocalFolder = allFolders.first(where: {$0.url == folderUrlBeforeResignKey})
+        if let folder = allFolders.first(where: {$0.url == folderUrlBeforeResignKey}) {
+            fileState.currentActiveGroup = .localFolder(folder)
+        }
     }
 }

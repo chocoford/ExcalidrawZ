@@ -114,7 +114,7 @@ struct OpenFromURLModifier: ViewModifier {
                 canAddToTemp = false
                 Task {
                     await MainActor.run {
-                        fileState.currentLocalFolder = folder
+                        fileState.currentActiveGroup = .localFolder(folder)
                         fileState.expandToGroup(folder.objectID)
                     }
                     try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.1))
@@ -167,9 +167,16 @@ struct OpenFromURLModifier: ViewModifier {
         if !fileState.temporaryFiles.contains(where: {$0 == targetURL}) {
             fileState.temporaryFiles.append(targetURL)
         }
-        if !fileState.isTemporaryGroupSelected || fileState.currentTemporaryFile == nil {
-            fileState.isTemporaryGroupSelected = true
-            fileState.currentTemporaryFile = fileState.temporaryFiles.first
+        if fileState.currentActiveGroup != .temporary || {
+            if case .temporaryFile = fileState.currentActiveFile {
+                return false
+            } else {
+                return true
+            }
+        }() {
+            fileState.currentActiveGroup = .temporary
+            let file = fileState.temporaryFiles.first
+            fileState.currentActiveFile = file != nil ? .temporaryFile(file!) : nil
             
             if let imageSendToNewFile {
                 Task {
@@ -246,9 +253,9 @@ struct OpenFromURLModifier: ViewModifier {
                         let roomID = room.objectID
                         Task {
                             await MainActor.run {
-                                fileState.isInCollaborationSpace = true
+                                fileState.currentActiveGroup = .collaboration
                                 if case let room as CollaborationFile = viewContext.object(with: roomID) {
-                                    fileState.currentCollaborationFile = .room(room)
+                                    fileState.currentActiveFile = .collaborationFile(room)
                                 }
                             }
                         }
@@ -280,15 +287,15 @@ struct OpenFromURLModifier: ViewModifier {
                 if let file = object as? File {
                     if let group = file.group {
                         fileState.expandToGroup(group.objectID)
-                        fileState.currentGroup = group
+                        fileState.currentActiveGroup = .group(group)
                     }
-                    fileState.currentFile = file
+                    fileState.currentActiveFile = .file(file)
                 } else if let group = object as? Group {
                     fileState.expandToGroup(group.objectID)
-                    fileState.currentGroup = group
+                    fileState.currentActiveGroup = .group(group)
                 } else if let folder = object as? LocalFolder {
                     fileState.expandToGroup(folder.objectID)
-                    fileState.currentLocalFolder = folder
+                    fileState.currentActiveGroup = .localFolder(folder)
                 }
             }
         }

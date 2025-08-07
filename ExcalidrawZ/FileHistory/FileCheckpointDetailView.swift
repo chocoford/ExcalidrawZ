@@ -66,12 +66,13 @@ struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
     private func restoreCheckpoint() {
         guard let content = checkpoint.content else { return }
         if checkpoint.fileID != nil {
-            let file = fileState.currentFile
-            file?.content = checkpoint.content
-            file?.name = checkpoint.filename
-            fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
-        } else if let folder = fileState.currentLocalFolder,
-                  let fileURL = fileState.currentLocalFile {
+            if case .file(let file) = fileState.currentActiveFile {
+                file.content = checkpoint.content
+                file.name = checkpoint.filename
+                fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
+            }
+        } else if case .localFolder(let folder) = fileState.currentActiveGroup,
+                  case .localFile(let fileURL) = fileState.currentActiveFile {
             do {
                 try folder.withSecurityScopedURL { scopedURL in
                     var file = try ExcalidrawFile(data: content)

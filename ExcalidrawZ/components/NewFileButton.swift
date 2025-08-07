@@ -180,6 +180,7 @@ struct NewFileButton: View {
                     do {
                         let fileID = try await fileState.createNewFile(
                             active: !openWithDelay,
+                            in: group.objectID,
                             context: viewContext,
                             animation: .smooth
                         )
@@ -239,7 +240,11 @@ struct NewFileButton: View {
                 }
 #endif
                 if case .group(let group) = fileState.currentActiveGroup {
-                    try await fileState.createNewFile(context: viewContext)
+                    try await fileState.createNewFile(
+                        in: group.objectID,
+                        context: viewContext,
+                        animation: .smooth
+                    )
                 } else if case .localFolder(let folder) = fileState.currentActiveGroup {
                     try await folder.withSecurityScopedURL { scopedURL in
                         do {

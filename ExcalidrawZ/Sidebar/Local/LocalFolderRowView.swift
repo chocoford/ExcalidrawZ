@@ -32,7 +32,13 @@ struct LocalFolderRowView: View {
     @State private var isCreateSubfolderPresented = false
     @State private var newSubfolderName: String = String(localizable: .generalNewFolderName)
 
-    var isSelected: Bool { fileState.currentLocalFolder == folder }
+    var isSelected: Bool {
+        if case .localFolder(let folder) = fileState.currentActiveGroup {
+            return self.folder == folder
+        } else {
+            return false
+        }
+    }
     
     @FetchRequest(
         sortDescriptors: [SortDescriptor(\.filePath, order: .forward)],
@@ -72,7 +78,7 @@ struct LocalFolderRowView: View {
             .contentShape(Rectangle())
         } else {
             Button {
-                fileState.currentLocalFolder = folder
+                fileState.currentActiveGroup = .localFolder(folder)
             } label: {
                 Label {
                     Text(folder.url?.lastPathComponent ?? String(localizable: .generalUnknown))
@@ -200,8 +206,12 @@ struct LocalFolderRowView: View {
                     
                     Task {
                         for subFolder in subFolders {
+                            let id = subFolder.objectID
                             await MainActor.run {
-                                NotificationCenter.default.post(name: .shouldExpandGroup, object: subFolder.objectID)
+                                NotificationCenter.default.post(
+                                    name: .shouldExpandGroup,
+                                    object: id
+                                )
                             }
                             
                             try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.2))
@@ -287,10 +297,9 @@ struct LocalFolderRowView: View {
             }
         }
         
-        if fileState.currentLocalFolder == folder {
-            Task {
-                try? await fileState.setToDefaultGroup()
-            }
+        if case .localFolder(let localFoder) = fileState.currentActiveGroup, localFoder == folder {
+            fileState.currentActiveFile = nil
+            fileState.currentActiveGroup = nil
         }
     }
     
@@ -410,7 +419,9 @@ struct LocalFolderRowView: View {
                     }
                     await MainActor.run {
                         // IMPORTANT -- viewContext fetch group
-                        fileState.currentLocalFolder = viewContext.object(with: self.folder.objectID) as? LocalFolder
+                        if let folder = viewContext.object(with: self.folder.objectID) as? LocalFolder {
+                            fileState.currentActiveGroup = .localFolder(folder)
+                        }
                     }
                 }
             }

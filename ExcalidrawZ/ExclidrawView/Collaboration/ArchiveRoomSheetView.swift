@@ -73,7 +73,7 @@ struct ArchiveRoomSheetView: View {
                         .frame(width: 60)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(fileState.currentGroup == nil && fileState.currentLocalFolder == nil)
+                .disabled(fileState.currentActiveGroup == nil)
             }
         }
     }
@@ -83,7 +83,7 @@ struct ArchiveRoomSheetView: View {
         let fileID = file.objectID
         let name = file.name ?? String(localizable: .generalUntitled)
         let content = file.content
-        if let group = fileState.currentGroup {
+        if case .group(let group) = fileState.currentActiveGroup {
             let groupID = group.objectID
             Task.detached {
                 do {
@@ -102,8 +102,10 @@ struct ArchiveRoomSheetView: View {
                         Task {
                             await MainActor.run {
                                 if let group = viewContext.object(with: groupID) as? Group {
-                                    parentFileState.currentGroup = group
-                                    parentFileState.currentFile = viewContext.object(with: fileID) as? File
+                                    parentFileState.currentActiveGroup = .group(group)
+                                    if let file = viewContext.object(with: fileID) as? File {
+                                        parentFileState.currentActiveFile = .file(file)
+                                    }
                                     parentFileState.expandToGroup(groupID)
                                 }
                             }
@@ -115,7 +117,7 @@ struct ArchiveRoomSheetView: View {
                 }
             }
             
-        } else if let localFolder = fileState.currentLocalFolder {
+        } else if case .localFolder(let localFolder) = fileState.currentActiveGroup {
             let localFolderID = localFolder.objectID
             Task.detached {
                 do {
@@ -132,8 +134,8 @@ struct ArchiveRoomSheetView: View {
                             Task {
                                 await MainActor.run {
                                     if let localFolder = viewContext.object(with: localFolderID) as? LocalFolder {
-                                        parentFileState.currentLocalFolder = localFolder
-                                        parentFileState.currentLocalFile = fileURL
+                                        parentFileState.currentActiveGroup = .localFolder(localFolder)
+                                        parentFileState.currentActiveFile = .localFile(fileURL)
                                         parentFileState.expandToGroup(localFolderID)
                                     }
                                 }

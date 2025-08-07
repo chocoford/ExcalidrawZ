@@ -216,8 +216,8 @@ struct SerachContent: View {
                            !fileState.collaboratingFiles.contains(room) {
                             store.togglePaywall(reason: .roomLimit)
                         } else {
-                            fileState.isInCollaborationSpace = true
-                            fileState.currentCollaborationFile = .room(room)
+                            fileState.currentActiveGroup = .collaboration
+                            fileState.currentActiveFile = .collaborationFile(room)
                         }
                     }
                 }
@@ -249,8 +249,8 @@ struct SerachContent: View {
                     }
                     .onTapGesture(count: tapSelectCount) {
                         if let group = file.group {
-                            fileState.currentGroup = group
-                            fileState.currentFile = file
+                            fileState.currentActiveGroup = .group(group)
+                            fileState.currentActiveFile = .file(file)
                             fileState.expandToGroup(group.objectID)
                             dismiss()
                         }
@@ -289,7 +289,7 @@ struct SerachContent: View {
                                     let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
                                     fetchRequest.predicate = NSPredicate(format: "filePath = %@", file.deletingLastPathComponent().filePath)
                                     if let folder = try viewContext.fetch(fetchRequest).first {
-                                        fileState.currentLocalFolder = folder
+                                        fileState.currentActiveGroup = .localFolder(folder)
                                         fileState.currentActiveFile = .localFile(file)
                                         fileState.expandToGroup(folder.objectID)
                                         dismiss()
@@ -400,14 +400,14 @@ struct SerachContent: View {
                !fileState.collaboratingFiles.contains(file) {
                 store.togglePaywall(reason: .roomLimit)
             } else {
-                fileState.isInCollaborationSpace = true
-                fileState.currentCollaborationFile = .room(file)
+                fileState.currentActiveGroup = .collaboration
+                fileState.currentActiveFile = .collaborationFile(file)
             }
         } else if index < searchCollaborationFiles.count + searchFiles.count {
             let file = searchFiles[index - searchCollaborationFiles.count]
             if let group = file.group {
-                fileState.currentGroup = group
-                fileState.currentFile = file
+                fileState.currentActiveGroup = .group(group)
+                fileState.currentActiveFile = .file(file)
                 fileState.expandToGroup(group.objectID)
                 dismiss()
             }
@@ -419,7 +419,7 @@ struct SerachContent: View {
                         let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
                         fetchRequest.predicate = NSPredicate(format: "filePath = %@", file.deletingLastPathComponent().filePath)
                         if let folder = try viewContext.fetch(fetchRequest).first {
-                            fileState.currentLocalFolder = folder
+                            fileState.currentActiveGroup = .localFolder(folder)
                             fileState.currentActiveFile = .localFile(file)
                             fileState.expandToGroup(folder.objectID)
                             dismiss()

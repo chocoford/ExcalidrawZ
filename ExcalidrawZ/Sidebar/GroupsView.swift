@@ -71,7 +71,9 @@ struct GroupsView: View {
         )
     }
     
-    var isSelected: Bool { fileState.currentGroup == group && fileState.currentFile == nil }
+    var isSelected: Bool {
+        fileState.currentActiveGroup == .group(group) && fileState.currentActiveFile == nil
+    }
     
     @State private var isExpanded = false
 
@@ -98,8 +100,8 @@ struct GroupsView: View {
             } set: { val in
                 DispatchQueue.main.async {
                     if val {
-                        fileState.currentGroup = group
-                        fileState.currentFile = nil
+                        fileState.currentActiveGroup = .group(group)
+                        fileState.currentActiveFile = nil
                     }
                 }
             },

@@ -43,7 +43,13 @@ struct LocalFoldersView: View {
     
     let paddingBase: CGFloat = 14
     
-    var isSelected: Bool { fileState.currentLocalFolder == folder }
+    var isSelected: Bool {
+        if case .localFolder(let localFolder) = fileState.currentActiveGroup {
+            return localFolder == folder
+        } else {
+            return false
+        }
+    }
     
     @State private var isExpanded = false
     
@@ -65,7 +71,7 @@ struct LocalFoldersView: View {
             isSelected: Binding {
                 isSelected
             } set: {
-                if $0 { fileState.currentLocalFolder = folder }
+                if $0 { fileState.currentActiveGroup = .localFolder(folder) }
             },
             isExpanded: $isExpanded
         ) {
@@ -105,18 +111,18 @@ struct LocalFoldersView: View {
     
     private func handleSelectedDeletion() {
         // switch current folder first if necessary.
-        if fileState.currentLocalFolder == folder {
+        if fileState.currentActiveGroup == .localFolder(folder) {
             guard let index = folderChildren.firstIndex(of: folder) else {
                 return
             }
             if index == 0 {
                 if folderChildren.count > 1 {
-                    fileState.currentLocalFolder = folderChildren[1]
+                    fileState.currentActiveGroup = .localFolder(folderChildren[1])
                 } else {
-                    fileState.currentLocalFolder = nil
+                    fileState.currentActiveGroup = nil
                 }
             } else {
-                fileState.currentLocalFolder = folderChildren[0]
+                fileState.currentActiveGroup = .localFolder(folderChildren[0])
             }
         }
     }

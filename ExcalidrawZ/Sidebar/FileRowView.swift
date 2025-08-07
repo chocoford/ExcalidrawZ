@@ -78,7 +78,7 @@ struct FileRowView: View {
     @FocusState private var isFocused: Bool
     
     var isSelected: Bool {
-        fileState.currentFile == file
+        fileState.currentActiveFile == .file(file)
     }
     
     var body: some View {

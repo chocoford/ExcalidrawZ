@@ -24,7 +24,7 @@ struct CollaborationFileRow: View {
     }
     
     var isSelected: Bool {
-        if case .room(let room) = fileState.currentCollaborationFile {
+        if case .collaborationFile(let room) = fileState.currentActiveFile {
             return room == file
         } else {
             return false
@@ -48,7 +48,6 @@ struct CollaborationFileRow: View {
     }
     
     @State private var isDeleteRoomConfirmationDialogPresented = false
-    @State private var fileToBeArchived: CollaborationFile?
     
     var body: some View {
         FileRowButton(isSelected: isSelected, isMultiSelected: false) {
@@ -61,7 +60,7 @@ struct CollaborationFileRow: View {
                       !fileState.collaboratingFiles.contains(file) {
                 store.togglePaywall(reason: .roomLimit)
             } else {
-                fileState.currentCollaborationFile = .room(file)
+                fileState.currentActiveFile = .collaborationFile(file)
             }
         } label: {
             VStack(alignment: .leading) {
@@ -98,104 +97,6 @@ struct CollaborationFileRow: View {
             }
         }
         .modifier(FileRowDragDropModifier(file: file, sortField: fileState.sortField))
-        .modifier(ArchiveRoomModifier(collaborationFile: $fileToBeArchived))
-        .contextMenu {
-            contextMenu()
-                .labelStyle(.titleAndIcon)
-        }
-        .confirmationDialog(
-            .localizable(
-                .sidebarCollaborationFileRowDeleteConfirmationTitle(file.name ?? String(localizable: .generalUntitled))
-            ),
-            isPresented: $isDeleteRoomConfirmationDialogPresented,
-            titleVisibility: .visible
-        ) {
-            Button(role: .destructive) {
-                deleteCollaborationFile(file: file)
-            } label: {
-                Text(.localizable(.generalButtonDelete))
-            }
-        }
-    }
-    
-    @MainActor @ViewBuilder
-    private func contextMenu() -> some View {
-        if let roomID = file.roomID {
-            Button {
-                copyRoomShareLink(roomID: roomID, filename: file.name)
-            } label: {
-                Label(
-                    .localizable(.sidebarCollaborationFileRowContextMenuCopyInvitationLink),
-                    systemSymbol: .link
-                )
-            }
-        }
-        Button {
-            fileToBeArchived = file
-        } label: {
-            Label(
-                .localizable(.sidebarCollaborationFileRowContextMenuArchive),
-                systemSymbol: .archivebox
-            )
-        }
-        
-        Button {
-            fileState.collaboratingFiles.removeAll(where: {$0 == file})
-            fileState.collaboratingFilesState[file] = nil
-            if fileState.currentCollaborationFile == .room(file) {
-                fileState.currentCollaborationFile = nil
-            }
-        } label: {
-            Label(
-                .localizable(.sidebarCollaborationFileRowContextMenuDisconnect),
-                systemSymbol: .rectanglePortraitAndArrowRight
-            )
-        }
-
-        Divider()
-
-        Button(role: .destructive) {
-            isDeleteRoomConfirmationDialogPresented.toggle()
-        } label: {
-            Label(.localizable(.generalButtonDelete), systemSymbol: .trash)
-        }
-    }
-    
-    private func deleteCollaborationFile(file: CollaborationFile) {
-        let context = PersistenceController.shared.container.newBackgroundContext()
-        let fileID = file.objectID
-        Task.detached {
-            do {
-                try await context.perform {
-                    guard let file = context.object(with: fileID) as? CollaborationFile else { return }
-
-                    context.delete(file)
-                    
-                    // also delete checkpoints
-                    let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
-                    checkpointsFetchRequest.predicate = NSPredicate(format: "collaborationFile = %@", file)
-                    let checkpoints = try context.fetch(checkpointsFetchRequest)
-                    if !checkpoints.isEmpty {
-                        let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: checkpoints.map{$0.objectID})
-                        try context.executeAndMergeChanges(using: batchDeleteRequest)
-                    }
-
-                    try context.save()
-                    
-                }
-            } catch {
-                await alertToast(error)
-            }
-        }
-        
-        fileState.collaboratingFiles.removeAll(where: {$0 == file})
-        fileState.collaboratingFilesState[file] = nil
-        if fileState.currentCollaborationFile == .room(file) {
-            fileState.currentCollaborationFile = nil
-        }
+        .modifier(CollaborationFileRowContextMenuModifier(file: file))
     }
 }
-
-//#Preview {
-//    CollaborationFileRow()
-//}

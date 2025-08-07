@@ -21,12 +21,7 @@ struct ContentViewModern: View {
     
     var body: some View {
         ZStack {
-            // macOS always displays the content column.
-            if #available(macOS 14.0, iOS 17.0, *), false {
-                threeColumnNavigationSplitView()
-            } else {
-                twoColumnNavigationSplitView()
-            }
+            content()
         }
         .onChange(of: columnVisibility) { newValue in
             layoutState.isSidebarPresented = newValue != .detailOnly
@@ -45,7 +40,7 @@ struct ContentViewModern: View {
     }
     
     @MainActor @ViewBuilder
-    private func twoColumnNavigationSplitView() -> some View {
+    private func content() -> some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             if #available(macOS 14.0, iOS 17.0, *) {
 #if os(macOS)
@@ -67,36 +62,6 @@ struct ContentViewModern: View {
         } detail: {
             ContentViewDetail(isSettingsPresented: $isSettingsPresented)
         }
-    }
-    
-    
-    @StateObject private var localFolderState = LocalFolderState()
-    
-    @available(macOS 14.0, iOS 17.0, *)
-    @MainActor @ViewBuilder
-    private func threeColumnNavigationSplitView() -> some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-#if os(macOS)
-            GroupsSidebar()
-                .frame(minWidth: 270)
-                .toolbar(content: sidebarToolbar)
-                .toolbar(removing: .sidebarToggle)
-#elseif os(iOS)
-            if horizontalSizeClass == .compact {
-                SidebarView()
-                    .toolbar(content: sidebarToolbar)
-                    .toolbar(removing: .sidebarToggle)
-            } else {
-                SidebarView()
-                    .toolbar(content: sidebarToolbar)
-            }
-#endif
-        } content: {
-            FilesSidebar()
-        } detail: {
-            ContentViewDetail(isSettingsPresented: $isSettingsPresented)
-        }
-        .environmentObject(localFolderState)
     }
     
     @ToolbarContentBuilder

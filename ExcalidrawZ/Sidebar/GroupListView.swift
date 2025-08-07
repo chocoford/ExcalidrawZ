@@ -69,14 +69,8 @@ struct GroupListView: View {
                     let spacing: CGFloat = 4
                     VStack(spacing: 0) {
                         Button {
-                            fileState.currentFile = nil
-                            fileState.currentGroup = nil
-                            fileState.currentLocalFile = nil
-                            fileState.currentLocalFolder = nil
-                            fileState.currentTemporaryFile = nil
-                            fileState.isTemporaryGroupSelected = false
-                            fileState.isInCollaborationSpace = false
-                            fileState.currentCollaborationFile = nil
+                            fileState.currentActiveFile = nil
+                            fileState.currentActiveGroup = nil
                         } label: {
                             HStack {
                                 Image(systemSymbol: .house)
@@ -85,15 +79,13 @@ struct GroupListView: View {
                             }
                             .padding(.vertical, 2)
                         }
-                        .buttonStyle(ListButtonStyle(selected: !fileState.hasAnyActiveFile && !fileState.hasAnyActiveGroup))
+                        .buttonStyle(
+                            ListButtonStyle(selected: fileState.currentActiveFile == nil && fileState.currentActiveGroup == nil)
+                        )
                         
                         Button {
-                            if !fileState.isInCollaborationSpace {
-                                fileState.isInCollaborationSpace = true
-                                if containerHorizontalSizeClass != .compact {
-                                    fileState.currentCollaborationFile = .home
-                                }
-                            }
+                            fileState.currentActiveFile = nil
+                            fileState.currentActiveGroup = .collaboration
                         } label: {
                             HStack {
                                 Image(systemSymbol: .person3)
@@ -102,7 +94,7 @@ struct GroupListView: View {
                             }
                             .padding(.vertical, 2)
                         }
-                        .buttonStyle(ListButtonStyle(selected: fileState.isInCollaborationSpace))
+                        .buttonStyle(ListButtonStyle(selected: fileState.currentActiveGroup == .collaboration))
                     }
                     Divider()
 
@@ -112,6 +104,7 @@ struct GroupListView: View {
                             TemporaryGroupRowView()
                         }
                     }
+                    
                     // iCloud
                     VStack(alignment: .leading, spacing: spacing) {
                         databaseGroupsList()
@@ -177,18 +170,11 @@ struct GroupListView: View {
             }
         }
         .onChange(of: trashedFilesCount) { count in
-            if count == 0 && fileState.currentGroup?.groupType == .trash {
-                fileState.currentGroup = displayedGroups.first
-            }
-        }
-        .onChange(of: displayedGroups) { newValue in
-            if fileState.currentGroup == nil {
-                fileState.currentGroup = displayedGroups.first
-            } else if fileState.currentLocalFolder == nil,
-                      !fileState.isTemporaryGroupSelected,
-                      !fileState.isInCollaborationSpace,
-                      !displayedGroups.contains(where: {$0 == fileState.currentGroup}) {
-                fileState.currentGroup = displayedGroups.first
+            if count == 0,
+               case .group(let group) = fileState.currentActiveGroup,
+               group.groupType == .trash {
+                fileState.currentActiveFile = nil
+                fileState.currentActiveGroup = nil
             }
         }
     }
@@ -273,7 +259,6 @@ struct GroupListView: View {
         }
         .menuIndicator(.hidden)
         .fixedSize()
-        .disabled(fileState.isTemporaryGroupSelected || !fileState.hasAnyActiveGroup)
     }
     
     private func importLocalFolders(urls: [URL]) {
@@ -290,9 +275,14 @@ struct GroupListView: View {
                         return
                     }
                     
+                    var urls: [URL] = []
+                    for case let url as URL in enumerator.allObjects {
+                        urls.append(url)
+                    }
+                    
                     // Check the folder is too large (too many subfolders)
                     var count = 0
-                    for case let url as URL in enumerator.allObjects {
+                    for url in urls {
                         let isHidden = (try? url.resourceValues(forKeys: [.isHiddenKey]).isHidden) ?? false
                         let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                         if !isHidden && isDirectory {
@@ -312,12 +302,12 @@ struct GroupListView: View {
                         return
                     }
                     
-                    try await context.perform {
+                    try await context.perform { [urls] in
                         let localFolder = try LocalFolder(url: url, context: context)
                         context.insert(localFolder)
                         try localFolder.refreshChildren(context: context)
                         // create checkpoints for every file in folder
-                        for case let url as URL in enumerator {
+                        for url in urls {
                             if url.pathExtension == "excalidraw" {
                                 let checkpoint = LocalFileCheckpoint(context: context)
                                 checkpoint.url = url
@@ -382,26 +372,3 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
         }
     }
 }
-
-
-
-#if DEBUG
-
-
-//struct GroupSidebarView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        GroupListView(
-//            store: .init(
-//                initialState: .init(
-//                    groups: [Group.preview],
-//                    state: .init()
-//                ),
-//                reducer: {
-//                    GroupStore()
-//                }
-//            )
-//        )
-//    }
-//}
-#endif
- 

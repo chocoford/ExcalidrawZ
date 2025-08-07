@@ -156,8 +156,16 @@ struct FileContextMenu: View {
                 } else {
                     [file]
                 }
-                for file in filesToRecover {
-                    fileState.recoverFile(file)
+                let fileIDs = filesToRecover.map{$0.objectID}
+                Task.detached {
+                    let context = PersistenceController.shared.container.newBackgroundContext()
+                    for fileID in fileIDs {
+                        do {
+                            try await fileState.recoverFile(fileID: fileID, context: context)
+                        } catch {
+                            await alertToast(error)
+                        }
+                    }
                 }
             } label: {
                 Label(
@@ -224,12 +232,14 @@ struct FileContextMenu: View {
     }
     
     private func moveFile(to groupID: NSManagedObjectID) {
+        let currentFile: File? = if case .file(let currentFile) = fileState.currentActiveFile {
+            currentFile
+        } else { nil }
         let context = PersistenceController.shared.container.newBackgroundContext()
-        
         
         if fileState.selectedFiles.isEmpty {
             let fileID = file.objectID
-            let currentFileID = fileState.currentFile?.objectID
+            let currentFileID = currentFile?.objectID
             
             Task.detached {
                 do {
@@ -244,8 +254,8 @@ struct FileContextMenu: View {
                         await MainActor.run {
                             guard case let group as Group = viewContext.object(with: groupID),
                                   case let file as File = viewContext.object(with: fileID) else { return }
-                            fileState.currentGroup = group
-                            fileState.currentFile = file
+                            fileState.currentActiveGroup = .group(group)
+                            fileState.currentActiveFile = .file(file)
                             
                             fileState.expandToGroup(group.objectID)
                         }
@@ -258,7 +268,7 @@ struct FileContextMenu: View {
             let fileIDs = fileState.selectedFiles.map {
                 $0.objectID
             }
-            let currentFileID = fileState.currentFile?.objectID
+            let currentFileID = currentFile?.objectID
 
             
             Task.detached {
@@ -284,8 +294,8 @@ struct FileContextMenu: View {
                         await MainActor.run {
                             guard case let group as Group = viewContext.object(with: groupID),
                                   case let file as File = viewContext.object(with: fileID) else { return }
-                            fileState.currentGroup = group
-                            fileState.currentFile = file
+                            fileState.currentActiveGroup = .group(group)
+                            fileState.currentActiveFile = .file(file)
                             
                             fileState.expandToGroup(group.objectID)
                         }
@@ -316,7 +326,7 @@ struct FileContextMenu: View {
                 )
                 
                 if containerHorizontalSizeClass != .compact {
-                    fileState.currentFile = newFile
+                    fileState.currentActiveFile = .file(newFile)
                 }
             }
             fileState.resetSelections()

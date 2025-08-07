@@ -86,12 +86,7 @@ struct LocalFilesListContentView: View {
         .animation(.default, value: files)
         .bindWindow($window)
         .watchImmediately(of: folder.url) { newValue in
-            DispatchQueue.main.async {
-                getFolderContents()
-                if horizontalSizeClass != .compact {
-                    fileState.currentLocalFile = files.first
-                }
-            }
+            DispatchQueue.main.async { getFolderContents() }
         }
 #if os(macOS)
         .onReceive(
@@ -100,10 +95,16 @@ struct LocalFilesListContentView: View {
             if let window = notification.object as? NSWindow,
                window == self.window {
                 DispatchQueue.main.async {
-                    guard fileState.currentLocalFolder != nil else { return }
+                    guard fileState.currentActiveGroup != nil else { return }
                     getFolderContents()
-                    if fileState.currentLocalFile == nil || fileState.currentLocalFile?.deletingLastPathComponent() != folder.url {
-                        fileState.currentLocalFile = files.first
+                    if fileState.currentActiveFile == nil || {
+                        if case .localFile(let localFile) = fileState.currentActiveFile {
+                            return localFile.deletingLastPathComponent() != folder.url
+                        } else {
+                            return true
+                        }
+                    }() {
+                        fileState.currentActiveFile = nil
                     }
                 }
             }
@@ -139,7 +140,10 @@ struct LocalFilesListContentView: View {
         }
         .onReceive(localFolderState.refreshFilesPublisher) { _ in
             getFolderContents()
-            fileState.currentLocalFile = files.first
+            if case .localFile(let file) = fileState.currentActiveFile,
+               !files.contains(file) {
+                fileState.currentActiveFile = nil
+            }
         }
     }
     
@@ -157,9 +161,9 @@ struct LocalFilesListContentView: View {
                     self.files = files
                     self.sortFiles(field: self.sortField)
                     
-                    if let currentFile = fileState.currentLocalFile {
+                    if case .localFile(let currentFile) = fileState.currentActiveFile {
                         if !self.files.contains(currentFile) {
-                            fileState.currentLocalFile = self.files.first
+                            fileState.currentActiveFile = nil
                         }
                     }
                 }
@@ -196,23 +200,16 @@ struct LocalFilesListContentView: View {
     }
     
     private func handleItemRemoved(path: String) {
-        if fileState.currentLocalFile?.filePath == path {
+        if case .localFile(let file) = fileState.currentActiveFile, file.filePath == path {
             let index = files.firstIndex(where: {$0.filePath == path}) ?? -1
             if index <= 0 {
                 if files.count <= 1 {
-//                    try folder.withSecurityScopedURL { scopedURL in
-//                        do {
-//                            try await fileState.createNewLocalFile(folderURL: scopedURL)
-//                        } catch {
-//                            alertToast(error)
-//                        }
-//                    }
-                    fileState.currentLocalFile = nil
+                    fileState.currentActiveFile = nil
                 } else {
-                    fileState.currentLocalFile = files[1]
+                    fileState.currentActiveFile = .localFile(files[1])
                 }
             } else {
-                fileState.currentLocalFile = files[0]
+                fileState.currentActiveFile = .localFile(files[0])
             }
         }
         files.removeAll(where: { $0.filePath == path })

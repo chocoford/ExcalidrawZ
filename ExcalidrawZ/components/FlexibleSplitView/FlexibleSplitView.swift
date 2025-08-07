@@ -110,7 +110,7 @@ struct FlexibleSplitView<Item: FlexibleItem, ID: Hashable & Transferable>: View 
                         } isTargeted: { isTargeted in
                             let dst = item.wrappedValue[keyPath: itemID]
                             guard isTargeted else { return }
-                            print(draggedItemID, "draggedIndex: \(items.firstIndex(where: {$0[keyPath: itemID] == draggedItemID})), dstIndex: \(items.firstIndex(where: {$0[keyPath: itemID] == dst}))")
+//                            print(draggedItemID, "draggedIndex: \(items.firstIndex(where: {$0[keyPath: itemID] == draggedItemID})), dstIndex: \(items.firstIndex(where: {$0[keyPath: itemID] == dst}))")
                             withAnimation {
                                 if let draggedIndex = items.firstIndex(where: {$0[keyPath: itemID] == draggedItemID}),
                                    let dstIndex = items.firstIndex(where: {$0[keyPath: itemID] == dst}) {
