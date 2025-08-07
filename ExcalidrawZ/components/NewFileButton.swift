@@ -117,7 +117,12 @@ struct NewFileButton: View {
         .fixedSize()
         .bindWindow($window)
         .help(.localizable(.createNewFile))
-        .disabled(fileState.currentGroup?.groupType == .trash || fileState.isTemporaryGroupSelected)
+        .disabled({
+            if case .group(let group) = fileState.currentActiveGroup, group.groupType == .trash {
+                return true
+            }
+            return false
+        }() || fileState.currentActiveGroup == .temporary)
         .onReceive(NotificationCenter.default.publisher(for: .shouldHandleNewDraw)) { _ in
             guard window?.isKeyWindow == true else { return }
             
@@ -170,12 +175,14 @@ struct NewFileButton: View {
         isCreatingFile = true
         
         do {
-            if fileState.currentGroup != nil {
-                let fileID = try withAnimation(.smooth) {
-                    try fileState.createNewFile(active: !openWithDelay, context: viewContext)
-                }
+            if case .group(let group) = fileState.currentActiveGroup {
                 Task {
                     do {
+                        let fileID = try await fileState.createNewFile(
+                            active: !openWithDelay,
+                            context: viewContext,
+                            animation: .smooth
+                        )
                         try await viewContext.perform {
                             if let file = viewContext.object(with: fileID) as? File {
                                 file.visitedAt = .now
@@ -184,14 +191,16 @@ struct NewFileButton: View {
                         }
                         
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-                            fileState.currentFile = viewContext.object(with: fileID) as? File
+                            if let file = viewContext.object(with: fileID) as? File {
+                                fileState.currentActiveFile = .file(file)
+                            }
                             isCreatingFile = false
                         }
                     } catch {
                         alertToast(error)
                     }
                 }
-            } else if let folder = fileState.currentLocalFolder {
+            } else if case .localFolder(let folder) = fileState.currentActiveGroup {
                 try folder.withSecurityScopedURL { scopedURL in
                     do {
                         try await fileState.createNewLocalFile(active: !openWithDelay, folderURL: scopedURL)
@@ -229,9 +238,9 @@ struct NewFileButton: View {
                     throw CanNotReadFromClipboardError()
                 }
 #endif
-                if fileState.currentGroup != nil {
-                    try fileState.createNewFile(context: viewContext)
-                } else if let folder = fileState.currentLocalFolder {
+                if case .group(let group) = fileState.currentActiveGroup {
+                    try await fileState.createNewFile(context: viewContext)
+                } else if case .localFolder(let folder) = fileState.currentActiveGroup {
                     try await folder.withSecurityScopedURL { scopedURL in
                         do {
                             try await fileState.createNewLocalFile(folderURL: scopedURL)

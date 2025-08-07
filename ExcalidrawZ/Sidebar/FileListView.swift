@@ -116,6 +116,7 @@ struct FileListView: View {
                     fileState.currentActiveFile = .file(file)
                 }
             }
+        }
     }
     
     
@@ -149,47 +150,6 @@ struct FileListView: View {
                     }
             }
 #endif
-        }
-    }
-    
-    private func onCurrentGroupChanged(_ newValue: Group?) {
-        guard newValue != nil else { return }
-        if fileState.currentFile?.group != newValue || fileState.currentFile?.inTrash != (newValue?.groupType == .trash) {
-            if containerHorizontalSizeClass == .compact {
-                // do not set file at iphone.
-                return
-            }
-            fileState.currentFile = files.first
-        }
-    }
-    
-    private func onCurrentFileChanged(_ newValue: File?) {
-//        guard fileState.currentGroup != nil else { return }
-//        if newValue == nil {
-//            if let file = files.first {
-//                if containerHorizontalSizeClass != .compact {
-//                    fileState.currentFile = file
-//                }
-//            } else {
-//                do {
-//                    try fileState.createNewFile(active: true, context: managedObjectContext)
-//                } catch {
-//                    alertToast(error)
-//                }
-//            }
-//        }
-    }
-    
-    private func onFilesChanged(_ newValue: FetchedResults<File>) {
-        if newValue.isEmpty, containerHorizontalSizeClass == .compact {
-            do {
-                try fileState.createNewFile(active: false, context: managedObjectContext)
-            } catch {
-                alertToast(error)
-            }
-        } else if !newValue.contains(where: {$0.id == fileState.currentFile?.id}),
-                  containerHorizontalSizeClass != .compact {
-            fileState.currentFile = newValue.first
         }
     }
     

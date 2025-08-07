@@ -13,30 +13,26 @@ import Combine
 import ChocofordUI
 
 struct ExcalidrawContainerView: View {
+    @Environment(\.colorScheme) var colorScheme
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
+
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var layoutState: LayoutState
-    
-    @Binding var file: ExcalidrawFile?
-    
-    init(file: Binding<ExcalidrawFile?>) {
-        self._file = file
-    }
-
-    @Environment(\.colorScheme) var colorScheme
-    
     @EnvironmentObject private var fileState: FileState
-    
+
+    @Binding var file: ExcalidrawFile?
     var interactionEnabled: Bool
     
     init(
+        file: Binding<ExcalidrawFile?>,
         interactionEnabled: Bool = true
     ) {
+        self._file = file
         self.interactionEnabled = interactionEnabled
     }
-    
+
     @State private var loadingState = ExcalidrawView.LoadingState.loading
     @State private var isProgressViewPresented = true
     

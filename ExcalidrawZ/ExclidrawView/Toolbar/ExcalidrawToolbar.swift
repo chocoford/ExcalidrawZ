@@ -31,11 +31,7 @@ struct ExcalidrawToolbar: View {
 
     
     var body: some View {
-        if fileState.currentFile != nil ||
-            fileState.currentLocalFile != nil ||
-            fileState.currentTemporaryFile != nil {
-            toolbar()
-        } else if case .room = fileState.currentCollaborationFile {
+        if fileState.currentActiveFile != nil {
             toolbar()
         }
     }
@@ -292,7 +288,7 @@ struct ExcalidrawToolbar: View {
             Text(.localizable(.toolbarViewMode))
             Spacer()
             Button {
-                if fileState.currentFile?.inTrash == true {
+                if case .file(let file) = fileState.currentActiveFile, file.inTrash {
                     layoutState.isResotreAlertIsPresented.toggle()
                 } else {
                     Task {
@@ -560,9 +556,9 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
     }
     
     private func getSizeClass(_ width: CGFloat) -> ExcalidrawToolbarToolSizeClass {
-        let collaborationExtraWidth: CGFloat = 90
+        let collaborationExtraWidth: CGFloat = 90 // Collaborators
         
-        let width: CGFloat = if fileState.currentCollaborationFile != nil {
+        let width: CGFloat = if case .collaborationFile = fileState.currentActiveFile {
             width - collaborationExtraWidth
         } else {
             width

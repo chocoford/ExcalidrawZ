@@ -142,8 +142,8 @@ struct FileHomeItemView: View {
     }
     
     private func openFile(_ file: File) {
-        fileState.currentFile = file
-        fileState.currentGroup = file.group
+        fileState.currentActiveFile = .file(file)
+        fileState.currentActiveGroup = file.group != nil ? .group(file.group!) : nil
         if let groupID = file.group?.objectID {
             fileState.expandToGroup(groupID)
         }
@@ -206,7 +206,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                     }
             }
             .overlayPreferenceValue(FileHomeItemPreferenceKey.self) { value in
-                if let activeFile = file ?? fileState.currentFile,
+                if let activeFile = file,
                    let sAnchor: Anchor<CGRect> = value[activeFile.objectID.description + "SOURCE"],
                    let dAnchor: Anchor<CGRect> = value["DEST"] {
                     // let _ = print("FileHomeItemTransitionModifier: \(activeFile.objectID.description)")
@@ -224,10 +224,10 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                 }
             }
             .environmentObject(state)
-            .onChange(of: fileState.currentFile) { newValue in
+            .onChange(of: fileState.currentActiveFile) { newValue in
                 let oldValue = self.file
 
-                if oldValue == nil, let newValue { // open
+                if oldValue == nil, case .file(let newValue) = newValue { // open
                     state.canShowItemContainerView = true
                     self.animateFlag = false
                     self.show = true
@@ -262,9 +262,6 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                         
                     }
                 }
-            }
-            .onChange(of: file) { newValue in
-                
             }
     }
     

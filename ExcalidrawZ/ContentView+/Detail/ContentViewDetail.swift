@@ -13,7 +13,6 @@ import AppKit
 import ChocofordUI
 import SplitView
 
-
 struct ContentViewDetail: View {
     @Environment(\.alertToast) var alertToast
 
@@ -22,17 +21,9 @@ struct ContentViewDetail: View {
     @Binding var isSettingsPresented: Bool
     
     @StateObject private var toolState = ToolState()
-
-    var disableInteration: Bool {
-        !fileState.hasAnyActiveFile && !fileState.hasAnyActiveGroup ||
-        fileState.currentGroup != nil && fileState.currentFile == nil ||
-        fileState.currentLocalFolder != nil && fileState.currentLocalFile == nil ||
-        fileState.isTemporaryGroupSelected && fileState.currentTemporaryFile == nil
-    }
     
     var body: some View {
-        ContentDetailNavigationView(isSettingsPresented: $isSettingsPresented)
-            .modifier(FileHomeItemTransitionModifier())
+        splitViewsContent()
             .modifier(ExcalidrawContainerToolbarContentModifier())
             .opacity(fileState.isInCollaborationSpace ? 0 : 1)
             .overlay {
@@ -52,18 +43,6 @@ struct ContentViewDetail: View {
             }
 #endif
             .environmentObject(toolState)
-
-        // splitViewsContent()
-        //     .environmentObject(toolState)
-    }
-    
-    @MainActor @ViewBuilder
-    private func splitViewsContent() -> some View {
-        if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *) {
-            ExcalidrawSplitViewsContainer()
-        } else if fileState.currentFiles.count > 0 {
-            ExcalidrawContainerWrapper(activeFile: $fileState.currentFiles[0])
-        }
     }
     
     private func applyToolStateWebCoordinator() {
@@ -77,12 +56,46 @@ struct ContentViewDetail: View {
 //            }
 //        }
     }
+    
+    @MainActor @ViewBuilder
+    private func splitViewsContent() -> some View {
+        if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *), false {
+            ExcalidrawSplitViewsContainer()
+        } else if fileState.activeFiles.count > 0 {
+            ContentDetailNavigationView(isSettingsPresented: $isSettingsPresented)
+                .modifier(FileHomeItemTransitionModifier())
+        }
+    }
 }
 
+extension FileState.ActiveFile: FlexibleItem {
+    var title: String {
+        name ?? .init(localizable: .generalUntitled)
+    }
+}
+
+@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
+struct ExcalidrawSplitViewsContainer: View {
+    @Environment(\.managedObjectContext) var viewContext
+    @Environment(\.alertToast) var alertToast
+
+    @EnvironmentObject var fileState: FileState
+    
+    var body: some View {
+//        FlexibleSplitView(items: $fileState.activeFiles) { file in
+//            withAnimation {
+//                fileState.activeFiles.removeAll(where: {$0?.id == file?.id})
+//            }
+//        } subView: { activeFile in
+//            ExcalidrawContainerWrapper(activeFile: activeFile)
+//                .modifier(FileHomeItemTransitionModifier())
+//        }
+    }
+}
 
 struct ContentDetailNavigationView: View {
     @Environment(\.colorScheme) var colorScheme
-
+    
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
@@ -92,10 +105,7 @@ struct ContentDetailNavigationView: View {
     @StateObject private var toolState = ToolState()
 
     var disableInteration: Bool {
-        !fileState.hasAnyActiveFile && !fileState.hasAnyActiveGroup ||
-        fileState.currentGroup != nil && fileState.currentFile == nil ||
-        fileState.currentLocalFolder != nil && fileState.currentLocalFile == nil ||
-        fileState.isTemporaryGroupSelected && fileState.currentTemporaryFile == nil
+        fileState.currentActiveFile == nil
     }
     
     var background: Color {
@@ -123,9 +133,11 @@ struct ContentDetailNavigationView: View {
             background
                 .ignoresSafeArea()
             
-            ExcalidrawContainerView(interactionEnabled: !disableInteration)
-                .opacity(disableInteration || !fileHomeItemTransitionState.canShowExcalidrawCanvas ? 0 : 1)
-                .allowsHitTesting(!disableInteration)
+            ExcalidrawContainerWrapper(
+                activeFile: $fileState.currentActiveFile,
+                interactionEnabled: !disableInteration
+            )
+            .opacity(disableInteration || !fileHomeItemTransitionState.canShowExcalidrawCanvas ? 0 : 1)
             
             if fileHomeItemTransitionState.canShowItemContainerView {
                 switch lastHomeType {
@@ -142,7 +154,7 @@ struct ContentDetailNavigationView: View {
                             }
                             .opacity(
                                 fileHomeItemTransitionState.canShowItemContainerView ||
-                                !fileState.hasAnyActiveFile && !fileState.hasAnyActiveGroup
+                                fileState.currentActiveFile == nil && fileState.currentActiveGroup == nil
                                 ? 1
                                 : 0
                             )
@@ -154,7 +166,7 @@ struct ContentDetailNavigationView: View {
                                 FileHomeView(group: group)
                                     .opacity(
                                         fileHomeItemTransitionState.canShowItemContainerView ||
-                                        fileState.currentFile == nil
+                                        fileState.currentActiveFile == nil
                                         ? 1
                                         : 0
                                     )
@@ -187,14 +199,25 @@ struct ContentDetailNavigationView: View {
             }
         }
         .onReceive(fileState.objectWillChange) { _ in
-            guard fileState.currentFile == nil else { return }
+            guard fileState.currentActiveFile == nil else { return }
             
-            lastHomeType = fileState.currentGroup != nil ? .fileHome :
-                fileState.currentLocalFolder != nil ? .localFileHome :
-                fileState.isTemporaryGroupSelected ? .temporaryFileHome : .home
+            lastHomeType = {
+                switch fileState.currentActiveGroup {
+                    case .group:
+                        return .fileHome
+                    case .localFolder:
+                        return .localFileHome
+                    case .temporary:
+                        return .temporaryFileHome
+                    default:
+                        return .home
+                }
+            }()
         }
-        .onChange(of: fileState.currentFile) { newValue in
-            if newValue == nil, currentGroups.isEmpty, let currentGroup = fileState.currentGroup {
+        .onChange(of: fileState.currentActiveFile) { newValue in
+            if newValue == nil,
+               currentGroups.isEmpty,
+               case .group(let currentGroup) = fileState.currentActiveGroup {
                 // file all parents
                 var parents: [Group] = [currentGroup]
                 var p = currentGroup
@@ -205,8 +228,8 @@ struct ContentDetailNavigationView: View {
                 currentGroups = parents.reversed()
             }
         }
-        .watchImmediately(of: fileState.currentGroup) { newValue in
-            if let newValue, lastHomeType == .fileHome {
+        .watchImmediately(of: fileState.currentActiveGroup) { newValue in
+            if case .group(let newValue) = newValue, lastHomeType == .fileHome {
                 if currentGroups.isEmpty {
                     // file all parents
                     var parents: [Group] = [newValue]
@@ -232,28 +255,11 @@ struct ContentDetailNavigationView: View {
             } else {
                 currentGroups.removeAll()
             }
-extension FileState.ActiveFile: FlexibleItem {
-    var title: String {
-        name ?? .init(localizable: .generalUntitled)
-    }
-}
-
-@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
-struct ExcalidrawSplitViewsContainer: View {
-    @Environment(\.managedObjectContext) var viewContext
-    @Environment(\.alertToast) var alertToast
-
-    @EnvironmentObject var fileState: FileState
-    
-    var body: some View {
-        FlexibleSplitView(items: $fileState.currentFiles) { file in
-            withAnimation {
-                fileState.currentFiles.removeAll(where: {$0.id == file.id})
-            }
-        } subView: { activeFile in
-            ExcalidrawContainerWrapper(activeFile: activeFile)
         }
     }
+    
+
+    
 }
 
 
@@ -263,7 +269,16 @@ struct ExcalidrawContainerWrapper: View {
 
     @EnvironmentObject var fileState: FileState
 
-    @Binding var activeFile: FileState.ActiveFile
+    @Binding var activeFile: FileState.ActiveFile?
+    var interactionEnabled: Bool
+    
+    init(
+        activeFile: Binding<FileState.ActiveFile?>,
+        interactionEnabled: Bool = true
+    ) {
+        self._activeFile = activeFile
+        self.interactionEnabled = interactionEnabled
+    }
     
     var body: some View {
         ExcalidrawContainerView(
@@ -277,13 +292,15 @@ struct ExcalidrawContainerWrapper: View {
                         return try? ExcalidrawFile(contentsOf: url)
                     case .collaborationFile(let file):
                         return try? ExcalidrawFile(from: file.objectID, context: viewContext)
+                    default:
+                        return nil
                 }
             } set: { val in
                 guard let val else { return }
                 do {
                     switch activeFile {
                         case .file(let file):
-                            if file.id?.uuidString == activeFile.id {
+                            if file.id == val.id {
                                 // Everytime load a new file will cause an actual update.
                                 let oldElements = try ExcalidrawFile(
                                     from: file.objectID,
@@ -298,7 +315,7 @@ struct ExcalidrawContainerWrapper: View {
                                 fileState.updateFile(file, with: val)
                             }
                         case .localFile(let url):
-                            guard let folder = fileState.currentLocalFolder else { return }
+                            guard case .localFolder(let folder) = fileState.currentActiveGroup else { return }
                             Task {
                                 try folder.withSecurityScopedURL { _ in
                                     do {
@@ -338,13 +355,14 @@ struct ExcalidrawContainerWrapper: View {
                                     alertToast(error)
                                 }
                             }
-                        case .collaborationFile(let file):
+                        case .collaborationFile:
                             print("Not support yet...")
+                        default:
+                            break
                     }
-                } catch {
-                    
-                }
-            }
+                } catch { }
+            },
+            interactionEnabled: interactionEnabled
         )
         .modifier(ExcalidrawContainerToolbarContentModifier())
         .opacity(fileState.isInCollaborationSpace ? 0 : 1)
@@ -368,6 +386,7 @@ struct ExcalidrawContainerWrapper: View {
 //        .overlay {
 //            splitViewsContent()
 //        }
+        .allowsHitTesting(interactionEnabled)
     }
 }
 

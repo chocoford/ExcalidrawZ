@@ -10,7 +10,7 @@ import WebKit
 import Combine
 import os.log
 import UniformTypeIdentifiers
-import CoreData
+@preconcurrency import CoreData
 import ChocofordEssentials
 
 
@@ -22,48 +22,92 @@ final class FileState: ObservableObject {
     var currentGroupPublisherCancellables: [AnyCancellable] = []
     var currentFilePublisherCancellables: [AnyCancellable] = []
     
-    @Published var currentGroup: Group? {
+//    @Published var currentGroup: Group? {
+//        didSet {
+//            currentGroupPublisherCancellables.forEach {$0.cancel()}
+//            guard let currentGroup else { return }
+//            currentGroupPublisherCancellables = [
+//                currentGroup.publisher(for: \.name).sink { [weak self] _ in
+//                    self?.objectWillChange.send()
+//                }
+//            ]
+//            currentLocalFolder = nil
+//            currentLocalFile = nil
+//            isTemporaryGroupSelected = false
+//            currentTemporaryFile = nil
+//            isInCollaborationSpace = false
+//            resetSelections()
+//        }
+//    }
+//    @Published var currentFile: File? {
+//        didSet {
+//            print("freeze watchUpdate: \(Date.now.formatted(date: .omitted, time: .complete))")
+//            shouldIgnoreUpdate = true
+//            recoverWatchUpdate()
+//            resetSelections()
+//            resetCurrentFileChangesListener()
+//            if currentFile != nil {
+//                currentLocalFolder = nil
+//                currentLocalFile = nil
+//                isTemporaryGroupSelected = false
+//                currentTemporaryFile = nil
+//                isInCollaborationSpace = false
+//            }
+//        }
+//    }
+    
+    enum ActiveGroup: Identifiable, Equatable {
+        case group(Group)
+        case localFolder(LocalFolder)
+        case temporary
+        case collaboration
+        
+        var id: String {
+            switch self {
+                case .group(let group):
+                    (group.id ?? UUID()).uuidString
+                case .localFolder(let folder):
+                    folder.filePath ?? UUID().uuidString
+                case .temporary:
+                    "temporary"
+                case .collaboration:
+                    "collaboration"
+            }
+        }
+        
+//        enum GroupType: Equatable {
+//            case group, localFolder, temporary, collaboration
+//        }
+//        
+//        var type: GroupType {
+//            switch self {
+//                case .group:
+//                    .group
+//                case .localFolder:
+//                    .localFolder
+//                case .temporary:
+//                    .temporary
+//                case .collaboration:
+//                    .collaboration
+//            }
+//        }
+    }
+  
+    @Published var currentActiveGroup: ActiveGroup? {
         didSet {
             currentGroupPublisherCancellables.forEach {$0.cancel()}
-            guard let currentGroup else { return }
-            currentGroupPublisherCancellables = [
-                currentGroup.publisher(for: \.name).sink { [weak self] _ in
-                    self?.objectWillChange.send()
-                }
-            ]
-            currentLocalFolder = nil
-            currentLocalFile = nil
-            isTemporaryGroupSelected = false
-            currentTemporaryFile = nil
-            isInCollaborationSpace = false
-            resetSelections()
-        }
-    }
-    
-    @Published var currentFile: File? {
-        didSet {
-            print("freeze watchUpdate: \(Date.now.formatted(date: .omitted, time: .complete))")
-            shouldIgnoreUpdate = true
-            recoverWatchUpdate()
-            resetSelections()
-            resetCurrentFileChangesListener()
-            if let currentFile {
-                currentLocalFolder = nil
-                currentLocalFile = nil
-                isTemporaryGroupSelected = false
-                currentTemporaryFile = nil
-                isInCollaborationSpace = false
+            guard let currentActiveGroup else { return }
+            if case .group(let group) = currentActiveGroup {
+                currentGroupPublisherCancellables = [
+                    group.publisher(for: \.name).sink { [weak self] _ in
+                        self?.objectWillChange.send()
+                    }
+                ]
             }
-            
-//            Task {
-//                try? await PersistenceController.shared.container.viewContext.perform {
-//                    self.currentFile?.visitedAt = .now
-//                    try PersistenceController.shared.container.viewContext.save()
-//                }
-//            }
+            resetSelections()
         }
     }
-    
+
     enum ActiveFile: Identifiable, Equatable {
         case file(File)
         case localFile(URL)
@@ -98,7 +142,7 @@ final class FileState: ObservableObject {
     }
     
     @Published var activeFileIndex: Int?
-    @Published var currentFiles: [ActiveFile] = [] {
+    @Published var activeFiles: [ActiveFile?] = [] {
         willSet {
             guard let activeFileIndex else { return }
             self.activeFileIndex = min(newValue.endIndex - 1, activeFileIndex)
@@ -109,18 +153,18 @@ final class FileState: ObservableObject {
     }
     var currentActiveFile: ActiveFile? {
         get {
-            if let activeFileIndex, activeFileIndex < currentFiles.count {
-                return currentFiles[activeFileIndex]
+            if let activeFileIndex, activeFileIndex < activeFiles.count {
+                return activeFiles[activeFileIndex]
             }
             return nil
         }
         
         set {
-            if let activeFileIndex, activeFileIndex < currentFiles.count {
+            if let activeFileIndex, activeFileIndex < activeFiles.count {
                 if let newValue {
-                    currentFiles[activeFileIndex] = newValue
+                    activeFiles[activeFileIndex] = newValue
                 } else {
-                    currentFiles.remove(at: activeFileIndex)
+                    activeFiles.remove(at: activeFileIndex)
                 }
             }
         }
@@ -129,88 +173,98 @@ final class FileState: ObservableObject {
     @Published var selectedFiles: Set<File> = []
     @Published var selectedStartFile: File?
     
-    @Published var currentLocalFolder: LocalFolder? {
-        didSet {
-            resetSelections()
-
-            if currentLocalFolder != nil {
-                currentFile = nil
-                currentGroup = nil
-                isTemporaryGroupSelected = false
-                currentTemporaryFile = nil
-                isInCollaborationSpace = false
-            }
-        }
-    }
-
-    @Published var currentLocalFile: URL? {
-        didSet {
-            resetSelections()
-
-            if currentLocalFile != nil {
-                currentFile = nil
-                currentGroup = nil
-                isTemporaryGroupSelected = false
-                currentTemporaryFile = nil
-                isInCollaborationSpace = false
-                // selectedLocalFiles = [currentLocalFile]
-            }
-        }
-    }
-    @Published var currentLocalFileBookmarkData: Data? {
-        didSet {
-            if currentLocalFileBookmarkData != nil {
-                currentFile = nil
-                currentGroup = nil
-                isTemporaryGroupSelected = false
-                currentTemporaryFile = nil
-                isInCollaborationSpace = false
-            }
-        }
-    }
+//    @Published var currentLocalFolder: LocalFolder? {
+//        didSet {
+//            resetSelections()
+//
+//            if currentLocalFolder != nil {
+//                currentFile = nil
+//                currentGroup = nil
+//                isTemporaryGroupSelected = false
+//                currentTemporaryFile = nil
+//                isInCollaborationSpace = false
+//            }
+//        }
+//    }
+//
+//    @Published var currentLocalFile: URL? {
+//        didSet {
+//            resetSelections()
+//
+//            if currentLocalFile != nil {
+//                currentFile = nil
+//                currentGroup = nil
+//                isTemporaryGroupSelected = false
+//                currentTemporaryFile = nil
+//                isInCollaborationSpace = false
+//                // selectedLocalFiles = [currentLocalFile]
+//            }
+//        }
+//    }
+//    @Published var currentLocalFileBookmarkData: Data? {
+//        didSet {
+//            if currentLocalFileBookmarkData != nil {
+//                currentFile = nil
+//                currentGroup = nil
+//                isTemporaryGroupSelected = false
+//                currentTemporaryFile = nil
+//                isInCollaborationSpace = false
+//            }
+//        }
+//    }
     @Published var selectedLocalFiles: Set<URL> = []
     @Published var selectedStartLocalFile: URL?
 
-    @Published var isTemporaryGroupSelected = false {
-        didSet {
-            resetSelections()
-            if isTemporaryGroupSelected {
-                currentFile = nil
-                currentGroup = nil
-                currentLocalFolder = nil
-                currentLocalFile = nil
-                isInCollaborationSpace = false
-            }
-        }
-    }
+//    @Published var isTemporaryGroupSelected = false {
+//        didSet {
+//            resetSelections()
+//            if isTemporaryGroupSelected {
+//                currentFile = nil
+//                currentGroup = nil
+//                currentLocalFolder = nil
+//                currentLocalFile = nil
+//                isInCollaborationSpace = false
+//            }
+//        }
+//    }
     @Published var temporaryFiles: [URL] = []
-    @Published var currentTemporaryFile: URL? {
-        didSet {
-            resetSelections()
-            if currentTemporaryFile != nil {
-                currentFile = nil
-                currentGroup = nil
-                currentLocalFolder = nil
-                currentLocalFile = nil
-                // selectedTemporaryFiles = [currentTemporaryFile]
-            }
-        }
-    }
+//    @Published var currentTemporaryFile: URL? {
+//        didSet {
+//            resetSelections()
+//            if currentTemporaryFile != nil {
+//                currentFile = nil
+//                currentGroup = nil
+//                currentLocalFolder = nil
+//                currentLocalFile = nil
+//                // selectedTemporaryFiles = [currentTemporaryFile]
+//            }
+//        }
+//    }
     @Published var selectedTemporaryFiles: Set<URL> = []
     @Published var selectedStartTemporaryFile: URL?
     // Collab
-    @Published var isInCollaborationSpace = false {
-        didSet {
-            if isInCollaborationSpace {
-                currentFile = nil
-                currentGroup = nil
-                currentLocalFolder = nil
-                currentLocalFile = nil
-                isTemporaryGroupSelected = false
-                currentTemporaryFile = nil
-            }
+    
+    var isInCollaborationSpace: Bool {
+        if case .collaborationFile = currentActiveFile {
+            return true
         }
+        if case .collaboration = currentActiveGroup {
+            return true
+        }
+        return false
     }
+//    @Published var isInCollaborationSpace = false {
+//        didSet {
+//            if isInCollaborationSpace {
+//                currentFile = nil
+//                currentGroup = nil
+//                currentLocalFolder = nil
+//                currentLocalFile = nil
+//                isTemporaryGroupSelected = false
+//                currentTemporaryFile = nil
+//            }
+//        }
+//    }
     /// Files that is currently under collaboration.
     @Published var collaboratingFiles: [CollaborationFile] = []
     @Published var collaboratingFilesState: [CollaborationFile : ExcalidrawView.LoadingState] = [:]
@@ -228,24 +282,24 @@ final class FileState: ObservableObject {
             }
         }
     }
-    @Published var currentCollaborationFile: CollborationRoute? {
-        didSet {
-            if case .room(let file) = currentCollaborationFile {
-                currentFile = nil
-                currentGroup = nil
-                currentLocalFolder = nil
-                currentLocalFile = nil
-                isTemporaryGroupSelected = false
-                currentTemporaryFile = nil
-                isInCollaborationSpace = true
-                if !collaboratingFiles.contains(where: {$0 == file}) {
-                    collaboratingFiles.append(file)
-                }
-            }
-        }
-    }
+//    @Published var currentCollaborationFile: CollborationRoute? {
+//        didSet {
+//            if case .room(let file) = currentCollaborationFile {
+//                currentFile = nil
+//                currentGroup = nil
+//                currentLocalFolder = nil
+//                currentLocalFile = nil
+//                isTemporaryGroupSelected = false
+//                currentTemporaryFile = nil
+//                isInCollaborationSpace = true
+//                if !collaboratingFiles.contains(where: {$0 == file}) {
+//                    collaboratingFiles.append(file)
+//                }
+//            }
+//        }
+//    }
     var currentCollaborators: [Collaborator] {
-        if case .room(let file) = currentCollaborationFile {
+        if case .collaborationFile(let file) = currentActiveFile {
             collaborators[file] ?? []
         } else {
             []
@@ -254,19 +308,19 @@ final class FileState: ObservableObject {
     
     @AppStorage("ExcalidrawFileSortField") var sortField: ExcalidrawFileSortField = .updatedAt
     
-    var hasAnyActiveGroup: Bool {
-        currentGroup != nil || currentLocalFolder != nil || isTemporaryGroupSelected || isInCollaborationSpace
-    }
-    var hasAnyActiveFile: Bool {
-        if currentGroup != nil && currentFile != nil ||
-            currentLocalFolder != nil && currentLocalFile != nil ||
-            isTemporaryGroupSelected && currentTemporaryFile != nil {
-            return true
-        } else if case .room = currentCollaborationFile, isInCollaborationSpace {
-            return true
-        }
-        return false
-    }
+//    var hasAnyActiveGroup: Bool {
+//        currentGroup != nil || currentLocalFolder != nil || isTemporaryGroupSelected || isInCollaborationSpace
+//    }
+//    var hasAnyActiveFile: Bool {
+//        if currentGroup != nil && currentFile != nil ||
+//            currentLocalFolder != nil && currentLocalFile != nil ||
+//            isTemporaryGroupSelected && currentTemporaryFile != nil {
+//            return true
+//        } else if case .room = currentCollaborationFile, isInCollaborationSpace {
+//            return true
+//        }
+//        return false
+//    }
 
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
     var excalidrawCollaborationWebCoordinator: ExcalidrawView.Coordinator?
@@ -300,7 +354,7 @@ final class FileState: ObservableObject {
         parentGroupID: NSManagedObjectID? = nil,
         context: NSManagedObjectContext
     ) async throws -> NSManagedObjectID {
-        try await context.perform {
+        let group = try await context.perform {
             let group = Group(name: name, context: context)
             
             if let parentGroupID,
@@ -308,70 +362,63 @@ final class FileState: ObservableObject {
                 group.parent = parent
             }
             try context.save()
-            if activate {
-                Task {
-                    await MainActor.run {
-                        self.currentGroup = group
-                    }
-                }
-            }
-            return group.objectID
+            
+            return group
         }
+        
+        if activate {
+            self.currentActiveGroup = .group(group)
+        }
+        
+        return group.objectID
     }
     
     @discardableResult
-    func createNewFile(active: Bool = true, context: NSManagedObjectContext) throws -> NSManagedObjectID {
-        guard let currentGroup else { throw AppError.stateError(.currentGroupNil) }
-        let file = File(name: String(localizable: .newFileNamePlaceholder), context: context)
-        guard let group = context.object(with: currentGroup.objectID) as? Group else {
-            throw AppError.groupError(.notFound(currentGroup.objectID.description))
-        }
-        file.group = group
+    func createNewFile(
+        active: Bool = true,
+        in groupID: NSManagedObjectID? = nil,
+        context: NSManagedObjectContext,
+        animation: Animation? = nil,
+    ) async throws -> NSManagedObjectID {
+        guard let targetGroupID = groupID ?? {
+            if case .group(let currentGroup) = self.currentActiveGroup {
+                return currentGroup.objectID
+            }
+            return nil
+        }() else { throw AppError.stateError(.currentGroupNil) }
         
-        guard let templateURL = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else {
-            throw AppError.fileError(.notFound)
+        let file = try await context.perform {
+            
+            let file = File(name: String(localizable: .newFileNamePlaceholder), context: context)
+            
+            guard let group = context.object(with: targetGroupID) as? Group else {
+                throw AppError.groupError(.notFound(targetGroupID.description))
+            }
+            file.group = group
+            
+            guard let templateURL = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else {
+                throw AppError.fileError(.notFound)
+            }
+            file.content = try Data(contentsOf: templateURL)
+            
+            withAnimation(animation) {
+                context.insert(file)
+            }
+            
+            try context.save()
+            
+            return file
         }
-        file.content = try Data(contentsOf: templateURL)
+        
         if active {
-            currentFile = file
+            self.currentActiveFile = .file(file)
         }
-        try context.save()
         
         return file.objectID
     }
-    
-    func updateCurrentFileData(data: Data) {
-        guard !shouldIgnoreUpdate, currentFile?.inTrash != true else {
-            return
-        }
-        if let file = currentFile {
-            let didUpdateFile = didUpdateFile
-            let id = file.objectID
-            let bgContext = PersistenceController.shared.container.newBackgroundContext()
-            
-            Task.detached {
-                do {
-                    try await bgContext.perform {
-                        guard let file = bgContext.object(with: id) as? File else { return }
-                        try file.updateElements(with: data, newCheckpoint: !didUpdateFile)
-                        try bgContext.save()
-                    }
-                    
-                    await MainActor.run {
-                        self.didUpdateFile = true
-                    }
-                    
-                } catch {
-                    print(error)
-                }
-            }
-        } else if !isCreatingFile {
-            
-        }
-    }
-    
+
     func updateCurrentFile(with excalidrawFile: ExcalidrawFile) {
-        if let file = self.currentFile {
+        if case .file(let file) = self.currentActiveFile {
             updateFile(file, with: excalidrawFile)
         }
     }
@@ -451,7 +498,7 @@ final class FileState: ObservableObject {
         
         if active {
             await MainActor.run {
-                self.currentLocalFile = fileURL
+                self.currentActiveFile = .localFile(fileURL)
             }
         }
     }
@@ -550,49 +597,56 @@ final class FileState: ObservableObject {
     }
     func importFile(_ url: URL, to targetGroupType: ImportGroupType = .current) async throws {
         let excalidrawFile = try ExcalidrawFile(contentsOf: url)
-                var targetGroup: Group?
-        if targetGroupType == .default {
-            let viewContext = PersistenceController.shared.container.viewContext
-            let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
-            fetchRequest.predicate = NSPredicate(format: "type == %@", "default")
-            fetchRequest.fetchLimit = 1
-            try await viewContext.perform {
-                let result = (try viewContext.fetch(fetchRequest).first) as Group?
-                targetGroup = result
+        let context = PersistenceController.shared.container.viewContext
+        let currentGroup: Group? = {
+            if case .group(let currentGroup) = self.currentActiveGroup {
+                return currentGroup
             }
-        } else if case .custom(let id) = targetGroupType, let id {
-            let viewContext = PersistenceController.shared.container.viewContext
-            let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
-            fetchRequest.predicate = NSPredicate(format: "id == %@", id as CVarArg)
-            fetchRequest.fetchLimit = 1
-            try await viewContext.perform {
-                let result = (try viewContext.fetch(fetchRequest).first) as Group?
-                targetGroup = result
-            }
-        }
+            return nil
+        }()
+        let currentGroupID = currentGroup?.objectID
         
-        let group = targetGroup
-        let viewContext = PersistenceController.shared.container.viewContext
-        try await viewContext.perform {
-            guard let group = group ?? self.currentGroup else { throw AppError.stateError(.currentGroupNil) }
-            let file = File(name: excalidrawFile.name ?? "Untitled", context: viewContext)
+        let (fileID, mediaItemsNeedImport) = try await context.perform {
+            var targetGroup: Group?
+
+            if targetGroupType == .default {
+                let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+                fetchRequest.predicate = NSPredicate(format: "type == %@", "default")
+                fetchRequest.fetchLimit = 1
+                targetGroup = (try context.fetch(fetchRequest).first) as Group?
+            } else if case .custom(let id) = targetGroupType, let id {
+                let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+                fetchRequest.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+                fetchRequest.fetchLimit = 1
+                targetGroup = (try context.fetch(fetchRequest).first) as Group?
+            }
+            
+            guard let group = targetGroup ?? {
+                guard let currentGroupID else { return nil }
+                return context.object(with: currentGroupID) as? Group
+            }() else { throw AppError.stateError(.currentGroupNil) }
+            
+            let file = File(name: excalidrawFile.name ?? "Untitled", context: context)
             file.content = try excalidrawFile.contentWithoutFiles()
             file.group = group
             
-            let mediaItems = try viewContext.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
+            let mediaItems = try context.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
             let mediaItemsNeedImport = excalidrawFile.files.values.filter{ item in !mediaItems.contains(where: {$0.id == item.id})}
             mediaItemsNeedImport.forEach { item in
-                let mediaItem = MediaItem(resource: item, context: viewContext)
+                let mediaItem = MediaItem(resource: item, context: context)
                 mediaItem.file = file
-                viewContext.insert(mediaItem)
+                context.insert(mediaItem)
             }
-            PersistenceController.shared.save()
-
-             Task {
-                 try? await self.excalidrawWebCoordinator?.insertMediaFiles(mediaItemsNeedImport)
-                 await MainActor.run {
-                     self.currentFile = file
-                 }
+            
+            try context.save()
+            
+            return (file.objectID, mediaItemsNeedImport)
+        }
+        
+        try? await self.excalidrawWebCoordinator?.insertMediaFiles(mediaItemsNeedImport)
+        await MainActor.run {
+            if let file = context.object(with: fileID) as? File {
+                self.currentActiveFile = .file(file)
             }
         }
     }
@@ -605,7 +659,11 @@ final class FileState: ObservableObject {
     /// * multiple folders: Create groups by folders
     /// * folders & files: Create groups by folders & Group remains files to `Ungrouped`
     func importFiles(_ urls: [URL]) async throws {
-        let currentGroupID = currentGroup?.objectID
+        guard case .group(let currentGroup) = self.currentActiveGroup else {
+            return
+        }
+        
+        let currentGroupID = currentGroup.objectID
         var groupID: NSManagedObjectID?
         if urls.count == 1, let url = urls.first {
             guard url.startAccessingSecurityScopedResource() else {
@@ -650,7 +708,7 @@ final class FileState: ObservableObject {
                 let fetchRequest = NSFetchRequest<Group>()
                 fetchRequest.predicate = NSPredicate(format: "type == %@", "default")
                 var group: Group?
-                if let currentGroupID, let currentGroup = viewContext.object(with: currentGroupID) as? Group {
+                if let currentGroup = viewContext.object(with: currentGroupID) as? Group {
                     group = currentGroup
                 } else if let defaultGroup = try viewContext.fetch(fetchRequest).first {
                     group = defaultGroup
@@ -755,31 +813,62 @@ final class FileState: ObservableObject {
     
     func deleteFile(_ file: File) {
         file.inTrash = true
-        if file == currentFile {
-            currentFile = nil
+        if .file(file) == currentActiveFile {
+            currentActiveFile = nil
         }
         PersistenceController.shared.save()
     }
     
-    func recoverFile(_ file: File) {
-        guard file.inTrash else { return }
-        file.inTrash = false
+    func recoverFile(fileID: NSManagedObjectID, context: NSManagedObjectContext) async throws {
+        let file: File? = try await context.perform {
+            guard let file = context.object(with: fileID) as? File else { return nil }
+            guard file.inTrash else { return nil }
+            file.inTrash = false
+            
+            if let groupID = file.group?.objectID,
+               let group = context.object(with: groupID) as? Group {
+//                await MainActor.run {
+//                    self.currentActiveGroup = .group(group)
+//                }
+            } else {
+                let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+                fetchRequest.predicate = NSPredicate(format: "type == %@", "default")
+                fetchRequest.fetchLimit = 1
+                if let group = try context.fetch(fetchRequest).first {
+                    file.group = group
+                    
+                    
+//                    await MainActor.run {
+//                        self.currentActiveGroup = .group(group)
+//                    }
+                }
+            }
+            
+            // self.currentActiveFile = .file(file)
+            
+            try context.save()
+            
+            return file
+        }
         
-        currentGroup = file.group
-        currentFile = file
-        PersistenceController.shared.save()
+        if let file {
+            self.currentActiveFile = .file(file)
+            if let group = file.group {
+                self.currentActiveGroup = .group(group)
+            }
+        }
     }
 
     func mergeDefaultGroupAndTrashIfNeeded(context: NSManagedObjectContext) async throws {
         print("mergeDefaultGroupAndTrashIfNeeded...")
-        try await context.perform {
+        let theEearlisetGroup = try await context.perform {
             let groups = try context.fetch(NSFetchRequest<Group>(entityName: "Group"))
             
             let defaultGroups = groups.filter({$0.groupType == .default})
-            
+            var theEearlisetGroup: Group?
             // Merge default groups
             if defaultGroups.count > 1 {
-                let theEearlisetGroup = defaultGroups.sorted(by: {
+                theEearlisetGroup = defaultGroups.sorted(by: {
                     ($0.createdAt ?? .distantFuture) < ($1.createdAt ?? .distantFuture)
                 }).first!
                 
@@ -794,12 +883,6 @@ final class FileState: ObservableObject {
                         context.delete(group)
                     }
                 }
-                
-                Task {
-                    await MainActor.run {
-                        self.currentGroup = theEearlisetGroup
-                    }
-                }
             }
             
             let trashGroups = groups.filter({$0.groupType == .trash})
@@ -807,6 +890,12 @@ final class FileState: ObservableObject {
                 context.delete(trash)
             }
             try context.save()
+            
+            return theEearlisetGroup
+        }
+        
+        if let theEearlisetGroup {
+            self.currentActiveGroup = .group(theEearlisetGroup)
         }
     }
     
@@ -859,18 +948,25 @@ final class FileState: ObservableObject {
     @MainActor
     public func setToDefaultGroup() async throws {
         let viewContext = PersistenceController.shared.container.viewContext
-        try await viewContext.perform {
+        let (file, group): (File?, Group?) = try await viewContext.perform {
             let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
             fetchRequest.predicate = NSPredicate(format: "type = %@", "default")
             if let defaultGroup = try viewContext.fetch(fetchRequest).first {
-                self.currentGroup = defaultGroup
-                
                 let fileFetchRequest = NSFetchRequest<File>(entityName: "File")
                 fileFetchRequest.predicate = NSPredicate(format: "group = %@ AND inTrash = false", defaultGroup)
                 fileFetchRequest.sortDescriptors = [
                     NSSortDescriptor(keyPath: \File.updatedAt, ascending: false)
                 ]
-                self.currentFile = try viewContext.fetch(fileFetchRequest).first
+                return (try viewContext.fetch(fileFetchRequest).first, defaultGroup)
+            }
+            
+            return (nil, nil)
+        }
+        
+        if let group {
+            self.currentActiveGroup = .group(group)
+            if let file {
+                self.currentActiveFile = .file(file)
             }
         }
     }
@@ -880,7 +976,7 @@ final class FileState: ObservableObject {
     private func resetCurrentFileChangesListener() {
         currentFilePublisherCancellables.forEach{$0.cancel()}
         
-        if let currentFile {
+        if case .file(let currentFile) = self.currentActiveFile {
             currentFilePublisherCancellables = [
                 currentFile.publisher(for: \.name).sink { [weak self] _ in
                     DispatchQueue.main.async {

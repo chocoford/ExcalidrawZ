@@ -94,8 +94,8 @@ struct FileHomeView: View {
                         HStack(spacing: 2) {
                             ForEach(parentGroups) { group in
                                 Button {
-                                    fileState.currentFile = nil
-                                    fileState.currentGroup = group
+                                    fileState.currentActiveFile = nil
+                                    fileState.currentActiveGroup = .group(group)
                                 } label: {
                                     Text(group.name ?? String(localizable: .generalUntitled))
                                         .foregroundStyle(.secondary)

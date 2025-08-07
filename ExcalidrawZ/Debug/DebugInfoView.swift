@@ -53,13 +53,16 @@ struct DebugInfoView: View {
     @State private var selectedTab: Tabs = .fileContent
     
     var currentFile: File? {
-        fileState.currentFile
+        if case .file(let file) = fileState.currentActiveFile {
+            return file
+        }
+        return nil
     }
     
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("File Content", systemImage: "play", value: .fileContent) {
-                if let file = fileState.currentFile,
+                if case .file(let file) = fileState.currentActiveFile,
                    let excalidrawFile = try? ExcalidrawFile.init(
                     from: file.objectID,
                     context: viewContext
