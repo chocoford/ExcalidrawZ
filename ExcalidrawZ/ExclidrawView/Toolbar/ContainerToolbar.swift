@@ -154,19 +154,6 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             title()
         }
 #endif
-
-#if os(macOS)
-        ToolbarItemGroup(placement: .cancellationAction) {
-            if #available(macOS 26.0, iOS 26.0, *) {
-                SettingsLink()
-            } else {
-                SettingsButton(useDefaultLabel: true) {
-                    Label(.localizable(.settingsName), systemSymbol: .gear)
-                        .labelStyle(.iconOnly)
-                }
-            }
-        }
-#endif
         
 //        ToolbarItemGroup(placement: .confirmationAction) {
         ToolbarItemGroup(placement: .primaryAction) {

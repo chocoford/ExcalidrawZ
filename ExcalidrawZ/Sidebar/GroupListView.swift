@@ -148,6 +148,10 @@ struct GroupListView: View {
             
             Divider()
 
+//            if #available(macOS 26.0, *) {
+//                contentToolbar()
+//                    .buttonStyle(.glassProminent)
+//            } else
             if #available(macOS 14.0, *) {
                 contentToolbar()
 #if canImport(AppKit)
@@ -178,7 +182,7 @@ struct GroupListView: View {
             }
         }
     }
-    
+
     @MainActor @ViewBuilder
     private func createGroupMenuButton() -> some View {
         Menu {
@@ -209,12 +213,15 @@ struct GroupListView: View {
     @MainActor @ViewBuilder
     private func contentToolbar() -> some View {
         HStack {
-            Button {
-                searchExcalidraw()
-            } label: {
-                Label(.localizable(.searchButtonTitle), systemSymbol: .magnifyingglass)
-                    .labelStyle(.iconOnly)
+            if #available(macOS 26.0, iOS 26.0, *) {
+                SettingsLink().labelStyle(.iconOnly)
+            } else {
+                SettingsButton(useDefaultLabel: true) {
+                    Label(.localizable(.settingsName), systemSymbol: .gear)
+                        .labelStyle(.iconOnly)
+                }
             }
+            
             Spacer()
             if #available(macOS 13.0, *) {
                 sortMenuButton()

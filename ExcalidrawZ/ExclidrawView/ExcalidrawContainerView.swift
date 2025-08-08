@@ -39,7 +39,6 @@ struct ExcalidrawContainerView: View {
     @State private var isDropping: Bool = false
     @State private var cloudContainerEventChangeListener: AnyCancellable?
 
-    
 //    {
 //        Binding {
 //            do {
