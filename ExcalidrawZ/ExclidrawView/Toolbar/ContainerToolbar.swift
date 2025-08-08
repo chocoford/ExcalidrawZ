@@ -78,7 +78,9 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
     private func toolbarContent_macOS() -> some ToolbarContent {
 #if os(macOS)
         ToolbarItemGroup(placement: .status) {
-            if #available(macOS 13.0, iOS 16.0, *) {
+            if #available(macOS 26.0, iOS 26.0, *) {
+                ExcalidrawToolbar()
+            } else if #available(macOS 13.0, iOS 16.0, *) {
                 ExcalidrawToolbar()
                 .padding(.vertical, 2)
             } else {
@@ -125,6 +127,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                     Label(.localizable(.navigationButtonBack), systemSymbol: .chevronBackward)
                 }
                 title()
+                    .padding(.trailing, 8)
             }
 #endif
 
@@ -154,9 +157,13 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 
 #if os(macOS)
         ToolbarItemGroup(placement: .cancellationAction) {
-            SettingsButton(useDefaultLabel: true) {
-                Label(.localizable(.settingsName), systemSymbol: .gear)
-                    .labelStyle(.iconOnly)
+            if #available(macOS 26.0, iOS 26.0, *) {
+                SettingsLink()
+            } else {
+                SettingsButton(useDefaultLabel: true) {
+                    Label(.localizable(.settingsName), systemSymbol: .gear)
+                        .labelStyle(.iconOnly)
+                }
             }
         }
 #endif

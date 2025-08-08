@@ -27,7 +27,10 @@ struct SidebarView: View {
     @StateObject private var localFolderState = LocalFolderState()
 
     var body: some View {
-        if #available(macOS 13.0, *) {
+        if #available(macOS 26.0, *) {
+            oneColumnSidebar()
+                .navigationSplitViewColumnWidth(min: 260, ideal: 260, max: 340)
+        } else if #available(macOS 13.0, *) {
             oneColumnSidebar()
                 .navigationSplitViewColumnWidth(min: 240, ideal: 240, max: 340)
         } else {

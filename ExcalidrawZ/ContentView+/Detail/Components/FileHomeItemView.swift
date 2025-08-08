@@ -206,7 +206,15 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                     }
             }
             .overlayPreferenceValue(FileHomeItemPreferenceKey.self) { value in
-                if let activeFile = file,
+                
+                
+                if let activeFile = file ?? {
+                    if case .file(let file) = fileState.currentActiveFile {
+                        return file
+                    } else {
+                        return nil
+                    }
+                }(),
                    let sAnchor: Anchor<CGRect> = value[activeFile.objectID.description + "SOURCE"],
                    let dAnchor: Anchor<CGRect> = value["DEST"] {
                     // let _ = print("FileHomeItemTransitionModifier: \(activeFile.objectID.description)")
@@ -236,7 +244,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                     withAnimation(.smooth(duration: duration)) {
                         self.animateFlag = true
                     }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.1) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.15) {
                         withAnimation {
                             self.show = false
                             state.canShowExcalidrawCanvas = true
@@ -255,7 +263,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                     withAnimation(.bouncy(duration: duration / 2)) {
                         self.animateFlag = false
                     }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + duration / 2 + 0.1) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + duration / 2 + 0.15) {
                         self.show = true
                         self.file = nil
                         state.shouldHideItem = nil

@@ -129,7 +129,7 @@ struct ExcalidrawToolbar: View {
                 if sizeClass == .dense {
                     denseContent()
                 } else {
-                    content(sizeClass: sizeClass)
+                    segmentedPicker(sizeClass: sizeClass)
                 }
             }
         }
@@ -141,7 +141,11 @@ struct ExcalidrawToolbar: View {
     @State private var lastActivatedSecondaryTool: ExcalidrawTool?
     
     @MainActor @ViewBuilder
-    private func content(sizeClass: ExcalidrawToolbarToolSizeClass, size: CGFloat = 20, withFooter: Bool = true) -> some View {
+    private func segmentedPicker(
+        sizeClass: ExcalidrawToolbarToolSizeClass,
+        size: CGFloat = 20,
+        withFooter: Bool = true
+    ) -> some View {
         HStack(spacing: size / 2) {
             SegmentedPicker(selection: $toolState.activatedTool) {
                 primaryToolPikcerItems(size: size, withFooter: withFooter)
@@ -150,9 +154,23 @@ struct ExcalidrawToolbar: View {
                     secondaryToolPikcerItems(size: size, withFooter: withFooter)
                 }
             }
-            .padding(size / 3)
+            .padding({
+                if #available(macOS 26.0, iOS 26.0, *) {
+                    .top
+                } else {
+                    .all
+                }
+            }(), {
+                if #available(macOS 26.0, iOS 26.0, *) {
+                    0
+                } else {
+                    size / 3
+                }
+            }())
             .background {
-                if #available(macOS 14.0, iOS 17.0, *) {
+                if #available(macOS 26.0, iOS 26.0, *) {
+                    
+                } else if #available(macOS 14.0, iOS 17.0, *) {
                     RoundedRectangle(cornerRadius: size / 1.6)
                         .fill(.regularMaterial)
                         .stroke(.separator, lineWidth: 0.5)

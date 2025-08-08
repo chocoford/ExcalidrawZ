@@ -141,8 +141,8 @@ final class FileState: ObservableObject {
         }
     }
     
-    @Published var activeFileIndex: Int?
-    @Published var activeFiles: [ActiveFile?] = [] {
+    @Published var activeFileIndex: Int? = 0
+    @Published var activeFiles: [ActiveFile?] = [nil] {
         willSet {
             guard let activeFileIndex else { return }
             self.activeFileIndex = min(newValue.endIndex - 1, activeFileIndex)
@@ -153,18 +153,21 @@ final class FileState: ObservableObject {
     }
     var currentActiveFile: ActiveFile? {
         get {
-            if let activeFileIndex, activeFileIndex < activeFiles.count {
+            if let activeFileIndex, activeFileIndex >= 0, activeFileIndex < activeFiles.count {
                 return activeFiles[activeFileIndex]
             }
             return nil
         }
         
         set {
-            if let activeFileIndex, activeFileIndex < activeFiles.count {
+            if let activeFileIndex,
+               activeFileIndex < activeFiles.count {
                 if let newValue {
                     activeFiles[activeFileIndex] = newValue
-                } else {
+                } else if activeFileIndex > 0 {
                     activeFiles.remove(at: activeFileIndex)
+                } else {
+                    activeFiles[activeFileIndex] = nil
                 }
             }
         }

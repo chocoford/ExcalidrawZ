@@ -131,7 +131,9 @@ struct LibraryView: View {
     private func toolbar() -> some ToolbarContent {
 #if os(macOS)
         ToolbarItem(placement: .destructiveAction) {
-            Color.clear
+            if #available(macOS 26.0, *) {} else {
+                Color.clear
+            }
         }
         
         /// This is the key to make sidebar toggle at the right side.
@@ -150,12 +152,15 @@ struct LibraryView: View {
                 Text(.localizable(.librariesTitle))
                     .foregroundStyle(.secondary)
                     .font(.headline)
+                    .padding(.horizontal, 8)
                 if #available(macOS 15.0, iOS 18.0, *) {} else {
                     Spacer()
                 }
             } else {
-                Color.clear
-                    .frame(width: 1)
+                if #available(macOS 26.0, *) {} else {
+                    Color.clear
+                        .frame(width: 1)
+                }
             }
         }
         ToolbarItem(placement: .confirmationAction) {

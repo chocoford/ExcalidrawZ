@@ -145,7 +145,10 @@ struct ContentDetailNavigationView: View {
                         // Home View
                         HomeView()
                             .background {
-                                if #available(macOS 14.0, iOS 17.0, *) {
+                                if #available(macOS 26.0, iOS 17.0, *) {
+                                    Rectangle()
+                                        .fill(.background)
+                                } else if #available(macOS 14.0, iOS 17.0, *) {
                                     Rectangle()
                                         .fill(.windowBackground)
                                 } else {
@@ -172,7 +175,10 @@ struct ContentDetailNavigationView: View {
                                     )
                                     .background {
                                         ZStack {
-                                            if #available(macOS 14.0, iOS 17.0, *) {
+                                            if #available(macOS 26.0, iOS 17.0, *) {
+                                                Rectangle()
+                                                    .fill(.background)
+                                            } else if #available(macOS 14.0, iOS 17.0, *) {
                                                 Rectangle()
                                                     .fill(.windowBackground)
                                             } else {
@@ -198,38 +204,25 @@ struct ContentDetailNavigationView: View {
                 }
             }
         }
-        .onReceive(fileState.objectWillChange) { _ in
-            guard fileState.currentActiveFile == nil else { return }
-            
-            lastHomeType = {
-                switch fileState.currentActiveGroup {
-                    case .group:
-                        return .fileHome
-                    case .localFolder:
-                        return .localFileHome
-                    case .temporary:
-                        return .temporaryFileHome
-                    default:
-                        return .home
-                }
-            }()
-        }
         .onChange(of: fileState.currentActiveFile) { newValue in
-            if newValue == nil,
-               currentGroups.isEmpty,
-               case .group(let currentGroup) = fileState.currentActiveGroup {
-                // file all parents
-                var parents: [Group] = [currentGroup]
-                var p = currentGroup
-                while let parent = p.parent {
-                    parents.append(parent)
-                    p = parent
+            if newValue == nil {
+                if case .group(let currentGroup) = fileState.currentActiveGroup {
+                    // file all parents
+                    var parents: [Group] = [currentGroup]
+                    var p = currentGroup
+                    while let parent = p.parent {
+                        parents.append(parent)
+                        p = parent
+                    }
+                    currentGroups = parents.reversed()
                 }
-                currentGroups = parents.reversed()
+                
+                updateLastHomeType()
             }
+           
         }
         .watchImmediately(of: fileState.currentActiveGroup) { newValue in
-            if case .group(let newValue) = newValue, lastHomeType == .fileHome {
+            if case .group(let newValue) = newValue {
                 if currentGroups.isEmpty {
                     // file all parents
                     var parents: [Group] = [newValue]
@@ -255,10 +248,27 @@ struct ContentDetailNavigationView: View {
             } else {
                 currentGroups.removeAll()
             }
+            
+            if fileState.currentActiveFile == nil {
+                updateLastHomeType()
+            }
         }
     }
     
-
+    private func updateLastHomeType() {
+        switch fileState.currentActiveGroup {
+            case .group:
+                lastHomeType = .fileHome
+            case .localFolder:
+                lastHomeType = .localFileHome
+            case .temporary:
+                lastHomeType = .temporaryFileHome
+            case .collaboration:
+                lastHomeType = .temporaryFileHome
+            default:
+                lastHomeType = .home
+        }
+    }
     
 }
 
@@ -364,7 +374,6 @@ struct ExcalidrawContainerWrapper: View {
             },
             interactionEnabled: interactionEnabled
         )
-        .modifier(ExcalidrawContainerToolbarContentModifier())
         .opacity(fileState.isInCollaborationSpace ? 0 : 1)
         .overlay {
             ExcalidrawCollabContainerView()

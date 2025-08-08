@@ -118,9 +118,15 @@ struct FileRowView: View {
                 }
                 fileState.selectedFiles.insertOrRemove(file)
             } else {
+                if let group = file.group {
+                    fileState.currentActiveGroup = .group(group)
+                }
                 fileState.currentActiveFile = .file(file)
             }
 #else
+            if let group = file.group {
+                fileState.currentActiveGroup = .group(group)
+            }
             fileState.currentActiveFile = .file(file)
 #endif
         }

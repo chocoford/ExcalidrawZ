@@ -105,8 +105,11 @@ struct ContentViewModern: View {
 //
 #if os(macOS)
         /// It is neccessary for macOS to `space-between` the new button and sidebar toggle.
+        /// In the latest macOS 26.0, this is not needed anymore. Otherwise, there will be a blank background.
         ToolbarItemGroup(placement: .secondaryAction) {
-            Color.clear
+            if #available(macOS 26.0, iOS 26.0, *) { } else {
+                Color.clear
+            }
         }
 #endif
     }
