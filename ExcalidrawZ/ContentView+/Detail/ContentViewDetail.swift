@@ -127,6 +127,7 @@ struct ContentDetailNavigationView: View {
     
     /// For transition
     @State private var currentGroups: [Group] = []
+    @State private var currentFolders: [LocalFolder] = []
     
     var body: some View {
         ZStack {
@@ -166,7 +167,7 @@ struct ContentDetailNavigationView: View {
                         // File Home View
                         ZStack {
                             ForEach(Array(currentGroups.enumerated()), id: \.element) { i, group in
-                                FileHomeView(group: group)
+                                GroupFileHomeView(group: group)
                                     .opacity(
                                         fileHomeItemTransitionState.canShowItemContainerView ||
                                         fileState.currentActiveFile == nil
@@ -197,7 +198,38 @@ struct ContentDetailNavigationView: View {
                         
                         
                     case .localFileHome:
-                        EmptyView()
+                        ZStack {
+                            LocalFoldersProvider { _ in
+                                ForEach(Array(currentFolders.enumerated()), id: \.element) { i, folder in
+                                    LocalFolderFileHomeView(folder: folder)
+                                        .opacity(
+                                            fileHomeItemTransitionState.canShowItemContainerView ||
+                                            fileState.currentActiveFile == nil
+                                            ? 1
+                                            : 0
+                                        )
+                                        .background {
+                                            ZStack {
+                                                if #available(macOS 26.0, iOS 17.0, *) {
+                                                    Rectangle()
+                                                        .fill(.background)
+                                                } else if #available(macOS 14.0, iOS 17.0, *) {
+                                                    Rectangle()
+                                                        .fill(.windowBackground)
+                                                } else {
+                                                    Color.windowBackgroundColor
+                                                }
+                                            }
+                                            .overlay(alignment: .leading) {
+                                                Rectangle().fill(.separator).frame(width: 1).offset(x: -1)
+                                            }
+                                        }
+                                        .transition(
+                                            .move(edge: .trailing)
+                                        )
+                                }
+                            }
+                        }
                     case .temporaryFileHome:
                         EmptyView()
                         
@@ -206,52 +238,78 @@ struct ContentDetailNavigationView: View {
         }
         .onChange(of: fileState.currentActiveFile) { newValue in
             if newValue == nil {
-                if case .group(let currentGroup) = fileState.currentActiveGroup {
-                    // file all parents
-                    var parents: [Group] = [currentGroup]
-                    var p = currentGroup
-                    while let parent = p.parent {
-                        parents.append(parent)
-                        p = parent
-                    }
-                    currentGroups = parents.reversed()
-                }
+                initCurrentGroups()
                 
                 updateLastHomeType()
             }
-           
         }
         .watchImmediately(of: fileState.currentActiveGroup) { newValue in
-            if case .group(let newValue) = newValue {
-                if currentGroups.isEmpty {
-                    // file all parents
-                    var parents: [Group] = [newValue]
-                    var p = newValue
-                    while let parent = p.parent {
-                        parents.append(parent)
-                        p = parent
+            switch newValue {
+                case .group(let newValue):
+                    if currentGroups.isEmpty {
+                        initCurrentGroups()
+                    } else if currentGroups.contains(newValue) {
+                        let index = currentGroups.firstIndex(of: newValue)!
+                        withAnimation(.smooth(duration: 0.4)) {
+                            currentGroups = Array(currentGroups.prefix(upTo: index + 1))
+                        }
+                    } else {
+                        withAnimation(.smooth(duration: 0.4)) {
+                            currentGroups.append(newValue)
+                        }
                     }
-                    currentGroups = parents.reversed()
-                } else if currentGroups.contains(newValue) {
-                    let index = currentGroups.firstIndex(of: newValue)!
-                    withAnimation(.smooth(duration: 0.4)) {
-                        currentGroups = Array(currentGroups.prefix(upTo: index + 1))
+                    
+                case .localFolder(let newValue):
+                    if currentFolders.isEmpty {
+                        initCurrentGroups()
+                    } else if currentFolders.contains(newValue) {
+                        let index = currentFolders.firstIndex(of: newValue)!
+                        withAnimation(.smooth(duration: 0.4)) {
+                            currentFolders = Array(currentFolders.prefix(upTo: index + 1))
+                        }
+                    } else {
+                        withAnimation(.smooth(duration: 0.4)) {
+                            currentFolders.append(newValue)
+                        }
                     }
-                } else {
-                    withAnimation(.smooth(duration: 0.4)) {
-                        currentGroups.append(newValue)
-                    }
-//                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-//                        currentGroups.remove(at: 0)
-//                    }
-                }
-            } else {
-                currentGroups.removeAll()
+                    
+                default:
+                    currentGroups.removeAll()
             }
+            
+            
+            
             
             if fileState.currentActiveFile == nil {
                 updateLastHomeType()
             }
+        }
+    }
+    
+    private func initCurrentGroups() {
+        switch fileState.currentActiveGroup {
+            case .group(let currentGroup):
+                // file all parents
+                var parents: [Group] = [currentGroup]
+                var p = currentGroup
+                while let parent = p.parent {
+                    parents.append(parent)
+                    p = parent
+                }
+                currentGroups = parents.reversed()
+                
+            case .localFolder(let folder):
+                // file all parents
+                var parents: [LocalFolder] = [folder]
+                var p = folder
+                while let parent = p.parent {
+                    parents.append(parent)
+                    p = parent
+                }
+                currentFolders = parents.reversed()
+            
+            default:
+                break
         }
     }
     

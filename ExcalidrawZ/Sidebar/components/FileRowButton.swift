@@ -53,25 +53,7 @@ struct FileRowButton: View {
     var body: some View {
         label
             .contentShape(Rectangle())
-            .onHover { isHovered in
-                withAnimation {
-                    self.isHovered = isHovered
-                }
-            }
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .foregroundStyle(isSelected ? Color.accentColor.opacity(0.2) : Color.gray.opacity(0.2))
-                    .opacity(isHovered || isSelected ? 1 : 0)
-            )
-            .overlay {
-                if isMultiSelected {
-                    RoundedRectangle(cornerRadius: 4)
-                        .stroke(
-                            isMultiSelected ? Color.accentColor : Color.clear,
-                            lineWidth: 2
-                        )
-                }
-            }
+            .modifier(ExcalidrawZSidebarRowModifier(isSelected: isSelected, isMultiSelected: isMultiSelected))
             .animation(.easeOut(duration: 0.1), value: isMultiSelected)
             .simultaneousGesture(
                 TapGesture().onEnded {
@@ -80,3 +62,4 @@ struct FileRowButton: View {
             )
     }
 }
+

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct CollaborationFileRowContextMenuModifier: ViewModifier {
+struct CollaborationFileContextMenuModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
 

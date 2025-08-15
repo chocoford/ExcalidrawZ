@@ -9,31 +9,14 @@ import SwiftUI
 import ChocofordUI
 import SmoothGradient
 
-struct FileHomeView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-    @Environment(\.alertToast) private var alertToast
-
-    @EnvironmentObject var fileState: FileState
-
+struct GroupFileHomeView: View {
     var group: Group
-    var parentGroups: [Group]
     
     @FetchRequest
     private var files: FetchedResults<File>
-    @FetchRequest
-    private var childGroups: FetchedResults<Group>
     
     init(group: Group) {
         self.group = group
-        self.parentGroups = {
-            var parents: [Group] = []
-            var currentGroup: Group? = group
-            while let parent = currentGroup?.parent {
-                parents.append(parent)
-                currentGroup = parent
-            }
-            return parents.reversed()
-        }()
         self._files = FetchRequest<File>(
             sortDescriptors: [
                 NSSortDescriptor(keyPath: \File.createdAt, ascending: false),
@@ -45,16 +28,96 @@ struct FileHomeView: View {
             : NSPredicate(format: "inTrash == false AND group == %@", group),
             animation: .default
         )
-        
+    }
+    
+    
+    var body: some View {
+        FileHomeView(group: group, files: Array(files))
+    }
+}
+
+struct LocalFolderFileHomeView: View {
+    
+    var folder: LocalFolder
+    
+    init(folder: LocalFolder) {
+        self.folder = folder
+    }
+    
+    var body: some View {
+        LocalFilesProvider(folder: folder, sortField: .updatedAt) { files, updateFlags in
+            FileHomeView(folder: folder, files: files)
+        }
+    }
+}
+
+
+struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
+    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.alertToast) private var alertToast
+
+    @EnvironmentObject var fileState: FileState
+
+    var group: HomeGroup
+    var parentGroups: [HomeGroup]
+    var files: [FileState.ActiveFile]
+    
+    enum GroupType {
+        case group
+        case localFolder
+    }
+    var groupType: GroupType
+    var futureActiveGroup: (HomeGroup) -> FileState.ActiveGroup
+    
+    @FetchRequest
+    private var childGroups: FetchedResults<HomeGroup>
+    
+    init(group: Group, files: [File]) where HomeGroup == Group {
+        self.group = group
+        self.parentGroups = {
+            var parents: [Group] = []
+            var currentGroup: Group? = group
+            while let parent = currentGroup?.parent {
+                parents.append(parent)
+                currentGroup = parent
+            }
+            return parents.reversed()
+        }()
+        self.files = files.map {.file($0)}
+
         self._childGroups = FetchRequest<Group>(
             sortDescriptors: [NSSortDescriptor(keyPath: \Group.name, ascending: true)],
             predicate: group.groupType == .trash
             ? NSPredicate(format: "false")
             : NSPredicate(format: "parent == %@", group)
         )
+
+        self.groupType = .group
+        self.futureActiveGroup = { .group($0) }
     }
     
-    @State private var selection: NSManagedObjectID?
+    init(folder: LocalFolder, files: [URL]) where HomeGroup == LocalFolder {
+        self.group = folder
+        self.parentGroups = {
+            var parents: [LocalFolder] = []
+            var currentGroup: LocalFolder? = folder
+            while let parent = currentGroup?.parent {
+                parents.append(parent)
+                currentGroup = parent
+            }
+            return parents.reversed()
+        }()
+        self.files = files.map{ .localFile($0) }
+
+        self._childGroups = FetchRequest<LocalFolder>(
+            sortDescriptors: [NSSortDescriptor(keyPath: \LocalFolder.filePath, ascending: true)],
+            predicate: NSPredicate(format: "parent == %@", group)
+        )
+        self.groupType = .localFolder
+        self.futureActiveGroup = { .localFolder($0) }
+    }
+    
+    @State private var selection: String?
     
     @State private var scrollViewHeight: CGFloat = 0
     @State private var contentHeight: CGFloat = 0
@@ -78,7 +141,6 @@ struct FileHomeView: View {
                     print("On Tap")
                 }
         }
-        .readHeight($scrollViewHeight)
     }
     
     let fileItemWidth: CGFloat = 240
@@ -95,7 +157,7 @@ struct FileHomeView: View {
                             ForEach(parentGroups) { group in
                                 Button {
                                     fileState.currentActiveFile = nil
-                                    fileState.currentActiveGroup = .group(group)
+                                    fileState.currentActiveGroup = futureActiveGroup(group)
                                 } label: {
                                     Text(group.name ?? String(localizable: .generalUntitled))
                                         .foregroundStyle(.secondary)
@@ -141,62 +203,68 @@ struct FileHomeView: View {
                             NewFileButton(openWithDelay: true)
                                 .hoverCursor(.pointingHand)
                             
-                            Button {
-                                isCreateGroupDialogPresented.toggle()
-                            } label: {
-                                Label("New Group", systemSymbol: .folderBadgePlus)
-                            }
-                            .hoverCursor(.pointingHand)
+                            NewGroupButton(parentID: group.objectID)
+                                .hoverCursor(.pointingHand)
 
                             Spacer()
                         }
                         .controlSize(.large)
-                        .modifier(CreateGroupModifier(
-                            isPresented: $isCreateGroupDialogPresented
-                        ))
-                        .onHover { isHovered in
-                            if isHovered {
-                                NSCursor.pointingHand.set()
-                            } else {
-                                NSCursor.arrow.set()
-                            }
-                        }
+//                        .onHover { isHovered in
+//                            if isHovered {
+//                                NSCursor.pointingHand.set()
+//                            } else {
+//                                NSCursor.arrow.set()
+//                            }
+//                        }
+                        
                         // Groups
                         LazyVGrid(
-                            columns: [.init(.adaptive(minimum: folderItemWidth, maximum: folderItemWidth * 2 - 0.1), spacing: 20)],
+                            columns: [
+                                .init(
+                                    .adaptive(minimum: folderItemWidth, maximum: folderItemWidth * 2 - 0.1),
+                                    spacing: 20
+                                )
+                            ],
                             spacing: 20
                         ) {
-                            ForEach(childGroups) { group in
+                             ForEach(childGroups) { group in
                                 HomeFolderItemView(
-                                    isSelected: selection == group.objectID,
+                                    isSelected: selection == group.objectID.description,
                                     name: group.name ?? String(localizable: .generalUntitled),
-                                    itemsCount: group.files?.count ?? 0
+                                    itemsCount: group.filesCount,
                                 )
+                                .modifier(FileHomeGroupContextMenuModifier(group: group))
                                 .simultaneousGesture(TapGesture(count: 2).onEnded {
-                                    fileState.currentActiveGroup = .group(group)
+                                    fileState.currentActiveGroup = futureActiveGroup(group)
                                     fileState.expandToGroup(group.objectID)
                                 })
                                 .simultaneousGesture(TapGesture().onEnded {
-                                    selection = group.objectID
+                                    selection = group.objectID.description
                                 })
                             }
                         }
+                        
+#if os(macOS)
+                        .animation(.smooth, value: Array(childGroups))
+#endif
 
                         // Files
                         LazyVGrid(
-                            columns: [.init(.adaptive(minimum: fileItemWidth, maximum: fileItemWidth * 2 - 0.1), spacing: 20)],
+                            columns: [
+                                .init(.adaptive(minimum: fileItemWidth, maximum: fileItemWidth * 2 - 0.1), spacing: 20)
+                            ],
                             spacing: 20
                         ) {
                             ForEach(files) { file in
                                 FileHomeItemView(
+                                    file: file,
                                     isSelected: Binding {
-                                        selection == file.objectID
+                                        selection == file.id
                                     } set: { val in
                                         if val {
-                                            selection = file.objectID
+                                            selection = file.id
                                         }
                                     },
-                                    file: file
                                 )
                             }
                             
@@ -216,8 +284,8 @@ struct FileHomeView: View {
                 }
                 .readHeight($contentHeight)
                 
-                Color.clear
-                    .frame(height: max(0, scrollViewHeight - contentHeight))
+                Color.clear // .opacity(0.2)
+                    .frame(height: max(0, scrollViewHeight - contentHeight - 150))
                     .contentShape(Rectangle())
                     .onTapGesture {
                         selection = nil
@@ -275,9 +343,14 @@ struct FileHomeView: View {
                     }
             }
         }
+        .readHeight($scrollViewHeight)
+//        .onChange(of: scrollViewHeight) { newValue in
+//            print(scrollViewHeight, contentHeight)
+//        }
+//        .onChange(of: contentHeight) { newValue in
+//            print(scrollViewHeight, contentHeight)
+//        }
     }
-    
-    
 }
 
 
@@ -285,4 +358,34 @@ struct EmptyFilesPlaceholderModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
     }
+}
+
+
+struct FileHomeGroupContextMenuModifier<HomeGroup>: ViewModifier {
+    var group: HomeGroup
+    
+    func body(content: Content) -> some View {
+        if let group = group as? Group {
+            content
+                .modifier(
+                    GroupContextMenuViewModifier(
+                        group: group,
+                        folderStructStyle: .tree,
+                        isExpanded: .constant(false)
+                    )
+                )
+        } else if let group = group as? LocalFolder {
+            content
+                .modifier(
+                    LocalFolderContextMenuModifier(
+                        folder: group,
+                        folderStructStyle: .tree,
+                        isSelected: false
+                    )
+            )
+        } else {
+            content
+        }
+    }
+    
 }

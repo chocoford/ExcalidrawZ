@@ -42,7 +42,7 @@ struct SegmentedPicker<Selection, Content>: View where Selection : Hashable, Con
                         if #available(macOS 26.0, iOS 26.0, *) {
                             RoundedRectangle(cornerRadius: 10)
                                 .glassEffect(
-                                    .regular,
+                                    .clear,
                                     in: .rect(cornerRadius: 10)
                                 )
                         } else {

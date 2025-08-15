@@ -8,9 +8,11 @@
 import SwiftUI
 
 struct LocalFileRowContextMenuModifier: ViewModifier {
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
 
     @EnvironmentObject var fileState: FileState
+    @EnvironmentObject var localFolderState: LocalFolderState
     
     var file: URL
     
@@ -36,24 +38,29 @@ struct LocalFileRowContextMenuModifier: ViewModifier {
     
     private func renameFile(newName: String) {
         do {
-            if case .localFolder(let folder) = fileState.currentActiveGroup {
-                try folder.withSecurityScopedURL { _ in
-                    let newURL = file.deletingLastPathComponent()
-                        .appendingPathComponent(
-                            newName,
-                            conformingTo: .excalidrawFile
-                        )
-                    try FileManager.default.moveItem(at: file, to: newURL)
-                    
-                    // Update local file ID mapping
-                    ExcalidrawFile.localFileURLIDMapping[newURL] = ExcalidrawFile.localFileURLIDMapping[file]
-                    self.fileState.currentActiveFile = .localFile(newURL)
-                    ExcalidrawFile.localFileURLIDMapping[file] = nil
-                    
-                    // Also update checkpoints
-                    updateCheckpoints(oldURL: self.file, newURL: newURL)
-                }
+            // find folder
+            let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+            fetchRequest.predicate = NSPredicate(format: "filePath == %@", file.deletingLastPathComponent().filePath)
+            guard let folder = try viewContext.fetch(fetchRequest).first else { return }
+            
+            try folder.withSecurityScopedURL { _ in
+                let newURL = file.deletingLastPathComponent()
+                    .appendingPathComponent(
+                        newName,
+                        conformingTo: .excalidrawFile
+                    )
+                try FileManager.default.moveItem(at: file, to: newURL)
+                
+                // Update local file ID mapping
+                ExcalidrawFile.localFileURLIDMapping[newURL] = ExcalidrawFile.localFileURLIDMapping[file]
+                ExcalidrawFile.localFileURLIDMapping[file] = nil
+                
+                // Also update checkpoints
+                updateCheckpoints(oldURL: self.file, newURL: newURL)
+                
+                localFolderState.itemRenamedPublisher.send(newURL.filePath)
             }
+            
         } catch {
             alertToast(error)
         }
@@ -83,6 +90,7 @@ struct LocalFileRowContextMenu: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject var fileState: FileState
+    @EnvironmentObject var localFolderState: LocalFolderState
 
     var file: URL
     var onToggleRename: () -> Void
@@ -267,7 +275,6 @@ struct LocalFileRowContextMenu: View {
         }
     }
     
-    
     private func moveLocalFile(to targetFolderID: NSManagedObjectID) {
         let context = PersistenceController.shared.container.newBackgroundContext()
         let filesToMove: [URL] = if fileState.selectedLocalFiles.contains(file) {
@@ -275,67 +282,20 @@ struct LocalFileRowContextMenu: View {
         } else {
             [file]
         }
-        Task.detached {
-            do {
-                try await context.perform {
-                    guard case let folder as LocalFolder = context.object(with: targetFolderID) else { return }
-                    
-                    try folder.withSecurityScopedURL { scopedURL in
-                        let fileCoordinator = NSFileCoordinator()
-                        fileCoordinator.coordinate(
-                            writingItemAt: scopedURL,
-                            options: .forMoving,
-                            error: nil
-                        ) { url in
-                            do {
-                                for file in filesToMove {
-                                    try FileManager.default.moveItem(
-                                        at: file,
-                                        to: url.appendingPathComponent(
-                                            file.lastPathComponent,
-                                            conformingTo: .excalidrawFile
-                                        )
-                                    )
-                                    
-                                    // Update URL ID Mapping
-                                    let newURL = scopedURL.appendingPathComponent(
-                                        file.lastPathComponent,
-                                        conformingTo: .excalidrawFile
-                                    )
-                                    // Update local file ID mapping
-                                    ExcalidrawFile.localFileURLIDMapping[newURL] = ExcalidrawFile.localFileURLIDMapping[file]
-                                    ExcalidrawFile.localFileURLIDMapping[file] = nil
-                                    
-                                    // Also update checkpoints
-                                    Task {
-                                        await MainActor.run {
-                                            updateCheckpoints(oldURL: file, newURL: newURL)
-                                        }
-                                    }
-                                    Task {
-                                        await MainActor.run {
-                                            if fileState.currentActiveFile == .localFile(file) {
-                                                DispatchQueue.main.async {
-                                                    if let folder = viewContext.object(with: targetFolderID) as? LocalFolder {
-                                                        fileState.currentActiveGroup = .localFolder(folder)
-                                                    }
-                                                    fileState.currentActiveFile = .localFile(newURL)
-                                                    fileState.expandToGroup(targetFolderID)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            } catch {
-                                alertToast(error)
-                            }
-                        }
+        do {
+            let mapping = try localFolderState.moveLocalFiles(filesToMove, to: targetFolderID, context: context)
+            
+            if fileState.currentActiveFile == .localFile(file), let newURL = mapping[file] {
+                DispatchQueue.main.async {
+                    if let folder = viewContext.object(with: targetFolderID) as? LocalFolder {
+                        fileState.currentActiveGroup = .localFolder(folder)
                     }
-                    
+                    fileState.currentActiveFile = .localFile(newURL)
+                    fileState.expandToGroup(targetFolderID)
                 }
-            } catch {
-                await alertToast(error)
             }
+        } catch {
+            alertToast(error)
         }
     }
     
@@ -380,25 +340,6 @@ struct LocalFileRowContextMenu: View {
             }
         } catch {
             alertToast(error)
-        }
-    }
-    
-    private func updateCheckpoints(oldURL: URL, newURL: URL) {
-        let context = PersistenceController.shared.container.newBackgroundContext()
-        Task.detached {
-            do {
-                try await context.perform {
-                    let fetchRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
-                    fetchRequest.predicate = NSPredicate(format: "url = %@", oldURL as NSURL)
-                    let checkpoints = try context.fetch(fetchRequest)
-                    checkpoints.forEach {
-                        $0.url = newURL
-                    }
-                    try context.save()
-                }
-            } catch {
-                await alertToast(error)
-            }
         }
     }
 }

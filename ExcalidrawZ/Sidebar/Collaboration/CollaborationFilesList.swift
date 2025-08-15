@@ -63,7 +63,7 @@ struct CollaborationFilesContent: View {
         LazyVStack(alignment: .leading) {
             /// ❕❕❕use `id: \.self` can avoid multi-thread access crash when closing join-room-sheet.
             ForEach(collaborationFiles, id: \.self) { file in
-                CollaborationFileRow(file: file)
+                CollaborationFileRow(file: file, files: collaborationFiles)
             }
         }
         .fileListDropFallback()

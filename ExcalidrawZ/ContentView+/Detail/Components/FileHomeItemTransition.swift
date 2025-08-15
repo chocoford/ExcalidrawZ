@@ -9,7 +9,7 @@ import SwiftUI
 
 final class FileHomeItemTransitionState: ObservableObject {
     
-    @Published var shouldHideItem: NSManagedObjectID? = nil
+    @Published var shouldHideItem: String? = nil
     
     
     
@@ -33,7 +33,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
     @State private var show: Bool = true
     @State private var animateFlag: Bool = false
     
-    @State private var file: File?
+    @State private var file: FileState.ActiveFile?
     
     @State private var state: FileHomeItemTransitionState = FileHomeItemTransitionState()
     
@@ -48,14 +48,8 @@ struct FileHomeItemTransitionModifier: ViewModifier {
             .overlayPreferenceValue(FileHomeItemPreferenceKey.self) { value in
                 
                 
-                if let activeFile = file ?? {
-                    if case .file(let file) = fileState.currentActiveFile {
-                        return file
-                    } else {
-                        return nil
-                    }
-                }(),
-                   let sAnchor: Anchor<CGRect> = value[activeFile.objectID.description + "SOURCE"],
+                if let activeFile = file ?? fileState.currentActiveFile,
+                   let sAnchor: Anchor<CGRect> = value[activeFile.id + "SOURCE"],
                    let dAnchor: Anchor<CGRect> = value["DEST"] {
                     // let _ = print("FileHomeItemTransitionModifier: \(activeFile.objectID.description)")
                     GeometryReader { geomerty in
@@ -75,7 +69,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
             .onChange(of: fileState.currentActiveFile) { newValue in
                 let oldValue = self.file
 
-                if oldValue == nil, case .file(let newValue) = newValue { // open
+                if oldValue == nil, let newValue { // open
                     state.canShowItemContainerView = true
                     self.animateFlag = false
                     self.show = true
@@ -109,7 +103,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                     // dismiss
                     
                     self.animateFlag = true
-                    state.shouldHideItem = oldValue!.objectID
+                    state.shouldHideItem = oldValue!.id
                     state.canShowItemContainerView = true
                     self.show = true
                     
@@ -143,14 +137,14 @@ struct FileHomeItemHeroLayer: View {
     
     @EnvironmentObject var appPreference: AppPreference
     
-    var file: File
+    var file: FileState.ActiveFile
     var show: Bool
     var isAnimating: Bool
     var sourceAnchor: Anchor<CGRect>
     var destinationAnchor: Anchor<CGRect>
 
     init(
-        file: File,
+        file: FileState.ActiveFile,
         show: Bool,
         animateFlag: Bool,
         sourceAnchor: Anchor<CGRect>,
@@ -164,7 +158,7 @@ struct FileHomeItemHeroLayer: View {
     }
     
     var platformImage: NSImage? {
-        FileItemPreviewCache.shared.object(forKey: file.objectID)
+        FileItemPreviewCache.shared.object(forKey: file.id as NSString)
     }
     
     @State private var image: Image?

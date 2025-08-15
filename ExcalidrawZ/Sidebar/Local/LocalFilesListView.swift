@@ -49,22 +49,29 @@ struct LocalFilesListView: View {
     }
 }
 
-
-struct LocalFilesListContentView: View {
-    @Environment(\.scenePhase) private var scenePhase
+struct LocalFilesProvider<Content: View>: View {
     @Environment(\.alertToast) private var alertToast
-    @Environment(\.containerHorizontalSizeClass) private var horizontalSizeClass
 
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var localFolderState: LocalFolderState
 
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField
+    var content: (_ files: [URL], _ updateFlag: [URL : Date]) -> Content
+    
+    init(
+        folder: LocalFolder,
+        sortField: ExcalidrawFileSortField,
+        @ViewBuilder content: @escaping (_ files: [URL], _ updateFlag: [URL : Date]) -> Content
+    ) {
+        self.folder = folder
+        self.sortField = sortField
+        self.content = content
+    }
+    
     
     @State private var files: [URL] = []
-    
     @State private var updateFlags: [URL : Date] = [:]
-
     
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -73,78 +80,68 @@ struct LocalFilesListContentView: View {
 #endif
     
     var body: some View {
-        LazyVStack(alignment: .leading, spacing: 0) {
-            ForEach(files, id: \.self) { file in
-                LocalFileRowView(
-                    file: file,
-                    updateFlag: updateFlags[file],
-                    files: files
-                )
-                .id(updateFlags[file])
+        content(files, updateFlags)
+            .bindWindow($window)
+            .watchImmediately(of: folder.url) { newValue in
+                DispatchQueue.main.async { getFolderContents() }
             }
-        }
-        .animation(.default, value: files)
-        .bindWindow($window)
-        .watchImmediately(of: folder.url) { newValue in
-            DispatchQueue.main.async { getFolderContents() }
-        }
-#if os(macOS)
-        .onReceive(
-            NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
-        ) { notification in
-            if let window = notification.object as? NSWindow,
-               window == self.window {
-                DispatchQueue.main.async {
-                    guard fileState.currentActiveGroup != nil else { return }
-                    getFolderContents()
-                    if fileState.currentActiveFile == nil || {
-                        if case .localFile(let localFile) = fileState.currentActiveFile {
-                            return localFile.deletingLastPathComponent() != folder.url
-                        } else {
-                            return true
-                        }
-                    }() {
-                        fileState.currentActiveFile = nil
-                    }
-                }
-            }
-        }
-#elseif os(iOS)
-        .onChange(of: scenePhase) { newValue in
-            if newValue == .active {
-                DispatchQueue.main.async {
-                    getFolderContents()
-                    if horizontalSizeClass != .compact {
-                        if fileState.currentLocalFile == nil || fileState.currentLocalFile?.deletingLastPathComponent() != folder.url {
-                            fileState.currentLocalFile = files.first
+    #if os(macOS)
+            .onReceive(
+                NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
+            ) { notification in
+                if let window = notification.object as? NSWindow,
+                   window == self.window {
+                    DispatchQueue.main.async {
+                        guard fileState.currentActiveGroup != nil else { return }
+                        getFolderContents()
+                        if fileState.currentActiveFile == nil || {
+                            if case .localFile(let localFile) = fileState.currentActiveFile {
+                                return localFile.deletingLastPathComponent() != folder.url
+                            } else {
+                                return true
+                            }
+                        }() {
+                            fileState.currentActiveFile = nil
                         }
                     }
                 }
             }
-        }
-#endif
-        .onChange(of: sortField) { newValue in
-            sortFiles(field: newValue)
-        }
-        .onReceive(localFolderState.itemCreatedPublisher) { path in
-            getFolderContents()
-        }
-        .onReceive(localFolderState.itemRemovedPublisher) { path in
-            handleItemRemoved(path: path)
-        }
-        .onReceive(localFolderState.itemUpdatedPublisher) { path in
-            handleItemUpdated(path: path)
-        }
-        .onReceive(localFolderState.itemRenamedPublisher) { path in
-            handleItemRenamed(path: path)
-        }
-        .onReceive(localFolderState.refreshFilesPublisher) { _ in
-            getFolderContents()
-            if case .localFile(let file) = fileState.currentActiveFile,
-               !files.contains(file) {
-                fileState.currentActiveFile = nil
+    #elseif os(iOS)
+            .onChange(of: scenePhase) { newValue in
+                if newValue == .active {
+                    DispatchQueue.main.async {
+                        getFolderContents()
+                        if horizontalSizeClass != .compact {
+                            if fileState.currentLocalFile == nil || fileState.currentLocalFile?.deletingLastPathComponent() != folder.url {
+                                fileState.currentLocalFile = files.first
+                            }
+                        }
+                    }
+                }
             }
-        }
+    #endif
+            .onChange(of: sortField) { newValue in
+                sortFiles(field: newValue)
+            }
+            .onReceive(localFolderState.itemCreatedPublisher) { path in
+                getFolderContents()
+            }
+            .onReceive(localFolderState.itemRemovedPublisher) { path in
+                handleItemRemoved(path: path)
+            }
+            .onReceive(localFolderState.itemUpdatedPublisher) { path in
+                handleItemUpdated(path: path)
+            }
+            .onReceive(localFolderState.itemRenamedPublisher) { path in
+                handleItemRenamed(path: path)
+            }
+            .onReceive(localFolderState.refreshFilesPublisher) { _ in
+                getFolderContents()
+                if case .localFile(let file) = fileState.currentActiveFile,
+                   !files.contains(file) {
+                    fileState.currentActiveFile = nil
+                }
+            }
     }
     
     private func getFolderContents() {
@@ -226,4 +223,33 @@ struct LocalFilesListContentView: View {
     private func handleItemRenamed(path: String) {
         getFolderContents()
     }
+}
+
+struct LocalFilesListContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.alertToast) private var alertToast
+    @Environment(\.containerHorizontalSizeClass) private var horizontalSizeClass
+
+    @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var localFolderState: LocalFolderState
+
+    var folder: LocalFolder
+    var sortField: ExcalidrawFileSortField
+    
+    var body: some View {
+        LocalFilesProvider(folder: folder, sortField: sortField) { files, updateFlags in
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(files, id: \.self) { file in
+                    LocalFileRowView(
+                        file: file,
+                        updateFlag: updateFlags[file],
+                        files: files
+                    )
+                    .id(updateFlags[file])
+                }
+            }
+            .animation(.default, value: files)
+        }
+    }
+    
 }

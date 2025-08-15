@@ -18,6 +18,7 @@ struct FileRowView: View {
     @EnvironmentObject var fileState: FileState
     
     var file: File
+    var files: FetchedResults<File>
     
     @FetchRequest(
         sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],
@@ -26,51 +27,12 @@ struct FileRowView: View {
     )
     var topLevelGroups: FetchedResults<Group>
     
-    @FetchRequest
-    private var files: FetchedResults<File>
-    
-    @State private var isRenameSheetPresented = false
-
     init(
         file: File,
-        sortField: ExcalidrawFileSortField,
+        files: FetchedResults<File>,
     ) {
-        let group = file.group
-        let groupType = group?.groupType ?? .normal
         self.file = file
-        
-        // Files
-        let sortDescriptors: [SortDescriptor<File>] = {
-            switch sortField {
-                case .updatedAt:
-                    [
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse)
-                    ]
-                case .name:
-                    [
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse),
-                        SortDescriptor(\.name, order: .reverse),
-                    ]
-                case .rank:
-                    [
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse),
-                        SortDescriptor(\.rank, order: .forward),
-                    ]
-            }
-        }()
-        
-        self._files = FetchRequest<File>(
-            sortDescriptors: sortDescriptors,
-            predicate: groupType == .trash ? NSPredicate(
-                format: "inTrash == YES"
-            ) : NSPredicate(
-                format: "group.id == %@ AND inTrash == NO", (group?.id ?? UUID()) as CVarArg
-            ),
-            animation: .smooth
-        )
+        self.files = files
     }
     
     @State private var showPermanentlyDeleteAlert: Bool = false
@@ -83,7 +45,7 @@ struct FileRowView: View {
     
     var body: some View {
         FileRowButton(
-            name: (file.name ?? "")/* + " - \(file.rank ?? -1)"*/,
+            name: (file.name ?? "")/* + " - \(file.rank)"*/,
             updatedAt: file.updatedAt,
             isInTrash: file.inTrash == true,
             isSelected: isSelected,
@@ -130,19 +92,7 @@ struct FileRowView: View {
             fileState.currentActiveFile = .file(file)
 #endif
         }
-        .modifier(FileRowDragDropModifier(file: file, sortField: fileState.sortField))
-        .modifier(
-            RenameSheetViewModifier(
-                isPresented: $isRenameSheetPresented,
-                name: self.file.name ?? ""
-            ) {
-                fileState.renameFile(
-                    self.file.objectID,
-                    context: viewContext,
-                    newName: $0
-                )
-            }
-        )
+        .modifier(FileRowDragDropModifier(file: file, files: files))
         .modifier(FileContextMenuModifier(file: file))
     }
 }

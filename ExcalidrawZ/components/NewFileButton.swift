@@ -89,7 +89,7 @@ struct NewFileButton: View {
             Button {
                 createNewFile()
             } label: {
-                Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
+                Label(.localizable(.generalButtonCreateNewFile), systemSymbol: .squareAndPencil)
             }
             .keyboardShortcut("n", modifiers: [.command])
             
@@ -102,7 +102,7 @@ struct NewFileButton: View {
             .keyboardShortcut("n", modifiers: [.command, .option, .shift])
         } label: {
             ZStack {
-                Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
+                Label(.localizable(.generalButtonCreateNewFile), systemSymbol: .squareAndPencil)
                     .opacity(isCreatingFile ? 0.0 : 1.0)
                 
                 if isCreatingFile {
@@ -116,7 +116,7 @@ struct NewFileButton: View {
         }
         .fixedSize()
         .bindWindow($window)
-        .help(.localizable(.createNewFile))
+        .help(.localizable(.generalButtonCreateNewFile))
         .disabled({
             if case .group(let group) = fileState.currentActiveGroup, group.groupType == .trash {
                 return true
@@ -171,6 +171,7 @@ struct NewFileButton: View {
     
     private func createNewFile() {
         guard !isCreatingFile else { return }
+        let delay: Double = 0.7
         
         isCreatingFile = true
         
@@ -190,11 +191,15 @@ struct NewFileButton: View {
                             }
                             try viewContext.save()
                         }
-                        
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-                            if let file = viewContext.object(with: fileID) as? File {
-                                fileState.currentActiveFile = .file(file)
+                         
+                        if openWithDelay {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                                if let file = viewContext.object(with: fileID) as? File {
+                                    fileState.currentActiveFile = .file(file)
+                                }
+                                isCreatingFile = false
                             }
+                        } else {
                             isCreatingFile = false
                         }
                     } catch {
@@ -204,8 +209,19 @@ struct NewFileButton: View {
             } else if case .localFolder(let folder) = fileState.currentActiveGroup {
                 try folder.withSecurityScopedURL { scopedURL in
                     do {
-                        try await fileState.createNewLocalFile(active: !openWithDelay, folderURL: scopedURL)
+                        guard let url = try await fileState.createNewLocalFile(active: !openWithDelay, folderURL: scopedURL) else {
+                            return
+                        }
                         isCreatingFile = false
+                        
+                        if openWithDelay {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                                fileState.currentActiveFile = .localFile(url)
+                                isCreatingFile = false
+                            }
+                        } else {
+                            isCreatingFile = false
+                        }
                     } catch {
                         alertToast(error)
                     }

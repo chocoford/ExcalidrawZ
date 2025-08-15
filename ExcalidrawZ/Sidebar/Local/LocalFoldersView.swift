@@ -43,14 +43,23 @@ struct LocalFoldersView: View {
     
     let paddingBase: CGFloat = 14
     
-    var isSelected: Bool {
-        if case .localFolder(let localFolder) = fileState.currentActiveGroup {
-            return localFolder == folder
-        } else {
-            return false
+    var isSelectedBinding: Binding<Bool> {
+        Binding {
+            (
+            fileState.currentActiveGroup == .localFolder(folder) &&
+            fileState.currentActiveFile == nil
+            ) || isBeingDropped
+        } set: { val in
+            DispatchQueue.main.async {
+                if val {
+                    fileState.currentActiveGroup = .localFolder(folder)
+                    fileState.currentActiveFile = nil
+                }
+            }
         }
     }
     
+    @State private var isBeingDropped = false
     @State private var isExpanded = false
     
     var body: some View {
@@ -68,11 +77,7 @@ struct LocalFoldersView: View {
     @MainActor @ViewBuilder
     private func diclsureGroupView() -> some View {
         SelectableDisclosureGroup(
-            isSelected: Binding {
-                isSelected
-            } set: {
-                if $0 { fileState.currentActiveGroup = .localFolder(folder) }
-            },
+            isSelected: isSelectedBinding,
             isExpanded: $isExpanded
         ) {
             ForEach(folderChildren) { folder in
@@ -83,9 +88,13 @@ struct LocalFoldersView: View {
             
             LocalFilesListContentView(folder: folder, sortField: sortField)
         } label: {
-            LocalFolderRowView(folder: folder, onDelete: onDeleteSelected)
+            LocalFolderRowView(
+                folder: folder,
+                isBeingDropped: $isBeingDropped,
+                onDelete: onDeleteSelected
+            )
         }
-        .disclosureGroupIndicatorVisibility(folderChildren.isEmpty ? .hidden : .visible)
+        .disclosureGroupIndicatorVisibility(.visible)
         .onReceive(NotificationCenter.default.publisher(for: .shouldExpandGroup)) { notification in
             guard let targetGroupID = notification.object as? NSManagedObjectID,
                   targetGroupID == self.folder.objectID else { return }
@@ -101,7 +110,11 @@ struct LocalFoldersView: View {
             children: folderChildren,
             paddingLeading: 6
         ) {
-            LocalFolderRowView(folder: folder, onDelete: onDeleteSelected)
+            LocalFolderRowView(
+                folder: folder,
+                isBeingDropped: $isBeingDropped,
+                onDelete: onDeleteSelected
+            )
         } childView: { child in
             LocalFoldersView(folder: child, sortField: sortField) {
                 handleSelectedDeletion()

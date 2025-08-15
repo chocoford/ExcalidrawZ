@@ -22,40 +22,6 @@ final class FileState: ObservableObject {
     var currentGroupPublisherCancellables: [AnyCancellable] = []
     var currentFilePublisherCancellables: [AnyCancellable] = []
     
-//    @Published var currentGroup: Group? {
-//        didSet {
-//            currentGroupPublisherCancellables.forEach {$0.cancel()}
-//            guard let currentGroup else { return }
-//            currentGroupPublisherCancellables = [
-//                currentGroup.publisher(for: \.name).sink { [weak self] _ in
-//                    self?.objectWillChange.send()
-//                }
-//            ]
-//            currentLocalFolder = nil
-//            currentLocalFile = nil
-//            isTemporaryGroupSelected = false
-//            currentTemporaryFile = nil
-//            isInCollaborationSpace = false
-//            resetSelections()
-//        }
-//    }
-//    @Published var currentFile: File? {
-//        didSet {
-//            print("freeze watchUpdate: \(Date.now.formatted(date: .omitted, time: .complete))")
-//            shouldIgnoreUpdate = true
-//            recoverWatchUpdate()
-//            resetSelections()
-//            resetCurrentFileChangesListener()
-//            if currentFile != nil {
-//                currentLocalFolder = nil
-//                currentLocalFile = nil
-//                isTemporaryGroupSelected = false
-//                currentTemporaryFile = nil
-//                isInCollaborationSpace = false
-//            }
-//        }
-//    }
-    
     enum ActiveGroup: Identifiable, Equatable {
         case group(Group)
         case localFolder(LocalFolder)
@@ -74,23 +40,6 @@ final class FileState: ObservableObject {
                     "collaboration"
             }
         }
-        
-//        enum GroupType: Equatable {
-//            case group, localFolder, temporary, collaboration
-//        }
-//        
-//        var type: GroupType {
-//            switch self {
-//                case .group:
-//                    .group
-//                case .localFolder:
-//                    .localFolder
-//                case .temporary:
-//                    .temporary
-//                case .collaboration:
-//                    .collaboration
-//            }
-//        }
     }
   
     @Published var currentActiveGroup: ActiveGroup? {
@@ -108,7 +57,7 @@ final class FileState: ObservableObject {
         }
     }
 
-    enum ActiveFile: Identifiable, Equatable {
+    enum ActiveFile: Identifiable, Hashable {
         case file(File)
         case localFile(URL)
         case temporaryFile(URL)
@@ -117,13 +66,13 @@ final class FileState: ObservableObject {
         var id: String {
             switch self {
                 case .file(let file):
-                    (file.id ?? UUID()).uuidString
+                    file.objectID.description
                 case .localFile(let url):
                     url.absoluteString
                 case .temporaryFile(let url):
                     url.absoluteString
                 case .collaborationFile(let collaborationFile):
-                    collaborationFile.id?.uuidString ?? UUID().uuidString
+                    collaborationFile.objectID.description 
             }
         }
         
@@ -176,75 +125,14 @@ final class FileState: ObservableObject {
     @Published var selectedFiles: Set<File> = []
     @Published var selectedStartFile: File?
     
-//    @Published var currentLocalFolder: LocalFolder? {
-//        didSet {
-//            resetSelections()
-//
-//            if currentLocalFolder != nil {
-//                currentFile = nil
-//                currentGroup = nil
-//                isTemporaryGroupSelected = false
-//                currentTemporaryFile = nil
-//                isInCollaborationSpace = false
-//            }
-//        }
-//    }
-//
-//    @Published var currentLocalFile: URL? {
-//        didSet {
-//            resetSelections()
-//
-//            if currentLocalFile != nil {
-//                currentFile = nil
-//                currentGroup = nil
-//                isTemporaryGroupSelected = false
-//                currentTemporaryFile = nil
-//                isInCollaborationSpace = false
-//                // selectedLocalFiles = [currentLocalFile]
-//            }
-//        }
-//    }
-//    @Published var currentLocalFileBookmarkData: Data? {
-//        didSet {
-//            if currentLocalFileBookmarkData != nil {
-//                currentFile = nil
-//                currentGroup = nil
-//                isTemporaryGroupSelected = false
-//                currentTemporaryFile = nil
-//                isInCollaborationSpace = false
-//            }
-//        }
-//    }
     @Published var selectedLocalFiles: Set<URL> = []
     @Published var selectedStartLocalFile: URL?
 
-//    @Published var isTemporaryGroupSelected = false {
-//        didSet {
-//            resetSelections()
-//            if isTemporaryGroupSelected {
-//                currentFile = nil
-//                currentGroup = nil
-//                currentLocalFolder = nil
-//                currentLocalFile = nil
-//                isInCollaborationSpace = false
-//            }
-//        }
-//    }
     @Published var temporaryFiles: [URL] = []
-//    @Published var currentTemporaryFile: URL? {
-//        didSet {
-//            resetSelections()
-//            if currentTemporaryFile != nil {
-//                currentFile = nil
-//                currentGroup = nil
-//                currentLocalFolder = nil
-//                currentLocalFile = nil
-//                // selectedTemporaryFiles = [currentTemporaryFile]
-//            }
-//        }
-//    }
+    
     @Published var selectedTemporaryFiles: Set<URL> = []
     @Published var selectedStartTemporaryFile: URL?
+    
     // Collab
     
     var isInCollaborationSpace: Bool {
@@ -256,18 +144,7 @@ final class FileState: ObservableObject {
         }
         return false
     }
-//    @Published var isInCollaborationSpace = false {
-//        didSet {
-//            if isInCollaborationSpace {
-//                currentFile = nil
-//                currentGroup = nil
-//                currentLocalFolder = nil
-//                currentLocalFile = nil
-//                isTemporaryGroupSelected = false
-//                currentTemporaryFile = nil
-//            }
-//        }
-//    }
+
     /// Files that is currently under collaboration.
     @Published var collaboratingFiles: [CollaborationFile] = []
     @Published var collaboratingFilesState: [CollaborationFile : ExcalidrawView.LoadingState] = [:]
@@ -285,22 +162,7 @@ final class FileState: ObservableObject {
             }
         }
     }
-//    @Published var currentCollaborationFile: CollborationRoute? {
-//        didSet {
-//            if case .room(let file) = currentCollaborationFile {
-//                currentFile = nil
-//                currentGroup = nil
-//                currentLocalFolder = nil
-//                currentLocalFile = nil
-//                isTemporaryGroupSelected = false
-//                currentTemporaryFile = nil
-//                isInCollaborationSpace = true
-//                if !collaboratingFiles.contains(where: {$0 == file}) {
-//                    collaboratingFiles.append(file)
-//                }
-//            }
-//        }
-//    }
+    
     var currentCollaborators: [Collaborator] {
         if case .collaborationFile(let file) = currentActiveFile {
             collaborators[file] ?? []
@@ -311,20 +173,6 @@ final class FileState: ObservableObject {
     
     @AppStorage("ExcalidrawFileSortField") var sortField: ExcalidrawFileSortField = .updatedAt
     
-//    var hasAnyActiveGroup: Bool {
-//        currentGroup != nil || currentLocalFolder != nil || isTemporaryGroupSelected || isInCollaborationSpace
-//    }
-//    var hasAnyActiveFile: Bool {
-//        if currentGroup != nil && currentFile != nil ||
-//            currentLocalFolder != nil && currentLocalFile != nil ||
-//            isTemporaryGroupSelected && currentTemporaryFile != nil {
-//            return true
-//        } else if case .room = currentCollaborationFile, isInCollaborationSpace {
-//            return true
-//        }
-//        return false
-//    }
-
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
     var excalidrawCollaborationWebCoordinator: ExcalidrawView.Coordinator?
     
@@ -355,25 +203,37 @@ final class FileState: ObservableObject {
         name: String,
         activate: Bool = true,
         parentGroupID: NSManagedObjectID? = nil,
-        context: NSManagedObjectContext
+        context: NSManagedObjectContext,
+        animation: Animation? = nil,
     ) async throws -> NSManagedObjectID {
-        let group = try await context.perform {
-            let group = Group(name: name, context: context)
-            
-            if let parentGroupID,
-               let parent = context.object(with: parentGroupID) as? Group {
-                group.parent = parent
+        let groupID = try await context.perform {
+            let group = withAnimation(animation) {
+                
+                let group = Group(name: name, context: context)
+                
+                if let parentGroupID,
+                   let parent = context.object(with: parentGroupID) as? Group {
+                    group.parent = parent
+                }
+                
+                context.insert(group)
+                return group
             }
+            
             try context.save()
             
-            return group
+            return group.objectID
         }
         
         if activate {
-            self.currentActiveGroup = .group(group)
+            await MainActor.run {
+                if let group = context.object(with: groupID) as? Group {
+                    self.currentActiveGroup = .group(group)
+                }
+            }
         }
         
-        return group.objectID
+        return groupID
     }
     
     @discardableResult
@@ -390,7 +250,7 @@ final class FileState: ObservableObject {
             return nil
         }() else { throw AppError.stateError(.currentGroupNil) }
         
-        let file = try await context.perform {
+        let fileID = try await context.perform {
             
             let file = File(name: String(localizable: .newFileNamePlaceholder), context: context)
             
@@ -410,14 +270,18 @@ final class FileState: ObservableObject {
             
             try context.save()
             
-            return file
+            return file.objectID
         }
         
         if active {
-            self.currentActiveFile = .file(file)
+            await MainActor.run {
+                if let file = context.object(with: fileID) as? File {
+                    self.currentActiveFile = .file(file)
+                }
+            }
         }
         
-        return file.objectID
+        return fileID
     }
 
     func updateCurrentFile(with excalidrawFile: ExcalidrawFile) {
@@ -466,8 +330,9 @@ final class FileState: ObservableObject {
         }
     }
     
-    func createNewLocalFile(active: Bool = true, folderURL scopedURL: URL) async throws {
-        guard let data = ExcalidrawFile().content else { return }
+    @discardableResult
+    func createNewLocalFile(active: Bool = true, folderURL scopedURL: URL) async throws -> URL? {
+        guard let data = ExcalidrawFile().content else { return nil }
         var newFileName = "Untitled"
         
         while FileManager.default.fileExists(at: scopedURL.appendingPathComponent(newFileName, conformingTo: .excalidrawFile)) {
@@ -504,6 +369,8 @@ final class FileState: ObservableObject {
                 self.currentActiveFile = .localFile(fileURL)
             }
         }
+        
+        return fileURL
     }
     
     /// Remember to call `startAccessingSecurityScopedResource` before calling this function.
@@ -906,18 +773,18 @@ final class FileState: ObservableObject {
         let context = PersistenceController.shared.container.newBackgroundContext()
         Task.detached {
             await context.perform {
-                guard case let targetGroup as any ExcalidrawFileGroupRepresentable = context.object(with: groupID) else { return }
+                guard case let targetGroup as any ExcalidrawGroup = context.object(with: groupID) else { return }
                 
                 var groupIDs: [NSManagedObjectID] = []
                 // get groupIDs
                 do {
                     var targetGroupID: NSManagedObjectID? = groupID
-                    var parentGroup: (any ExcalidrawFileGroupRepresentable)? = targetGroup
+                    var parentGroup: (any ExcalidrawGroup)? = targetGroup
                     while true {
-                        guard let parentGroupID = (parentGroup?.getParent() as? (any ExcalidrawFileGroupRepresentable))?.objectID else {
+                        guard let parentGroupID = (parentGroup?.getParent() as? (any ExcalidrawGroup))?.objectID else {
                             break
                         }
-                        parentGroup = context.object(with: parentGroupID) as? (any ExcalidrawFileGroupRepresentable)
+                        parentGroup = context.object(with: parentGroupID) as? (any ExcalidrawGroup)
                         targetGroupID = parentGroup?.objectID
                         if let targetGroupID {
                             groupIDs.insert(targetGroupID, at: 0)

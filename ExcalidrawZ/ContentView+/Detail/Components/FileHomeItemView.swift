@@ -16,7 +16,7 @@ struct FileHomeItemPreferenceKey: PreferenceKey {
     }
 }
 
-class FileItemPreviewCache: NSCache<NSManagedObjectID, NSImage> {
+class FileItemPreviewCache: NSCache<NSString, NSImage> {
     static let shared = FileItemPreviewCache()
 }
 
@@ -27,7 +27,52 @@ struct FileHomeItemView: View {
     @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
 
     @Binding var isSelected: Bool
-    var file: File
+    var file: FileState.ActiveFile
+    var fileID: String
+    var filename: String
+    var excalidrawFileGetter: (FileState.ActiveFile, NSManagedObjectContext) -> ExcalidrawFile?
+    var onOpen: () -> Void
+    
+    init(
+        file: FileState.ActiveFile,
+        isSelected: Binding<Bool>,
+    ) {
+         self.file = file
+        self._isSelected = isSelected
+        switch file {
+            case .file(let file):
+                self.fileID = file.objectID.description
+                self.filename = file.name ?? String(localizable: .generalUntitled)
+            case .localFile(let url):
+                self.fileID = url.absoluteString
+                self.filename = url.deletingPathExtension().lastPathComponent.isEmpty
+                ? String(localizable: .generalUntitled)
+                : url.deletingPathExtension().lastPathComponent
+            case .temporaryFile(let url):
+                self.fileID = url.absoluteString
+                self.filename = url.deletingPathExtension().lastPathComponent.isEmpty
+                ? String(localizable: .generalUntitled)
+                : url.deletingPathExtension().lastPathComponent
+            case .collaborationFile(let collaborationFile):
+                self.fileID = collaborationFile.objectID.description
+                self.filename = collaborationFile.name ?? String(localizable: .generalUntitled)
+        }
+        self.excalidrawFileGetter = { activeFile, context in
+            switch activeFile {
+                case .file(let file):
+                    return try? ExcalidrawFile(from: file.objectID, context: context)
+                case .localFile(let url):
+                    return try? ExcalidrawFile(contentsOf: url)
+                case .temporaryFile(let url):
+                    return try? ExcalidrawFile(contentsOf: url)
+                case .collaborationFile(let collaborationFile):
+                    return try? ExcalidrawFile(from: collaborationFile.objectID, context: context)
+            }
+        }
+        self.onOpen = {
+            
+        }
+    }
     
     @State private var coverImage: Image? = nil
     
@@ -62,14 +107,14 @@ struct FileHomeItemView: View {
         .readWidth($width)
         .overlay(alignment: .bottom) {
             HStack {
-                Text(file.name ?? String(localizable: .generalUntitled))
+                Text(filename)
                     .lineLimit(1)
                     .font(.headline)
                 Spacer()
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
-            .background(.regularMaterial)
+            .background(.ultraThinMaterial)
         }
         .clipShape(RoundedRectangle(cornerRadius: Self.roundedCornerRadius))
         .overlay {
@@ -84,26 +129,26 @@ struct FileHomeItemView: View {
         .background {
             Color.clear
                 .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
-                    [file.objectID.description+"SOURCE": value]
+                    [fileID+"SOURCE": value]
                 }
         }
         .overlay {
             Color.clear
                 .contentShape(Rectangle())
                 .simultaneousGesture(TapGesture(count: 2).onEnded {
-                    openFile(file)
+                    openFile()
                 })
                 .simultaneousGesture(TapGesture().onEnded {
                     isSelected = true
                 })
-                .modifier(FileContextMenuModifier(file: file))
+                .modifier(FileHomeItemContextMenuModifier(file: file))
         }
-        .opacity(fileHomeItemTransitionState.shouldHideItem == file.objectID ? 0 : 1)
+        .opacity(fileHomeItemTransitionState.shouldHideItem == fileID ? 0 : 1)
         .onChange(of: file) { newValue in
-            self.getElementsImage(fileID: newValue.objectID)
+            self.getElementsImage()
         }
         .onAppear {
-            if let image = cache.object(forKey: file.objectID) {
+            if let image = cache.object(forKey: fileID as NSString) {
                 Task.detached {
                     let image = Image(platformImage: image)
                     await MainActor.run {
@@ -111,13 +156,13 @@ struct FileHomeItemView: View {
                     }
                 }
             } else {
-                self.getElementsImage(fileID: file.objectID)
+                self.getElementsImage()
             }
         }
     }
     
-    private func getElementsImage(fileID: NSManagedObjectID) {
-        if let excalidrawFile = try? ExcalidrawFile(from: fileID, context: viewContext) {
+    private func getElementsImage() {
+        if let excalidrawFile = excalidrawFileGetter(file, viewContext) {
             Task {
                 while fileState.excalidrawWebCoordinator?.isLoading == true {
                     try? await Task.sleep(nanoseconds: UInt64(1e+9 * 1))
@@ -129,7 +174,7 @@ struct FileHomeItemView: View {
                 ) {
                     Task.detached {
                         await MainActor.run {
-                            cache.setObject(image, forKey: fileID)
+                            cache.setObject(image, forKey: fileID as NSString)
                         }
                         let image = Image(platformImage: image)
                         await MainActor.run {
@@ -141,12 +186,38 @@ struct FileHomeItemView: View {
         }
     }
     
-    private func openFile(_ file: File) {
-        fileState.currentActiveFile = .file(file)
-        fileState.currentActiveGroup = file.group != nil ? .group(file.group!) : nil
-        if let groupID = file.group?.objectID {
-            fileState.expandToGroup(groupID)
+    private func openFile() {
+        fileState.currentActiveFile = file
+        
+        switch file {
+            case .file(let file):
+                fileState.currentActiveGroup = file.group != nil ? .group(file.group!) : nil
+                if let groupID = file.group?.objectID {
+                    fileState.expandToGroup(groupID)
+                }
+            case .localFile(let url):
+                do {
+                    let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                    fetchRequest.predicate = NSPredicate(format: "url == %@", url.deletingLastPathComponent() as NSURL)
+                    fetchRequest.fetchLimit = 1
+                    let folders = try viewContext.fetch(fetchRequest)
+                    if let folder = folders.first {
+                        fileState.currentActiveGroup = .localFolder(folder)
+                    } else {
+                        // Handle case where local folder is not found
+                        fileState.currentActiveGroup = nil
+                    }
+                } catch {}
+            case .temporaryFile:
+                fileState.currentActiveGroup = .temporary
+            case .collaborationFile(let file):
+                fileState.currentActiveGroup = file.group != nil ? .group(file.group!) : nil
+                if let groupID = file.group?.objectID {
+                    fileState.expandToGroup(groupID)
+                }
         }
+        
+  
     }
     
     @ViewBuilder
@@ -164,5 +235,28 @@ struct FileHomeItemView: View {
                     .frame(height: width == nil ? 180 : width! * 0.5625)
             }
         }
+    }
+}
+
+
+struct FileHomeItemContextMenuModifier: ViewModifier {
+    var file: FileState.ActiveFile
+    
+    func body(content: Content) -> some View {
+        switch file {
+            case .file(let file):
+                content
+                    .modifier(FileContextMenuModifier(file: file))
+            case .localFile(let url):
+                content
+                    .modifier(LocalFileRowContextMenuModifier(file: url))
+            case .temporaryFile(let url):
+                content
+                    .modifier(TemporaryFileContextMenuModifier(file: url))
+            case .collaborationFile(let collaborationFile):
+                content
+                    .modifier(CollaborationFileContextMenuModifier(file: collaborationFile))
+        }
+            
     }
 }

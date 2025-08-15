@@ -8,27 +8,34 @@
 import SwiftUI
 import CoreData
 
-protocol ExcalidrawFileGroupRepresentable: NSManagedObject, NSFetchRequestResult, Identifiable {
+protocol ExcalidrawGroup: NSManagedObject, NSFetchRequestResult, Identifiable {
     var name: String? { get }
+    var filesCount: Int { get }
     
     func getParent() -> Any?
 }
 
-extension Group: ExcalidrawFileGroupRepresentable {
+extension Group: ExcalidrawGroup {
     func getParent() -> Any? {
         parent
     }
+    var filesCount: Int {
+        files?.count ?? 0
+    }
 }
-extension LocalFolder: ExcalidrawFileGroupRepresentable {
+extension LocalFolder: ExcalidrawGroup {
     var name: String? {
         url?.lastPathComponent
     }
     func getParent() -> Any? {
         parent
     }
+    var filesCount: Int {
+        (try? self.getFiles(deep: false).count) ?? 0
+    }
 }
 
-struct MoveToGroupMenu<Group: ExcalidrawFileGroupRepresentable>: View {
+struct MoveToGroupMenu<Group: ExcalidrawGroup>: View {
     @Environment(\.alertToast) private var alertToast
         
     var group: Group

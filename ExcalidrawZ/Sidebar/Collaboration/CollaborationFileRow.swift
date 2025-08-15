@@ -18,9 +18,11 @@ struct CollaborationFileRow: View {
     @EnvironmentObject private var collaborationState: CollaborationState
 
     var file: CollaborationFile
+    var collaborationFiles: FetchedResults<CollaborationFile>
     
-    init(file: CollaborationFile) {
+    init(file: CollaborationFile, files: FetchedResults<CollaborationFile>) {
         self.file = file
+        self.collaborationFiles = files
     }
     
     var isSelected: Bool {
@@ -96,7 +98,7 @@ struct CollaborationFileRow: View {
                 .font(.footnote)
             }
         }
-        .modifier(FileRowDragDropModifier(file: file, sortField: fileState.sortField))
-        .modifier(CollaborationFileRowContextMenuModifier(file: file))
+        .modifier(FileRowDragDropModifier(file: file, files: collaborationFiles))
+        .modifier(CollaborationFileContextMenuModifier(file: file))
     }
 }

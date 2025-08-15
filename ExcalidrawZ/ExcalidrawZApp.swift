@@ -128,7 +128,7 @@ struct ExcalidrawZApp: App {
                         object: nil
                     )
                 } label: {
-                    Text(.localizable(.createNewFile))
+                    Text(.localizable(.generalButtonCreateNewFile))
                 }
                 .keyboardShortcut("N", modifiers: .command)
                 

@@ -52,6 +52,8 @@ struct SelectableDisclosureGroup: View {
     }
     
     @State private var expandSubGroupsFlag = false
+    
+    var depthPaddingBase: CGFloat { 12 }
 
     var body: some View {
         DisclosureGroup(isExpanded: isExpanded) {
@@ -64,10 +66,10 @@ struct SelectableDisclosureGroup: View {
             } label: {
                 HStack(spacing: 0) {
                     Color.clear
-                        .frame(width: CGFloat(depth * 8), height: 1)
+                        .frame(width: CGFloat(depth) * depthPaddingBase, height: 1)
                     
                     // Placeholder for chevron
-                    Color.clear.frame(width: 8, height: 1)
+                    Color.clear.frame(width: 6, height: 1)
 
                     Color.clear.frame(width: 4, height: 1)
 
@@ -75,12 +77,12 @@ struct SelectableDisclosureGroup: View {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(ListButtonStyle(selected: isSelected))
+            .buttonStyle(.excalidrawSidebarRow(isSelected: isSelected, isMultiSelected: false))
             .overlay(alignment: .leading) {
                 if indicatorVisibility == .visible {
                     HStack(spacing: 0) {
                         Color.clear
-                            .frame(width: CGFloat(depth * 8), height: 1)
+                            .frame(width: CGFloat(depth) * depthPaddingBase, height: 1)
                         
                         Image(systemSymbol: .chevronRight)
                             .font(.footnote)

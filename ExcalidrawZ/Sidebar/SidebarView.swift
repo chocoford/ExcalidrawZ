@@ -16,7 +16,6 @@ enum ExcalidrawFileSortField: String, Hashable {
     case rank
 }
 
-
 struct SidebarView: View {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.searchExcalidrawAction) private var searchExcalidraw
@@ -24,7 +23,7 @@ struct SidebarView: View {
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var fileState: FileState
 
-    @StateObject private var localFolderState = LocalFolderState()
+    @StateObject private var dragState = SidebarDragState()
 
     var body: some View {
         if #available(macOS 26.0, *) {
@@ -41,15 +40,40 @@ struct SidebarView: View {
     
     @MainActor @ViewBuilder
     private func oneColumnSidebar() -> some View {
-        GroupListView()
+        GroupListView(sortField: fileState.sortField)
             .border(.top, color: .separatorColor)
 #if os(iOS)
-        .background {
-            List(selection: $fileState.currentActiveFile) {}
-        }
+            .background {
+                List(selection: $fileState.currentActiveFile) {}
+            }
 #endif
-        .environmentObject(localFolderState)
+            .background {
+                Color.clear.contentShape(Rectangle())
+                    .simultaneousGesture(TapGesture().onEnded {
+                        dragState.currentDragItem = nil
+                        dragState.currentDropTarget = nil
+                    })
+            }
+            .environmentObject(dragState)
     }
+}
+
+class SidebarDragState: ObservableObject {
+    
+    enum DragItem: Hashable {
+        case group(NSManagedObjectID)
+        case file(NSManagedObjectID)
+        case localFolder(NSManagedObjectID)
+        case localFile(URL)
+    }
+    
+    @Published var currentDragItem: DragItem?
+    
+    enum DropTarget: Equatable {
+        case after(DragItem)
+        case startOfGroup(DragItem)
+    }
+    @Published var currentDropTarget: DropTarget?
 }
 
 #Preview {

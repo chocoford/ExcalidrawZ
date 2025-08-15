@@ -32,7 +32,6 @@ struct FileRowLabel: View {
     }
     
     var body: some View {
-        
         HStack(spacing: 10) {
             ExcalidrawIconView()
                 .frame(height: 14)
@@ -44,10 +43,7 @@ struct FileRowLabel: View {
         }
         .lineLimit(1)
         .truncationMode(.middle)
-        .padding(.leading, 14 + CGFloat(depth+1) * 8)
-        .padding(.trailing, 6)
-        .padding(.vertical, 6)
-        .contentShape(Rectangle())
+        .padding(.leading, 2 + CGFloat(depth+1) * 12)
     }
 }
 

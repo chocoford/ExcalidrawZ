@@ -17,8 +17,21 @@ struct BoundsPreferenceKey: PreferenceKey {
     
 }
 
+//protocol RecentlyHomeFile {
+//    var lastVisitedAt: Date? { get }
+//}
+//
+//extension File: RecentlyHomeFile {
+//    var lastVisitedAt: Date? { visitedAt }
+//}
+//extension CollaborationFile: RecentlyHomeFile {
+//    var lastVisitedAt: Date? { visitedAt }
+//}
+
 struct HomeView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var fileState: FileState
+    
     
     @FetchRequest(
         sortDescriptors: [
@@ -30,11 +43,30 @@ struct HomeView: View {
     )
     private var files: FetchedResults<File>
     
+    @FetchRequest(
+        sortDescriptors: [],
+        animation: .default
+    )
+    private var localFolders: FetchedResults<LocalFolder>
+    
+    // @State private var localFiles: [URL] = []
+    
+    @FetchRequest(
+        sortDescriptors: [
+            .init(keyPath: \File.updatedAt, ascending: false),
+            .init(keyPath: \File.visitedAt, ascending: false)
+        ],
+        animation: .default
+    )
+    private var collaborationFiles: FetchedResults<CollaborationFile>
+    
+    @State private var recentlyFiles: [FileState.ActiveFile] = []
+    
     @State private var isSearchPresented: Bool = false
     
     @State private var inputText: String = ""
     
-    @State private var selectedRecntlyFiles: Set<File> = []
+    @State private var selectedRecntlyFiles: Set<FileState.ActiveFile> = []
     
     var body: some View {
         Color.clear
@@ -45,6 +77,9 @@ struct HomeView: View {
             }
             .overlay {
                 content()
+            }
+            .onChange(of: scenePhase) { _ in
+                getRecentlyFiles()
             }
     }
     
@@ -71,13 +106,13 @@ struct HomeView: View {
                 })
                 .background {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: 16)
                             .fill(Color.textBackgroundColor)
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: 16)
                             .stroke(Color.separatorColor, lineWidth: 0.5)
                     }
                     .compositingGroup()
-                    .shadow(radius: 0.5, y: 0.5)
+                    .shadow(color: Color.gray.opacity(0.2), radius: 10, y: 0)
                     .padding(1)
                     .anchorPreference(
                         key: BoundsPreferenceKey.self,
@@ -86,7 +121,6 @@ struct HomeView: View {
                         ["InputField" : $0]
                     }
                 }
-                
                 
                 ZStack {
                     VStack(spacing: 30) {
@@ -99,8 +133,9 @@ struct HomeView: View {
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 10) {
-                                    ForEach(files.prefix(10)) { file in
+                                    ForEach(recentlyFiles) { file in
                                         FileHomeItemView(
+                                            file: file,
                                             isSelected: Binding {
                                                 selectedRecntlyFiles.contains(file)
                                             } set: { val in
@@ -110,7 +145,6 @@ struct HomeView: View {
                                                     selectedRecntlyFiles.remove(file)
                                                 }
                                             },
-                                            file: file
                                         )
                                         .frame(width: 200)
                                     }
@@ -118,6 +152,9 @@ struct HomeView: View {
                                 .padding(10)
                             }
                             .offset(x: -10)
+                        }
+                        .onHover { isHovered in
+                            if isHovered { getRecentlyFiles() }
                         }
                         
                         VStack(alignment: .leading) {
@@ -155,9 +192,13 @@ struct HomeView: View {
                                 isSearchPresented = false
                             }
                             .background {
-                                RoundedRectangle(cornerRadius: 6)
+                                RoundedRectangle(cornerRadius: 16)
                                     .fill(.background)
-                                    .shadow(radius: 1, y: 2)
+                                    .shadow(color: .gray.opacity(0.2), radius: 4, y: 0)
+                                    .transition(.opacity)
+                                
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(.background)
                             }
                             .frame(width: rect.width, height: 500)
                             .offset(x: rect.minX, y: rect.minY)
@@ -166,7 +207,55 @@ struct HomeView: View {
                     }
                 }
             }
+            .onAppear {
+                getRecentlyFiles()
+            }
         }
+    }
+    
+    private func getRecentlyFiles() {
+        // Recently means visited in the last 7 days
+        // let calendar = Calendar.current
+        // let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        
+        var allDatedFiles: [FileState.ActiveFile : Date] = [:]
+        
+        // files
+        files.forEach { file in
+            allDatedFiles[.file(file)] = file.visitedAt ?? file.updatedAt ?? file.createdAt ?? .distantPast
+        }
+        
+        // Local files
+        for folder in localFolders {
+            do {
+                let filesAndModificationDates: [(URL, Date)] = try folder.getFiles(
+                    deep: true,
+                    properties: [.contentModificationDateKey, .creationDateKey]
+                ) { url in
+                    let modifiedDate = try url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate ?? .distantPast
+                    let creationDate = try url.resourceValues(forKeys: [.creationDateKey]).creationDate ?? .distantPast
+                    return (url, max(modifiedDate, creationDate))
+                }
+                
+                filesAndModificationDates.forEach { (url, date) in
+                    allDatedFiles[.localFile(url)] = date
+                }
+            } catch {
+                
+            }
+        }
+        
+        // Collaboration files
+        collaborationFiles.forEach { file in
+            allDatedFiles[.collaborationFile(file)] = file.visitedAt ?? file.updatedAt ?? file.createdAt ?? .distantPast
+        }
+        
+        
+        let sortedAllFiles = allDatedFiles.sorted(by: {
+            $0.value > $1.value
+        }).map {$0.key}
+        
+        self.recentlyFiles = Array(sortedAllFiles.prefix(20))
     }
 }
 

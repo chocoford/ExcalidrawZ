@@ -16,6 +16,7 @@ struct GroupsView: View {
     @AppStorage("FolderStructureStyle") var folderStructStyle: FolderStructureStyle = .disclosureGroup
 
     @EnvironmentObject var fileState: FileState
+    @EnvironmentObject var sidebarDragState: SidebarDragState
 
     var group: Group
     var sortField: ExcalidrawFileSortField
@@ -25,6 +26,8 @@ struct GroupsView: View {
     
     @FetchRequest
     private var files: FetchedResults<File>
+    
+    @State private var refreshKey = UUID()
     
     init(
         group: Group,
@@ -36,7 +39,7 @@ struct GroupsView: View {
         fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \Group.name, ascending: true)]
         self._children = FetchRequest(fetchRequest: fetchRequest, animation: .default)
         
-        
+        /// Put the important things first.
         let sortDescriptors: [SortDescriptor<File>] = {
             switch sortField {
                 case .updatedAt:
@@ -52,14 +55,14 @@ struct GroupsView: View {
                     ]
                 case .rank:
                     [
+                        SortDescriptor(\.rank, order: .forward),
                         SortDescriptor(\.updatedAt, order: .reverse),
                         SortDescriptor(\.createdAt, order: .reverse),
-                        SortDescriptor(\.rank, order: .forward),
                     ]
             }
         }()
-         self.sortField = sortField
-        
+        self.sortField = sortField
+
         self._files = FetchRequest(
             sortDescriptors: sortDescriptors,
             predicate: group.groupType == .trash ? NSPredicate(
@@ -71,15 +74,36 @@ struct GroupsView: View {
         )
     }
     
-    var isSelected: Bool {
-        fileState.currentActiveGroup == .group(group) && fileState.currentActiveFile == nil
+    var isSelectedBinding: Binding<Bool> {
+        Binding {
+            (
+                fileState.currentActiveGroup == .group(group) &&
+                fileState.currentActiveFile == nil
+            ) ||
+            isBeingDropped
+        } set: { val in
+            DispatchQueue.main.async {
+                if val {
+                    fileState.currentActiveGroup = .group(group)
+                    fileState.currentActiveFile = nil
+                }
+            }
+        }
     }
+    
+    @State private var isBeingDropped = false
     
     @State private var isExpanded = false
 
     var body: some View {
         content()
             .animation(.smooth, value: folderStructStyle)
+            .onReceive(NotificationCenter.default.publisher(for: .didImportToExcalidrawZ)) { notification in
+                guard let fileID = notification.object as? UUID else { return }
+                if let file = files.first(where: {$0.id == fileID}) {
+                    fileState.currentActiveFile = .file(file)
+                }
+            }
     }
     
     @MainActor @ViewBuilder
@@ -95,33 +119,36 @@ struct GroupsView: View {
     @MainActor @ViewBuilder
     private func diclsureGroupView() -> some View {
         SelectableDisclosureGroup(
-            isSelected: Binding {
-                isSelected
-            } set: { val in
-                DispatchQueue.main.async {
-                    if val {
-                        fileState.currentActiveGroup = .group(group)
-                        fileState.currentActiveFile = nil
-                    }
-                }
-            },
+            isSelected: isSelectedBinding,
             isExpanded: $isExpanded
         ) {
             ForEach(children) { group in
                 GroupsView(group: group, sortField: sortField)
             }
-            
-            ForEach(files) { file in
-                FileRowView(
-                    file: file,
-                    sortField: sortField,
-                )
+            LazyVStack(alignment: .leading, spacing: 0) {
+                // `id: \.self` - Prevent crashes caused by closing the Share Sheet that was opened from the app menu.
+                // MultiThread access
+                ForEach(files, id: \.self) { file in
+                    FileRowView(
+                        file: file,
+                        files: files,
+                    )
+                }
+                // ⬇️ cause `com.apple.SwiftUI.AsyncRenderer (22): EXC_BREAKPOINT` on iOS
+                // .animation(.smooth, value: files)
+            }
+            .overlay(alignment: .top) {
+                if sidebarDragState.currentDropTarget == .startOfGroup(.group(group.objectID)) {
+                    DropTargetPlaceholder()
+                }
             }
             
         } label: {
             GroupRowView(
                 group: group,
-                isExpanded: $isExpanded
+                isSelected: isSelectedBinding.wrappedValue,
+                isExpanded: $isExpanded,
+                isBeingDropped: $isBeingDropped
             )
         }
         .disclosureGroupIndicatorVisibility(children.isEmpty && files.isEmpty ? .hidden : .visible)
@@ -139,7 +166,9 @@ struct GroupsView: View {
         TreeStructureView(children: children, paddingLeading: 6) {
             GroupRowView(
                 group: group,
-                isExpanded: $isExpanded
+                isSelected: isSelectedBinding.wrappedValue,
+                isExpanded: $isExpanded,
+                isBeingDropped: $isBeingDropped
             )
         } childView: { child in
             GroupsView(group: child, sortField: sortField)

@@ -13,13 +13,19 @@ import ChocofordUI
 import FSEventsWrapper
 #endif
 
-struct LocalFoldersListView: View {
+struct LocalFoldersProvider<Content: View>: View {
     @Environment(\.managedObjectContext) private var viewContext
-    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.alertToast) private var alertToast
+    @Environment(\.scenePhase) private var scenePhase
     
     @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var localFolderState: LocalFolderState
+
+    var content: (FetchedResults<LocalFolder>) -> Content
+    init(
+        @ViewBuilder content: @escaping (FetchedResults<LocalFolder>) -> Content
+    ) {
+        self.content = content
+    }
 
     @FetchRequest(
         sortDescriptors: [
@@ -30,100 +36,69 @@ struct LocalFoldersListView: View {
     )
     var folders: FetchedResults<LocalFolder>
     
-    init() { }
-    
+    @StateObject private var localFolderState = LocalFolderState()
+
 #if canImport(AppKit)
     typealias PlatformWindow = NSWindow
 #elseif canImport(UIKit)
     typealias PlatformWindow = UIWindow
 #endif
-
+    
+    
     @State private var window: PlatformWindow?
 #if canImport(AppKit)
     @State private var monitorTasks: [LocalFolder : Task<Void, Never>] = [:]
 #elseif canImport(UIKit)
     @State private var monitors: [LocalFolder : DirectoryMonitor] = [:]
 #endif
-
+    
     @State private var folderUrlBeforeResignKey: URL?
 
+    
     var body: some View {
-        LazyVStack(alignment: .leading, spacing: 4) {
-            ForEach(folders) { folder in
-                VStack(alignment: .leading, spacing: 0) {
-                    // Local folder view
-                    Section {
-                        LocalFoldersView(folder: folder, sortField: .updatedAt) {
-                            // switch current folder first if necessary.
-                            if case .localFolder(let localFolder) = fileState.currentActiveGroup,
-                               localFolder == folder {
-                                guard let index = folders.firstIndex(of: folder) else {
-                                    return
-                                }
-                                if index == 0 {
-                                    if folders.count > 1 {
-                                        fileState.currentActiveGroup = .localFolder(folders[1])
-                                    } else {
-                                        fileState.currentActiveGroup = nil
-                                    }
-                                } else {
-                                    fileState.currentActiveGroup = .localFolder(folders[0])
-                                }
-                            }
-                        }
+        content(folders)
+            .environmentObject(localFolderState)
+            .bindWindow($window)
+    #if os(macOS)
+            .onReceive(
+                NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
+            ) { notification in
+                if let window = notification.object as? NSWindow,
+                   window == self.window {
+                    do {
+                        try self.refreshFoldersContent()
+                        try redirectToCurrentFolder()
+                    } catch {
+                        alertToast(error)
+                    }
+                    folderUrlBeforeResignKey = nil
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { notification in
+                if let window = notification.object as? NSWindow,
+                   window == self.window {
+                    if case .localFolder(let localFolder) = fileState.currentActiveGroup {
+                        self.folderUrlBeforeResignKey = localFolder.url
                     }
                 }
             }
-        }
-        .bindWindow($window)
-#if os(macOS)
-        .onReceive(
-            NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
-        ) { notification in
-            if let window = notification.object as? NSWindow,
-               window == self.window {
-                do {
-                    try self.refreshFoldersContent()
-                    try redirectToCurrentFolder()
-                } catch {
-                    alertToast(error)
-                }
-                folderUrlBeforeResignKey = nil
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { notification in
-            if let window = notification.object as? NSWindow,
-               window == self.window {
-                if case .localFolder(let localFolder) = fileState.currentActiveGroup {
-                    self.folderUrlBeforeResignKey = localFolder.url
-                }
-            }
-        }
 #elseif os(iOS)
-        .onChange(of: scenePhase) { newValue in
-            if newValue == .active {
-                do {
-                    try self.refreshFoldersContent()
-                    try redirectToCurrentFolder()
-                } catch {
-                    alertToast(error)
+            .onChange(of: scenePhase) { newValue in
+                if newValue == .active {
+                    do {
+                        try self.refreshFoldersContent()
+                        try redirectToCurrentFolder()
+                    } catch {
+                        alertToast(error)
+                    }
                 }
             }
-        }
 #endif
-        .watchImmediately(of: folders) { newValue in
-            handleFoldersObservation(folders: newValue)
-        }
-        .onAppear {
-            folders.forEach { try? $0.refreshChildren(context: viewContext) }
-        }
+            .watchImmediately(of: folders) { newValue in
+                handleFoldersObservation(folders: newValue)
+            }
     }
     
-    private func refreshFoldersContent() throws {
-        for i in 0..<folders.count {
-            try folders[i].refreshChildren(context: viewContext)
-        }
-    }
     
 #if canImport(AppKit)
     private func handleFoldersObservation(folders newValue: FetchedResults<LocalFolder>) {
@@ -272,6 +247,12 @@ struct LocalFoldersListView: View {
         print("[LocalFoldersListView] update monitors<\(monitors.count)> ")
     }
 #endif
+    
+    private func refreshFoldersContent() throws {
+        for i in 0..<folders.count {
+            try folders[i].refreshChildren(context: viewContext)
+        }
+    }
 
     private func redirectToCurrentFolder() throws {
         guard fileState.currentActiveGroup == nil, let folderUrlBeforeResignKey else { return }
@@ -283,4 +264,55 @@ struct LocalFoldersListView: View {
             fileState.currentActiveGroup = .localFolder(folder)
         }
     }
+}
+
+struct LocalFoldersListView: View {
+    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.alertToast) private var alertToast
+
+    @EnvironmentObject private var fileState: FileState
+    
+    init() { }
+
+    var body: some View {
+        LocalFoldersProvider { folders in
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(folders) { folder in
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Local folder view
+                        Section {
+                            LocalFoldersView(folder: folder, sortField: .updatedAt) {
+                                // switch current folder first if necessary.
+                                if case .localFolder(let localFolder) = fileState.currentActiveGroup,
+                                   localFolder == folder {
+                                    guard let index = folders.firstIndex(of: folder) else {
+                                        return
+                                    }
+                                    if index == 0 {
+                                        if folders.count > 1 {
+                                            fileState.currentActiveGroup = .localFolder(folders[1])
+                                        } else {
+                                            fileState.currentActiveGroup = nil
+                                        }
+                                    } else {
+                                        fileState.currentActiveGroup = .localFolder(folders[0])
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .onAppear {
+                for i in 0..<folders.count {
+                    do {
+                        try folders[i].refreshChildren(context: viewContext)
+                    } catch {
+                        alertToast(error)
+                    }
+                }
+            }
+        }
+    }
+    
 }

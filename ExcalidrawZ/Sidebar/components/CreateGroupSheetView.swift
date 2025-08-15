@@ -13,47 +13,55 @@ struct CreateGroupModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject var fileState: FileState
     
-    
-    @FetchRequest(
-        sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],
-        predicate: NSPredicate(format: "parent = nil")
-    )
+    @FetchRequest
     var groups: FetchedResults<Group>
     
     @Binding var isPresented: Bool
+    var parentGroupID: NSManagedObjectID?
     
-    init(isPresented: Binding<Bool>) {
+    init(isPresented: Binding<Bool>, parentGroupID: NSManagedObjectID?) {
         self._isPresented = isPresented
+        self.parentGroupID = parentGroupID
+        
+        self._groups = FetchRequest(
+            sortDescriptors: [
+                SortDescriptor(\.createdAt, order: .forward),
+            ],
+            predicate: parentGroupID != nil
+            ? NSPredicate(format: "parent = %@", parentGroupID!)
+            : NSPredicate(format: "parent = nil"),
+            animation: .smooth
+        )
     }
     
     @State private var initialNewGroupName = ""
     
     func body(content: Content) -> some View {
         content
-        .sheet(isPresented: $isPresented) {
-            if containerHorizontalSizeClass == .compact {
-                createFolderSheetView()
+            .sheet(isPresented: $isPresented) {
+                if containerHorizontalSizeClass == .compact {
+                    createFolderSheetView()
 #if os(iOS)
-                    .presentationDetents([.height(140)])
-                    .presentationDragIndicator(.visible)
+                        .presentationDetents([.height(140)])
+                        .presentationDragIndicator(.visible)
 #endif
-            } else if #available(iOS 18.0, macOS 13.0, *) {
-                createFolderSheetView()
-                    .scrollDisabled(true)
-                    .frame(width: 400, height: 140)
+                } else if #available(iOS 18.0, macOS 13.0, *) {
+                    createFolderSheetView()
+                        .scrollDisabled(true)
+                        .frame(width: 400, height: 140)
 #if os(iOS)
-                    .presentationSizing(.fitted)
+                        .presentationSizing(.fitted)
 #endif
-            } else {
-                createFolderSheetView()
+                } else {
+                    createFolderSheetView()
+                }
             }
-        }
-        .onChange(of: groups.count) { _ in
-            initialNewGroupName = getNextGroupName()
-        }
-        .onAppear {
-            initialNewGroupName = getNextGroupName()
-        }
+            .onChange(of: groups.count) { _ in
+                initialNewGroupName = getNextGroupName()
+            }
+            .onAppear {
+                initialNewGroupName = getNextGroupName()
+            }
     }
     
     @MainActor @ViewBuilder
@@ -67,7 +75,9 @@ struct CreateGroupModifier: ViewModifier {
                     try await fileState.createNewGroup(
                         name: name,
                         activate: true,
-                        context: viewContext
+                        parentGroupID: parentGroupID,
+                        context: viewContext,
+                        animation: .smooth
                     )
                 } catch {
                     alertToast(error)

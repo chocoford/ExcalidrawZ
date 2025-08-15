@@ -102,9 +102,17 @@ extension LocalFolder {
                 let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
                 fetchRequest.predicate = NSPredicate(format: "parent = %@", self)
                 let childeren = try context.fetch(fetchRequest)
-                var mismatchedFolders = childeren
-                for url in contents.filter({$0.isDirectory && (try? $0.resourceValues(forKeys: [.isHiddenKey]))?.isHidden == false}) {
-                    mismatchedFolders.removeAll(where: {$0.url == url})
+                /// Children folders that should be deleted
+                var missingChidren = childeren
+                for url in contents.filter({
+                    $0.isDirectory && (try? $0.resourceValues(forKeys: [.isHiddenKey]))?.isHidden == false
+                }) {
+                    /// If found, remove from `missingChidren`
+                    if let index = missingChidren.firstIndex(where: {$0.url == url}) {
+                        missingChidren.remove(at: index)
+                    }
+                    
+                    /// If self.children already contains this folder, skip
                     if self.children?.contains(where: {
                         if let child = $0 as? LocalFolder {
                             return child.url == url
@@ -113,13 +121,15 @@ extension LocalFolder {
                     }) == true {
                         continue
                     }
+                    /// Otherwise, create a new LocalFolder instance and add it to children
                     let child = try LocalFolder(url: url, context: context)
                     self.addToChildren(child)
                 }
                 
-                // remove mismatched folders
-                for folder in mismatchedFolders {
-                    context.delete(folder)
+                /// remove missing children folders
+                for folder in missingChidren {
+                    // also delete all children of this folder
+                    try deleteLocalFolder(folder, context: context)
                 }
                 
                 for case let subfolder as LocalFolder in self.children?.allObjects ?? [] {
@@ -129,5 +139,54 @@ extension LocalFolder {
                 try context.save()
             }
         }
+    }
+    
+    func getFiles<T>(
+        deep: Bool,
+        properties: [URLResourceKey]? = nil,
+        action: (_ fileURL: URL) throws -> T = { $0 }
+    ) throws -> [T] {
+        try self.withSecurityScopedURL { scopedURL in
+            let filemanager = FileManager.default
+            if deep {
+                guard let enumerator = filemanager.enumerator(at: scopedURL, includingPropertiesForKeys: properties) else {
+                    return []
+                }
+                var results: [T] = []
+                for case let file as URL in enumerator {
+                    if file.pathExtension == "excalidraw" {
+                        try results.append(action(file))
+                    }
+                }
+                return results
+            } else {
+                let urls = try filemanager.contentsOfDirectory(at: scopedURL, includingPropertiesForKeys: properties)
+                return try urls.filter({
+                    $0.pathExtension == "excalidraw"
+                }).map {
+                    try action($0)
+                }
+            }
+        }
+    }
+}
+
+
+func deleteLocalFolder(
+    _ folder: LocalFolder,
+    withChildren: Bool = true,
+    context: NSManagedObjectContext
+) throws {
+    try context.performAndWait {
+        let children: [LocalFolder] = folder.children?.allObjects.compactMap { $0 as? LocalFolder } ?? []
+        if withChildren {
+            for child in children {
+                try deleteLocalFolder(child, withChildren: true, context: context)
+            }
+        }
+        
+        context.delete(folder)
+        
+        try context.save()
     }
 }

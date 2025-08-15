@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct FileContextMenuModifier: ViewModifier {
-    @EnvironmentObject var fileState: FileState
+    @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject private var fileState: FileState
     @Environment(\.alertToast) private var alertToast
 
     init(file: File) {
@@ -17,10 +18,33 @@ struct FileContextMenuModifier: ViewModifier {
     
     var file: File
     
+    @State private var isRenameSheetPresented = false
     @State private var isPermanentlyDeleteAlertPresented = false
     
     func body(content: Content) -> some View {
         content
+            .contextMenu {
+                FileContextMenu(
+                    file: file
+                ) {
+                    isRenameSheetPresented.toggle()
+                } onTogglePermanentlyDelete: {
+                    isPermanentlyDeleteAlertPresented.toggle()
+                }
+                .labelStyle(.titleAndIcon)
+            }
+            .modifier(
+                RenameSheetViewModifier(
+                    isPresented: $isRenameSheetPresented,
+                    name: self.file.name ?? ""
+                ) {
+                    fileState.renameFile(
+                        self.file.objectID,
+                        context: viewContext,
+                        newName: $0
+                    )
+                }
+            )
             .confirmationDialog(
                 LocalizedStringKey.localizable(.sidebarFileRowDeletePermanentlyAlertTitle(file.name ?? "")),
                 isPresented: $isPermanentlyDeleteAlertPresented
@@ -32,13 +56,6 @@ struct FileContextMenuModifier: ViewModifier {
                 }
             } message: {
                 Text(.localizable(.generalCannotUndoMessage))
-            }
-            .contextMenu {
-                FileContextMenu(
-                    file: file,
-                    isPermanentlyDeleteAlertPresented: $isPermanentlyDeleteAlertPresented
-                )
-                .labelStyle(.titleAndIcon)
             }
     }
     
@@ -91,7 +108,8 @@ struct FileContextMenu: View {
     @EnvironmentObject var fileState: FileState
 
     var file: File
-    @Binding var isPermanentlyDeleteAlertPresented: Bool
+    var onToggleRename: () -> Void
+    var onTogglePermanentlyDelete: () -> Void
     
     @FetchRequest(
         sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],
@@ -99,15 +117,11 @@ struct FileContextMenu: View {
         animation: .default
     )
     var topLevelGroups: FetchedResults<Group>
-    
-    @State private var isRenameSheetPresented = false
 
-    
     var body: some View {
         if !file.inTrash {
             Button {
-                // fileIDToBeRenamed = self.file.objectID
-                isRenameSheetPresented.toggle()
+                onToggleRename()
             } label: {
                 Label(
                     .localizable(
@@ -180,7 +194,7 @@ struct FileContextMenu: View {
             }
             
             Button {
-                isPermanentlyDeleteAlertPresented.toggle()
+                onTogglePermanentlyDelete()
             } label: {
                 Label(
                     .localizable(
