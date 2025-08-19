@@ -50,6 +50,8 @@ extension UTType {
 
 struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.alertToast) private var alertToast
+    
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var sidebarDragState: SidebarDragState
     
@@ -66,152 +68,155 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
         self.files = files
     }
     
-    @State private var isDragging = false
+    
+    @State private var localFileWillBeDropped: (URL, SidebarDragState.FileRowDropTarget)? = nil
 
     func body(content: Content) -> some View {
-        if #available(macOS 13.0, iOS 16.0, *), false {
-            // No
-//            content
-//                .draggable(FileRowTransferable(objectID: file.objectID))
-//                .dropDestination(for: FileRowTransferable.self) { items, location in
-//                    for item in items {
-//                        guard let objectID = item.objectID else { continue }
-//                        sortFiles(
-//                            draggedItemID: objectID,
-//                            drop: file.objectID,
-//                            files: files.map{$0},
-//                            context: viewContext
-//                        ) {
-//                            if fileState.sortField != .rank {
-//                                withAnimation {
-//                                    fileState.sortField = .rank
-//                                }
-//                            }
-//                        }
-//                    }
-//                    return true
-//                } isTargeted: { isEntered in
-//                    if isEntered {
-//                        
-//                    }
-//                }
-        } else {
-            content
-                .opacity(isDragging ? 0.3 : 1)
-                .contentShape(Rectangle())
-                .onDrag {
-                    let url = file.objectID.uriRepresentation()
-                    print("onDrag", url)
-                    withAnimation { isDragging = true }
-                    sidebarDragState.currentDragItem = .file(file.objectID)
-                    return NSItemProvider(
-                        item: url.dataRepresentation as NSData,
-                        typeIdentifier: UTType.excalidrawFileRow.identifier
-                    )
+        content
+            .opacity(sidebarDragState.currentDragItem == .file(file.objectID) ? 0.3 : 1)
+            .contentShape(Rectangle())
+            .onDrag {
+                let url = file.objectID.uriRepresentation()
+                sidebarDragState.currentDragItem = .file(file.objectID)
+                return NSItemProvider(
+                    item: url.dataRepresentation as NSData,
+                    typeIdentifier: UTType.excalidrawFileRow.identifier
+                )
+            }
+            .overlay {
+                let canDrop = if case .file = sidebarDragState.currentDragItem {
+                    true
+                } else if case .localFile = sidebarDragState.currentDragItem {
+                    true
+                } else {
+                    false
                 }
-                .overlay {
-                    if sidebarDragState.currentDropTarget != nil {
-                        VStack(spacing: 0) {
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .onDrop(
-                                    of: [.excalidrawFileRow],
-                                    delegate: FileRowDropDelegate(
-                                        item: file,
-                                        onEntered: {
+                
+                if canDrop {
+                    VStack(spacing: 0) {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .modifier(
+                                SidebarRowDropModifier(
+                                    allow: [.excalidrawFileRow, .fileURL],
+                                    onTargeted: { val in
+                                        if val {
                                             if let index = files.firstIndex(of: file) {
                                                 if index > 0 {
-                                                    sidebarDragState.currentDropTarget = .after(.file(files[index-1].objectID))
+                                                    sidebarDragState.currentDropFileRowTarget = .after(.file(files[index-1].objectID))
                                                 } else if let group = file.group {
-                                                    sidebarDragState.currentDropTarget = .startOfGroup(.group(group.objectID))
+                                                    sidebarDragState.currentDropFileRowTarget = .startOfGroup(.group(group.objectID))
                                                 }
                                             }
-                                        },
-                                        onLeave: {
-                                            sidebarDragState.currentDropTarget = nil
-                                        },
-                                        onDrop: { draggedItemID in
-                                            DispatchQueue.main.async {
-                                                sidebarDragState.currentDropTarget = nil
-                                                sidebarDragState.currentDragItem = nil
-                                                if let index = files.firstIndex(of: file) {
+                                        } else {
+                                            sidebarDragState.currentDropFileRowTarget = nil
+                                        }
+                                    },
+                                    onDrop: { item in
+                                        if let index = files.firstIndex(of: file) {
+                                            let dropTarget: SidebarDragState.FileRowDropTarget = {
+                                                if index > 0 {
+                                                    return .after(.file(files[index-1].objectID))
+                                                } else if let group = file.group {
+                                                    return .startOfGroup(.group(group.objectID))
+                                                } else {
+                                                    return .after(.file(file.objectID))
+                                                }
+                                            }()
+                                            switch item {
+                                                case .file(let fileID):
                                                     self.sortFiles(
-                                                        draggedItemID: draggedItemID,
-                                                        droppedTargt: {
-                                                            if index > 0 {
-                                                                return .after(.file(files[index-1].objectID))
-                                                            } else if let group = file.group {
-                                                                return .startOfGroup(.group(group.objectID))
-                                                            } else {
-                                                                return .after(.file(file.objectID))
-                                                            }
-                                                        }(),
+                                                        draggedItemID: fileID,
+                                                        droppedTargt: dropTarget,
                                                         files: files.map{$0},
                                                         context: viewContext
                                                     )
-                                                }
+                                                case .localFile(let url):
+                                                    localFileWillBeDropped = (url, dropTarget)
+                                                default:
+                                                    break
                                             }
                                         }
-                                    ),
+
+                                    }
                                 )
-                                .simultaneousGesture(TapGesture().onEnded {
-                                    sidebarDragState.currentDragItem = nil
-                                    sidebarDragState.currentDropTarget = nil
-                                })
-                            
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .onDrop(
-                                    of: [.excalidrawFileRow],
-                                    delegate: FileRowDropDelegate(
-                                        item: file,
-                                        onEntered: {
+                            )
+                            .simultaneousGesture(TapGesture().onEnded {
+                                sidebarDragState.currentDragItem = nil
+                                sidebarDragState.currentDropFileRowTarget = nil
+                                sidebarDragState.currentDropGroupTarget = nil
+                            })
+                        
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .modifier(
+                                SidebarRowDropModifier(
+                                    allow: [
+                                        .excalidrawFileRow, .fileURL
+                                    ],
+                                    onTargeted: { isTargeted in
+                                        if isTargeted {
                                             if let index = files.firstIndex(of: file) {
-                                                sidebarDragState.currentDropTarget = .after(.file(files[index].objectID))
+                                                sidebarDragState.currentDropFileRowTarget = .after(.file(files[index].objectID))
                                             }
-                                        },
-                                        onLeave: {
-                                            sidebarDragState.currentDropTarget = nil
-                                        },
-                                        onDrop: { draggedItemID in
-                                            DispatchQueue.main.async {
-                                                sidebarDragState.currentDropTarget = nil
-                                                sidebarDragState.currentDragItem = nil
+                                        } else {
+                                            sidebarDragState.currentDropFileRowTarget = nil
+                                        }
+                                    },
+                                    onDrop: { item in
+                                        switch item {
+                                            case .file(let fileID):
                                                 self.sortFiles(
-                                                    draggedItemID: draggedItemID,
+                                                    draggedItemID: fileID,
                                                     droppedTargt: .after(.file(file.objectID)),
                                                     files: files.map{$0},
                                                     context: viewContext
                                                 )
-                                            }
+                                            case .localFile(let url):
+                                                localFileWillBeDropped = (url, .after(.file(file.objectID)))
+                                            default:
+                                                break
                                         }
-                                    )
+                                    }
                                 )
-                                .simultaneousGesture(TapGesture().onEnded {
-                                    sidebarDragState.currentDragItem = nil
-                                    sidebarDragState.currentDropTarget = nil
-                                })
-                        }
+                            )
+                            .simultaneousGesture(TapGesture().onEnded {
+                                sidebarDragState.currentDragItem = nil
+                                sidebarDragState.currentDropFileRowTarget = nil
+                                sidebarDragState.currentDropGroupTarget = nil
+                            })
                     }
                 }
-                .overlay(alignment: .bottom) {
-                    if sidebarDragState.currentDropTarget == .after(.file(file.objectID)) {
-                        DropTargetPlaceholder()
-                            
-                    }
+            }
+            .overlay(alignment: .bottom) {
+                if sidebarDragState.currentDropFileRowTarget == .after(.file(file.objectID)) {
+                    DropTargetPlaceholder()
                 }
-                .onReceive(NotificationCenter.default.publisher(for: .didDropFileRow)) { output in
-                    withAnimation {
-                        self.isDragging = false
-                    }
+            }
+            .confirmationDialog(
+                "Import local file",
+                isPresented: Binding {
+                    localFileWillBeDropped != nil
+                } set: { val in
+                    if !val { localFileWillBeDropped = nil }
                 }
-        }
+            ) {
+                Button {
+                    if let localFileWillBeDropped {
+                        performDropLocalFile(payload: localFileWillBeDropped)
+                    }
+                } label: {
+                    Text(.localizable(.generalButtonConfirm))
+                }
+            } message: {
+                Text("This will import the local file to database, and it will be synced with iCloud.")
+            }
     }
     
     /// Drop to the position before the target file.
     private func sortFiles<DragFile: DragMovableFile>(
         draggedItemID draggedObjectID: NSManagedObjectID,
-        droppedTargt target: SidebarDragState.DropTarget,
+        droppedTargt target: SidebarDragState.FileRowDropTarget,
         files allFiles: [DragFile],
         context: NSManagedObjectContext,
         completionHandler: (() -> Void)? = nil
@@ -323,9 +328,28 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
             }
         }
     }
+    
+    private func performDropLocalFile(payload: (URL, SidebarDragState.FileRowDropTarget)) {
+        let (url, dropTarget) = payload
+        do {
+            let newFile = try File(url: url, context: viewContext)
+            viewContext.insert(newFile)
+            try viewContext.save()
+            
+            self.sortFiles(
+                draggedItemID: newFile.objectID,
+                droppedTargt: dropTarget,
+                files: files.map{$0},
+                context: viewContext
+            )
+        } catch {
+            alertToast(error)
+        }
+    }
 }
 
 fileprivate struct NotFoundError: Error {}
+
 
 struct FileRowDropDelegate<File: DragMovableFile>: DropDelegate {
     let item: File

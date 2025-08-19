@@ -209,10 +209,12 @@ struct NewFileButton: View {
             } else if case .localFolder(let folder) = fileState.currentActiveGroup {
                 try folder.withSecurityScopedURL { scopedURL in
                     do {
-                        guard let url = try await fileState.createNewLocalFile(active: !openWithDelay, folderURL: scopedURL) else {
+                        guard let url = try await fileState.createNewLocalFile(
+                            active: !openWithDelay,
+                            folderURL: scopedURL
+                        ) else {
                             return
                         }
-                        isCreatingFile = false
                         
                         if openWithDelay {
                             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {

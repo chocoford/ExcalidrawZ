@@ -51,7 +51,7 @@ struct SidebarView: View {
                 Color.clear.contentShape(Rectangle())
                     .simultaneousGesture(TapGesture().onEnded {
                         dragState.currentDragItem = nil
-                        dragState.currentDropTarget = nil
+                        dragState.currentDropFileRowTarget = nil
                     })
             }
             .environmentObject(dragState)
@@ -69,11 +69,18 @@ class SidebarDragState: ObservableObject {
     
     @Published var currentDragItem: DragItem?
     
-    enum DropTarget: Equatable {
+    enum FileRowDropTarget: Equatable {
         case after(DragItem)
         case startOfGroup(DragItem)
     }
-    @Published var currentDropTarget: DropTarget?
+    @Published var currentDropFileRowTarget: FileRowDropTarget?
+    
+    enum GroupDropTarget: Equatable {
+        case exact(DragItem)
+        case below(DragItem)
+    }
+    
+     @Published var currentDropGroupTarget: GroupDropTarget?
 }
 
 #Preview {

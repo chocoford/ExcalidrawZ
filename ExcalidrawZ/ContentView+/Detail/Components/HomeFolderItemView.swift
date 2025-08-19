@@ -26,6 +26,7 @@ struct HomeFolderItemView: View {
             VStack(alignment: .leading) {
                 Text(name)
                     .font(.headline)
+                    .lineLimit(1)
                 
                 Text("\(itemsCount) items")
                     .font(.footnote)

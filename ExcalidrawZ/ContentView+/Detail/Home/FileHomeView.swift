@@ -88,7 +88,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
         self._childGroups = FetchRequest<Group>(
             sortDescriptors: [NSSortDescriptor(keyPath: \Group.name, ascending: true)],
             predicate: group.groupType == .trash
-            ? NSPredicate(format: "false")
+            ? nil
             : NSPredicate(format: "parent == %@", group)
         )
 
@@ -152,126 +152,10 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
             VStack(spacing: 0) {
                 VStack(spacing: 30) {
                     // Header
-                    VStack(spacing: 0) {
-                        HStack(spacing: 2) {
-                            ForEach(parentGroups) { group in
-                                Button {
-                                    fileState.currentActiveFile = nil
-                                    fileState.currentActiveGroup = futureActiveGroup(group)
-                                } label: {
-                                    Text(group.name ?? String(localizable: .generalUntitled))
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
-                                }
-                                .buttonStyle(.text(size: .small))
-                                .hoverCursor(.pointingHand)
-
-                                if group != parentGroups.last {
-                                    Image(systemSymbol: .chevronRight)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            Spacer()
-                        }
-                        .font(.caption)
-                        
-                        HStack {
-                            Text(group.name ?? String(localizable: .generalUntitled))
-                                .font(.title)
-                            
-                            Spacer()
-                            
-                            // Toolbar
-                            HStack {
-                                Menu {
-                                    
-                                } label: {
-                                    Image(systemSymbol: .ellipsisCircle)
-                                }
-                                .fixedSize()
-                                .menuIndicator(.hidden)
-                                .buttonStyle(.borderless)
-                            }
-                        }
-                        .padding(.horizontal, 10)
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    SwiftUI.Group {
-                        // Quick Actions
-                        HStack(spacing: 10) {
-                            NewFileButton(openWithDelay: true)
-                                .hoverCursor(.pointingHand)
-                            
-                            NewGroupButton(parentID: group.objectID)
-                                .hoverCursor(.pointingHand)
-
-                            Spacer()
-                        }
-                        .controlSize(.large)
-//                        .onHover { isHovered in
-//                            if isHovered {
-//                                NSCursor.pointingHand.set()
-//                            } else {
-//                                NSCursor.arrow.set()
-//                            }
-//                        }
-                        
-                        // Groups
-                        LazyVGrid(
-                            columns: [
-                                .init(
-                                    .adaptive(minimum: folderItemWidth, maximum: folderItemWidth * 2 - 0.1),
-                                    spacing: 20
-                                )
-                            ],
-                            spacing: 20
-                        ) {
-                             ForEach(childGroups) { group in
-                                HomeFolderItemView(
-                                    isSelected: selection == group.objectID.description,
-                                    name: group.name ?? String(localizable: .generalUntitled),
-                                    itemsCount: group.filesCount,
-                                )
-                                .modifier(FileHomeGroupContextMenuModifier(group: group))
-                                .simultaneousGesture(TapGesture(count: 2).onEnded {
-                                    fileState.currentActiveGroup = futureActiveGroup(group)
-                                    fileState.expandToGroup(group.objectID)
-                                })
-                                .simultaneousGesture(TapGesture().onEnded {
-                                    selection = group.objectID.description
-                                })
-                            }
-                        }
-                        
-#if os(macOS)
-                        .animation(.smooth, value: Array(childGroups))
-#endif
-
-                        // Files
-                        LazyVGrid(
-                            columns: [
-                                .init(.adaptive(minimum: fileItemWidth, maximum: fileItemWidth * 2 - 0.1), spacing: 20)
-                            ],
-                            spacing: 20
-                        ) {
-                            ForEach(files) { file in
-                                FileHomeItemView(
-                                    file: file,
-                                    isSelected: Binding {
-                                        selection == file.id
-                                    } set: { val in
-                                        if val {
-                                            selection = file.id
-                                        }
-                                    },
-                                )
-                            }
-                            
-                        }
-                        
-                    }
-                    .padding(.horizontal, 30)
+                    header()
+                        .padding(.horizontal, 20)
+                    quickActions()
+                        .padding(.horizontal, 30)
                 }
                 .padding(.top, parentGroups.isEmpty ? 36 : 15)
                 .padding(.bottom, 30)
@@ -283,9 +167,10 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                         }
                 }
                 .readHeight($contentHeight)
+
                 
-                Color.clear // .opacity(0.2)
-                    .frame(height: max(0, scrollViewHeight - contentHeight - 150))
+                Color.clear
+                    .frame(height: max(0, scrollViewHeight - contentHeight))
                     .contentShape(Rectangle())
                     .onTapGesture {
                         selection = nil
@@ -344,12 +229,170 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
             }
         }
         .readHeight($scrollViewHeight)
-//        .onChange(of: scrollViewHeight) { newValue in
-//            print(scrollViewHeight, contentHeight)
-//        }
-//        .onChange(of: contentHeight) { newValue in
-//            print(scrollViewHeight, contentHeight)
-//        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func header() -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 2) {
+                ForEach(parentGroups) { group in
+                    Button {
+                        fileState.currentActiveFile = nil
+                        fileState.currentActiveGroup = futureActiveGroup(group)
+                    } label: {
+                        Text(group.name ?? String(localizable: .generalUntitled))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    .buttonStyle(.text(size: .small))
+                    // .hoverCursor(.link)
+
+                    if group != parentGroups.last {
+                        Image(systemSymbol: .chevronRight)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+            }
+            .font(.caption)
+            
+            HStack {
+                Text(group.name ?? String(localizable: .generalUntitled))
+                    .font(.title)
+                
+                Spacer()
+                
+                // Toolbar
+                HStack {
+                    if #available(macOS 14.0, iOS 17.0, *) {
+                        actionsMenu()
+                            .buttonStyle(.accessoryBar)
+                    } else {
+                        actionsMenu()
+                    }
+                }
+            }
+            .padding(.horizontal, 10)
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func actionsMenu() -> some View {
+        SwiftUI.Group {
+            if let group = group as? Group {
+                GroupMenuProvider(group: group) { triggers in
+                    Menu {
+                        GroupMenuItems(
+                            group: group,
+                            canExpand: false
+                        ) {
+                            triggers.onToggleRename()
+                        } onToogleCreateSubfolder: {
+                            triggers.onToogleCreateSubfolder()
+                        } onToggleDelete: {
+                            triggers.onToggleDelete()
+                        }
+                    } label: {
+                        Image(systemSymbol: .ellipsisCircle)
+                    }
+                }
+            } else if let folder = group as? LocalFolder {
+                LocalFolderMenuProvider(folder: folder) { triggers in
+                    Menu {
+                        LocalFolderMenuItems(
+                            folder: folder,
+                            canExpand: false
+                        ) {
+                            triggers.onToogleCreateSubfolder()
+                        } onDelete: {
+                            triggers.onToggleDelete()
+                        }
+                    } label: {
+                        Image(systemSymbol: .ellipsisCircle)
+                    }
+                }
+            }
+        }
+        .fixedSize()
+        .menuIndicator(.hidden)
+    }
+    
+    
+    @MainActor @ViewBuilder
+    private func quickActions() -> some View {
+        
+        if let group = self.group as? Group, group.groupType == .trash {
+            // Trash group actions
+            HStack(spacing: 10) {
+                Spacer()
+            }
+            .controlSize(.large)
+        } else {
+            // Quick Actions
+            HStack(spacing: 10) {
+                NewFileButton(openWithDelay: true)
+                // .hoverCursor(.link)
+                
+                NewGroupButton(parentID: group.objectID)
+                // .hoverCursor(.link)
+                
+                Spacer()
+            }
+            .controlSize(.large)
+            
+            // Groups
+            LazyVGrid(
+                columns: [
+                    .init(
+                        .adaptive(minimum: folderItemWidth, maximum: folderItemWidth * 2 - 0.1),
+                        spacing: 20
+                    )
+                ],
+                spacing: 20
+            ) {
+                ForEach(childGroups) { group in
+                    HomeFolderItemView(
+                        isSelected: selection == group.objectID.description,
+                        name: group.name ?? String(localizable: .generalUntitled),
+                        itemsCount: group.filesCount,
+                    )
+                    .modifier(FileHomeGroupContextMenuModifier(group: group))
+                    .simultaneousGesture(TapGesture(count: 2).onEnded {
+                        fileState.currentActiveGroup = futureActiveGroup(group)
+                        fileState.expandToGroup(group.objectID)
+                    })
+                    .simultaneousGesture(TapGesture().onEnded {
+                        selection = group.objectID.description
+                    })
+                }
+            }
+#if os(macOS)
+            .animation(.smooth, value: Array(childGroups))
+#endif
+        }
+        
+        // Files
+        LazyVGrid(
+            columns: [
+                .init(.adaptive(minimum: fileItemWidth, maximum: fileItemWidth * 2 - 0.1), spacing: 20)
+            ],
+            spacing: 20
+        ) {
+            ForEach(files) { file in
+                FileHomeItemView(
+                    file: file,
+                    isSelected: Binding {
+                        selection == file.id
+                    } set: { val in
+                        if val {
+                            selection = file.id
+                        }
+                    },
+                )
+            }
+        }
+        
+        
     }
 }
 
@@ -370,8 +413,7 @@ struct FileHomeGroupContextMenuModifier<HomeGroup>: ViewModifier {
                 .modifier(
                     GroupContextMenuViewModifier(
                         group: group,
-                        folderStructStyle: .tree,
-                        isExpanded: .constant(false)
+                        canExpand: false
                     )
                 )
         } else if let group = group as? LocalFolder {
@@ -379,8 +421,7 @@ struct FileHomeGroupContextMenuModifier<HomeGroup>: ViewModifier {
                 .modifier(
                     LocalFolderContextMenuModifier(
                         folder: group,
-                        folderStructStyle: .tree,
-                        isSelected: false
+                        canExpand: false
                     )
             )
         } else {

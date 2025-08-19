@@ -45,7 +45,7 @@ struct ContentViewModern: View {
             if #available(macOS 14.0, iOS 17.0, *) {
 #if os(macOS)
                 SidebarView()
-                    .toolbar(content: sidebarToolbar)
+                     .toolbar(content: sidebarToolbar)
 #elseif os(iOS)
                 if horizontalSizeClass == .compact {
                     SidebarView()
@@ -68,7 +68,7 @@ struct ContentViewModern: View {
     private func sidebarToolbar() -> some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
             // create
-            NewFileButton()
+            NewFileButton(openWithDelay: false)
         }
         
 #if os(macOS)

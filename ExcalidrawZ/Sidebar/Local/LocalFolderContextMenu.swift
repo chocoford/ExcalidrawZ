@@ -8,33 +8,46 @@
 import SwiftUI
 import CoreData
  
-struct LocalFolderContextMenuModifier: ViewModifier {
+struct LocalFolderMenuProvider: View {
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
 
+    struct Triggers {
+        var onToggleRename: () -> Void
+        var onToogleCreateSubfolder: () -> Void
+        var onToggleDelete: () -> Void
+    }
+    
     var folder: LocalFolder
-    var folderStructStyle: FolderStructureStyle
-    var isSelected: Bool
+    var content: (Triggers) -> AnyView
+
+    init<Content: View>(
+        folder: LocalFolder,
+        content: @escaping (Triggers) -> Content
+    ) {
+        self.folder = folder
+        self.content = { AnyView(content($0)) }
+    }
     
-    @State private var isCreateSubfolderPresented = false
     @State private var newSubfolderName: String = String(localizable: .generalNewFolderName)
+    @State private var isRenameSheetPresented = false
+    @State private var isCreateSubfolderSheetPresented = false
+    @State private var isDeleteConfirmPresented = false
+
+    var triggers: Triggers {
+        Triggers {
+            isRenameSheetPresented.toggle()
+        } onToogleCreateSubfolder: {
+            generateNewSubfolderName()
+            isCreateSubfolderSheetPresented.toggle()
+        } onToggleDelete: {
+            isDeleteConfirmPresented.toggle()
+        }
+    }
     
-    func body(content: Content) -> some View {
-        content
-            .contextMenu {
-                LocalFolderContextMenu(
-                    folder: folder,
-                    folderStructStyle: folderStructStyle,
-                    isSelected: isSelected
-                ) {
-                    generateNewSubfolderName()
-                    isCreateSubfolderPresented.toggle()
-                } onDelete: {
-                    removeObservation()
-                }
-                .labelStyle(.titleAndIcon)
-            }
-            .sheet(isPresented: $isCreateSubfolderPresented) {
+    var body: some View {
+        content(triggers)
+            .sheet(isPresented: $isCreateSubfolderSheetPresented) {
                 CreateGroupSheetView(
                     name: $newSubfolderName,
                     createType: .localFolder
@@ -123,7 +136,35 @@ struct LocalFolderContextMenuModifier: ViewModifier {
 
 }
 
-struct LocalFolderContextMenu: View {
+struct LocalFolderContextMenuModifier: ViewModifier {
+    @EnvironmentObject private var fileState: FileState
+
+    var folder: LocalFolder
+    var canExpand: Bool
+    
+    @State private var isCreateSubfolderPresented = false
+    @State private var newSubfolderName: String = String(localizable: .generalNewFolderName)
+    
+    func body(content: Content) -> some View {
+        LocalFolderMenuProvider(folder: folder) { triggers in
+            content
+                .contextMenu {
+                    LocalFolderMenuItems(
+                        folder: folder,
+                        canExpand: canExpand
+                    ) {
+                        triggers.onToogleCreateSubfolder()
+                    } onDelete: {
+                        triggers.onToggleDelete()
+                    }
+                    .labelStyle(.titleAndIcon)
+                }
+        }
+    }
+
+}
+
+struct LocalFolderMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     
@@ -131,12 +172,22 @@ struct LocalFolderContextMenu: View {
     @EnvironmentObject private var localFolderState: LocalFolderState
 
     var folder: LocalFolder
-    var folderStructStyle: FolderStructureStyle
-    var isSelected: Bool
+    var canExpand: Bool
     
     var onToggleCreateSubfolder: () -> Void
     var onDelete: () -> Void
     
+    init(
+        folder: LocalFolder,
+        canExpand: Bool,
+        onToggleCreateSubfolder: @escaping () -> Void,
+        onDelete: @escaping () -> Void,
+    ) {
+        self.folder = folder
+        self.canExpand = canExpand
+        self.onToggleCreateSubfolder = onToggleCreateSubfolder
+        self.onDelete = onDelete
+    }
     
     @FetchRequest(
         sortDescriptors: [SortDescriptor(\.filePath, order: .forward)],
@@ -145,8 +196,14 @@ struct LocalFolderContextMenu: View {
     )
     private var topLevelLocalFolders: FetchedResults<LocalFolder>
     
+    
+    var isSelected: Bool {
+        fileState.currentActiveGroup == .localFolder(folder)
+    }
+    
+    
     var body: some View {
-        if folderStructStyle == .disclosureGroup, folder.children?.allObjects.isEmpty == false {
+        if canExpand, folder.children?.allObjects.isEmpty == false {
             Button {
                 self.expandAllSubFolders(folder.objectID)
             } label: {

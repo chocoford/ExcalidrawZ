@@ -7,31 +7,34 @@
 
 import SwiftUI
 
-struct GroupContextMenuViewModifier: ViewModifier {
+struct GroupMenuProvider: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
+    struct Triggers {
+        var onToggleRename: () -> Void
+        var onToogleCreateSubfolder: () -> Void
+        var onToggleDelete: () -> Void
+    }
+    
     var group: Group
-    var folderStructStyle: FolderStructureStyle
-    @Binding var isExpanded: Bool
+    var content: (Triggers) -> AnyView
     
     @FetchRequest
     private var childrenGroups: FetchedResults<Group>
     
-    init(
+    init<Content: View>(
         group: Group,
-        folderStructStyle: FolderStructureStyle,
-        isExpanded: Binding<Bool>
+        content: @escaping (Triggers) -> Content
     ) {
         self.group = group
-        self.folderStructStyle = folderStructStyle
-        self._isExpanded = isExpanded
         self._childrenGroups = FetchRequest(
             sortDescriptors: [SortDescriptor(\Group.name, order: .forward)],
             predicate: NSPredicate(format: "parent = %@", group),
             animation: .default
         )
+        self.content = { AnyView(content($0)) }
     }
     
     @State private var initialNewGroupName: String = ""
@@ -39,19 +42,20 @@ struct GroupContextMenuViewModifier: ViewModifier {
     @State private var isRenameSheetPresented = false
     @State private var isCreateSubfolderSheetPresented = false
 
-    func body(content: Content) -> some View {
-        content
-            .contextMenu {
-                GroupContextMenu(
-                    group: group,
-                    folderStructStyle: folderStructStyle) {
-                        isRenameSheetPresented.toggle()
-                    } onToogleCreateSubfolder: {
-                        isCreateSubfolderSheetPresented.toggle()
-                    } onToggleDelete: {
-                        isDeleteConfirmPresented.toggle()
-                    }
-            }
+    
+    var triggers: Triggers {
+        Triggers {
+            isRenameSheetPresented.toggle()
+        } onToogleCreateSubfolder: {
+            isCreateSubfolderSheetPresented.toggle()
+        } onToggleDelete: {
+            isDeleteConfirmPresented.toggle()
+        }
+    }
+        
+    
+    var body: some View {
+        content(triggers)
             .confirmationDialog(
                 group.groupType == .trash
                 ? String(localizable: .sidebarGroupRowDeletePermanentlyConfirmTitle)
@@ -96,15 +100,13 @@ struct GroupContextMenuViewModifier: ViewModifier {
         ) { name in
             Task {
                 do {
-                    try await fileState.createNewGroup(
+                    let groupID = try await fileState.createNewGroup(
                         name: name,
                         activate: true,
                         parentGroupID: group.objectID,
                         context: viewContext
                     )
-                    withAnimation(.smooth(duration: 0.2)) {
-                        isExpanded = true
-                    }
+                    fileState.expandToGroup(groupID)
                 } catch {
                     alertToast(error)
                 }
@@ -136,64 +138,7 @@ struct GroupContextMenuViewModifier: ViewModifier {
                 let context = PersistenceController.shared.container.newBackgroundContext()
                 try await context.perform {
                     guard case let group as Group = context.object(with: groupID) else { return }
-
-                    if group.groupType == .trash {
-                        let files = try PersistenceController.shared.listTrashedFiles(context: context)
-                        for file in files {
-                            // Also delete checkpoints
-                            let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
-                            checkpointsFetchRequest.predicate = NSPredicate(format: "file = %@", file)
-                            let fileCheckpoints = try context.fetch(checkpointsFetchRequest)
-                            let objectIDsToBeDeleted = fileCheckpoints.map{$0.objectID}
-                            if !objectIDsToBeDeleted.isEmpty {
-                                let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: objectIDsToBeDeleted)
-                                try context.executeAndMergeChanges(using: batchDeleteRequest)
-                            }
-                            context.delete(file)
-                        }
-                    } else {
-                        guard let defaultGroup = try PersistenceController.shared.getDefaultGroup(context: context) else {
-                            throw AppError.fileError(.notFound)
-                        }
-                        
-                        // get all subgroups' files
-                        var allFiles: [File] = []
-                        var allGroups: [Group] = [group]
-                        var groupIndex = -1
-                        var parentGroup = group
-                        while groupIndex < allGroups.count {
-                            if groupIndex >= 0 {
-                                parentGroup = allGroups[groupIndex]
-                            }
-                            
-                            let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
-                            fetchRequest.predicate = NSPredicate(format: "parent = %@", parentGroup)
-                            let groups = try context.fetch(fetchRequest)
-                            allGroups.append(contentsOf: groups)
-                            
-                            let fileFetchRequest = NSFetchRequest<File>(entityName: "File")
-                            fileFetchRequest.predicate = NSPredicate(format: "group = %@", parentGroup)
-                            let files = try context.fetch(fileFetchRequest)
-                            allFiles.append(contentsOf: files)
-                            
-                            groupIndex += 1
-                        }
-                        
-                        
-                        for file in allFiles {
-                            file.inTrash = true
-                            file.deletedAt = .now
-                            file.group = defaultGroup
-                        }
-                        
-                        for group in allGroups {
-                            context.delete(group)
-                        }
-                        // Issue: Could not merge changes...
-                        // let batchDeletion = NSBatchDeleteRequest(objectIDs: allGroups.map{$0.objectID})
-                        // try context.executeAndMergeChanges(using: batchDeletion)
-                    }
-                    try context.save()
+                    try group.delete(context: context)
                 }
 
                 await MainActor.run {
@@ -208,13 +153,47 @@ struct GroupContextMenuViewModifier: ViewModifier {
     }
 }
 
-struct GroupContextMenu: View {
+struct GroupContextMenuViewModifier: ViewModifier {
+    
+    var group: Group
+    var canExpand: Bool
+    
+    init(
+        group: Group,
+        canExpand: Bool,
+    ) {
+        self.group = group
+        self.canExpand = canExpand
+    }
+    
+    func body(content: Content) -> some View {
+        GroupMenuProvider(
+            group: group
+        ) { triggers in
+            content
+                .contextMenu {
+                    GroupMenuItems(
+                        group: group,
+                        canExpand: canExpand
+                    ) {
+                        triggers.onToggleRename()
+                    } onToogleCreateSubfolder: {
+                        triggers.onToogleCreateSubfolder()
+                    } onToggleDelete: {
+                        triggers.onToggleDelete()
+                    }
+                }
+        }
+    }
+}
+
+struct GroupMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
     var group: Group
-    var folderStructStyle: FolderStructureStyle
+    var canExpand: Bool
     var onToggleRename: () -> Void
     var onToogleCreateSubfolder: () -> Void
     var onToggleDelete: () -> Void
@@ -225,13 +204,13 @@ struct GroupContextMenu: View {
     
     init(
         group: Group,
-        folderStructStyle: FolderStructureStyle,
+        canExpand: Bool,
         onToggleRename: @escaping () -> Void,
         onToogleCreateSubfolder: @escaping () -> Void,
         onToggleDelete: @escaping () -> Void
     ) {
         self.group = group
-        self.folderStructStyle = folderStructStyle
+        self.canExpand = canExpand
         self.onToggleRename = onToggleRename
         self.onToogleCreateSubfolder = onToogleCreateSubfolder
         self.onToggleDelete = onToggleDelete
@@ -272,7 +251,7 @@ struct GroupContextMenu: View {
                 Label(.localizable(.sidebarGroupRowContextMenuAddSubgroup), systemSymbol: .folderBadgePlus)
             }
             
-            if folderStructStyle == .disclosureGroup, !childrenGroups.isEmpty {
+            if canExpand, !childrenGroups.isEmpty {
                 Button {
                     self.expandAllSubGroups(group.objectID)
                 } label: {

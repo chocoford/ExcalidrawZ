@@ -13,6 +13,7 @@ class SegmentedPickerModel<Selection>: ObservableObject where Selection : Hashab
 }
 
 struct SegmentedPicker<Selection, Content>: View where Selection : Hashable, Content : View {
+    @Environment(\.colorScheme) private var colorScheme
     
     @Binding var selection: Selection?
     var content: () -> Content
@@ -41,6 +42,11 @@ struct SegmentedPicker<Selection, Content>: View where Selection : Hashable, Con
                     SwiftUI.Group {
                         if #available(macOS 26.0, iOS 26.0, *) {
                             RoundedRectangle(cornerRadius: 10)
+                                .fill(
+                                    colorScheme == .dark
+                                    ? AnyShapeStyle(Color.clear)
+                                    : AnyShapeStyle(Material.ultraThickMaterial)
+                                )
                                 .glassEffect(
                                     .clear,
                                     in: .rect(cornerRadius: 10)

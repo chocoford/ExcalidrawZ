@@ -681,14 +681,6 @@ final class FileState: ObservableObject {
         return newFile
     }
     
-    func deleteFile(_ file: File) {
-        file.inTrash = true
-        if .file(file) == currentActiveFile {
-            currentActiveFile = nil
-        }
-        PersistenceController.shared.save()
-    }
-    
     func recoverFile(fileID: NSManagedObjectID, context: NSManagedObjectContext) async throws {
         let file: File? = try await context.perform {
             guard let file = context.object(with: fileID) as? File else { return nil }
@@ -871,3 +863,4 @@ final class FileState: ObservableObject {
         self.selectedTemporaryFiles = []
     }
 }
+

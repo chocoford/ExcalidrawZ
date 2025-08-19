@@ -61,56 +61,10 @@ struct SelectableDisclosureGroup: View {
                 .environment(\.diclosureGroupDepth, depth + 1)
                 .environment(\.disclosureGroupExpandFlagKey, expandSubGroupsFlag)
         } label: {
-            Button {
-                isSelected = true
-            } label: {
-                HStack(spacing: 0) {
-                    Color.clear
-                        .frame(width: CGFloat(depth) * depthPaddingBase, height: 1)
-                    
-                    // Placeholder for chevron
-                    Color.clear.frame(width: 6, height: 1)
-
-                    Color.clear.frame(width: 4, height: 1)
-
-                    label
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.excalidrawSidebarRow(isSelected: isSelected, isMultiSelected: false))
-            .overlay(alignment: .leading) {
-                if indicatorVisibility == .visible {
-                    HStack(spacing: 0) {
-                        Color.clear
-                            .frame(width: CGFloat(depth) * depthPaddingBase, height: 1)
-                        
-                        Image(systemSymbol: .chevronRight)
-                            .font(.footnote)
-                            .rotationEffect(.degrees(isExpanded.wrappedValue ? 90 : 0))
-                            .padding(4)
-                            .contentShape(Rectangle())
-                            .simultaneousGesture(
-                                TapGesture().onEnded {
-                                    let workItem = DispatchWorkItem(flags: .noQoS) {
-                                        withAnimation(.smooth(duration: 0.2)) {
-                                            isExpanded.wrappedValue.toggle()
-                                        }
-                                    }
-#if canImport(AppKit)
-                                    if NSEvent.modifierFlags.contains(.option) {
-                                        expandSubGroupsFlag = !isExpanded.wrappedValue
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: workItem)
-                                    } else {
-                                        workItem.perform()
-                                    }
-#else
-                                    workItem.perform()
-#endif
-                                },
-                                including: .gesture
-                            )
-                    }
-                }
+            if let extraLabelStyle = config.extraLabelStyle {
+                extraLabelStyle(AnyView(labelView()))
+            } else {
+                labelView()
             }
         }
         .disclosureGroupStyle(.selectable)
@@ -126,12 +80,70 @@ struct SelectableDisclosureGroup: View {
             expandSubGroupsFlag = false
         }
     }
+    
+    @MainActor @ViewBuilder
+    private func labelView() -> some View {
+        Button {
+            isSelected = true
+        } label: {
+            HStack(spacing: 0) {
+                Color.clear
+                    .frame(width: CGFloat(depth) * depthPaddingBase, height: 1)
+                
+                // Placeholder for chevron
+                Color.clear.frame(width: 6, height: 1)
+
+                Color.clear.frame(width: 4, height: 1)
+
+                label
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.excalidrawSidebarRow(isSelected: isSelected, isMultiSelected: false))
+        .overlay(alignment: .leading) {
+            if indicatorVisibility == .visible {
+                HStack(spacing: 0) {
+                    Color.clear
+                        .frame(width: CGFloat(depth) * depthPaddingBase, height: 1)
+                    
+                    Image(systemSymbol: .chevronRight)
+                        .font(.footnote)
+                        .rotationEffect(.degrees(isExpanded.wrappedValue ? 90 : 0))
+                        .padding(4)
+                        .contentShape(Rectangle())
+                        .simultaneousGesture(
+                            TapGesture().onEnded {
+                                let workItem = DispatchWorkItem(flags: .noQoS) {
+                                    withAnimation(.smooth(duration: 0.2)) {
+                                        isExpanded.wrappedValue.toggle()
+                                    }
+                                }
+#if canImport(AppKit)
+                                if NSEvent.modifierFlags.contains(.option) {
+                                    expandSubGroupsFlag = !isExpanded.wrappedValue
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: workItem)
+                                } else {
+                                    workItem.perform()
+                                }
+#else
+                                workItem.perform()
+#endif
+                            },
+                            including: .gesture
+                        )
+                }
+            }
+        }
+        .foregroundStyle(config.labelForegroundStyle)
+    }
 }
 
 @available(macOS 13.0, *)
 extension SelectableDisclosureGroup {
     class Config {
         var isIndicatorVisibility: DisclosureGroupIndicatorVisibility = .visible
+        var extraLabelStyle: ((AnyView) -> AnyView)?
+        var labelForegroundStyle: AnyShapeStyle = AnyShapeStyle(HierarchicalShapeStyle.primary)
     }
     
 //    public func diclosureGroupIndicatorVisibility(
@@ -140,6 +152,18 @@ extension SelectableDisclosureGroup {
 //        self.config.isIndicatorVisibility = visibility
 //        return self
 //    }
+    
+    public func extraLabelStyle<Content: View>(
+        @ViewBuilder _ style: @escaping (AnyView) -> Content
+    ) -> Self {
+        self.config.extraLabelStyle = { AnyView(style($0)) }
+        return self
+    }
+    
+    public func labelForegroundStyle<S: ShapeStyle>(_ style: S) -> Self {
+        self.config.labelForegroundStyle = AnyShapeStyle(style)
+        return self
+    }
 }
 
 @available(macOS 13.0, *)

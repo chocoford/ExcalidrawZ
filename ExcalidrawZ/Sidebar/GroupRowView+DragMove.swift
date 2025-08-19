@@ -8,153 +8,237 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+extension UTType {
+    static let excalidrawGroupRow = UTType("com.chocoford.excalidrawGroupRow")!
+}
+
 struct GroupRowDragDropModifier: ViewModifier {
-    @Environment(\.managedObjectContext) private var viewContext
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var sidebarDragState: SidebarDragState
 
     var group: Group
-    @Binding var shouldHighlight: Bool
-    
-    @State private var isDragging = false
     
     func body(content: Content) -> some View {
         content
-            .onDrag {
-                let url = group.objectID.uriRepresentation()
-                withAnimation { isDragging = true }
-                sidebarDragState.currentDragItem = .group(group.objectID)
-                return NSItemProvider(
-                    item: url.dataRepresentation as NSData,
-                    typeIdentifier: UTType.excalidrawGroupRow.identifier
-                )
-            }
-            .onDrop(
-                of: [
+            .modifier(GroupRowDragModifier(group: group))
+            .modifier(GroupRowDropModifier(
+                group: group,
+                allow: [
                     .excalidrawFileRow,
                     .excalidrawGroupRow,
                     .excalidrawLocalFolderRow,
                     .fileURL
                 ],
-                delegate: GroupRowDropDelegate(
-                    group: group,
-                    sortField: $fileState.sortField,
-                    shouldHighlight: $shouldHighlight,
-                    context: viewContext,
-                ) { _ in
-                    sidebarDragState.currentDragItem = nil
-                    sidebarDragState.currentDropTarget = nil
-                    
-                    fileState.expandToGroup(group.objectID)
-                    
-                    // fileState.sortField = .rank
-                    
-                    isDragging = false
-                }
-            )
-        
-//            .background {
-//                RoundedRectangle(cornerRadius: 12)
-//                    .fill(shouldHighlight ? Color.accentColor : Color.clear)
-//            }
-//            .foregroundStyle(shouldHighlight ? Color.white : Color.primary)
+                dropTarget: {.exact($0)}
+            ))
     }
+
 }
 
-extension UTType {
-    static let excalidrawGroupRow = UTType("com.chocoford.excalidrawGroupRow")!
-}
+struct GroupRowDragModifier: ViewModifier {
+    @EnvironmentObject private var sidebarDragState: SidebarDragState
 
-struct GroupRowDropDelegate: SidebarRowDropDelegate {
     var group: Group
-    @Binding var sortField: ExcalidrawFileSortField
-    @Binding var shouldHighlight: Bool
-    var context: NSManagedObjectContext
-    var onDrop: (NSManagedObjectID) -> Void
-    
-    // var sortFilesCallback: (_ draggedID: NSManagedObjectID, _ targetID: NSManagedObjectID) -> Void
-        
-    @State private var draggedFileID: NSManagedObjectID?
-    
-    func dropEntered(info: DropInfo) {
-        // print("dropEntered", group.name ?? "")
-        shouldHighlight = true
-    }
-    
-    func dropExited(info: DropInfo) {
-        // print("dropExited", group.name ?? "")
-        shouldHighlight = false
-    }
-    
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        return DropProposal(operation: .move)
-    }
-    
-    func performDrop(info: DropInfo) -> Bool {
-        handleDrop(info: info) { item in
-            DispatchQueue.main.async {
-                switch item {
-                    case .group(let groupID):
-                        self.handleDropGroup(id: groupID)
-                    case .file(let fileID):
-                        self.handleDropFile(id: fileID)
-                    case .localFolder(let folderID):
-                        // import folder to this group
-                        break
-                    case .localFile(let url):
-                        // import file to this group
-                        break
+
+    func body(content: Content) -> some View {
+        if group.groupType == .normal {
+            content
+                .onDrag {
+                    let url = group.objectID.uriRepresentation()
+                    sidebarDragState.currentDragItem = .group(group.objectID)
+                    return NSItemProvider(
+                        item: url.dataRepresentation as NSData,
+                        typeIdentifier: UTType.excalidrawGroupRow.identifier
+                    )
                 }
-            }
+        } else {
+            content
         }
-        
-        Task {
-            do {
-                NotificationCenter.default.post(name: .didDropFileRow, object: nil)
-                try context.save()
-            } catch {
-                print(error)
-            }
-        }
-        shouldHighlight = false
-        
-        return true
     }
+}
+
+struct GroupRowDropModifier: ViewModifier {
+    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.alertToast) private var alertToast
+    @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var sidebarDragState: SidebarDragState
+
+    var group: Group
+    var allow: [UTType] = [
+        .excalidrawFileRow,
+        .excalidrawGroupRow,
+        .excalidrawLocalFolderRow,
+        .fileURL
+    ]
+    var dropTarget: (SidebarDragState.DragItem) -> SidebarDragState.GroupDropTarget
+
+    
+    @State private var folderWillBeImported: NSManagedObjectID?
+    @State private var localFileWillBeImported: URL?
+    
+    
+    func body(content: Content) -> some View {
+        content
+            .opacity(sidebarDragState.currentDragItem == .group(group.objectID) ? 0.3 : 1)
+            .modifier(
+                SidebarRowDropModifier(
+                    allow: allow,
+                    onTargeted: { val in
+                        sidebarDragState.currentDropGroupTarget = val
+                        ? dropTarget(.group(group.objectID))
+                        : nil
+                    },
+                    onDrop: { item in
+                        NotificationCenter.default.post(name: .didDropFileRow, object: nil)
+
+                        if case .file = item {
+                            fileState.expandToGroup(group.objectID)
+                        } else if group.groupType != .trash {
+                            fileState.expandToGroup(group.objectID)
+                        } else {
+                            return
+                        }
+                        
+                        switch item {
+                            case .group(let groupID):
+                                self.handleDropGroup(id: groupID)
+                            case .file(let fileID):
+                                self.handleDropFile(id: fileID)
+                            case .localFolder(let folderID):
+                                self.handleImportFolder(id: folderID)
+                            case .localFile(let url):
+                                self.handleImportFile(url: url)
+                        }
+                    }
+                )
+            )
+            .confirmationDialog(
+                "Import Folder",
+                isPresented: Binding {
+                    folderWillBeImported != nil
+                } set: { val in
+                    if !val {
+                        folderWillBeImported = nil
+                    }
+                }
+            ) {
+                Button {
+                    performImportFolder(id: folderWillBeImported!)
+                } label: {
+                    Text(.localizable(.generalButtonConfirm))
+                }
+            } message: {
+                Text("This will import the folder and all its contents into this group, and it will be synced with iCloud.")
+            }
+            .confirmationDialog(
+                "Import Local Files",
+                isPresented: Binding {
+                    localFileWillBeImported != nil
+                } set: { val in
+                    if !val {
+                        localFileWillBeImported = nil
+                    }
+                }
+            ) {
+                Button {
+                    performImportFile(url: localFileWillBeImported!)
+                } label: {
+                    Text(.localizable(.generalButtonConfirm))
+                }
+            } message: {
+                Text("This will import the file into this group.")
+            }
+    }
+    
+    
     
     private func handleDropFile(id fileID: NSManagedObjectID) {
         // add files to Group
-        onDrop(fileID)
+        // or move files to trash
         Task {
             do {
-                try await context.perform {
-                    guard let file = context.object(with: fileID) as? File else { return }
-                    group.addToFiles(file)
+                try await viewContext.perform {
+                    guard let file = viewContext.object(with: fileID) as? File else { return }
                     
-                    file.rank = Int64((group.files?.count ?? 1) - 1)
+                    if group.groupType == .trash {
+                        file.inTrash = true
+                    } else {
+                        group.addToFiles(file)
+                        file.rank = Int64((group.files?.count ?? 1) - 1)
+                    }
                     
-                    try context.save()
+                    try viewContext.save()
                 }
             } catch {
-                print(error)
+                alertToast(error)
             }
         }
-    } 
+    }
     
     private func handleDropGroup(id groupID: NSManagedObjectID) {
-        onDrop(groupID)
+        if group.groupType == .trash { return }
         if groupID == group.objectID { return }
         Task {
             do {
-                try await context.perform {
-                    guard let group = context.object(with: groupID) as? Group else { return }
+                try await viewContext.perform {
+                    guard let group = viewContext.object(with: groupID) as? Group else { return }
                     self.group.addToChildren(group)
                     
                     group.rank = Int64((self.group.children?.count ?? 1) - 1)
                     
-                    try context.save()
+                    try viewContext.save()
                 }
             } catch {
-                print(error)
+                alertToast(error)
+            }
+        }
+    }
+    
+    private func handleImportFolder(id folderID: NSManagedObjectID) {
+        if group.groupType == .trash { return }
+        folderWillBeImported = folderID
+    }
+    
+    private func performImportFolder(id folderID: NSManagedObjectID) {
+        Task {
+            do {
+                try await viewContext.perform {
+                    guard let folder = viewContext.object(with: folderID) as? LocalFolder else { return }
+                    
+                    let group = try folder.importToGroup(context: viewContext)
+                    group.parent = self.group
+                    
+                    withAnimation(.smooth) {
+                        viewContext.insert(group)
+                    }
+                    
+                    try viewContext.save()
+                }
+            } catch {
+                alertToast(error)
+            }
+        }
+    }
+    
+    private func handleImportFile(url: URL) {
+        if group.groupType == .trash { return }
+        localFileWillBeImported = url
+    }
+    
+    private func performImportFile(url: URL) {
+        // import file to this group
+        Task {
+            do {
+                try await viewContext.perform {
+                    let file = try File(url: url, context: viewContext)
+                    file.group = self.group
+                    
+                    withAnimation(.smooth) {
+                        viewContext.insert(file)
+                    }
+                    
+                    try viewContext.save()
+                }
+            } catch {
+                alertToast(error)
             }
         }
     }

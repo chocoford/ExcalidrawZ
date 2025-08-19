@@ -76,17 +76,7 @@ struct FileContextMenuModifier: ViewModifier {
                         guard case let file as File = context.object(with: fileID) else {
                             return
                         }
-                        
-                        // also delete checkpoints
-                        let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
-                        checkpointsFetchRequest.predicate = NSPredicate(format: "file = %@", file)
-                        let fileCheckpoints = try context.fetch(checkpointsFetchRequest)
-                        let objectIDsToBeDeleted = fileCheckpoints.map{$0.objectID}
-                        if !objectIDsToBeDeleted.isEmpty {
-                            let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: objectIDsToBeDeleted)
-                            try context.executeAndMergeChanges(using: batchDeleteRequest)
-                        }
-                        context.delete(file)
+                        try file.delete(context: context, save: false)
                         try context.save()
                     }
                 }
@@ -355,9 +345,19 @@ struct FileContextMenu: View {
         } else {
             [file]
         }
-        for selectedFile in filesToBeDelete {
-            fileState.deleteFile(selectedFile)
+        do {
+            for selectedFile in filesToBeDelete {
+                try selectedFile.delete(context: viewContext, save: false)
+            }
+            try viewContext.save()
+            
+            if .file(file) == fileState.currentActiveFile {
+                fileState.currentActiveFile = nil
+            }
+            
+            fileState.resetSelections()
+        } catch {
+            alertToast(error)
         }
-        fileState.resetSelections()
     }
 }

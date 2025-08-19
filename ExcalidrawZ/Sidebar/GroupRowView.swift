@@ -61,19 +61,6 @@ struct GroupRowView: View {
     @MainActor @ViewBuilder
     private var content: some View {
         groupRowView()
-            .modifier(
-                GroupContextMenuViewModifier(
-                    group: group,
-                    folderStructStyle: folderStructStyle,
-                    isExpanded: $isExpanded
-                )
-            )
-            .modifier(
-                GroupRowDragDropModifier(
-                    group: group,
-                    shouldHighlight: $isBeingDropped
-                )
-            )
     }
 
     @MainActor @ViewBuilder

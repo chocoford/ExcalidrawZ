@@ -80,19 +80,28 @@ struct FileRowView: View {
                 }
                 fileState.selectedFiles.insertOrRemove(file)
             } else {
-                if let group = file.group {
-                    fileState.currentActiveGroup = .group(group)
-                }
-                fileState.currentActiveFile = .file(file)
+                activeFile(file)
             }
 #else
-            if let group = file.group {
-                fileState.currentActiveGroup = .group(group)
-            }
-            fileState.currentActiveFile = .file(file)
+            activeFile(file)
 #endif
         }
         .modifier(FileRowDragDropModifier(file: file, files: files))
         .modifier(FileContextMenuModifier(file: file))
+    }
+    
+    private func activeFile(_ file: File) {
+        if file.inTrash {
+            if let trashGroup = {
+                let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+                fetchRequest.predicate = NSPredicate(format: "type == 'trash'")
+                return (try? viewContext.fetch(fetchRequest))?.first
+            }() {
+                fileState.currentActiveGroup = .group(trashGroup)
+            }
+        } else if let group = file.group {
+            fileState.currentActiveGroup = .group(group)
+        }
+        fileState.currentActiveFile = .file(file)
     }
 }

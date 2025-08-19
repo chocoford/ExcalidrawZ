@@ -124,6 +124,7 @@ struct LocalFileRowView: View {
             }
         }
         .modifier(LocalFileRowContextMenuModifier(file: file))
+        .modifier(LocalFileRowDragDropModifier(file: file))
         .onReceive(NotificationCenter.default.publisher(for: .fileXattrDidModified)) { output in
             if let path = output.object as? String, self.file.filePath == path {
                 DispatchQueue.main.async {

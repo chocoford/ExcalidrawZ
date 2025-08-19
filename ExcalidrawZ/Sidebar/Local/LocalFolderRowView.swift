@@ -19,17 +19,17 @@ struct LocalFolderRowView: View {
     @EnvironmentObject private var localFolderState: LocalFolderState
 
     var folder: LocalFolder
-    @Binding var isBeingDropped: Bool
+    // @Binding var isBeingDropped: Bool
 
     var onDelete: () -> Void
     
     init(
         folder: LocalFolder,
-        isBeingDropped: Binding<Bool>,
+        // isBeingDropped: Binding<Bool>,
         onDelete: @escaping () -> Void
     ) {
         self.folder = folder
-        self._isBeingDropped = isBeingDropped
+        // self._isBeingDropped = isBeingDropped
         self.onDelete = onDelete
     }
     
@@ -44,19 +44,6 @@ struct LocalFolderRowView: View {
 
     var body: some View {
         content()
-            .modifier(
-                LocalFolderContextMenuModifier(
-                    folder: folder,
-                    folderStructStyle: folderStructStyle,
-                    isSelected: isSelected
-                )
-            )
-            .modifier(
-                LocalFolderRowDragDropModifier(
-                    folder: folder,
-                    shouldHighlight: $isBeingDropped
-                )
-            )
     }
 
     @MainActor @ViewBuilder

@@ -15,6 +15,7 @@ extension Notification.Name {
 struct GroupsView: View {
     @AppStorage("FolderStructureStyle") var folderStructStyle: FolderStructureStyle = .disclosureGroup
 
+    @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var sidebarDragState: SidebarDragState
 
@@ -115,6 +116,46 @@ struct GroupsView: View {
         }
     }
     
+    var ancestors: Set<Group> {
+        var parents: Set<Group> = []
+        var parent: Group? = self.group
+        while let p = parent {
+            parents.insert(p)
+            parent = p.parent
+        }
+        return parents
+    }
+    
+    var canDrop: Bool {
+        if case .group(let groupID) = sidebarDragState.currentDragItem,
+           let draggedGroup = viewContext.object(with: groupID) as? Group,
+           draggedGroup.parent != self.group,
+           !ancestors.contains(draggedGroup),
+           self.group.groupType != .trash {
+            return true
+        } else if case .file(let fileID) = sidebarDragState.currentDragItem,
+                  let draggedFile = viewContext.object(with: fileID) as? File,
+                  draggedFile.group != self.group {
+            return true
+        } else if case .localFolder = sidebarDragState.currentDragItem,
+                  self.group.groupType != .trash {
+            return true
+        } else if case .localFile = sidebarDragState.currentDragItem,
+                  self.group.groupType != .trash {
+            return true
+        }
+        return false
+    }
+    
+    var canDropToGroup: Bool {
+        sidebarDragState.currentDropGroupTarget == .exact(.group(group.objectID)) && canDrop
+    }
+    
+    var canDropBelowGroup: Bool {
+        sidebarDragState.currentDropGroupTarget == .below(.group(group.objectID)) && canDrop
+    }
+    
+    
     @available(macOS 13.0, *)
     @MainActor @ViewBuilder
     private func diclsureGroupView() -> some View {
@@ -138,11 +179,18 @@ struct GroupsView: View {
                 // .animation(.smooth, value: files)
             }
             .overlay(alignment: .top) {
-                if sidebarDragState.currentDropTarget == .startOfGroup(.group(group.objectID)) {
+                if sidebarDragState.currentDropFileRowTarget == .startOfGroup(.group(group.objectID)) {
                     DropTargetPlaceholder()
                 }
             }
-            
+            .modifier(GroupRowDropModifier(
+                group: group,
+                allow: [
+                    .excalidrawGroupRow,
+                    .excalidrawLocalFolderRow,
+                ],
+                dropTarget: {.below($0)}
+            ))
         } label: {
             GroupRowView(
                 group: group,
@@ -150,6 +198,38 @@ struct GroupsView: View {
                 isExpanded: $isExpanded,
                 isBeingDropped: $isBeingDropped
             )
+            .modifier(GroupRowDragModifier(group: group))
+        }
+        .extraLabelStyle { content in
+            content
+                .modifier(
+                    GroupContextMenuViewModifier(
+                        group: group,
+                        canExpand: true,
+                    )
+                )
+                .modifier(GroupRowDropModifier(group: group) { .exact($0) })
+                .foregroundStyle(
+                    canDropToGroup || canDropBelowGroup
+                    ? AnyShapeStyle(Color.white)
+                    : AnyShapeStyle(HierarchicalShapeStyle.primary)
+                )
+                .background {
+                    if canDropToGroup {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.accentColor)
+                    } else if canDropBelowGroup {
+                        UnevenRoundedRectangle(
+                            cornerRadii: .init(
+                                topLeading: 12,
+                                bottomLeading: 0,
+                                bottomTrailing: 0,
+                                topTrailing: 12
+                            )
+                        )
+                        .fill(Color.accentColor)
+                    }
+                }
         }
         .disclosureGroupIndicatorVisibility(children.isEmpty && files.isEmpty ? .hidden : .visible)
         .onReceive(NotificationCenter.default.publisher(for: .shouldExpandGroup)) { notification in
@@ -157,6 +237,12 @@ struct GroupsView: View {
                   targetGroupID == self.group.objectID else { return }
             withAnimation(.smooth(duration: 0.2)) {
                 self.isExpanded = true
+            }
+        }
+        .background {
+            if canDropBelowGroup {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.accentColor.opacity(0.2))
             }
         }
     }

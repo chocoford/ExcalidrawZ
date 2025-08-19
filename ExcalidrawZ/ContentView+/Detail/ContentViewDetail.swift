@@ -129,11 +129,14 @@ struct ContentDetailNavigationView: View {
     @State private var currentGroups: [Group] = []
     @State private var currentFolders: [LocalFolder] = []
     
+    @State private var isTransitioning = false
+    
     var body: some View {
         ZStack {
-            background
-                .ignoresSafeArea()
-            
+//            background
+//                .ignoresSafeArea()
+//                .opacity(disableInteration || !fileHomeItemTransitionState.canShowExcalidrawCanvas ? 0 : 1)
+
             ExcalidrawContainerWrapper(
                 activeFile: $fileState.currentActiveFile,
                 interactionEnabled: !disableInteration
@@ -146,10 +149,7 @@ struct ContentDetailNavigationView: View {
                         // Home View
                         HomeView()
                             .background {
-                                if #available(macOS 26.0, iOS 17.0, *) {
-                                    Rectangle()
-                                        .fill(.background)
-                                } else if #available(macOS 14.0, iOS 17.0, *) {
+                                if #available(macOS 14.0, iOS 17.0, *) {
                                     Rectangle()
                                         .fill(.windowBackground)
                                 } else {
@@ -176,19 +176,22 @@ struct ContentDetailNavigationView: View {
                                     )
                                     .background {
                                         ZStack {
-                                            if #available(macOS 26.0, iOS 17.0, *) {
-                                                Rectangle()
-                                                    .fill(.background)
-                                            } else if #available(macOS 14.0, iOS 17.0, *) {
+                                            if #available(macOS 14.0, iOS 17.0, *) {
                                                 Rectangle()
                                                     .fill(.windowBackground)
                                             } else {
                                                 Color.windowBackgroundColor
                                             }
                                         }
-                                        .overlay(alignment: .leading) {
-                                            Rectangle().fill(.separator).frame(width: 1).offset(x: -1)
-                                        }
+                                        .shadow(
+                                            color: .gray.opacity(isTransitioning && i == currentGroups.endIndex - 1 ? 0.3 : 0.0),
+                                            radius: 0,
+                                            x: -1
+                                        )
+                                        .animation(
+                                            .default,
+                                            value: isTransitioning && i == currentGroups.endIndex - 1
+                                        )
                                     }
                                     .transition(
                                         .move(edge: .trailing)
@@ -210,19 +213,22 @@ struct ContentDetailNavigationView: View {
                                         )
                                         .background {
                                             ZStack {
-                                                if #available(macOS 26.0, iOS 17.0, *) {
-                                                    Rectangle()
-                                                        .fill(.background)
-                                                } else if #available(macOS 14.0, iOS 17.0, *) {
+                                                if #available(macOS 14.0, iOS 17.0, *) {
                                                     Rectangle()
                                                         .fill(.windowBackground)
                                                 } else {
                                                     Color.windowBackgroundColor
                                                 }
                                             }
-                                            .overlay(alignment: .leading) {
-                                                Rectangle().fill(.separator).frame(width: 1).offset(x: -1)
-                                            }
+                                            .shadow(
+                                                color: .gray.opacity(isTransitioning && i == currentFolders.endIndex - 1 ? 0.3 : 0.0),
+                                                radius: 0,
+                                                x: -1
+                                            )
+                                            .animation(
+                                                .default,
+                                                value: isTransitioning && i == currentFolders.endIndex - 1
+                                            )
                                         }
                                         .transition(
                                             .move(edge: .trailing)
@@ -254,8 +260,14 @@ struct ContentDetailNavigationView: View {
                             currentGroups = Array(currentGroups.prefix(upTo: index + 1))
                         }
                     } else {
-                        withAnimation(.smooth(duration: 0.4)) {
-                            currentGroups.append(newValue)
+                        isTransitioning = true
+                        DispatchQueue.main.async {
+                            withAnimation(.smooth(duration: 0.4)) {
+                                currentGroups.append(newValue)
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                isTransitioning = false
+                            }
                         }
                     }
                     
@@ -268,8 +280,15 @@ struct ContentDetailNavigationView: View {
                             currentFolders = Array(currentFolders.prefix(upTo: index + 1))
                         }
                     } else {
-                        withAnimation(.smooth(duration: 0.4)) {
-                            currentFolders.append(newValue)
+                        isTransitioning = true
+                        DispatchQueue.main.async {
+                            withAnimation(.smooth(duration: 0.4)) {
+                                currentFolders.append(newValue)
+                            }
+                            
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                isTransitioning = false
+                            }
                         }
                     }
                     

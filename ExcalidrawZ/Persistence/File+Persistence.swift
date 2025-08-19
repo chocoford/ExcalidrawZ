@@ -20,7 +20,7 @@ extension File {
     
     convenience init(url: URL, context: NSManagedObjectContext) throws {
         let lastPathComponent = url.lastPathComponent
-
+        
         var fileNameURL = url
         for _ in 0..<lastPathComponent.count(where: {$0 == "."}) {
             fileNameURL.deletePathExtension()
@@ -44,7 +44,7 @@ extension File {
         
         self.content = contentData
         self.updatedAt = .now
-
+        
         let viewContext = self.managedObjectContext ?? PersistenceController.shared.container.newBackgroundContext()
         if newCheckpoint {
             let checkpoint = FileCheckpoint(context: viewContext)
@@ -65,14 +65,14 @@ extension File {
             checkpoint.updatedAt = .now
         }
         
-//        return true
+        //        return true
     }
     
 //    func update(file: ExcalidrawFile, context: NSManagedObjectContext) async throws {
 //        try await context.perform {
 //            guard let file = context.object(with: id) as? File,
 //                  let content = excalidrawFile.content else { return }
-//            
+//
 //            try file.updateElements(
 //                with: content,
 //                newCheckpoint: !didUpdateFile
@@ -82,17 +82,63 @@ extension File {
 //                    ($0 as? MediaItem)?.id == id
 //                }) != true
 //            }
-//            
+//
 //            // also update medias
 //            for (_, resource) in newMedias {
 //                let mediaItem = MediaItem(resource: resource, context: bgContext)
 //                mediaItem.file = file
 //                bgContext.insert(mediaItem)
 //            }
-//            
+//
 //            try bgContext.save()
 //        }
 //    }
+    
+    func exportToDisk(folder url: URL) {
+        let filemanager = FileManager.default
+        
+        var filename = self.name ?? String(localizable: .generalUntitled)
+        var i = 1
+        while filemanager.fileExists(
+            atPath: url.appendingPathComponent(filename, conformingTo: .excalidrawFile).filePath
+        ) {
+            filename = (self.name ?? String(localizable: .generalUntitled)) + " (\(i))"
+            i += 1
+        }
+        
+        let url = url.appendingPathComponent(filename, conformingTo: .excalidrawFile)
+        filemanager.createFile(atPath: url.filePath, contents: self.content)
+    }
+    
+    func delete(
+        context: NSManagedObjectContext,
+        save: Bool = true
+    ) throws {
+        if inTrash {
+            let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(
+                entityName: "FileCheckpoint"
+            )
+            checkpointsFetchRequest.predicate = NSPredicate(
+                format: "file = %@", self
+            )
+            let fileCheckpoints = try context.fetch(checkpointsFetchRequest)
+            let objectIDsToBeDeleted = fileCheckpoints.map{$0.objectID}
+            if !objectIDsToBeDeleted.isEmpty {
+                let batchDeleteRequest = NSBatchDeleteRequest(
+                    objectIDs: objectIDsToBeDeleted
+                )
+                try context.executeAndMergeChanges(using: batchDeleteRequest)
+            }
+            context.delete(self)
+        } else {
+            self.inTrash = true
+            self.deletedAt = .now
+        }
+        
+        if save {
+            try context.save()
+        }
+    }
 }
 
 struct FileLocalizable: Codable {

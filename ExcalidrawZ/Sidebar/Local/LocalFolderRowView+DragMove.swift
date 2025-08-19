@@ -14,181 +14,225 @@ extension UTType {
 
 
 struct LocalFolderRowDragDropModifier: ViewModifier {
-    @Environment(\.managedObjectContext) private var viewContext
-    @Environment(\.alertToast) private var alertToast
-
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var sidebarDragState: SidebarDragState
-    @EnvironmentObject private var localFolderState: LocalFolderState
-
     var folder: LocalFolder
-    @Binding var shouldHighlight: Bool
     
-    @State private var isDragging = false
+    init(folder: LocalFolder) {
+        self.folder = folder
+    }
     
+
     func body(content: Content) -> some View {
         content
+            .modifier(LocalFolderDragModifier(folder: folder))
+            .modifier(LocalFolderDropModifier(folder: folder) {.exact($0)})
+    }
+    
+}
+
+struct LocalFolderDragModifier: ViewModifier {
+    @EnvironmentObject private var sidebarDragState: SidebarDragState
+
+    var folder: LocalFolder
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(sidebarDragState.currentDragItem == .localFolder(folder.objectID) ? 0.3 : 1)
             .onDrag {
                 let url = folder.objectID.uriRepresentation()
-                withAnimation { isDragging = true }
                 sidebarDragState.currentDragItem = .localFolder(folder.objectID)
                 return NSItemProvider(
                     item: url.dataRepresentation as NSData,
                     typeIdentifier: UTType.excalidrawLocalFolderRow.identifier
                 )
             }
-            .onDrop(
-                of: [
-                    .excalidrawFileRow,
-                    .excalidrawGroupRow,
-                    .excalidrawLocalFolderRow,
-                    .fileURL
-                ],
-                delegate: LocalFolderRowDropDelegate(
-                    folder: folder,
-                    sortField: $fileState.sortField,
-                    isTargeted: $shouldHighlight,
-                ) { dragItem in
-                    sidebarDragState.currentDragItem = nil
-                    sidebarDragState.currentDropTarget = nil
-                    
-                    fileState.expandToGroup(folder.objectID)
-                    
-                    switch dragItem {
-                        case .group(let groupID):
-                            /// move group to this folder
-                            /// --> export group to this folder
-                            break
-                        case .file(let fileID):
-                            /// export
-                            break
-                        case .localFolder(let folderID):
-                            if folderID == folder.objectID { return }
-                            
-                            // move folder to this folder
-                            do {
-                                try localFolderState.moveLocalFolder(
-                                    folderID,
-                                    to: folder.objectID,
-                                    forceRefreshFiles: true,
-                                    context: viewContext
-                                )
-                            } catch {
-                                alertToast(error)
-                            }
-                        case .localFile(let url):
-                            // move file to this folder
-                            do {
-                                let mapping = try localFolderState.moveLocalFiles(
-                                    [url],
-                                    to: folder.objectID,
-                                    context: viewContext
-                                )
-                                if fileState.currentActiveFile == .localFile(url), let newURL = mapping[url] {
-                                    DispatchQueue.main.async {
-                                        if let folder = viewContext.object(with: folder.objectID) as? LocalFolder {
-                                            fileState.currentActiveGroup = .localFolder(folder)
-                                        }
-                                        fileState.currentActiveFile = .localFile(newURL)
-                                        fileState.expandToGroup(folder.objectID)
-                                    }
-                                }
-                            } catch {
-                                alertToast(error)
-                            }
-                            break
-                    }
-                    
-                    
-                    isDragging = false
-                }
-            )
-
     }
+}
+
+
+struct LocalFolderDropModifier: ViewModifier {
+    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.alertToast) private var alertToast
     
-}
-
-protocol SidebarRowDropDelegate: DropDelegate { }
-extension SidebarRowDropDelegate {
-    func handleDrop(info: DropInfo, onDrop: @escaping (SidebarDragState.DragItem) -> Void) {
-        Task {
-            for provider in info.itemProviders(
-                for: [
-                    .excalidrawFileRow,
-                    .excalidrawGroupRow,
-                    .excalidrawLocalFolderRow,
-                    .fileURL
-                ]
-            ) {
-                // handle drop file
-                if let data = try? await provider.loadItem(
-                    forTypeIdentifier: UTType.excalidrawFileRow.identifier
-                ) as? Data,
-                   let url = URL(dataRepresentation: data, relativeTo: nil),
-                   url.scheme == "x-coredata",
-                   let draggedObjectID = PersistenceController.shared.container.persistentStoreCoordinator.managedObjectID(forURIRepresentation: url) {
-                    onDrop(.file(draggedObjectID))
-                }
-                
-                // handle drop group
-                if let data = try? await provider.loadItem(
-                    forTypeIdentifier: UTType.excalidrawGroupRow.identifier
-                ) as? Data,
-                   let url = URL(dataRepresentation: data, relativeTo: nil),
-                   url.scheme == "x-coredata",
-                   let draggedObjectID = PersistenceController.shared.container.persistentStoreCoordinator.managedObjectID(forURIRepresentation: url) {
-                    onDrop(.group(draggedObjectID))
-                }
-                
-                // handle drop local folder
-                if let data = try? await provider.loadItem(
-                    forTypeIdentifier: UTType.excalidrawLocalFolderRow.identifier
-                ) as? Data,
-                   let url = URL(dataRepresentation: data, relativeTo: nil),
-                   url.scheme == "x-coredata",
-                   let draggedObjectID = PersistenceController.shared.container.persistentStoreCoordinator.managedObjectID(forURIRepresentation: url) {
-                    onDrop(.localFolder(draggedObjectID))
-                }
-                
-                // handle drop url
-                if let data = try? await provider.loadItem(
-                    forTypeIdentifier: UTType.fileURL.identifier
-                ) as? Data,
-                   let url = URL(dataRepresentation: data, relativeTo: nil),
-                   url.isFileURL == true {
-                    if url.isDirectory {
-                        
-                    } else {
-                        onDrop(.localFile(url))
-                    }
-                }
-                
-            }
-        }
-    }
-}
-
-struct LocalFolderRowDropDelegate: SidebarRowDropDelegate {
+    @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var sidebarDragState: SidebarDragState
+    @EnvironmentObject private var localFolderState: LocalFolderState
+    
     var folder: LocalFolder
-    @Binding var sortField: ExcalidrawFileSortField
-    @Binding var isTargeted: Bool
-    var onDrop: (SidebarDragState.DragItem) -> Void
-    func dropEntered(info: DropInfo) {
-        isTargeted = true
+    var dropTarget: (SidebarDragState.DragItem) -> SidebarDragState.GroupDropTarget
+    
+    @State private var groupIDWillBeDropped: NSManagedObjectID?
+    @State private var fileIDWillBeDropped: NSManagedObjectID?
+    
+    var ancestors: Set<LocalFolder> {
+        var result = Set<LocalFolder>()
+        var current: LocalFolder? = folder
+        while let parent = current?.parent {
+            result.insert(parent)
+            current = parent
+        }
+        return result
     }
     
-    func dropExited(info: DropInfo) {
-        isTargeted = false
-    }
-    func performDrop(info: DropInfo) -> Bool {
-        handleDrop(info: info) { item in
-            DispatchQueue.main.async {
-                self.onDrop(item)
+    func body(content: Content) -> some View {
+         content
+            .modifier(
+                SidebarRowDropModifier(
+                    allow: [
+                        .excalidrawFileRow,
+                        .excalidrawGroupRow,
+                        .excalidrawLocalFolderRow,
+                        .fileURL
+                    ],
+                    onTargeted: { val in
+                        sidebarDragState.currentDropGroupTarget = val
+                        ? dropTarget(.localFolder(folder.objectID))
+                        : nil
+                    },
+                    onDrop: { item in
+                        fileState.expandToGroup(folder.objectID)
+                        
+                        switch item {
+                            case .group(let groupID):
+                                handleDropGroup(id: groupID)
+                            case .file(let fileID):
+                                handleDropFile(id: fileID)
+                            case .localFolder(let folderID):
+                                handleDropLocalFolder(id: folderID)
+                            case .localFile(let url):
+                                handleDropLocalFile(url: url)
+                        }
+                    }
+                )
+            )
+            .confirmationDialog(
+                "Export to disk",
+                isPresented: Binding {
+                    groupIDWillBeDropped != nil
+                } set: {
+                    if !$0 {
+                        self.groupIDWillBeDropped = nil
+                    }
+                }
+            ) {
+                Button {
+                    performExportGroupToLocalFolder(id: groupIDWillBeDropped!)
+                } label: {
+                    Text(.localizable(.generalButtonConfirm))
+                }
+            } message: {
+                Text("This will export the group and its contents to disk.")
             }
+            .confirmationDialog(
+                "Export to disk",
+                isPresented: Binding {
+                    fileIDWillBeDropped != nil
+                } set: {
+                    if !$0 {
+                        self.fileIDWillBeDropped = nil
+                    }
+                }
+            ) {
+                Button {
+                    performExportFileToLocalFolder(id: fileIDWillBeDropped!)
+                } label: {
+                    Text(.localizable(.generalButtonConfirm))
+                }
+            } message: {
+                Text("This will export the file to disk.")
+            }
+    }
+    
+    private func handleDropGroup(id groupID: NSManagedObjectID) {
+        self.groupIDWillBeDropped = groupID
+    }
+    
+    private func performExportGroupToLocalFolder(id groupID: NSManagedObjectID) {
+        guard let group = viewContext.object(with: groupID) as? Group else {
+            return
         }
         
-        isTargeted = false
-        return true
+        do {
+            try folder.withSecurityScopedURL { scopedURL in
+                let fileCoordinator = NSFileCoordinator()
+                fileCoordinator.coordinate(
+                    writingItemAt: scopedURL,
+                    options: .forReplacing,
+                    error: nil
+                ) { url in
+                    do {
+                        try group.exportToDisk(folder: url)
+                    } catch {
+                        alertToast(error)
+                    }
+                }
+            }
+        } catch {
+            alertToast(error)
+        }
+        
     }
     
+    private func handleDropFile(id fileID: NSManagedObjectID) {
+        self.fileIDWillBeDropped = fileID
+    }
+    
+    private func performExportFileToLocalFolder(id fileID: NSManagedObjectID) {
+        guard let file = viewContext.object(with: fileID) as? File else {
+            return
+        }
+        
+        do {
+            try folder.withSecurityScopedURL { scopedURL in
+                let fileCoordinator = NSFileCoordinator()
+                fileCoordinator.coordinate(
+                    writingItemAt: scopedURL,
+                    options: .forReplacing,
+                    error: nil
+                ) { url in
+                    file.exportToDisk(folder: url)
+                }
+            }
+        } catch {
+            alertToast(error)
+        }
+    }
+    
+    private func handleDropLocalFolder(id folderID: NSManagedObjectID) {
+        if folderID == folder.objectID { return }
+        
+        // move folder to this folder
+        do {
+            try localFolderState.moveLocalFolder(
+                folderID,
+                to: folder.objectID,
+                forceRefreshFiles: true,
+                context: viewContext
+            )
+        } catch {
+            alertToast(error)
+        }
+    }
+    
+    private func handleDropLocalFile(url: URL) {
+        if folder.url == url.deletingLastPathComponent() { return }
+        // move file to this folder
+        do {
+            let mapping = try localFolderState.moveLocalFiles(
+                [url],
+                to: folder.objectID,
+                context: viewContext
+            )
+            if fileState.currentActiveFile == .localFile(url), let newURL = mapping[url] {
+                DispatchQueue.main.async {
+                    if let folder = viewContext.object(with: folder.objectID) as? LocalFolder {
+                        fileState.currentActiveGroup = .localFolder(folder)
+                    }
+                    fileState.currentActiveFile = .localFile(newURL)
+                    fileState.expandToGroup(folder.objectID)
+                }
+            }
+        } catch {
+            alertToast(error)
+        }
+    }
 }

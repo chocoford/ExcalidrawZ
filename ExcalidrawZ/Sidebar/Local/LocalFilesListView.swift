@@ -145,32 +145,35 @@ struct LocalFilesProvider<Content: View>: View {
     }
     
     private func getFolderContents() {
-        do {
-            try folder.withSecurityScopedURL { folderURL in
-                let contents = try FileManager.default.contentsOfDirectory(
-                    at: folderURL,
-                    includingPropertiesForKeys: [.nameKey],
-                    options: [.skipsSubdirectoryDescendants]
-                )
-                let files = contents
-                    .filter({ $0.pathExtension == "excalidraw" })
-                withAnimation {
-                    self.files = files
-                    self.sortFiles(field: self.sortField)
-                    
-                    if case .localFile(let currentFile) = fileState.currentActiveFile {
-                        if !self.files.contains(currentFile) {
-                            fileState.currentActiveFile = nil
+        // wait a liitle
+        DispatchQueue.main.async {
+            do {
+                try folder.withSecurityScopedURL { folderURL in
+                    let contents = try FileManager.default.contentsOfDirectory(
+                        at: folderURL,
+                        includingPropertiesForKeys: [.nameKey],
+                        options: [.skipsSubdirectoryDescendants]
+                    )
+                    let files = contents
+                        .filter({ $0.pathExtension == "excalidraw" })
+                    withAnimation {
+                        self.files = files
+                        self.sortFiles(field: self.sortField)
+                        
+                        if case .localFile(let currentFile) = fileState.currentActiveFile {
+                            if !self.files.contains(currentFile) {
+                                fileState.currentActiveFile = nil
+                            }
                         }
                     }
+                    self.updateFlags = files.map {
+                        [$0 : Date()]
+                    }.merged()
                 }
-                self.updateFlags = files.map {
-                    [$0 : Date()]
-                }.merged()
+                // debugPrint("[DEBUG] getFolderContents...", self.files)
+            } catch {
+                alertToast(error)
             }
-            // debugPrint("[DEBUG] getFolderContents...", self.files)
-        } catch {
-            alertToast(error)
         }
     }
 
@@ -232,9 +235,12 @@ struct LocalFilesListContentView: View {
 
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var localFolderState: LocalFolderState
+    @EnvironmentObject private var sidebarDragState: SidebarDragState
 
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField
+    
+    @State private var isBeingDropped: Bool = false
     
     var body: some View {
         LocalFilesProvider(folder: folder, sortField: sortField) { files, updateFlags in
@@ -249,7 +255,7 @@ struct LocalFilesListContentView: View {
                 }
             }
             .animation(.default, value: files)
+            .modifier(LocalFolderDropModifier(folder: folder) {.below($0)})
         }
     }
-    
 }

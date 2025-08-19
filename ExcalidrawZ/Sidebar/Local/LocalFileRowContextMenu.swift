@@ -305,8 +305,6 @@ struct LocalFileRowContextMenu: View {
         } else {
             [file]
         }
-//        var fileToBeActive: URL? = nil
-        
         
         do {
             if case .localFolder(let folder) = fileState.currentActiveGroup {
@@ -332,11 +330,13 @@ struct LocalFileRowContextMenu: View {
                     }
                 }
                 
+                fileState.currentActiveFile = nil
+                
                 // Should change current local file...
-                let folderURL = self.file.deletingLastPathComponent()
-                let contents = try FileManager.default.contentsOfDirectory(at: folderURL, includingPropertiesForKeys: [.nameKey])
-                let file = contents.first(where: {$0.pathExtension == "excalidraw"})
-                fileState.currentActiveFile = file == nil ? nil : .localFile(file!)
+//                let folderURL = self.file.deletingLastPathComponent()
+//                let contents = try FileManager.default.contentsOfDirectory(at: folderURL, includingPropertiesForKeys: [.nameKey])
+//                let file = contents.first(where: {$0.pathExtension == "excalidraw"})
+//                fileState.currentActiveFile = file == nil ? nil : .localFile(file!)
             }
         } catch {
             alertToast(error)

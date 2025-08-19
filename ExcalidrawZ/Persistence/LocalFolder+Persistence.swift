@@ -7,6 +7,8 @@
 
 import Foundation
 import CoreData
+import SwiftUI
+import UniformTypeIdentifiers
 
 extension LocalFolder {
 
@@ -169,6 +171,93 @@ extension LocalFolder {
             }
         }
     }
+    
+    
+    func importToGroup(
+        context: NSManagedObjectContext,
+        // animation: Animation?,
+        parentGroup: Group? = nil
+    ) throws -> Group {
+        try self.withSecurityScopedURL { scopedURL in
+            let folderOrURLs = try FileManager.default.contentsOfDirectory(
+                at: scopedURL,
+                includingPropertiesForKeys: [.isDirectoryKey]
+            )
+            
+            let rootGroup: Group? = parentGroup == nil
+            ? Group(name: scopedURL.lastPathComponent, context: context)
+            : nil
+
+            for url in folderOrURLs {
+                guard let isDirectory = try url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory else {
+                    continue
+                }
+                
+                if isDirectory {
+
+                } else if url.pathExtension == "excalidraw" {
+                    // transfer the file to a File instance
+                    let file = try File(url: url, context: context)
+                    (parentGroup ?? rootGroup)?.addToFiles(file)
+                }
+            }
+            
+            for case let folder as LocalFolder in self.children ?? [] {
+                if let url = folder.url {
+                    let p = Group(name: url.lastPathComponent, context: context)
+                    _ = try folder.importToGroup(
+                        context: context,
+                        // animation: animation,
+                        parentGroup: p
+                    )
+                    (parentGroup ?? rootGroup)?.addToChildren(p)
+                }
+            }
+            
+            return (rootGroup ?? parentGroup)!
+        }
+    }
+    
+//    func moveUnder(destination url: URL) throws {
+//        guard let sourceURL = self.url,
+//              let enumerator = FileManager.default.enumerator(
+//                at: sourceURL,
+//                includingPropertiesForKeys: [.isDirectoryKey]
+//              ) else {
+//            return
+//        }
+//        
+//        try withSecurityScopedURL { scopedURL in
+//            let fileCoordinator = NSFileCoordinator()
+//            let filemanager = FileManager.default
+//            
+//            var destinationURL = url.appendingPathComponent(
+//                self.name ?? scopedURL.lastPathComponent,
+//                conformingTo: .directory
+//            )
+//            
+//            var i = 1
+//            while filemanager.fileExists(atPath: destinationURL.filePath) {
+//                destinationURL = url.appendingPathComponent(
+//                    self.name ?? scopedURL.lastPathComponent + " (\(i))",
+//                    conformingTo: .directory
+//                )
+//            }
+//            // Move
+//            fileCoordinator.coordinate(
+//                writingItemAt: scopedURL,
+//                options: .forMoving,
+//                writingItemAt: destinationURL,
+//                options: .forReplacing,
+//                error: nil
+//            ) { src, dist in
+//                try? FileManager.default.moveItem(
+//                    at: src,
+//                    to: dist
+//                )
+//            }
+//        }
+//    }
 }
 
 

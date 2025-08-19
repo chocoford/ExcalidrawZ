@@ -78,19 +78,9 @@ struct GroupListView: View {
     @State private var isCreateLocalFolderDialogPresented = false
     
     @State private var createGroupType: CreateGroupSheetView.CreateGroupType = .group
-    @State private var isCreateGroupDialogPresented = false
-#if os(iOS)
-    @State private var isCreateGroupConfirmationDialogPresented = false
-#endif
     
     var body: some View {
         content
-            .modifier(
-                CreateGroupModifier(
-                    isPresented: $isCreateGroupDialogPresented,
-                    parentGroupID: nil
-                )
-            )
     }
     
     @MainActor @ViewBuilder
@@ -98,7 +88,6 @@ struct GroupListView: View {
         VStack(alignment: .leading, spacing: 0) {
             ScrollView {
                 LazyVStack(spacing: 8) {
-                    let spacing: CGFloat = 4
                     VStack(spacing: 0) {
                         Button {
                             fileState.currentActiveFile = nil
@@ -134,36 +123,32 @@ struct GroupListView: View {
                             )
                         )
                     }
+                    
                     Divider()
-
+                    
                     // Temporary
                     if !fileState.temporaryFiles.isEmpty {
-                        VStack(alignment: .leading, spacing: spacing) {
+                        VStack(alignment: .leading, spacing: 0) {
                             TemporaryGroupRowView()
                         }
                     }
                     
                     // iCloud
-                    VStack(alignment: .leading, spacing: spacing) {
-                        databaseGroupsList()
-                            .modifier(
-                                ContentHeaderCreateButtonHoverModifier(
-                                    groupType: .group,
-                                    title: .localizable(.sidebarGroupListSectionHeaderICloud)
-                                )
+                    databaseGroupsList()
+                        .modifier(
+                            ContentHeaderCreateButtonHoverModifier(
+                                groupType: .group,
+                                title: .localizable(.sidebarGroupListSectionHeaderICloud)
                             )
-                    }
-                    
+                        )
                     // Local
-                    VStack(alignment: .leading, spacing: spacing) {
-                        LocalFoldersListView()
-                            .modifier(
-                                ContentHeaderCreateButtonHoverModifier(
-                                    groupType: .localFolder,
-                                    title: .localizable(.sidebarGroupListSectionHeaderLocal)
-                                )
+                    LocalFoldersListView()
+                        .modifier(
+                            ContentHeaderCreateButtonHoverModifier(
+                                groupType: .localFolder,
+                                title: .localizable(.sidebarGroupListSectionHeaderLocal)
                             )
-                    }
+                        )
                 }
                 .padding(8)
             }
@@ -215,33 +200,6 @@ struct GroupListView: View {
                 fileState.currentActiveGroup = nil
             }
         }
-    }
-
-    @MainActor @ViewBuilder
-    private func createGroupMenuButton() -> some View {
-        Menu {
-            SwiftUI.Group {
-                Button {
-                    isCreateGroupDialogPresented.toggle()
-                    createGroupType = .group
-                } label: {
-                    Text(.localizable(.sidebarGroupListCreateTitle))
-                }
-                
-                Button {
-                    isCreateLocalFolderDialogPresented.toggle()
-                } label: {
-                    Text(.localizable(.sidebarGroupListButtonAddObservation))
-                }
-            }
-            .labelStyle(.titleAndIcon)
-        } label: {
-            Label(
-                .localizable(.sidebarGroupListNewFolder),
-                systemSymbol: .plusCircle
-            )
-        }
-        .menuIndicator(.hidden)
     }
     
     @MainActor @ViewBuilder
@@ -302,7 +260,6 @@ struct GroupListView: View {
         .fixedSize()
     }
     
-
 }
 
 fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
@@ -321,35 +278,40 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
     @State private var isHovered = false
     
     func body(content: Content) -> some View {
-        Section {
+        VStack(spacing: 0) {
+            header()
             content
-        } header: {
-            HStack {
-                Text(title)
-                    .foregroundStyle(.secondary)
-                
-                Spacer()
-                
-                NewGroupButton(type: groupType, parentID: nil) { type in
-                    ZStack {
-                        switch type {
-                            case .localFolder:
-                                Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .plusCircleFill)
-                            case .group:
-                                Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
-                        }
-                    }
-                }
-                .opacity(isHovered ? 1 : 0)
-                .hoverCursor(.pointingHand)
-                .labelStyle(.iconOnly)
-                .buttonStyle(.borderless)
-            }
-            .font(.callout.bold())
-            .animation(.smooth, value: isHovered)
         }
+        .contentShape(Rectangle())
         .onHover {
             isHovered = $0
         }
+    }
+    
+    @MainActor @ViewBuilder
+    private func header() -> some View {
+        HStack {
+            Text(title)
+                .foregroundStyle(.secondary)
+            
+            Spacer()
+            
+            NewGroupButton(type: groupType, parentID: nil) { type in
+                ZStack {
+                    switch type {
+                        case .localFolder:
+                            Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .plusCircleFill)
+                        case .group:
+                            Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
+                    }
+                }
+            }
+            .opacity(isHovered ? 1 : 0)
+            // .hoverCursor(.link)
+            .labelStyle(.iconOnly)
+            .buttonStyle(.borderless)
+        }
+        .font(.callout.bold())
+        .animation(.smooth, value: isHovered)
     }
 }

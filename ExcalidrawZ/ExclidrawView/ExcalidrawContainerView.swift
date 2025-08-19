@@ -231,7 +231,7 @@ struct ExcalidrawContainerView: View {
                 layoutState.isResotreAlertIsPresented.toggle()
             }
             .alert(
-                .localizable(.deletedFileRecoverAlertTitle),
+                String(localizable: .deletedFileRecoverAlertTitle),
                 isPresented: $layoutState.isResotreAlertIsPresented
             ) {
                 Button(role: .cancel) {

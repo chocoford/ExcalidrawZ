@@ -191,8 +191,20 @@ struct FileHomeItemView: View {
         
         switch file {
             case .file(let file):
-                fileState.currentActiveGroup = file.group != nil ? .group(file.group!) : nil
-                if let groupID = file.group?.objectID {
+                
+                let getTrashGroup: () -> Group? = {
+                    let trashGroupFetchRequest = NSFetchRequest<Group>(entityName: "Group")
+                    trashGroupFetchRequest.predicate = NSPredicate(format: "type == 'trash'")
+                    return try? viewContext.fetch(trashGroupFetchRequest).first
+                }
+                
+                fileState.currentActiveGroup = file.group == nil
+                ? nil
+                : file.inTrash
+                ? .group(getTrashGroup() ?? file.group!)
+                : .group(file.group!)
+                
+                if let groupID = file.group?.objectID, file.inTrash == false {
                     fileState.expandToGroup(groupID)
                 }
             case .localFile(let url):

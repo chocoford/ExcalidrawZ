@@ -263,7 +263,9 @@ struct ExcalidrawToolbar: View {
                 withFooter: false
             )
             .foregroundStyle(
-                toolState.activatedTool != nil && secondaryPickerItems.contains(toolState.activatedTool!) ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(HierarchicalShapeStyle.primary)
+                toolState.activatedTool != nil && secondaryPickerItems.contains(toolState.activatedTool!)
+                ? AnyShapeStyle(Color.accentColor)
+                : AnyShapeStyle(HierarchicalShapeStyle.primary)
             )
         } primaryAction: {
             if let lastActivatedSecondaryTool,

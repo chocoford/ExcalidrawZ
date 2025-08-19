@@ -99,7 +99,7 @@ struct HomeView: View {
                 }
                 .padding(10)
                 .frame(maxWidth: 500)
-                .hoverCursor(.iBeam)
+                .hoverCursor(.horizontalText)
                 .contentShape(Rectangle())
                 .simultaneousGesture(TapGesture().onEnded {
                     isSearchPresented.toggle()

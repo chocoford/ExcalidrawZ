@@ -13,9 +13,10 @@ import ChocofordUI
 struct LocalFoldersView: View {
     @AppStorage("FolderStructureStyle") var folderStructStyle: FolderStructureStyle = .disclosureGroup
 
-    @Environment(\.managedObjectContext) private var managedObjectContext
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var sidebarDragState: SidebarDragState
     
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField
@@ -48,7 +49,7 @@ struct LocalFoldersView: View {
             (
             fileState.currentActiveGroup == .localFolder(folder) &&
             fileState.currentActiveFile == nil
-            ) || isBeingDropped
+            )
         } set: { val in
             DispatchQueue.main.async {
                 if val {
@@ -59,7 +60,6 @@ struct LocalFoldersView: View {
         }
     }
     
-    @State private var isBeingDropped = false
     @State private var isExpanded = false
     
     var body: some View {
@@ -72,6 +72,38 @@ struct LocalFoldersView: View {
         }
         .animation(.smooth, value: folderStructStyle)
     }
+    
+    var dragItemURL: URL? {
+        if case .localFile(let url) = sidebarDragState.currentDragItem {
+           url
+       } else if case .localFolder(let folderID) = sidebarDragState.currentDragItem {
+           (viewContext.object(with: folderID) as? LocalFolder)?.url
+       } else {
+           nil
+       }
+    }
+    
+    var canDrop: Bool {
+        if let dragItemURL,
+           dragItemURL.deletingLastPathComponent() != folder.url,
+           folder.url?.filePath.hasPrefix(dragItemURL.filePath) == false {
+            return true
+        } else if case .file = sidebarDragState.currentDragItem {
+            return true
+        } else if case .group = sidebarDragState.currentDragItem {
+            return true
+        }
+        return false
+    }
+    
+    var canDropToFolder: Bool {
+        sidebarDragState.currentDropGroupTarget == .exact(.localFolder(folder.objectID)) && canDrop
+    }
+    
+    var canDropBelowFoler: Bool {
+        sidebarDragState.currentDropGroupTarget == .below(.localFolder(folder.objectID)) && canDrop
+    }
+    
     
     @available(macOS 13.0, *)
     @MainActor @ViewBuilder
@@ -90,9 +122,42 @@ struct LocalFoldersView: View {
         } label: {
             LocalFolderRowView(
                 folder: folder,
-                isBeingDropped: $isBeingDropped,
                 onDelete: onDeleteSelected
             )
+            .modifier(LocalFolderDragModifier(folder: folder))
+        }
+        .extraLabelStyle { content in
+            content
+                .modifier(
+                    LocalFolderContextMenuModifier(
+                        folder: folder,
+                        canExpand: true,
+                    )
+                )
+                .modifier(
+                    LocalFolderDropModifier(folder: folder) { .exact($0) }
+                )
+                .foregroundStyle(
+                    canDropToFolder || canDropBelowFoler
+                    ? AnyShapeStyle(Color.white)
+                    : AnyShapeStyle(HierarchicalShapeStyle.primary)
+                )
+                .background {
+                    if canDropToFolder {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.accentColor)
+                    } else if canDropBelowFoler {
+                        UnevenRoundedRectangle(
+                            cornerRadii: .init(
+                                topLeading: 12,
+                                bottomLeading: 0,
+                                bottomTrailing: 0,
+                                topTrailing: 12
+                            )
+                        )
+                        .fill(Color.accentColor)
+                    }
+                }
         }
         .disclosureGroupIndicatorVisibility(.visible)
         .onReceive(NotificationCenter.default.publisher(for: .shouldExpandGroup)) { notification in
@@ -100,6 +165,12 @@ struct LocalFoldersView: View {
                   targetGroupID == self.folder.objectID else { return }
             withAnimation(.smooth(duration: 0.2)) {
                 self.isExpanded = true
+            }
+        }
+        .background {
+            if canDropBelowFoler {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.accentColor.opacity(0.2))
             }
         }
     }
@@ -112,7 +183,6 @@ struct LocalFoldersView: View {
         ) {
             LocalFolderRowView(
                 folder: folder,
-                isBeingDropped: $isBeingDropped,
                 onDelete: onDeleteSelected
             )
         } childView: { child in
