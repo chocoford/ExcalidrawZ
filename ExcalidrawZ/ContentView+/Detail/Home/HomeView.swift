@@ -29,6 +29,7 @@ struct BoundsPreferenceKey: PreferenceKey {
 //}
 
 struct HomeView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var fileState: FileState
     
@@ -99,20 +100,33 @@ struct HomeView: View {
                 }
                 .padding(10)
                 .frame(maxWidth: 500)
-                .hoverCursor(.horizontalText)
                 .contentShape(Rectangle())
+                .hoverCursor(.horizontalText)
                 .simultaneousGesture(TapGesture().onEnded {
                     isSearchPresented.toggle()
                 })
                 .background {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.textBackgroundColor)
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.separatorColor, lineWidth: 0.5)
+                        if #available(macOS 26.0, iOS 26.0, *) {
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.textBackgroundColor)
+                                .stroke(Color.separatorColor, lineWidth: 0.5)
+                                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
+                        } else {
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.textBackgroundColor)
+                                .shadow(
+                                    color: colorScheme == .light
+                                    ? Color.gray.opacity(0.33)
+                                    : Color.black.opacity(0.33),
+                                    radius: 10,
+                                )
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.separatorColor, lineWidth: 0.5)
+                            
+                        }
                     }
                     .compositingGroup()
-                    .shadow(color: Color.gray.opacity(0.2), radius: 10, y: 0)
                     .padding(1)
                     .anchorPreference(
                         key: BoundsPreferenceKey.self,
@@ -188,17 +202,28 @@ struct HomeView: View {
                         GeometryReader { geomerty in
                             let rect = geomerty[anchor]
                             
-                            SerachContent(withDismissButton: false) {
+                            SerachContent(withDismissButton: false, source: .normal) {
                                 isSearchPresented = false
                             }
                             .background {
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(.background)
-                                    .shadow(color: .gray.opacity(0.2), radius: 4, y: 0)
-                                    .transition(.opacity)
-                                
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(.background)
+                                ZStack {
+                                    if #available(macOS 26.0, iOS 26.0, *) {
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .fill(Color.textBackgroundColor)
+                                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .fill(Color.textBackgroundColor)
+                                    }
+                                }
+                                .shadow(
+                                    color: colorScheme == .light
+                                    ? .gray.opacity(0.33)
+                                    : .black.opacity(0.33),
+                                    radius: 4,
+                                    y: 0
+                                )
+                                .transition(.opacity)
                             }
                             .frame(width: rect.width, height: 500)
                             .offset(x: rect.minX, y: rect.minY)

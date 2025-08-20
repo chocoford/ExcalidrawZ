@@ -50,7 +50,12 @@ class CursorHostingView<Content: View>: NSHostingView<Content> {
             .inVisibleRect,          // 跟随可见区域，无需手动更新 rect
             .activeInKeyWindow
         ]
-        let ta = NSTrackingArea(rect: .zero, options: options, owner: self, userInfo: nil)
+        let ta = NSTrackingArea(
+            rect: .zero,
+            options: options,
+            owner: self,
+            userInfo: nil
+        )
         addTrackingArea(ta)
         trackingArea = ta
     }
@@ -112,8 +117,11 @@ struct HoverCursorModifier: ViewModifier {
 
 extension View {
     @ViewBuilder
-    public func hoverCursor(_ style: CursorStyle) -> some View {
-        if #available(macOS 15.0, *) {
+    public func hoverCursor(
+        _ style: CursorStyle,
+        forceAppKit: Bool = false
+    ) -> some View {
+        if #available(macOS 15.0, *), !forceAppKit {
             // 15+ 优先使用指针样式（系统更稳），否则走 NSViewRepresentable
             self.pointerStyle(style.asPointerStyle())
         } else {

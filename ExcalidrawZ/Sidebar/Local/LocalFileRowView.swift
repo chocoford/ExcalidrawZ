@@ -82,10 +82,10 @@ struct LocalFileRowView: View {
                 }
                 fileState.selectedLocalFiles.insertOrRemove(file)
             } else {
-                fileState.currentActiveFile = .localFile(file)
+                activeFile(file)
             }
 #else
-            fileState.currentActiveFile = .localFile(file)
+            activeFile(file)
 #endif
         } label: {
             FileRowLabel(
@@ -160,6 +160,18 @@ struct LocalFileRowView: View {
                 isWaitingForOpeningFile = false
             }
         }
+    }
+    
+    private func activeFile(_ file: URL) {
+        // fetch file's folder
+        let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+        fetchRequest.predicate = NSPredicate(format: "url == %@", file.deletingLastPathComponent() as CVarArg)
+        fetchRequest.fetchLimit = 1
+        
+        if let folder = (try? viewContext.fetch(fetchRequest))?.first {
+            fileState.currentActiveGroup = .localFolder(folder)
+        }
+        fileState.currentActiveFile = .localFile(file)
     }
     
     private func updateModifiedDate() {

@@ -77,6 +77,7 @@ struct FileHomeItemView: View {
     @State private var coverImage: Image? = nil
     
     @State private var width: CGFloat?
+    @State private var isHovered = false
     
     static let roundedCornerRadius: CGFloat = 12
     
@@ -116,15 +117,47 @@ struct FileHomeItemView: View {
             .padding(.vertical, 12)
             .background(.ultraThinMaterial)
         }
-        .clipShape(RoundedRectangle(cornerRadius: Self.roundedCornerRadius))
+        .clipShape(
+            RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+        )
         .overlay {
             RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
-                .stroke(isSelected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(SeparatorShapeStyle()))
+                .stroke(
+                    isSelected
+                    ? AnyShapeStyle(Color.accentColor)
+                    : AnyShapeStyle(SeparatorShapeStyle())
+                )
         }
         .background {
-            RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
-                .fill(.background)
-                .shadow(color: Color.gray.opacity(0.2), radius: 4)
+            if #available(macOS 26.0, iOS 26.0, *) {
+                RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+                    .fill(
+                        colorScheme == .light
+                        ? AnyShapeStyle(HierarchicalShapeStyle.secondary)
+                        : AnyShapeStyle(Color.clear)
+                    )
+                    .glassEffect(.clear, in: .rect(cornerRadius: 12))
+                    .shadow(
+                        color: colorScheme == .light
+                        ? Color.gray.opacity(0.33)
+                        : Color.black.opacity(0.33),
+                        radius: isHovered
+                        ? colorScheme == .light ? 2 : 6
+                        : 0
+                    )
+                
+            } else {
+                RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+                    .fill(.background)
+                    .shadow(
+                        color: colorScheme == .light
+                        ? Color.gray.opacity(0.33)
+                        : Color.black.opacity(0.33),
+                        radius: isHovered
+                        ? colorScheme == .light ? 2 : 6
+                        : 0
+                    )
+            }
         }
         .background {
             Color.clear
@@ -142,8 +175,10 @@ struct FileHomeItemView: View {
                     isSelected = true
                 })
                 .modifier(FileHomeItemContextMenuModifier(file: file))
+                .onHover { isHovered = $0 }
         }
         .opacity(fileHomeItemTransitionState.shouldHideItem == fileID ? 0 : 1)
+        .animation(.smooth(duration: 0.2), value: isHovered)
         .onChange(of: file) { newValue in
             self.getElementsImage()
         }

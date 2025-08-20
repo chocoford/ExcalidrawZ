@@ -52,15 +52,19 @@ struct SearchableModifier: ViewModifier {
                 }
             }
             .sheet(isPresented: $isSearchSheetPresented) {
-                SerachContent {
+                SerachContent(source: .sheet) {
                     isSearchSheetPresented = false
                 }
+                .padding(10)
                 .swiftyAlert()
 #if os(macOS)
                 .frame(width: 500, height: 400)
 #endif
             }
-            .environment(\.searchExcalidrawAction, SearchExcalidrawAction(isSearchPresented: $isSearchSheetPresented))
+            .environment(
+                \.searchExcalidrawAction,
+                 SearchExcalidrawAction(isSearchPresented: $isSearchSheetPresented)
+            )
     }
 }
 
@@ -71,14 +75,22 @@ struct SerachContent: View {
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var fileState: FileState
     
+    enum Source {
+        case normal
+        case sheet
+    }
+    
     var withDismissButton: Bool
+    var source: Source
     var dismiss: () -> Void
     
     init(
         withDismissButton: Bool = true,
+        source: Source,
         dismissAction: @escaping () -> Void
     ) {
         self.withDismissButton = withDismissButton
+        self.source = source
         self.dismiss = dismissAction
     }
     
@@ -127,7 +139,13 @@ struct SerachContent: View {
                     }
                     .buttonStyle(.borderless)
                     .keyboardShortcut(.escape)
-                    .padding(.trailing, 20)
+                    .padding(.trailing, {
+                        if #available(macOS 26.0, iOS 26.0, *) {
+                            0
+                        } else {
+                            20
+                        }
+                    }())
                 }
             }
 
@@ -320,10 +338,18 @@ struct SerachContent: View {
             }
             .font(.headline)
             .padding(4)
-            .background(.background)
+            .apply{ content in
+                if #available(macOS 26.0, iOS 26.0, *), source == .normal {
+                    content
+                        .background(Color.textBackgroundColor)
+                } else {
+                    content
+                        .background(.background)
 #if canImport(AppKit)
-            .visualEffect(material: .sheet)
+                        .visualEffect(material: .sheet)
 #endif
+                }
+            }
         }
     }
     
@@ -523,11 +549,5 @@ fileprivate struct SearchItemRow: View {
                 }
             }
         }
-    }
-}
-
-#Preview {
-    SerachContent() {
-        
     }
 }

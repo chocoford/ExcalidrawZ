@@ -9,11 +9,14 @@ import SwiftUI
 import ChocofordUI
 
 struct HomeFolderItemView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject var fileState: FileState
 
     var isSelected: Bool
     var name: String
     var itemsCount: Int
+    
+    @State private var isHovered = false
     
     var body: some View {
         HStack(spacing: 10) {
@@ -37,19 +40,52 @@ struct HomeFolderItemView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
+        .contentShape(Rectangle())
+        .onHover { isHovered = $0 }
         .background {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(.background)
-                .shadow(color: Color.gray.opacity(0.2), radius: 4)
-            
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(
-                    isSelected
-                    ? AnyShapeStyle(Color.accentColor)
-                    : AnyShapeStyle(SeparatorShapeStyle())
-                )
+            ZStack {
+                if #available(macOS 26.0, iOS 26.0, *) {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(
+                            colorScheme == .light
+                            ? AnyShapeStyle(HierarchicalShapeStyle.secondary)
+                            : AnyShapeStyle(Color.clear)
+                        )
+                        .stroke(
+                            isSelected
+                            ? AnyShapeStyle(Color.accentColor)
+                            : AnyShapeStyle(SeparatorShapeStyle())
+                        )
+                        .glassEffect(.clear, in: .rect(cornerRadius: 12))
+                        .shadow(
+                            color: colorScheme == .light
+                            ? Color.gray.opacity(0.33)
+                            : Color.black.opacity(0.33),
+                            radius: isHovered
+                            ? colorScheme == .light ? 2 : 6
+                            : 0
+                        )
+                    
+                } else {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.background)
+                        .shadow(
+                            color: colorScheme == .light
+                            ? Color.gray.opacity(0.2)
+                            : Color.black.opacity(0.2),
+                            radius: isHovered ? 4 : 0
+                        )
+                    
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(
+                            isSelected
+                            ? AnyShapeStyle(Color.accentColor)
+                            : AnyShapeStyle(SeparatorShapeStyle())
+                        )
+                }
+            }
             
         }
-        .contentShape(Rectangle())
+        .animation(.smooth(duration: 0.2), value: isHovered)
     }
 }
