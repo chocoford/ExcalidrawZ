@@ -23,6 +23,8 @@ class FileItemPreviewCache: NSCache<NSString, NSImage> {
 struct FileHomeItemView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.managedObjectContext) var viewContext
+    @Environment(\.isEnabled) private var isEnabled
+    
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
 
@@ -31,13 +33,13 @@ struct FileHomeItemView: View {
     var fileID: String
     var filename: String
     var excalidrawFileGetter: (FileState.ActiveFile, NSManagedObjectContext) -> ExcalidrawFile?
-    var onOpen: () -> Void
+    var customLabel: AnyView? = nil
     
     init(
         file: FileState.ActiveFile,
-        isSelected: Binding<Bool>,
+        isSelected: Binding<Bool>
     ) {
-         self.file = file
+        self.file = file
         self._isSelected = isSelected
         switch file {
             case .file(let file):
@@ -69,10 +71,17 @@ struct FileHomeItemView: View {
                     return try? ExcalidrawFile(from: collaborationFile.objectID, context: context)
             }
         }
-        self.onOpen = {
-            
-        }
     }
+    
+    init<Label: View>(
+        file: FileState.ActiveFile,
+        isSelected: Binding<Bool>,
+        @ViewBuilder customLabel: () -> Label
+    ) {
+        self.init(file: file, isSelected: isSelected)
+        self.customLabel = AnyView(customLabel())
+    }
+    
     
     @State private var coverImage: Image? = nil
     
@@ -107,11 +116,17 @@ struct FileHomeItemView: View {
         }
         .readWidth($width)
         .overlay(alignment: .bottom) {
-            HStack {
-                Text(filename)
-                    .lineLimit(1)
-                    .font(.headline)
-                Spacer()
+            ZStack {
+                if let customLabel {
+                    customLabel
+                } else {
+                    HStack {
+                        Text(filename)
+                            .lineLimit(1)
+                            .font(.headline)
+                        Spacer()
+                    }
+                }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
@@ -222,6 +237,7 @@ struct FileHomeItemView: View {
     }
     
     private func openFile() {
+        guard isEnabled else { return }
         fileState.currentActiveFile = file
         
         switch file {
@@ -258,13 +274,11 @@ struct FileHomeItemView: View {
             case .temporaryFile:
                 fileState.currentActiveGroup = .temporary
             case .collaborationFile(let file):
-                fileState.currentActiveGroup = file.group != nil ? .group(file.group!) : nil
-                if let groupID = file.group?.objectID {
-                    fileState.expandToGroup(groupID)
+                if !fileState.collaboratingFiles.contains(file) {
+                    fileState.collaboratingFiles.append(file)
                 }
+                fileState.currentActiveGroup = .collaboration
         }
-        
-  
     }
     
     @ViewBuilder

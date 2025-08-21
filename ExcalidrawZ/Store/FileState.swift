@@ -49,11 +49,15 @@ final class FileState: ObservableObject {
             if case .group(let group) = currentActiveGroup {
                 currentGroupPublisherCancellables = [
                     group.publisher(for: \.name).sink { [weak self] _ in
-                        self?.objectWillChange.send()
+                        DispatchQueue.main.async {
+                            self?.objectWillChange.send()
+                        }
                     }
                 ]
             }
-            resetSelections()
+            DispatchQueue.main.async {
+                self.resetSelections()
+            }
         }
     }
 

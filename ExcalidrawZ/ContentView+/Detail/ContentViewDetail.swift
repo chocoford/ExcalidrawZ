@@ -25,12 +25,6 @@ struct ContentViewDetail: View {
     var body: some View {
         splitViewsContent()
             .modifier(ExcalidrawContainerToolbarContentModifier())
-            .opacity(fileState.isInCollaborationSpace ? 0 : 1)
-            .overlay {
-                ExcalidrawCollabContainerView()
-                    .opacity(fileState.isInCollaborationSpace ? 1 : 0)
-                    .allowsHitTesting(fileState.isInCollaborationSpace)
-            }
 #if os(iOS)
             .modifier(ApplePencilToolbarModifier())
             .sheet(isPresented: $isSettingsPresented) {
@@ -121,6 +115,7 @@ struct ContentDetailNavigationView: View {
         case fileHome
         case localFileHome
         case temporaryFileHome
+        case collaborationFileHome
     }
     
     @State private var lastHomeType: HomeType = .home
@@ -198,8 +193,6 @@ struct ContentDetailNavigationView: View {
                                     )
                             }
                         }
-                        
-                        
                     case .localFileHome:
                         ZStack {
                             LocalFoldersProvider { _ in
@@ -238,7 +231,14 @@ struct ContentDetailNavigationView: View {
                         }
                     case .temporaryFileHome:
                         EmptyView()
-                        
+                    case .collaborationFileHome:
+                        CollaborationHome()
+                            .opacity(
+                                fileHomeItemTransitionState.canShowItemContainerView ||
+                                fileState.currentActiveFile == nil
+                                ? 1
+                                : 0
+                            )
                 }
             }
         }
@@ -341,7 +341,7 @@ struct ContentDetailNavigationView: View {
             case .temporary:
                 lastHomeType = .temporaryFileHome
             case .collaboration:
-                lastHomeType = .temporaryFileHome
+                lastHomeType = .collaborationFileHome
             default:
                 lastHomeType = .home
         }
@@ -367,64 +367,43 @@ struct ExcalidrawContainerWrapper: View {
         self.interactionEnabled = interactionEnabled
     }
     
-    var body: some View {
-        ExcalidrawContainerView(
-            file: Binding<ExcalidrawFile?> {
+    var localFileBinding: Binding<ExcalidrawFile?> {
+        Binding<ExcalidrawFile?> {
+            switch activeFile {
+                case .file(let file):
+                    return try? ExcalidrawFile(from: file.objectID, context: viewContext)
+                case .localFile(let url):
+                    return try? ExcalidrawFile(contentsOf: url)
+                case .temporaryFile(let url):
+                    return try? ExcalidrawFile(contentsOf: url)
+                case .collaborationFile(let file):
+                    return nil
+                default:
+                    return nil
+            }
+        } set: { val in
+            guard let val else { return }
+            do {
                 switch activeFile {
                     case .file(let file):
-                        return try? ExcalidrawFile(from: file.objectID, context: viewContext)
+                        if file.id == val.id {
+                            // Everytime load a new file will cause an actual update.
+                            let oldElements = try ExcalidrawFile(
+                                from: file.objectID,
+                                context: viewContext
+                            ).elements
+                            if val.elements == oldElements {
+                                print("[updateCurrentFile] no updates, ignored.")
+                                return
+                            } else {
+                                print("[updateCurrentFile] elements changed.")
+                            }
+                            fileState.updateFile(file, with: val)
+                        }
                     case .localFile(let url):
-                        return try? ExcalidrawFile(contentsOf: url)
-                    case .temporaryFile(let url):
-                        return try? ExcalidrawFile(contentsOf: url)
-                    case .collaborationFile(let file):
-                        return try? ExcalidrawFile(from: file.objectID, context: viewContext)
-                    default:
-                        return nil
-                }
-            } set: { val in
-                guard let val else { return }
-                do {
-                    switch activeFile {
-                        case .file(let file):
-                            if file.id == val.id {
-                                // Everytime load a new file will cause an actual update.
-                                let oldElements = try ExcalidrawFile(
-                                    from: file.objectID,
-                                    context: viewContext
-                                ).elements
-                                if val.elements == oldElements {
-                                    print("[updateCurrentFile] no updates, ignored.")
-                                    return
-                                } else {
-                                    print("[updateCurrentFile] elements changed.")
-                                }
-                                fileState.updateFile(file, with: val)
-                            }
-                        case .localFile(let url):
-                            guard case .localFolder(let folder) = fileState.currentActiveGroup else { return }
-                            Task {
-                                try folder.withSecurityScopedURL { _ in
-                                    do {
-                                        let oldElements = try ExcalidrawFile(contentsOf: url).elements
-                                        if val.elements == oldElements {
-                                            print("[updateCurrentFile] no updates, ignored.")
-                                            return
-                                        } else {
-                                            print("[updateCurrentFile] elements changed.")
-                                        }
-                                        try await fileState.updateLocalFile(
-                                            to: url,
-                                            with: val,
-                                            context: viewContext
-                                        )
-                                    } catch {
-                                        alertToast(error)
-                                    }
-                                }
-                            }
-                        case .temporaryFile(let url):
-                            Task {
+                        guard case .localFolder(let folder) = fileState.currentActiveGroup else { return }
+                        Task {
+                            try folder.withSecurityScopedURL { _ in
                                 do {
                                     let oldElements = try ExcalidrawFile(contentsOf: url).elements
                                     if val.elements == oldElements {
@@ -442,20 +421,55 @@ struct ExcalidrawContainerWrapper: View {
                                     alertToast(error)
                                 }
                             }
-                        case .collaborationFile:
-                            print("Not support yet...")
-                        default:
-                            break
-                    }
-                } catch { }
-            },
-            interactionEnabled: interactionEnabled
-        )
-        .opacity(fileState.isInCollaborationSpace ? 0 : 1)
-        .overlay {
+                        }
+                    case .temporaryFile(let url):
+                        Task {
+                            do {
+                                let oldElements = try ExcalidrawFile(contentsOf: url).elements
+                                if val.elements == oldElements {
+                                    print("[updateCurrentFile] no updates, ignored.")
+                                    return
+                                } else {
+                                    print("[updateCurrentFile] elements changed.")
+                                }
+                                try await fileState.updateLocalFile(
+                                    to: url,
+                                    with: val,
+                                    context: viewContext
+                                )
+                            } catch {
+                                alertToast(error)
+                            }
+                        }
+                    case .collaborationFile:
+                        break
+                    default:
+                        break
+                }
+            } catch { }
+        }
+    }
+    
+    var isInCollaborationSpace: Bool {
+        if case .collaborationFile = activeFile {
+            return true
+        } else {
+            return false
+        }
+    }
+    
+    var body: some View {
+        ZStack {
+            ExcalidrawContainerView(
+                file: localFileBinding,
+                interactionEnabled: interactionEnabled
+            )
+            .opacity(isInCollaborationSpace ? 0 : 1)
+            .allowsHitTesting(!isInCollaborationSpace)
+
             ExcalidrawCollabContainerView()
-                .opacity(fileState.isInCollaborationSpace ? 1 : 0)
-                .allowsHitTesting(fileState.isInCollaborationSpace)
+                .opacity(isInCollaborationSpace ? 1 : 0)
+                .allowsHitTesting(isInCollaborationSpace)
         }
 #if os(iOS)
         .modifier(ApplePencilToolbarModifier())

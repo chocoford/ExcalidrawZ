@@ -61,10 +61,6 @@ struct ExcalidrawCollabContainerView: View {
                         )
                 }
             }
-            
-            if fileState.currentActiveGroup == .collaboration && fileState.currentActiveFile == nil {
-                CollaborationHome()
-            }
         }
     }
 }
