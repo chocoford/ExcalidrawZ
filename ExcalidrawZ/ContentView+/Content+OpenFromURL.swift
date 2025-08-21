@@ -175,8 +175,7 @@ struct OpenFromURLModifier: ViewModifier {
             }
         }() {
             fileState.currentActiveGroup = .temporary
-            let file = fileState.temporaryFiles.first
-            fileState.currentActiveFile = file != nil ? .temporaryFile(file!) : nil
+            fileState.currentActiveFile = .temporaryFile(targetURL)
             
             if let imageSendToNewFile {
                 Task {

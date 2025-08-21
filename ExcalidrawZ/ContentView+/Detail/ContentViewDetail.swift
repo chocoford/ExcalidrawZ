@@ -230,7 +230,13 @@ struct ContentDetailNavigationView: View {
                             }
                         }
                     case .temporaryFileHome:
-                        EmptyView()
+                        TemporaryFilesHomeView()
+                            .opacity(
+                                fileHomeItemTransitionState.canShowItemContainerView ||
+                                fileState.currentActiveFile == nil
+                                ? 1
+                                : 0
+                            )
                     case .collaborationFileHome:
                         CollaborationHome()
                             .opacity(
@@ -376,8 +382,6 @@ struct ExcalidrawContainerWrapper: View {
                     return try? ExcalidrawFile(contentsOf: url)
                 case .temporaryFile(let url):
                     return try? ExcalidrawFile(contentsOf: url)
-                case .collaborationFile(let file):
-                    return nil
                 default:
                     return nil
             }
@@ -441,8 +445,6 @@ struct ExcalidrawContainerWrapper: View {
                                 alertToast(error)
                             }
                         }
-                    case .collaborationFile:
-                        break
                     default:
                         break
                 }

@@ -51,6 +51,121 @@ struct LocalFolderFileHomeView: View {
     }
 }
 
+struct FileHomeContainer: View {
+    
+    var content: AnyView
+    
+    init<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) {
+        self.content = AnyView(content())
+    }
+    
+    @State private var scrollViewHeight: CGFloat = 0
+    @State private var contentHeight: CGFloat = 0
+    
+    var config = Config()
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                content
+                    .readHeight($contentHeight)
+                
+                Color.clear
+                    .frame(height: max(0, scrollViewHeight - contentHeight))
+                    .contentShape(Rectangle())
+                    .overlay(alignment: .top) {
+                        if config.isPlaceholderPresented {
+                            LazyVGrid(
+                                columns: [
+                                    .init(
+                                        .adaptive(
+                                            minimum: config.itemWidth,
+                                            maximum: config.itemWidth * 2 - 0.1
+                                        ),
+                                        spacing: 20
+                                    )
+                                ],
+                                spacing: 20
+                            ) {
+                                ForEach(0..<30) { _ in
+                                    FileHomeItemView.placeholder()
+                                }
+                            }
+                            .padding(.horizontal, 30)
+                            
+                        }
+                    }
+                    .mask {
+                        if config.isPlaceholderPresented {
+                            if #available(macOS 14.0, iOS 16.0, *) {
+                                Rectangle()
+                                    .fill(
+                                        SmoothLinearGradient(
+                                            from: Color.white,
+                                            to: Color.white.opacity(0.0),
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
+                            } else {
+                                Rectangle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [.white, .white.opacity(0.0)],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
+                            }
+                        } else {
+                            Color.white
+                        }
+                    }
+                    .overlay {
+                        if config.isPlaceholderPresented {
+                            if #available(macOS 14.0, iOS 16.0, *) {
+                                Text("No files...")
+                                    .foregroundStyle(.placeholder)
+                            } else {
+                                Text("No files...")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+            }
+            .background {
+                config.contentBackground
+            }
+        }
+        .readHeight($scrollViewHeight)
+    }
+    
+    
+    class Config {
+        var contentBackground: AnyView?
+        var isPlaceholderPresented: Bool = false
+        var itemWidth: CGFloat = 240
+    }
+    
+    @MainActor
+    func contentBackground<Background: View>(
+        @ViewBuilder background: () -> Background
+    ) -> Self {
+        config.contentBackground = AnyView(background())
+        return self
+    }
+    
+    @MainActor
+    func showPlaceholder(_ isPresented: Bool, itemWidth: CGFloat) -> Self {
+        config.isPlaceholderPresented = isPresented
+        config.itemWidth = itemWidth
+        return self
+    }
+    
+}
+
 
 struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -148,85 +263,26 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     
     @MainActor @ViewBuilder
     private func content() -> some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                VStack(spacing: 30) {
-                    // Header
-                    header()
-                        .padding(.horizontal, 20)
-                    quickActions()
-                        .padding(.horizontal, 30)
-                }
-                .padding(.top, parentGroups.isEmpty ? 36 : 15)
-                .padding(.bottom, 30)
-                .background {
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            selection = nil
-                        }
-                }
-                .readHeight($contentHeight)
-
-                
-                Color.clear
-                    .frame(height: max(0, scrollViewHeight - contentHeight))
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selection = nil
-                    }
-                    .overlay(alignment: .top) {
-                        if files.isEmpty {
-                            LazyVGrid(
-                                columns: [.init(.adaptive(minimum: fileItemWidth, maximum: fileItemWidth * 2 - 0.1), spacing: 20)],
-                                spacing: 20
-                            ) {
-                                ForEach(0..<30) { _ in
-                                    FileHomeItemView.placeholder()
-                                }
-                            }
-                            .padding(.horizontal, 30)
-                            
-                        }
-                    }
-                    .mask {
-                        if files.isEmpty {
-                            if #available(macOS 14.0, iOS 16.0, *) {
-                                Rectangle()
-                                    .fill(
-                                        SmoothLinearGradient(
-                                            from: Color.white,
-                                            to: Color.white.opacity(0.0),
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                    )
-                            } else {
-                                Rectangle()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [.white, .white.opacity(0.0)],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                    )
-                            }
-                        } else {
-                            Color.white
-                        }
-                    }
-                    .overlay {
-                        if files.isEmpty {
-                            if #available(macOS 14.0, iOS 16.0, *) {
-                                Text("No files...")
-                                    .foregroundStyle(.placeholder)
-                            } else {
-                                Text("No files...")
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
+        FileHomeContainer {
+            VStack(spacing: 30) {
+                header()
+                    .padding(.horizontal, 20)
+                quickActions()
+                    .padding(.horizontal, 30)
+                groupsAndFiles()
+                    .padding(.horizontal, 30)
             }
+            .padding(.top, parentGroups.isEmpty ? 36 : 15)
+            .padding(.bottom, 30)
+            .readHeight($contentHeight)
+        }
+        .showPlaceholder(files.isEmpty, itemWidth: fileItemWidth)
+        .contentBackground {
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    selection = nil
+                }
         }
         .readHeight($scrollViewHeight)
     }
@@ -339,7 +395,12 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 Spacer()
             }
             .controlSize(.large)
-            
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func groupsAndFiles() -> some View {
+        if let group = self.group as? Group, group.groupType == .trash {} else {
             // Groups
             LazyVGrid(
                 columns: [
@@ -366,11 +427,11 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                     })
                 }
             }
+            
 #if os(macOS)
             .animation(.smooth, value: Array(childGroups))
 #endif
         }
-        
         // Files
         LazyVGrid(
             columns: [
@@ -391,9 +452,8 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 )
             }
         }
-        
-        
     }
+    
 }
 
 

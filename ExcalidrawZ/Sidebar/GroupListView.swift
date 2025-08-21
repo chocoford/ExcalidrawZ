@@ -122,16 +122,15 @@ struct GroupListView: View {
                                 isMultiSelected: false
                             )
                         )
-                    }
-                    
-                    Divider()
-                    
-                    // Temporary
-                    if !fileState.temporaryFiles.isEmpty {
-                        VStack(alignment: .leading, spacing: 0) {
+                        
+                        // Temporary
+                        if !fileState.temporaryFiles.isEmpty {
                             TemporaryGroupRowView()
                         }
                     }
+                    
+                    
+                    Divider()
                     
                     // iCloud
                     databaseGroupsList()
