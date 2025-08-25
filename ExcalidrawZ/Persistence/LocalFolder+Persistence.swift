@@ -175,7 +175,7 @@ extension LocalFolder {
     
     func importToGroup(
         context: NSManagedObjectContext,
-        // animation: Animation?,
+        delete: Bool,
         parentGroup: Group? = nil
     ) throws -> Group {
         try self.withSecurityScopedURL { scopedURL in
@@ -207,10 +207,22 @@ extension LocalFolder {
                     let p = Group(name: url.lastPathComponent, context: context)
                     _ = try folder.importToGroup(
                         context: context,
+                        delete: false,
                         // animation: animation,
                         parentGroup: p
                     )
                     (parentGroup ?? rootGroup)?.addToChildren(p)
+                }
+            }
+            
+            if delete {
+                let fileCoordinator = NSFileCoordinator()
+                fileCoordinator.coordinate(
+                    writingItemAt: scopedURL,
+                    options: .forMoving,
+                    error: nil
+                ) { url in
+                    try? FileManager.default.trashItem(at: url, resultingItemURL: nil)
                 }
             }
             

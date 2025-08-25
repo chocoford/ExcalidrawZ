@@ -8,6 +8,8 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+import ChocofordUI
+
 extension UTType {
     static let excalidrawGroupRow = UTType("com.chocoford.excalidrawGroupRow")!
 }
@@ -70,10 +72,21 @@ struct GroupRowDropModifier: ViewModifier {
     ]
     var dropTarget: (ItemDragState.DragItem) -> ItemDragState.GroupDropTarget
 
+    var ancestors: Set<Group> {
+        var result = Set<Group>()
+        var current: Group? = group
+        while let parent = current?.parent {
+            result.insert(parent)
+            current = parent
+        }
+        return result
+    }
     
     @State private var folderWillBeImported: NSManagedObjectID?
     @State private var localFileWillBeImported: URL?
     
+    @State private var importFolderSuccessCallback: ((Bool) -> Void)?
+    @State private var importLocalFileSuccessCallback: ((Bool) -> Void)?
     
     func body(content: Content) -> some View {
         content
@@ -87,29 +100,35 @@ struct GroupRowDropModifier: ViewModifier {
                         : nil
                     },
                     onDrop: { item in
-                        if case .file = item {
-                            fileState.expandToGroup(group.objectID)
-                        } else if group.groupType != .trash {
-                            fileState.expandToGroup(group.objectID)
-                        } else {
-                            return
+                        Task {
+                            let success: Bool = await {
+                                switch item {
+                                    case .group(let groupID):
+                                        return await self.handleDropGroup(id: groupID, context: viewContext)
+                                    case .file(let fileID):
+                                        return await self.handleDropFile(id: fileID, context: viewContext)
+                                    case .localFolder(let folderID):
+                                        return await self.handleImportFolder(id: folderID)
+                                    case .localFile(let url):
+                                        return await self.handleImportFile(url: url)
+                                }
+                            }()
+                            
+                            if success {
+                                if case .file = item {
+                                    fileState.expandToGroup(group.objectID)
+                                } else if group.groupType != .trash {
+                                    fileState.expandToGroup(group.objectID)
+                                } else {
+                                    return
+                                }
+                            }
                         }
                         
-                        switch item {
-                            case .group(let groupID):
-                                self.handleDropGroup(id: groupID)
-                            case .file(let fileID):
-                                self.handleDropFile(id: fileID)
-                            case .localFolder(let folderID):
-                                self.handleImportFolder(id: folderID)
-                            case .localFile(let url):
-                                self.handleImportFile(url: url)
-                        }
                     }
                 )
             )
-            .confirmationDialog(
-                "Import Folder",
+            .sheet(
                 isPresented: Binding {
                     folderWillBeImported != nil
                 } set: { val in
@@ -118,16 +137,21 @@ struct GroupRowDropModifier: ViewModifier {
                     }
                 }
             ) {
-                Button {
-                    performImportFolder(id: folderWillBeImported!)
-                } label: {
-                    Text(.localizable(.generalButtonConfirm))
+                DropToGroupSheetView(
+                    object: folderWillBeImported!,
+                    title: "Import Folder",
+                    message: "This will import the folder and all its contents into this group, and it will be synced with iCloud.",
+                    deleteOldSourceLabel: "Also delete the original folder"
+                ) { folder, delete in
+                    Task {
+                        let success = await performImportFolder(id: folder, delete: delete, context: viewContext)
+                        self.importFolderSuccessCallback?(success)
+                    }
+                } onCancel: {
+                    self.importFolderSuccessCallback?(false)
                 }
-            } message: {
-                Text("This will import the folder and all its contents into this group, and it will be synced with iCloud.")
             }
-            .confirmationDialog(
-                "Import Local Files",
+            .sheet(
                 isPresented: Binding {
                     localFileWillBeImported != nil
                 } set: { val in
@@ -136,107 +160,238 @@ struct GroupRowDropModifier: ViewModifier {
                     }
                 }
             ) {
-                Button {
-                    performImportFile(url: localFileWillBeImported!)
-                } label: {
-                    Text(.localizable(.generalButtonConfirm))
+                DropToGroupSheetView(
+                    object: localFileWillBeImported!,
+                    title: "Import Local Files",
+                    message: "This will import the folder and all its contents into this group, and it will be synced with iCloud.",
+                    deleteOldSourceLabel: "Also delete the original file"
+                ) { file, delete in
+                    Task {
+                        let success = await performImportFile(url: file, delete: delete, context: viewContext)
+                        self.importLocalFileSuccessCallback?(success)
+                    }
+                } onCancel: {
+                    self.importLocalFileSuccessCallback?(false)
                 }
-            } message: {
-                Text("This will import the file into this group.")
             }
     }
     
     
     
-    private func handleDropFile(id fileID: NSManagedObjectID) {
+    private func handleDropFile(id fileID: NSManagedObjectID, context: NSManagedObjectContext) async -> Bool {
         // add files to Group
         // or move files to trash
-        Task {
-            do {
-                try await viewContext.perform {
-                    guard let file = viewContext.object(with: fileID) as? File else { return }
-                    
-                    if group.groupType == .trash {
-                        file.inTrash = true
-                    } else {
-                        group.addToFiles(file)
-                        file.rank = Int64((group.files?.count ?? 1) - 1)
-                    }
-                    
-                    try viewContext.save()
+        do {
+            try await viewContext.perform {
+                guard let file = context.object(with: fileID) as? File else { return }
+                
+                if group.groupType == .trash && !file.inTrash ||
+                    group.groupType != .trash && file.group == self.group { return }
+                
+                if group.groupType == .trash {
+                    file.inTrash = true
+                } else {
+                    group.addToFiles(file)
+                    file.rank = Int64((group.files?.count ?? 1) - 1)
                 }
-            } catch {
-                alertToast(error)
+                
+                try context.save()
             }
+            return true
+        } catch {
+            alertToast(error)
         }
+        return false
     }
     
-    private func handleDropGroup(id groupID: NSManagedObjectID) {
-        if group.groupType == .trash { return }
-        if groupID == group.objectID { return }
-        Task {
-            do {
-                try await viewContext.perform {
-                    guard let group = viewContext.object(with: groupID) as? Group else { return }
-                    self.group.addToChildren(group)
-                    
-                    group.rank = Int64((self.group.children?.count ?? 1) - 1)
-                    
-                    try viewContext.save()
-                }
-            } catch {
-                alertToast(error)
+    private func handleDropGroup(id groupID: NSManagedObjectID, context: NSManagedObjectContext) async -> Bool {
+        if group.groupType == .trash { return false }
+        if groupID == group.objectID { return false }
+        if ancestors.contains(where: {$0.objectID == groupID}) { return false }
+        do {
+            return try await context.perform {
+                guard let group = context.object(with: groupID) as? Group else { return false }
+                
+                if group == self.group { return false }
+                
+                self.group.addToChildren(group)
+                
+                group.rank = Int64((self.group.children?.count ?? 1) - 1)
+                
+                try context.save()
+                
+                return true
             }
+        } catch {
+            alertToast(error)
         }
+        return false
     }
     
-    private func handleImportFolder(id folderID: NSManagedObjectID) {
-        if group.groupType == .trash { return }
+    private func handleImportFolder(id folderID: NSManagedObjectID) async -> Bool {
+        if group.groupType == .trash { return false }
         folderWillBeImported = folderID
-    }
-    
-    private func performImportFolder(id folderID: NSManagedObjectID) {
-        Task {
-            do {
-                try await viewContext.perform {
-                    guard let folder = viewContext.object(with: folderID) as? LocalFolder else { return }
-                    
-                    let group = try folder.importToGroup(context: viewContext)
-                    group.parent = self.group
-                    
-                    withAnimation(.smooth) {
-                        viewContext.insert(group)
-                    }
-                    
-                    try viewContext.save()
+        
+        return await withCheckedContinuation { continuation in
+            self.importFolderSuccessCallback = {
+                continuation.resume(returning: $0)
+                DispatchQueue.main.async {
+                    self.importFolderSuccessCallback = nil
                 }
-            } catch {
-                alertToast(error)
             }
         }
     }
     
-    private func handleImportFile(url: URL) {
-        if group.groupType == .trash { return }
-        localFileWillBeImported = url
+    private func performImportFolder(
+        id folderID: NSManagedObjectID,
+        delete: Bool,
+        context: NSManagedObjectContext
+    ) async -> Bool {
+        do {
+            return try await context.perform {
+                guard let folder = viewContext.object(with: folderID) as? LocalFolder else { return false }
+                
+                let group = try folder.importToGroup(context: viewContext, delete: delete)
+                group.parent = self.group
+                
+                withAnimation(.smooth) {
+                    context.insert(group)
+                }
+                
+                try context.save()
+                
+                return true
+            }
+        } catch {
+            alertToast(error)
+        }
+        return false
     }
     
-    private func performImportFile(url: URL) {
+    private func handleImportFile(url: URL) async -> Bool {
+        if group.groupType == .trash { return false }
+        localFileWillBeImported = url
+        
+        return await withCheckedContinuation { continuation in
+            self.importLocalFileSuccessCallback = {
+                continuation.resume(returning: $0)
+                DispatchQueue.main.async {
+                    self.importLocalFileSuccessCallback = nil
+                }
+            }
+        }
+    }
+    
+    private func performImportFile(url: URL, delete: Bool, context: NSManagedObjectContext) async -> Bool {
         // import file to this group
-        Task {
-            do {
-                try await viewContext.perform {
-                    let file = try File(url: url, context: viewContext)
-                    file.group = self.group
-                    
-                    withAnimation(.smooth) {
-                        viewContext.insert(file)
+        do {
+            return try await context.perform {
+                let file = try File(url: url, context: context)
+                file.group = self.group
+                
+                withAnimation(.smooth) {
+                    context.insert(file)
+                }
+                
+                try context.save()
+                
+                if delete {
+                    try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+                }
+                return true
+            }
+        } catch {
+            alertToast(error)
+        }
+        return false
+    }
+}
+
+
+struct DropToGroupSheetView<T>: View {
+    @AppStorage("AlsoDeleteOldFileOnImport") private var alsoDeleteOldFileOnImport = false
+    
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.isPresented) private var isPresented
+    
+    var object: T
+    var title: String
+    var message: String
+    var deleteOldSourceLabel: String
+    var onConfirm: (_ object: T, _ delete: Bool) -> Void
+    var onCancel: () -> Void
+    
+    init(
+        object: T,
+        title: String,
+        message: String,
+        deleteOldSourceLabel: String,
+        onConfirm: @escaping (_ object: T, _ delete: Bool) -> Void,
+        onCancel: @escaping () -> Void = {}
+    ) {
+        self.object = object
+        self.title = title
+        self.message = message
+        self.deleteOldSourceLabel = deleteOldSourceLabel
+        self.onConfirm = onConfirm
+        self.onCancel = onCancel
+    }
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            Text(title)
+                .font(.title2.bold())
+            
+            Text(message)
+                .multilineTextAlignment(.center)
+            
+            Toggle(deleteOldSourceLabel, isOn: $alsoDeleteOldFileOnImport)
+
+            HStack(spacing: 10) {
+                if #available(iOS 26.0, macOS 26.0, *) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text(.localizable(.generalButtonCancel))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonBorderShape(.capsule)
+
+                    Button {
+                        onConfirm(object, alsoDeleteOldFileOnImport)
+                        dismiss()
+                    } label: {
+                        Text(.localizable(.generalButtonConfirm))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.glassProminent)
+                    .buttonBorderShape(.capsule)
+                } else {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text(.localizable(.generalButtonCancel))
+                            .frame(maxWidth: .infinity)
                     }
                     
-                    try viewContext.save()
+                    Button {
+                        onConfirm(object, alsoDeleteOldFileOnImport)
+                        dismiss()
+                    } label: {
+                        Text(.localizable(.generalButtonConfirm))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
-            } catch {
-                alertToast(error)
+            }
+            .controlSize(.large)
+        }
+        .padding(20)
+        .frame(width: 360)
+        .watchImmediately(of: isPresented) { val in
+            print("isPresented: \(val)")
+            if val {
+                
             }
         }
     }

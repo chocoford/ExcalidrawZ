@@ -86,7 +86,11 @@ extension Group {
         }
     }
     
-    func delete(context: NSManagedObjectContext, save: Bool = true) throws {
+    func delete(
+        context: NSManagedObjectContext,
+        forcePermanently: Bool = false,
+        save: Bool = true
+    ) throws {
         if groupType == .trash {
             // empty trash
             let fetchRequest = NSFetchRequest<File>(entityName: "File")
@@ -107,7 +111,11 @@ extension Group {
             )
             for file in try context.fetch(fetchRequest) {
                 file.group = defaultGroup
-                try file.delete(context: context, save: false)
+                try file.delete(
+                    context: context,
+                    forcePermanently: forcePermanently,
+                    save: false
+                )
             }
             
             // delete sub groups

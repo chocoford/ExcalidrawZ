@@ -72,7 +72,11 @@ struct HomeFolderItemView: View {
                     
                 } else {
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(.background)
+                        .fill(
+                            isHighlighted
+                            ? AnyShapeStyle(Color.accentColor)
+                            : AnyShapeStyle(BackgroundStyle())
+                        )
                         .shadow(
                             color: colorScheme == .light
                             ? Color.gray.opacity(0.2)
@@ -98,12 +102,11 @@ struct HomeFolderItemDropModifier<HomeGroup: ExcalidrawGroup>: ViewModifier {
     var group: HomeGroup
     
     func body(content: Content) -> some View {
-        
         if let group = group as? Group {
             content
                 .modifier(
                     GroupRowDropModifier(group: group) { item in
-                            .exact(item)
+                            .below(item)
                     }
                 )
         } else if let folder = group as? LocalFolder {
@@ -111,7 +114,7 @@ struct HomeFolderItemDropModifier<HomeGroup: ExcalidrawGroup>: ViewModifier {
                 .modifier(LocalFolderDropModifier(
                     folder: folder,
                     dropTarget: { item in
-                            .exact(item)
+                            .below(item)
                     }
                 ))
         }

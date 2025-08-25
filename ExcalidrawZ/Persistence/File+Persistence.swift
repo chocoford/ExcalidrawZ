@@ -112,9 +112,10 @@ extension File {
     
     func delete(
         context: NSManagedObjectContext,
+        forcePermanently: Bool = false,
         save: Bool = true
     ) throws {
-        if inTrash {
+        if inTrash || forcePermanently {
             let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(
                 entityName: "FileCheckpoint"
             )

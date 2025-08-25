@@ -215,10 +215,10 @@ struct GroupsView: View {
                     : AnyShapeStyle(HierarchicalShapeStyle.primary)
                 )
                 .background {
-                    if canDropToGroup {
+                    if canDropToGroup || canDropBelowGroup && !isExpanded {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color.accentColor)
-                    } else if canDropBelowGroup {
+                    } else if canDropBelowGroup && isExpanded {
                         UnevenRoundedRectangle(
                             cornerRadii: .init(
                                 topLeading: 12,
@@ -240,7 +240,7 @@ struct GroupsView: View {
             }
         }
         .background {
-            if canDropBelowGroup {
+            if canDropBelowGroup && isExpanded {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color.accentColor.opacity(0.2))
             }

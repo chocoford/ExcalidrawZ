@@ -284,6 +284,9 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 .onTapGesture {
                     selection = nil
                 }
+                .modifier(
+                    HomeFolderItemDropModifier(group: group)
+                )
         }
         .readHeight($scrollViewHeight)
     }
@@ -417,9 +420,9 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                         isSelected: selection == group.objectID.description,
                         isHighlighted: {
                             if let group = group as? Group {
-                                return dragState.currentDropGroupTarget == .exact(.group(group.objectID))
+                                return dragState.currentDropGroupTarget == .below(.group(group.objectID)) || dragState.currentDropGroupTarget == .exact(.group(group.objectID))
                             } else if let folder = group as? LocalFolder {
-                                return dragState.currentDropGroupTarget == .exact(.localFolder(folder.objectID))
+                                return dragState.currentDropGroupTarget == .below(.localFolder(folder.objectID)) || dragState.currentDropGroupTarget == .exact(.localFolder(folder.objectID))
                             } else {
                                 return false
                             }
