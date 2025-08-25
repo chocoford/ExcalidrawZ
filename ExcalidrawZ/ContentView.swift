@@ -29,7 +29,7 @@ struct ContentView: View {
     @StateObject private var exportState = ExportState()
     @StateObject private var layoutState = LayoutState()
     @StateObject private var shareFileState = ShareFileState()
-    
+
 #if canImport(AppKit)
     @State private var window: NSWindow?
 #elseif canImport(UIKit)
@@ -57,6 +57,7 @@ struct ContentView: View {
             .environmentObject(exportState)
             .environmentObject(layoutState)
             .environmentObject(shareFileState)
+            .modifier(DragStateModifier())
             .swiftyAlert(logs: true)
             .bindWindow($window)
             .containerSizeClassInjection()

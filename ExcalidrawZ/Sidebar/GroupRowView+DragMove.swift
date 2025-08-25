@@ -34,7 +34,7 @@ struct GroupRowDragDropModifier: ViewModifier {
 }
 
 struct GroupRowDragModifier: ViewModifier {
-    @EnvironmentObject private var sidebarDragState: SidebarDragState
+    @EnvironmentObject private var sidebarDragState: ItemDragState
 
     var group: Group
 
@@ -59,7 +59,7 @@ struct GroupRowDropModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var sidebarDragState: SidebarDragState
+    @EnvironmentObject private var sidebarDragState: ItemDragState
 
     var group: Group
     var allow: [UTType] = [
@@ -68,7 +68,7 @@ struct GroupRowDropModifier: ViewModifier {
         .excalidrawLocalFolderRow,
         .fileURL
     ]
-    var dropTarget: (SidebarDragState.DragItem) -> SidebarDragState.GroupDropTarget
+    var dropTarget: (ItemDragState.DragItem) -> ItemDragState.GroupDropTarget
 
     
     @State private var folderWillBeImported: NSManagedObjectID?
@@ -87,8 +87,6 @@ struct GroupRowDropModifier: ViewModifier {
                         : nil
                     },
                     onDrop: { item in
-                        NotificationCenter.default.post(name: .didDropFileRow, object: nil)
-
                         if case .file = item {
                             fileState.expandToGroup(group.objectID)
                         } else if group.groupType != .trash {

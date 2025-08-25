@@ -128,8 +128,7 @@ struct GroupListView: View {
                             TemporaryGroupRowView()
                         }
                     }
-                    
-                    
+
                     Divider()
                     
                     // iCloud
@@ -168,7 +167,6 @@ struct GroupListView: View {
                     .buttonStyle(.text(size: .small, square: true))
             }
         }
-        .fileListDropFallback()
 #if os(macOS)
         .background {
             Color.clear

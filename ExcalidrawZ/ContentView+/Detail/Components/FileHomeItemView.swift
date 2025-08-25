@@ -72,7 +72,7 @@ struct FileHomeItemView: View {
             }
         }
     }
-    
+
     init<Label: View>(
         file: FileState.ActiveFile,
         isSelected: Binding<Bool>,
@@ -81,17 +81,16 @@ struct FileHomeItemView: View {
         self.init(file: file, isSelected: isSelected)
         self.customLabel = AnyView(customLabel())
     }
-    
-    
+
     @State private var coverImage: Image? = nil
-    
+
     @State private var width: CGFloat?
     @State private var isHovered = false
-    
+
     static let roundedCornerRadius: CGFloat = 12
-    
+
     let cache = FileItemPreviewCache.shared
-    
+
     var body: some View {
         VStack(spacing: 0) {
             if let coverImage {
@@ -160,7 +159,6 @@ struct FileHomeItemView: View {
                         ? colorScheme == .light ? 2 : 6
                         : 0
                     )
-                
             } else {
                 RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
                     .fill(.background)
@@ -192,6 +190,7 @@ struct FileHomeItemView: View {
                 .modifier(FileHomeItemContextMenuModifier(file: file))
                 .onHover { isHovered = $0 }
         }
+        .modifier(FileHomeItemDragModifier(file: file))
         .opacity(fileHomeItemTransitionState.shouldHideItem == fileID ? 0 : 1)
         .animation(.smooth(duration: 0.2), value: isHovered)
         .onChange(of: file) { newValue in
@@ -210,7 +209,7 @@ struct FileHomeItemView: View {
             }
         }
     }
-    
+
     private func getElementsImage() {
         if let excalidrawFile = excalidrawFileGetter(file, viewContext) {
             Task {
@@ -235,7 +234,7 @@ struct FileHomeItemView: View {
             }
         }
     }
-    
+
     private func openFile() {
         guard isEnabled else { return }
         fileState.currentActiveFile = file
@@ -280,7 +279,7 @@ struct FileHomeItemView: View {
                 fileState.currentActiveGroup = .collaboration
         }
     }
-    
+
     @ViewBuilder
     static func placeholder() -> some View {
         ViewSizeReader { size in
@@ -297,10 +296,11 @@ struct FileHomeItemView: View {
             }
         }
     }
+
 }
 
 
-struct FileHomeItemContextMenuModifier: ViewModifier {
+private struct FileHomeItemContextMenuModifier: ViewModifier {
     var file: FileState.ActiveFile
     
     func body(content: Content) -> some View {
@@ -319,5 +319,67 @@ struct FileHomeItemContextMenuModifier: ViewModifier {
                     .modifier(CollaborationFileContextMenuModifier(file: collaborationFile))
         }
             
+    }
+}
+
+private struct FileHomeItemDragModifier: ViewModifier {
+    var file: FileState.ActiveFile
+    
+    func body(content: Content) -> some View {
+        switch file {
+            case .file(let file):
+                content
+                    .modifier(FileRowDragModifier(file: file))
+            case .localFile(let url):
+                content
+                    .modifier(LocalFileRowDragDropModifier(file: url))
+            case .temporaryFile(let url):
+                content
+                    .modifier(LocalFileRowDragDropModifier(file: url))
+            case .collaborationFile(let collaborationFile):
+                content
+                    .modifier(FileRowDragModifier(file: collaborationFile))
+                
+        }
+    }
+}
+
+
+private struct DatabaseFileHomeDropContianer<F: ExcalidrawFileRepresentable>: View {
+    var file: F
+    
+    @FetchRequest
+    private var files: FetchedResults<F>
+    
+    var content: (_ files: FetchedResults<F>) -> AnyView
+    
+    
+    init<Content: View>(
+        file: F,
+        @ViewBuilder content: @escaping (_ files: FetchedResults<F>) -> Content
+    ) where F == File {
+        self.file = file
+        self._files = FetchRequest<File>(
+            sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)],
+            predicate: NSPredicate(format: "group == %@", file.group ?? Group()),
+            animation: .smooth
+        )
+        self.content = { AnyView(content($0)) }
+    }
+    
+    init<Content: View>(
+        file: F,
+        @ViewBuilder content: @escaping (_ files: FetchedResults<F>) -> Content
+    ) where F == CollaborationFile {
+        self.file = file
+        self._files = FetchRequest<CollaborationFile>(
+            sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)],
+            animation: .smooth
+        )
+        self.content = { AnyView(content($0)) }
+    }
+    
+    var body: some View {
+        content(files)
     }
 }

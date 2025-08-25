@@ -40,37 +40,15 @@ struct FileRowTransferable: Transferable {
     }
 }
 
-extension Notification.Name {
-    static let didDropFileRow = Notification.Name("DidDropFileRow")
-}
-
 extension UTType {
     static let excalidrawFileRow = UTType("com.chocoford.excalidrawFileRow")!
 }
 
-struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
-    @Environment(\.managedObjectContext) private var viewContext
-    @Environment(\.alertToast) private var alertToast
-    
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var sidebarDragState: SidebarDragState
+struct FileRowDragModifier<DraggableFile: DragMovableFile>: ViewModifier {
+    @EnvironmentObject private var sidebarDragState: ItemDragState
     
     var file: DraggableFile
-    var files: FetchedResults<DraggableFile>
     
-    init(file: File, files: FetchedResults<File>) where DraggableFile == File {
-        self.file = file
-        self.files = files
-    }
-        
-    init(file: CollaborationFile, files: FetchedResults<CollaborationFile>) where DraggableFile == CollaborationFile {
-        self.file = file
-        self.files = files
-    }
-    
-    
-    @State private var localFileWillBeDropped: (URL, SidebarDragState.FileRowDropTarget)? = nil
-
     func body(content: Content) -> some View {
         content
             .opacity(sidebarDragState.currentDragItem == .file(file.objectID) ? 0.3 : 1)
@@ -83,6 +61,41 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
                     typeIdentifier: UTType.excalidrawFileRow.identifier
                 )
             }
+    }
+}
+
+struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
+    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.alertToast) private var alertToast
+    
+    @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var sidebarDragState: ItemDragState
+    
+    var file: DraggableFile
+    var files: FetchedResults<DraggableFile>
+    
+    init(
+        file: File,
+        sameGroupFiles files: FetchedResults<File>,
+    ) where DraggableFile == File {
+        self.file = file
+        self.files = files
+    }
+        
+    init(
+        file: CollaborationFile,
+        allCollaborationFiles files: FetchedResults<CollaborationFile>
+    ) where DraggableFile == CollaborationFile {
+        self.file = file
+        self.files = files
+    }
+    
+    
+    @State private var localFileWillBeDropped: (URL, ItemDragState.FileRowDropTarget)? = nil
+
+    func body(content: Content) -> some View {
+        content
+            .modifier(FileRowDragModifier(file: file))
             .overlay {
                 let canDrop = if case .file = sidebarDragState.currentDragItem {
                     true
@@ -114,7 +127,7 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
                                     },
                                     onDrop: { item in
                                         if let index = files.firstIndex(of: file) {
-                                            let dropTarget: SidebarDragState.FileRowDropTarget = {
+                                            let dropTarget: ItemDragState.FileRowDropTarget = {
                                                 if index > 0 {
                                                     return .after(.file(files[index-1].objectID))
                                                 } else if let group = file.group {
@@ -216,7 +229,7 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
     /// Drop to the position before the target file.
     private func sortFiles<DragFile: DragMovableFile>(
         draggedItemID draggedObjectID: NSManagedObjectID,
-        droppedTargt target: SidebarDragState.FileRowDropTarget,
+        droppedTargt target: ItemDragState.FileRowDropTarget,
         files allFiles: [DragFile],
         context: NSManagedObjectContext,
         completionHandler: (() -> Void)? = nil
@@ -329,7 +342,7 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
         }
     }
     
-    private func performDropLocalFile(payload: (URL, SidebarDragState.FileRowDropTarget)) {
+    private func performDropLocalFile(payload: (URL, ItemDragState.FileRowDropTarget)) {
         let (url, dropTarget) = payload
         do {
             let newFile = try File(url: url, context: viewContext)
@@ -350,70 +363,6 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
 
 fileprivate struct NotFoundError: Error {}
 
-
-struct FileRowDropDelegate<File: DragMovableFile>: DropDelegate {
-    let item: File
-    // @Binding var sortField: ExcalidrawFileSortField
-    // var sortFilesCallback: (_ draggedID: NSManagedObjectID, _ targetID: NSManagedObjectID) -> Void
-    var onEntered: () -> Void
-    var onLeave: () -> Void
-    var onDrop: (_ draggedItemID: NSManagedObjectID) -> Void
-
-    let context = PersistenceController.shared.container.viewContext
-    
-    @State private var draggedFileID: NSManagedObjectID?
-    
-    func dropEntered(info: DropInfo) { onEntered() }
-    func dropExited(info: DropInfo) { onLeave() }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        return DropProposal(operation: .move)
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        NotificationCenter.default.post(name: .didDropFileRow, object: nil)
-        let container = PersistenceController.shared.container
-        for provider in info.itemProviders(for: [UTType.excalidrawFileRow]) {
-            provider.loadItem(
-                forTypeIdentifier: UTType.excalidrawFileRow.identifier
-            ) { item, error in
-                if let error {
-                    print(error)
-                    return
-                }
-                guard let data = item as? Data,
-                      let url = URL(dataRepresentation: data, relativeTo: nil) else {
-                    return
-                }
-                print("Load Item: \(url)")
-                guard url.scheme == "x-coredata",
-                      let draggedObjectID = container.persistentStoreCoordinator.managedObjectID(forURIRepresentation: url) else {
-                    return
-                }
-                onDrop(draggedObjectID)
-            }
-        }
-        
-        return true
-    }
-    
-    
-}
-
-// only for cancel
-struct FileListDropDelegate: DropDelegate {
-    func dropExited(info: DropInfo) {
-        NotificationCenter.default.post(name: .didDropFileRow, object: nil)
-    }
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
-    }
-    func performDrop(info: DropInfo) -> Bool {
-        NotificationCenter.default.post(name: .didDropFileRow, object: nil)
-        return true
-    }
-}
-
 struct DropTargetPlaceholder: View {
     @Environment(\.diclosureGroupDepth) private var depth
 
@@ -428,12 +377,5 @@ struct DropTargetPlaceholder: View {
         }
         .frame(height: 5)
         .padding(.leading, 14 + CGFloat(depth+1) * 8)
-    }
-}
-
-extension View {
-    @MainActor @ViewBuilder
-    func fileListDropFallback() -> some View {
-        onDrop(of: [.url], delegate: FileListDropDelegate())
     }
 }

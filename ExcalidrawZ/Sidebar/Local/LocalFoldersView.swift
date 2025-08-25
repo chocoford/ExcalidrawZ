@@ -16,7 +16,7 @@ struct LocalFoldersView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var sidebarDragState: SidebarDragState
+    @EnvironmentObject private var sidebarDragState: ItemDragState
     
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField

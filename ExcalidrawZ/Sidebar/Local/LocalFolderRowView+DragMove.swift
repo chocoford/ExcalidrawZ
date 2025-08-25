@@ -30,7 +30,7 @@ struct LocalFolderRowDragDropModifier: ViewModifier {
 }
 
 struct LocalFolderDragModifier: ViewModifier {
-    @EnvironmentObject private var sidebarDragState: SidebarDragState
+    @EnvironmentObject private var sidebarDragState: ItemDragState
 
     var folder: LocalFolder
 
@@ -54,11 +54,11 @@ struct LocalFolderDropModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
     
     @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var sidebarDragState: SidebarDragState
+    @EnvironmentObject private var sidebarDragState: ItemDragState
     @EnvironmentObject private var localFolderState: LocalFolderState
     
     var folder: LocalFolder
-    var dropTarget: (SidebarDragState.DragItem) -> SidebarDragState.GroupDropTarget
+    var dropTarget: (ItemDragState.DragItem) -> ItemDragState.GroupDropTarget
     
     @State private var groupIDWillBeDropped: NSManagedObjectID?
     @State private var fileIDWillBeDropped: NSManagedObjectID?

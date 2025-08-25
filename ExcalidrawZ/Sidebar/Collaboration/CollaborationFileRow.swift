@@ -98,7 +98,7 @@ struct CollaborationFileRow: View {
                 .font(.footnote)
             }
         }
-        .modifier(FileRowDragDropModifier(file: file, files: collaborationFiles))
+        .modifier(FileRowDragDropModifier(file: file, allCollaborationFiles: collaborationFiles))
         .modifier(CollaborationFileContextMenuModifier(file: file))
     }
 }

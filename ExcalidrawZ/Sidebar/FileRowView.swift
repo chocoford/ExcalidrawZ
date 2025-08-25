@@ -20,6 +20,11 @@ struct FileRowView: View {
     var file: File
     var files: FetchedResults<File>
     
+    init(file: File, sameGroupFiles files: FetchedResults<File>) {
+        self.file = file
+        self.files = files
+    }
+    
     @FetchRequest(
         sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],
         predicate: NSPredicate(format: "parent = nil"),
@@ -86,7 +91,7 @@ struct FileRowView: View {
             activeFile(file)
 #endif
         }
-        .modifier(FileRowDragDropModifier(file: file, files: files))
+        .modifier(FileRowDragDropModifier(file: file, sameGroupFiles: files))
         .modifier(FileContextMenuModifier(file: file))
     }
     

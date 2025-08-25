@@ -10,7 +10,7 @@ import UniformTypeIdentifiers
 
 protocol SidebarRowDropable: DropDelegate { }
 extension SidebarRowDropable {
-    func handleDrop(info: DropInfo, onDrop: @escaping (SidebarDragState.DragItem) -> Void) {
+    func handleDrop(info: DropInfo, onDrop: @escaping (ItemDragState.DragItem) -> Void) {
         Task {
             for provider in info.itemProviders(
                 for: [
@@ -70,7 +70,7 @@ extension SidebarRowDropable {
 
 struct SidebarRowDropDelegate: SidebarRowDropable {
     var onTargeted: (_ isTargeted: Bool) -> Void
-    var onDrop: (SidebarDragState.DragItem) -> Void
+    var onDrop: (ItemDragState.DragItem) -> Void
     
     func dropEntered(info: DropInfo) {
         onTargeted(true)
@@ -98,11 +98,11 @@ struct SidebarRowDropDelegate: SidebarRowDropable {
 
 
 struct SidebarRowDropModifier: ViewModifier {
-    @EnvironmentObject private var sidebarDragState: SidebarDragState
+    @EnvironmentObject private var sidebarDragState: ItemDragState
     
     var allow: [UTType]
     var onTargeted: (_ isTargeted: Bool) -> Void
-    var onDrop: (SidebarDragState.DragItem) -> Void
+    var onDrop: (ItemDragState.DragItem) -> Void
 
     func body(content: Content) -> some View {
         content
@@ -111,10 +111,7 @@ struct SidebarRowDropModifier: ViewModifier {
                 delegate: SidebarRowDropDelegate(
                     onTargeted: onTargeted,
                     onDrop: { item in
-                        sidebarDragState.currentDragItem = nil
-                        sidebarDragState.currentDropFileRowTarget = nil
-                        sidebarDragState.currentDropGroupTarget = nil
-                        
+                        sidebarDragState.reset()
                         self.onDrop(item)
                     }
                 )

@@ -17,7 +17,7 @@ struct GroupsView: View {
 
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var sidebarDragState: SidebarDragState
+    @EnvironmentObject var sidebarDragState: ItemDragState
 
     var group: Group
     var sortField: ExcalidrawFileSortField

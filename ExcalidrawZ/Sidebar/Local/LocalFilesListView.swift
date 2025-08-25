@@ -235,7 +235,7 @@ struct LocalFilesListContentView: View {
 
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var localFolderState: LocalFolderState
-    @EnvironmentObject private var sidebarDragState: SidebarDragState
+    @EnvironmentObject private var sidebarDragState: ItemDragState
 
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField

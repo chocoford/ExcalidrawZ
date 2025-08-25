@@ -171,7 +171,8 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
 
-    @EnvironmentObject var fileState: FileState
+    @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var dragState: ItemDragState
 
     var group: HomeGroup
     var parentGroups: [HomeGroup]
@@ -414,6 +415,15 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 ForEach(childGroups) { group in
                     HomeFolderItemView(
                         isSelected: selection == group.objectID.description,
+                        isHighlighted: {
+                            if let group = group as? Group {
+                                return dragState.currentDropGroupTarget == .exact(.group(group.objectID))
+                            } else if let folder = group as? LocalFolder {
+                                return dragState.currentDropGroupTarget == .exact(.localFolder(folder.objectID))
+                            } else {
+                                return false
+                            }
+                        }(),
                         name: group.name ?? String(localizable: .generalUntitled),
                         itemsCount: group.filesCount,
                     )
@@ -425,6 +435,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                     .simultaneousGesture(TapGesture().onEnded {
                         selection = group.objectID.description
                     })
+                    .modifier(HomeFolderItemDropModifier(group: group))
                 }
             }
             

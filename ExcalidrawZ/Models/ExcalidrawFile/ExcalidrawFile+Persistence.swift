@@ -8,7 +8,7 @@
 import Foundation
 import CoreData
 
-protocol ExcalidrawFileRepresentable {
+protocol ExcalidrawFileRepresentable: NSManagedObject {
     var id: UUID? { get }
     var content: Data? { get }
     var name: String? { get }

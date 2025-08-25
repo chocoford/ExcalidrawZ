@@ -79,16 +79,12 @@ struct HomeView: View {
             .overlay {
                 content()
             }
-            .onChange(of: scenePhase) { _ in
-                getRecentlyFiles()
-            }
     }
     
     @MainActor @ViewBuilder
     private func content() -> some View {
         ZStack {
             VStack(spacing: 30) {
-                
                 Text("Welcome to ExcalidrawZ")
                     .font(.largeTitle)
                 
@@ -231,6 +227,9 @@ struct HomeView: View {
                         }
                     }
                 }
+            }
+            .onChange(of: scenePhase) { _ in
+                getRecentlyFiles()
             }
             .onAppear {
                 getRecentlyFiles()

@@ -27,7 +27,6 @@ struct CollaborationFilesList: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 12)
-        .fileListDropFallback()
     }
 }
 
@@ -66,7 +65,6 @@ struct CollaborationFilesContent: View {
                 CollaborationFileRow(file: file, files: collaborationFiles)
             }
         }
-        .fileListDropFallback()
         // ⬇️ cause `com.apple.SwiftUI.AsyncRenderer (22): EXC_BREAKPOINT` on iOS
         // .animation(.smooth, value: files)
     }

@@ -22,8 +22,7 @@ struct SidebarView: View {
     
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var fileState: FileState
-
-    @StateObject private var dragState = SidebarDragState()
+    @EnvironmentObject var dragState: ItemDragState
 
     var body: some View {
         if #available(macOS 26.0, *) {
@@ -50,37 +49,10 @@ struct SidebarView: View {
             .background {
                 Color.clear.contentShape(Rectangle())
                     .simultaneousGesture(TapGesture().onEnded {
-                        dragState.currentDragItem = nil
-                        dragState.currentDropFileRowTarget = nil
+                        dragState.reset()
                     })
             }
-            .environmentObject(dragState)
     }
-}
-
-class SidebarDragState: ObservableObject {
-    
-    enum DragItem: Hashable {
-        case group(NSManagedObjectID)
-        case file(NSManagedObjectID)
-        case localFolder(NSManagedObjectID)
-        case localFile(URL)
-    }
-    
-    @Published var currentDragItem: DragItem?
-    
-    enum FileRowDropTarget: Equatable {
-        case after(DragItem)
-        case startOfGroup(DragItem)
-    }
-    @Published var currentDropFileRowTarget: FileRowDropTarget?
-    
-    enum GroupDropTarget: Equatable {
-        case exact(DragItem)
-        case below(DragItem)
-    }
-    
-     @Published var currentDropGroupTarget: GroupDropTarget?
 }
 
 #Preview {

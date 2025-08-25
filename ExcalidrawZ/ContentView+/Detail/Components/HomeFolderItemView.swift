@@ -10,9 +10,11 @@ import ChocofordUI
 
 struct HomeFolderItemView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject var fileState: FileState
+    @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var dragState: ItemDragState
 
     var isSelected: Bool
+    var isHighlighted: Bool
     var name: String
     var itemsCount: Int
     
@@ -47,7 +49,9 @@ struct HomeFolderItemView: View {
                 if #available(macOS 26.0, iOS 26.0, *) {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(
-                            colorScheme == .light
+                            isHighlighted
+                            ? AnyShapeStyle(Color.accentColor)
+                            : colorScheme == .light
                             ? AnyShapeStyle(HierarchicalShapeStyle.secondary)
                             : AnyShapeStyle(Color.clear)
                         )
@@ -84,8 +88,33 @@ struct HomeFolderItemView: View {
                         )
                 }
             }
-            
         }
         .animation(.smooth(duration: 0.2), value: isHovered)
+    }
+}
+
+
+struct HomeFolderItemDropModifier<HomeGroup: ExcalidrawGroup>: ViewModifier {
+    var group: HomeGroup
+    
+    func body(content: Content) -> some View {
+        
+        if let group = group as? Group {
+            content
+                .modifier(
+                    GroupRowDropModifier(group: group) { item in
+                            .exact(item)
+                    }
+                )
+        } else if let folder = group as? LocalFolder {
+            content
+                .modifier(LocalFolderDropModifier(
+                    folder: folder,
+                    dropTarget: { item in
+                            .exact(item)
+                    }
+                ))
+        }
+        
     }
 }
