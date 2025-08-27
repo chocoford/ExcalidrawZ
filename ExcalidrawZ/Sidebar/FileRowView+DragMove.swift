@@ -51,11 +51,18 @@ struct FileRowDragModifier<DraggableFile: DragMovableFile>: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .opacity(sidebarDragState.currentDragItem == .file(file.objectID) ? 0.3 : 1)
+            .opacity({
+                sidebarDragState.currentDragItem == .file(file.objectID) ||
+                sidebarDragState.currentDragItem == .collaborationFile(file.objectID)
+            }() ? 0.3 : 1)
             .contentShape(Rectangle())
             .onDrag {
                 let url = file.objectID.uriRepresentation()
-                sidebarDragState.currentDragItem = .file(file.objectID)
+                if let file = file as? File {
+                    sidebarDragState.currentDragItem = .file(file.objectID)
+                } else if let file = file as? CollaborationFile {
+                    sidebarDragState.currentDragItem = .collaborationFile(file.objectID)
+                }
                 return NSItemProvider(
                     item: url.dataRepresentation as NSData,
                     typeIdentifier: UTType.excalidrawFileRow.identifier
@@ -92,6 +99,7 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
     
     
     @State private var localFileWillBeDropped: (URL, ItemDragState.FileRowDropTarget)? = nil
+    @State private var collaborationFileWillBeDropped: (NSManagedObjectID, ItemDragState.FileRowDropTarget)? = nil
 
     func body(content: Content) -> some View {
         content
@@ -100,6 +108,10 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
                 let canDrop = if case .file = sidebarDragState.currentDragItem {
                     true
                 } else if case .localFile = sidebarDragState.currentDragItem {
+                    true
+                } else if case .collaborationFile = sidebarDragState.currentDragItem {
+                    true
+                } else if case .temporaryFile = sidebarDragState.currentDragItem  {
                     true
                 } else {
                     false
@@ -146,6 +158,10 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
                                                     )
                                                 case .localFile(let url):
                                                     localFileWillBeDropped = (url, dropTarget)
+                                                case .collaborationFile(let roomID):
+                                                    collaborationFileWillBeDropped = (roomID, dropTarget)
+                                                case .temporaryFile(let url):
+                                                   handleDropTemporaryFile(payload: (url, dropTarget))
                                                 default:
                                                     break
                                             }
@@ -177,16 +193,21 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
                                         }
                                     },
                                     onDrop: { item in
+                                        let dropTarget: ItemDragState.FileRowDropTarget = .after(.file(file.objectID))
                                         switch item {
                                             case .file(let fileID):
                                                 self.sortFiles(
                                                     draggedItemID: fileID,
-                                                    droppedTargt: .after(.file(file.objectID)),
+                                                    droppedTargt: dropTarget,
                                                     files: files.map{$0},
                                                     context: viewContext
                                                 )
                                             case .localFile(let url):
-                                                localFileWillBeDropped = (url, .after(.file(file.objectID)))
+                                                localFileWillBeDropped = (url, dropTarget)
+                                            case .collaborationFile(let roomID):
+                                                collaborationFileWillBeDropped = (roomID, dropTarget)
+                                            case .temporaryFile(let url):
+                                                handleDropTemporaryFile(payload: (url, dropTarget))
                                             default:
                                                 break
                                         }
@@ -206,23 +227,37 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
                     DropTargetPlaceholder()
                 }
             }
-            .confirmationDialog(
-                "Import local file",
+            .sheet(
                 isPresented: Binding {
-                    localFileWillBeDropped != nil
+                    collaborationFileWillBeDropped != nil
                 } set: { val in
-                    if !val { localFileWillBeDropped = nil }
+                    if !val {
+                        collaborationFileWillBeDropped = nil
+                    }
                 }
             ) {
-                Button {
-                    if let localFileWillBeDropped {
-                        performDropLocalFile(payload: localFileWillBeDropped)
-                    }
-                } label: {
-                    Text(.localizable(.generalButtonConfirm))
+                DropToGroupSheetView(
+                    object: collaborationFileWillBeDropped!,
+                    title: "Import collaboration room",
+                    message: "This will import the collaboration room to file stored in database, and it will be synced with iCloud.",
+                    deleteOldSourceLabel: "Also delete the collaboration room after import?",
+                ) { object, delete in
+                    self.perfromDropCollaborationFile(payload: object, delete: delete)
                 }
-            } message: {
-                Text("This will import the local file to database, and it will be synced with iCloud.")
+            }
+            .sheet(isPresented: Binding {
+                localFileWillBeDropped != nil
+            } set: { val in
+                if !val { localFileWillBeDropped = nil }
+            }) {
+                DropToGroupSheetView(
+                    object: localFileWillBeDropped!,
+                    title: "Import local file",
+                    message: "This will import the local file to database, and it will be synced with iCloud.",
+                    deleteOldSourceLabel: "Also delete the local file after import.",
+                ) { object, delete in
+                    self.performDropLocalFile(payload: object, delete: delete)
+                }
             }
     }
     
@@ -289,7 +324,9 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
                             withAnimation {
                                 // Not in Group Drag
                                 for (i, file) in allFiles.enumerated() {
-                                    if i > toIndex {
+                                    if i <= toIndex {
+                                        file.rank = Int64(i)
+                                    } else if i > toIndex {
                                         file.rank = Int64(i+1)
                                     }
                                 }
@@ -342,12 +379,14 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
         }
     }
     
-    private func performDropLocalFile(payload: (URL, ItemDragState.FileRowDropTarget)) {
+    private func performDropLocalFile(payload: (URL, ItemDragState.FileRowDropTarget), delete: Bool) {
         let (url, dropTarget) = payload
         do {
             let newFile = try File(url: url, context: viewContext)
-            viewContext.insert(newFile)
-            try viewContext.save()
+            
+            withAnimation {
+                viewContext.insert(newFile)
+            }
             
             self.sortFiles(
                 draggedItemID: newFile.objectID,
@@ -355,8 +394,89 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
                 files: files.map{$0},
                 context: viewContext
             )
+            
+            if delete {
+                try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+            }
+            
+            try viewContext.save()
+
         } catch {
             alertToast(error)
+        }
+    }
+    
+    private func perfromDropCollaborationFile(payload: (NSManagedObjectID, ItemDragState.FileRowDropTarget), delete: Bool) {
+        let (roomID, dropTarget) = payload
+        guard let collaborationFile = viewContext.object(with: roomID) as? CollaborationFile,
+              let group = file.group else {
+            return
+        }
+        do {
+            try collaborationFile.archiveToLocal(
+                group: .group(group),
+                delete: delete,
+            ) { error, target in
+                switch target {
+                    case .file(_, let fileID):
+                        sortFiles(
+                            draggedItemID: fileID,
+                            droppedTargt: dropTarget,
+                            files: files.map{$0},
+                            context: viewContext
+                        )
+                    default:
+                        break
+                }
+            }
+        } catch {
+            alertToast(error)
+        }
+    }
+    
+    private func handleDropTemporaryFile(payload: (URL, ItemDragState.FileRowDropTarget)) {
+        let (url, dropTarget) = payload
+        guard let group = file.group else { return }
+        let groupID = group.objectID
+        Task.detached {
+            let context = PersistenceController.shared.container.newBackgroundContext()
+
+            do {
+                let fileID = try await context.perform {
+                    let file = try File(url: url, context: context)
+                    let group = context.object(with: groupID) as? Group
+                    file.group = group
+                                        
+                    withAnimation {
+                        context.insert(file)
+                    }
+                    
+                    try context.save()
+                    return file.objectID
+                }
+                
+                await MainActor.run {
+                    sortFiles(
+                        draggedItemID: fileID,
+                        droppedTargt: dropTarget,
+                        files: files.map{$0},
+                        context: viewContext
+                    )
+                    if let file = viewContext.object(with: fileID) as? File {
+                        if fileState.currentActiveFile == .temporaryFile(url) {
+                            fileState.currentActiveFile = .file(file)
+                            fileState.currentActiveGroup = .group(group)
+                        } else if fileState.currentActiveGroup == .temporary, fileState.temporaryFiles == [url] {
+                            fileState.currentActiveFile = .file(file)
+                            fileState.currentActiveGroup = .group(group)
+                        }
+                    }
+                    fileState.temporaryFiles.removeAll { $0 == url }
+                }
+                
+            } catch {
+                await alertToast(error)
+            }
         }
     }
 }

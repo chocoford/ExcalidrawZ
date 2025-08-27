@@ -92,6 +92,10 @@ struct LocalFoldersView: View {
             return true
         } else if case .group = sidebarDragState.currentDragItem {
             return true
+        } else if case .collaborationFile = sidebarDragState.currentDragItem {
+            return true
+        } else if case .temporaryFile = sidebarDragState.currentDragItem {
+            return true
         }
         return false
     }

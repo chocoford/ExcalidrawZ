@@ -97,18 +97,26 @@ struct CollaborationHome: View {
                             ? AnyLayout(VStackLayout(spacing: 10))
                             : AnyLayout(HStackLayout(spacing: 10))
                         ) {
-                            actions()
+                            if #available(macOS 26.0, iOS 26.0, *) {
+                                actions()
+                                    .buttonStyle(.glassProminent)
+                            } else {
+                                actions()
+                                    .buttonStyle(.borderedProminent)
+                            }
                         }
                         .disabled(collaborationState.userCollaborationInfo.username.isEmpty)
                     } else {
                         if collaborationFiles.isEmpty {
                             VStack(spacing: 10) {
                                 actions()
+                                    .buttonStyle(.borderedProminent)
                             }
                             .disabled(collaborationState.userCollaborationInfo.username.isEmpty)
                         } else {
                             HStack(spacing: 10) {
                                 actions()
+                                    .buttonStyle(.borderedProminent)
                             }
                             .disabled(collaborationState.userCollaborationInfo.username.isEmpty)
                         }
@@ -142,8 +150,8 @@ struct CollaborationHome: View {
             Text(.localizable(.collaborationButtonCreateNewRoom))
                 .frame(width: 150)
         }
-        .buttonStyle(.borderedProminent)
         .controlSize(.large)
+
         
         Button {
             if let limit = store.collaborationRoomLimits, collaborationFiles.count >= limit {
@@ -155,8 +163,8 @@ struct CollaborationHome: View {
             Text(.localizable(.collaborationButtonJoinRoom))
                 .frame(width: 150)
         }
-        .buttonStyle(.borderedProminent)
         .controlSize(.large)
+
     }
     
     @MainActor @ViewBuilder

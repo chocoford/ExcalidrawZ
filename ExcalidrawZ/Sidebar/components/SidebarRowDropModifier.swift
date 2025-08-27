@@ -27,7 +27,12 @@ extension SidebarRowDropable {
                    let url = URL(dataRepresentation: data, relativeTo: nil),
                    url.scheme == "x-coredata",
                    let draggedObjectID = PersistenceController.shared.container.persistentStoreCoordinator.managedObjectID(forURIRepresentation: url) {
-                    onDrop(.file(draggedObjectID))
+                    let context = PersistenceController.shared.container.viewContext
+                    if let file = context.object(with: draggedObjectID) as? File {
+                        onDrop(.file(draggedObjectID))
+                    } else if let file = context.object(with: draggedObjectID) as? CollaborationFile {
+                        onDrop(.collaborationFile(draggedObjectID))
+                    }
                 }
                 
                 // handle drop group
@@ -103,6 +108,9 @@ struct SidebarRowDropModifier: ViewModifier {
     var allow: [UTType]
     var onTargeted: (_ isTargeted: Bool) -> Void
     var onDrop: (ItemDragState.DragItem) -> Void
+    
+    @FetchRequest(sortDescriptors: [], predicate: NSPredicate(format: "parent == nil"))
+    private var topLevelFolders: FetchedResults<LocalFolder>
 
     func body(content: Content) -> some View {
         content
@@ -112,7 +120,23 @@ struct SidebarRowDropModifier: ViewModifier {
                     onTargeted: onTargeted,
                     onDrop: { item in
                         sidebarDragState.reset()
-                        self.onDrop(item)
+                        
+                        switch item {
+                            case .localFile(let url):
+                                if topLevelFolders.contains(where: {
+                                    if let folderURL = $0.url {
+                                        return url.filePath.contains(folderURL.filePath)
+                                    } else {
+                                        return false
+                                    }
+                                }) {
+                                    self.onDrop(.localFile(url))
+                                } else {
+                                    self.onDrop(.temporaryFile(url))
+                                }
+                            default:
+                                self.onDrop(item)
+                        }
                     }
                 )
             )

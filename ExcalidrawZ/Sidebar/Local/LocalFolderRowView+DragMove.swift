@@ -62,9 +62,11 @@ struct LocalFolderDropModifier: ViewModifier {
     
     @State private var groupIDWillBeDropped: NSManagedObjectID?
     @State private var fileIDWillBeDropped: NSManagedObjectID?
+    @State private var collborationFileIDWillBeDropped: NSManagedObjectID?
     
     @State private var dropGroupCallback: ((Bool) -> Void)?
     @State private var dropFileCallback: ((Bool) -> Void)?
+    @State private var dropCollborationFileCallback: ((Bool) -> Void)?
     
     var ancestors: Set<LocalFolder> {
         var result = Set<LocalFolder>()
@@ -103,6 +105,10 @@ struct LocalFolderDropModifier: ViewModifier {
                                         return await handleDropLocalFolder(id: folderID, context: viewContext)
                                     case .localFile(let url):
                                         return await handleDropLocalFile(url: url, context: viewContext)
+                                    case .collaborationFile(let roomID):
+                                        return await handleDropCollaborationFile(id: roomID)
+                                    case .temporaryFile(let url):
+                                        return await handleDropTemporaryFile(url: url)
                                 }
                             }()
                             
@@ -124,9 +130,9 @@ struct LocalFolderDropModifier: ViewModifier {
             ) {
                 DropToGroupSheetView(
                     object: groupIDWillBeDropped!,
-                    title: "Export to disk",
-                    message: "This will export the group and its contents to disk.",
-                    deleteOldSourceLabel: "Also delete the original group"
+                    title: .localizable(.dropGroupToLocalFolderConfirmationTitle),
+                    message: .localizable(.dropGroupToLocalFolderConfirmationMessage),
+                    deleteOldSourceLabel: .localizable(.dropGroupToLocalFolderConfirmationToggleAlsoDeleteSource)
                 ) { groupID, delete in
                     Task {
                         let success = await performExportGroupToLocalFolder(id: groupID, delete: delete, context: viewContext)
@@ -147,9 +153,9 @@ struct LocalFolderDropModifier: ViewModifier {
             ) {
                 DropToGroupSheetView(
                     object: fileIDWillBeDropped!,
-                    title: "Export to disk",
-                    message: "This will export the file to disk.",
-                    deleteOldSourceLabel: "Also delete the original file"
+                    title: .localizable(.dropFileToLocalFolderConfirmationTitle),
+                    message: .localizable(.dropFileToLocalFolderConfirmationMessage),
+                    deleteOldSourceLabel: .localizable(.dropFileToLocalFolderConfirmationToggleAlsoDeleteSource)
                 ) { fileID, delete in
                     Task {
                         let success = await performExportFileToLocalFolder(id: fileID, delete: delete, context: viewContext)
@@ -157,6 +163,33 @@ struct LocalFolderDropModifier: ViewModifier {
                     }
                 } onCancel: {
                     self.dropGroupCallback?(false)
+                }
+            }
+            .sheet(
+                isPresented: Binding {
+                    collborationFileIDWillBeDropped != nil
+                } set: {
+                    if !$0 {
+                        self.collborationFileIDWillBeDropped = nil
+                    }
+                }
+            ) {
+                DropToGroupSheetView(
+                    object: collborationFileIDWillBeDropped!,
+                    title: "Import collaboration room",
+                    message: "",
+                    deleteOldSourceLabel: "Also delete the original collaboration room"
+                ) { fileID, delete in
+                    Task {
+                        let success = await performImportCollaborationFile(
+                            id: fileID,
+                            delete: delete,
+                            context: viewContext
+                        )
+                        self.dropCollborationFileCallback?(success)
+                    }
+                } onCancel: {
+                    self.dropCollborationFileCallback?(false)
                 }
             }
     }
@@ -299,7 +332,7 @@ struct LocalFolderDropModifier: ViewModifier {
         if folder.url == url.deletingLastPathComponent() { return false }
         // move file to this folder
         do {
-            let mapping = try localFolderState.moveLocalFiles(
+            let mapping = try LocalFileUtils.moveLocalFiles(
                 [url],
                 to: folder.objectID,
                 context: context
@@ -317,6 +350,80 @@ struct LocalFolderDropModifier: ViewModifier {
             alertToast(error)
         }
         
+        return false
+    }
+    
+    private func handleDropCollaborationFile(id roomID: NSManagedObjectID) async -> Bool {
+        self.collborationFileIDWillBeDropped = roomID
+        
+        return await withCheckedContinuation { continuation in
+            self.dropCollborationFileCallback = {
+                continuation.resume(returning: $0)
+                DispatchQueue.main.async {
+                    self.dropCollborationFileCallback = nil
+                }
+            }
+        }
+    }
+    
+    private func performImportCollaborationFile(
+        id roomID: NSManagedObjectID,
+        delete: Bool,
+        context: NSManagedObjectContext
+    ) async -> Bool {
+        guard let collaborationFile = context.object(with: roomID) as? CollaborationFile else {
+            return false
+        }
+        
+        return await withCheckedContinuation { continuation in
+            do {
+                try collaborationFile.archiveToLocal(
+                    group: .localFolder(folder),
+                    delete: delete
+                ) { error, target in
+                    switch target {
+                        case .localFile:
+                            continuation.resume(returning: true)
+                        default:
+                            if let error {
+                                alertToast(error)
+                            }
+                            continuation.resume(returning: false)
+                    }
+                }
+            } catch {
+                alertToast(error)
+            }
+        }
+    }
+    
+    
+    private func handleDropTemporaryFile(url: URL) async -> Bool {
+        let folderID = folder.objectID
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        do {
+            let mapping = try LocalFileUtils.moveLocalFiles(
+                [url],
+                to: folderID,
+                context: context
+            )
+            
+            await MainActor.run {
+                if let newURL = mapping[url],
+                   fileState.currentActiveFile == .temporaryFile(url) ||
+                    fileState.currentActiveGroup == .temporary && fileState.temporaryFiles == [url] {
+                    fileState.currentActiveGroup = .localFolder(folder)
+                    fileState.currentActiveFile = .localFile(newURL)
+                } else {
+                    fileState.currentActiveGroup = .localFolder(folder)
+                    fileState.currentActiveFile = nil
+                }
+                fileState.temporaryFiles.removeAll(where: {$0 == url})
+            }
+            return true
+        } catch {
+            alertToast(error)
+        }
         return false
     }
 }

@@ -18,8 +18,8 @@ struct ArchiveRoomModifier: ViewModifier {
         content
             .sheet(item: $collaborationFile) { file in
                 ArchiveRoomSheetView(file: file, parentFileState: parentFileState)
-                .padding()
-                .frame(width: 350, height: 500)
+                    .padding()
+                    .frame(width: 350, height: 500)
             }
             .environmentObject(fileState)
     }
@@ -79,80 +79,39 @@ struct ArchiveRoomSheetView: View {
     }
     
     private func archiveCollaborationFile()  {
-        let context = PersistenceController.shared.container.newBackgroundContext()
         let fileID = file.objectID
         let name = file.name ?? String(localizable: .generalUntitled)
         let content = file.content
-        if case .group(let group) = fileState.currentActiveGroup {
-            let groupID = group.objectID
-            Task.detached {
-                do {
-                    try await context.perform {
-                        guard case let group as Group = context.object(with: groupID) else { return }
-                        let newFile = File(name: name, context: context)
-                        newFile.group = group
-                        newFile.content = content
-                        newFile.inTrash = false
-                        
-                        context.insert(newFile)
-                        
-                        try context.save()
-                        
-                        let fileID = newFile.objectID
-                        Task {
-                            await MainActor.run {
-                                if let group = viewContext.object(with: groupID) as? Group {
-                                    parentFileState.currentActiveGroup = .group(group)
-                                    if let file = viewContext.object(with: fileID) as? File {
-                                        parentFileState.currentActiveFile = .file(file)
-                                    }
-                                    parentFileState.expandToGroup(groupID)
-                                }
+        guard let activeGroup = fileState.currentActiveGroup else { return }
+        do {
+            try file.archiveToLocal(
+                group: activeGroup,
+                delete: false,
+            ) { error, target in
+                switch target {
+                    case .file(let groupID, let fileID):
+                        if let group = viewContext.object(with: groupID) as? Group {
+                            parentFileState.currentActiveGroup = .group(group)
+                            if let file = viewContext.object(with: fileID) as? File {
+                                parentFileState.currentActiveFile = .file(file)
                             }
+                            parentFileState.expandToGroup(groupID)
                         }
-                    }
-                    await dismiss()
-                } catch {
-                    await alertToast(error)
-                }
-            }
-            
-        } else if case .localFolder(let localFolder) = fileState.currentActiveGroup {
-            let localFolderID = localFolder.objectID
-            Task.detached {
-                do {
-                    try await context.perform {
-                        guard case let localFolder as LocalFolder = context.object(with: localFolderID) else { return }
-                        try localFolder.withSecurityScopedURL { scopedURL in
-                            var file = try ExcalidrawFile(from: fileID, context: context)
-                            try file.syncFiles(context: context)
-                            let fileURL = scopedURL.appendingPathComponent(
-                                name,
-                                conformingTo: .excalidrawFile
-                            )
-                            try file.content?.write(to: fileURL)
-                            Task {
-                                await MainActor.run {
-                                    if let localFolder = viewContext.object(with: localFolderID) as? LocalFolder {
-                                        parentFileState.currentActiveGroup = .localFolder(localFolder)
-                                        parentFileState.currentActiveFile = .localFile(fileURL)
-                                        parentFileState.expandToGroup(localFolderID)
-                                    }
-                                }
-                            }
+                    case .localFile(let folderID, let url):
+                        if let localFolder = viewContext.object(with: folderID) as? LocalFolder {
+                            parentFileState.currentActiveGroup = .localFolder(localFolder)
+                            parentFileState.currentActiveFile = .localFile(url)
+                            parentFileState.expandToGroup(folderID)
                         }
-                    }
-                    await dismiss()
-                } catch {
-                    await alertToast(error)
+                    case nil:
+                        if let error {
+                            alertToast(error)
+                        }
                 }
+                dismiss()
             }
+        } catch {
+            alertToast(error)
         }
-        
     }
 }
-
-//#Preview {
-//    ArchiveRoomSheetView()
-//        .environmentObject(FileState())
-//}

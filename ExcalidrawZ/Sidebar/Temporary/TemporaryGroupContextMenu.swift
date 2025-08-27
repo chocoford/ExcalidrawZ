@@ -7,13 +7,6 @@
 
 import SwiftUI
 
-struct TemporaryGroupContextMenu: View {
-    var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
-    }
-}
-
-
 struct TemporaryGroupMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
@@ -128,85 +121,30 @@ struct TemporaryGroupMenuItems: View {
     }
     
     private func moveLocalFiles(to targetFolderID: NSManagedObjectID) {
-        let context = PersistenceController.shared.container.newBackgroundContext()
         let temporaryFiles = fileState.temporaryFiles
         guard case .temporaryFile(let currentFileURL) = fileState.currentActiveFile else {
             return
         }
         Task.detached {
+            let context = PersistenceController.shared.container.newBackgroundContext()
+
             do {
-                try await context.perform {
-                    guard case let folder as LocalFolder = context.object(with: targetFolderID) else { return }
-                    
-                    try folder.withSecurityScopedURL { scopedURL in
-                        let fileCoordinator = NSFileCoordinator()
-                        fileCoordinator.coordinate(writingItemAt: scopedURL, options: .forMoving, error: nil) { url in
-                            for file in fileState.temporaryFiles {
-                                do {
-                                    try FileManager.default.moveItem(
-                                        at: file,
-                                        to: url.appendingPathComponent(
-                                            file.lastPathComponent,
-                                            conformingTo: .excalidrawFile
-                                        )
-                                    )
-                                } catch {
-                                    alertToast(error)
-                                }
-                            }
-                        }
+                let mapping = try await LocalFileUtils.moveLocalFiles(
+                    temporaryFiles,
+                    to: targetFolderID,
+                    context: context
+                )
+                
+                let currentFileNewURL = mapping[currentFileURL]
+                
+                if await fileState.currentActiveGroup == .temporary {
+                    await MainActor.run {
+                        fileState.temporaryFiles.removeAll()
+                        fileState.expandToGroup(targetFolderID)
+                        let localFolder = viewContext.object(with: targetFolderID) as? LocalFolder
+                        fileState.currentActiveGroup = localFolder != nil ? .localFolder(localFolder!) : nil
+                        fileState.currentActiveFile = currentFileNewURL != nil ? .localFile(currentFileNewURL!) : nil
                     }
-                    
-                    var currentFileNewURL: URL?
-                    for file in temporaryFiles {
-                        if let newURL = folder.url?.appendingPathComponent(
-                            file.lastPathComponent,
-                            conformingTo: .excalidrawFile
-                        ) {
-                            if file == currentFileURL { currentFileNewURL = newURL }
-                            // Update local file ID mapping
-                            ExcalidrawFile.localFileURLIDMapping[newURL] = ExcalidrawFile.localFileURLIDMapping[file]
-                            ExcalidrawFile.localFileURLIDMapping[file] = nil
-                            
-                            // Also update checkpoints
-                            Task {
-                                await MainActor.run {
-                                    updateLocalFileCheckpoints(oldURL: file, newURL: newURL)
-                                }
-                            }
-                        }
-                    }
-                    let folderID = folder.objectID
-                    Task { [currentFileNewURL] in
-                        if await fileState.currentActiveGroup == .temporary {
-                            await MainActor.run {
-                                fileState.temporaryFiles.removeAll()
-                                fileState.expandToGroup(folderID)
-                                let localFolder = viewContext.object(with: targetFolderID) as? LocalFolder
-                                fileState.currentActiveGroup = localFolder != nil ? .localFolder(localFolder!) : nil
-                                fileState.currentActiveFile = currentFileNewURL != nil ? .localFile(currentFileNewURL!) : nil
-                            }
-                        }
-                    }
-                }
-            } catch {
-                await alertToast(error)
-            }
-        }
-    }
-    
-    private func updateLocalFileCheckpoints(oldURL: URL, newURL: URL) {
-        let context = PersistenceController.shared.container.newBackgroundContext()
-        Task.detached {
-            do {
-                try await context.perform {
-                    let fetchRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
-                    fetchRequest.predicate = NSPredicate(format: "url = %@", oldURL as NSURL)
-                    let checkpoints = try context.fetch(fetchRequest)
-                    checkpoints.forEach {
-                        $0.url = newURL
-                    }
-                    try context.save()
                 }
             } catch {
                 await alertToast(error)
@@ -215,7 +153,3 @@ struct TemporaryGroupMenuItems: View {
     }
 }
 
-
-#Preview {
-    TemporaryGroupContextMenu()
-}

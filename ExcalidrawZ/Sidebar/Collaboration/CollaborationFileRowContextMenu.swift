@@ -47,20 +47,7 @@ struct CollaborationFileContextMenuModifier: ViewModifier {
             do {
                 try await context.perform {
                     guard let file = context.object(with: fileID) as? CollaborationFile else { return }
-
-                    context.delete(file)
-                    
-                    // also delete checkpoints
-                    let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
-                    checkpointsFetchRequest.predicate = NSPredicate(format: "collaborationFile = %@", file)
-                    let checkpoints = try context.fetch(checkpointsFetchRequest)
-                    if !checkpoints.isEmpty {
-                        let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: checkpoints.map{$0.objectID})
-                        try context.executeAndMergeChanges(using: batchDeleteRequest)
-                    }
-
-                    try context.save()
-                    
+                    try file.delete(context: context)
                 }
             } catch {
                 await alertToast(error)

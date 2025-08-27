@@ -8,7 +8,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct LocalFileRowDragDropModifier: ViewModifier {
+struct LocalFileDragModifier: ViewModifier {
     @EnvironmentObject private var sidebarDragState: ItemDragState
 
     var file: URL

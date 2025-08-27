@@ -5651,6 +5651,138 @@
         }
       }
     },
+    "dropFileToLocalFolderConfirmationMessage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will export the file to disk."
+          }
+        }
+      }
+    },
+    "dropFileToLocalFolderConfirmationTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export to disk"
+          }
+        }
+      }
+    },
+    "dropFileToLocalFolderConfirmationToggleAlsoDeleteSource" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also delete the original file."
+          }
+        }
+      }
+    },
+    "dropGroupToLocalFolderConfirmationMessage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will export the group and its contents to disk."
+          }
+        }
+      }
+    },
+    "dropGroupToLocalFolderConfirmationTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export to disk"
+          }
+        }
+      }
+    },
+    "dropGroupToLocalFolderConfirmationToggleAlsoDeleteSource" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also delete the original group."
+          }
+        }
+      }
+    },
+    "dropLocalFileToGroupConfirmationMessage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will import the folder and all its contents into this group, and it will be synced with iCloud."
+          }
+        }
+      }
+    },
+    "dropLocalFileToGroupConfirmationTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import local files"
+          }
+        }
+      }
+    },
+    "dropLocalFileToGroupConfirmationToggleAlsoDeleteSource" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also delete the original file"
+          }
+        }
+      }
+    },
+    "dropLocalFolderToGroupConfirmationMessage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will import the folder and all its contents into this group, and it will be synced with iCloud."
+          }
+        }
+      }
+    },
+    "dropLocalFolderToGroupConfirmationTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import folder"
+          }
+        }
+      }
+    },
+    "dropLocalFolderToGroupConfirmationToggleAlsoDeleteSource" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also delete the original folder."
+          }
+        }
+      }
+    },
     "excalidrawWebViewPlaceholderSelectFile" : {
       "extractionState" : "manual",
       "localizations" : {

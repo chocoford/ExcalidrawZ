@@ -80,12 +80,16 @@ struct FileContextMenuModifier: ViewModifier {
                         try context.save()
                     }
                 }
-                await fileState.resetSelections()
+                await MainActor.run {
+                    fileState.resetSelections()
+                }
             } catch {
                 await alertToast(error)
             }
             
-            await fileState.resetSelections()
+            await MainActor.run {
+                fileState.resetSelections()
+            }
         }
     }
 }

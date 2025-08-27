@@ -273,10 +273,10 @@ struct FileHomeItemView: View {
             case .temporaryFile:
                 fileState.currentActiveGroup = .temporary
             case .collaborationFile(let file):
+                fileState.currentActiveGroup = .collaboration
                 if !fileState.collaboratingFiles.contains(file) {
                     fileState.collaboratingFiles.append(file)
                 }
-                fileState.currentActiveGroup = .collaboration
         }
     }
 
@@ -332,10 +332,10 @@ private struct FileHomeItemDragModifier: ViewModifier {
                     .modifier(FileRowDragModifier(file: file))
             case .localFile(let url):
                 content
-                    .modifier(LocalFileRowDragDropModifier(file: url))
+                    .modifier(LocalFileDragModifier(file: url))
             case .temporaryFile(let url):
                 content
-                    .modifier(LocalFileRowDragDropModifier(file: url))
+                    .modifier(LocalFileDragModifier(file: url))
             case .collaborationFile(let collaborationFile):
                 content
                     .modifier(FileRowDragModifier(file: collaborationFile))

@@ -143,6 +143,12 @@ struct GroupsView: View {
         } else if case .localFile = sidebarDragState.currentDragItem,
                   self.group.groupType != .trash {
             return true
+        } else if case .collaborationFile = sidebarDragState.currentDragItem,
+                  self.group.groupType != .trash {
+            return true
+        } else if case .temporaryFile = sidebarDragState.currentDragItem,
+                  self.group.groupType != .trash {
+            return true
         }
         return false
     }

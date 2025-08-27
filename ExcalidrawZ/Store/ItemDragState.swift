@@ -13,6 +13,9 @@ class ItemDragState: ObservableObject {
         case file(NSManagedObjectID)
         case localFolder(NSManagedObjectID)
         case localFile(URL)
+        
+        case collaborationFile(NSManagedObjectID)
+        case temporaryFile(URL)
     }
     
     @Published var currentDragItem: DragItem?

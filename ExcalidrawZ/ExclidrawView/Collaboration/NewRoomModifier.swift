@@ -141,9 +141,6 @@ struct NewRoomModifier: ViewModifier {
                         alertToast(error)
                     }
                 }
-//#if os(iOS)
-//                .presentationDetents([.height(400)])
-//#endif
             }
             .sheet(isPresented: $state.isJoinRoomSheetPresented) {
                 JoinRoomSheetView()
@@ -174,6 +171,9 @@ struct NewRoomModifier: ViewModifier {
                             if let collabFile = viewContext.object(with: fileID) as? CollaborationFile {
                                 fileState.currentActiveGroup = .collaboration
                                 fileState.currentActiveFile = .collaborationFile(collabFile)
+                                if !fileState.collaboratingFiles.contains(collabFile) {
+                                    fileState.collaboratingFiles.append(collabFile)
+                                }
                             }
                         }
                     }

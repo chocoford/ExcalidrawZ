@@ -283,7 +283,7 @@ struct LocalFileRowContextMenu: View {
             [file]
         }
         do {
-            let mapping = try localFolderState.moveLocalFiles(filesToMove, to: targetFolderID, context: context)
+            let mapping = try LocalFileUtils.moveLocalFiles(filesToMove, to: targetFolderID, context: context)
             
             if fileState.currentActiveFile == .localFile(file), let newURL = mapping[file] {
                 DispatchQueue.main.async {

@@ -30,7 +30,6 @@ struct TemporaryFileContextMenu: View {
     @EnvironmentObject private var fileState: FileState
     
     var file: URL
-
     
     @FetchRequest(
         sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],
@@ -101,7 +100,6 @@ struct TemporaryFileContextMenu: View {
                 systemSymbol: .trayAndArrowUp
             )
         }
-        
         
         Divider()
         
@@ -189,90 +187,34 @@ struct TemporaryFileContextMenu: View {
         }
         Task.detached {
             do {
-                try await context.perform {
-                    guard case let folder as LocalFolder = context.object(with: targetFolderID) else { return }
-                    
-                    try folder.withSecurityScopedURL { scopedURL in
-                        let fileCoordinator = NSFileCoordinator()
-                        fileCoordinator.coordinate(
-                            writingItemAt: scopedURL,
-                            options: .forMoving,
-                            error: nil
-                        ) { url in
-                            do {
-                                for file in filesToMove {
-                                    try FileManager.default.moveItem(
-                                        at: file,
-                                        to: url.appendingPathComponent(
-                                            file.lastPathComponent,
-                                            conformingTo: .excalidrawFile
-                                        )
-                                    )
-                                    
-                                    let newURL = scopedURL.appendingPathComponent(
-                                        file.lastPathComponent,
-                                        conformingTo: .excalidrawFile
-                                    )
-                                    // Update local file ID mapping
-                                    ExcalidrawFile.localFileURLIDMapping[newURL] = ExcalidrawFile.localFileURLIDMapping[file]
-                                    ExcalidrawFile.localFileURLIDMapping[file] = nil
-                                    
-                                    // Also update checkpoints
-                                    Task {
-                                        await MainActor.run {
-                                            updateLocalFileCheckpoints(oldURL: file, newURL: newURL)
-                                        }
-                                    }
-                                    
-                                    Task {
-                                        await MainActor.run {
-                                            fileState.temporaryFiles.removeAll(where: {$0 == file})
-                                            if fileState.temporaryFiles.isEmpty {
-                                                fileState.currentActiveGroup = nil
-                                            }
-                                            if case .localFile(let localFile) = fileState.currentActiveFile,
-                                               localFile == file {
-                                                let folder = viewContext.object(with: targetFolderID) as? LocalFolder
-                                                fileState.currentActiveGroup = folder != nil ? .localFolder(folder!) : nil
-                                                fileState.currentActiveFile = .localFile(newURL)
-                                                // auto expand
-                                                if let folder {
-                                                    fileState.expandToGroup(folder.objectID)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            } catch {
-                                alertToast(error)
-                            }
+                
+                let mapping = try await LocalFileUtils.moveLocalFiles(
+                    filesToMove,
+                    to: targetFolderID,
+                    context: context
+                )
+                
+                await MainActor.run {
+                    fileState.temporaryFiles.removeAll(where: {filesToMove.contains($0)})
+                    if fileState.temporaryFiles.isEmpty {
+                        fileState.currentActiveGroup = nil
+                    }
+                    if case .localFile(let localFile) = fileState.currentActiveFile,
+                       localFile == file,
+                       let newURL = mapping[localFile] {
+                        let folder = viewContext.object(with: targetFolderID) as? LocalFolder
+                        fileState.currentActiveGroup = folder != nil ? .localFolder(folder!) : nil
+                        fileState.currentActiveFile = .localFile(newURL)
+                        // auto expand
+                        if let folder {
+                            fileState.expandToGroup(folder.objectID)
                         }
                     }
-                   
                 }
+                
             } catch {
                 await alertToast(error)
             }
         }
     }
-    
-    private func updateLocalFileCheckpoints(oldURL: URL, newURL: URL) {
-        let context = PersistenceController.shared.container.newBackgroundContext()
-        Task.detached {
-            do {
-                try await context.perform {
-                    let fetchRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
-                    fetchRequest.predicate = NSPredicate(format: "url = %@", oldURL as NSURL)
-                    let checkpoints = try context.fetch(fetchRequest)
-                    checkpoints.forEach {
-                        $0.url = newURL
-                    }
-                    try context.save()
-                }
-            } catch {
-                await alertToast(error)
-            }
-        }
-    }
-
 }
