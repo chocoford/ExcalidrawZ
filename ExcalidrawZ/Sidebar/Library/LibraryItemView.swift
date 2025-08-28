@@ -215,7 +215,9 @@ struct LibraryItemContentView: View {
             Task.detached {
                 do {
                     let image: Image
-                    if let platformImage = excalidrawLibItemsCache.object(forKey: NSString(string: item.libraryItems[0].id)) {
+                    if let platformImage = excalidrawLibItemsCache.object(
+                        forKey: NSString(string: item.libraryItems[0].id)
+                    ) {
                         image = Image(platformImage: platformImage)
                     } else {
                         let nsImage = try await webCoordinator.exportElementsToPNG(

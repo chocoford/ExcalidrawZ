@@ -362,9 +362,11 @@ struct SerachContent: View {
         if let group {
             tree.insert(group, at: 0)
         }
-        while let parent = group?.parent {
+        var depth = 0
+        while let parent = group?.parent, depth < 10 {
             tree.insert(parent, at: 0)
             group = parent
+            depth += 1
         }
         return tree.map{ $0.name ?? String(localizable: .generalUntitled) }.joined(separator: " > ")
     }

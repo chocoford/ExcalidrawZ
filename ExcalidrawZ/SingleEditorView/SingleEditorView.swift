@@ -55,33 +55,8 @@ struct SingleEditorView: View {
 
     var body: some View {
         ZStack {
-            if #available(macOS 14.0, *), appPreference.inspectorLayout == .sidebar {
-                content()
-                    .inspector(isPresented: $layoutState.isInspectorPresented) {
-                        LibraryView()
-                            .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
-                    }
-            } else {
-                content()
-                HStack {
-                    Spacer()
-                    if layoutState.isInspectorPresented {
-                        LibraryView()
-                            .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .background {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(.regularMaterial)
-                                    .shadow(radius: 4)
-                            }
-                            .transition(.move(edge: .trailing))
-                    }
-                }
-                .animation(.easeOut, value: layoutState.isInspectorPresented)
-                .padding(.top, 10)
-                .padding(.horizontal, 10)
-                .padding(.bottom, 40)
-            }
+            content()
+                .modifier(LibraryTrailingSidebarModifier())
         }
         .environmentObject(fileState)
         .environmentObject(exportState)

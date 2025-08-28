@@ -47,7 +47,6 @@ struct ExcalidrawLibrary: Codable, Hashable {
         self.libraryItems = libraryItems
     }
     
-    
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(self.type, forKey: .type)
@@ -61,7 +60,6 @@ struct ExcalidrawLibrary: Codable, Hashable {
         }
     }
     
-    
     struct Item: Codable, Hashable {
         enum Status: String, Codable {
             case published = "published"
@@ -73,6 +71,8 @@ struct ExcalidrawLibrary: Codable, Hashable {
         var createdAt: Date
         var name: String
         var elements: [ExcalidrawElement]
+        
+        var content: Data?
         
         enum CodingKeys: String, CodingKey {
             case id, status, name, elements

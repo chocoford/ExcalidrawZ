@@ -13,6 +13,48 @@ import ChocofordEssentials
 import ChocofordUI
 import UniformTypeIdentifiers
 
+struct LibraryTrailingSidebarModifier: ViewModifier {
+    @EnvironmentObject private var appPreference: AppPreference
+    @EnvironmentObject private var layoutState: LayoutState
+    
+    @State private var librariesToImport: [ExcalidrawLibrary] = []
+    
+    func body(content: Content) -> some View {
+        ZStack {
+            if #available(macOS 14.0, iOS 17.0, *), appPreference.inspectorLayout == .sidebar {
+                content
+                    .inspector(isPresented: $layoutState.isInspectorPresented) {
+                        LibraryView(librariesToImport: $librariesToImport)
+                            .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
+                    }
+            } else {
+                content
+                if appPreference.inspectorLayout == .floatingBar {
+                    HStack {
+                        Spacer()
+                        if layoutState.isInspectorPresented {
+                            LibraryView(librariesToImport: $librariesToImport)
+                                .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .background {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(.regularMaterial)
+                                        .shadow(radius: 4)
+                                }
+                                .transition(.move(edge: .trailing))
+                        }
+                    }
+                    .animation(.easeOut, value: layoutState.isInspectorPresented)
+                    .padding(.top, 10)
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 40)
+                }
+            }
+        }
+        .modifier(ExcalidrawLibraryImporter(items: $librariesToImport))
+    }
+}
+
 struct LibraryView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
@@ -23,11 +65,18 @@ struct LibraryView: View {
         
     @FetchRequest(sortDescriptors: [SortDescriptor(\.id)], animation: .smooth)
     var libraries: FetchedResults<Library>
+
+    @Binding var librariesToImport: [ExcalidrawLibrary]
+    
+    init(
+        librariesToImport: Binding<[ExcalidrawLibrary]>
+    ) {
+        self._librariesToImport = librariesToImport
+    }
     
     @StateObject private var viewModel = LibraryViewModel()
     
     // each library contains one library item...
-    @State private var librariesToImport: [ExcalidrawLibrary] = []
     @State private var image: Image?
     
     @State private var isFileImpoterPresented: Bool = false
@@ -55,10 +104,6 @@ struct LibraryView: View {
                     content()
                 }
             }
-        }
-        .sheet(isPresented: $isImportSheetPresented) {
-            ExcalidrawLibraryImportSheetView(libraries: librariesToImport)
-                .frame(minWidth: 700)
         }
         .onDrop(of: [.excalidrawlibFile], isTargeted: $isDropTargeted) { providers in
             librariesToImport.removeAll()
@@ -106,20 +151,16 @@ struct LibraryView: View {
             allowedContentTypes: [.excalidrawlibFile],
             allowsMultipleSelection: true
         ) { urls in
+            var libraries: [ExcalidrawLibrary] = []
             for url in urls {
                 _ = url.startAccessingSecurityScopedResource()
                 let data = try Data(contentsOf: url)
                 var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data)
                 library.name = url.deletingPathExtension().lastPathComponent
-                self.librariesToImport.append(library)
+                libraries.append(library)
                 url.stopAccessingSecurityScopedResource()
             }
-            isImportSheetPresented.toggle()
-        }
-        .onChange(of: isImportSheetPresented) { newValue in
-            if !newValue {
-                librariesToImport.removeAll()
-            }
+            self.librariesToImport = libraries
         }
         .environmentObject(viewModel)
         .onAppear {
@@ -557,7 +598,7 @@ struct LibraryPreviewView: View {
                 
             }
             .inspector(isPresented: .constant(true)) {
-                LibraryView()
+                LibraryView(librariesToImport: .constant([]))
             }
         } else {
             Color.clear

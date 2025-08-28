@@ -7,6 +7,42 @@
 
 import SwiftUI
 
+struct ExcalidrawLibraryImporter: ViewModifier {
+    @Environment(\.alertToast) var alertToast
+
+    @Binding var librariesToImport: [ExcalidrawLibrary]
+    
+    init(items: Binding<[ExcalidrawLibrary]>) {
+        self._librariesToImport = items
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: Binding {
+                !librariesToImport.isEmpty
+            } set: { val in
+                if !val {
+                    librariesToImport = []
+                }
+            }) {
+                ExcalidrawLibraryImportSheetView(libraries: librariesToImport)
+                    .frame(minWidth: 700)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .shouldImportExternalLibraryFile)) { output in
+                guard let url = output.object as? URL else { return }
+                do {
+                    let data = try Data(contentsOf: url)
+                    var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data)
+                    library.name = url.deletingPathExtension().lastPathComponent
+                    librariesToImport.append(library)
+                } catch {
+                    librariesToImport = []
+                    alertToast(error)
+                }
+            }
+    }
+}
+
 struct ExcalidrawLibraryImportSheetView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.alertToast) var alertToast
@@ -189,6 +225,9 @@ struct ExcalidrawLibraryImportSheetView: View {
         }
         .padding(.vertical, 20)
         .padding(.horizontal, 40)
+        .watchImmediately(of: libraries, perform: { val in
+            print("libraries changed: \(libraries.count)")
+        })
         .onAppear {
             selectedItems = Set(
                 libraries.flatMap {

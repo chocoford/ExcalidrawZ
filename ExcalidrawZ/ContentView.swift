@@ -90,35 +90,8 @@ struct ContentView: View {
                         .frame(width: 1150, height: 580)
                 }
             } else {
-                if #available(macOS 14.0, iOS 17.0, *), appPreference.inspectorLayout == .sidebar {
-                    contentView()
-                        .inspector(isPresented: $layoutState.isInspectorPresented) {
-                            LibraryView()
-                                .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
-                        }
-                } else {
-                    contentView()
-                    if appPreference.inspectorLayout == .floatingBar {
-                        HStack {
-                            Spacer()
-                            if layoutState.isInspectorPresented {
-                                LibraryView()
-                                    .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    .background {
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(.regularMaterial)
-                                            .shadow(radius: 4)
-                                    }
-                                    .transition(.move(edge: .trailing))
-                            }
-                        }
-                        .animation(.easeOut, value: layoutState.isInspectorPresented)
-                        .padding(.top, 10)
-                        .padding(.horizontal, 10)
-                        .padding(.bottom, 40)
-                    }
-                }
+                contentView()
+                    .modifier(LibraryTrailingSidebarModifier())
             }
         }
     }

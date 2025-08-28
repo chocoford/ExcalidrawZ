@@ -333,7 +333,8 @@ struct FileContextMenu: View {
                     context: viewContext
                 )
                 
-                if containerHorizontalSizeClass != .compact {
+                if containerHorizontalSizeClass != .compact,
+                   fileState.currentActiveFile == .file(file) {
                     fileState.currentActiveFile = .file(newFile)
                 }
             }

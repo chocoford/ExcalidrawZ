@@ -92,6 +92,19 @@ final class FileState: ObservableObject {
                     file.name
             }
         }
+        
+        var updatedAt: Date? {
+            switch self {
+                case .file(let file):
+                    file.updatedAt
+                case .localFile(let url):
+                    (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? nil
+                case .temporaryFile(let url):
+                    (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? nil
+                case .collaborationFile(let file):
+                    file.updatedAt
+            }
+        }
     }
     
     @Published var activeFileIndex: Int? = 0
@@ -123,6 +136,11 @@ final class FileState: ObservableObject {
                     activeFiles[activeFileIndex] = nil
                 }
             }
+            
+            shouldIgnoreUpdate = true
+            recoverWatchUpdate()
+            currentFilePublisherCancellables.forEach{$0.cancel()}
+            resetSelections()
         }
     }
     
@@ -326,7 +344,10 @@ final class FileState: ObservableObject {
                     try bgContext.save()
                 }
                 await MainActor.run {
+                    // print("Did update file: \(file.name ?? "nil")")
+                    // already throttled
                     self.didUpdateFileState[id] = true
+                    self.objectWillChange.send()
                 }
             } catch {
                 print(error)

@@ -266,7 +266,8 @@ struct LocalFileRowContextMenu: View {
                         fileToBeActive = newURL
                     }
                 }
-                if let fileToBeActive {
+                if let fileToBeActive,
+                   fileState.currentActiveFile == .localFile(file) {
                     fileState.currentActiveFile = .localFile(fileToBeActive)
                 }
             }

@@ -14,6 +14,9 @@ import Combine
 
 import ChocofordUI
 
+extension Notification.Name {
+    static let shouldImportExternalLibraryFile = Notification.Name("ShouldImportExternalLibraryFile")
+}
 
 struct OpenFromURLModifier: ViewModifier {
     @Environment(\.managedObjectContext) var viewContext
@@ -99,6 +102,7 @@ struct OpenFromURLModifier: ViewModifier {
     }
     
     private func onOpenLocalFile(_ url: URL) {
+        guard let utType = UTType(filenameExtension: url.pathExtension) else { return }
         var targetURL = url
         
         // check if it is already in LocalFolder
@@ -132,10 +136,10 @@ struct OpenFromURLModifier: ViewModifier {
         
         logger.debug("on open url: \(url)")
         
+        // handle images
         var imageSendToNewFile: (Data, UTType)? = nil
         
-        if let utType = UTType(filenameExtension: url.pathExtension),
-           utType.conforms(to: .image) {
+        if utType.conforms(to: .image) {
             
             self.logger.info("Opening image file: \(url, privacy: .public), utType: \(utType.identifier, privacy: .public)")
             do {
@@ -163,7 +167,14 @@ struct OpenFromURLModifier: ViewModifier {
             }
         }
         
+        // handle library file
+        if utType == .excalidrawlibFile {
+            onOpenLibraryFile(url)
+            return
+        }
         
+        
+        // handle excalidraw file
         if !fileState.temporaryFiles.contains(where: {$0 == targetURL}) {
             fileState.temporaryFiles.append(targetURL)
         }
@@ -298,6 +309,10 @@ struct OpenFromURLModifier: ViewModifier {
                 }
             }
         }
+    }
+    
+    private func onOpenLibraryFile(_ url: URL) {
+        NotificationCenter.default.post(name: .shouldImportExternalLibraryFile, object: url)
     }
 }
 

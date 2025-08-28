@@ -147,10 +147,10 @@ struct LocalFoldersView: View {
                     : AnyShapeStyle(HierarchicalShapeStyle.primary)
                 )
                 .background {
-                    if canDropToFolder {
+                    if canDropToFolder || canDropBelowFoler && !isExpanded {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color.accentColor)
-                    } else if canDropBelowFoler {
+                    } else if canDropBelowFoler && isExpanded {
                         UnevenRoundedRectangle(
                             cornerRadii: .init(
                                 topLeading: 12,

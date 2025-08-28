@@ -145,25 +145,17 @@ struct ShareView: View {
                 }
 
                 if horizontalSizeClass != .compact {
-                    Button {
-                        dismiss()
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text(.localizable(.exportSheetButtonDismiss))
-                            Spacer()
-                        }
+                    if #available(macOS 26.0, iOS 26.0, *) {
+                        closeButton(block: true)
+                            .buttonStyle(.glassProminent)
+                    } else {
+                        closeButton(block: true)
+                            .buttonStyle(.borderedProminent)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
                 }
                 
                 if containerVerticalSizeClass == .compact {
-                    Button(role: .cancel) {
-                        dismiss()
-                    } label: {
-                        Text(.localizable(.generalButtonClose))
-                    }
+                    closeButton(block: false)
                 }
             }
             .navigationDestination(for: Route.self) { route in
@@ -191,6 +183,24 @@ struct ShareView: View {
         SVGPreviewView(svgURL: url)
     }
 #endif
+    
+    @MainActor @ViewBuilder
+    private func closeButton(block: Bool) -> some View {
+        Button {
+            dismiss()
+        } label: {
+            HStack {
+                if block {
+                    Spacer()
+                }
+                Text(.localizable(.exportSheetButtonDismiss))
+                if block {
+                    Spacer()
+                }
+            }
+        }
+        .controlSize(.large)
+    }
 }
 
 
