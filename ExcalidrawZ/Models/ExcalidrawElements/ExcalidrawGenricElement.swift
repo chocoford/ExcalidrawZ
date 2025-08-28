@@ -7,6 +7,11 @@
 
 import Foundation
 
+enum ExcalidrawStrokeSharpness: String, Codable, Sendable {
+    case round
+    case sharp
+}
+
 struct ExcalidrawGenericElement: ExcalidrawElementBase, Sendable {
     var type: ExcalidrawElementType
     
@@ -37,6 +42,9 @@ struct ExcalidrawGenericElement: ExcalidrawElementBase, Sendable {
     var locked: Bool? // not available in v1
     var customData: [String : AnyCodable]?
     
+    // Legacy Properties
+    var strokeSharpness: ExcalidrawStrokeSharpness? // deprecated
+    
     static func == (lhs: Self, rhs: Self) -> Bool {
         return lhs.type == rhs.type &&
         lhs.id == rhs.id &&
@@ -60,6 +68,9 @@ struct ExcalidrawGenericElement: ExcalidrawElementBase, Sendable {
         lhs.boundElements == rhs.boundElements &&
         lhs.link == rhs.link &&
         lhs.locked == rhs.locked &&
-        lhs.customData == rhs.customData
+        lhs.customData == rhs.customData &&
+        
+        // Lagacy
+        lhs.strokeSharpness == rhs.strokeSharpness
     }
 }
