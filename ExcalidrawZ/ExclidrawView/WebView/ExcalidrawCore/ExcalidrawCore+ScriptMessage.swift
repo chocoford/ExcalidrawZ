@@ -69,8 +69,10 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     Task {
                         await self.exportImageManager.responseExport(id: svgData.data.id, blobString: svgData.data.svg)
                     }
-                case .addLibrary(let message):
-                    self.addLibrary(item: message.data)
+                case .onLoadLibrary(let message):
+                    self.onLoadLibrary(library: message.data)
+                case .addToLibrary(let message):
+                    self.addToLibrary(item: message.data)
                 case .getAllMedias(let data):
                     Task {
                         await self.allMediaTransferManager.responseExport(id: data.data.id, resourceFiles: data.data.files)
@@ -286,7 +288,7 @@ extension ExcalidrawCore {
         }
     }
     
-    func addLibrary(item: ExcalidrawLibrary.Item) {
+    func addToLibrary(item: ExcalidrawLibrary.Item) {
         let context = PersistenceController.shared.container.newBackgroundContext()
         let onError = self.publishError
         Task.detached {
@@ -308,7 +310,10 @@ extension ExcalidrawCore {
                 onError(error)
             }
         }
-        
+    }
+    
+    func onLoadLibrary(library: ExcalidrawLibrary) {
+        NotificationCenter.default.post(name: .addLibrary, object: [library])
     }
 }
 
@@ -326,7 +331,8 @@ extension ExcalidrawCore {
         case didToggleToolLock
         case getElementsBlob
         case getElementsSVG
-        case addLibrary
+        case onLoadLibrary
+        case addToLibrary
         case getAllMedias
         case historyStateChanged
         case didPenDown
@@ -352,7 +358,8 @@ extension ExcalidrawCore {
         case didToggleToolLock(DidtoggleToolLockMessage)
         case getElementsBlob(ExcalidrawElementsBlobData)
         case getElementsSVG(ExcalidrawElementsSVGData)
-        case addLibrary(AddLibraryItemMessage)
+        case onLoadLibrary(OnAddLibraryMessage)
+        case addToLibrary(AddToLibraryMessage)
         case getAllMedias(GetAllMediasMessage)
         case historyStateChanged(HistoryStateChangedMessage)
         case didPenDown
@@ -396,8 +403,10 @@ extension ExcalidrawCore {
                     self = .getElementsBlob(try ExcalidrawElementsBlobData(from: decoder))
                 case .getElementsSVG:
                     self = .getElementsSVG(try ExcalidrawElementsSVGData(from: decoder))
-                case .addLibrary:
-                    self = .addLibrary(try AddLibraryItemMessage(from: decoder))
+                case .onLoadLibrary:
+                    self = .onLoadLibrary(try OnAddLibraryMessage(from: decoder))
+                case .addToLibrary:
+                    self = .addToLibrary(try AddToLibraryMessage(from: decoder))
                 case .getAllMedias:
                     self = .getAllMedias(try GetAllMediasMessage(from: decoder))
                 case .historyStateChanged:
@@ -579,8 +588,13 @@ extension ExcalidrawCore {
         var event: String
         var data: Bool
     }
+    
+    struct OnAddLibraryMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: ExcalidrawLibrary
+    }
 
-    struct AddLibraryItemMessage: AnyExcalidrawZMessage {
+    struct AddToLibraryMessage: AnyExcalidrawZMessage {
         var event: String
         var data: ExcalidrawLibrary.Item
     }

@@ -80,14 +80,12 @@ struct LibraryView: View {
     @State private var image: Image?
     
     @State private var isFileImpoterPresented: Bool = false
-    @State private var isImportSheetPresented: Bool = false
     @State private var isRemoveAllConfirmationPresented: Bool = false
     @State private var isRemoveSelectionsConfirmationPresented: Bool = false
     @State private var isFileExporterPresented: Bool = false
     
     @State private var scrollViewSize: CGSize = .zero
     
-    @State private var isDropTargeted: Bool = false
     
     @State private var inSelectionMode: Bool = false
     @State private var selectedItems = Set<LibraryItem>()
@@ -105,47 +103,7 @@ struct LibraryView: View {
                 }
             }
         }
-        .onDrop(of: [.excalidrawlibFile], isTargeted: $isDropTargeted) { providers in
-            librariesToImport.removeAll()
-            let canDrop = providers.contains(where: {$0.hasItemConformingToTypeIdentifier(UTType.excalidrawlibFile.identifier)})
-            print("canDrop: \(canDrop)")
-            guard canDrop else { return false }
-            Task {
-                do {
-                    for provider in providers {
-                        let url: URL? = try await withCheckedThrowingContinuation { continuation in
-                            provider.loadFileRepresentation(forTypeIdentifier: UTType.excalidrawlibFile.identifier) { url, error in
-                                if let error {
-                                    continuation.resume(throwing: error)
-                                    return
-                                }
-                                continuation.resume(returning: url)
-                            }
-                        }
-                        guard url != nil else { continue }
-                        let data: Data? = try await withCheckedThrowingContinuation { continuation in
-                            provider.loadDataRepresentation(forTypeIdentifier: UTType.excalidrawlibFile.identifier) { url, error in
-                                if let error {
-                                    continuation.resume(throwing: error)
-                                    return
-                                }
-                                continuation.resume(returning: url)
-                            }
-                        }
-                        guard data != nil else { continue }
-                        var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data!)
-                        library.name = url!.deletingPathExtension().lastPathComponent
-                        librariesToImport.append(library)
-                    }
-                    if !librariesToImport.isEmpty {
-                        isImportSheetPresented = true
-                    }
-                } catch {
-                    alertToast(error)
-                }
-            }
-            return true
-        }
+        .modifier(ExcalidrawLibraryDropHandler())
         .fileImporterWithAlert(
             isPresented: $isFileImpoterPresented,
             allowedContentTypes: [.excalidrawlibFile],
@@ -360,7 +318,10 @@ struct LibraryView: View {
                     }
                 }
         }
-        .confirmationDialog(.localizable(.librariesRemoveAllConfirmationTitle), isPresented: $isRemoveAllConfirmationPresented) {
+        .confirmationDialog(
+            .localizable(.librariesRemoveAllConfirmationTitle),
+            isPresented: $isRemoveAllConfirmationPresented
+        ) {
             Button(role: .destructive) {
                 removeAllItems()
             } label: {
@@ -467,6 +428,7 @@ struct LibraryView: View {
         let selectedItems = selectedItems
         let targetLibraryID = library.objectID
         let selectedItemIDs = selectedItems.map{$0.objectID}
+        let libraryIDs = Array(Set(selectedItems.compactMap{$0.library})).map { $0.objectID }
         Task.detached {
             context.perform {
                 guard let targetLibrary = context.object(with: targetLibraryID) as? Library else { return }
@@ -483,8 +445,8 @@ struct LibraryView: View {
                         }
                     }
                     try context.save()
-                    for library in Array(Set(selectedItems.compactMap{$0.library})) {
-                        guard let item = context.object(with: library.objectID) as? Library else { continue }
+                    for libraryID in libraryIDs {
+                        guard let item = context.object(with: libraryID) as? Library else { continue }
                         if (item.items?.count ?? 0) <= 0 {
                             context.delete(item)
                         }
@@ -506,17 +468,18 @@ struct LibraryView: View {
     private func removeSelectedItems() {
         let alertToast = alertToast
         let context = PersistenceController.shared.container.newBackgroundContext()
-        let selectedItems = selectedItems
+        let selectedItemIDs = selectedItems.map { $0.objectID }
+        let libraryIDs = Array(Set(selectedItems.compactMap{$0.library})).map { $0.objectID }
         Task.detached {
             context.perform {
                 do {
-                    for selectedItem in selectedItems {
-                        guard let item = context.object(with: selectedItem.objectID) as? LibraryItem else { continue }
+                    for id in selectedItemIDs {
+                        guard let item = context.object(with: id) as? LibraryItem else { continue }
                         context.delete(item)
                     }
                     try context.save()
-                    for library in Array(Set(selectedItems.compactMap{$0.library})) {
-                        guard let item = context.object(with: library.objectID) as? Library else { continue }
+                    for libraryID in libraryIDs {
+                        guard let item = context.object(with: libraryID) as? Library else { continue }
                         if (item.items?.count ?? 0) <= 0 {
                             context.delete(item)
                         }

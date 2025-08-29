@@ -29,7 +29,7 @@ struct ExcalidrawLibrary: Codable, Hashable {
             case 1:
                 let items = try container.decode([[ExcalidrawElement]].self, forKey: .library)
                 self.libraryItems = items.map{
-                    Item(id: UUID().uuidString, status: .published, createdAt: .now, name: "Untitled", elements: $0)
+                    Item(id: UUID().uuidString, status: .published, createdAt: .now, name: String(localizable: .generalUntitled), elements: $0)
                 }
             default:
                 self.source = try container.decode(String.self, forKey: .source)

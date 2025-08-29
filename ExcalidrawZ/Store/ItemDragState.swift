@@ -54,6 +54,7 @@ struct DragStateModifier: ViewModifier {
         content
             .modifier(ItemDropFallbackModifier())
             .modifier(ItemDropGlobalFallbackModifier())
+            .modifier(ExcalidrawLibraryDropHandler())
             .environmentObject(dragState)
     }
 }

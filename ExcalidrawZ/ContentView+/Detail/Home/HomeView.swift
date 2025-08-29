@@ -76,6 +76,8 @@ struct HomeView: View {
                 isSearchPresented = false
                 selectedRecntlyFiles.removeAll()
             }
+            .modifier(ExcalidrawLibraryDropHandler())
+            .modifier(ItemDropFallbackModifier())
             .overlay {
                 content()
             }

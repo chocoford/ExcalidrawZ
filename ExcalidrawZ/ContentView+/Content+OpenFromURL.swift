@@ -14,10 +14,6 @@ import Combine
 
 import ChocofordUI
 
-extension Notification.Name {
-    static let shouldImportExternalLibraryFile = Notification.Name("ShouldImportExternalLibraryFile")
-}
-
 struct OpenFromURLModifier: ViewModifier {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.openURL) private var openURL

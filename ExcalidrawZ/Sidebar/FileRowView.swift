@@ -50,7 +50,7 @@ struct FileRowView: View {
     
     var body: some View {
         FileRowButton(
-            name: (file.name ?? "") + " - \(file.rank)",
+            name: (file.name ?? "")/* + " - \(file.rank)"*/,
             updatedAt: file.updatedAt,
             isInTrash: file.inTrash == true,
             isSelected: isSelected,
