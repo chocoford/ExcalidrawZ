@@ -300,7 +300,6 @@
 		396603AE2D096D4500870AC9 /* Persistence */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (39A28CC02D92B04B00B079B1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39A28CC12D92B04C00B079B1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Persistence; sourceTree = "<group>"; };
 		396603C42D096D4900870AC9 /* Store */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Store; sourceTree = "<group>"; };
 		396603D92D096D5700870AC9 /* Settings */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Settings; sourceTree = "<group>"; };
-		396603E72D096D6200870AC9 /* SingleEditorView */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SingleEditorView; sourceTree = "<group>"; };
 		396603ED2D096D6500870AC9 /* Share */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Share; sourceTree = "<group>"; };
 		396603F72D096D6800870AC9 /* FileHistory */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = FileHistory; sourceTree = "<group>"; };
 		396604052D096D7100870AC9 /* components */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (391459BA2E3A18B000A45CA7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = components; sourceTree = "<group>"; };
@@ -445,7 +444,6 @@
 				396603F72D096D6800870AC9 /* FileHistory */,
 				396603ED2D096D6500870AC9 /* Share */,
 				39B69BC52D8BD74C003369E8 /* Subscription */,
-				396603E72D096D6200870AC9 /* SingleEditorView */,
 				396603D92D096D5700870AC9 /* Settings */,
 				394EF5032DAD358A005C18E7 /* Debug */,
 				3963A0342C6BD6B200472AE7 /* Sparkle */,
@@ -517,7 +515,6 @@
 				396603AE2D096D4500870AC9 /* Persistence */,
 				396603C42D096D4900870AC9 /* Store */,
 				396603D92D096D5700870AC9 /* Settings */,
-				396603E72D096D6200870AC9 /* SingleEditorView */,
 				396603ED2D096D6500870AC9 /* Share */,
 				396603F72D096D6800870AC9 /* FileHistory */,
 				396604052D096D7100870AC9 /* components */,
@@ -569,7 +566,6 @@
 				396603AE2D096D4500870AC9 /* Persistence */,
 				396603C42D096D4900870AC9 /* Store */,
 				396603D92D096D5700870AC9 /* Settings */,
-				396603E72D096D6200870AC9 /* SingleEditorView */,
 				396603ED2D096D6500870AC9 /* Share */,
 				396603F72D096D6800870AC9 /* FileHistory */,
 				396604052D096D7100870AC9 /* components */,

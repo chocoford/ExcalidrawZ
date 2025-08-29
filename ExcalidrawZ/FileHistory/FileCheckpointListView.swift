@@ -119,36 +119,66 @@ struct FileCheckpointListView<Checkpoint: FileCheckpointRepresentable>: View {
     @State private var selection: Checkpoint?
     
     var body: some View {
+        content()
+    }
+    
+    
+    @MainActor @ViewBuilder
+    private func content() -> some View {
 #if os(iOS)
-            NavigationStack {
-                List(selection: $selection) {
-                    ForEach(fileCheckpoints) { checkpoint in
-                        FileCheckpointRowView(checkpoint: checkpoint)
-                    }
+        content_iOS()
+#else
+        if #available(macOS 26.0, *) {
+            content_macOS()
+        } else {
+            content_macOS()
+        }
+#endif
+    }
+    
+#if os(iOS)
+
+    @MainActor @ViewBuilder
+    private func content_iOS() -> some View {
+        NavigationStack {
+            List(selection: $selection) {
+                ForEach(fileCheckpoints) { checkpoint in
+                    FileCheckpointRowView(checkpoint: checkpoint)
                 }
-                .navigationTitle("File history")
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        if containerVerticalSizeClass == .compact {
-                            Button {
-                                dismiss()
-                            } label: {
-                                Label(.localizable(.generalButtonClose), systemSymbol: .chevronDown)
-                            }
+            }
+            .navigationTitle("File history")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if containerVerticalSizeClass == .compact {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Label(.localizable(.generalButtonClose), systemSymbol: .chevronDown)
                         }
                     }
                 }
             }
+        }
+    }
 #else
+    @MainActor @ViewBuilder
+    private func content_macOS() -> some View {
+        if #available(macOS 13.0, *) {
             List {
                 ForEach(fileCheckpoints) { checkpoint in
                     FileCheckpointRowView(checkpoint: checkpoint)
                 }
             }
-            .onAppear {
-                print("[TEST] checkpoints: \(fileCheckpoints.count)")
+            .scrollContentBackground(.hidden)
+        } else {
+            List {
+                ForEach(fileCheckpoints) { checkpoint in
+                    FileCheckpointRowView(checkpoint: checkpoint)
+                }
             }
-#endif
+        }
     }
+#endif
+
 }
 

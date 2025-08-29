@@ -169,22 +169,10 @@ struct HomeView: View {
                             if isHovered { getRecentlyFiles() }
                         }
                         
-                        VStack(alignment: .leading) {
-                            HStack {
-                                Text("Tips")
-                                Spacer()
-                            }
-                            
-                            VStack {
-                                HStack {
-                                    Rectangle().fill(.secondary)
-                                    Rectangle().fill(.secondary)
-                                }
-                                .frame(height: 200)
-                            }
-                        }
+                        TemplatesSection()
+                        
+                        HomeTipsSection()
                     }
-                    // .opacity(inputText.isEmpty ? 1 : 0)
                 }
             }
             .frame(maxWidth: 720)
@@ -282,6 +270,26 @@ struct HomeView: View {
         }).map {$0.key}
         
         self.recentlyFiles = Array(sortedAllFiles.prefix(20))
+    }
+}
+
+private struct TemplatesSection: View {
+    var body: some View {
+        VStack {
+            HStack {
+                Text("Templates")
+                Spacer()
+                Button {
+                    
+                } label: {
+                    Text("Show All")
+                }
+            }
+            
+            ScrollView(.horizontal) {
+                
+            }
+        }
     }
 }
 

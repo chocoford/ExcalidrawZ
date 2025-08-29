@@ -37,7 +37,15 @@ struct ShareFileModifier: ViewModifier {
     @MainActor @ViewBuilder
     private func content(_ file: ExcalidrawFile) -> some View {
         ZStack {
-            if #available(macOS 13.0, iOS 16.0, *) {
+//            if #available(macOS 26.0, iOS 26.0, *) {
+//                ShareView(sharedFile: file)
+//                    .swiftyAlert()
+//                    .presentationBackground {
+//                        Rectangle()
+//                            .glassEffect(in: .containerRelative)
+//                    }
+//            } else
+        if #available(macOS 13.0, iOS 16.0, *) {
                 ShareView(sharedFile: file)
                     .swiftyAlert()
             } else {
@@ -417,20 +425,34 @@ struct ExportButtonStyle: PrimitiveButtonStyle {
                 .frame(width: size, height: size)
                 .background {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(
-                                isEnabled ?
-                                (
-                                    isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial)
-                                ) : AnyShapeStyle(Color.clear)
-                            )
-                        if #available(macOS 13.0, iOS 17.0, *) {
+                        if #available(macOS 26.0, iOS 26.0, *) {
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(.separator, lineWidth: 0.5)
+                                .fill(
+                                    isEnabled ?
+                                    (
+                                        isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial)
+                                    ) : AnyShapeStyle(Color.clear)
+                                )
+                                .glassEffect(.clear, in: RoundedRectangle(cornerRadius: 12))
                         } else {
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(.gray, lineWidth: 0.5)
+                                .fill(
+                                    isEnabled ?
+                                    (
+                                        isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial)
+                                    ) : AnyShapeStyle(Color.clear)
+                                )
+                            
+                            if #available(macOS 13.0, iOS 17.0, *) {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(.separator, lineWidth: 0.5)
+                            } else {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(.gray, lineWidth: 0.5)
+                            }
                         }
+                        
+                       
                     }
                     .animation(.default, value: isHovered)
                 }

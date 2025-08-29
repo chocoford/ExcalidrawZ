@@ -22,7 +22,7 @@ struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
     }
     
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 0) {
             ZStack {
                 if let data = checkpoint.content,
                    let file = try? ExcalidrawFile(data: data, id: checkpoint.fileID),
@@ -38,28 +38,60 @@ struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
             }
             .frame(width: 400, height: 300)
             .clipShape(RoundedRectangle(cornerRadius: 8))
-            
-            VStack(spacing: 8) {
-                Text(checkpoint.filename ?? "")
-                    .font(.title)
-                
-                Text(checkpoint.updatedAt?.formatted() ?? "")
-            }
-            
+
             HStack {
-                Button { @MainActor in
-                    restoreCheckpoint()
-                } label: {
-                    Text(.localizable(.checkpointButtonRestore))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(checkpoint.filename ?? "")
+                        .font(.title2.bold())
+                    Text(checkpoint.updatedAt?.formatted() ?? "")
+                        .font(.footnote)
+                }
+
+                Spacer()
+
+                if #available(macOS 26.0, iOS 26.0, *) {
+                    
+                    Button {
+                        viewContext.delete(checkpoint)
+                        dismiss()
+                    } label: {
+                        Image(systemSymbol: .trash)
+                            .foregroundStyle(.red)
+                    }
+                    .buttonBorderShape(.circle)
+                    .buttonStyle(.glass)
+                    .controlSize(.extraLarge)
+                    
+                    Button { @MainActor in
+                        restoreCheckpoint()
+                    } label: {
+                        Text(.localizable(.checkpointButtonRestore))
+                    }
+                    .buttonBorderShape(.capsule)
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.extraLarge)
+                } else {
+                    Button {
+                        viewContext.delete(checkpoint)
+                        dismiss()
+                    } label: {
+                        Image(systemSymbol: .trash)
+                            .foregroundStyle(.red)
+                    }
+                    .controlSize(.large)
+                    
+                    Button { @MainActor in
+                        restoreCheckpoint()
+                    } label: {
+                        Text(.localizable(.checkpointButtonRestore))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                 }
                 
-                Button {
-                    viewContext.delete(checkpoint)
-                    dismiss()
-                } label: {
-                    Text(.localizable(.checkpointButtonDelete))
-                }
+                
             }
+            .padding(20)
         }
     }
     

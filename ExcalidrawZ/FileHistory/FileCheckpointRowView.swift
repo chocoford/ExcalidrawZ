@@ -39,7 +39,6 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
 #elseif os(macOS)
             Popover(arrowEdge: .trailing) {
                 FileCheckpointDetailView(checkpoint: checkpoint)
-                    .padding(40)
             } label: {
                 label()
             }

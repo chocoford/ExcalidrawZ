@@ -226,30 +226,6 @@ struct ExcalidrawZApp: App {
         }
 #endif
     }
-    
-    
-#if os(macOS)
-    @MainActor
-    private func documentGroup() -> some Scene {
-        if #available(macOS 13.0, iOS 17.0, *) {
-            return DocumentGroup(newDocument: ExcalidrawFile()) { config in
-                SingleEditorView(config: config, shouldAdjustWindowSize: false)
-                    .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-                    .swiftyAlert()
-                    .environmentObject(appPrefernece)
-            }
-            .defaultSize(width: 1200, height: 600)
-        } else {
-            return DocumentGroup(newDocument: ExcalidrawFile()) { config in
-                SingleEditorView(config: config, shouldAdjustWindowSize: true)
-                    .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-                    .swiftyAlert()
-                    .environmentObject(appPrefernece)
-                
-            }
-        }
-    }
-#endif
 }
 
 fileprivate extension Scene {
