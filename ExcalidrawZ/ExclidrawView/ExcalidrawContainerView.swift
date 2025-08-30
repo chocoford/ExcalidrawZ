@@ -264,6 +264,25 @@ struct ExcalidrawContainerView: View {
     private func selectFilePlaceholderView() -> some View {
         ZStack {
             if isSelectFilePlaceholderPresented {
+                if #available(macOS 14.0, iOS 17.0, *) {
+                    Rectangle()
+                        .fill(.windowBackground)
+                } else {
+                    Rectangle()
+                        .fill(Color.windowBackgroundColor)
+                }
+                ProgressView()
+            }
+        }
+        .onChange(of: fileState.currentActiveFile == nil, debounce: 0.1) { newValue in
+            isSelectFilePlaceholderPresented = newValue
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func emptyFilePlaceholderview() -> some View {
+        ZStack {
+            if isSelectFilePlaceholderPresented {
                 ZStack {
                     if #available(macOS 14.0, iOS 17.0, *) {
                         Rectangle()
@@ -290,11 +309,6 @@ struct ExcalidrawContainerView: View {
             isSelectFilePlaceholderPresented = newValue
         }
         .contentShape(Rectangle())
-    }
-    
-    @MainActor @ViewBuilder
-    private func emptyFilePlaceholderview() -> some View {
-        selectFilePlaceholderView()
     }
 }
 

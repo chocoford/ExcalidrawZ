@@ -90,6 +90,10 @@ struct FileHomeItemView: View {
     static let roundedCornerRadius: CGFloat = 12
 
     let cache = FileItemPreviewCache.shared
+    
+    var cacheKey: String {
+        colorScheme == .light ? fileID + "_light" : fileID + "_dark"
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -196,8 +200,8 @@ struct FileHomeItemView: View {
         .onChange(of: file) { newValue in
             self.getElementsImage()
         }
-        .onAppear {
-            if let image = cache.object(forKey: fileID as NSString) {
+        .watchImmediately(of: colorScheme) { _ in
+            if let image = cache.object(forKey: cacheKey as NSString) {
                 Task.detached {
                     let image = Image(platformImage: image)
                     await MainActor.run {
@@ -223,7 +227,7 @@ struct FileHomeItemView: View {
                 ) {
                     Task.detached {
                         await MainActor.run {
-                            cache.setObject(image, forKey: fileID as NSString)
+                            cache.setObject(image, forKey: cacheKey as NSString)
                         }
                         let image = Image(platformImage: image)
                         await MainActor.run {

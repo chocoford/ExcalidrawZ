@@ -26,6 +26,7 @@ final class FileHomeItemTransitionState: ObservableObject {
 }
 
 struct FileHomeItemTransitionModifier: ViewModifier {
+    @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject var fileState: FileState
     
     var duration: Double = 0.5
@@ -46,9 +47,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                     }
             }
             .overlayPreferenceValue(FileHomeItemPreferenceKey.self) { value in
-                
-                
-                if let activeFile = file ?? fileState.currentActiveFile,
+                if let activeFile = file,// ?? fileState.currentActiveFile,
                    let sAnchor: Anchor<CGRect> = value[activeFile.id + "SOURCE"],
                    let dAnchor: Anchor<CGRect> = value["DEST"] {
                     // let _ = print("FileHomeItemTransitionModifier: \(activeFile.objectID.description)")
@@ -68,8 +67,50 @@ struct FileHomeItemTransitionModifier: ViewModifier {
             .environmentObject(state)
             .onChange(of: fileState.currentActiveFile) { newValue in
                 let oldValue = self.file
-
+   
+                func groupCheck(file: FileState.ActiveFile?) -> Bool {
+                    switch file {
+                        case .file(let file):
+                            guard case .group(let group) = fileState.currentActiveGroup,
+                               file.group == group else {
+                                return false
+                            }
+                        case .collaborationFile:
+                            guard fileState.isInCollaborationSpace else {
+                                return false
+                            }
+                        case .localFile(let url):
+                            let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                            fetchRequest.predicate = NSPredicate(format: "url == %@", url.deletingLastPathComponent() as CVarArg)
+                            fetchRequest.fetchLimit = 1
+                            guard let folder = ((try? viewContext.fetch(fetchRequest)) ?? []).first,
+                                  case .localFolder(let f) = fileState.currentActiveGroup,
+                                  folder == f else {
+                                return false
+                            }
+                        default:
+                            break
+                    }
+                    return true
+                }
+                
+                if !groupCheck(file: newValue) {
+                    withOpenFileDelay {
+                        self.file = newValue
+                        state.canShowExcalidrawCanvas = true
+                        state.canShowItemContainerView = false
+                    }
+                    return
+                }
+                
+                if !groupCheck(file: oldValue) {
+                    self.file = nil
+                    state.canShowExcalidrawCanvas = false
+                    state.canShowItemContainerView = true
+                }
+                
                 if oldValue == nil, let newValue { // open
+                    self.file = newValue
                     state.canShowItemContainerView = true
                     self.animateFlag = false
                     self.show = true
@@ -83,7 +124,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                                 self.show = false
                                 state.canShowExcalidrawCanvas = true
                             }
-                            self.file = newValue
+                            
                             state.canShowItemContainerView = false
                         }
                     } else {
@@ -95,7 +136,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                                 self.show = false
                                 state.canShowExcalidrawCanvas = true
                             }
-                            self.file = newValue
+                            // self.file = newValue
                             state.canShowItemContainerView = false
                         }
                     }
@@ -157,8 +198,12 @@ struct FileHomeItemHeroLayer: View {
         self.destinationAnchor = destinationAnchor
     }
     
+    var cacheKey: String {
+        colorScheme == .light ? file.id + "_light" : file.id + "_dark"
+    }
+    
     var platformImage: NSImage? {
-        FileItemPreviewCache.shared.object(forKey: file.id as NSString)
+        FileItemPreviewCache.shared.object(forKey: cacheKey as NSString)
     }
     
     @State private var image: Image?

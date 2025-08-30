@@ -391,10 +391,8 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
             // Quick Actions
             HStack(spacing: 10) {
                 NewFileButton(openWithDelay: true)
-                // .hoverCursor(.link)
                 
                 NewGroupButton(parentID: group.objectID)
-                // .hoverCursor(.link)
                 
                 Spacer()
             }

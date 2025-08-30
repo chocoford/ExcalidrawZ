@@ -163,15 +163,18 @@ struct LocalFileRowView: View {
     }
     
     private func activeFile(_ file: URL) {
-        // fetch file's folder
-        let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-        fetchRequest.predicate = NSPredicate(format: "url == %@", file.deletingLastPathComponent() as CVarArg)
-        fetchRequest.fetchLimit = 1
-        
-        if let folder = (try? viewContext.fetch(fetchRequest))?.first {
-            fileState.currentActiveGroup = .localFolder(folder)
-        }
         fileState.currentActiveFile = .localFile(file)
+
+        withOpenFileDelay {
+            // fetch file's folder
+            let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+            fetchRequest.predicate = NSPredicate(format: "url == %@", file.deletingLastPathComponent() as CVarArg)
+            fetchRequest.fetchLimit = 1
+            
+            if let folder = (try? viewContext.fetch(fetchRequest))?.first {
+                fileState.currentActiveGroup = .localFolder(folder)
+            }
+        }
     }
     
     private func updateModifiedDate() {
