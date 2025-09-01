@@ -169,7 +169,8 @@ struct ExcalidrawZApp: App {
                     Text(.localizable(.menubarButtonImport))
                 }
                 Button {
-                    try? archiveAllFiles(context: viewContext)
+                    // MUST USE THIS INSTEAD OF VIEWCONTEXT
+                    try? archiveAllFiles(context: PersistenceController.shared.container.viewContext)
                 } label: {
                     Text(.localizable(.menubarButtonExportAll))
                 }
