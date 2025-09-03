@@ -396,11 +396,10 @@ struct ExcalidrawContainerWrapper: View {
                                 from: file.objectID,
                                 context: viewContext
                             ).elements
+                            viewContext.perform { file.visitedAt = .now }
                             if val.elements == oldElements {
                                 print("[updateCurrentFile] no updates, ignored.")
                                 return
-                            } else {
-                                print("[updateCurrentFile] elements changed.")
                             }
                             fileState.updateFile(file, with: val)
                         }
@@ -413,8 +412,6 @@ struct ExcalidrawContainerWrapper: View {
                                     if val.elements == oldElements {
                                         print("[updateCurrentFile] no updates, ignored.")
                                         return
-                                    } else {
-                                        print("[updateCurrentFile] elements changed.")
                                     }
                                     try await fileState.updateLocalFile(
                                         to: url,
@@ -433,8 +430,6 @@ struct ExcalidrawContainerWrapper: View {
                                 if val.elements == oldElements {
                                     print("[updateCurrentFile] no updates, ignored.")
                                     return
-                                } else {
-                                    print("[updateCurrentFile] elements changed.")
                                 }
                                 try await fileState.updateLocalFile(
                                     to: url,

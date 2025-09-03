@@ -42,7 +42,10 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
             } label: {
                 label()
             }
-            .buttonStyle(ListButtonStyle())
+            .buttonStyle(
+                ExcalidrawZSidebarRowButtonStyle(isSelected: false, isMultiSelected: false)
+            )
+//            .buttonStyle(ListButtonStyle())
 #endif
     }
     
@@ -50,7 +53,7 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
     private func label() -> some View {
         VStack(alignment: .leading) {
             HStack {
-                Text(checkpoint.filename ?? "")
+                Text((checkpoint.filename ?? "")/* + " - \(checkpoint.objectID)"*/)
                     .font(.headline)
                 Spacer()
             }

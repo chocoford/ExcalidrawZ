@@ -141,6 +141,12 @@ final class FileState: ObservableObject {
             recoverWatchUpdate()
             currentFilePublisherCancellables.forEach{$0.cancel()}
             resetSelections()
+            if let currentActiveFile {
+                didUpdateFileState[currentActiveFile] = false
+            }
+            if let newValue {
+                didUpdateFileState[newValue] = false
+            }
         }
     }
     
@@ -201,7 +207,7 @@ final class FileState: ObservableObject {
     var shouldIgnoreUpdate = true
     /// Indicate the file is being updated after being set as current file.
     var didUpdateFile = false
-    var didUpdateFileState: [NSManagedObjectID : Bool] = [:]
+    var didUpdateFileState: [ActiveFile : Bool] = [:]
     var isCreatingFile = false
     
     var recoverWatchUpdateWorkItem: DispatchWorkItem?
@@ -314,10 +320,11 @@ final class FileState: ObservableObject {
     
     func updateFile(_ file: File, with excalidrawFile: ExcalidrawFile) {
         guard !shouldIgnoreUpdate, !file.inTrash else { return }
-        let didUpdateFile = didUpdateFileState[file.objectID] ?? false
+        let didUpdateFile = didUpdateFileState[.file(file)] ?? false
         let id = file.objectID
         let bgContext = PersistenceController.shared.container.newBackgroundContext()
-        
+        self.didUpdateFileState[.file(file)] = true
+        print("updateFile: \(Date.now), didUpdateFile: \(didUpdateFile)")
         Task.detached {
             do {
                 try await bgContext.perform {
@@ -344,9 +351,7 @@ final class FileState: ObservableObject {
                     try bgContext.save()
                 }
                 await MainActor.run {
-                    // print("Did update file: \(file.name ?? "nil")")
                     // already throttled
-                    self.didUpdateFileState[id] = true
                     self.objectWillChange.send()
                 }
             } catch {

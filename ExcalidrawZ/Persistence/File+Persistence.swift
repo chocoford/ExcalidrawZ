@@ -45,20 +45,22 @@ extension File {
         self.content = contentData
         self.updatedAt = .now
         
-        let viewContext = self.managedObjectContext ?? PersistenceController.shared.container.newBackgroundContext()
+        let context = self.managedObjectContext ?? PersistenceController.shared.container.newBackgroundContext()
         if newCheckpoint {
-            let checkpoint = FileCheckpoint(context: viewContext)
+            print("[updateElements] new checkpoint")
+            let checkpoint = FileCheckpoint(context: context)
             checkpoint.id = UUID()
             checkpoint.content = contentData
             checkpoint.filename = self.name
             checkpoint.updatedAt = .now
             self.addToCheckpoints(checkpoint)
             
-            if let checkpoints = try? PersistenceController.shared.fetchFileCheckpoints(of: self, viewContext: viewContext),
+            if let checkpoints = try? PersistenceController.shared.fetchFileCheckpoints(of: self, viewContext: context),
                checkpoints.count > 50 {
                 self.removeFromCheckpoints(checkpoints.last!)
             }
-        } else if let checkpoint = try? PersistenceController.shared.getLatestCheckpoint(of: self, viewContext: viewContext) {
+        } else if let checkpoint = try? PersistenceController.shared.getLatestCheckpoint(of: self, viewContext: context) {
+            print("[updateElements] update checkpoint")
             // update latest checkpoint
             checkpoint.content = contentData
             checkpoint.filename = self.name

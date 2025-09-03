@@ -84,6 +84,7 @@ struct CreateGroupModifier: ViewModifier {
                 }
             }
         }
+        .controlSize(.large)
     }
     
     func getNextGroupName() -> String {
@@ -143,20 +144,6 @@ struct CreateGroupSheetView: View {
     private func content() -> some View {
         Form {
             Section {
-//                HStack {
-//                    Text("type:").frame(width: 40, alignment: .trailing)
-//
-//                    Picker(selection: $createType) {
-//                        Text("Group").tag(CreateGroupType.group)
-//                        Text("Folder").tag(CreateGroupType.localFolder)
-//                    } label: {
-//                        Text("type:")
-//                    }
-//                    .pickerStyle(.segmented)
-//                    .fixedSize()
-//                    .disabled(!canSelectCreateType)
-//                }
-                
                 HStack {
 #if os(macOS)
                     Text(.localizable(.sidebarGroupListCreateGroupName))
@@ -175,8 +162,12 @@ struct CreateGroupSheetView: View {
                         }
                 }
             } header: {
-                Text(createType == .group ? .localizable(.sidebarGroupListCreateTitle) : .localizable(.sidebarGroupListCreateFolderTitle))
-                    .fontWeight(.bold)
+                Text(
+                    createType == .group
+                    ? .localizable(.sidebarGroupListCreateTitle)
+                    : .localizable(.sidebarGroupListCreateFolderTitle)
+                )
+                .fontWeight(.bold)
             } footer: {
                 HStack {
                     Spacer()
@@ -185,21 +176,27 @@ struct CreateGroupSheetView: View {
                         onCreate(name)
                         dismiss()
                     }
-                    .buttonStyle(.borderedProminent)
+                    .modifier(ProminentButtonModifier())
                     .disabled(name.isEmpty)
                 }
             }
-//#if os(macOS)
-//            Divider()
-//#endif
-            
         }
         .labelsHidden()
 #if os(macOS)
         .padding()
-//#elseif os(iOS)
-//        .presentationDetents([.height(300)])
 #endif
+    }
+}
+
+struct ProminentButtonModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            content
+                .buttonStyle(.glassProminent)
+        } else {
+            content
+                .buttonStyle(.borderedProminent)
+        }
     }
 }
 

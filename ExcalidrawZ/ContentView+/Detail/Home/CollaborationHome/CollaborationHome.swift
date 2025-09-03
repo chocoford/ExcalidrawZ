@@ -45,6 +45,7 @@ struct CollaborationHome: View {
                         )
                 }
         }
+        .scrollClipDisabledIfAvailable()
         .readHeight($scrollViewHeight)
     }
     

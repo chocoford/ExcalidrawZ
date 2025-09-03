@@ -39,88 +39,6 @@ struct ExcalidrawContainerView: View {
     @State private var isDropping: Bool = false
     @State private var cloudContainerEventChangeListener: AnyCancellable?
 
-//    {
-//        Binding {
-//            do {
-//                if let file = fileState.currentFile {
-//                    let excalidrawFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
-//                    return excalidrawFile
-//                } else if let folder = fileState.currentLocalFolder,
-//                          let file = fileState.currentLocalFile,
-//                          let folderPath = folder.url?.filePath,
-//                          file.filePath.contains(folderPath) {
-//                    // Should startAccessingSecurityScopedResource for folderURL
-//                    let file = try folder.withSecurityScopedURL { _ in
-//                        return try ExcalidrawFile(contentsOf: file)
-//                    }
-//                    return file
-//                } else if fileState.isTemporaryGroupSelected,
-//                          let file = fileState.currentTemporaryFile {
-//                    return try ExcalidrawFile(contentsOf: file)
-//                }
-//            } catch {
-//                alertToast(error)
-//            }
-//            return nil
-//        } set: { file in
-//            guard let file else { return }
-//            if let currentFile = fileState.currentFile,
-//                  file.id == fileState.currentFile?.id {
-//                do {
-//                    // Everytime load a new file will cause an actual update.
-//                    let oldElements = try ExcalidrawFile(from: currentFile.objectID, context: viewContext).elements
-//                    if file.elements == oldElements {
-//                        print("[updateCurrentFile] no updates, ignored.")
-//                        return
-//                    } else {
-//                        print("[updateCurrentFile] elements changed.")
-//                    }
-//                } catch {
-//                    alertToast(error)
-//                }
-//                fileState.updateCurrentFile(with: file)
-//            } else if let folder = fileState.currentLocalFolder,
-//                      let url = fileState.currentLocalFile {
-//                Task {
-//                    do {
-//                        try folder.withSecurityScopedURL { _ in
-//                            do {
-//                                let oldElements = try ExcalidrawFile(contentsOf: url).elements
-//                                if file.elements == oldElements {
-//                                    print("[updateCurrentFile] no updates, ignored.")
-//                                    return
-//                                } else {
-//                                    print("[updateCurrentFile] elements changed.")
-//                                }
-//                                try await fileState.updateLocalFile(to: url, with: file, context: viewContext)
-//                            } catch {
-//                                alertToast(error)
-//                            }
-//                        }
-//                    } catch {
-//                        alertToast(error)
-//                    }
-//                }
-//            } else if fileState.isTemporaryGroupSelected,
-//                      let url = fileState.currentTemporaryFile {
-//                Task {
-//                    do {
-//                        let oldElements = try ExcalidrawFile(contentsOf: url).elements
-//                        if file.elements == oldElements {
-//                            print("[updateCurrentFile] no updates, ignored.")
-//                            return
-//                        } else {
-//                            print("[updateCurrentFile] elements changed.")
-//                        }
-//                        try await fileState.updateLocalFile(to: url, with: file, context: viewContext)
-//                    } catch {
-//                        alertToast(error)
-//                    }
-//                }
-//            }
-//        }
-//    }
-
     // everytime launch should sync data.
     @State private var isImporting = false
     @State private var fileBeforeImporting: ExcalidrawFile?
@@ -312,3 +230,85 @@ struct ExcalidrawContainerView: View {
     }
 }
 
+
+//    {
+//        Binding {
+//            do {
+//                if let file = fileState.currentFile {
+//                    let excalidrawFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
+//                    return excalidrawFile
+//                } else if let folder = fileState.currentLocalFolder,
+//                          let file = fileState.currentLocalFile,
+//                          let folderPath = folder.url?.filePath,
+//                          file.filePath.contains(folderPath) {
+//                    // Should startAccessingSecurityScopedResource for folderURL
+//                    let file = try folder.withSecurityScopedURL { _ in
+//                        return try ExcalidrawFile(contentsOf: file)
+//                    }
+//                    return file
+//                } else if fileState.isTemporaryGroupSelected,
+//                          let file = fileState.currentTemporaryFile {
+//                    return try ExcalidrawFile(contentsOf: file)
+//                }
+//            } catch {
+//                alertToast(error)
+//            }
+//            return nil
+//        } set: { file in
+//            guard let file else { return }
+//            if let currentFile = fileState.currentFile,
+//                  file.id == fileState.currentFile?.id {
+//                do {
+//                    // Everytime load a new file will cause an actual update.
+//                    let oldElements = try ExcalidrawFile(from: currentFile.objectID, context: viewContext).elements
+//                    if file.elements == oldElements {
+//                        print("[updateCurrentFile] no updates, ignored.")
+//                        return
+//                    } else {
+//                        print("[updateCurrentFile] elements changed.")
+//                    }
+//                } catch {
+//                    alertToast(error)
+//                }
+//                fileState.updateCurrentFile(with: file)
+//            } else if let folder = fileState.currentLocalFolder,
+//                      let url = fileState.currentLocalFile {
+//                Task {
+//                    do {
+//                        try folder.withSecurityScopedURL { _ in
+//                            do {
+//                                let oldElements = try ExcalidrawFile(contentsOf: url).elements
+//                                if file.elements == oldElements {
+//                                    print("[updateCurrentFile] no updates, ignored.")
+//                                    return
+//                                } else {
+//                                    print("[updateCurrentFile] elements changed.")
+//                                }
+//                                try await fileState.updateLocalFile(to: url, with: file, context: viewContext)
+//                            } catch {
+//                                alertToast(error)
+//                            }
+//                        }
+//                    } catch {
+//                        alertToast(error)
+//                    }
+//                }
+//            } else if fileState.isTemporaryGroupSelected,
+//                      let url = fileState.currentTemporaryFile {
+//                Task {
+//                    do {
+//                        let oldElements = try ExcalidrawFile(contentsOf: url).elements
+//                        if file.elements == oldElements {
+//                            print("[updateCurrentFile] no updates, ignored.")
+//                            return
+//                        } else {
+//                            print("[updateCurrentFile] elements changed.")
+//                        }
+//                        try await fileState.updateLocalFile(to: url, with: file, context: viewContext)
+//                    } catch {
+//                        alertToast(error)
+//                    }
+//                }
+//            }
+//        }
+//    }

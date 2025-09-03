@@ -70,10 +70,12 @@ struct NewGroupButton: View {
 
     var body: some View {
         content()
-            .modifier(CreateGroupModifier(
-                isPresented: $isCreateGroupDialogPresented,
-                parentGroupID: parentGroupID,
-            ))
+            .modifier(
+                CreateGroupModifier(
+                    isPresented: $isCreateGroupDialogPresented,
+                    parentGroupID: parentGroupID,
+                )
+            )
             .fileImporterWithAlert(
                 isPresented: $isCreateLocalFolderDialogPresented,
                 allowedContentTypes: [.folder],

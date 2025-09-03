@@ -47,9 +47,9 @@ struct WhatsNewSheetViewModifier: ViewModifier {
             }
             .bindWindow($window)
             .onAppear {
-//#if DEBUG
-//                isPresented = true
-//#endif
+#if DEBUG
+                isPresented = true
+#endif
                 if let buildString = Bundle.main.infoDictionary!["CFBundleVersion"] as? String,
                    lastBuild < (Int(buildString) ?? 0) {
                     isPresented = true
@@ -82,6 +82,8 @@ struct WhatsNewView: View {
 
     @State var route: Route? = nil
     
+    @State private var navigationMaxHeight: CGFloat = .zero
+    
     var body: some View {
         if #available(macOS 13.0, iOS 16.0, *) {
             NavigationStack {
@@ -97,6 +99,7 @@ struct WhatsNewView: View {
                     switch route {
                         case .allFeatures:
                             allFeaturesList()
+                                .frame(width: 720, height: 500)
                         case .video(let url):
                             VideoPlayer(player: AVPlayer(url: url))
 #if os(macOS)
@@ -132,36 +135,54 @@ struct WhatsNewView: View {
             }
         }
         .readSize($navigationSize)
-        .toolbar {
-#if os(macOS)
-            ToolbarItem(placement: .cancellationAction) {
-                if #available(macOS 13.0, iOS 16.0, *) {
-                    Text("") // <-- only with this, the continue button below will show (macOS)
+//        .watchImmediately(of: navigationSize) { newValue in
+//            navigationMaxHeight = max(navigationMaxHeight, newValue.height)
+//        }
+        .overlay(alignment: .topTrailing) {
+            ZStack {
+                if #available(macOS 26.0, *) {
+                    dismissButton()
+                        .buttonBorderShape(.circle)
+                        .buttonStyle(.glass)
+                        .controlSize(.extraLarge)
                 } else {
-                    if showContinue {
-                        Button {
-                            dismiss()
-                        } label: {
-                            Text(.localizable(.whatsNewButtonContinue))
-                                .padding(.horizontal)
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
+                    dismissButton()
+                        .buttonStyle(.borderless)
+                        .controlSize(.large)
                 }
             }
-#endif
-            ToolbarItem(placement: .primaryAction) {
-                if #available(macOS 13.0, iOS 16.0, *) {
-                    if showContinue {
-                        Button {
-                            dismiss()
-                        } label: {
-                            Text(.localizable(.whatsNewButtonContinue))
-                        }
-                    }
-                }
-            }
+            .padding(20)
         }
+//        .toolbar {
+//#if os(macOS)
+//            ToolbarItem(placement: .cancellationAction) {
+//                if #available(macOS 13.0, iOS 16.0, *) {
+//                    Text("") // <-- only with this, the continue button below will show (macOS)
+//                } else {
+//                    if showContinue {
+//                        Button {
+//                            dismiss()
+//                        } label: {
+//                            Text(.localizable(.whatsNewButtonContinue))
+//                                .padding(.horizontal)
+//                        }
+//                        .buttonStyle(.borderedProminent)
+//                    }
+//                }
+//            }
+//#endif
+//            ToolbarItem(placement: .primaryAction) {
+//                if #available(macOS 13.0, iOS 16.0, *) {
+//                    if showContinue {
+//                        Button {
+//                            dismiss()
+//                        } label: {
+//                            Text(.localizable(.whatsNewButtonContinue))
+//                        }
+//                    }
+//                }
+//            }
+//        }
 #if os(iOS)
         .navigationTitle(Text(.localizable(.whatsNewTitle)))
         .navigationBarTitleDisplayMode(.large)
@@ -246,8 +267,6 @@ struct WhatsNewView: View {
         .padding(.bottom, 40)
     }
     
-
-
     @MainActor @ViewBuilder
     private func warnningSection() -> some View {
         VStack {
@@ -317,6 +336,16 @@ struct WhatsNewView: View {
                     .fill(Color.accentColor)
             }
         }
+    }
+    
+    @MainActor @ViewBuilder
+    private func dismissButton() -> some View {
+        Button {
+            dismiss()
+        } label: {
+            Image(systemSymbol: .xmark)
+        }
+        .keyboardShortcut("w", modifiers: .command)
     }
 }
 

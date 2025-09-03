@@ -114,6 +114,16 @@ struct GroupListView: View {
                                 Image(systemSymbol: .person3)
                                     .frame(width: 30, alignment: .leading)
                                 Text(.localizable(.sidebarGroupRowCollaborationTitle))
+                                
+                                Spacer()
+                                
+                                if !fileState.collaboratingFilesState.values.filter({$0 == .loaded}).isEmpty {
+                                    Text(
+                                        fileState.collaboratingFilesState.values.filter({$0 == .loaded}).count.formatted()
+                                    )
+                                    .foregroundStyle(.secondary)
+                                    .padding(.trailing, 4)
+                                }
                             }
                         }
                         .buttonStyle(
@@ -304,7 +314,6 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
                 }
             }
             .opacity(isHovered ? 1 : 0)
-            // .hoverCursor(.link)
             .labelStyle(.iconOnly)
             .buttonStyle(.borderless)
         }

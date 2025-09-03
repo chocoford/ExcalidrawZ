@@ -33,61 +33,17 @@ struct HomeView: View {
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var fileState: FileState
     
-    
-    @FetchRequest(
-        sortDescriptors: [
-            .init(keyPath: \File.updatedAt, ascending: false),
-            .init(keyPath: \File.visitedAt, ascending: false)
-        ],
-        predicate: NSPredicate(format: "inTrash == false"),
-        animation: .default
-    )
-    private var files: FetchedResults<File>
-    
-    @FetchRequest(
-        sortDescriptors: [],
-        animation: .default
-    )
-    private var localFolders: FetchedResults<LocalFolder>
-    
-    // @State private var localFiles: [URL] = []
-    
-    @FetchRequest(
-        sortDescriptors: [
-            .init(keyPath: \File.updatedAt, ascending: false),
-            .init(keyPath: \File.visitedAt, ascending: false)
-        ],
-        animation: .default
-    )
-    private var collaborationFiles: FetchedResults<CollaborationFile>
-    
-    @State private var recentlyFiles: [FileState.ActiveFile] = []
-    
     @State private var isSearchPresented: Bool = false
     
     @State private var inputText: String = ""
-    
     @State private var selectedRecntlyFiles: Set<FileState.ActiveFile> = []
-    
+
     var body: some View {
-        Color.clear
-            .contentShape(Rectangle())
-            .onTapGesture {
-                isSearchPresented = false
-                selectedRecntlyFiles.removeAll()
-            }
-            .modifier(ExcalidrawLibraryDropHandler())
-            .modifier(ItemDropFallbackModifier())
-            .overlay {
-                content()
-            }
-    }
-    
-    @MainActor @ViewBuilder
-    private func content() -> some View {
-        ZStack {
+        ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 30) {
-                Text("Welcome to ExcalidrawZ")
+                 Color.clear.frame(height: 40)
+                
+                Text(.localizable(.homeTitle))
                     .font(.largeTitle)
                 
                 HStack(spacing: 8) {
@@ -136,46 +92,18 @@ struct HomeView: View {
                 
                 ZStack {
                     VStack(spacing: 30) {
-                        VStack(alignment: .leading) {
-                            HStack {
-                                Image(systemSymbol: .clock)
-                                Text("Recently visited")
-                            }
-                            .font(.subheadline)
-                            
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 10) {
-                                    ForEach(recentlyFiles) { file in
-                                        FileHomeItemView(
-                                            file: file,
-                                            isSelected: Binding {
-                                                selectedRecntlyFiles.contains(file)
-                                            } set: { val in
-                                                if val {
-                                                    selectedRecntlyFiles = [file]
-                                                } else {
-                                                    selectedRecntlyFiles.remove(file)
-                                                }
-                                            },
-                                        )
-                                        .frame(width: 200)
-                                    }
-                                }
-                                .padding(10)
-                            }
-                            .offset(x: -10)
-                        }
-                        .onHover { isHovered in
-                            if isHovered { getRecentlyFiles() }
-                        }
                         
-                        TemplatesSection()
+                        RecentlyFilesSection(selectedRecntlyFiles: $selectedRecntlyFiles)
+
+#if DEBUG || DEV
+                        // TemplatesSection()
+#endif
                         
                         HomeTipsSection()
                     }
                 }
             }
-            .frame(maxWidth: 720)
+            // .frame(maxWidth: 720)
             .padding(40)
             .overlayPreferenceValue(BoundsPreferenceKey.self) { key in
                 if isSearchPresented, let anchor = key["InputField"] {
@@ -218,12 +146,107 @@ struct HomeView: View {
                     }
                 }
             }
-            .onChange(of: scenePhase) { _ in
-                getRecentlyFiles()
+            .frame(maxWidth: .infinity)
+            .modifier(ExcalidrawLibraryDropHandler())
+            .modifier(ItemDropFallbackModifier())
+            .background {
+                Color.clear.contentShape(Rectangle())
+                    .onTapGesture {
+                        selectedRecntlyFiles.removeAll()
+                    }
             }
-            .onAppear {
-                getRecentlyFiles()
+        }
+        .scrollClipDisabledIfAvailable()
+    }
+    
+}
+
+private struct RecentlyFilesSection: View {
+    @Environment(\.scenePhase) private var scenePhase
+
+    @Binding private var selectedRecntlyFiles: Set<FileState.ActiveFile>
+    
+    init(selectedRecntlyFiles: Binding<Set<FileState.ActiveFile>>) {
+        self._selectedRecntlyFiles = selectedRecntlyFiles
+    }
+    
+    @FetchRequest(
+        sortDescriptors: [
+            .init(keyPath: \File.updatedAt, ascending: false),
+            .init(keyPath: \File.visitedAt, ascending: false)
+        ],
+        predicate: NSPredicate(format: "inTrash == false"),
+        animation: .default
+    )
+    private var files: FetchedResults<File>
+    
+    @FetchRequest(
+        sortDescriptors: [],
+        animation: .default
+    )
+    private var localFolders: FetchedResults<LocalFolder>
+    
+    @FetchRequest(
+        sortDescriptors: [
+            .init(keyPath: \File.updatedAt, ascending: false),
+            .init(keyPath: \File.visitedAt, ascending: false)
+        ],
+        animation: .default
+    )
+    private var collaborationFiles: FetchedResults<CollaborationFile>
+    
+    
+    @State private var recentlyFiles: [FileState.ActiveFile] = []
+    
+    var body: some View {
+        ZStack {
+            if !recentlyFiles.isEmpty {
+                content()
             }
+        }
+        .animation(.default, value: recentlyFiles.isEmpty)
+        .onChange(of: scenePhase) { _ in
+            getRecentlyFiles()
+        }
+        .onAppear {
+            getRecentlyFiles()
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func content() -> some View {
+        VStack(alignment: .leading) {
+            HStack {
+                Image(systemSymbol: .clock)
+                Text(.localizable(.homeRecentlyVisitedTitle))
+            }
+            .font(.headline)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(recentlyFiles) { file in
+                        FileHomeItemView(
+                            file: file,
+                            isSelected: Binding {
+                                selectedRecntlyFiles.contains(file)
+                            } set: { val in
+                                if val {
+                                    selectedRecntlyFiles = [file]
+                                } else {
+                                    selectedRecntlyFiles.remove(file)
+                                }
+                            },
+                        )
+                        .frame(width: 200)
+                    }
+                }
+                .padding(10)
+            }
+            .offset(x: -10)
+            .scrollClipDisabledIfAvailable()
+        }
+        .onHover { isHovered in
+            if isHovered { getRecentlyFiles() }
         }
     }
     

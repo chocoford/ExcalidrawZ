@@ -1,5 +1,5 @@
 {
-  "originHash" : "58ac34db17fc9b244736be5f62b1e3b61af783d3791345033cf1a5ac2b288f60",
+  "originHash" : "f44a531c0580b36c8a07b4fe2b35c363519413f9e45a0ffe52249fe77a8f4e6d",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -16,7 +16,7 @@
       "location" : "https://github.com/chocoford/ChocofordKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "dc54e915b1fa8eac6ed974371d26463172d44692"
+        "revision" : "01413520b0c2a64e112edbcabea549768aaae587"
       }
     },
     {
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swhitty/FlyingFox.git",
       "state" : {
-        "revision" : "de429870282bed7b01bf6c384f5f29d55907aa10",
-        "version" : "0.24.1"
+        "revision" : "76b2d2d0eb54f0b53e8b661cc8007c487d94f8da",
+        "version" : "0.25.0"
       }
     },
     {
@@ -53,6 +53,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "e23d6eab941da699ac4a60fb0e60f3ba5c937459"
+      }
+    },
+    {
+      "identity" : "networkimage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/gonzalezreal/NetworkImage",
+      "state" : {
+        "revision" : "2849f5323265386e200484b0d0f896e73c3411b9",
+        "version" : "6.0.1"
       }
     },
     {
@@ -101,6 +110,15 @@
       }
     },
     {
+      "identity" : "swift-cmark",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-cmark",
+      "state" : {
+        "revision" : "b022b08312decdc46585e0b3440d97f6f22ef703",
+        "version" : "0.6.0"
+      }
+    },
+    {
       "identity" : "swift-log",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-log.git",
@@ -110,12 +128,21 @@
       }
     },
     {
+      "identity" : "swift-markdown-ui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/gonzalezreal/swift-markdown-ui.git",
+      "state" : {
+        "revision" : "5f613358148239d0292c0cef674a3c2314737f9e",
+        "version" : "2.4.1"
+      }
+    },
+    {
       "identity" : "swiftui-introspect",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/siteline/SwiftUI-Introspect.git",
+      "location" : "https://github.com/siteline/swiftui-introspect",
       "state" : {
-        "revision" : "807f73ce09a9b9723f12385e592b4e0aaebd3336",
-        "version" : "1.3.0"
+        "revision" : "9bedf1e79c7b7c34b35b74bef126f56d2400ef7f",
+        "version" : "1.4.0-beta.4"
       }
     },
     {

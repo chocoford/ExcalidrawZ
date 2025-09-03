@@ -13489,6 +13489,39 @@
         }
       }
     },
+    "homeRecentlyVisitedTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently visited"
+          }
+        }
+      }
+    },
+    "homeTipsTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tips"
+          }
+        }
+      }
+    },
+    "homeTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome to ExcalidrawZ"
+          }
+        }
+      }
+    },
     "iCloudSyncingDataDescription" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36314,6 +36347,336 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更新時間"
+          }
+        }
+      }
+    },
+    "tipsFileHistoryDetailContent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click the button in the top-right corner of the program window to expand the history for the currently open file; you can then restore or delete any entries.\n                File history is tied to the file—deleting the file will also delete its history. Currently, a file can retain up to 50 history snapshots."
+          }
+        }
+      }
+    },
+    "tipsFileHistoryDetailTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learn how to restore file data with File History"
+          }
+        }
+      }
+    },
+    "tipsFileHistoryOverviewDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learn how to restore file data"
+          }
+        }
+      }
+    },
+    "tipsFileHistoryOverviewTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File History"
+          }
+        }
+      }
+    },
+    "tipsLibraryDetailAddExportContent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "- Right-click on any element or group of elements to add them to your Library.\n- The Library supports grouping, allowing you to organize your items as needed.\n- You can also export your Library for backup or sharing."
+          }
+        }
+      }
+    },
+    "tipsLibraryDetailAddExportTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add & Export"
+          }
+        }
+      }
+    },
+    "tipsLibraryDetailImportUseContent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "- The Library is located in the top-right corner of the app window and opens as a sidebar drawer.\n- You can import items directly from an Excalidraw library file by either double-clicking it or dragging it into the app.\n- Each imported library file becomes an independent group.\n- To use an item, simply drag it from the library sidebar onto the canvas."
+          }
+        }
+      }
+    },
+    "tipsLibraryDetailImportUseTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import & Use"
+          }
+        }
+      }
+    },
+    "tipsLibraryDetailLibraryDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Library in ExcalidrawZ helps you reuse elements and manage custom assets efficiently."
+          }
+        }
+      }
+    },
+    "tipsLibraryDetailTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library"
+          }
+        }
+      }
+    },
+    "tipsLibraryOverviewDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play with excalidraw library."
+          }
+        }
+      }
+    },
+    "tipsLibraryOverviewTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library"
+          }
+        }
+      }
+    },
+    "tipsOrganizeFilesDetailContent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "### Change the Order: View Files Your Way\n\n- **Sort by Time**: Quickly find your most recent creations.\n- **Sort by Name**: Perfect if you like to locate files alphabetically.\n- **Drag & Drop Custom Order**: Prefer your own sequence? Just drag files to arrange them exactly how you want.\n\n###  Organize: Create Subfolders for Clarity\n\n- Use **subfolders** to group related files together.\n- For example:\n- *Design Drafts* → Works in progress\n- *Finished Projects* → Completed pieces for archiving\n- *Inspiration* → Quick notes and ideas\n- A clear folder structure helps you find what you need in seconds.\n\n\n\n#### Move Across Spaces: Files That Flow Freely\n\nYour files can live in different spaces:\n\n- **Database** (persistent storage)\n- **Local Files** (saved on your device)\n- **Temporary Files** (quick drafts)\n- **Collaboration Space** (shared with others)\n\nYou can move files between them by:\n\n- **Right-click menu** → Select *Move to…*\n- **Drag & drop** → Simply drag to the destination space"
+          }
+        }
+      }
+    },
+    "tipsOrganizeFilesDetailDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ isn’t just for sketching ideas—it also gives you powerful tools to keep your files neat and accessible. Here are some practical tips to help you stay organized:"
+          }
+        }
+      }
+    },
+    "tipsOrganizeFilesDetailTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How to Organize Your Files in ExcalidrawZ"
+          }
+        }
+      }
+    },
+    "tipsOrganizeFilesOverviewDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Organize your files effectively."
+          }
+        }
+      }
+    },
+    "tipsOrganizeFilesOverviewTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Organize files"
+          }
+        }
+      }
+    },
+    "tipsShareDetailArchiveContent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ allows you to archive all files stored in the database and export them to your local device.\n\n- **How it works**\n\n  When you select the **Archive** option in the Share panel, all database files will be collected and exported together.\n\n- **Result**\n\n  The export will appear as a folder on your local device, containing all your archived files."
+          }
+        }
+      }
+    },
+    "tipsShareDetailArchiveTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archive all your database files"
+          }
+        }
+      }
+    },
+    "tipsShareDetailDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ allows you to easily export and share your drawings in many formats."
+          }
+        }
+      }
+    },
+    "tipsShareDetailExportFileContent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In addition to images, you can also export your drawings as files.\n\n- **How to access**\n\n  Open the **Share** panel and select the **File** option.\n\n- **Ways to save and use**\n\n  - Copy the file directly to the clipboard\n  - Save the file locally with one click\n  - Drag and drop the file to any destination you prefer\n\n- **Compatibility**\n\n  The exported file is fully compatible with Excalidraw, so it can be opened and edited without any loss of content."
+          }
+        }
+      }
+    },
+    "tipsShareDetailExportFileTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export to file"
+          }
+        }
+      }
+    },
+    "tipsShareDetailExportImageContent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can export the content of your canvas as an image directly from the app.\n\n- **How to access**\n\n  Click the **Share** button in the top-right corner of the window. In the share popup, the first option is **Export as Image**.\n\n- **Export options**\n\n  - Export in either light or dark mode\n  - Export with a transparent background\n  - Embed the source file within the image, allowing it to be re-imported and edited later\n\n- **Ways to save and use**\n\n  - Copy the image directly to the clipboard\n  - Save the image to your local device with one click\n  - Drag and drop"
+          }
+        }
+      }
+    },
+    "tipsShareDetailExportImageTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export to image"
+          }
+        }
+      }
+    },
+    "tipsShareDetailExportPDFContent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ExcalidrawZ also supports exporting your drawings as vector PDFs. This ensures that the exported image remains lossless, no matter how much you zoom in.\n\n- **How to access**\n\n  Open the **Share** panel and select the **PDF** option.\n\n- **Export process**\n\n  This will open the system print dialog. From here, you can either:\n\n  - Print the file directly\n  - Choose *Export to PDF* to save a lossless PDF version"
+          }
+        }
+      }
+    },
+    "tipsShareDetailExportPDFTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export to lossless PDF"
+          }
+        }
+      }
+    },
+    "tipsShareDetailTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sharing Your Work in ExcalidrawZ"
+          }
+        }
+      }
+    },
+    "tipsShareOverviewDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share your drawings with others."
+          }
+        }
+      }
+    },
+    "tipsShareOverviewTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        }
+      }
+    },
+    "tipsWhatsNewOverviewTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What’s New"
           }
         }
       }

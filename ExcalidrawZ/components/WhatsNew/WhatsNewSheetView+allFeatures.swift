@@ -11,25 +11,12 @@ extension WhatsNewView {
     @MainActor @ViewBuilder
     func featuresContent() -> some View {
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewLiveCollaborationCompabilityTitle),
-            description: .localizable(.whatsNewLiveCollaborationCompabilityDescription),
-            icon: Image(systemSymbol: .person2CropSquareStack)
+            title: "Completely redesigned UI",
+            description: "The redesigned sidebar and homepage make it more intuitive to browse files.",
+            icon: Image(systemSymbol: .macwindow)
         )
         
         
-#if os(iOS)
-        if UIDevice().userInterfaceIdiom == .pad {
-            
-        } else if UIDevice().userInterfaceIdiom == .phone {
-            
-        }
-#else
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewCustomFontTitle),
-            description: .localizable(.whatsNewCustomFontDescription),
-            icon: Image(systemSymbol: .character)
-        )
-#endif
     }
     
     
@@ -48,8 +35,6 @@ extension WhatsNewView {
                     Spacer()
                 }
                 .padding(4)
-                
-                Divider()
             }
             
             // Content
@@ -59,6 +44,30 @@ extension WhatsNewView {
                         version: Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
                     ) {
                         featuresContent()
+                    }
+                    
+                    // MARK: - v1.5.2
+                    WhatsNewVersionSection(version: "v1.5.1") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewLiveCollaborationCompabilityTitle),
+                            description: .localizable(.whatsNewLiveCollaborationCompabilityDescription),
+                            icon: Image(systemSymbol: .person2CropSquareStack)
+                        )
+                        
+                        
+#if os(iOS)
+                        if UIDevice().userInterfaceIdiom == .pad {
+                            
+                        } else if UIDevice().userInterfaceIdiom == .phone {
+                            
+                        }
+#else
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewCustomFontTitle),
+                            description: .localizable(.whatsNewCustomFontDescription),
+                            icon: Image(systemSymbol: .character)
+                        )
+#endif
                     }
                     
                     // MARK: - v1.4.5
@@ -179,7 +188,7 @@ extension WhatsNewView {
                             description: .localizable(.whatsNewFallbackExcalifontDescription),
                             icon: Image(systemSymbol: .characterCursorIbeam)
                         ) {
-                            if let url = Bundle.main.url(forResource: "Fallback Excalifont 720p", withExtension: "mov") {
+                            if let url = URL(string: "https://pub-2983ae3d3c894bd08530707492e919db.r2.dev/Fallback Excalifont 720p.mov") {
                                 if #available(macOS 13.0, iOS 16.0, *) {
                                     NavigationLink(value: Route.video(url)) {
                                         WhatsNewRowMediaPreviewView(url: url)
@@ -290,9 +299,6 @@ extension WhatsNewView {
                 .padding(.top, 20)
                 .padding(.bottom, 40)
             }
-#if os(macOS)
-            .frame(width: navigationSize.width, height: max(0, navigationSize.height - 40))
-#endif
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

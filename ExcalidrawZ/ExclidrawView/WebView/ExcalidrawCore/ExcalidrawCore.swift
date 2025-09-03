@@ -333,7 +333,6 @@ extension ExcalidrawCore {
     ) async throws -> Data {
         let id = UUID().uuidString
         let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified()), \(embedScene), \(withBackground), \(colorScheme == .dark)); 0;"
-        self.logger.debug("\(#function), script:\n\(script)")
         Task { @MainActor in
             do {
                 try await webView.evaluateJavaScript(script)
@@ -384,7 +383,6 @@ extension ExcalidrawCore {
     ) async throws -> Data {
         let id = UUID().uuidString
         let script = try "window.excalidrawZHelper.exportElementsToSvg('\(id)', \(elements.jsonStringified()), \(embedScene), \(withBackground), \(colorScheme == .dark)); 0;"
-        self.logger.debug("\(#function)")
         Task { @MainActor in
             do {
                 try await webView.evaluateJavaScript(script)

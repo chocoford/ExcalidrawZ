@@ -41,16 +41,8 @@
 		3987A5152CB54B200054D7D5 /* QuickLookPreviewExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3987A5072CB54B200054D7D5 /* QuickLookPreviewExtension.appex */; platformFilters = (macos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3987A51C2CB54B840054D7D5 /* QuickLookPreviewExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3987A5072CB54B200054D7D5 /* QuickLookPreviewExtension.appex */; platformFilters = (macos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3987A5D02CB63FB00054D7D5 /* overwrite_console.js in Resources */ = {isa = PBXBuildFile; fileRef = 3976C4D52C8789F60037D3AF /* overwrite_console.js */; };
-		398B12CB2E434572003D1F4B /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03B2C6C7EAA00472AE7 /* ChocofordEssentials */; };
-		398B12CC2E434572003D1F4B /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03D2C6C7EAA00472AE7 /* ChocofordUI */; };
 		398B12CD2E434572003D1F4B /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2F72C512E7B00F14E88 /* ChocofordEssentials */; };
 		398B12CE2E434572003D1F4B /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3930B2F92C512E7B00F14E88 /* ChocofordUI */; };
-		398B12CF2E434572003D1F4B /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 39E9C5A42C8CB2E600BC1C07 /* ChocofordEssentials */; };
-		398B12D02E434572003D1F4B /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 39E9C5A62C8CB2E600BC1C07 /* ChocofordUI */; };
-		398B12D12E434572003D1F4B /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3929AB782CA5E4B800C7CCE8 /* ChocofordEssentials */; };
-		398B12D22E434572003D1F4B /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3929AB7A2CA5E4B800C7CCE8 /* ChocofordUI */; };
-		398B12D32E434572003D1F4B /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 39E556F12CC8060E0009F051 /* ChocofordEssentials */; };
-		398B12D42E434572003D1F4B /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 398F144C2CF7379C0061CCF9 /* ChocofordUI */; };
 		398B15852E437999003D1F4B /* SmoothGradient in Frameworks */ = {isa = PBXBuildFile; productRef = 398B15842E437999003D1F4B /* SmoothGradient */; };
 		398B158C2E4379A5003D1F4B /* SmoothGradient in Frameworks */ = {isa = PBXBuildFile; productRef = 398B158B2E4379A5003D1F4B /* SmoothGradient */; };
 		398F14532CF738DB0061CCF9 /* SwiftyAlert in Frameworks */ = {isa = PBXBuildFile; productRef = 398F14522CF738DB0061CCF9 /* SwiftyAlert */; };
@@ -61,6 +53,8 @@
 		3990F82D2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F82E2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F8362CACF4C500C94983 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3990F8352CACF4C500C94983 /* StoreKit.framework */; };
+		3999925C2E654D3D000FF1EC /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3999925B2E654D3D000FF1EC /* MarkdownUI */; };
+		399992682E654D5F000FF1EC /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 399992672E654D5F000FF1EC /* MarkdownUI */; };
 		39A28C9A2D92AB1D00B079B1 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */; };
 		39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */ = {isa = PBXBuildFile; fileRef = 39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */; };
 		39AD1EE9295AE08800DA9657 /* FakeSaveCommand.js in Resources */ = {isa = PBXBuildFile; fileRef = 39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */; };
@@ -75,8 +69,6 @@
 		39BE12F12CB7DD97006781D5 /* Zlib in Frameworks */ = {isa = PBXBuildFile; productRef = 39BE12F02CB7DD97006781D5 /* Zlib */; };
 		39E4A9BF2D410437002BF98C /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A0392C6C7EAA00472AE7 /* ChocofordEssentials */; };
 		39E4A9C02D410437002BF98C /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03A2C6C7EAA00472AE7 /* ChocofordUI */; };
-		39E4A9C72D410437002BF98C /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 39E556F32CC8060E0009F051 /* ChocofordUI */; };
-		39E4A9C82D410437002BF98C /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 398F144A2CF7379C0061CCF9 /* ChocofordEssentials */; };
 		39ED18542D3FDE1C00E437A0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */; };
 		39ED18552D3FDE1C00E437A0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */; };
 		39ED18632D40FCBD00E437A0 /* AVKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 39ED18622D40FCBD00E437A0 /* AVKit.framework */; };
@@ -244,6 +236,34 @@
 			);
 			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
 		};
+		399993652E66DA9E000FF1EC /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"ExcalidrawZ - Library Add&Export.mov",
+				"ExcalidrawZ - Library import.mov",
+				"ExcalidrawZ - Organize files.mov",
+				"ExcalidrawZ - Share file.mov",
+				"ExcalidrawZ - Share image.mov",
+				"ExcalidrawZ - Share PDF.mov",
+				"ExcalidrawZ File History guide.mov",
+				"Fallback Excalifont 720p.mov",
+			);
+			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ (AppStore) */;
+		};
+		399993662E66DAA0000FF1EC /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"ExcalidrawZ - Library Add&Export.mov",
+				"ExcalidrawZ - Library import.mov",
+				"ExcalidrawZ - Organize files.mov",
+				"ExcalidrawZ - Share file.mov",
+				"ExcalidrawZ - Share image.mov",
+				"ExcalidrawZ - Share PDF.mov",
+				"ExcalidrawZ File History guide.mov",
+				"Fallback Excalifont 720p.mov",
+			);
+			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
+		};
 		39A28CA22D92AB8700B079B1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -311,7 +331,7 @@
 		3987A5092CB54B200054D7D5 /* QuickLookPreviewExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3987A51A2CB54B200054D7D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = QuickLookPreviewExtension; sourceTree = "<group>"; };
 		39A28CF92D92D8EA00B079B1 /* ContentView+ */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "ContentView+"; sourceTree = "<group>"; };
 		39B69BC52D8BD74C003369E8 /* Subscription */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (39B2EBF52D9AFD9900B6CB47 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39B2EC032D9AFFDB00B6CB47 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Subscription; sourceTree = "<group>"; };
-		39ED18482D3FCECB00E437A0 /* Videos */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Videos; sourceTree = "<group>"; };
+		39ED18482D3FCECB00E437A0 /* Videos */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (399993652E66DA9E000FF1EC /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 399993662E66DAA0000FF1EC /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Videos; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -319,8 +339,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				398B12CC2E434572003D1F4B /* ChocofordUI in Frameworks */,
-				398B12CB2E434572003D1F4B /* ChocofordEssentials in Frameworks */,
+				3999925C2E654D3D000FF1EC /* MarkdownUI in Frameworks */,
 				39E4A9C02D410437002BF98C /* ChocofordUI in Frameworks */,
 				39E4A9BF2D410437002BF98C /* ChocofordEssentials in Frameworks */,
 				3965F3792D76B5090065A8C8 /* MathJaxSwift in Frameworks */,
@@ -339,17 +358,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				398B12D42E434572003D1F4B /* ChocofordUI in Frameworks */,
-				398B12D32E434572003D1F4B /* ChocofordEssentials in Frameworks */,
-				398B12D22E434572003D1F4B /* ChocofordUI in Frameworks */,
-				398B12D12E434572003D1F4B /* ChocofordEssentials in Frameworks */,
-				398B12D02E434572003D1F4B /* ChocofordUI in Frameworks */,
-				398B12CF2E434572003D1F4B /* ChocofordEssentials in Frameworks */,
 				398B12CE2E434572003D1F4B /* ChocofordUI in Frameworks */,
 				398B12CD2E434572003D1F4B /* ChocofordEssentials in Frameworks */,
 				391087832DFFCC1A0057F493 /* Logging in Frameworks */,
-				39E4A9C82D410437002BF98C /* ChocofordEssentials in Frameworks */,
-				39E4A9C72D410437002BF98C /* ChocofordUI in Frameworks */,
 				3965F3772D76B4EC0065A8C8 /* MathJaxSwift in Frameworks */,
 				3914876D2960AFD10042927A /* Sparkle in Frameworks */,
 				39BE12EE2CB7DD8C006781D5 /* Zlib in Frameworks */,
@@ -358,6 +369,7 @@
 				398F14532CF738DB0061CCF9 /* SwiftyAlert in Frameworks */,
 				398B15852E437999003D1F4B /* SmoothGradient in Frameworks */,
 				39ED18642D40FCC400E437A0 /* AVKit.framework in Frameworks */,
+				399992682E654D5F000FF1EC /* MarkdownUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -538,6 +550,7 @@
 				3965F3782D76B5090065A8C8 /* MathJaxSwift */,
 				391087892DFFCC200057F493 /* Logging */,
 				398B158B2E4379A5003D1F4B /* SmoothGradient */,
+				3999925B2E654D3D000FF1EC /* MarkdownUI */,
 			);
 			productName = ExcaliDrawZ;
 			productReference = 3963A0822C6C7EAA00472AE7 /* ExcalidrawZ.app */;
@@ -596,6 +609,7 @@
 				3965F3762D76B4EC0065A8C8 /* MathJaxSwift */,
 				391087822DFFCC1A0057F493 /* Logging */,
 				398B15842E437999003D1F4B /* SmoothGradient */,
+				399992672E654D5F000FF1EC /* MarkdownUI */,
 			);
 			productName = ExcaliDrawZ;
 			productReference = 397E4653295838CF003B824B /* ExcalidrawZ.app */;
@@ -718,6 +732,7 @@
 				3965F3752D76B4EC0065A8C8 /* XCRemoteSwiftPackageReference "MathJaxSwift" */,
 				391087702DFFCB900057F493 /* XCRemoteSwiftPackageReference "swift-log" */,
 				398B15832E437999003D1F4B /* XCRemoteSwiftPackageReference "SmoothGradient" */,
+				3999925A2E654D3D000FF1EC /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 			);
 			productRefGroup = 397E4654295838CF003B824B /* Products */;
 			projectDirPath = "";
@@ -1796,6 +1811,14 @@
 				kind = branch;
 			};
 		};
+		3999925A2E654D3D000FF1EC /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
 		39BE12EC2CB7DD8C006781D5 /* XCRemoteSwiftPackageReference "Zlib" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/mezhevikin/Zlib.git";
@@ -1940,6 +1963,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 398F14492CF7379C0061CCF9 /* XCRemoteSwiftPackageReference "ChocofordKit" */;
 			productName = ChocofordEssentials;
+		};
+		3999925B2E654D3D000FF1EC /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3999925A2E654D3D000FF1EC /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
+		};
+		399992672E654D5F000FF1EC /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3999925A2E654D3D000FF1EC /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
 		};
 		39A3FE5F2E40A43700DF6AD0 /* XCStringsToolPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
