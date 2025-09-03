@@ -74,7 +74,6 @@ struct FileHomeContainer: View {
                 
                 Color.clear
                     .frame(height: max(0, scrollViewHeight - contentHeight))
-                    .contentShape(Rectangle())
                     .overlay(alignment: .top) {
                         if config.isPlaceholderPresented {
                             LazyVGrid(
@@ -120,7 +119,7 @@ struct FileHomeContainer: View {
                                     )
                             }
                         } else {
-                            Color.white
+                            Color.clear
                         }
                     }
                     .overlay {
@@ -279,7 +278,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
         }
         .showPlaceholder(files.isEmpty, itemWidth: fileItemWidth)
         .contentBackground {
-            Color.clear
+            Color.clear // .opacity(0.2)
                 .contentShape(Rectangle())
                 .onTapGesture {
                     selection = nil
