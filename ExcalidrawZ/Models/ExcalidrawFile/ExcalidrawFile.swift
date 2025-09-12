@@ -38,9 +38,9 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
     struct ResourceFile: Codable, Hashable, Sendable {
         var mimeType: String
         var id: String
-        var createdAt: Date
+        var createdAt: Date?
         var dataURL: String
-        var lastRetrievedAt: Date
+        var lastRetrievedAt: Date?
         
         enum CodingKeys: String, CodingKey {
             case mimeType
@@ -54,13 +54,18 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
             let container: KeyedDecodingContainer<CodingKeys> = try decoder.container(keyedBy: CodingKeys.self)
             self.mimeType = try container.decode(String.self, forKey: ExcalidrawFile.ResourceFile.CodingKeys.mimeType)
             self.id = try container.decode(String.self, forKey: .id)
-            let created = try container.decode(Int.self, forKey: .createdAt)
-            self.createdAt = Date(timeIntervalSince1970: TimeInterval(created) / 1000)
+            if let created = try container.decodeIfPresent(Int.self, forKey: .createdAt) {
+                self.createdAt = Date(timeIntervalSince1970: TimeInterval(created) / 1000)
+            }
             self.dataURL = try container.decode(String.self, forKey: .dataURL)
-            let lastRetrieved = try container.decode(Int.self, forKey: .lastRetrievedAt)
-            self.lastRetrievedAt = Date(timeIntervalSince1970: TimeInterval(lastRetrieved) / 1000)
-            if self.lastRetrievedAt.timeIntervalSinceNow > 0 {
-                self.lastRetrievedAt = Date(timeIntervalSince1970: self.lastRetrievedAt.timeIntervalSince1970 / 1000)
+            if let lastRetrieved = try container.decodeIfPresent(Int.self, forKey: .lastRetrievedAt) {
+                let lastRetrievedAt = Date(timeIntervalSince1970: TimeInterval(lastRetrieved) / 1000)
+                self.lastRetrievedAt = lastRetrievedAt
+                if lastRetrievedAt.timeIntervalSinceNow > 0 {
+                    self.lastRetrievedAt = Date(
+                        timeIntervalSince1970: lastRetrievedAt.timeIntervalSince1970 / 1000
+                    )
+                }
             }
         }
         
@@ -68,9 +73,19 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(self.mimeType, forKey: .mimeType)
             try container.encode(self.id, forKey: .id)
-            try container.encode(Int(self.createdAt.timeIntervalSince1970 * 1000), forKey: .createdAt)
+            if let createdAt = self.createdAt {
+                try container.encode(
+                    Int(createdAt.timeIntervalSince1970 * 1000),
+                    forKey: .createdAt
+                )
+            }
             try container.encode(self.dataURL, forKey: .dataURL)
-            try container.encode(Int(self.lastRetrievedAt.timeIntervalSince1970 * 1000), forKey: .lastRetrievedAt)
+            if let lastRetrievedAt = self.lastRetrievedAt {
+                try container.encode(
+                    Int(lastRetrievedAt.timeIntervalSince1970 * 1000),
+                    forKey: .lastRetrievedAt
+                )
+            }
         }
     }
     
