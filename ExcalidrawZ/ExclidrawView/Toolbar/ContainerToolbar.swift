@@ -76,6 +76,71 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 
     @ToolbarContentBuilder
     private func toolbarContent_macOS() -> some ToolbarContent {
+        ToolbarItemGroup(placement: .navigation) {
+            if #available(macOS 13.0, iOS 16.0, *), appPreference.sidebarLayout == .sidebar {
+                
+            } else if containerHorizontalSizeClass != .compact {
+                Button {
+                    layoutState.isSidebarPresented.toggle()
+                } label: {
+                    Label(.localizable(.sidebarToggleName), systemSymbol: .sidebarLeft)
+                }
+            }
+            
+#if os(macOS)
+            if fileState.currentActiveGroup != nil {
+                HStack {
+                    
+                    Button {
+                        if fileState.currentActiveFile != nil {
+                            fileState.currentActiveFile = nil
+                        } else {
+                            switch fileState.currentActiveGroup {
+                                case .group(let group):
+                                    fileState.currentActiveGroup = group.parent != nil ? .group(group.parent!) : nil
+                                case .localFolder(let localFolder):
+                                    fileState.currentActiveGroup = localFolder.parent != nil
+                                    ? .localFolder(localFolder.parent!)
+                                    : nil
+                                default:
+                                    fileState.currentActiveGroup = nil
+                            }
+                        }
+                    } label: {
+                        Label(.localizable(.navigationButtonBack), systemSymbol: .chevronBackward)
+                    }
+                    
+                    title()
+                    
+                    if let file = fileState.currentActiveFile {
+                        ZStack {
+                            switch file {
+                                case .file(let file):
+                                    FileMenu(file: file) {}
+                                case .localFile(let url):
+                                    LocalFileMenu(file: url) {}
+                                case .temporaryFile(let url):
+                                    Menu {
+                                        TemporaryFileMenuItems(file: url)
+                                            .labelStyle(.titleAndIcon)
+                                    } label: {}
+                                case .collaborationFile(let collaborationFile):
+                                    CollaborationFileMenu(file: collaborationFile) {}
+                            }
+                        }
+                        .labelsHidden()
+                        .controlSize(.small)
+                        .padding(.trailing, 8)
+                    }
+                }
+            }
+#endif
+
+            if #available(macOS 13.0, iOS 16.0, *) { } else {
+                NewFileButton()
+            }
+        }
+        
 #if os(macOS)
         ToolbarItemGroup(placement: .status) {
             if #available(macOS 26.0, iOS 26.0, *) {
@@ -94,47 +159,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             ExcalidrawToolbar()
         }
 #endif
-        
-        ToolbarItemGroup(placement: .navigation) {
-            if #available(macOS 13.0, iOS 16.0, *), appPreference.sidebarLayout == .sidebar {
-                
-            } else if containerHorizontalSizeClass != .compact {
-                Button {
-                    layoutState.isSidebarPresented.toggle()
-                } label: {
-                    Label(.localizable(.sidebarToggleName), systemSymbol: .sidebarLeft)
-                }
-            }
-            
-#if os(macOS)
-            if fileState.currentActiveGroup != nil {
-                Button {
-                    if fileState.currentActiveFile != nil {
-                        fileState.currentActiveFile = nil
-                    } else {
-                        switch fileState.currentActiveGroup {
-                            case .group(let group):
-                                fileState.currentActiveGroup = group.parent != nil ? .group(group.parent!) : nil
-                            case .localFolder(let localFolder):
-                                fileState.currentActiveGroup = localFolder.parent != nil
-                                ? .localFolder(localFolder.parent!)
-                                : nil
-                            default:
-                                fileState.currentActiveGroup = nil
-                        }
-                    }
-                } label: {
-                    Label(.localizable(.navigationButtonBack), systemSymbol: .chevronBackward)
-                }
-                title()
-                    .padding(.trailing, 8)
-            }
-#endif
-
-            if #available(macOS 13.0, iOS 16.0, *) { } else {
-                NewFileButton()
-            }
-        }
+    
         
 #if os(iOS)
         ToolbarItemGroup(placement: .topBarLeading) {

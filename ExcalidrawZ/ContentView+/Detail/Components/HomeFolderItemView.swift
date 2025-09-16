@@ -33,7 +33,7 @@ struct HomeFolderItemView: View {
                     .font(.headline)
                     .lineLimit(1)
                 
-                Text("\(itemsCount) items")
+                Text(localizable: .homeGroupItemsFormatter(itemsCount))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

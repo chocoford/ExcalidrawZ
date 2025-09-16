@@ -68,7 +68,7 @@ struct BackupsSettingsView: View {
             .clipped()
             .animation(.default, value: route)
             .frame(width: 240)
-            .visualEffect(material: .sidebar)
+            // .visualEffect(material: .sidebar)
 
             Divider()
             

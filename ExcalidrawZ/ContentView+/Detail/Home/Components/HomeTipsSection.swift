@@ -156,7 +156,7 @@ struct TipDetailContainer: View {
         }
         // .scrollIndicators(.hidden)
         .frame(maxHeight: 700)
-        .overlay(alignment: .topTrailing) {
+        .overlay(alignment: .topLeading) {
             ZStack {
                 if #available(macOS 26.0, *) {
                     dismissButton()

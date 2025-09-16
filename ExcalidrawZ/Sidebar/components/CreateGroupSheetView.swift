@@ -188,17 +188,6 @@ struct CreateGroupSheetView: View {
     }
 }
 
-struct ProminentButtonModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(macOS 26.0, iOS 26.0, *) {
-            content
-                .buttonStyle(.glassProminent)
-        } else {
-            content
-                .buttonStyle(.borderedProminent)
-        }
-    }
-}
 
 #Preview {
     CreateGroupSheetView(name: .constant(""), createType: .group) { newName in

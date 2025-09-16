@@ -92,7 +92,7 @@ struct LocalFilesProvider<Content: View>: View {
                 if let window = notification.object as? NSWindow,
                    window == self.window {
                     DispatchQueue.main.async {
-                        guard fileState.currentActiveGroup != nil else { return }
+                        guard fileState.currentActiveGroup == .localFolder(folder) else { return }
                         getFolderContents()
                         if fileState.currentActiveFile == nil || {
                             if case .localFile(let localFile) = fileState.currentActiveFile {

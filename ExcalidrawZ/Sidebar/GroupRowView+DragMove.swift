@@ -68,6 +68,7 @@ struct GroupRowDropModifier: ViewModifier {
         .excalidrawFileRow,
         .excalidrawGroupRow,
         .excalidrawLocalFolderRow,
+        .excalidrawlibFile,
         .fileURL
     ]
     var dropTarget: (ItemDragState.DragItem) -> ItemDragState.GroupDropTarget

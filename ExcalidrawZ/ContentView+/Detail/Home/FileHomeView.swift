@@ -125,10 +125,10 @@ struct FileHomeContainer: View {
                     .overlay {
                         if config.isPlaceholderPresented {
                             if #available(macOS 14.0, iOS 16.0, *) {
-                                Text("No files...")
+                                Text(localizable: .homeNoFilesPlaceholder)
                                     .foregroundStyle(.placeholder)
                             } else {
-                                Text("No files...")
+                                Text(localizable: .homeNoFilesPlaceholder)
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -283,6 +283,9 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 .onTapGesture {
                     selection = nil
                 }
+//                .modifier(
+//                    ExcalidrawLibraryDropHandler()
+//                )
                 .modifier(
                     HomeFolderItemDropModifier(group: group)
                 )
@@ -363,8 +366,6 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                             canExpand: false
                         ) {
                             triggers.onToogleCreateSubfolder()
-                        } onDelete: {
-                            triggers.onToggleDelete()
                         }
                     } label: {
                         Image(systemSymbol: .ellipsisCircle)

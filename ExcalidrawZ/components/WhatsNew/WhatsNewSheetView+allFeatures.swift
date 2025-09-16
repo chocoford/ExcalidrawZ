@@ -11,12 +11,16 @@ extension WhatsNewView {
     @MainActor @ViewBuilder
     func featuresContent() -> some View {
         WhatsNewFeatureRow(
-            title: "Completely redesigned UI",
-            description: "The redesigned sidebar and homepage make it more intuitive to browse files.",
+            title: .localizable(.whatsNewRedesignUITitle),
+            description: .localizable(.whatsNewRedesignUIDescription),
             icon: Image(systemSymbol: .macwindow)
         )
         
-        
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewEnhanceInteractiveExperienceTitle),
+            description: .localizable(.whatsNewEnhanceInteractiveExperienceDescription),
+            icon: Image(systemSymbol: .cursorarrowMotionlines)
+        )
     }
     
     
@@ -31,7 +35,8 @@ extension WhatsNewView {
                     } label: {
                         Label(.localizable(.navigationButtonBack), systemSymbol: .chevronLeft)
                     }
-                    .buttonStyle(.borderless)
+                    .modernButtonStyle(style: .glass, shape: .circle)
+                    
                     Spacer()
                 }
                 .padding(4)
@@ -46,30 +51,17 @@ extension WhatsNewView {
                         featuresContent()
                     }
                     
-                    // MARK: - v1.5.2
+#if os(macOS)
+                    // MARK: - v1.5.1
                     WhatsNewVersionSection(version: "v1.5.1") {
-                        WhatsNewFeatureRow(
-                            title: .localizable(.whatsNewLiveCollaborationCompabilityTitle),
-                            description: .localizable(.whatsNewLiveCollaborationCompabilityDescription),
-                            icon: Image(systemSymbol: .person2CropSquareStack)
-                        )
-                        
-                        
-#if os(iOS)
-                        if UIDevice().userInterfaceIdiom == .pad {
-                            
-                        } else if UIDevice().userInterfaceIdiom == .phone {
-                            
-                        }
-#else
                         WhatsNewFeatureRow(
                             title: .localizable(.whatsNewCustomFontTitle),
                             description: .localizable(.whatsNewCustomFontDescription),
                             icon: Image(systemSymbol: .character)
                         )
-#endif
                     }
-                    
+#endif
+
                     // MARK: - v1.4.5
                     WhatsNewVersionSection(version: "v1.4.5") {
                         WhatsNewFeatureRow(
@@ -301,13 +293,14 @@ extension WhatsNewView {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .confirmationAction) {
                 Link(destination: URL(string: "https://github.com/chocoford/ExcalidrawZ/blob/main/CHANGELOG.md")!) {
                     HStack(spacing: 2) {
                         Text("Change Log")
                         Image(systemSymbol: .arrowRight)
                     }
                 }
+                .hoverCursor(.link)
             }
         }
     }

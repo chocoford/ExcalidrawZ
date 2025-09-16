@@ -223,6 +223,7 @@ struct FileHomeItemView: View {
                 
                 if let image = try? await fileState.excalidrawWebCoordinator?.exportElementsToPNG(
                     elements: excalidrawFile.elements,
+                    files: excalidrawFile.files.isEmpty ? nil : excalidrawFile.files,
                     colorScheme: colorScheme
                 ) {
                     Task.detached {

@@ -17,6 +17,7 @@ extension SidebarRowDropable {
                     .excalidrawFileRow,
                     .excalidrawGroupRow,
                     .excalidrawLocalFolderRow,
+                    .excalidrawlibFile,
                     .fileURL
                 ]
             ) {
@@ -28,9 +29,9 @@ extension SidebarRowDropable {
                    url.scheme == "x-coredata",
                    let draggedObjectID = PersistenceController.shared.container.persistentStoreCoordinator.managedObjectID(forURIRepresentation: url) {
                     let context = PersistenceController.shared.container.viewContext
-                    if let file = context.object(with: draggedObjectID) as? File {
+                    if context.object(with: draggedObjectID) is File {
                         onDrop(.file(draggedObjectID))
-                    } else if let file = context.object(with: draggedObjectID) as? CollaborationFile {
+                    } else if  context.object(with: draggedObjectID) is CollaborationFile {
                         onDrop(.collaborationFile(draggedObjectID))
                     }
                 }
@@ -55,6 +56,9 @@ extension SidebarRowDropable {
                     onDrop(.localFolder(draggedObjectID))
                 }
                 
+                
+                handleDropExcalidrawLibrary(providers: [provider])
+                
                 // handle drop url
                 if let data = try? await provider.loadItem(
                     forTypeIdentifier: UTType.fileURL.identifier
@@ -63,8 +67,10 @@ extension SidebarRowDropable {
                    url.isFileURL == true {
                     if url.isDirectory {
                         
-                    } else {
+                    } else if url.pathExtension == UTType.excalidrawFile.preferredFilenameExtension {
                         onDrop(.localFile(url))
+                    } else if url.pathExtension == UTType.excalidrawlibFile.preferredFilenameExtension {
+                        
                     }
                 }
                 
@@ -85,7 +91,17 @@ struct SidebarRowDropDelegate: SidebarRowDropable {
     }
     
     func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
+        if info.hasItemsConforming(
+            to: [
+                .excalidrawFileRow,
+                .excalidrawGroupRow,
+                .excalidrawLocalFolderRow,
+            ]
+        ) {
+            return DropProposal(operation: .move)
+        } else {
+            return DropProposal(operation: .copy)
+        }
     }
     
     func performDrop(info: DropInfo) -> Bool {

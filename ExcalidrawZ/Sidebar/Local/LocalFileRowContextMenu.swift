@@ -7,25 +7,38 @@
 
 import SwiftUI
 
-struct LocalFileRowContextMenuModifier: ViewModifier {
+struct LocalFileMenuProvider: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
-
-    @EnvironmentObject var fileState: FileState
+    @EnvironmentObject private var fileState: FileState
     @EnvironmentObject var localFolderState: LocalFolderState
-    
+
     var file: URL
+    var content: (Triggers) -> AnyView
+
+    init<Content: View>(
+        file: URL,
+        content: @escaping (Triggers) -> Content
+    ) {
+        self.file = file
+        self.content = { AnyView(content($0)) }
+    }
+    
+    
+    struct Triggers {
+        var onToggleRename: () -> Void
+    }
     
     @State private var isRenameSheetPresented = false
     
-    func body(content: Content) -> some View {
-        content
-            .contextMenu {
-                LocalFileRowContextMenu(file: file) {
-                    isRenameSheetPresented.toggle()
-                }
-                .labelStyle(.titleAndIcon)
-            }
+    var triggers: Triggers {
+        Triggers {
+            isRenameSheetPresented.toggle()
+        }
+    }
+    
+    var body: some View {
+        content(triggers)
             .modifier(
                 RenameSheetViewModifier(
                     isPresented: $isRenameSheetPresented,
@@ -86,7 +99,48 @@ struct LocalFileRowContextMenuModifier: ViewModifier {
     }
 }
 
-struct LocalFileRowContextMenu: View {
+struct LocalFileRowContextMenuModifier: ViewModifier {
+    var file: URL
+    
+    func body(content: Content) -> some View {
+        LocalFileMenuProvider(file: file) { triggers in
+            content
+                .contextMenu {
+                    LocalFileRowMenuItems(file: file) {
+                        triggers.onToggleRename()
+                    }
+                    .labelStyle(.titleAndIcon)
+                }
+        }
+    }
+}
+
+struct LocalFileMenu: View {
+    var file: URL
+    var label: AnyView
+    
+    init<Label: View>(
+        file: URL,
+        @ViewBuilder label: () -> Label
+    ) {
+        self.file = file
+        self.label = AnyView(label())
+    }
+    
+    var body: some View {
+        LocalFileMenuProvider(file: file) { triggers in
+            Menu {
+                LocalFileRowMenuItems(file: file) {
+                    triggers.onToggleRename()
+                }
+            } label: {
+                label
+            }
+        }
+    }
+}
+
+struct LocalFileRowMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject var fileState: FileState
@@ -102,9 +156,6 @@ struct LocalFileRowContextMenu: View {
         animation: .default
     )
     private var topLevelLocalFolders: FetchedResults<LocalFolder>
-    
-    
-
     
     var body: some View {
         // Rename

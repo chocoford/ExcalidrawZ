@@ -109,7 +109,10 @@ struct NewGroupButton: View {
         let context = PersistenceController.shared.container.newBackgroundContext()
         Task.detached {
             do {
-                for url in urls {
+                let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                let folders = try context.fetch(request)
+                
+                for url in urls where folders.contains(where: { $0.url == url }) == false {
                     guard url.startAccessingSecurityScopedResource() else { continue }
                     
                     guard let enumerator = FileManager.default.enumerator(
@@ -136,7 +139,6 @@ struct NewGroupButton: View {
                     
                     if count > 1000 {
                         await MainActor.run {
-                           
                             alert(title: .localizable(.sidebarLocalFolderTooLargeAlertTitle), error: FolderTooLargeError())
                         }
                         return
@@ -162,6 +164,7 @@ struct NewGroupButton: View {
                     url.stopAccessingSecurityScopedResource()
                 }
             } catch {
+                print("import failed:", error)
                 await alertToast(error)
             }
         }

@@ -96,7 +96,7 @@ struct GroupListView: View {
                             HStack {
                                 Image(systemSymbol: .house)
                                     .frame(width: 30, alignment: .leading)
-                                Text("Home")
+                                Text(localizable: .sidebarRowHomeTitle)
                             }
                         }
                         .buttonStyle(
@@ -162,20 +162,10 @@ struct GroupListView: View {
             }
             
             Divider()
-
-//            if #available(macOS 26.0, *) {
-//                contentToolbar()
-//                    .buttonStyle(.glassProminent)
-//            } else
-            if #available(macOS 14.0, *) {
-                contentToolbar()
-#if canImport(AppKit)
-                    .buttonStyle(.accessoryBar)
-#endif
-            } else {
-                contentToolbar()
-                    .buttonStyle(.text(size: .small, square: true))
-            }
+            
+            contentToolbar()
+                .buttonStyle(.borderless)
+                .padding(8)
         }
 #if os(macOS)
         .background {
@@ -227,12 +217,12 @@ struct GroupListView: View {
             } else {
                 sortMenuButton()
                     .menuStyle(.borderlessButton)
-                    .buttonStyle(.text(size: .small, square: true))
+                    // .buttonStyle(.text(size: .small, square: true))
             }
         }
         .padding(4)
         .controlSize(.regular)
-        .background(.ultraThickMaterial)
+        // .background(.ultraThickMaterial)
     }
     
     @MainActor @ViewBuilder

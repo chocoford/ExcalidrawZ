@@ -7,32 +7,40 @@
 
 import SwiftUI
 
-struct FileContextMenuModifier: ViewModifier {
+struct FileMenuProvider: View {
     @Environment(\.managedObjectContext) private var viewContext
-    @EnvironmentObject private var fileState: FileState
-    @Environment(\.alertToast) private var alertToast
-
-    init(file: File) {
-        self.file = file
-    }
+    @Environment(\.alertToast) var alertToast
+    @EnvironmentObject var fileState: FileState
     
     var file: File
+    var content: (Triggers) -> AnyView
+
+    init<Content: View>(
+        file: File,
+        content: @escaping (Triggers) -> Content
+    ) {
+        self.file = file
+        self.content = { AnyView(content($0)) }
+    }
+    
+    struct Triggers {
+        var onToggleRename: () -> Void
+        var onTogglePermanentlyDelete: () -> Void
+    }
     
     @State private var isRenameSheetPresented = false
     @State private var isPermanentlyDeleteAlertPresented = false
     
-    func body(content: Content) -> some View {
-        content
-            .contextMenu {
-                FileContextMenu(
-                    file: file
-                ) {
-                    isRenameSheetPresented.toggle()
-                } onTogglePermanentlyDelete: {
-                    isPermanentlyDeleteAlertPresented.toggle()
-                }
-                .labelStyle(.titleAndIcon)
-            }
+    var triggers: Triggers {
+        Triggers {
+            isRenameSheetPresented.toggle()
+        } onTogglePermanentlyDelete: {
+            isPermanentlyDeleteAlertPresented.toggle()
+        }
+    }
+    
+    var body: some View {
+        content(triggers)
             .modifier(
                 RenameSheetViewModifier(
                     isPresented: $isRenameSheetPresented,
@@ -92,9 +100,62 @@ struct FileContextMenuModifier: ViewModifier {
             }
         }
     }
+
 }
 
-struct FileContextMenu: View {
+struct FileContextMenuModifier: ViewModifier {
+    var file: File
+
+    init(file: File) {
+        self.file = file
+    }
+    func body(content: Content) -> some View {
+        FileMenuProvider(file: file) { triggers in
+            content
+                .contextMenu {
+                    FileMenuItems(
+                        file: file
+                    ) {
+                        triggers.onToggleRename()
+                    } onTogglePermanentlyDelete: {
+                        triggers.onTogglePermanentlyDelete()
+                    }
+                    .labelStyle(.titleAndIcon)
+                }
+        }
+    }
+}
+
+struct FileMenu: View {
+    var file: File
+    var label: AnyView
+    
+    init<L: View>(
+        file: File,
+        @ViewBuilder label: () -> L
+    ) {
+        self.file = file
+        self.label = AnyView(label())
+    }
+    
+    var body: some View {
+        FileMenuProvider(file: file) { triggers in
+            Menu {
+                FileMenuItems(
+                    file: file) {
+                        triggers.onToggleRename()
+                    } onTogglePermanentlyDelete: {
+                        triggers.onTogglePermanentlyDelete()
+                    }
+            } label: {
+                label
+            }
+        }
+        
+    }
+}
+
+struct FileMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast

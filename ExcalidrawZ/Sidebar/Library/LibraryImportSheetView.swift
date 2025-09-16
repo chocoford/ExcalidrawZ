@@ -58,52 +58,59 @@ struct ExcalidrawLibraryDropHandler: ViewModifier {
     @Environment(\.alertToast) var alertToast
 
     @State private var isDropTargeted: Bool = false
-    @State var librariesToImport: [ExcalidrawLibrary] = []
 
     func body(content: Content) -> some View {
         content
             .onDrop(of: [.excalidrawlibFile], isTargeted: $isDropTargeted) { providers in
-                librariesToImport.removeAll()
                 let canDrop = providers.contains(where: {$0.hasItemConformingToTypeIdentifier(UTType.excalidrawlibFile.identifier)})
                 guard canDrop else { return false }
-                Task {
-                    do {
-                        for provider in providers {
-                            let url: URL? = try await withCheckedThrowingContinuation { continuation in
-                                provider.loadFileRepresentation(forTypeIdentifier: UTType.excalidrawlibFile.identifier) { url, error in
-                                    if let error {
-                                        continuation.resume(throwing: error)
-                                        return
-                                    }
-                                    continuation.resume(returning: url)
-                                }
-                            }
-                            guard url != nil else { continue }
-                            let data: Data? = try await withCheckedThrowingContinuation { continuation in
-                                provider.loadDataRepresentation(forTypeIdentifier: UTType.excalidrawlibFile.identifier) { url, error in
-                                    if let error {
-                                        continuation.resume(throwing: error)
-                                        return
-                                    }
-                                    continuation.resume(returning: url)
-                                }
-                            }
-                            guard data != nil else { continue }
-                            var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data!)
-                            library.name = url!.deletingPathExtension().lastPathComponent
-                            librariesToImport.append(library)
-                        }
-                        
-                        NotificationCenter.default.post(
-                            name: .addLibrary,
-                            object: librariesToImport
-                        )
-                    } catch {
-                        alertToast(error)
-                    }
-                }
+                handleDropExcalidrawLibrary(providers: providers)
                 return true
             }
+    }
+}
+
+func handleDropExcalidrawLibrary(providers: [NSItemProvider]) {
+    let canDrop = providers.contains(where: {$0.hasItemConformingToTypeIdentifier(UTType.excalidrawlibFile.identifier)})
+    guard canDrop else { return }
+    Task {
+        var librariesToImport: [ExcalidrawLibrary] = []
+        do {
+            for provider in providers {
+                let url: URL? = try await withCheckedThrowingContinuation { continuation in
+                    provider.loadFileRepresentation(forTypeIdentifier: UTType.excalidrawlibFile.identifier) { url, error in
+                        if let error {
+                            continuation.resume(throwing: error)
+                            return
+                        }
+                        continuation.resume(returning: url)
+                    }
+                }
+                guard url != nil else { continue }
+                let data: Data? = try await withCheckedThrowingContinuation { continuation in
+                    provider.loadDataRepresentation(forTypeIdentifier: UTType.excalidrawlibFile.identifier) { url, error in
+                        if let error {
+                            continuation.resume(throwing: error)
+                            return
+                        }
+                        continuation.resume(returning: url)
+                    }
+                }
+                guard data != nil else { continue }
+                var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data!)
+                library.name = url!.deletingPathExtension().lastPathComponent
+                librariesToImport.append(library)
+            }
+            
+            await MainActor.run { [librariesToImport] in
+                NotificationCenter.default.post(
+                    name: .addLibrary,
+                    object: librariesToImport
+                )
+            }
+        } catch {
+            print(error)
+        }
     }
 }
 

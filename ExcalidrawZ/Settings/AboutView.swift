@@ -76,20 +76,19 @@ struct AboutView: View {
                 Text(Bundle.main.infoDictionary!["CFBundleVersion"] as! String)
                     .foregroundColor(.secondary)
             }
-
-            WithAsyncValue(isChinaAppStore) { isChina, error in
-                if isChina == true {
-                    HStack {
-                        Spacer()
-                        Link(destination: URL(string: "https://beian.miit.gov.cn/")!) {
-                            Text("粤ICP备2023139330号-5A")
+        } header: {
+            HStack {
+                WithAsyncValue(isChinaAppStore) { isChina, error in
+                    if isChina == true {
+                        HStack {
+                            Spacer()
+                            Link(destination: URL(string: "https://beian.miit.gov.cn/")!) {
+                                Text("粤ICP备2023139330号-5A")
+                            }
                         }
                     }
                 }
-            }
 
-        } header: {
-            HStack {
                 Spacer(minLength: 0)
                 VStack(spacing: 0) {
                     Image("AppIcon-macOS")
@@ -107,10 +106,12 @@ struct AboutView: View {
                 Spacer()
                 if let privacyPolicy = URL(string: "https://excalidrawz.chocoford.com/privacy/") {
                     Link(.localizable(.generalButtonPrivacyPolicy), destination: privacyPolicy)
+                        .hoverCursor(.link)
                 }
                 Text("·")
                 if let termsOfUse = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/") {
                     Link(.localizable(.generalButtonTermsOfUse), destination: termsOfUse)
+                        .hoverCursor(.link)
                 }
                 
             }

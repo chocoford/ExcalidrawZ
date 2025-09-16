@@ -92,37 +92,29 @@ struct CollaborationHome: View {
                     
                     Divider()
                     
-                    if #available(macOS 13.0, iOS 16.0, *) {
-                        (
-                            collaborationFiles.isEmpty
-                            ? AnyLayout(VStackLayout(spacing: 10))
-                            : AnyLayout(HStackLayout(spacing: 10))
-                        ) {
-                            if #available(macOS 26.0, iOS 26.0, *) {
+                    ZStack {
+                        if #available(macOS 13.0, iOS 16.0, *) {
+                            (
+                                collaborationFiles.isEmpty
+                                ? AnyLayout(VStackLayout(spacing: 10))
+                                : AnyLayout(HStackLayout(spacing: 10))
+                            ) {
                                 actions()
-                                    .buttonStyle(.glassProminent)
-                            } else {
-                                actions()
-                                    .buttonStyle(.borderedProminent)
                             }
-                        }
-                        .disabled(collaborationState.userCollaborationInfo.username.isEmpty)
-                    } else {
-                        if collaborationFiles.isEmpty {
-                            VStack(spacing: 10) {
-                                actions()
-                                    .buttonStyle(.borderedProminent)
-                            }
-                            .disabled(collaborationState.userCollaborationInfo.username.isEmpty)
                         } else {
-                            HStack(spacing: 10) {
-                                actions()
-                                    .buttonStyle(.borderedProminent)
+                            if collaborationFiles.isEmpty {
+                                VStack(spacing: 10) {
+                                    actions()
+                                }
+                            } else {
+                                HStack(spacing: 10) {
+                                    actions()
+                                }
                             }
-                            .disabled(collaborationState.userCollaborationInfo.username.isEmpty)
                         }
                     }
-                    
+                    .prominentButtonStyle()
+                    .disabled(collaborationState.userCollaborationInfo.username.isEmpty)
                 }
                 .padding(.horizontal, 80)
             }

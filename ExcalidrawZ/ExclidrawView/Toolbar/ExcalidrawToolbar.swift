@@ -107,6 +107,33 @@ struct ExcalidrawToolbar: View {
             }
         }
 #elseif os(macOS)
+        leadingTollsContent()
+        
+        ExcalidrawToolbarToolContainer { sizeClass in
+            HStack(spacing: 10) {
+                ZStack {
+                    Color.clear
+                    if sizeClass == .dense {
+                        denseContent()
+                    } else {
+                        segmentedPicker(sizeClass: sizeClass)
+                    }
+                }
+            }
+        }
+        
+        if #available(macOS 26.0, iOS 26.0, *),
+            !secondaryPickerItems.isEmpty,
+           let tool = toolState.activatedTool {
+            secondaryPickerItemsMenu(tool: tool)
+        }
+        
+        moreTools()
+#endif
+    }
+    
+    @MainActor @ViewBuilder
+    private func leadingTollsContent() -> some View {
         Button {
             toolState.toggleToolLock()
         } label: {
@@ -122,28 +149,6 @@ struct ExcalidrawToolbar: View {
             .animation(.default, value: toolState.isToolLocked)
         }
         .help("\(String(localizable: .toolbarButtonLockToolHelp)) - Q")
-        
-        ExcalidrawToolbarToolContainer { sizeClass in
-            HStack(spacing: 10) {
-                ZStack {
-                    Color.clear
-                    if sizeClass == .dense {
-                        denseContent()
-                    } else {
-                        segmentedPicker(sizeClass: sizeClass)
-                    }
-                }
-            }
-        }
-
-        if #available(macOS 26.0, iOS 26.0, *),
-            !secondaryPickerItems.isEmpty,
-           let tool = toolState.activatedTool {
-            secondaryPickerItemsMenu(tool: tool)
-        }
-        
-        moreTools()
-#endif
     }
     
     @State private var lastActivatedSecondaryTool: ExcalidrawTool?

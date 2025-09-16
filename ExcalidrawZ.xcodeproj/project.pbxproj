@@ -53,6 +53,18 @@
 		3990F82D2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F82E2CA9C55100C94983 /* Store.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3990F82B2CA9C55100C94983 /* Store.storekit */; };
 		3990F8362CACF4C500C94983 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3990F8352CACF4C500C94983 /* StoreKit.framework */; };
+		3998125D2E73EBF400B7AAC9 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03B2C6C7EAA00472AE7 /* ChocofordEssentials */; };
+		3998125E2E73EBF400B7AAC9 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03D2C6C7EAA00472AE7 /* ChocofordUI */; };
+		3998125F2E73EBF400B7AAC9 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 39E9C5A42C8CB2E600BC1C07 /* ChocofordEssentials */; };
+		399812602E73EBF400B7AAC9 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 39E9C5A62C8CB2E600BC1C07 /* ChocofordUI */; };
+		399812612E73EBF400B7AAC9 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3929AB782CA5E4B800C7CCE8 /* ChocofordEssentials */; };
+		399812622E73EBF400B7AAC9 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3929AB7A2CA5E4B800C7CCE8 /* ChocofordUI */; };
+		399812632E73EBF400B7AAC9 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 39E556F12CC8060E0009F051 /* ChocofordEssentials */; };
+		399812642E73EBF400B7AAC9 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 39E556F32CC8060E0009F051 /* ChocofordUI */; };
+		399812652E73EBF400B7AAC9 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 398F144A2CF7379C0061CCF9 /* ChocofordEssentials */; };
+		399812662E73EBF400B7AAC9 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 398F144C2CF7379C0061CCF9 /* ChocofordUI */; };
+		399815462E73EF4C00B7AAC9 /* ExcalidrawZ Icon 26.icon in Resources */ = {isa = PBXBuildFile; fileRef = 399815452E73EF4C00B7AAC9 /* ExcalidrawZ Icon 26.icon */; };
+		399815472E73EF4C00B7AAC9 /* ExcalidrawZ Icon 26.icon in Resources */ = {isa = PBXBuildFile; fileRef = 399815452E73EF4C00B7AAC9 /* ExcalidrawZ Icon 26.icon */; };
 		3999925C2E654D3D000FF1EC /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3999925B2E654D3D000FF1EC /* MarkdownUI */; };
 		399992682E654D5F000FF1EC /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 399992672E654D5F000FF1EC /* MarkdownUI */; };
 		39A28C9A2D92AB1D00B079B1 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */; };
@@ -71,8 +83,6 @@
 		39E4A9C02D410437002BF98C /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03A2C6C7EAA00472AE7 /* ChocofordUI */; };
 		39ED18542D3FDE1C00E437A0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */; };
 		39ED18552D3FDE1C00E437A0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */; };
-		39ED18632D40FCBD00E437A0 /* AVKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 39ED18622D40FCBD00E437A0 /* AVKit.framework */; };
-		39ED18642D40FCC400E437A0 /* AVKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 39ED18622D40FCBD00E437A0 /* AVKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -155,15 +165,14 @@
 		3987A5072CB54B200054D7D5 /* QuickLookPreviewExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QuickLookPreviewExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		3990F82B2CA9C55100C94983 /* Store.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Store.storekit; sourceTree = "<group>"; };
 		3990F8352CACF4C500C94983 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		399815452E73EF4C00B7AAC9 /* ExcalidrawZ Icon 26.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "ExcalidrawZ Icon 26.icon"; sourceTree = "<group>"; };
 		39A7BB812A101B21003887F9 /* FakeToggleColorMode.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = FakeToggleColorMode.js; sourceTree = "<group>"; };
 		39AD1EE8295AE08800DA9657 /* FakeSaveCommand.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = FakeSaveCommand.js; sourceTree = "<group>"; };
 		39AF4DE02D0611E0009126C4 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = SOURCE_ROOT; };
 		39B69A2D2D8422F0003369E8 /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
 		39B69A322D8423C3003369E8 /* Overrides.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Overrides.xcconfig; sourceTree = "<group>"; };
 		39B69BDC2D8C18A0003369E8 /* SyncedStore.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = SyncedStore.storekit; sourceTree = "<group>"; };
-		39C024C72E409F82005E515C /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/WebKit.framework; sourceTree = DEVELOPER_DIR; };
 		39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
-		39ED18622D40FCBD00E437A0 /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/System/Library/Frameworks/AVKit.framework; sourceTree = DEVELOPER_DIR; };
 		500E089B2CF1BFB600392CC2 /* Project.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Project.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -339,6 +348,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3998125E2E73EBF400B7AAC9 /* ChocofordUI in Frameworks */,
+				3998125D2E73EBF400B7AAC9 /* ChocofordEssentials in Frameworks */,
 				3999925C2E654D3D000FF1EC /* MarkdownUI in Frameworks */,
 				39E4A9C02D410437002BF98C /* ChocofordUI in Frameworks */,
 				39E4A9BF2D410437002BF98C /* ChocofordEssentials in Frameworks */,
@@ -350,7 +361,6 @@
 				3990F8362CACF4C500C94983 /* StoreKit.framework in Frameworks */,
 				3965F2122D6F60330065A8C8 /* FSEventsWrapper in Frameworks */,
 				398B158C2E4379A5003D1F4B /* SmoothGradient in Frameworks */,
-				39ED18632D40FCBD00E437A0 /* AVKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -358,6 +368,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				399812662E73EBF400B7AAC9 /* ChocofordUI in Frameworks */,
+				399812652E73EBF400B7AAC9 /* ChocofordEssentials in Frameworks */,
+				399812642E73EBF400B7AAC9 /* ChocofordUI in Frameworks */,
+				399812632E73EBF400B7AAC9 /* ChocofordEssentials in Frameworks */,
+				399812622E73EBF400B7AAC9 /* ChocofordUI in Frameworks */,
+				399812612E73EBF400B7AAC9 /* ChocofordEssentials in Frameworks */,
+				399812602E73EBF400B7AAC9 /* ChocofordUI in Frameworks */,
+				3998125F2E73EBF400B7AAC9 /* ChocofordEssentials in Frameworks */,
 				398B12CE2E434572003D1F4B /* ChocofordUI in Frameworks */,
 				398B12CD2E434572003D1F4B /* ChocofordEssentials in Frameworks */,
 				391087832DFFCC1A0057F493 /* Logging in Frameworks */,
@@ -368,7 +386,6 @@
 				3965F2102D6F60170065A8C8 /* FSEventsWrapper in Frameworks */,
 				398F14532CF738DB0061CCF9 /* SwiftyAlert in Frameworks */,
 				398B15852E437999003D1F4B /* SmoothGradient in Frameworks */,
-				39ED18642D40FCC400E437A0 /* AVKit.framework in Frameworks */,
 				399992682E654D5F000FF1EC /* MarkdownUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -404,8 +421,6 @@
 		397152D52C85D02500A65ADF /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				39C024C72E409F82005E515C /* WebKit.framework */,
-				39ED18622D40FCBD00E437A0 /* AVKit.framework */,
 				3915C9AB2CB54A6800B860E7 /* QuickLookUI.framework */,
 				3990F8352CACF4C500C94983 /* StoreKit.framework */,
 			);
@@ -465,6 +480,7 @@
 				396603722D096D3400870AC9 /* Extensions */,
 				3966034F2D096D2900870AC9 /* Utils */,
 				397E468529599DA0003B824B /* Resources */,
+				399815452E73EF4C00B7AAC9 /* ExcalidrawZ Icon 26.icon */,
 				397E465A295838D0003B824B /* Assets.xcassets */,
 				39B69BDC2D8C18A0003369E8 /* SyncedStore.storekit */,
 				3990F82B2CA9C55100C94983 /* Store.storekit */,
@@ -759,6 +775,7 @@
 				39AF4DE32D0611E0009126C4 /* CHANGELOG.md in Resources */,
 				3963A07A2C6C7EAA00472AE7 /* template.excalidraw in Resources */,
 				3963A07C2C6C7EAA00472AE7 /* Assets.xcassets in Resources */,
+				399815462E73EF4C00B7AAC9 /* ExcalidrawZ Icon 26.icon in Resources */,
 				39B69BDD2D8C18A0003369E8 /* SyncedStore.storekit in Resources */,
 				3963A07D2C6C7EAA00472AE7 /* FakeToggleColorMode.js in Resources */,
 				3990F82E2CA9C55100C94983 /* Store.storekit in Resources */,
@@ -778,6 +795,7 @@
 				39B69A2E2D8422F0003369E8 /* Secrets.plist in Resources */,
 				397E468F295AAE5E003B824B /* template.excalidraw in Resources */,
 				397E465B295838D0003B824B /* Assets.xcassets in Resources */,
+				399815472E73EF4C00B7AAC9 /* ExcalidrawZ Icon 26.icon in Resources */,
 				39B69BDE2D8C18A0003369E8 /* SyncedStore.storekit in Resources */,
 				39A7BB822A101B21003887F9 /* FakeToggleColorMode.js in Resources */,
 				3990F82D2CA9C55100C94983 /* Store.storekit in Resources */,
@@ -904,7 +922,7 @@
 		3963A0802C6C7EAA00472AE7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "ExcalidrawZ Icon 26";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -956,7 +974,7 @@
 		3963A0812C6C7EAA00472AE7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "ExcalidrawZ Icon 26";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -1070,7 +1088,7 @@
 		3963A0A52C6D12D400472AE7 /* App Store */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "ExcalidrawZ Icon 26";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -1122,7 +1140,7 @@
 		3963A0A62C6D12D400472AE7 /* App Store */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "ExcalidrawZ Icon 26";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -1355,7 +1373,7 @@
 		397E4679295838D0003B824B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "ExcalidrawZ Icon 26";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -1413,7 +1431,7 @@
 		397E467A295838D0003B824B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "ExcalidrawZ Icon 26";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";

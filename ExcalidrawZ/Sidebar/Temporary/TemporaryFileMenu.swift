@@ -1,5 +1,5 @@
 //
-//  TemporaryFileContextMenu.swift
+//  TemporaryFileMenu.swift
 //  ExcalidrawZ
 //
 //  Created by Dove Zachary on 8/7/25.
@@ -11,19 +11,19 @@ import CoreData
 import ChocofordUI
 
 struct TemporaryFileContextMenuModifier: ViewModifier {
-
     var file: URL
 
     func body(content: Content) -> some View {
         content
             .contextMenu {
-                TemporaryFileContextMenu(file: file)
+                TemporaryFileMenuItems(file: file)
                     .labelStyle(.titleAndIcon)
             }
     }
 }
 
-struct TemporaryFileContextMenu: View {
+
+struct TemporaryFileMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     
@@ -188,7 +188,7 @@ struct TemporaryFileContextMenu: View {
         Task.detached {
             do {
                 
-                let mapping = try await LocalFileUtils.moveLocalFiles(
+                let mapping = try LocalFileUtils.moveLocalFiles(
                     filesToMove,
                     to: targetFolderID,
                     context: context

@@ -7,23 +7,39 @@
 
 import SwiftUI
 
-struct CollaborationFileContextMenuModifier: ViewModifier {
+struct CollaborationFileMenuProvider: View {
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
 
     var file: CollaborationFile
+    var content: (Triggers) -> AnyView
+    
+    init<Content: View>(
+        file: CollaborationFile,
+        content: @escaping (Triggers) -> Content
+    ) {
+        self.file = file
+        self.content = { AnyView(content($0)) }
+    }
+    
+    struct Triggers {
+        var onArchiveFile: (CollaborationFile) -> Void
+        var onToggleDelete: () -> Void
+    }
     
     @State private var isDeleteRoomConfirmationDialogPresented: Bool = false
     @State private var fileToBeArchived: CollaborationFile?
-
-    func body(content: Content) -> some View {
-        content
-            .contextMenu {
-                CollaborationFileRowContextMenu(file: file, fileToBeArchived: $fileToBeArchived) {
-                    isDeleteRoomConfirmationDialogPresented.toggle()
-                }
-                .labelStyle(.titleAndIcon)
-            }
+    
+    var triggers: Triggers {
+        Triggers {
+            fileToBeArchived = $0
+        } onToggleDelete: {
+            isDeleteRoomConfirmationDialogPresented.toggle()
+        }
+    }
+    
+    var body: some View {
+        content(triggers)
             .modifier(ArchiveRoomModifier(collaborationFile: $fileToBeArchived))
             .confirmationDialog(
                 .localizable(
@@ -62,13 +78,61 @@ struct CollaborationFileContextMenuModifier: ViewModifier {
     }
 }
 
-struct CollaborationFileRowContextMenu: View {
+struct CollaborationFileContextMenuModifier: ViewModifier {
+    var file: CollaborationFile
+
+    func body(content: Content) -> some View {
+        CollaborationFileMenuProvider(file: file) { triggers in
+            content
+                .contextMenu {
+                    CollaborationFileMenuItems(file: file) {
+                        triggers.onArchiveFile($0)
+                    } onDelete: {
+                        triggers.onToggleDelete()
+                    }
+                    .labelStyle(.titleAndIcon)
+                }
+        }
+    }
+}
+
+struct CollaborationFileMenu: View {
+    var file: CollaborationFile
+    var label: AnyView
+    
+    init<Label: View>(
+        file: CollaborationFile,
+        @ViewBuilder label: () -> Label
+    ) {
+        self.file = file
+        self.label = AnyView(label())
+    }
+    
+    var body: some View {
+        CollaborationFileMenuProvider(file: file) { triggers in
+            Menu {
+                CollaborationFileMenuItems(
+                    file: file
+                ) { file in
+                    triggers.onArchiveFile(file)
+                } onDelete: {
+                    triggers.onToggleDelete()
+                }
+            } label: {
+                label
+            }
+        }
+    }
+}
+
+struct CollaborationFileMenuItems: View {
     
     @EnvironmentObject private var fileState: FileState
 
     var file: CollaborationFile
-    @Binding var fileToBeArchived: CollaborationFile?
+    // @Binding var fileToBeArchived: CollaborationFile?
     
+    var onArchiveFile: (CollaborationFile) -> Void
     var onDelete: () -> Void
     
     var body: some View {
@@ -83,7 +147,7 @@ struct CollaborationFileRowContextMenu: View {
             }
         }
         Button {
-            fileToBeArchived = file
+            onArchiveFile(file)
         } label: {
             Label(
                 .localizable(.sidebarCollaborationFileRowContextMenuArchive),

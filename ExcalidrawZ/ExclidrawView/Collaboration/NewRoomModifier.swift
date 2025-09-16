@@ -74,7 +74,7 @@ struct NewRoomModifier: ViewModifier {
             }
 #endif
             .confirmationDialog(
-                .localizable(.collaborationNewRoomConfirmationDialogTitle),
+                String(localizable: .collaborationNewRoomConfirmationDialogTitle),
                 isPresented: Binding {
 #if os(iOS)
                     UIDevice.current.userInterfaceIdiom != .pad ? state.isCreateRoomConfirmationDialogPresented : false

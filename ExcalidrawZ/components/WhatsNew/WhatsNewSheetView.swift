@@ -92,22 +92,21 @@ struct WhatsNewView: View {
                         navigationContent()
                     } else {
                         navigationContent()
-                            .frame(width: 720)
+                           
                     }
                 }
                 .navigationDestination(for: Route.self) { route in
                     switch route {
                         case .allFeatures:
                             allFeaturesList()
-                                .frame(width: 720, height: 500)
                         case .video(let url):
                             VideoPlayer(player: AVPlayer(url: url))
-#if os(macOS)
-                                .frame(width: 720, height: 500)
-#endif
                     }
                 }
             }
+#if os(macOS)
+            .frame(width: 720, height: 500)
+#endif
         } else {
             if route == nil {
                 ZStack {
@@ -138,7 +137,7 @@ struct WhatsNewView: View {
 //        .watchImmediately(of: navigationSize) { newValue in
 //            navigationMaxHeight = max(navigationMaxHeight, newValue.height)
 //        }
-        .overlay(alignment: .topTrailing) {
+        .overlay(alignment: .topLeading) {
             ZStack {
                 if #available(macOS 26.0, *) {
                     dismissButton()

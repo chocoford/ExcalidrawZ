@@ -153,13 +153,8 @@ struct ShareView: View {
                 }
 
                 if horizontalSizeClass != .compact {
-                    if #available(macOS 26.0, iOS 26.0, *) {
-                        closeButton(block: true)
-                            .buttonStyle(.glassProminent)
-                    } else {
-                        closeButton(block: true)
-                            .buttonStyle(.borderedProminent)
-                    }
+                    closeButton(block: true)
+                        .prominentButtonStyle()
                 }
                 
                 if containerVerticalSizeClass == .compact {
@@ -167,15 +162,17 @@ struct ShareView: View {
                 }
             }
             .navigationDestination(for: Route.self) { route in
-                switch route {
-                    case .exportImage:
-                        ExportImageView(file: sharedFile)
-                    case .exportFile:
-                        ExportFileView(file: sharedFile)
+                ZStack {
+                    switch route {
+                        case .exportImage:
+                            ExportImageView(file: sharedFile)
+                        case .exportFile:
+                            ExportFileView(file: sharedFile)
 #if DEBUG
-                    case .svgPreview(let url):
-                        svgPreviewView(url: url)
+                        case .svgPreview(let url):
+                            svgPreviewView(url: url)
 #endif
+                    }
                 }
             }
             .padding(40)
@@ -406,61 +403,6 @@ fileprivate struct SquareButton: View {
     }
 }
 
-
-
-struct ExportButtonStyle: PrimitiveButtonStyle {
-    @Environment(\.isEnabled) var isEnabled
-    
-    @State private var isHovered = false
-    
-    let size: CGFloat = 86
-    
-    func makeBody(configuration: Configuration) -> some View {
-        PrimitiveButtonWrapper {
-            configuration.trigger()
-        } content: { isPressed in
-            configuration.label
-                .foregroundStyle(isEnabled ? .primary : .secondary)
-                .padding()
-                .frame(width: size, height: size)
-                .background {
-                    ZStack {
-                        if #available(macOS 26.0, iOS 26.0, *) {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(
-                                    isEnabled ?
-                                    (
-                                        isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial)
-                                    ) : AnyShapeStyle(Color.clear)
-                                )
-                                .glassEffect(.clear, in: RoundedRectangle(cornerRadius: 12))
-                        } else {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(
-                                    isEnabled ?
-                                    (
-                                        isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial)
-                                    ) : AnyShapeStyle(Color.clear)
-                                )
-                            
-                            if #available(macOS 13.0, iOS 17.0, *) {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(.separator, lineWidth: 0.5)
-                            } else {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(.gray, lineWidth: 0.5)
-                            }
-                        }
-                        
-                       
-                    }
-                    .animation(.default, value: isHovered)
-                }
-                .contentShape(Rectangle())
-                .onHover { isHovered = $0 }
-        }
-    }
-}
 
 #if DEBUG
 #Preview {

@@ -396,7 +396,10 @@ struct ExcalidrawContainerWrapper: View {
                                 from: file.objectID,
                                 context: viewContext
                             ).elements
-                            viewContext.perform { file.visitedAt = .now }
+                            viewContext.perform {
+                                file.visitedAt = .now
+                                try? viewContext.save()
+                            }
                             if val.elements == oldElements {
                                 print("[updateCurrentFile] no updates, ignored.")
                                 return

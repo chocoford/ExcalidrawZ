@@ -92,7 +92,6 @@ struct MathInputSheetView: View {
                     }
                 }
             
-            Divider()
             HStack {
                 Spacer()
                 Button {
@@ -108,8 +107,9 @@ struct MathInputSheetView: View {
                 } label: {
                     Text(.localizable(.toolbarLatexMathButtonInsert))
                 }
-                .buttonStyle(.borderedProminent)
+                .modernButtonStyle(style: .borderedProminent)
             }
+            .modernButtonStyle(size: .large, shape: .modern)
         }
         .padding()
         .onChange(of: inputText, debounce: 0.2) { newValue in

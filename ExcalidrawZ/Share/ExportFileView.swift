@@ -43,9 +43,7 @@ struct ExportFileView: View {
     
     @State private var fileContentString: String = ""
     @State private var fileDocument: ExcalidrawFile?
-    
-    @State private var showBackButton = false
-    
+        
     var body: some View {
         Center {
 #if canImport(AppKit)
@@ -72,25 +70,10 @@ struct ExportFileView: View {
 #endif
             actionsView()
         }
-#if os(macOS)
-        .overlay(alignment: .topLeading) {
-            if showBackButton {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemSymbol: .chevronLeft)
-                }
-                .transition(
-                    .offset(x: -10).combined(with: .opacity)
-                )
-            }
-        }
-        .animation(.default, value: showBackButton)
-#endif
+        .modifier(ShareSubViewBackButtonModifier(dismiss: dismiss))
         .padding(horizontalSizeClass == .compact ? 0 : 20)
         .onAppear {
             saveFileToTemp()
-            showBackButton = true
             fileName = file.name ?? String(localizable: .newFileNamePlaceholder)
             do {
                 fileDocument = file
@@ -98,9 +81,6 @@ struct ExportFileView: View {
             } catch {
                 alertToast(error)
             }
-        }
-        .onDisappear {
-            showBackButton = false
         }
     }
     
@@ -178,6 +158,7 @@ struct ExportFileView: View {
             
             Spacer()
         }
+        .modernButtonStyle(shape:. modern)
         .fileExporter(
             isPresented: $showFileExporter,
             document: fileDocument,

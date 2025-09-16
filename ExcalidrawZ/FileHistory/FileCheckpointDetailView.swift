@@ -50,42 +50,43 @@ struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
                 Spacer()
 
                 if #available(macOS 26.0, iOS 26.0, *) {
-                    
-                    Button {
-                        viewContext.delete(checkpoint)
-                        dismiss()
-                    } label: {
-                        Image(systemSymbol: .trash)
-                            .foregroundStyle(.red)
+                    HStack {
+                        Button {
+                            viewContext.delete(checkpoint)
+                            dismiss()
+                        } label: {
+                            Image(systemSymbol: .trash)
+                                .foregroundStyle(.red)
+                        }
+                        .buttonBorderShape(.circle)
+                        .buttonStyle(.glass)
+                        
+                        Button { @MainActor in
+                            restoreCheckpoint()
+                        } label: {
+                            Text(.localizable(.checkpointButtonRestore))
+                        }
+                        .buttonBorderShape(.capsule)
+                        .buttonStyle(.glassProminent)
                     }
-                    .buttonBorderShape(.circle)
-                    .buttonStyle(.glass)
-                    .controlSize(.extraLarge)
-                    
-                    Button { @MainActor in
-                        restoreCheckpoint()
-                    } label: {
-                        Text(.localizable(.checkpointButtonRestore))
-                    }
-                    .buttonBorderShape(.capsule)
-                    .buttonStyle(.glassProminent)
                     .controlSize(.extraLarge)
                 } else {
-                    Button {
-                        viewContext.delete(checkpoint)
-                        dismiss()
-                    } label: {
-                        Image(systemSymbol: .trash)
-                            .foregroundStyle(.red)
+                    HStack {
+                        Button {
+                            viewContext.delete(checkpoint)
+                            dismiss()
+                        } label: {
+                            Image(systemSymbol: .trash)
+                                .foregroundStyle(.red)
+                        }
+                        
+                        Button { @MainActor in
+                            restoreCheckpoint()
+                        } label: {
+                            Text(.localizable(.checkpointButtonRestore))
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
-                    .controlSize(.large)
-                    
-                    Button { @MainActor in
-                        restoreCheckpoint()
-                    } label: {
-                        Text(.localizable(.checkpointButtonRestore))
-                    }
-                    .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                 }
                 

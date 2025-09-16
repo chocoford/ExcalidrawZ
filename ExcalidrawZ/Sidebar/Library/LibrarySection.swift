@@ -70,6 +70,7 @@ struct LibrarySectionContent: View {
                                 }
                                 .padding(2)
                                 .frame(width: size, height: size)
+                                .padding(4)
                             }
                         }
                         .simultaneousGesture(
