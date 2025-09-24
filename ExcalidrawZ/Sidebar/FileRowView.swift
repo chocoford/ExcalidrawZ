@@ -57,14 +57,10 @@ struct FileRowView: View {
             isMultiSelected: fileState.selectedFiles.contains(file)
         ) {
 #if os(macOS)
-            if fileState.selectedFiles.isEmpty {
-                fileState.selectedStartFile = nil
-            }
-            
             if NSEvent.modifierFlags.contains(.shift) {
                 // 1. If this is the first shift-click, remember it and select that file.
-                if fileState.selectedStartFile == nil {
-                    fileState.selectedStartFile = file
+                // Shift don't change the start file.
+                if fileState.selectedFiles.isEmpty {
                     fileState.selectedFiles.insert(file)
                 } else {
                     guard let startFile = fileState.selectedStartFile,
@@ -80,15 +76,15 @@ struct FileRowView: View {
                     fileState.selectedFiles = sliceSet
                 }
             } else if NSEvent.modifierFlags.contains(.command) {
-                if fileState.selectedFiles.isEmpty {
-                    fileState.selectedStartFile = file
-                }
                 fileState.selectedFiles.insertOrRemove(file)
+                fileState.selectedStartFile = file
             } else {
                 activeFile(file)
+                fileState.selectedStartFile = file
             }
 #else
             activeFile(file)
+            fileState.selectedStartFile = file
 #endif
         }
         .modifier(FileRowDragDropModifier(file: file, sameGroupFiles: files))

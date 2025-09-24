@@ -102,8 +102,9 @@ struct ShareView: View {
             VStack(spacing: horizontalSizeClass == .compact ? 10 : 20) {
                 Text(.localizable(.exportSheetHeadline))
                     .font(horizontalSizeClass == .compact ? .headline : .largeTitle)
-                
-                HStack(spacing: 14) {
+                Spacer()
+                //                VStack(spacing: 10) {
+                HStack(spacing: 10) {
                     SquareButton(title: .localizable(.exportSheetButtonImage), icon: .photo) {
                         route.append(Route.exportImage)
                     }
@@ -112,7 +113,8 @@ struct ShareView: View {
                     SquareButton(title: .localizable(.exportSheetButtonFile), icon: .doc) {
                         route.append(Route.exportFile)
                     }
-                    
+                    //                    }
+                    //                    HStack(spacing: 10) {
                     SquareButton(title: .localizable(.exportSheetButtonPDF), icon: .docRichtext, priority: .background) {
                         do {
                             let imageData = try await exportState.exportCurrentFileToImage(
@@ -125,7 +127,7 @@ struct ShareView: View {
                             await exportPDF(name: imageData.name, svgURL: imageData.url)
 #elseif os(iOS)
                             exportedPDFURL = await exportPDF(name: imageData.name, svgURL: imageData.url)
-//                            route.append(Route.svgPreview(imageData.url))
+                            //                            route.append(Route.svgPreview(imageData.url))
 #endif
                         } catch {
                             alertToast(error)
@@ -151,15 +153,9 @@ struct ShareView: View {
 #endif
                     }
                 }
-
-                if horizontalSizeClass != .compact {
-                    closeButton(block: true)
-                        .prominentButtonStyle()
-                }
-                
-                if containerVerticalSizeClass == .compact {
-                    closeButton(block: false)
-                }
+                //                }
+                Spacer()
+                Spacer()
             }
             .navigationDestination(for: Route.self) { route in
                 ZStack {
@@ -176,6 +172,16 @@ struct ShareView: View {
                 }
             }
             .padding(40)
+            .overlay(alignment: .topLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
+                        .labelStyle(.iconOnly)
+                }
+                .modernButtonStyle(style: .glass, size: .large, shape: .modernCircle)
+                .padding(24)
+            }
 #if os(macOS)
             .toolbar(.hidden, for: .windowToolbar)
 #endif
@@ -327,18 +333,16 @@ struct ShareViewLagacy: View {
                 }
 #endif
             }
-            
+
+        }
+        .overlay(alignment: .topLeading) {
             Button {
                 dismiss()
             } label: {
-                HStack {
-                    Spacer()
-                    Text(.localizable(.generalButtonClose))
-                    Spacer()
-                }
+                Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
+                    .labelStyle(.iconOnly)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .modernButtonStyle(style: .glass, size: .large, shape: .modernCircle)
         }
     }
 

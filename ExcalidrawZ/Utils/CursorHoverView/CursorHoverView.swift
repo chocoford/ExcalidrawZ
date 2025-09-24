@@ -124,8 +124,10 @@ extension View {
         if #available(macOS 15.0, *), !forceAppKit {
             // 15+ 优先使用指针样式（系统更稳），否则走 NSViewRepresentable
             self.pointerStyle(style.asPointerStyle())
-        } else {
+        } else if #available(macOS 13.0, *) {
             modifier(HoverCursorModifier(cursor: style.asNSCursor))
+        } else {
+            self
         }
     }
 }

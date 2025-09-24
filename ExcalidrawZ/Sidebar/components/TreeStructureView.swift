@@ -87,7 +87,7 @@ where Children.Element : Hashable {
             root
                 .readHeight($height)
             
-            VStack(alignment: .leading, spacing: 0) {
+            LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(children, id: childrenID) { child in
                     let isLast = child == children.last
 
@@ -125,7 +125,6 @@ where Children.Element : Hashable {
                 }
             }
         }
-        
     }
 }
 

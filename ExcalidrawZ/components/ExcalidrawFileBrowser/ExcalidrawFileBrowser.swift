@@ -179,32 +179,37 @@ struct ExcalidrawLocalFileBrowserContentView: View {
     }
     
     @State private var contents: [URL] = []
-    
+    @StateObject private var localFolderState = LocalFolderState()
     var body: some View {
-        ForEach(contents, id: \.self) { url in
-            ExcalidrawFileItemView(
-                isSelected: Binding {
-                    if case .localFile(let localFile) = fileState.currentActiveFile {
-                        return localFile == url
-                    }
-                    return false
-                } set: { val in
-                    if val {
-                        fileState.currentActiveFile = .localFile(url)
-                    }
-                },
-                filename: url.lastPathComponent
-            ) {
+        LocalFilesProvider(folder: folder, sortField: .name) { files, updateFlags in
+            ForEach(files, id: \.self) { url in
+                ExcalidrawFileItemView(
+                    isSelected: Binding {
+                        if case .localFile(let localFile) = fileState.currentActiveFile {
+                            return localFile == url
+                        }
+                        return false
+                    } set: { val in
+                        if val {
+                            fileState.currentActiveFile = .localFile(url)
+                        }
+                    },
+                    filename: url.lastPathComponent
+                ) {
 #if canImport(AppKit)
-                NSWorkspace.shared.icon(forFile: url.filePath)
+                    NSWorkspace.shared.icon(forFile: url.filePath)
 #elseif canImport(UIKit)
-                UIImage.icon(forFileURL: url)
+                    UIImage.icon(forFileURL: url)
 #endif
-            } onDoubleClick: {
-                onDoubleClick?()
+                } onDoubleClick: {
+                    onDoubleClick?()
+                }
             }
         }
+        .environmentObject(localFolderState)
     }
+    
+    
 }
 
 struct ExcalidrawFileItemView: View {

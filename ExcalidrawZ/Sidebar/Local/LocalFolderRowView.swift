@@ -71,7 +71,7 @@ struct LocalFolderRowView: View {
                 .truncationMode(.middle)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(ListButtonStyle(selected: isSelected))
+            .buttonStyle(.excalidrawSidebarRow(isSelected: isSelected, isMultiSelected: false))
         }
     }
     

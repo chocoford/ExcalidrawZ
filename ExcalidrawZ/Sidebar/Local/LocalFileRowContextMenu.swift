@@ -174,17 +174,20 @@ struct LocalFileRowMenuItems: View {
         Button {
             duplicateFile()
         } label: {
-            Label(
-                .localizable(
-                    !fileState.selectedLocalFiles.isEmpty && fileState.selectedLocalFiles.contains(file)
-                    ? .sidebarFileRowContextMenuDuplicateFiles(
-                        fileState.selectedLocalFiles.count
+            Label {
+                if !fileState.selectedLocalFiles.isEmpty && fileState.selectedLocalFiles.contains(file),
+                   #available(macOS 13.0, iOS 16.0, *) {
+                    Text(
+                        localizable: .sidebarFileRowContextMenuDuplicateFiles(
+                            fileState.selectedLocalFiles.count
+                        )
                     )
-                    : .sidebarFileRowContextMenuDuplicate
-                ),
-                systemSymbol: .docOnDoc
-            )
-            .foregroundStyle(.red)
+                } else {
+                    Text(localizable: .sidebarFileRowContextMenuDuplicate)
+                }
+            } icon: {
+                Image(systemSymbol: .docOnDoc)
+            }
         }
 
         moveLocalFileMenu()
@@ -229,16 +232,20 @@ struct LocalFileRowMenuItems: View {
         Button {
             moveToTrash()
         } label: {
-            Label(
-                .localizable(
-                    !fileState.selectedLocalFiles.isEmpty && fileState.selectedLocalFiles.contains(file)
-                    ? .generalButtonMoveFilesToTrash(
-                        fileState.selectedLocalFiles.count
+            Label {
+                if !fileState.selectedLocalFiles.isEmpty && fileState.selectedLocalFiles.contains(file),
+                    #available(macOS 13.0, iOS 16.0, *) {
+                    Text(
+                        localizable: .generalButtonMoveFilesToTrash(
+                            fileState.selectedLocalFiles.count
+                        )
                     )
-                    : .generalButtonMoveToTrash
-                ),
-                systemSymbol: .trash
-            )
+                } else {
+                    Text(localizable: .generalButtonMoveToTrash)
+                }
+            } icon: {
+                Image(systemSymbol: .trash)
+            }
             .foregroundStyle(.red)
         }
     }

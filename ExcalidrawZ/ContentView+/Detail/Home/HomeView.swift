@@ -36,7 +36,6 @@ struct HomeView: View {
     @State private var isSearchPresented: Bool = false
     
     @State private var inputText: String = ""
-    @State private var selectedRecntlyFiles: Set<FileState.ActiveFile> = []
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -93,7 +92,7 @@ struct HomeView: View {
                 ZStack {
                     VStack(spacing: 30) {
                         
-                        RecentlyFilesSection(selectedRecntlyFiles: $selectedRecntlyFiles)
+                        RecentlyFilesSection()
 
 #if DEBUG || DEV
                         // TemplatesSection()
@@ -152,7 +151,7 @@ struct HomeView: View {
             .background {
                 Color.clear.contentShape(Rectangle())
                     .onTapGesture {
-                        selectedRecntlyFiles.removeAll()
+                        fileState.resetSelections()
                     }
             }
         }
@@ -163,12 +162,8 @@ struct HomeView: View {
 
 private struct RecentlyFilesSection: View {
     @Environment(\.scenePhase) private var scenePhase
-
-    @Binding private var selectedRecntlyFiles: Set<FileState.ActiveFile>
     
-    init(selectedRecntlyFiles: Binding<Set<FileState.ActiveFile>>) {
-        self._selectedRecntlyFiles = selectedRecntlyFiles
-    }
+    init() {}
     
     @FetchRequest(
         sortDescriptors: [
@@ -227,15 +222,7 @@ private struct RecentlyFilesSection: View {
                     ForEach(recentlyFiles) { file in
                         FileHomeItemView(
                             file: file,
-                            isSelected: Binding {
-                                selectedRecntlyFiles.contains(file)
-                            } set: { val in
-                                if val {
-                                    selectedRecntlyFiles = [file]
-                                } else {
-                                    selectedRecntlyFiles.remove(file)
-                                }
-                            },
+                            canMultiSelect: false
                         )
                         .frame(width: 200)
                     }

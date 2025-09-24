@@ -128,11 +128,7 @@ struct FileCheckpointListView<Checkpoint: FileCheckpointRepresentable>: View {
 #if os(iOS)
         content_iOS()
 #else
-        if #available(macOS 26.0, *) {
-            content_macOS()
-        } else {
-            content_macOS()
-        }
+        content_macOS()
 #endif
     }
     
@@ -165,9 +161,16 @@ struct FileCheckpointListView<Checkpoint: FileCheckpointRepresentable>: View {
     private func content_macOS() -> some View {
         let _ = print("[updateElements FileCheckpointListView] checkpoints count: \(fileCheckpoints.count), unique count: \(Set(fileCheckpoints).count), ids: \(fileCheckpoints.map { $0.objectID })")
         
-        if #available(macOS 13.0, *) {
+        if #available(macOS 26.0, *) {
             List {
                 ForEach(fileCheckpoints, id: \.objectID) { checkpoint in
+                    FileCheckpointRowView(checkpoint: checkpoint)
+                }
+            }
+            .scrollContentBackground(.hidden)
+        } else if #available(macOS 13.0, *) {
+            List {
+                ForEach(fileCheckpoints) { checkpoint in
                     FileCheckpointRowView(checkpoint: checkpoint)
                 }
             }

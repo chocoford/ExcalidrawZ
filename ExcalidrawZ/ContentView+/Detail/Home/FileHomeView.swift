@@ -15,14 +15,34 @@ struct GroupFileHomeView: View {
     @FetchRequest
     private var files: FetchedResults<File>
     
-    init(group: Group) {
+    init(group: Group, sortField: ExcalidrawFileSortField) {
         self.group = group
+        
+        /// Put the important things first.
+        let sortDescriptors: [SortDescriptor<File>] = {
+            switch sortField {
+                case .updatedAt:
+                    [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse)
+                    ]
+                case .name:
+                    [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
+                        SortDescriptor(\.name, order: .reverse),
+                    ]
+                case .rank:
+                    [
+                        SortDescriptor(\.rank, order: .forward),
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
+                    ]
+            }
+        }()
+        
         self._files = FetchRequest<File>(
-            sortDescriptors: [
-                NSSortDescriptor(keyPath: \File.createdAt, ascending: false),
-                NSSortDescriptor(keyPath: \File.updatedAt, ascending: false),
-                NSSortDescriptor(keyPath: \File.visitedAt, ascending: false),
-            ],
+            sortDescriptors: sortDescriptors,
             predicate: group.groupType == .trash
             ? NSPredicate(format: "inTrash == true")
             : NSPredicate(format: "inTrash == false AND group == %@", group),
@@ -39,13 +59,15 @@ struct GroupFileHomeView: View {
 struct LocalFolderFileHomeView: View {
     
     var folder: LocalFolder
+    var sortField: ExcalidrawFileSortField
     
-    init(folder: LocalFolder) {
+    init(folder: LocalFolder, sortField: ExcalidrawFileSortField) {
         self.folder = folder
+        self.sortField = sortField
     }
     
     var body: some View {
-        LocalFilesProvider(folder: folder, sortField: .updatedAt) { files, updateFlags in
+        LocalFilesProvider(folder: folder, sortField: sortField) { files, updateFlags in
             FileHomeView(folder: folder, files: files)
         }
     }
@@ -71,7 +93,7 @@ struct FileHomeContainer: View {
             VStack(spacing: 0) {
                 content
                     .readHeight($contentHeight)
-                
+
                 Color.clear
                     .frame(height: max(0, scrollViewHeight - contentHeight))
                     .overlay(alignment: .top) {
@@ -264,17 +286,8 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
         FileHomeContainer {
-            VStack(spacing: 30) {
-                header()
-                    .padding(.horizontal, 20)
-                quickActions()
-                    .padding(.horizontal, 30)
-                groupsAndFiles()
-                    .padding(.horizontal, 30)
-            }
-            .padding(.top, parentGroups.isEmpty ? 36 : 15)
-            .padding(.bottom, 30)
-            .readHeight($contentHeight)
+            containerContent()
+                .readHeight($contentHeight)
         }
         .showPlaceholder(files.isEmpty, itemWidth: fileItemWidth)
         .contentBackground {
@@ -282,10 +295,8 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 .contentShape(Rectangle())
                 .onTapGesture {
                     selection = nil
+                    fileState.resetSelections()
                 }
-//                .modifier(
-//                    ExcalidrawLibraryDropHandler()
-//                )
                 .modifier(
                     HomeFolderItemDropModifier(group: group)
                 )
@@ -336,6 +347,20 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
             }
             .padding(.horizontal, 10)
         }
+    }
+    
+    @MainActor @ViewBuilder
+    private func containerContent() -> some View {
+        VStack(spacing: 30) {
+            header()
+                .padding(.horizontal, 20)
+            quickActions()
+                .padding(.horizontal, 30)
+            groupsAndFiles()
+                .padding(.horizontal, 30)
+        }
+        .padding(.top, parentGroups.isEmpty ? 36 : 15)
+        .padding(.bottom, 30)
     }
     
     @MainActor @ViewBuilder
@@ -435,9 +460,19 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                     })
                     .simultaneousGesture(TapGesture().onEnded {
                         selection = group.objectID.description
+                        fileState.resetSelections()
                     })
                     .modifier(HomeFolderItemDropModifier(group: group))
                 }
+            }
+            .onChange(of: fileState.selectedFiles.isEmpty) { isEmpty in
+                if !isEmpty { selection = nil }
+            }
+            .onChange(of: fileState.selectedLocalFiles.isEmpty) { isEmpty in
+                if !isEmpty { selection = nil }
+            }
+            .onChange(of: fileState.selectedTemporaryFiles.isEmpty) { isEmpty in
+                if !isEmpty { selection = nil }
             }
             
 #if os(macOS)
@@ -453,14 +488,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
         ) {
             ForEach(files) { file in
                 FileHomeItemView(
-                    file: file,
-                    isSelected: Binding {
-                        selection == file.id
-                    } set: { val in
-                        if val {
-                            selection = file.id
-                        }
-                    },
+                    file: file
                 )
             }
         }
@@ -502,3 +530,10 @@ struct FileHomeGroupContextMenuModifier<HomeGroup>: ViewModifier {
     }
     
 }
+
+
+//struct ScrollViewSpacerModifier: ViewModifier {
+//    func body(content: Content) -> some View {
+//        content
+//    }
+//}

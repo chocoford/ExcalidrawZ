@@ -275,7 +275,8 @@ struct GroupMenuItems: View {
                         MoveToGroupMenu(
                             destination: group,
                             sourceGroup: self.group,
-                            childrenSortKey: \Group.name
+                            childrenSortKey: \Group.name,
+                            canMoveToParentGroup: false
                         ) {
                             performGroupMoveAction(source: self.group.objectID, target: $0)
                         }

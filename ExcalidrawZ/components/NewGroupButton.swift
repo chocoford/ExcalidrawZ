@@ -19,7 +19,6 @@ struct NewGroupButton: View {
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
 
-    
     enum GroupType {
         case localFolder
         case group

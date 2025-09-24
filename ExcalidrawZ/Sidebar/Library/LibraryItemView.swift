@@ -14,6 +14,7 @@ struct LibraryItemView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
     
+    @EnvironmentObject var fileState: FileState
     @EnvironmentObject var libraryViewModel: LibraryViewModel
     
     var item: LibraryItem
@@ -59,8 +60,14 @@ struct LibraryItemView: View {
                 return itemProvider
             }
             .modifier(LibraryItemContentBackgroundModifier())
+            .simultaneousGesture(TapGesture(count: 2).onEnded {
+                addToCanvas()
+            })
             .contextMenu { contextMenu().labelStyle(.titleAndIcon) }
-            .confirmationDialog(.localizable(.librariesRemoveItemConfirmationTitle), isPresented: $isDeleteConfirmPresented) {
+            .confirmationDialog(
+                String(localizable: .librariesRemoveItemConfirmationTitle),
+                isPresented: $isDeleteConfirmPresented
+            ) {
                 AsyncButton(role: .destructive) {
                     try await deleteLibraryItem()
                 } label: {
@@ -93,12 +100,13 @@ struct LibraryItemView: View {
     @MainActor @ViewBuilder
     private func contextMenu() -> some View {
         if !inSelectionMode {
-            Button {
-                addToCanvas()
-            } label: {
-                Label(.localizable(.librariesButtonItemAddToCanvas), systemSymbol: .plusSquare)
+            if fileState.currentActiveFile != nil {
+                Button {
+                    addToCanvas()
+                } label: {
+                    Label(.localizable(.librariesButtonItemAddToCanvas), systemSymbol: .plusSquare)
+                }
             }
-
             if libraries.count > 1 {
                 Menu {
                     ForEach(libraries.filter({$0.name != nil && $0 != self.item.library})) { library in
@@ -124,6 +132,9 @@ struct LibraryItemView: View {
     }
     
     private func addToCanvas() {
+        guard fileState.currentActiveFile != nil else {
+            return
+        }
         Task {
             do {
                 try await libraryViewModel.excalidrawWebCoordinator?.loadLibraryItem(item: item.excalidrawLibrary)

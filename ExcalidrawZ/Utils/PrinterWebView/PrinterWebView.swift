@@ -10,18 +10,18 @@ import WebKit
 import SwiftUIIntrospect
 import os.log
 
-//#if DEBUG
-//class PrinterWebView: WKWebView {
-//    init(filename: String) {
-//        fatalError("init(coder:) has not been implemented")
-//    }
-//    
-//    required init?(coder: NSCoder) {
-//        fatalError("init(coder:) has not been implemented")
-//    }
-//    public func print(fileURL: URL) async {}
-//}
-//#else
+#if DEBUG
+class PrinterWebView: WKWebView {
+    init(filename: String) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    public func print(fileURL: URL) async {}
+}
+#else
 
 
 class PrinterWebView: WKWebView {
@@ -152,4 +152,4 @@ extension PrinterWebView: WKNavigationDelegate {
         }
     }
 }
-//#endif
+#endif

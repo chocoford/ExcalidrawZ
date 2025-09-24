@@ -34,7 +34,7 @@ struct ModernButtonStyleModifier: ViewModifier {
     
     enum BorderShape {
         case capsule, roundedRectangle(CGFloat?), circle
-        case modern
+        case modern, modernCircle
     }
     
     enum Style {
@@ -79,6 +79,12 @@ struct ModernButtonStyleModifier: ViewModifier {
                 case .modern:
                     if #available(macOS 26.0, iOS 26.0, *) {
                         return .capsule
+                    } else {
+                        return .roundedRectangle
+                    }
+                case .modernCircle:
+                    if #available(macOS 26.0, iOS 26.0, *) {
+                        return .circle
                     } else {
                         return .roundedRectangle
                     }

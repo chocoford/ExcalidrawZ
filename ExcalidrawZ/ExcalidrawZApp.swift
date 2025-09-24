@@ -166,13 +166,13 @@ struct ExcalidrawZApp: App {
                         NotificationCenter.default.post(name: .shouldHandleImport, object: panel.urls)
                     }
                 } label: {
-                    Text(.localizable(.menubarButtonImport))
+                    Label(.localizable(.menubarButtonImport), systemSymbol: .squareAndArrowDown)
                 }
                 Button {
                     // MUST USE THIS INSTEAD OF VIEWCONTEXT
                     try? archiveAllFiles(context: PersistenceController.shared.container.viewContext)
                 } label: {
-                    Text(.localizable(.menubarButtonExportAll))
+                    Label(.localizable(.menubarButtonExportAll), systemSymbol: .squareAndArrowUp)
                 }
             }
             

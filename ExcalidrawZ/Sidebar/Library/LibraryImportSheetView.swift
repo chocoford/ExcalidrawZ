@@ -219,9 +219,15 @@ struct ExcalidrawLibraryImportSheetView: View {
                             VStack(spacing: 0) {
                                 HStack {
                                     Text(library.name ?? String(localizable: .generalUntitled))
-                                    Text(.localizable(.librariesImportLibraryItemsCount(library.libraryItems.count)))
-                                        .foregroundStyle(.secondary)
-                                        .font(.footnote)
+                                    if #available(macOS 13.0, iOS 16.0, *) {
+                                        Text(.localizable(.librariesImportLibraryItemsCount(library.libraryItems.count)))
+                                            .foregroundStyle(.secondary)
+                                            .font(.footnote)
+                                    } else {
+                                        Text(library.libraryItems.count.formatted())
+                                            .foregroundStyle(.secondary)
+                                            .font(.footnote)
+                                    }
                                     
                                     Spacer()
                                     
@@ -268,9 +274,15 @@ struct ExcalidrawLibraryImportSheetView: View {
             
             HStack {
                 if !selectedItems.isEmpty {
-                    Text(.localizable(.librariesImportSelectionsCount(selectedItems.count)))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    if #available(macOS 13.0, iOS 16.0, *) {
+                        Text(.localizable(.librariesImportSelectionsCount(selectedItems.count)))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(selectedItems.count.formatted())
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 
                 Spacer()

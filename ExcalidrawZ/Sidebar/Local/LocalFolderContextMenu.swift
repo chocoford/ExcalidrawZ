@@ -243,7 +243,8 @@ struct LocalFolderMenuItems: View {
                     destination: folder,
                     sourceGroup: self.folder,
                     childrenSortKey: \LocalFolder.filePath,
-                    allowSubgroups: false
+                    allowSubgroups: false,
+                    canMoveToParentGroup: false
                 ) { targetFolderID in
                     moveLocalFolder(to: targetFolderID)
                 }

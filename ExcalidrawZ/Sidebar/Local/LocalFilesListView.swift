@@ -69,6 +69,26 @@ struct LocalFilesProvider<Content: View>: View {
         self.content = content
     }
     
+    static func withSibling(
+        file: URL,
+        sortField: ExcalidrawFileSortField,
+        @ViewBuilder content: @escaping (_ files: [URL], _ updateFlag: [URL : Date]) -> Content
+    ) -> Self? {
+        let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+        fetchRequest.predicate = NSPredicate(format: "filePath == %@", file.deletingLastPathComponent().filePath)
+        fetchRequest.fetchLimit = 1
+        
+        guard let folder = (try? PersistenceController.shared.container.viewContext.fetch(fetchRequest))?.first else {
+            return nil
+        }
+        
+        return LocalFilesProvider(
+            folder: folder,
+            sortField: sortField,
+            content: content
+        )
+    }
+    
     
     @State private var files: [URL] = []
     @State private var updateFlags: [URL : Date] = [:]

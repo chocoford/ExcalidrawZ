@@ -22,7 +22,7 @@ struct ShareSubViewBackButtonModifier: ViewModifier {
                         Image(systemSymbol: .chevronLeft)
                             .padding(4)
                     }
-                    .modernButtonStyle(style: .glass, shape: .circle)
+                    .modernButtonStyle(style: .glass, shape: .modernCircle)
                     .transition(
                         .offset(x: -10).combined(with: .opacity)
                     )

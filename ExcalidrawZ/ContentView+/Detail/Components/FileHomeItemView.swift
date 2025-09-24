@@ -8,6 +8,10 @@
 import SwiftUI
 import ChocofordUI
 
+extension Notification.Name {
+    static let filePreviewShouldRefresh = Notification.Name("FilePreviewShouldRefresh")
+}
+
 struct FileHomeItemPreferenceKey: PreferenceKey {
     static var defaultValue: [String: Anchor<CGRect>] = [:]
     
@@ -18,6 +22,19 @@ struct FileHomeItemPreferenceKey: PreferenceKey {
 
 class FileItemPreviewCache: NSCache<NSString, NSImage> {
     static let shared = FileItemPreviewCache()
+
+    static func cacheKey(for file: FileState.ActiveFile, colorScheme: ColorScheme) -> NSString {
+        file.id + (colorScheme == .light ? "_light" : "_dark") as NSString
+    }
+    
+    func getPreviewCache(forFile file: FileState.ActiveFile, colorScheme: ColorScheme) -> NSImage? {
+        self.object(forKey: Self.cacheKey(for: file, colorScheme: colorScheme))
+    }
+    
+    func removePreviewCache(forFile file: FileState.ActiveFile, colorScheme: ColorScheme) {
+        self.removeObject(forKey: Self.cacheKey(for: file, colorScheme: colorScheme))
+    }
+    
 }
 
 struct FileHomeItemView: View {
@@ -28,8 +45,8 @@ struct FileHomeItemView: View {
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
 
-    @Binding var isSelected: Bool
     var file: FileState.ActiveFile
+    var canMultiSelect: Bool
     var fileID: String
     var filename: String
     var excalidrawFileGetter: (FileState.ActiveFile, NSManagedObjectContext) -> ExcalidrawFile?
@@ -37,10 +54,10 @@ struct FileHomeItemView: View {
     
     init(
         file: FileState.ActiveFile,
-        isSelected: Binding<Bool>
+        canMultiSelect: Bool = true
     ) {
         self.file = file
-        self._isSelected = isSelected
+        self.canMultiSelect = canMultiSelect
         switch file {
             case .file(let file):
                 self.fileID = file.objectID.description
@@ -60,25 +77,30 @@ struct FileHomeItemView: View {
                 self.filename = collaborationFile.name ?? String(localizable: .generalUntitled)
         }
         self.excalidrawFileGetter = { activeFile, context in
-            switch activeFile {
-                case .file(let file):
-                    return try? ExcalidrawFile(from: file.objectID, context: context)
-                case .localFile(let url):
-                    return try? ExcalidrawFile(contentsOf: url)
-                case .temporaryFile(let url):
-                    return try? ExcalidrawFile(contentsOf: url)
-                case .collaborationFile(let collaborationFile):
-                    return try? ExcalidrawFile(from: collaborationFile.objectID, context: context)
+            do {
+                switch activeFile {
+                    case .file(let file):
+                        return try ExcalidrawFile(from: file.objectID, context: context)
+                    case .localFile(let url):
+                        return try ExcalidrawFile(contentsOf: url)
+                    case .temporaryFile(let url):
+                        return try ExcalidrawFile(contentsOf: url)
+                    case .collaborationFile(let collaborationFile):
+                        return try ExcalidrawFile(from: collaborationFile.objectID, context: context)
+                }
+            } catch {
+                print("excalidrawFileGetter error:", error)
+                return nil
             }
         }
     }
 
     init<Label: View>(
         file: FileState.ActiveFile,
-        isSelected: Binding<Bool>,
+        canMultiSelect: Bool = true,
         @ViewBuilder customLabel: () -> Label
     ) {
-        self.init(file: file, isSelected: isSelected)
+        self.init(file: file, canMultiSelect: canMultiSelect)
         self.customLabel = AnyView(customLabel())
     }
 
@@ -138,14 +160,6 @@ struct FileHomeItemView: View {
         .clipShape(
             RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
         )
-        .overlay {
-            RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
-                .stroke(
-                    isSelected
-                    ? AnyShapeStyle(Color.accentColor)
-                    : AnyShapeStyle(SeparatorShapeStyle())
-                )
-        }
         .background {
             if #available(macOS 26.0, iOS 26.0, *) {
                 RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
@@ -188,20 +202,36 @@ struct FileHomeItemView: View {
                 .simultaneousGesture(TapGesture(count: 2).onEnded {
                     openFile()
                 })
-                .simultaneousGesture(TapGesture().onEnded {
-                    isSelected = true
-                })
+                .modifier(
+                    FileHomeItemSelectModifier(
+                        file: file,
+                        sortField: fileState.sortField,
+                        canMultiSelect: canMultiSelect
+                    )
+                )
                 .modifier(FileHomeItemContextMenuModifier(file: file))
-                .onHover { isHovered = $0 }
+                .onHover {
+                    isHovered = $0
+                }
         }
         .modifier(FileHomeItemDragModifier(file: file))
         .opacity(fileHomeItemTransitionState.shouldHideItem == fileID ? 0 : 1)
         .animation(.smooth(duration: 0.2), value: isHovered)
+        .onReceive(
+            NotificationCenter.default.publisher(for: .filePreviewShouldRefresh)
+        ) { notification in
+            guard let fileID = notification.object as? String,
+                  self.file.id == fileID else { return }
+            
+            print("Refreshing preview for file: \(fileID)")
+            
+            self.getElementsImage()
+        }
         .onChange(of: file) { newValue in
             self.getElementsImage()
         }
         .watchImmediately(of: colorScheme) { _ in
-            if let image = cache.object(forKey: cacheKey as NSString) {
+            if let image = cache.getPreviewCache(forFile: file, colorScheme: colorScheme) {
                 Task.detached {
                     let image = Image(platformImage: image)
                     await MainActor.run {
@@ -209,18 +239,21 @@ struct FileHomeItemView: View {
                     }
                 }
             } else {
-                self.getElementsImage()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.getElementsImage()
+                }
             }
         }
     }
 
     private func getElementsImage() {
+        // print("Generating preview for file 1: \(file.name)")
         if let excalidrawFile = excalidrawFileGetter(file, viewContext) {
             Task {
                 while fileState.excalidrawWebCoordinator?.isLoading == true {
                     try? await Task.sleep(nanoseconds: UInt64(1e+9 * 1))
                 }
-                
+                // print("Generating preview for file 2: \(file.name)")
                 if let image = try? await fileState.excalidrawWebCoordinator?.exportElementsToPNG(
                     elements: excalidrawFile.elements,
                     files: excalidrawFile.files.isEmpty ? nil : excalidrawFile.files,
@@ -303,7 +336,6 @@ struct FileHomeItemView: View {
     }
 
 }
-
 
 private struct FileHomeItemContextMenuModifier: ViewModifier {
     var file: FileState.ActiveFile

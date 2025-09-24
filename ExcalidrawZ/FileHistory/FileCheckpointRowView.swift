@@ -60,7 +60,11 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
             
             HStack(spacing: 0) {
                 if let file {
-                    Text(.localizable(.checkpointsElementsDescription(file.elements.count)))
+                    if #available(macOS 13.0, iOS 16.0, *) {
+                        Text(.localizable(.checkpointsElementsDescription(file.elements.count)))
+                    } else {
+                        Text(file.elements.count.formatted())
+                    }
                 }
                 Text(" · ")
                 if let content = checkpoint.content {

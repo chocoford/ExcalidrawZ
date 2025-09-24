@@ -33,8 +33,7 @@ struct TemporaryFileRowView: View {
 #if os(macOS)
             if NSEvent.modifierFlags.contains(.shift) {
                 let files = fileState.temporaryFiles
-                if fileState.selectedStartTemporaryFile == nil {
-                    fileState.selectedStartTemporaryFile = file
+                if fileState.selectedTemporaryFiles.isEmpty {
                     fileState.selectedTemporaryFiles.insert(file)
                 } else {
                     guard let startFile = fileState.selectedStartTemporaryFile,
@@ -50,15 +49,15 @@ struct TemporaryFileRowView: View {
                     fileState.selectedTemporaryFiles = sliceSet
                 }
             } else if NSEvent.modifierFlags.contains(.command) {
-                if fileState.selectedTemporaryFiles.isEmpty {
-                    fileState.selectedStartTemporaryFile = file
-                }
                 fileState.selectedTemporaryFiles.insertOrRemove(file)
+                fileState.selectedStartTemporaryFile = file
             } else {
                 fileState.currentActiveFile = .temporaryFile(file)
+                fileState.selectedStartTemporaryFile = file
             }
 #else
             fileState.currentTemporaryFile = file
+            fileState.selectedStartTemporaryFile = file
 #endif
         }
         .modifier(TemporaryFileContextMenuModifier(file: file))

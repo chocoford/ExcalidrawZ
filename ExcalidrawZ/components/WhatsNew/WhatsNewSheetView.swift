@@ -105,7 +105,8 @@ struct WhatsNewView: View {
                 }
             }
 #if os(macOS)
-            .frame(width: 720, height: 500)
+            .frame(width: 720, height: nil)
+            .frame(minHeight: 500)
 #endif
         } else {
             if route == nil {
@@ -152,36 +153,6 @@ struct WhatsNewView: View {
             }
             .padding(20)
         }
-//        .toolbar {
-//#if os(macOS)
-//            ToolbarItem(placement: .cancellationAction) {
-//                if #available(macOS 13.0, iOS 16.0, *) {
-//                    Text("") // <-- only with this, the continue button below will show (macOS)
-//                } else {
-//                    if showContinue {
-//                        Button {
-//                            dismiss()
-//                        } label: {
-//                            Text(.localizable(.whatsNewButtonContinue))
-//                                .padding(.horizontal)
-//                        }
-//                        .buttonStyle(.borderedProminent)
-//                    }
-//                }
-//            }
-//#endif
-//            ToolbarItem(placement: .primaryAction) {
-//                if #available(macOS 13.0, iOS 16.0, *) {
-//                    if showContinue {
-//                        Button {
-//                            dismiss()
-//                        } label: {
-//                            Text(.localizable(.whatsNewButtonContinue))
-//                        }
-//                    }
-//                }
-//            }
-//        }
 #if os(iOS)
         .navigationTitle(Text(.localizable(.whatsNewTitle)))
         .navigationBarTitleDisplayMode(.large)
@@ -198,15 +169,37 @@ struct WhatsNewView: View {
 #endif
             VStack(spacing: 6) {
                 VStack(alignment: .leading, spacing: 22) {
-                    Image("What's New Cover")
-                        .resizable()
-                        .scaledToFit()
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    if #available(macOS 13.0, iOS 16.0, *) {
+                        BeforeAfterSlider(
+                            slideMode: .drag,
+                            showHandlebar: true,
+                            initialPercentage: 0.0,
+                            autoplay: true,
+                            autoplayDuration: 6
+                        ) {
+                            Image("ExcalidrawZ - New")
+                                .resizable()
+                                .scaledToFit()
+                        } secondContent: {
+                            Image("ExcalidrawZ - Old")
+                                .resizable()
+                                .scaledToFit()
+                        } handle: {
+                            Image(systemName: "line.horizontal.3")
+                                .foregroundColor(.black)
+                        }
+                        .frame(height: 300)
+                    } else {
+                        Image("What's New Cover")
+                            .resizable()
+                            .scaledToFit()
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
 #if os(macOS)
-                        .padding(.horizontal, 80)
+                            .padding(.horizontal, 80)
 #endif
+                    }
                     
-                     featuresContent()
+                    featuresContent()
                 }
                 .padding(.vertical)
                 .fixedSize(horizontal: false, vertical: true)

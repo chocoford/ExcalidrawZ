@@ -65,16 +65,20 @@ struct TemporaryFileMenuItems: View {
                 }
             }
         } label: {
-            Label(
-                .localizable(
-                    !fileState.selectedTemporaryFiles.isEmpty && fileState.selectedTemporaryFiles.contains(file)
-                    ? .sidebarTemporaryGroupRowContextMenuSaveFilesTo(
-                        fileState.selectedTemporaryFiles.count
+            Label {
+                if !fileState.selectedTemporaryFiles.isEmpty && fileState.selectedTemporaryFiles.contains(file),
+                   #available(macOS 13.0, iOS 16.0, *) {
+                    Text(
+                        localizable: .sidebarTemporaryGroupRowContextMenuSaveFilesTo(
+                            fileState.selectedTemporaryFiles.count
+                        )
                     )
-                    : .sidebarTemporaryGroupRowContextMenuSaveTo
-                ),
-                systemSymbol: .trayAndArrowDown
-            )
+                } else {
+                    Text(localizable: .sidebarTemporaryGroupRowContextMenuSaveTo)
+                }
+            } icon: {
+                Image(systemSymbol: .trayAndArrowDown)
+            }
         }
         
         Menu {
@@ -123,13 +127,18 @@ struct TemporaryFileMenuItems: View {
                 fileState.currentActiveFile = file != nil ? .temporaryFile(file!) : nil
             }
         } label: {
-            Label(.localizable(
-                !fileState.selectedTemporaryFiles.isEmpty && fileState.selectedTemporaryFiles.contains(file)
-                ? .sidebarTemporaryFileRowContextMenuCloseFiles(
-                    fileState.selectedTemporaryFiles.count
-                )
-                : .sidebarTemporaryFileRowContextMenuCloseFile
-            ), systemSymbol: .xmarkCircle)
+            Label {
+                if !fileState.selectedTemporaryFiles.isEmpty && fileState.selectedTemporaryFiles.contains(file),
+                   #available(macOS 13.0, iOS 16.0, *) {
+                    Text(localizable: .sidebarTemporaryFileRowContextMenuCloseFiles(
+                        fileState.selectedTemporaryFiles.count
+                    ))
+                } else {
+                    Text(localizable: .sidebarTemporaryFileRowContextMenuCloseFile)
+                }
+            } icon: {
+                Image(systemSymbol: .xmarkCircle)
+            }
         }
     }
     

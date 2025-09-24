@@ -21,6 +21,7 @@ struct GroupsView: View {
 
     var group: Group
     var sortField: ExcalidrawFileSortField
+    var showFiles: Bool
     
     @FetchRequest
     private var children: FetchedResults<Group>
@@ -32,7 +33,8 @@ struct GroupsView: View {
     
     init(
         group: Group,
-        sortField: ExcalidrawFileSortField
+        sortField: ExcalidrawFileSortField,
+        showFiles: Bool = true
     ) {
         self.group = group
         let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
@@ -73,6 +75,7 @@ struct GroupsView: View {
             ),
             animation: .smooth
         )
+        self.showFiles = showFiles
     }
     
     var isSelectedBinding: Binding<Bool> {
@@ -110,7 +113,7 @@ struct GroupsView: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
         if #available(macOS 13.0, *), folderStructStyle == .disclosureGroup {
-            diclsureGroupView()
+             diclsureGroupView()
         } else {
             treeView()
         }
@@ -170,34 +173,41 @@ struct GroupsView: View {
             isExpanded: $isExpanded
         ) {
             ForEach(children) { group in
-                GroupsView(group: group, sortField: sortField)
+                GroupsView(group: group, sortField: sortField, showFiles: showFiles)
             }
-            LazyVStack(alignment: .leading, spacing: 0) {
-                // `id: \.self` - Prevent crashes caused by closing the Share Sheet that was opened from the app menu.
-                // MultiThread access
-                ForEach(files, id: \.self) { file in
-                    FileRowView(
-                        file: file,
-                        files: files,
-                    )
+            
+            if showFiles {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    // `id: \.self` - Prevent crashes caused by closing the Share Sheet that was opened from the app menu.
+                    // MultiThread access
+                    ForEach(files, id: \.self) { file in
+//                        Text("File Row View Placeholder")
+//                            .padding(6)
+                        FileRowView(
+                            file: file,
+                            files: files,
+                        )
+                    }
+                    // ⬇️ cause `com.apple.SwiftUI.AsyncRenderer (22): EXC_BREAKPOINT` on iOS
+                    // .animation(.smooth, value: files)
                 }
-                // ⬇️ cause `com.apple.SwiftUI.AsyncRenderer (22): EXC_BREAKPOINT` on iOS
-                // .animation(.smooth, value: files)
-            }
-            .overlay(alignment: .top) {
-                if sidebarDragState.currentDropFileRowTarget == .startOfGroup(.group(group.objectID)) {
-                    DropTargetPlaceholder()
+                .overlay(alignment: .top) {
+                    if sidebarDragState.currentDropFileRowTarget == .startOfGroup(.group(group.objectID)) {
+                        DropTargetPlaceholder()
+                    }
                 }
+                .modifier(GroupRowDropModifier(
+                    group: group,
+                    allow: [
+                        .excalidrawGroupRow,
+                        .excalidrawLocalFolderRow,
+                    ],
+                    dropTarget: {.below($0)}
+                ))
             }
-            .modifier(GroupRowDropModifier(
-                group: group,
-                allow: [
-                    .excalidrawGroupRow,
-                    .excalidrawLocalFolderRow,
-                ],
-                dropTarget: {.below($0)}
-            ))
         } label: {
+//            Text(group.name ?? String(localizable: .generalUntitled))
+//                .padding(6)
             GroupRowView(
                 group: group,
                 isSelected: isSelectedBinding.wrappedValue,
@@ -237,7 +247,7 @@ struct GroupsView: View {
                     }
                 }
         }
-        .disclosureGroupIndicatorVisibility(children.isEmpty && files.isEmpty ? .hidden : .visible)
+        .disclosureGroupIndicatorVisibility(children.isEmpty && (files.isEmpty || !showFiles) ? .hidden : .visible)
         .onReceive(NotificationCenter.default.publisher(for: .shouldExpandGroup)) { notification in
             guard let targetGroupID = notification.object as? NSManagedObjectID,
                   targetGroupID == self.group.objectID else { return }
@@ -262,8 +272,27 @@ struct GroupsView: View {
                 isExpanded: $isExpanded,
                 isBeingDropped: $isBeingDropped
             )
+            .modifier(
+                GroupContextMenuViewModifier(
+                    group: group,
+                    canExpand: false,
+                )
+            )
+            .modifier(GroupRowDropModifier(group: group) { .exact($0) })
+            .foregroundStyle(
+                canDropToGroup || canDropBelowGroup
+                ? AnyShapeStyle(Color.white)
+                : AnyShapeStyle(HierarchicalShapeStyle.primary)
+            )
+            .background {
+                if canDropToGroup || canDropBelowGroup {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.accentColor)
+                }
+            }
         } childView: { child in
             GroupsView(group: child, sortField: sortField)
+            // No need to show files in tree view, it is too crowded.
         }
     }
 }

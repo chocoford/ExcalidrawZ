@@ -60,8 +60,7 @@ struct LocalFileRowView: View {
                 }
             } else if NSEvent.modifierFlags.contains(.shift) {
                 // 1. If this is the first shift-click, remember it and select that file.
-                if fileState.selectedStartLocalFile == nil {
-                    fileState.selectedStartLocalFile = file
+                if fileState.selectedLocalFiles.isEmpty {
                     fileState.selectedLocalFiles.insert(file)
                 } else {
                     guard let startFile = fileState.selectedStartLocalFile,
@@ -77,15 +76,15 @@ struct LocalFileRowView: View {
                     fileState.selectedLocalFiles = sliceSet
                 }
             } else if NSEvent.modifierFlags.contains(.command) {
-                if fileState.selectedLocalFiles.isEmpty {
-                    fileState.selectedStartLocalFile = file
-                }
                 fileState.selectedLocalFiles.insertOrRemove(file)
+                fileState.selectedStartLocalFile = file
             } else {
                 activeFile(file)
+                fileState.selectedStartLocalFile = file
             }
 #else
             activeFile(file)
+            fileState.selectedStartLocalFile = file
 #endif
         } label: {
             FileRowLabel(

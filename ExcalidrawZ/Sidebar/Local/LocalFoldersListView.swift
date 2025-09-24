@@ -272,7 +272,13 @@ struct LocalFoldersListView: View {
 
     @EnvironmentObject private var fileState: FileState
     
-    init() { }
+    var showFiles: Bool
+    
+    init(
+        showFiles: Bool = true
+    ) {
+        self.showFiles = showFiles
+    }
 
     var body: some View {
         LocalFoldersProvider { folders in
@@ -281,7 +287,7 @@ struct LocalFoldersListView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         // Local folder view
                         Section {
-                            LocalFoldersView(folder: folder, sortField: .updatedAt) {
+                            LocalFoldersView(folder: folder, sortField: .updatedAt, showFiles: showFiles) {
                                 // switch current folder first if necessary.
                                 if case .localFolder(let localFolder) = fileState.currentActiveGroup,
                                    localFolder == folder {

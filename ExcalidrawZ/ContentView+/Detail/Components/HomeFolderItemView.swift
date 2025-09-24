@@ -32,13 +32,21 @@ struct HomeFolderItemView: View {
                 Text(name)
                     .font(.headline)
                     .lineLimit(1)
-                
-                Text(localizable: .homeGroupItemsFormatter(itemsCount))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                if #available(macOS 13.0, iOS 16.0, *) {
+                    Text(localizable: .homeGroupItemsFormatter(itemsCount))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                   
+                }
             }
                    
             Spacer()
+            if #available(macOS 13.0, iOS 16.0, *) {} else {
+                Text(itemsCount.formatted())
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)

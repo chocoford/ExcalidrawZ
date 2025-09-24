@@ -1,5 +1,5 @@
 {
-  "originHash" : "f44a531c0580b36c8a07b4fe2b35c363519413f9e45a0ffe52249fe77a8f4e6d",
+  "originHash" : "798692ffaa49915479c2bed73be4a0cd035dccd8461fa3316c2ae86d5d22dbb8",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -16,7 +16,7 @@
       "location" : "https://github.com/chocoford/ChocofordKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "01413520b0c2a64e112edbcabea549768aaae587"
+        "revision" : "619a195ea4d888d5018e392bb4b9fb0f514eb7cf"
       }
     },
     {
@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle.git",
       "state" : {
-        "revision" : "df074165274afaa39539c05d57b0832620775b11",
-        "version" : "2.7.1"
+        "revision" : "9a1d2a19d3595fcf8d9c447173f9a1687b3dcadb",
+        "version" : "2.8.0"
       }
     },
     {
@@ -114,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swiftlang/swift-cmark",
       "state" : {
-        "revision" : "b022b08312decdc46585e0b3440d97f6f22ef703",
-        "version" : "0.6.0"
+        "revision" : "b97d09472e847a416629f026eceae0e2afcfad65",
+        "version" : "0.7.0"
       }
     },
     {
@@ -161,6 +161,15 @@
       "state" : {
         "branch" : "dev",
         "revision" : "a079333861f767e14f6d32d8eb7110dcaee2db5d"
+      }
+    },
+    {
+      "identity" : "vortex",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/twostraws/Vortex.git",
+      "state" : {
+        "revision" : "9d9d9016ceace579455f01f8e0bd59facae7d252",
+        "version" : "1.0.4"
       }
     },
     {

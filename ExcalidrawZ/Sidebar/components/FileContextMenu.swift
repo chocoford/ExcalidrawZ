@@ -54,7 +54,7 @@ struct FileMenuProvider: View {
                 }
             )
             .confirmationDialog(
-                LocalizedStringKey.localizable(.sidebarFileRowDeletePermanentlyAlertTitle(file.name ?? "")),
+                String(localizable: .sidebarFileRowDeletePermanentlyAlertTitle(file.name ?? "")),
                 isPresented: $isPermanentlyDeleteAlertPresented
             ) {
                 Button(role: .destructive) {
@@ -190,14 +190,18 @@ struct FileMenuItems: View {
             Button {
                 duplicateFile()
             } label: {
-                Label(
-                    .localizable(
-                        !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file)
-                        ? .sidebarFileRowContextMenuDuplicateFiles(fileState.selectedFiles.count)
-                        : .sidebarFileRowContextMenuDuplicate
-                    ),
-                    systemSymbol: .docOnDoc
-                )
+                Label {
+                    if !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file),
+                          #available(macOS 13.0, iOS 16.0, *) {
+                            Text(
+                             localizable: .sidebarFileRowContextMenuDuplicateFiles(fileState.selectedFiles.count)
+                            )
+                      } else {
+                            Text(localizable: .sidebarFileRowContextMenuDuplicate)
+                      }
+                } icon: {
+                    Image(systemSymbol: .docOnDoc)
+                }
             }
             
             moveFileMenu()
@@ -212,11 +216,18 @@ struct FileMenuItems: View {
             Button(role: .destructive) {
                 deleteFile()
             } label: {
-                Label(.localizable(
-                    !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file)
-                    ? .sidebarFileRowContextMenuDeleteFiles(fileState.selectedFiles.count)
-                    : .sidebarFileRowContextMenuDelete
-                ), systemSymbol: .trash)
+                Label {
+                    if !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file),
+                       #available(macOS 13.0, iOS 16.0, *) {
+                        Text(
+                            localizable: .sidebarFileRowContextMenuDeleteFiles(fileState.selectedFiles.count)
+                        )
+                    } else {
+                        Text(localizable: .sidebarFileRowContextMenuDelete)
+                    }
+                } icon: {
+                    Image(systemSymbol: .trash)
+                }
             }
         } else {
             Button {
@@ -237,28 +248,37 @@ struct FileMenuItems: View {
                     }
                 }
             } label: {
-                Label(
-                    .localizable(
-                        !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file)
-                        ? .sidebarFileRowContextMenuRecoverFiles(fileState.selectedFiles.count)
-                        : .sidebarFileRowContextMenuRecover
-                    ),
-                    systemSymbol: .arrowshapeTurnUpBackward
-                )
-                .symbolVariant(.fill)
+                Label {
+                    if !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file),
+                       #available(macOS 13.0, iOS 16.0, *) {
+                        Text(
+                            localizable: .sidebarFileRowContextMenuRecoverFiles(fileState.selectedFiles.count)
+                        )
+                    } else {
+                        Text(localizable: .sidebarFileRowContextMenuRecover)
+                    }
+                } icon: {
+                    Image(systemSymbol: .arrowshapeTurnUpBackward)
+                        .symbolVariant(.fill)
+                }
             }
             
             Button {
                 onTogglePermanentlyDelete()
             } label: {
-                Label(
-                    .localizable(
-                        !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file)
-                        ? .sidebarFileRowContextMenuDeleteFilesPermanently(fileState.selectedFiles.count)
-                        : .sidebarFileRowContextMenuDeletePermanently
-                    ),
-                    systemSymbol: .trash
-                )
+                Label {
+                    if !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file),
+                       #available(macOS 13.0, iOS 16.0, *) {
+                        Text(
+                            localizable: .sidebarFileRowContextMenuDeleteFilesPermanently(fileState.selectedFiles.count)
+                        )
+                    } else {
+                        Text(localizable: .sidebarFileRowContextMenuDeletePermanently)
+                    }
+                } icon: {
+                    Image(systemSymbol: .trash)
+                }
+
             }
         }
     }
@@ -354,11 +374,7 @@ struct FileMenuItems: View {
                         try context.save()
                     }
                     
-                    let fileID: NSManagedObjectID? = if let currentFileID {
-                        fileIDs.first { $0 == currentFileID }
-                    } else {
-                        fileIDs.first
-                    }
+                    let fileID: NSManagedObjectID? = fileIDs.first { $0 == currentFileID }
                     if let fileID {
                         await MainActor.run {
                             guard case let group as Group = viewContext.object(with: groupID),

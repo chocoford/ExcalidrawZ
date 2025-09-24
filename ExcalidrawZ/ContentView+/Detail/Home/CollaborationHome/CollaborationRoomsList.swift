@@ -59,16 +59,7 @@ struct CollaborationRoomsList: View {
     private func content() -> some View {
         ForEach(collaborationFiles) { room in
             CollaborationRoomItemView(
-                room: room,
-                isSelected: Binding {
-                    selections.contains(room.objectID)
-                } set: { val in
-                    if val {
-                        selections.insert(room.objectID)
-                    } else {
-                        selections.remove(room.objectID)
-                    }
-                }
+                room: room
             )
         }
     }
@@ -80,7 +71,6 @@ struct CollaborationRoomItemView: View {
     @EnvironmentObject private var collaborationState: CollaborationState
     
     var room: CollaborationFile
-    @Binding var isSelected: Bool
 
     var collaboratingState: ExcalidrawView.LoadingState? {
         fileState.collaboratingFilesState[room]
@@ -100,8 +90,7 @@ struct CollaborationRoomItemView: View {
     
     var body: some View {
         FileHomeItemView(
-            file: .collaborationFile(room),
-            isSelected: $isSelected
+            file: .collaborationFile(room)
         ) {
             VStack {
                 HStack {

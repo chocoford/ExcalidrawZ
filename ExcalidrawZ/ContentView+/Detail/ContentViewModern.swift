@@ -68,16 +68,18 @@ struct ContentViewModern: View {
     private func sidebarToolbar() -> some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
             // create
-            NewFileButton(openWithDelay: false)
+            NewFileButton(openWithDelay: fileState.currentActiveGroup != nil)
         }
         
 #if os(macOS)
         // in macOS 14.*, the horizontalSizeClass is not `.regular`
         // if horizontalSizeClass == .regular {
 //            ToolbarItemGroup(placement: .destructiveAction) {
-//                SidebarToggle(columnVisibility: $columnVisibility)
-                
-//                NewFileButton()
+////                SidebarToggle(columnVisibility: $columnVisibility)
+//                if #available(macOS 26.0, iOS 26.0, *) {} else {
+//                    Color.clear.frame(width: 4, height: 4)
+//                }
+////                NewFileButton()
 //            }
         // }
 #elseif os(iOS)
@@ -90,19 +92,22 @@ struct ContentViewModern: View {
         }
 #endif
 //        ToolbarItemGroup(placement: .confirmationAction) {
-//            Color.blue.frame(width: 10, height: 10)
+//            Color.blue.frame(width: 4, height: 4)
 //        }
 //        ToolbarItemGroup(placement: .status) {
-//            Color.yellow.frame(width: 10, height: 10)
+//            Color.yellow.frame(width: 4, height: 4)
 //        }
 //        ToolbarItemGroup(placement: .principal) {
-//            Color.green.frame(width: 10, height: 10)
+//            Color.green.frame(width: 4, height: 4)
 //        }
 //
 //        ToolbarItemGroup(placement: .cancellationAction) {
-//            Color.red.frame(width: 10, height: 10)
+//            // Color.red.frame(width: 4, height: 4)
+//            if #available(macOS 15.0, *) {
+//                Color.clear.frame(height: 1)
+//            }
 //        }
-//
+
 #if os(macOS)
         /// It is neccessary for macOS to `space-between` the new button and sidebar toggle.
         /// In the latest macOS 26.0, this is not needed anymore. Otherwise, there will be a blank background.

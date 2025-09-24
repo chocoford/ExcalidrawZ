@@ -126,6 +126,14 @@ final class FileState: ObservableObject {
         }
         
         set {
+            if let currentActiveFileID = self.currentActiveFile?.id {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    NotificationCenter.default.post(
+                        name: .filePreviewShouldRefresh,
+                        object: currentActiveFileID
+                    )
+                }
+            }
             if let activeFileIndex,
                activeFileIndex < activeFiles.count {
                 if let newValue {
@@ -509,7 +517,7 @@ final class FileState: ObservableObject {
         let (fileID, mediaItemsNeedImport) = try await context.perform {
             var targetGroup: Group?
 
-            if targetGroupType == .default {
+            if targetGroupType == .default || currentGroupID == nil {
                 let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
                 fetchRequest.predicate = NSPredicate(format: "type == %@", "default")
                 fetchRequest.fetchLimit = 1
@@ -547,82 +555,85 @@ final class FileState: ObservableObject {
         await MainActor.run {
             if let file = context.object(with: fileID) as? File {
                 self.currentActiveFile = .file(file)
+                if let group = file.group {
+                    self.currentActiveGroup = .group(group)
+                    self.expandToGroup(group.objectID)
+                }
             }
         }
     }
     
     /// Different handle logics according to different combinations of urls.
-    /// * only files: Import to current group.
+    /// * only files: Import to current group ?? default group..
     /// * 1 folder:
     ///     * if has subfolders: Create groups by folders & Group remains files to `Ungrouped`
     ///     * if only files: import all files to one group with the same name of the ancestor folder.
     /// * multiple folders: Create groups by folders
     /// * folders & files: Create groups by folders & Group remains files to `Ungrouped`
     func importFiles(_ urls: [URL]) async throws {
-        guard case .group(let currentGroup) = self.currentActiveGroup else {
-            return
+        let context = PersistenceController.shared.container.viewContext
+
+        let currentGroup: Group? = if case .group(let currentGroup) = self.currentActiveGroup {
+            currentGroup
+        } else {
+            nil
         }
-        
-        let currentGroupID = currentGroup.objectID
-        var groupID: NSManagedObjectID?
+        let crrentGroupID = currentGroup?.objectID
+//        let defaultGroup = try PersistenceController.shared.getDefaultGroup(
+//            context: context
+//        )
         if urls.count == 1, let url = urls.first {
             guard url.startAccessingSecurityScopedResource() else {
                 throw AppError.urlError(.startAccessingSecurityScopedResourceFailed)
             }
             defer { url.stopAccessingSecurityScopedResource() }
-            if FileManager.default.isDirectory(url) { // a directory
-                let viewContext = PersistenceController.shared.container.newBackgroundContext()
-                try await viewContext.perform {
-                    let contents = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: [])
-                    
-                    if contents.allSatisfy({!FileManager.default.isDirectory($0)}) {
-                        // only files
-                        groupID = try self.importGroupFiles(url: url, viewContext: viewContext)
-                    } else {
-                        // has subfolders
-                        var unknownGroup: Group?
-                        for url in contents {
-                            if FileManager.default.isDirectory(url) {
-                                try self.importGroupFiles(url: url, viewContext: viewContext)
-                            } else if url.pathExtension == UTType.excalidrawFile.preferredFilenameExtension {
-                                if unknownGroup == nil {
-                                    unknownGroup = Group(name: "Ungrouped", context: viewContext)
-                                }
-                                let data = try Data(contentsOf: url, options: .uncached)
-                                let file = File(name: url.deletingPathExtension().lastPathComponent, context: viewContext)
-                                file.content = data
-                                file.group = unknownGroup
-                            }
-                        }
-                    }
-                    try viewContext.save()
+            if FileManager.default.isDirectory(url) {
+                // select a directory
+                try await context.perform {
+                    try self.importGroup(
+                        url: url,
+                        parentGroupID: crrentGroupID,
+                        context: context
+                    )
+                    try context.save()
                 }
             } else {
-                // only one excalidraw file
+                // select only one excalidraw file
                 try await self.importFile(url)
             }
         } else if urls.count > 1 {
+            // select multiple files or folders
             // folders will be created as group, files will be imported to `default` group.
-            let viewContext = PersistenceController.shared.container.newBackgroundContext()
-            try await viewContext.perform {
+            let context = PersistenceController.shared.container.newBackgroundContext()
+            try await context.perform {
                 let fetchRequest = NSFetchRequest<Group>()
                 fetchRequest.predicate = NSPredicate(format: "type == %@", "default")
                 var group: Group?
-                if let currentGroup = viewContext.object(with: currentGroupID) as? Group {
+                let currentGroup: Group? = if let crrentGroupID {
+                    context.object(with: crrentGroupID) as? Group
+                } else {
+                    nil
+                }
+                if let currentGroup {
                     group = currentGroup
-                } else if let defaultGroup = try viewContext.fetch(fetchRequest).first {
+                } else if let defaultGroup = try context.fetch(fetchRequest).first {
                     group = defaultGroup
                 }
                 guard let group else { return }
-                // multiple folders
+                
+                // folders
                 for folderURL in urls.filter({FileManager.default.isDirectory($0)}) {
                     guard folderURL.startAccessingSecurityScopedResource() else {
                         throw AppError.urlError(.startAccessingSecurityScopedResourceFailed)
                     }
                     defer { folderURL.stopAccessingSecurityScopedResource() }
-                    try self.importGroupFiles(url: folderURL, viewContext: viewContext)
+                    try self.importGroup(
+                        url: folderURL,
+                        parentGroupID: currentGroup?.objectID,
+                        context: context
+                    )
                 }
-                // only files
+                // files
                 for fileURL in urls.filter({!FileManager.default.isDirectory($0)}) {
                     guard fileURL.startAccessingSecurityScopedResource() else {
                         throw AppError.urlError(.startAccessingSecurityScopedResourceFailed)
@@ -630,47 +641,67 @@ final class FileState: ObservableObject {
                     defer { fileURL.stopAccessingSecurityScopedResource() }
                     
                     let data = try Data(contentsOf: fileURL, options: .uncached)
-                    let file = File(name: fileURL.deletingPathExtension().lastPathComponent, context: viewContext)
+                    let file = File(
+                        name: fileURL.deletingPathExtension().lastPathComponent,
+                        context: context
+                    )
                     file.content = data
                     file.group = group
                 }
-                try viewContext.save()
-                
-                groupID = group.objectID
+                try context.save()
             }
         }
-        _ = groupID
     }
     
-    @discardableResult
-    private func importGroupFiles(url: URL, viewContext: NSManagedObjectContext) throws -> NSManagedObjectID {
+    /// Import a folder as a group.
+    private func importGroup(
+        url: URL,
+        parentGroupID: NSManagedObjectID?,
+        context: NSManagedObjectContext
+    ) throws {
         let groupName = url.lastPathComponent
+        
         // create group
-        let group = Group(name: groupName, context: viewContext)
-        let urls = try flatFiles(in: url).filter {
-            $0.pathExtension == UTType.excalidrawFile.preferredFilenameExtension
+        let group: Group = Group(name: groupName, context: context)
+        context.insert(group)
+        let parentGroup: Group? = if let parentGroupID {
+            context.object(with: parentGroupID) as? Group
+        } else {
+            nil
         }
+        group.parent = parentGroup
+        
+        // contents
+        let urls = try FileManager.default.contentsOfDirectory(
+            at: url,
+            includingPropertiesForKeys: []
+        )
         
         // Import medias
-        let allMediaItems = try viewContext.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
+        let allMediaItems = try context.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
         var insertedMediaID = Set<String>()
         
-        for url in urls {
-            let excalidrawFile = try ExcalidrawFile(contentsOf: url)
-
-            let file = File(name: excalidrawFile.name ?? "Untitled", context: viewContext)
-            file.content = try excalidrawFile.contentWithoutFiles()
-            file.group = group
-            
+        // files
+        for fileURL in urls where fileURL.pathExtension == UTType.excalidrawFile.preferredFilenameExtension  {
+            let excalidrawFile = try ExcalidrawFile(contentsOf: fileURL)
+            let data = try Data(contentsOf: fileURL, options: .uncached)
+            let file = File(
+                name: fileURL.deletingPathExtension().lastPathComponent,
+                context: context
+            )
+            // try excalidrawFile.contentWithoutFiles() ?
+            file.content = data
+            file.group = group // ?? defaultGroup
+            context.insert(file)
             // Import medias
             let mediasToImport = excalidrawFile.files.values.filter { item in
                 !insertedMediaID.contains(item.id) &&
                 !allMediaItems.contains(where: {$0.id == item.id})
             }
             mediasToImport.forEach { item in
-                let mediaItem = MediaItem(resource: item, context: viewContext)
+                let mediaItem = MediaItem(resource: item, context: context)
                 mediaItem.file = file
-                viewContext.insert(mediaItem)
+                context.insert(mediaItem)
                 insertedMediaID.insert(item.id)
             }
             Task {
@@ -678,9 +709,15 @@ final class FileState: ObservableObject {
             }
         }
         
-        return group.objectID
+        // folders
+        for folderURL in urls where FileManager.default.isDirectory(folderURL) {
+            try self.importGroup(
+                url: folderURL,
+                parentGroupID: group.objectID,
+                context: context
+            )
+        }
     }
-    
     
     func renameFile(_ fileID: NSManagedObjectID, context: NSManagedObjectContext, newName: String) {
         context.perform {
@@ -857,9 +894,10 @@ final class FileState: ObservableObject {
         
         if let group {
             self.currentActiveGroup = .group(group)
-            if let file {
-                self.currentActiveFile = .file(file)
-            }
+            self.expandToGroup(group.objectID)
+//            if let file {
+//                self.currentActiveFile = .file(file)
+//            }
         }
     }
     

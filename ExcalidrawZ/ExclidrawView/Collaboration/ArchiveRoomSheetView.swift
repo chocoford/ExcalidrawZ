@@ -12,7 +12,7 @@ struct ArchiveRoomModifier: ViewModifier {
     
     @EnvironmentObject private var parentFileState: FileState
     
-    @StateObject private var fileState = FileState()
+     @StateObject private var fileState = FileState()
     
     func body(content: Content) -> some View {
         content
@@ -20,8 +20,8 @@ struct ArchiveRoomModifier: ViewModifier {
                 ArchiveRoomSheetView(file: file, parentFileState: parentFileState)
                     .padding()
                     .frame(width: 350, height: 500)
+                    .environmentObject(fileState)
             }
-            .environmentObject(fileState)
     }
 }
 
@@ -79,9 +79,6 @@ struct ArchiveRoomSheetView: View {
     }
     
     private func archiveCollaborationFile()  {
-        let fileID = file.objectID
-        let name = file.name ?? String(localizable: .generalUntitled)
-        let content = file.content
         guard let activeGroup = fileState.currentActiveGroup else { return }
         do {
             try file.archiveToLocal(

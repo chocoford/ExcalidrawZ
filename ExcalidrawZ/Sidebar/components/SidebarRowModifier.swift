@@ -13,7 +13,7 @@ struct ExcalidrawZSidebarRowModifier: ViewModifier {
     var isMultiSelected: Bool
     
     @State private var isHovered = false
-    
+        
     func body(content: Content) -> some View {
         HStack(spacing: 0) {
             content

@@ -83,83 +83,107 @@ struct GroupListView: View {
         content
     }
     
+    @State private var scrollViewHeight: CGFloat = .zero
+    @State private var scrollViewContentHeight: CGFloat = .zero
+    
     @MainActor @ViewBuilder
     private var content: some View {
         VStack(alignment: .leading, spacing: 0) {
             ScrollView {
-                LazyVStack(spacing: 8) {
-                    VStack(spacing: 0) {
-                        Button {
-                            fileState.currentActiveFile = nil
-                            fileState.currentActiveGroup = nil
-                        } label: {
-                            HStack {
-                                Image(systemSymbol: .house)
-                                    .frame(width: 30, alignment: .leading)
-                                Text(localizable: .sidebarRowHomeTitle)
-                            }
-                        }
-                        .buttonStyle(
-                            .excalidrawSidebarRow(
-                                isSelected: fileState.currentActiveFile == nil && fileState.currentActiveGroup == nil,
-                                isMultiSelected: false
-                            )
-                        )
-                        
-                        Button {
-                            fileState.currentActiveFile = nil
-                            fileState.currentActiveGroup = .collaboration
-                        } label: {
-                            HStack {
-                                Image(systemSymbol: .person3)
-                                    .frame(width: 30, alignment: .leading)
-                                Text(.localizable(.sidebarGroupRowCollaborationTitle))
-                                
-                                Spacer()
-                                
-                                if !fileState.collaboratingFilesState.values.filter({$0 == .loaded}).isEmpty {
-                                    Text(
-                                        fileState.collaboratingFilesState.values.filter({$0 == .loaded}).count.formatted()
-                                    )
-                                    .foregroundStyle(.secondary)
-                                    .padding(.trailing, 4)
+                VStack(spacing: 0) {
+                    VStack(spacing: 8) {
+                        VStack(spacing: 0) {
+                            Button {
+                                fileState.currentActiveFile = nil
+                                fileState.currentActiveGroup = nil
+                            } label: {
+                                HStack {
+                                    Image(systemSymbol: .house)
+                                        .frame(width: 30, alignment: .leading)
+                                    Text(localizable: .sidebarRowHomeTitle)
                                 }
                             }
-                        }
-                        .buttonStyle(
-                            .excalidrawSidebarRow(
-                                isSelected: fileState.currentActiveGroup == .collaboration,
-                                isMultiSelected: false
+                            .buttonStyle(
+                                .excalidrawSidebarRow(
+                                    isSelected: fileState.currentActiveFile == nil && fileState.currentActiveGroup == nil,
+                                    isMultiSelected: false
+                                )
                             )
-                        )
+                            
+                            Button {
+                                fileState.currentActiveFile = nil
+                                fileState.currentActiveGroup = .collaboration
+                            } label: {
+                                HStack {
+                                    Image(systemSymbol: .person3)
+                                        .frame(width: 30, alignment: .leading)
+                                    Text(.localizable(.sidebarGroupRowCollaborationTitle))
+                                    
+                                    Spacer()
+                                    
+                                    if !fileState.collaboratingFilesState.values.filter({$0 == .loaded}).isEmpty {
+                                        Text(
+                                            fileState.collaboratingFilesState.values.filter({$0 == .loaded}).count.formatted()
+                                        )
+                                        .foregroundStyle(.secondary)
+                                        .padding(.trailing, 4)
+                                    }
+                                }
+                            }
+                            .buttonStyle(
+                                .excalidrawSidebarRow(
+                                    isSelected: fileState.currentActiveGroup == .collaboration,
+                                    isMultiSelected: false
+                                )
+                            )
+                            
+                            // Temporary
+                            if !fileState.temporaryFiles.isEmpty {
+                                TemporaryGroupRowView()
+                            }
+                        }
                         
-                        // Temporary
-                        if !fileState.temporaryFiles.isEmpty {
-                            TemporaryGroupRowView()
-                        }
-                    }
+                        
+                        Divider()
+                        
+                        // iCloud
+                        databaseGroupsList()
+                            .modifier(
+                                ContentHeaderCreateButtonHoverModifier(
+                                    groupType: .group,
+                                    title: .localizable(.sidebarGroupListSectionHeaderICloud)
+                                )
+                            )
 
-                    Divider()
+                        // Local
+                        LocalFoldersListView()
+                            .modifier(
+                                ContentHeaderCreateButtonHoverModifier(
+                                    groupType: .localFolder,
+                                    title: .localizable(.sidebarGroupListSectionHeaderLocal)
+                                )
+                            )
+                    }
+                    .padding(8)
+                    .readHeight($scrollViewContentHeight)
                     
-                    // iCloud
-                    databaseGroupsList()
-                        .modifier(
-                            ContentHeaderCreateButtonHoverModifier(
-                                groupType: .group,
-                                title: .localizable(.sidebarGroupListSectionHeaderICloud)
-                            )
-                        )
-                    // Local
-                    LocalFoldersListView()
-                        .modifier(
-                            ContentHeaderCreateButtonHoverModifier(
-                                groupType: .localFolder,
-                                title: .localizable(.sidebarGroupListSectionHeaderLocal)
-                            )
-                        )
+                    Color.clear
+                        .frame(height: max(0, scrollViewHeight - scrollViewContentHeight))
                 }
-                .padding(8)
+                .background {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+#if os(macOS)
+                            if NSEvent.modifierFlags.contains(.command) || NSEvent.modifierFlags.contains(.shift) {
+                                return
+                            }
+#endif
+                            fileState.resetSelections()
+                        }
+                }
             }
+            .readHeight($scrollViewHeight)
             
             Divider()
             
@@ -167,23 +191,14 @@ struct GroupListView: View {
                 .buttonStyle(.borderless)
                 .padding(8)
         }
-#if os(macOS)
-        .background {
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    if NSEvent.modifierFlags.contains(.command) || NSEvent.modifierFlags.contains(.shift) {
-                        return
-                    }
-                    fileState.resetSelections()
-                }
-        }
-#endif
     }
     
     @MainActor @ViewBuilder
     private func databaseGroupsList() -> some View {
-        LazyVStack(alignment: .leading, spacing: 0) {
+        // ❕❕❕use `LazyVStack` will cause crash with error:
+        //        FAULT: NSGenericException: The window has been marked as needing another Update Constraints in Window pass,
+        //        but it has already had more Update Constraints in Window passes than there are views in the window.
+        VStack(alignment: .leading, spacing: 0) {
             /// ❕❕❕use `id: \.self` can avoid multi-thread access crash when closing create-room-sheet...
             ForEach(displayedGroups, id: \.self) { group in
                 GroupsView(group: group, sortField: fileState.sortField)
@@ -293,14 +308,32 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
             
             Spacer()
             
-            NewGroupButton(type: groupType, parentID: nil) { type in
-                ZStack {
-                    switch type {
-                        case .localFolder:
-                            Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .plusCircleFill)
-                        case .group:
+            ZStack {
+                switch groupType {
+                    case .localFolder:
+                        newGroupButton()
+                    case .group:
+                        Menu {
+                            SwiftUI.Group {
+                                newGroupButton()
+                                
+                                Button {
+                                    let panel = ExcalidrawOpenPanel.importPanel
+                                    if panel.runModal() == .OK {
+                                        NotificationCenter.default.post(name: .shouldHandleImport, object: panel.urls)
+                                    }
+                                } label: {
+                                    Label(
+                                        .localizable(.menubarButtonImport),
+                                        systemSymbol: .squareAndArrowDown
+                                    )
+                                }
+                            }
+                            .labelStyle(.titleAndIcon)
+                        } label: {
                             Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
-                    }
+                        }
+                        .menuIndicator(.hidden)
                 }
             }
             .opacity(isHovered ? 1 : 0)
@@ -309,5 +342,19 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
         }
         .font(.callout.bold())
         .animation(.smooth, value: isHovered)
+    }
+    
+    @MainActor @ViewBuilder
+    private func newGroupButton() -> some View {
+        NewGroupButton(type: groupType, parentID: nil) { type in
+            ZStack {
+                switch type {
+                    case .localFolder:
+                        Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .plusCircleFill)
+                    case .group:
+                        Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
+                }
+            }
+        }
     }
 }

@@ -20,6 +20,7 @@ struct LocalFoldersView: View {
     
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField
+    var showFiles: Bool
     var onDeleteSelected: () -> Void
         
     @FetchRequest
@@ -27,6 +28,7 @@ struct LocalFoldersView: View {
     
     init(folder: LocalFolder,
          sortField: ExcalidrawFileSortField,
+         showFiles: Bool = true,
          onDeleteSelected: @escaping () -> Void
     ) {
         self.folder = folder
@@ -39,6 +41,7 @@ struct LocalFoldersView: View {
             predicate: NSPredicate(format: "parent = %@", folder),
             animation: .default
         )
+        self.showFiles = showFiles
         self.onDeleteSelected = onDeleteSelected
     }
     
@@ -117,12 +120,13 @@ struct LocalFoldersView: View {
             isExpanded: $isExpanded
         ) {
             ForEach(folderChildren) { folder in
-                LocalFoldersView(folder: folder, sortField: sortField) {
+                LocalFoldersView(folder: folder, sortField: sortField, showFiles: showFiles) {
                     handleSelectedDeletion()
                 }
             }
-            
-            LocalFilesListContentView(folder: folder, sortField: sortField)
+            if showFiles {
+                LocalFilesListContentView(folder: folder, sortField: sortField)
+            }
         } label: {
             LocalFolderRowView(
                 folder: folder,
@@ -188,6 +192,13 @@ struct LocalFoldersView: View {
             LocalFolderRowView(
                 folder: folder,
                 onDelete: onDeleteSelected
+            )
+            .modifier(LocalFolderDragModifier(folder: folder))
+            .modifier(
+                LocalFolderContextMenuModifier(
+                    folder: folder,
+                    canExpand: true,
+                )
             )
         } childView: { child in
             LocalFoldersView(folder: child, sortField: sortField) {

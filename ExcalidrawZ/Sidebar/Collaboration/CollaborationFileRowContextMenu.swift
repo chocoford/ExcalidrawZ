@@ -42,8 +42,8 @@ struct CollaborationFileMenuProvider: View {
         content(triggers)
             .modifier(ArchiveRoomModifier(collaborationFile: $fileToBeArchived))
             .confirmationDialog(
-                .localizable(
-                    .sidebarCollaborationFileRowDeleteConfirmationTitle(file.name ?? String(localizable: .generalUntitled))
+                String(
+                    localizable: .sidebarCollaborationFileRowDeleteConfirmationTitle(file.name ?? String(localizable: .generalUntitled))
                 ),
                 isPresented: $isDeleteRoomConfirmationDialogPresented,
                 titleVisibility: .visible

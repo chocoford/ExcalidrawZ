@@ -28,7 +28,7 @@ struct ExcalidrawGroupBrowser: View {
                         .font(.headline)
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(groups) { group in
-                            GroupsView(group: group, sortField: .updatedAt)
+                            GroupsView(group: group, sortField: .updatedAt, showFiles: false)
                         }
                     }
                 }
@@ -37,7 +37,7 @@ struct ExcalidrawGroupBrowser: View {
                 VStack(alignment: .leading, spacing: spacing) {
                     Text(.localizable(.sidebarGroupListSectionHeaderLocal))
                         .font(.headline)
-                    LocalFoldersListView()
+                    LocalFoldersListView(showFiles: false)
                 }
             }
             .padding()

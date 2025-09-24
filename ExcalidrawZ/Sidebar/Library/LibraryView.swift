@@ -235,7 +235,7 @@ struct LibraryView: View {
             }
             VStack(spacing: 8) {
                 importButton()
-                    .controlSize(.large)
+                    .modernButtonStyle(size: .large, shape: .modern)
                 Link(destination: URL(string: "https://libraries.excalidraw.com")!) {
                     Text(.localizable(.librariesNoItemsGoToExcalidrawLibraries))
                         .font(.callout)
@@ -283,11 +283,21 @@ struct LibraryView: View {
             Color.clear
                 .overlay(alignment: .center) {
                     if inSelectionMode {
-                        Text(.localizable(.librariesItemsSelected(selectedItems.count)))
-                            .foregroundStyle(.secondary)
+                        if #available(macOS 13.0, iOS 16.0, *) {
+                            Text(.localizable(.librariesItemsSelected(selectedItems.count)))
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(selectedItems.count.formatted())
+                                .foregroundStyle(.secondary)
+                        }
                     } else {
-                        Text(.localizable(.librariesItemsCount(libraries.reduce(0, {$0 + ($1.items?.count ?? 0)}))))
-                            .foregroundStyle(.secondary)
+                        if #available(macOS 13.0, iOS 16.0, *) {
+                            Text(.localizable(.librariesItemsCount(libraries.reduce(0, {$0 + ($1.items?.count ?? 0)}))))
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(libraries.reduce(0, {$0 + ($1.items?.count ?? 0)}).formatted())
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             
@@ -319,7 +329,7 @@ struct LibraryView: View {
                 }
         }
         .confirmationDialog(
-            .localizable(.librariesRemoveAllConfirmationTitle),
+            String(localizable: .librariesRemoveAllConfirmationTitle),
             isPresented: $isRemoveAllConfirmationPresented
         ) {
             Button(role: .destructive) {
@@ -331,7 +341,13 @@ struct LibraryView: View {
             Text(.localizable(.generalCannotUndoMessage))
         }
         .confirmationDialog(
-            .localizable(.librariesRemoveSelectionsConfirmationTitle(selectedItems.count)),
+            {
+                if #available(macOS 13.0, iOS 16.0, *) {
+                    String(localizable: .librariesRemoveSelectionsConfirmationTitle(selectedItems.count))
+                } else {
+                    String(localizable: .generalButtonDelete)
+                }
+            }(),
             isPresented: $isRemoveSelectionsConfirmationPresented
         ) {
             Button(role: .destructive) {

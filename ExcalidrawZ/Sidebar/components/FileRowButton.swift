@@ -52,8 +52,12 @@ struct FileRowButton: View {
     
     var body: some View {
         label
-            .contentShape(Rectangle())
-            .modifier(ExcalidrawZSidebarRowModifier(isSelected: isSelected, isMultiSelected: isMultiSelected))
+            .modifier(
+                ExcalidrawZSidebarRowModifier(
+                    isSelected: isSelected,
+                    isMultiSelected: isMultiSelected
+                )
+            )
             .animation(.easeOut(duration: 0.1), value: isMultiSelected)
             .simultaneousGesture(
                 TapGesture().onEnded {

@@ -131,11 +131,11 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                         .labelsHidden()
                         .controlSize(.small)
                         .padding(.trailing, 8)
+                        .fixedSize()
                     }
                 }
             }
 #endif
-
             if #available(macOS 13.0, iOS 16.0, *) { } else {
                 NewFileButton()
             }

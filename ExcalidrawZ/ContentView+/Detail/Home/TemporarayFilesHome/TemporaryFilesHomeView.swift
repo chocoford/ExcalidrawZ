@@ -15,8 +15,6 @@ struct TemporaryFilesHomeView: View {
     let fileItemWidth: CGFloat = 240
     var files: [URL] { fileState.temporaryFiles }
     
-    @State private var selection: URL? = nil
-
     var body: some View {
         FileHomeContainer {
             // Header
@@ -48,14 +46,7 @@ struct TemporaryFilesHomeView: View {
             ) {
                 ForEach(files, id: \.self) { file in
                     FileHomeItemView(
-                        file: .temporaryFile(file),
-                        isSelected: Binding {
-                            selection == file
-                        } set: { val in
-                            if val {
-                                selection = file
-                            }
-                        },
+                        file: .temporaryFile(file)
                     )
                 }
                 
@@ -70,7 +61,6 @@ struct TemporaryFilesHomeView: View {
                         return
                     }
                     fileState.resetSelections()
-                    selection = nil
                 }
         }
     }

@@ -175,62 +175,78 @@ struct NewFileButton: View {
         
         isCreatingFile = true
         
-        do {
-            if case .group(let group) = fileState.currentActiveGroup {
-                Task {
-                    do {
-                        let fileID = try await fileState.createNewFile(
-                            active: !openWithDelay,
-                            in: group.objectID,
-                            context: viewContext,
-                            animation: .smooth
-                        )
-                        try await viewContext.perform {
-                            if let file = viewContext.object(with: fileID) as? File {
-                                file.visitedAt = .now
+        Task {
+            do {
+                if case .group(let group) = fileState.currentActiveGroup {
+                    createFile(in: group.objectID, delay: delay)
+                } else if case .localFolder(let folder) = fileState.currentActiveGroup {
+                    try await folder.withSecurityScopedURL { scopedURL in
+                        do {
+                            guard let url = try await fileState.createNewLocalFile(
+                                active: !openWithDelay,
+                                folderURL: scopedURL
+                            ) else {
+                                return
                             }
-                            try viewContext.save()
-                        }
-                         
-                        if openWithDelay {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                                if let file = viewContext.object(with: fileID) as? File {
-                                    fileState.currentActiveFile = .file(file)
+                            
+                            if openWithDelay {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                                    fileState.currentActiveFile = .localFile(url)
+                                    isCreatingFile = false
                                 }
+                            } else {
                                 isCreatingFile = false
                             }
-                        } else {
-                            isCreatingFile = false
+                        } catch {
+                            alertToast(error)
                         }
-                    } catch {
-                        alertToast(error)
                     }
+                } else if let defaultGroup = try PersistenceController.shared.getDefaultGroup(context: viewContext) {
+                    createFile(in: defaultGroup.objectID, delay: delay)
                 }
-            } else if case .localFolder(let folder) = fileState.currentActiveGroup {
-                try folder.withSecurityScopedURL { scopedURL in
-                    do {
-                        guard let url = try await fileState.createNewLocalFile(
-                            active: !openWithDelay,
-                            folderURL: scopedURL
-                        ) else {
-                            return
-                        }
-                        
-                        if openWithDelay {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                                fileState.currentActiveFile = .localFile(url)
-                                isCreatingFile = false
-                            }
-                        } else {
-                            isCreatingFile = false
-                        }
-                    } catch {
-                        alertToast(error)
-                    }
-                }
+            } catch {
+                alertToast(error)
             }
-        } catch {
-            alertToast(error)
+        }
+    }
+    
+    private func createFile(in groupID: NSManagedObjectID, delay: TimeInterval) {
+        Task {
+            do {
+                let fileID = try await fileState.createNewFile(
+                    active: !openWithDelay,
+                    in: groupID,
+                    context: viewContext,
+                    animation: .smooth
+                )
+                try await viewContext.perform {
+                    if let file = viewContext.object(with: fileID) as? File {
+                        file.visitedAt = .now
+                    }
+                    try viewContext.save()
+                }
+                
+                if openWithDelay {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                        if let file = viewContext.object(with: fileID) as? File {
+                            fileState.currentActiveFile = .file(file)
+                        }
+                        isCreatingFile = false
+                    }
+                } else {
+                    isCreatingFile = false
+                }
+                
+                DispatchQueue.main.asyncAfter(
+                    deadline: .now() + (openWithDelay ? delay : 0) + 0.2
+                ) {
+                    if let group = viewContext.object(with: groupID) as? Group {
+                        fileState.currentActiveGroup = .group(group)
+                    }
+                }
+            } catch {
+                alertToast(error)
+            }
         }
     }
     
@@ -257,6 +273,12 @@ struct NewFileButton: View {
                     throw CanNotReadFromClipboardError()
                 }
 #endif
+                
+                
+//                if fileState.currentActiveGroup == nil {
+//                    try await fileState.setToDefaultGroup()
+//                }
+                
                 if case .group(let group) = fileState.currentActiveGroup {
                     try await fileState.createNewFile(
                         in: group.objectID,
@@ -275,7 +297,10 @@ struct NewFileButton: View {
                 
                 try await Task.sleep(nanoseconds: UInt64(1e+9 * 0.5))
                 // drop clipboard data to current file
-                try await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(imageData: pngData, type: "png")
+                try await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
+                    imageData: pngData,
+                    type: "png"
+                )
             } catch {
                 alert(error: error)
             }
