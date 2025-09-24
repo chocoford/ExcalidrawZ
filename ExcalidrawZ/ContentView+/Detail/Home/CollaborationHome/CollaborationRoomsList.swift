@@ -19,7 +19,7 @@ struct CollaborationRoomsList: View {
             switch sortField {
                 case .updatedAt:
                     [
-                        // SortDescriptor(\.visitedAt, order: .reverse),
+                        SortDescriptor(\.visitedAt, order: .reverse),
                         SortDescriptor(\.updatedAt, order: .reverse),
                         SortDescriptor(\.createdAt, order: .reverse)
                     ]

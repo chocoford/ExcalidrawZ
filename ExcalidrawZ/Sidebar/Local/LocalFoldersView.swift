@@ -35,8 +35,8 @@ struct LocalFoldersView: View {
         self.sortField = sortField
         self._folderChildren = FetchRequest(
             sortDescriptors: [
-                NSSortDescriptor(keyPath: \LocalFolder.filePath, ascending: true),
                 NSSortDescriptor(keyPath: \LocalFolder.rank, ascending: true),
+                NSSortDescriptor(keyPath: \LocalFolder.filePath, ascending: true),
             ],
             predicate: NSPredicate(format: "parent = %@", folder),
             animation: .default

@@ -10,8 +10,8 @@ import SwiftUI
 struct ExcalidrawGroupBrowser: View {
     @FetchRequest(
         sortDescriptors: [
-            SortDescriptor(\.createdAt, order: .forward),
             SortDescriptor(\.type, order: .forward),
+            SortDescriptor(\.createdAt, order: .forward),
         ],
         predicate: NSPredicate(format: "parent = nil AND type != 'trash'")
     )

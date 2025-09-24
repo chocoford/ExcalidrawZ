@@ -167,8 +167,8 @@ private struct RecentlyFilesSection: View {
     
     @FetchRequest(
         sortDescriptors: [
+            .init(keyPath: \File.visitedAt, ascending: false),
             .init(keyPath: \File.updatedAt, ascending: false),
-            .init(keyPath: \File.visitedAt, ascending: false)
         ],
         predicate: NSPredicate(format: "inTrash == false"),
         animation: .default
@@ -183,8 +183,8 @@ private struct RecentlyFilesSection: View {
     
     @FetchRequest(
         sortDescriptors: [
+            .init(keyPath: \File.visitedAt, ascending: false),
             .init(keyPath: \File.updatedAt, ascending: false),
-            .init(keyPath: \File.visitedAt, ascending: false)
         ],
         animation: .default
     )

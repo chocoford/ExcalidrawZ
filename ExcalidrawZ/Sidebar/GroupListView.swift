@@ -33,9 +33,9 @@ struct GroupListView: View {
                     ]
                 case .name:
                     [
+                        SortDescriptor(\.name, order: .reverse),
                         SortDescriptor(\.updatedAt, order: .reverse),
                         SortDescriptor(\.createdAt, order: .reverse),
-                        SortDescriptor(\.name, order: .reverse),
                     ]
                 case .rank:
                     [

@@ -29,8 +29,8 @@ struct LocalFoldersProvider<Content: View>: View {
 
     @FetchRequest(
         sortDescriptors: [
-            SortDescriptor(\.importedAt, order: .forward),
             SortDescriptor(\.rank, order: .forward),
+            SortDescriptor(\.importedAt, order: .forward),
         ],
         predicate: NSPredicate(format: "parent == nil")
     )
@@ -287,7 +287,11 @@ struct LocalFoldersListView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         // Local folder view
                         Section {
-                            LocalFoldersView(folder: folder, sortField: .updatedAt, showFiles: showFiles) {
+                            LocalFoldersView(
+                                folder: folder,
+                                sortField: fileState.sortField,
+                                showFiles: showFiles
+                            ) {
                                 // switch current folder first if necessary.
                                 if case .localFolder(let localFolder) = fileState.currentActiveGroup,
                                    localFolder == folder {

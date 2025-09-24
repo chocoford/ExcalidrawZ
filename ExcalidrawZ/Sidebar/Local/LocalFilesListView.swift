@@ -171,7 +171,7 @@ struct LocalFilesProvider<Content: View>: View {
                 try folder.withSecurityScopedURL { folderURL in
                     let contents = try FileManager.default.contentsOfDirectory(
                         at: folderURL,
-                        includingPropertiesForKeys: [.nameKey],
+                        includingPropertiesForKeys: [.nameKey, .contentModificationDateKey, .creationDateKey],
                         options: [.skipsSubdirectoryDescendants]
                     )
                     let files = contents
@@ -180,8 +180,10 @@ struct LocalFilesProvider<Content: View>: View {
                         self.files = files
                         self.sortFiles(field: self.sortField)
                         
-                        if case .localFile(let currentFile) = fileState.currentActiveFile {
-                            if !self.files.contains(currentFile) {
+                        if case .localFolder(let folder) = fileState.currentActiveGroup,
+                            folder == self.folder,
+                            case .localFile(let currentFile) = fileState.currentActiveFile {
+                            if !files.contains(currentFile) {
                                 fileState.currentActiveFile = nil
                             }
                         }
