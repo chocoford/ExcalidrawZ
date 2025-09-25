@@ -128,7 +128,7 @@ struct ContentView: View {
                     try await fileState.importFiles(urls)
                 } catch {
                     await alertToast(error)
-                    print("[handleImport] error: \(error), Thread: \(Thread.current)")
+                    print("[handleImport] error: \(error)")
                 }
             }
         }

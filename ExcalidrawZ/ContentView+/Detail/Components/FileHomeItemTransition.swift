@@ -68,6 +68,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
             .onChange(of: fileState.currentActiveFile) { newValue in
                 let oldValue = self.file
    
+                /// Check if the newValue is in the same group as currentActiveGroup
                 func groupCheck(file: FileState.ActiveFile?) -> Bool {
                     switch file {
                         case .file(let file):
@@ -166,6 +167,8 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                             state.shouldHideItem = nil
                         }
                     }
+                } else {
+                    self.file = newValue
                 }
             }
     }

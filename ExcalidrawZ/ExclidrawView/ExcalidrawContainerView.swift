@@ -161,12 +161,14 @@ struct ExcalidrawContainerView: View {
                 Button {
                     // Recover file
                     if case .file(let currentFile) = fileState.currentActiveFile {
-                        Task.detached {
-                            let context = PersistenceController.shared.container.newBackgroundContext()
+                        Task {
+                            let context = viewContext
+                            // PersistenceController.shared.container.newBackgroundContext()
                             do {
-                                try await fileState.recoverFile(fileID: currentFile.objectID, context: context)
+                                try await fileState
+                                    .recoverFile(fileID: currentFile.objectID, context: context)
                             } catch {
-                                await alertToast(error)
+                                alertToast(error)
                             }
                         }
                     }

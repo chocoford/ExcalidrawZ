@@ -129,7 +129,7 @@ struct TemporaryGroupMenuItems: View {
             let context = PersistenceController.shared.container.newBackgroundContext()
 
             do {
-                let mapping = try await LocalFileUtils.moveLocalFiles(
+                let mapping = try LocalFileUtils.moveLocalFiles(
                     temporaryFiles,
                     to: targetFolderID,
                     context: context

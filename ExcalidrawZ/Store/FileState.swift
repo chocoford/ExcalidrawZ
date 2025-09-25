@@ -754,26 +754,18 @@ final class FileState: ObservableObject {
             guard file.inTrash else { return nil }
             file.inTrash = false
             
-            if let groupID = file.group?.objectID,
-               let group = context.object(with: groupID) as? Group {
-//                await MainActor.run {
-//                    self.currentActiveGroup = .group(group)
-//                }
-            } else {
+            if let groupID = file.group?.objectID {
                 let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
-                fetchRequest.predicate = NSPredicate(format: "type == %@", "default")
+                fetchRequest.predicate = NSPredicate(format: "id == %@", groupID as CVarArg)
                 fetchRequest.fetchLimit = 1
-                if let group = try context.fetch(fetchRequest).first {
-                    file.group = group
-                    
-                    
-//                    await MainActor.run {
-//                        self.currentActiveGroup = .group(group)
-//                    }
+                if try context.fetch(fetchRequest).isEmpty {
+                    let defaultGroup = try PersistenceController.shared.getDefaultGroup(context: context)
+                    file.group = defaultGroup
                 }
+            } else {
+                let defaultGroup = try PersistenceController.shared.getDefaultGroup(context: context)
+                file.group = defaultGroup
             }
-            
-            // self.currentActiveFile = .file(file)
             
             try context.save()
             
@@ -781,9 +773,16 @@ final class FileState: ObservableObject {
         }
         
         if let file {
-            self.currentActiveFile = .file(file)
-            if let group = file.group {
-                self.currentActiveGroup = .group(group)
+            let fileID = file.objectID
+            
+            await MainActor.run {
+                guard let file = context.object(with: fileID) as? File else { return }
+                if self.currentActiveFile == .file(file) {
+                    if let group = file.group {
+                        self.currentActiveGroup = .group(group)
+                        self.expandToGroup(group.objectID)  
+                    }
+                }
             }
         }
     }
