@@ -240,6 +240,7 @@ struct LibraryView: View {
                     Text(.localizable(.librariesNoItemsGoToExcalidrawLibraries))
                         .font(.callout)
                 }
+                .hoverCursor(.link)
             }
             
             Spacer()

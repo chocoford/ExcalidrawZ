@@ -8,11 +8,7 @@
 import SwiftUI
 import ChocofordUI
 
-private struct FolderTooLargeError: LocalizedError {
-    var errorDescription: String? {
-        .init(localizable: .sidebarLocalFolderTooLargeAlertDescription)
-    }
-}
+
 
 struct NewGroupButton: View {
     @Environment(\.alert) private var alert
@@ -75,13 +71,12 @@ struct NewGroupButton: View {
                     parentGroupID: parentGroupID,
                 )
             )
-            .fileImporterWithAlert(
-                isPresented: $isCreateLocalFolderDialogPresented,
-                allowedContentTypes: [.folder],
-                allowsMultipleSelection: true
-            ) { urls in
-                importLocalFolders(urls: urls)
-            }
+            .modifier(
+                CreateFolderModifier(
+                    isPresented: $isCreateLocalFolderDialogPresented,
+                    parentFolderID: parentGroupID
+                )
+            )
     }
     
     @MainActor @ViewBuilder
@@ -104,68 +99,5 @@ struct NewGroupButton: View {
         }
     }
     
-    private func importLocalFolders(urls: [URL]) {
-        let context = PersistenceController.shared.container.newBackgroundContext()
-        Task.detached {
-            do {
-                let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                let folders = try context.fetch(request)
-                
-                for url in urls where folders.contains(where: { $0.url == url }) == false {
-                    guard url.startAccessingSecurityScopedResource() else { continue }
-                    
-                    guard let enumerator = FileManager.default.enumerator(
-                        at: url,
-                        includingPropertiesForKeys: [.isDirectoryKey, .nameKey, .isHiddenKey]
-                    ) else {
-                        return
-                    }
-                    
-                    var urls: [URL] = []
-                    for case let url as URL in enumerator.allObjects {
-                        urls.append(url)
-                    }
-                    
-                    // Check the folder is too large (too many subfolders)
-                    var count = 0
-                    for url in urls {
-                        let isHidden = (try? url.resourceValues(forKeys: [.isHiddenKey]).isHidden) ?? false
-                        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                        if !isHidden && isDirectory {
-                            count += 1
-                        }
-                    }
-                    
-                    if count > 1000 {
-                        await MainActor.run {
-                            alert(title: .localizable(.sidebarLocalFolderTooLargeAlertTitle), error: FolderTooLargeError())
-                        }
-                        return
-                    }
-                    
-                    try await context.perform { [urls] in
-                        let localFolder = try LocalFolder(url: url, context: context)
-                        context.insert(localFolder)
-                        try localFolder.refreshChildren(context: context)
-                        // create checkpoints for every file in folder
-                        for url in urls {
-                            if url.pathExtension == "excalidraw" {
-                                let checkpoint = LocalFileCheckpoint(context: context)
-                                checkpoint.url = url
-                                checkpoint.content = try Data(contentsOf: url)
-                                checkpoint.updatedAt = .now
-                                context.insert(checkpoint)
-                            }
-                        }
-                        try context.save()
-                    }
-                    
-                    url.stopAccessingSecurityScopedResource()
-                }
-            } catch {
-                print("import failed:", error)
-                await alertToast(error)
-            }
-        }
-    }
+
 }

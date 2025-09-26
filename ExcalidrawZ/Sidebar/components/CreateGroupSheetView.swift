@@ -79,6 +79,7 @@ struct CreateGroupModifier: ViewModifier {
                         context: viewContext,
                         animation: .smooth
                     )
+                    
                 } catch {
                     alertToast(error)
                 }

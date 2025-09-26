@@ -11,6 +11,7 @@ import CoreData
 protocol ExcalidrawGroup: NSManagedObject, NSFetchRequestResult, Identifiable {
     var name: String? { get }
     var filesCount: Int { get }
+    var subgroupsCount: Int { get }
     
     func getParent() -> Any?
 }
@@ -22,6 +23,9 @@ extension Group: ExcalidrawGroup {
     var filesCount: Int {
         files?.count ?? 0
     }
+    var subgroupsCount: Int {
+        children?.count ?? 0
+    }
 }
 extension LocalFolder: ExcalidrawGroup {
     var name: String? {
@@ -32,6 +36,9 @@ extension LocalFolder: ExcalidrawGroup {
     }
     var filesCount: Int {
         (try? self.getFiles(deep: false).count) ?? 0
+    }
+    var subgroupsCount: Int {
+        (try? self.getFolders().count) ?? 0
     }
 }
 

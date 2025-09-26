@@ -211,23 +211,35 @@ struct LocalFolderMenuItems: View {
             }
         } else {
             Button(role: .destructive) {
-                do {
-                    try folder.withSecurityScopedURL { scopedURL in
-                        let fileCoordinator = NSFileCoordinator()
-                        fileCoordinator.coordinate(
-                            writingItemAt: scopedURL,
-                            options: .forDeleting,
-                            error: nil
-                        ) { url in
-                            do {
-                                try FileManager.default.trashItem(at: url, resultingItemURL: nil)
-                            } catch {
-                                alertToast(error)
+                if case .localFile(let file) = fileState.currentActiveFile,
+                   file.deletingLastPathComponent() == folder.url {
+                    fileState.currentActiveFile = nil
+                }
+                if let parent = folder.parent {
+                    fileState.currentActiveGroup = .localFolder(parent)
+                } else {
+                    fileState.currentActiveGroup = nil
+                }
+                DispatchQueue.main.async {
+                    do {
+                        try folder.withSecurityScopedURL { scopedURL in
+                            let fileCoordinator = NSFileCoordinator()
+                            fileCoordinator.coordinate(
+                                writingItemAt: scopedURL,
+                                options: .forDeleting,
+                                error: nil
+                            ) { url in
+                                do {
+                                    try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+                                } catch {
+                                    alertToast(error)
+                                }
                             }
                         }
+                        
+                    } catch {
+                        alertToast(error)
                     }
-                } catch {
-                    alertToast(error)
                 }
             } label: {
                 Label(.localizable(.generalButtonMoveToTrash), systemSymbol: .trash)

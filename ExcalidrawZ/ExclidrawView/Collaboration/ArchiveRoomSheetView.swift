@@ -72,9 +72,10 @@ struct ArchiveRoomSheetView: View {
                     Text(.localizable(.generalButtonSave))
                         .frame(width: 60)
                 }
-                .buttonStyle(.borderedProminent)
+                .modernButtonStyle(style: .glassProminent)
                 .disabled(fileState.currentActiveGroup == nil)
             }
+            .modernButtonStyle(shape: .capsule)
         }
     }
     

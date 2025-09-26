@@ -162,8 +162,10 @@ struct LocalFileRowMenuItems: View {
         Button {
             onToggleRename()
         } label: {
-            Label(.localizable(.sidebarFileRowContextMenuRename), systemSymbol: .squareAndPencil)
-                .foregroundStyle(.red)
+            Label(
+                .localizable(.sidebarFileRowContextMenuRename),
+                systemSymbol: .squareAndPencil
+            )
         }
         .disabled(
             fileState.selectedLocalFiles.count > 1 &&
@@ -266,17 +268,24 @@ struct LocalFileRowMenuItems: View {
                     }
                 }
             } label: {
-                Label(
-                    .localizable(
-                        !fileState.selectedLocalFiles.isEmpty && fileState.selectedLocalFiles.contains(file)
-                        ? .generalMoveFilesTo(
-                            fileState.selectedLocalFiles.count
-                        )
-                        : .generalMoveTo
-                            
-                    ),
-                    systemSymbol: .trayAndArrowUp
-                )
+                
+                Label {
+                    if #available(macOS 13.0, iOS 16.0, *) {
+                        if !fileState.selectedLocalFiles.isEmpty && fileState.selectedLocalFiles.contains(file) {
+                            Text(
+                                localizable: .generalMoveFilesTo(
+                                    fileState.selectedLocalFiles.count
+                                )
+                            )
+                        } else {
+                            Text(localizable: .generalMoveTo)
+                        }
+                    } else {
+                        Text(localizable: .generalMoveTo)
+                    }
+                } icon: {
+                    Image(systemSymbol: .trayAndArrowUp)
+                }
             }
         }
     }

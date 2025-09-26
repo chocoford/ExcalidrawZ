@@ -305,14 +305,29 @@ struct FileMenuItems: View {
                     }
                 }
             } label: {
-                Label(
-                    .localizable(
-                        !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file)
-                        ? .generalMoveFilesTo(fileState.selectedFiles.count)
-                        : .generalMoveTo
-                    ),
-                    systemSymbol: .trayAndArrowUp
-                )
+                Label {
+                    if #available(macOS 13.0, iOS 16.0, *) {
+                        if !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file) {
+                            Text(localizable: .generalMoveFilesTo(fileState.selectedFiles.count))
+                        } else {
+                            Text(localizable: .generalMoveTo)
+                        }
+                    } else {
+                        Text(localizable: .generalMoveTo)
+                    }
+                } icon: {
+                    Image(systemSymbol: .trayAndArrowUp)
+                }
+
+               
+//                Label(
+//                    .localizable(
+//                        !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file)
+//                        ? .generalMoveFilesTo(fileState.selectedFiles.count)
+//                        : .generalMoveTo
+//                    ),
+//                    systemSymbol: .trayAndArrowUp
+//                )
             }
             .disabled(
                 !fileState.selectedFiles.isEmpty && !fileState.selectedFiles.contains(file)

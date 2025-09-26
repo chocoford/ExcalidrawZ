@@ -132,6 +132,20 @@ struct GroupMenuProvider: View {
     
     private func deleteGroup() {
         let groupID = self.group.objectID
+        
+        if case .file(let file) = fileState.currentActiveFile,
+           file.group?.objectID == groupID {
+            fileState.currentActiveFile = nil
+        }
+        if case .group(let group) = fileState.currentActiveGroup,
+           group.objectID == groupID {
+            if let parent = group.parent {
+                fileState.currentActiveGroup = .group(parent)
+            } else {
+                fileState.currentActiveGroup = nil
+            }
+        }
+        
         Task.detached {
             // Handle empty trash action.
             do {
@@ -141,11 +155,6 @@ struct GroupMenuProvider: View {
                     try group.delete(context: context)
                 }
 
-                await MainActor.run {
-                    if case .group = fileState.currentActiveGroup {
-                        fileState.currentActiveGroup = nil
-                    }
-                }
             } catch {
                 await alertToast(error)
             }

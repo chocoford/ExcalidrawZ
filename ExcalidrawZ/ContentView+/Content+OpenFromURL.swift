@@ -174,44 +174,39 @@ struct OpenFromURLModifier: ViewModifier {
         if !fileState.temporaryFiles.contains(where: {$0 == targetURL}) {
             fileState.temporaryFiles.append(targetURL)
         }
-        if fileState.currentActiveGroup != .temporary || {
-            if case .temporaryFile = fileState.currentActiveFile {
-                return false
-            } else {
-                return true
-            }
-        }() {
-            fileState.currentActiveGroup = .temporary
-            fileState.currentActiveFile = .temporaryFile(targetURL)
-            
-            if let imageSendToNewFile {
-                Task {
-                    // Wait for boot
-                    if fileState.excalidrawWebCoordinator == nil {
-                        try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
-                    }
-                    
-                    if fileState.excalidrawWebCoordinator?.isLoading == true {
-                        self.webViewIsLoadingCancellable = fileState.excalidrawWebCoordinator?.$isLoading.sink { isLoading in
-                            Task {
-                                try? await Task.sleep(nanoseconds: UInt64(1e+9 * 2.3))
-                                try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
-                                    imageData: imageSendToNewFile.0,
-                                    type: imageSendToNewFile.1 == .png ? "png" : "svg+xml"
-                                )
-                            }
-                            self.webViewIsLoadingCancellable?.cancel()
+
+        
+        fileState.currentActiveGroup = .temporary
+        fileState.currentActiveFile = .temporaryFile(targetURL)
+        
+        if let imageSendToNewFile {
+            Task {
+                // Wait for boot
+                if fileState.excalidrawWebCoordinator == nil {
+                    try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
+                }
+                
+                if fileState.excalidrawWebCoordinator?.isLoading == true {
+                    self.webViewIsLoadingCancellable = fileState.excalidrawWebCoordinator?.$isLoading.sink { isLoading in
+                        Task {
+                            try? await Task.sleep(nanoseconds: UInt64(1e+9 * 2.3))
+                            try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
+                                imageData: imageSendToNewFile.0,
+                                type: imageSendToNewFile.1 == .png ? "png" : "svg+xml"
+                            )
                         }
-                    } else {
-                        try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
-                        try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
-                            imageData: imageSendToNewFile.0,
-                            type: imageSendToNewFile.1 == .png ? "png" : "svg+xml"
-                        )
+                        self.webViewIsLoadingCancellable?.cancel()
                     }
+                } else {
+                    try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
+                    try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
+                        imageData: imageSendToNewFile.0,
+                        type: imageSendToNewFile.1 == .png ? "png" : "svg+xml"
+                    )
                 }
             }
         }
+
         // save a checkpoint immediately.
         Task.detached {
             do {

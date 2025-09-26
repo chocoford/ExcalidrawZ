@@ -172,6 +172,16 @@ extension LocalFolder {
         }
     }
     
+    func getFolders() throws -> [URL] {
+        try self.withSecurityScopedURL { scopedURL in
+            let filemanager = FileManager.default
+            let urls = try filemanager.contentsOfDirectory(
+                at: scopedURL,
+                includingPropertiesForKeys: []
+            )
+            return urls.filter({ $0.isDirectory })
+        }
+    }
     
     func importToGroup(
         context: NSManagedObjectContext,

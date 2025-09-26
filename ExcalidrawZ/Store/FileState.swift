@@ -265,6 +265,7 @@ final class FileState: ObservableObject {
             await MainActor.run {
                 if let group = context.object(with: groupID) as? Group {
                     self.currentActiveGroup = .group(group)
+                    self.expandToGroup(group.objectID)
                 }
             }
         }
@@ -313,6 +314,10 @@ final class FileState: ObservableObject {
             await MainActor.run {
                 if let file = context.object(with: fileID) as? File {
                     self.currentActiveFile = .file(file)
+                    if let group = file.group {
+                        self.currentActiveGroup = .group(group)
+                        self.expandToGroup(group.objectID)
+                    }	
                 }
             }
         }

@@ -143,7 +143,11 @@ struct TemporaryFileMenuItems: View {
     }
     
     private func moveFile(to groupID: NSManagedObjectID) {
-        guard case .temporaryFile(let currentFileURL) = fileState.currentActiveFile else { return }
+        let currentFileURL: URL? = if case .temporaryFile(let file) = fileState.currentActiveFile {
+            file
+        } else {
+            nil
+        }
         let context = PersistenceController.shared.container.newBackgroundContext()
         let filesToMove: [URL] = if fileState.selectedTemporaryFiles.contains(file) {
             Array(fileState.selectedTemporaryFiles)
@@ -153,10 +157,12 @@ struct TemporaryFileMenuItems: View {
         
         Task.detached {
             do {
-                var currentTemporaryFileID: NSManagedObjectID?
-                try await context.perform {
-                    guard case let group as Group = context.object(with: groupID) else { return }
-                    
+                
+                let currentTemporaryFileID: NSManagedObjectID? = try await context.perform {
+                    guard case let group as Group = context.object(with: groupID) else {
+                        return nil
+                    }
+                    var currentTemporaryFileID :NSManagedObjectID? = nil
                     for file in filesToMove {
                         let newFile = try File(url: file, context: context)
                         newFile.group = group
@@ -166,20 +172,35 @@ struct TemporaryFileMenuItems: View {
                         }
                     }
                     try context.save()
+                    
+                    return currentTemporaryFileID
                 }
                 
                 await MainActor.run { [currentTemporaryFileID] in
-                    guard case let group as Group = viewContext.object(with: groupID) else { return }
-                    fileState.currentActiveGroup = .group(group)
-                    if let currentTemporaryFileID,
+                    fileState.expandToGroup(groupID)
+                    fileState.temporaryFiles.removeAll(where: {filesToMove.contains($0)})
+                    
+                    guard fileState.currentActiveGroup == .temporary else { return }
+                    
+                    // in temporary group, but no destination group.
+                    guard case let group as Group = viewContext.object(with: groupID) else {
+                        if fileState.temporaryFiles.isEmpty {
+                            fileState.currentActiveFile = nil
+                            fileState.currentActiveGroup = nil
+                        }
+                        return
+                    }
+                    if fileState.temporaryFiles.isEmpty {
+                        fileState.currentActiveGroup = .group(group)
+                    }
+                    if let currentFileURL,
+                       fileState.currentActiveFile == .temporaryFile(currentFileURL),
+                       let currentTemporaryFileID,
                        case let file as File = viewContext.object(with: currentTemporaryFileID) {
                         fileState.currentActiveFile = .file(file)
                     } else {
-                        let firstFile = group.files?.allObjects.first as? File
-                        fileState.currentActiveFile = firstFile != nil ? .file(firstFile!) : nil
+                        fileState.currentActiveFile = nil
                     }
-                    
-                    fileState.expandToGroup(group.objectID)
                 }
             } catch {
                 await alertToast(error)
@@ -196,27 +217,38 @@ struct TemporaryFileMenuItems: View {
         }
         Task.detached {
             do {
-                
                 let mapping = try LocalFileUtils.moveLocalFiles(
                     filesToMove,
                     to: targetFolderID,
                     context: context
                 )
-                
                 await MainActor.run {
+                    fileState.expandToGroup(targetFolderID)
                     fileState.temporaryFiles.removeAll(where: {filesToMove.contains($0)})
-                    if fileState.temporaryFiles.isEmpty {
-                        fileState.currentActiveGroup = nil
+                    
+                    
+                    guard fileState.currentActiveGroup == .temporary else { return }
+                    
+                    // in temporary group, but no destination folder.
+                    guard let folder = viewContext.object(with: targetFolderID) as? LocalFolder else {
+                        if fileState.temporaryFiles.isEmpty {
+                            fileState.currentActiveFile = nil
+                            fileState.currentActiveGroup = nil
+                        }
+                        return
                     }
-                    if case .localFile(let localFile) = fileState.currentActiveFile,
+                    
+                    if fileState.temporaryFiles.isEmpty {
+                        fileState.currentActiveGroup = .localFolder(folder)
+                    }
+
+                    if case .temporaryFile(let localFile) = fileState.currentActiveFile,
                        localFile == file,
                        let newURL = mapping[localFile] {
-                        let folder = viewContext.object(with: targetFolderID) as? LocalFolder
-                        fileState.currentActiveGroup = folder != nil ? .localFolder(folder!) : nil
                         fileState.currentActiveFile = .localFile(newURL)
-                        // auto expand
-                        if let folder {
-                            fileState.expandToGroup(folder.objectID)
+                    } else {
+                        if fileState.temporaryFiles.isEmpty {
+                            fileState.currentActiveFile = nil
                         }
                     }
                 }

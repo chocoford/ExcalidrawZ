@@ -451,7 +451,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                             }
                         }(),
                         name: group.name ?? String(localizable: .generalUntitled),
-                        itemsCount: group.filesCount,
+                        itemsCount: group.filesCount + group.subgroupsCount,
                     )
                     .modifier(FileHomeGroupContextMenuModifier(group: group))
                     .simultaneousGesture(TapGesture(count: 2).onEnded {

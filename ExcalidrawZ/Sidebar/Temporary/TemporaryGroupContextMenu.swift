@@ -26,8 +26,6 @@ struct TemporaryGroupMenuItems: View {
     )
     private var topLevelLocalFolders: FetchedResults<LocalFolder>
     
-    init() {}
-    
     var body: some View {
         Menu {
             let groups: [Group] = topLevelGroups
@@ -77,14 +75,16 @@ struct TemporaryGroupMenuItems: View {
     
     private func moveFiles(to groupID: NSManagedObjectID) {
         let temporaryFiles = fileState.temporaryFiles
-        guard case .temporaryFile(let currentFileURL) = fileState.currentActiveFile else {
-            return
-        }
         let context = PersistenceController.shared.container.newBackgroundContext()
+        let currentFileURL: URL? = if case .temporaryFile(let file) = fileState.currentActiveFile {
+            file
+        } else {
+            nil
+        }
+        
         Task.detached {
             do {
-                var currentTemporaryFileID: NSManagedObjectID?
-                try await context.perform {
+                let currentTemporaryFileID: NSManagedObjectID? = try await context.perform {
                     var currentFile: File?
                     for file in temporaryFiles {
                         let newFile = try File(url: file, context: context)
@@ -97,22 +97,35 @@ struct TemporaryGroupMenuItems: View {
                     }
                     try context.save()
                     
-                    currentTemporaryFileID = currentFile?.objectID
+                    return currentFile?.objectID
                 }
                 
                 
                 await MainActor.run { [currentTemporaryFileID] in
-                    guard case let group as Group = viewContext.object(with: groupID) else { return }
+                    fileState.temporaryFiles.removeAll()
+                    fileState.expandToGroup(groupID)
+                    
+                    guard fileState.currentActiveGroup == .temporary else {
+                        return
+                    }
+                    // in temprary but no destination group.
+                    guard case let group as Group = viewContext.object(with: groupID) else {
+                        fileState.currentActiveGroup = nil
+                        fileState.currentActiveFile = nil
+                        return
+                    }
+                    
                     fileState.currentActiveGroup = .group(group)
-                    if let currentTemporaryFileID,
+
+                    if let currentFileURL,
+                       fileState.currentActiveFile == .temporaryFile(currentFileURL),
+                       let currentTemporaryFileID,
                        case let file as File = viewContext.object(with: currentTemporaryFileID) {
                         fileState.currentActiveFile = .file(file)
                     } else {
-                        let file = group.files?.allObjects.first as? File
-                        fileState.currentActiveFile = file != nil ? .file(file!) : nil
+                        fileState.currentActiveFile = nil
                     }
                     
-                    fileState.expandToGroup(group.objectID)
                 }
             } catch {
                 await alertToast(error)
@@ -122,8 +135,10 @@ struct TemporaryGroupMenuItems: View {
     
     private func moveLocalFiles(to targetFolderID: NSManagedObjectID) {
         let temporaryFiles = fileState.temporaryFiles
-        guard case .temporaryFile(let currentFileURL) = fileState.currentActiveFile else {
-            return
+        let currentFileURL: URL? = if case .temporaryFile(let file) = fileState.currentActiveFile {
+            file
+        } else {
+            nil
         }
         Task.detached {
             let context = PersistenceController.shared.container.newBackgroundContext()
@@ -135,16 +150,32 @@ struct TemporaryGroupMenuItems: View {
                     context: context
                 )
                 
-                let currentFileNewURL = mapping[currentFileURL]
                 
-                if await fileState.currentActiveGroup == .temporary {
-                    await MainActor.run {
-                        fileState.temporaryFiles.removeAll()
-                        fileState.expandToGroup(targetFolderID)
-                        let localFolder = viewContext.object(with: targetFolderID) as? LocalFolder
-                        fileState.currentActiveGroup = localFolder != nil ? .localFolder(localFolder!) : nil
-                        fileState.currentActiveFile = currentFileNewURL != nil ? .localFile(currentFileNewURL!) : nil
+                await MainActor.run {
+                    fileState.temporaryFiles.removeAll()
+                    fileState.expandToGroup(targetFolderID)
+                    // ignore if current file is not temporary
+                    guard fileState.currentActiveGroup == .temporary else {
+                        return
                     }
+                    
+                    // in temprary but no destination folder.
+                    guard let localFolder = viewContext.object(with: targetFolderID) as? LocalFolder else {
+                        fileState.currentActiveGroup = nil
+                        fileState.currentActiveFile = nil
+                        return
+                    }
+                    fileState.currentActiveGroup = .localFolder(localFolder)
+
+                    
+                    guard let currentFileURL,
+                          fileState.currentActiveFile == .temporaryFile(currentFileURL),
+                          let currentFileNewURL = mapping[currentFileURL] else {
+                        fileState.currentActiveFile = nil
+                        return
+                    }
+                    
+                    fileState.currentActiveFile = .localFile(currentFileNewURL)
                 }
             } catch {
                 await alertToast(error)
