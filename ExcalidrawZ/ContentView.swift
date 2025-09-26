@@ -21,6 +21,8 @@ struct ContentView: View {
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject var appPreference: AppPreference
     
+    @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
+    
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ContentView")
     
     @State private var hideContent: Bool = false
@@ -84,9 +86,9 @@ struct ContentView: View {
                 Color.clear
             } else if isFirstImporting == true {
                 if #available(macOS 13.0, *) {
-                    welcomeView()
+                    ICloudSyncingView(isFirstImporting: isFirstImporting)
                 } else {
-                    welcomeView()
+                    ICloudSyncingView(isFirstImporting: isFirstImporting)
                         .frame(width: 1150, height: 580)
                 }
             } else {
@@ -103,21 +105,6 @@ struct ContentView: View {
         } else {
             ContentViewLagacy()
         }
-    }
-    
-    @MainActor @ViewBuilder
-    private func welcomeView() -> some View {
-        ProgressView {
-            VStack {
-                if isFirstImporting == true {
-                    Text(.localizable(.welcomeTitle)).font(.title)
-                    Text(.localizable(.welcomeDescription))
-                } else {
-                    Text(.localizable(.welcomeSyncing))
-                }
-            }
-        }
-        .padding(40)
     }
     
     private func handleImport(_ notification: Notification) {
@@ -157,6 +144,11 @@ struct ContentView: View {
     // Check if it is first launch by checking the files count.
     private func prepare() async {
         do {
+            guard !isICloudDisabled else {
+                isFirstImporting = false
+                return
+            }
+            
             let isEmpty = try viewContext.fetch(NSFetchRequest<File>(entityName: "File")).isEmpty
             isFirstImporting = isEmpty
             if isFirstImporting == true, try await CKContainer.default().accountStatus() != .available {
