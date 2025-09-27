@@ -146,6 +146,7 @@ struct ContentView: View {
         do {
             guard !isICloudDisabled else {
                 isFirstImporting = false
+                try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: viewContext)
                 return
             }
             

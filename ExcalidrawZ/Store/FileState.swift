@@ -827,8 +827,12 @@ final class FileState: ObservableObject {
             return theEearlisetGroup
         }
         
-        if let theEearlisetGroup {
-            self.currentActiveGroup = .group(theEearlisetGroup)
+        if let theEearlisetGroupID = theEearlisetGroup?.objectID {
+            await MainActor.run {
+                if let theEearlisetGroup = context.object(with: theEearlisetGroupID) as? Group {
+                    self.currentActiveGroup = .group(theEearlisetGroup)
+                }
+            }
         }
     }
     
