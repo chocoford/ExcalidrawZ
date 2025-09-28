@@ -18,6 +18,7 @@ struct FileRowButton: View {
     init(
         name: String,
         updatedAt: Date?,
+        isInTrash: Bool = false,
         isSelected: Bool,
         isMultiSelected: Bool,
         onTap: @escaping () -> Void,
@@ -28,7 +29,8 @@ struct FileRowButton: View {
         self.label = AnyView(
             FileRowLabel(
                 name: name,
-                updatedAt: updatedAt ?? .distantPast
+                updatedAt: updatedAt ?? .distantPast,
+                isInTrash: isInTrash
             )
         )
         self.onTap = onTap
@@ -50,28 +52,12 @@ struct FileRowButton: View {
     
     var body: some View {
         label
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
-            .contentShape(Rectangle())
-            .onHover { isHovered in
-                withAnimation {
-                    self.isHovered = isHovered
-                }
-            }
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .foregroundStyle(isSelected ? Color.accentColor.opacity(0.2) : Color.gray.opacity(0.2))
-                    .opacity(isHovered || isSelected ? 1 : 0)
+            .modifier(
+                ExcalidrawZSidebarRowModifier(
+                    isSelected: isSelected,
+                    isMultiSelected: isMultiSelected
+                )
             )
-            .overlay {
-                if isMultiSelected {
-                    RoundedRectangle(cornerRadius: 4)
-                        .stroke(
-                            isMultiSelected ? Color.accentColor : Color.clear,
-                            lineWidth: 2
-                        )
-                }
-            }
             .animation(.easeOut(duration: 0.1), value: isMultiSelected)
             .simultaneousGesture(
                 TapGesture().onEnded {
@@ -80,3 +66,4 @@ struct FileRowButton: View {
             )
     }
 }
+

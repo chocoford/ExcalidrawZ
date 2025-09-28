@@ -77,8 +77,6 @@ struct JoinRoomSheetView: View {
                 .foregroundStyle(.red)
                 .frame(height: 18, alignment: .top)
             
-            Divider()
-            
             HStack {
                 Spacer()
                 Button {
@@ -87,6 +85,8 @@ struct JoinRoomSheetView: View {
                     Text(.localizable(.generalButtonCancel))
                         .frame(width: 60)
                 }
+                .modernButtonStyle(style: .glass)
+                
                 Button {
                     dismiss()
                     joinRoom()
@@ -94,9 +94,10 @@ struct JoinRoomSheetView: View {
                     Text(.localizable(.collaborationJoinRoomButtonJoin))
                         .frame(width: 60)
                 }
-                .buttonStyle(.borderedProminent)
+                .modernButtonStyle(style: .glassProminent)
                 .disabled(error != nil || roomID == nil || name.isEmpty)
             }
+            .modernButtonStyle(shape: .modern)
         }
         .padding()
     }
@@ -225,8 +226,8 @@ struct JoinRoomSheetView: View {
                     Task {
                         await MainActor.run {
                             if let room = viewContext.object(with: roomID) as? CollaborationFile {
-                                fileState.isInCollaborationSpace = true
-                                fileState.currentCollaborationFile = .room(room)
+                                fileState.currentActiveGroup = .collaboration
+                                fileState.currentActiveFile = .collaborationFile(room)
                             }
                         }
                     }

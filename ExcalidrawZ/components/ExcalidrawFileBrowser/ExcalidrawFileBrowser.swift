@@ -64,17 +64,17 @@ struct ExcalidrawFileBrowser: View {
         VStack(spacing: 0) {
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 100, maximum: 100))], spacing: 0) {
-                    if let group = fileState.currentGroup {
+                    if case .group(let group) = fileState.currentActiveGroup {
                         ExcalidrawFileBrowserContentView(group: group) {
-                            if let file = fileState.currentFile {
+                            if case .file(let file) = fileState.currentActiveFile {
                                 dismiss()
                                 self.action(.file(file))
                                 
                             }
                         }
-                    } else if let folder = fileState.currentLocalFolder {
+                    } else if case .localFolder(let folder) = fileState.currentActiveGroup {
                         ExcalidrawLocalFileBrowserContentView(folder: folder) {
-                            if let file = fileState.currentLocalFile {
+                            if case .localFile(let file) = fileState.currentActiveFile {
                                 dismiss()
                                 self.action(.localFile(file))
                             }
@@ -86,8 +86,7 @@ struct ExcalidrawFileBrowser: View {
                     Color.clear
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            fileState.currentFile = nil
-                            fileState.currentLocalFile = nil
+                            fileState.currentActiveFile = nil
                         }
                 }
             }
@@ -104,18 +103,17 @@ struct ExcalidrawFileBrowser: View {
                 }
                 Button {
                     dismiss()
-                    if let file = fileState.currentFile {
+                    if case .file(let file) = fileState.currentActiveFile {
                         action(.file(file))
-                    } else if let localFile = fileState.currentLocalFile {
+                    } else if case .localFile(let localFile) = fileState.currentActiveFile {
                         action(.localFile(localFile))
                     }
-                    
                 } label: {
                     Text(.localizable(.generalButtonCreate))
                         .padding(.horizontal)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(fileState.currentFile == nil && fileState.currentLocalFile == nil)
+                .disabled(fileState.currentActiveFile == nil)
             }
             .padding()
         }
@@ -145,10 +143,13 @@ struct ExcalidrawFileBrowserContentView: View {
         ForEach(files) { file in
             ExcalidrawFileItemView(
                 isSelected: Binding {
-                    fileState.currentFile == file
+                    if case .file(let f) = fileState.currentActiveFile {
+                        return f == file
+                    }
+                    return false
                 } set: { val in
                     if val {
-                        fileState.currentFile = file
+                        fileState.currentActiveFile = .file(file)
                     }
                 },
                 filename: file.name ?? String(localizable: .generalUnknown)
@@ -178,29 +179,37 @@ struct ExcalidrawLocalFileBrowserContentView: View {
     }
     
     @State private var contents: [URL] = []
-    
+    @StateObject private var localFolderState = LocalFolderState()
     var body: some View {
-        ForEach(contents, id: \.self) { url in
-            ExcalidrawFileItemView(
-                isSelected: Binding {
-                    fileState.currentLocalFile == url
-                } set: { val in
-                    if val {
-                        fileState.currentLocalFile = url
-                    }
-                },
-                filename: url.lastPathComponent
-            ) {
+        LocalFilesProvider(folder: folder, sortField: .name) { files, updateFlags in
+            ForEach(files, id: \.self) { url in
+                ExcalidrawFileItemView(
+                    isSelected: Binding {
+                        if case .localFile(let localFile) = fileState.currentActiveFile {
+                            return localFile == url
+                        }
+                        return false
+                    } set: { val in
+                        if val {
+                            fileState.currentActiveFile = .localFile(url)
+                        }
+                    },
+                    filename: url.lastPathComponent
+                ) {
 #if canImport(AppKit)
-                NSWorkspace.shared.icon(forFile: url.filePath)
+                    NSWorkspace.shared.icon(forFile: url.filePath)
 #elseif canImport(UIKit)
-                UIImage.icon(forFileURL: url)
+                    UIImage.icon(forFileURL: url)
 #endif
-            } onDoubleClick: {
-                onDoubleClick?()
+                } onDoubleClick: {
+                    onDoubleClick?()
+                }
             }
         }
+        .environmentObject(localFolderState)
     }
+    
+    
 }
 
 struct ExcalidrawFileItemView: View {

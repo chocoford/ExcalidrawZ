@@ -35,13 +35,13 @@ struct ShareToolbarButton: View {
         .help(String(localizable: .export))
         .keyboardShortcut("s", modifiers: [.command, .shift])
         .disabled(
-            fileState.currentGroup?.groupType == .trash ||
-            (
-                fileState.currentFile == nil &&
-                fileState.currentLocalFile == nil &&
-                fileState.currentTemporaryFile == nil &&
-                fileState.currentCollaborationFile == nil
-            )
+            {
+                if case .group(let group) = fileState.currentActiveGroup {
+                    return group.groupType == .trash
+                }
+                return false
+            }() ||
+            fileState.currentActiveFile == nil
         )
         .bindWindow($window)
         .onReceive(NotificationCenter.default.publisher(for: .toggleShare)) { notification in
@@ -54,16 +54,22 @@ struct ShareToolbarButton: View {
     private func performShareFile() {
         print("[performShareFile] Thread: \(Thread.current)")
         do {
-            if let file = fileState.currentFile ?? fileState.currentCollaborationFile?.room {
-                self.shareFileState.currentSharedFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
-            } else if let folder = fileState.currentLocalFolder,
-                let fileURL = fileState.currentLocalFile {
-                try folder.withSecurityScopedURL { _ in
-                    self.shareFileState.currentSharedFile = try ExcalidrawFile(contentsOf: fileURL)
-                }
-            } else if fileState.isTemporaryGroupSelected,
-                      let fileURL = fileState.currentTemporaryFile {
-                self.shareFileState.currentSharedFile = try ExcalidrawFile(contentsOf: fileURL)
+            switch fileState.currentActiveFile {
+                case .file(let file):
+                    self.shareFileState.currentSharedFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
+                case .localFile(let url):
+                    if case .localFolder(let folder) = fileState.currentActiveGroup {
+                        try folder.withSecurityScopedURL { _ in
+                            self.shareFileState.currentSharedFile = try ExcalidrawFile(contentsOf: url)
+                        }
+                    }
+                case .temporaryFile(let url):
+                    self.shareFileState.currentSharedFile = try ExcalidrawFile(contentsOf: url)
+
+                case .collaborationFile(let collaborationFile):
+                    self.shareFileState.currentSharedFile = try ExcalidrawFile(from: collaborationFile.objectID, context: viewContext)
+                default:
+                    break
             }
         } catch {
             alertToast(error)

@@ -41,6 +41,7 @@ struct ExcalidrawZApp: App {
     private let updaterController: SPUStandardUpdaterController
 #endif
     init() {
+        print("init")
         // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
         // This is where you can also pass an updater delegate if you need one
 #if os(macOS) && !APP_STORE
@@ -127,7 +128,7 @@ struct ExcalidrawZApp: App {
                         object: nil
                     )
                 } label: {
-                    Text(.localizable(.createNewFile))
+                    Text(.localizable(.generalButtonCreateNewFile))
                 }
                 .keyboardShortcut("N", modifiers: .command)
                 
@@ -165,12 +166,13 @@ struct ExcalidrawZApp: App {
                         NotificationCenter.default.post(name: .shouldHandleImport, object: panel.urls)
                     }
                 } label: {
-                    Text(.localizable(.menubarButtonImport))
+                    Label(.localizable(.menubarButtonImport), systemSymbol: .squareAndArrowDown)
                 }
                 Button {
-                    try? archiveAllFiles(context: viewContext)
+                    // MUST USE THIS INSTEAD OF VIEWCONTEXT
+                    try? archiveAllFiles(context: PersistenceController.shared.container.viewContext)
                 } label: {
-                    Text(.localizable(.menubarButtonExportAll))
+                    Label(.localizable(.menubarButtonExportAll), systemSymbol: .squareAndArrowUp)
                 }
             }
             
@@ -225,30 +227,6 @@ struct ExcalidrawZApp: App {
         }
 #endif
     }
-    
-    
-#if os(macOS)
-    @MainActor
-    private func documentGroup() -> some Scene {
-        if #available(macOS 13.0, iOS 17.0, *) {
-            return DocumentGroup(newDocument: ExcalidrawFile()) { config in
-                SingleEditorView(config: config, shouldAdjustWindowSize: false)
-                    .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-                    .swiftyAlert()
-                    .environmentObject(appPrefernece)
-            }
-            .defaultSize(width: 1200, height: 600)
-        } else {
-            return DocumentGroup(newDocument: ExcalidrawFile()) { config in
-                SingleEditorView(config: config, shouldAdjustWindowSize: true)
-                    .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-                    .swiftyAlert()
-                    .environmentObject(appPrefernece)
-                
-            }
-        }
-    }
-#endif
 }
 
 fileprivate extension Scene {

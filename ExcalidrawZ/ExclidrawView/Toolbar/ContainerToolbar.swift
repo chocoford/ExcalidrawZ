@@ -76,9 +76,76 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
 
     @ToolbarContentBuilder
     private func toolbarContent_macOS() -> some ToolbarContent {
+        ToolbarItemGroup(placement: .navigation) {
+            if #available(macOS 13.0, iOS 16.0, *), appPreference.sidebarLayout == .sidebar {
+                
+            } else if containerHorizontalSizeClass != .compact {
+                Button {
+                    layoutState.isSidebarPresented.toggle()
+                } label: {
+                    Label(.localizable(.sidebarToggleName), systemSymbol: .sidebarLeft)
+                }
+            }
+            
+#if os(macOS)
+            if fileState.currentActiveGroup != nil {
+                HStack {
+                    
+                    Button {
+                        if fileState.currentActiveFile != nil {
+                            fileState.currentActiveFile = nil
+                        } else {
+                            switch fileState.currentActiveGroup {
+                                case .group(let group):
+                                    fileState.currentActiveGroup = group.parent != nil ? .group(group.parent!) : nil
+                                case .localFolder(let localFolder):
+                                    fileState.currentActiveGroup = localFolder.parent != nil
+                                    ? .localFolder(localFolder.parent!)
+                                    : nil
+                                default:
+                                    fileState.currentActiveGroup = nil
+                            }
+                        }
+                    } label: {
+                        Label(.localizable(.navigationButtonBack), systemSymbol: .chevronBackward)
+                    }
+                    
+                    title()
+                    
+                    if let file = fileState.currentActiveFile {
+                        ZStack {
+                            switch file {
+                                case .file(let file):
+                                    FileMenu(file: file) {}
+                                case .localFile(let url):
+                                    LocalFileMenu(file: url) {}
+                                case .temporaryFile(let url):
+                                    Menu {
+                                        TemporaryFileMenuItems(file: url)
+                                            .labelStyle(.titleAndIcon)
+                                    } label: {}
+                                case .collaborationFile(let collaborationFile):
+                                    CollaborationFileMenu(file: collaborationFile) {}
+                            }
+                        }
+                        .labelsHidden()
+                        .controlSize(.small)
+                        .padding(.trailing, 8)
+                        .fixedSize()
+                    }
+                }
+            }
+#endif
+            if #available(macOS 13.0, iOS 16.0, *) { } else {
+                NewFileButton()
+            }
+        }
+        
 #if os(macOS)
         ToolbarItemGroup(placement: .status) {
-            if #available(macOS 13.0, iOS 16.0, *) {
+            if #available(macOS 26.0, iOS 26.0, *) {
+                ExcalidrawToolbar()
+            } else if #available(macOS 13.0, iOS 16.0, *) {
                 ExcalidrawToolbar()
                 .padding(.vertical, 2)
             } else {
@@ -92,26 +159,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             ExcalidrawToolbar()
         }
 #endif
-        
-        ToolbarItemGroup(placement: .navigation) {
-            if #available(macOS 13.0, iOS 16.0, *), appPreference.sidebarLayout == .sidebar {
-                
-            } else if containerHorizontalSizeClass != .compact {
-                Button {
-                    layoutState.isSidebarPresented.toggle()
-                } label: {
-                    Label(.localizable(.sidebarToggleName), systemSymbol: .sidebarLeft)
-                }
-            }
-            
-#if os(macOS)
-            title()
-#endif
-
-            if #available(macOS 13.0, iOS 16.0, *) { } else {
-                NewFileButton()
-            }
-        }
+    
         
 #if os(iOS)
         ToolbarItemGroup(placement: .topBarLeading) {
@@ -131,19 +179,10 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             title()
         }
 #endif
-
-#if os(macOS)
-        ToolbarItemGroup(placement: .cancellationAction) {
-            SettingsButton(useDefaultLabel: true) {
-                Label(.localizable(.settingsName), systemSymbol: .gear)
-                    .labelStyle(.iconOnly)
-            }
-        }
-#endif
         
 //        ToolbarItemGroup(placement: .confirmationAction) {
         ToolbarItemGroup(placement: .primaryAction) {
-            if fileState.hasAnyActiveFile {
+            if fileState.currentActiveFile != nil {
 #if os(iOS)
                 applePencilToggle()
 #endif
@@ -232,57 +271,69 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
     
     @MainActor @ViewBuilder
     private func title() -> some View {
-        if let file = fileState.currentFile {
-            VStack(alignment: .leading) {
-                Text(file.name ?? String(localizable: .generalUntitled))
-                    .font(.headline)
-                Text(file.updatedAt?.formatted() ?? "Not modified")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        } else if let fileURL = fileState.currentLocalFile ?? fileState.currentTemporaryFile {
-            let filename = fileURL.deletingPathExtension().lastPathComponent
-            let updatedAt = (try? FileManager.default.attributesOfItem(atPath: fileURL.filePath))?[.modificationDate] as? Date
-            VStack(alignment: .leading) {
-                Text(filename)
-                    .font(.headline)
-                Text(updatedAt?.formatted() ?? "Not modified")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        } else if case .room(let collaborationFile) = fileState.currentCollaborationFile {
-            HStack(spacing: 10) {
+        switch fileState.currentActiveFile {
+            case .file(let file):
                 VStack(alignment: .leading) {
-                    Text(collaborationFile.name ?? String(localizable: .generalUntitled))
+                    Text(file.name ?? String(localizable: .generalUntitled))
                         .font(.headline)
-                    Text(collaborationFile.updatedAt?.formatted() ?? "Not modified")
+                    Text(file.updatedAt?.formatted() ?? "Not modified")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
-                
-                HStack(spacing: 0) {
-                    Button {
-                        isCollaboratorPopoverPresented.toggle()
-                    } label: {
-                        Label("Collborators", systemSymbol: .person2)
-                    }
-                    .disabled(fileState.currentCollaborators.isEmpty)
-                    .popover(isPresented: $isCollaboratorPopoverPresented, arrowEdge: .bottom) {
-                        if #available(macOS 13.0, *) {
-                            CollaboratorsList()
-                                .scrollContentBackground(.hidden)
-                        } else {
-                            CollaboratorsList()
-                        }
-                        
+            case .localFile(let fileURL):
+                let filename = fileURL.deletingPathExtension().lastPathComponent
+                let updatedAt = (try? FileManager.default.attributesOfItem(atPath: fileURL.filePath))?[.modificationDate] as? Date
+                VStack(alignment: .leading) {
+                    Text(filename)
+                        .font(.headline)
+                    Text(updatedAt?.formatted() ?? "Not modified")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            case .temporaryFile(let fileURL):
+                let filename = fileURL.deletingPathExtension().lastPathComponent
+                let updatedAt = (try? FileManager.default.attributesOfItem(atPath: fileURL.filePath))?[.modificationDate] as? Date
+                VStack(alignment: .leading) {
+                    Text(filename)
+                        .font(.headline)
+                    Text(updatedAt?.formatted() ?? "Not modified")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            case .collaborationFile(let collaborationFile):
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading) {
+                        Text(collaborationFile.name ?? String(localizable: .generalUntitled))
+                            .font(.headline)
+                        Text(collaborationFile.updatedAt?.formatted() ?? "Not modified")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                     
-                    Text("\(fileState.currentCollaborators.count)")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 0) {
+                        Button {
+                            isCollaboratorPopoverPresented.toggle()
+                        } label: {
+                            Label("Collborators", systemSymbol: .person2)
+                        }
+                        .disabled(fileState.currentCollaborators.isEmpty)
+                        .popover(isPresented: $isCollaboratorPopoverPresented, arrowEdge: .bottom) {
+                            if #available(macOS 13.0, *) {
+                                CollaboratorsList()
+                                    .scrollContentBackground(.hidden)
+                            } else {
+                                CollaboratorsList()
+                            }
+                            
+                        }
+                        
+                        Text("\(fileState.currentCollaborators.count)")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-            }
-           
+            default:
+                EmptyView()
         }
     }
     

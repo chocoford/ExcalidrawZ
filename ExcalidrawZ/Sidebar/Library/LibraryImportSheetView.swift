@@ -6,6 +6,113 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
+
+extension Notification.Name {
+    static let shouldImportExternalLibraryFile = Notification.Name("ShouldImportExternalLibraryFile")
+    static let addLibrary = Notification.Name("AddLibrary")
+}
+
+
+struct ExcalidrawLibraryImporter: ViewModifier {
+    @Environment(\.alertToast) var alertToast
+
+    @Binding var librariesToImport: [ExcalidrawLibrary]
+    
+    init(items: Binding<[ExcalidrawLibrary]>) {
+        self._librariesToImport = items
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: Binding {
+                !librariesToImport.isEmpty
+            } set: { val in
+                if !val {
+                    librariesToImport = []
+                }
+            }) {
+                ExcalidrawLibraryImportSheetView(libraries: librariesToImport)
+                    .frame(minWidth: 700)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .shouldImportExternalLibraryFile)) { output in
+                guard let url = output.object as? URL else { return }
+                do {
+                    let data = try Data(contentsOf: url)
+                    var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data)
+                    library.name = url.deletingPathExtension().lastPathComponent
+                    librariesToImport.append(library)
+                } catch {
+                    librariesToImport = []
+                    alertToast(error)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .addLibrary)) { output in
+                guard let libraries = output.object as? [ExcalidrawLibrary] else { return }
+                librariesToImport = libraries
+            }
+    }
+}
+
+struct ExcalidrawLibraryDropHandler: ViewModifier {
+    @Environment(\.alertToast) var alertToast
+
+    @State private var isDropTargeted: Bool = false
+
+    func body(content: Content) -> some View {
+        content
+            .onDrop(of: [.excalidrawlibFile], isTargeted: $isDropTargeted) { providers in
+                let canDrop = providers.contains(where: {$0.hasItemConformingToTypeIdentifier(UTType.excalidrawlibFile.identifier)})
+                guard canDrop else { return false }
+                handleDropExcalidrawLibrary(providers: providers)
+                return true
+            }
+    }
+}
+
+func handleDropExcalidrawLibrary(providers: [NSItemProvider]) {
+    let canDrop = providers.contains(where: {$0.hasItemConformingToTypeIdentifier(UTType.excalidrawlibFile.identifier)})
+    guard canDrop else { return }
+    Task {
+        var librariesToImport: [ExcalidrawLibrary] = []
+        do {
+            for provider in providers {
+                let url: URL? = try await withCheckedThrowingContinuation { continuation in
+                    provider.loadFileRepresentation(forTypeIdentifier: UTType.excalidrawlibFile.identifier) { url, error in
+                        if let error {
+                            continuation.resume(throwing: error)
+                            return
+                        }
+                        continuation.resume(returning: url)
+                    }
+                }
+                guard url != nil else { continue }
+                let data: Data? = try await withCheckedThrowingContinuation { continuation in
+                    provider.loadDataRepresentation(forTypeIdentifier: UTType.excalidrawlibFile.identifier) { url, error in
+                        if let error {
+                            continuation.resume(throwing: error)
+                            return
+                        }
+                        continuation.resume(returning: url)
+                    }
+                }
+                guard data != nil else { continue }
+                var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data!)
+                library.name = url!.deletingPathExtension().lastPathComponent
+                librariesToImport.append(library)
+            }
+            
+            await MainActor.run { [librariesToImport] in
+                NotificationCenter.default.post(
+                    name: .addLibrary,
+                    object: librariesToImport
+                )
+            }
+        } catch {
+            print(error)
+        }
+    }
+}
 
 struct ExcalidrawLibraryImportSheetView: View {
     @Environment(\.dismiss) var dismiss
@@ -112,9 +219,15 @@ struct ExcalidrawLibraryImportSheetView: View {
                             VStack(spacing: 0) {
                                 HStack {
                                     Text(library.name ?? String(localizable: .generalUntitled))
-                                    Text(.localizable(.librariesImportLibraryItemsCount(library.libraryItems.count)))
-                                        .foregroundStyle(.secondary)
-                                        .font(.footnote)
+                                    if #available(macOS 13.0, iOS 16.0, *) {
+                                        Text(.localizable(.librariesImportLibraryItemsCount(library.libraryItems.count)))
+                                            .foregroundStyle(.secondary)
+                                            .font(.footnote)
+                                    } else {
+                                        Text(library.libraryItems.count.formatted())
+                                            .foregroundStyle(.secondary)
+                                            .font(.footnote)
+                                    }
                                     
                                     Spacer()
                                     
@@ -161,9 +274,15 @@ struct ExcalidrawLibraryImportSheetView: View {
             
             HStack {
                 if !selectedItems.isEmpty {
-                    Text(.localizable(.librariesImportSelectionsCount(selectedItems.count)))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    if #available(macOS 13.0, iOS 16.0, *) {
+                        Text(.localizable(.librariesImportSelectionsCount(selectedItems.count)))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(selectedItems.count.formatted())
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 
                 Spacer()

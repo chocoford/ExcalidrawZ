@@ -33,45 +33,69 @@ struct SearchExcalidrawAction {
 
 struct SearchableModifier: ViewModifier {
     @State private var isSearchSheetPresented = false
-
+    
     func body(content: Content) -> some View {
         content
             .background {
                 Button {
                     isSearchSheetPresented.toggle()
                 } label: { }
-                .opacity(0.01)
-                .keyboardShortcut("f", modifiers: .command)
+                    .opacity(0.01)
+                    .keyboardShortcut("f", modifiers: .command)
                 
                 if #available(macOS 14.0, *) { } else {
                     Button {
                         isSearchSheetPresented = false
                     } label: { }
-                    .opacity(0.01)
-                    .keyboardShortcut(.escape)
+                        .opacity(0.01)
+                        .keyboardShortcut(.escape)
                 }
             }
             .sheet(isPresented: $isSearchSheetPresented) {
-                SerachContent()
-                    .swiftyAlert()
+                SerachContent(source: .sheet) {
+                    isSearchSheetPresented = false
+                }
+                .padding(10)
+                .swiftyAlert()
 #if os(macOS)
-                    .frame(width: 500, height: 400)
+                .frame(width: 500, height: 400)
 #endif
             }
-            .environment(\.searchExcalidrawAction, SearchExcalidrawAction(isSearchPresented: $isSearchSheetPresented))
+            .environment(
+                \.searchExcalidrawAction,
+                 SearchExcalidrawAction(isSearchPresented: $isSearchSheetPresented)
+            )
     }
 }
 
-fileprivate struct SerachContent: View {
+struct SerachContent: View {
     @Environment(\.managedObjectContext) private var viewContext
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.alertToast) private var alertToast
     
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var fileState: FileState
     
+    enum Source {
+        case normal
+        case sheet
+    }
+    
+    var withDismissButton: Bool
+    var source: Source
+    var dismiss: () -> Void
+    
+    init(
+        withDismissButton: Bool = true,
+        source: Source,
+        dismissAction: @escaping () -> Void
+    ) {
+        self.withDismissButton = withDismissButton
+        self.source = source
+        self.dismiss = dismissAction
+    }
+    
     @State private var searchText = ""
-
+    
     @State private var searchFiles: [File] = []
     @State private var searchFilesPath: [String] = []
     @State private var searchCollaborationFiles: [CollaborationFile] = []
@@ -80,22 +104,30 @@ fileprivate struct SerachContent: View {
     @State private var isSearching = false
     
     @State private var selectionIndex: Int?
+    
+    @FocusState private var isFocused: Bool
 #if os(iOS)
     let tapSelectCount = 1
 #elseif os(macOS)
-    let tapSelectCount = 2
+    let tapSelectCount = 1
 #endif
     
     var body: some View {
         VStack(spacing: 0) {
-            TextField("", text: $searchText, prompt: Text(.localizable(.searchFieldPropmtText)))
-                .textFieldStyle(SearchTextFieldStyle())
-                .submitLabel(.go)
-                .onSubmit {
-                    guard let selectionIndex else { return }
-                    onSelect(selectionIndex)
-                }
-                .overlay(alignment: .trailing) {
+            TextField(
+                "",
+                text: $searchText,
+                prompt: Text(.localizable(.searchFieldPropmtText))
+            )
+            .textFieldStyle(SearchTextFieldStyle())
+            .focused($isFocused)
+            .submitLabel(.go)
+            .onSubmit {
+                guard let selectionIndex else { return }
+                onSelect(selectionIndex)
+            }
+            .overlay(alignment: .trailing) {
+                if withDismissButton {
                     Button {
                         dismiss()
                     } label: {
@@ -107,10 +139,18 @@ fileprivate struct SerachContent: View {
                     }
                     .buttonStyle(.borderless)
                     .keyboardShortcut(.escape)
-                    .padding(.trailing, 20)
+                    .padding(.trailing, {
+                        if #available(macOS 26.0, iOS 26.0, *) {
+                            0
+                        } else {
+                            20
+                        }
+                    }())
                 }
-            
+            }
+
             Divider()
+
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
@@ -156,6 +196,7 @@ fileprivate struct SerachContent: View {
                 }
                 return nsevent
             }
+            isFocused = true
         }
 #endif
         .onDisappear {
@@ -189,12 +230,12 @@ fileprivate struct SerachContent: View {
                     .onTapGesture(count: tapSelectCount) {
                         dismiss()
                         if let limit = store.collaborationRoomLimits,
-                                  fileState.collaboratingFiles.count >= limit,
-                                  !fileState.collaboratingFiles.contains(room) {
+                           fileState.collaboratingFiles.count >= limit,
+                           !fileState.collaboratingFiles.contains(room) {
                             store.togglePaywall(reason: .roomLimit)
                         } else {
-                            fileState.isInCollaborationSpace = true
-                            fileState.currentCollaborationFile = .room(room)
+                            fileState.currentActiveGroup = .collaboration
+                            fileState.currentActiveFile = .collaborationFile(room)
                         }
                     }
                 }
@@ -226,8 +267,8 @@ fileprivate struct SerachContent: View {
                     }
                     .onTapGesture(count: tapSelectCount) {
                         if let group = file.group {
-                            fileState.currentGroup = group
-                            fileState.currentFile = file
+                            fileState.currentActiveGroup = .group(group)
+                            fileState.currentActiveFile = .file(file)
                             fileState.expandToGroup(group.objectID)
                             dismiss()
                         }
@@ -266,8 +307,8 @@ fileprivate struct SerachContent: View {
                                     let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
                                     fetchRequest.predicate = NSPredicate(format: "filePath = %@", file.deletingLastPathComponent().filePath)
                                     if let folder = try viewContext.fetch(fetchRequest).first {
-                                        fileState.currentLocalFolder = folder
-                                        fileState.currentLocalFile = file
+                                        fileState.currentActiveGroup = .localFolder(folder)
+                                        fileState.currentActiveFile = .localFile(file)
                                         fileState.expandToGroup(folder.objectID)
                                         dismiss()
                                     }
@@ -297,10 +338,18 @@ fileprivate struct SerachContent: View {
             }
             .font(.headline)
             .padding(4)
-            .background(.background)
+            .apply{ content in
+                if #available(macOS 26.0, iOS 26.0, *), source == .normal {
+                    content
+                        .background(Color.textBackgroundColor)
+                } else {
+                    content
+                        .background(.background)
 #if canImport(AppKit)
-            .visualEffect(material: .sheet)
+                        .visualEffect(material: .sheet)
 #endif
+                }
+            }
         }
     }
     
@@ -313,9 +362,11 @@ fileprivate struct SerachContent: View {
         if let group {
             tree.insert(group, at: 0)
         }
-        while let parent = group?.parent {
+        var depth = 0
+        while let parent = group?.parent, depth < 10 {
             tree.insert(parent, at: 0)
             group = parent
+            depth += 1
         }
         return tree.map{ $0.name ?? String(localizable: .generalUntitled) }.joined(separator: " > ")
     }
@@ -373,18 +424,18 @@ fileprivate struct SerachContent: View {
             dismiss()
             let file = searchCollaborationFiles[index]
             if let limit = store.collaborationRoomLimits,
-                      fileState.collaboratingFiles.count >= limit,
-                      !fileState.collaboratingFiles.contains(file) {
+               fileState.collaboratingFiles.count >= limit,
+               !fileState.collaboratingFiles.contains(file) {
                 store.togglePaywall(reason: .roomLimit)
             } else {
-                fileState.isInCollaborationSpace = true
-                fileState.currentCollaborationFile = .room(file)
+                fileState.currentActiveGroup = .collaboration
+                fileState.currentActiveFile = .collaborationFile(file)
             }
         } else if index < searchCollaborationFiles.count + searchFiles.count {
             let file = searchFiles[index - searchCollaborationFiles.count]
             if let group = file.group {
-                fileState.currentGroup = group
-                fileState.currentFile = file
+                fileState.currentActiveGroup = .group(group)
+                fileState.currentActiveFile = .file(file)
                 fileState.expandToGroup(group.objectID)
                 dismiss()
             }
@@ -396,8 +447,8 @@ fileprivate struct SerachContent: View {
                         let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
                         fetchRequest.predicate = NSPredicate(format: "filePath = %@", file.deletingLastPathComponent().filePath)
                         if let folder = try viewContext.fetch(fetchRequest).first {
-                            fileState.currentLocalFolder = folder
-                            fileState.currentLocalFile = file
+                            fileState.currentActiveGroup = .localFolder(folder)
+                            fileState.currentActiveFile = .localFile(file)
                             fileState.expandToGroup(folder.objectID)
                             dismiss()
                         }
@@ -422,7 +473,6 @@ fileprivate struct SearchTextFieldStyle: TextFieldStyle {
                 .textFieldStyle(.plain)
         }
         .padding(10)
-        .font(.title)
     }
 }
 
@@ -502,8 +552,4 @@ fileprivate struct SearchItemRow: View {
             }
         }
     }
-}
-
-#Preview {
-    SerachContent()
 }

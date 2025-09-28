@@ -39,11 +39,13 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
 #elseif os(macOS)
             Popover(arrowEdge: .trailing) {
                 FileCheckpointDetailView(checkpoint: checkpoint)
-                    .padding(40)
             } label: {
                 label()
             }
-            .buttonStyle(ListButtonStyle())
+            .buttonStyle(
+                ExcalidrawZSidebarRowButtonStyle(isSelected: false, isMultiSelected: false)
+            )
+//            .buttonStyle(ListButtonStyle())
 #endif
     }
     
@@ -51,14 +53,18 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
     private func label() -> some View {
         VStack(alignment: .leading) {
             HStack {
-                Text(checkpoint.filename ?? "")
+                Text((checkpoint.filename ?? "")/* + " - \(checkpoint.objectID)"*/)
                     .font(.headline)
                 Spacer()
             }
             
             HStack(spacing: 0) {
                 if let file {
-                    Text(.localizable(.checkpointsElementsDescription(file.elements.count)))
+                    if #available(macOS 13.0, iOS 16.0, *) {
+                        Text(.localizable(.checkpointsElementsDescription(file.elements.count)))
+                    } else {
+                        Text(file.elements.count.formatted())
+                    }
                 }
                 Text(" · ")
                 if let content = checkpoint.content {

@@ -14,6 +14,7 @@ struct LibraryItemView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
     
+    @EnvironmentObject var fileState: FileState
     @EnvironmentObject var libraryViewModel: LibraryViewModel
     
     var item: LibraryItem
@@ -58,8 +59,15 @@ struct LibraryItemView: View {
                 }
                 return itemProvider
             }
+            .modifier(LibraryItemContentBackgroundModifier())
+            .simultaneousGesture(TapGesture(count: 2).onEnded {
+                addToCanvas()
+            })
             .contextMenu { contextMenu().labelStyle(.titleAndIcon) }
-            .confirmationDialog(.localizable(.librariesRemoveItemConfirmationTitle), isPresented: $isDeleteConfirmPresented) {
+            .confirmationDialog(
+                String(localizable: .librariesRemoveItemConfirmationTitle),
+                isPresented: $isDeleteConfirmPresented
+            ) {
                 AsyncButton(role: .destructive) {
                     try await deleteLibraryItem()
                 } label: {
@@ -84,7 +92,6 @@ struct LibraryItemView: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
         LibraryItemContentView(item: item)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
         .font(.footnote)
         .lineLimit(1)
         .truncationMode(.middle)
@@ -93,12 +100,13 @@ struct LibraryItemView: View {
     @MainActor @ViewBuilder
     private func contextMenu() -> some View {
         if !inSelectionMode {
-            Button {
-                addToCanvas()
-            } label: {
-                Label(.localizable(.librariesButtonItemAddToCanvas), systemSymbol: .plusSquare)
+            if fileState.currentActiveFile != nil {
+                Button {
+                    addToCanvas()
+                } label: {
+                    Label(.localizable(.librariesButtonItemAddToCanvas), systemSymbol: .plusSquare)
+                }
             }
-
             if libraries.count > 1 {
                 Menu {
                     ForEach(libraries.filter({$0.name != nil && $0 != self.item.library})) { library in
@@ -124,6 +132,9 @@ struct LibraryItemView: View {
     }
     
     private func addToCanvas() {
+        guard fileState.currentActiveFile != nil else {
+            return
+        }
         Task {
             do {
                 try await libraryViewModel.excalidrawWebCoordinator?.loadLibraryItem(item: item.excalidrawLibrary)
@@ -199,40 +210,39 @@ struct LibraryItemContentView: View {
     
     @State private var image: Image?
 
+    var displayColorScheme: ColorScheme {
+        appPreference.excalidrawAppearance == .dark || (appPreference.excalidrawAppearance == .auto && colorScheme == .dark) ? .dark : .light
+    }
     
     var body: some View {
-        ZStack {
-            if appPreference.excalidrawAppearance == .light || (appPreference.excalidrawAppearance == .auto && colorScheme == .light) {
-                content()
-            } else if appPreference.excalidrawAppearance == .dark || (appPreference.excalidrawAppearance == .auto && colorScheme == .dark) {
-                content()
-                    .colorInvert()
-                    .hueRotation(Angle(degrees: 180))
-            }
-        }
-        .onAppear {
-            guard let webCoordinator = exportState.excalidrawWebCoordinator else { return }
-            Task.detached {
-                do {
-                    let image: Image
-                    if let platformImage = excalidrawLibItemsCache.object(forKey: NSString(string: item.libraryItems[0].id)) {
-                        image = Image(platformImage: platformImage)
-                    } else {
-                        let nsImage = try await webCoordinator.exportElementsToPNG(
-                            elements: item.libraryItems[0].elements,
-                            colorScheme: .light
-                        )
-                        excalidrawLibItemsCache.setObject(nsImage, forKey: NSString(string: item.libraryItems[0].id))
-                        image = Image(platformImage: nsImage)
+        content()
+            .onAppear {
+                guard let webCoordinator = exportState.excalidrawWebCoordinator else { return }
+                let colorScheme: ColorScheme = displayColorScheme
+                Task.detached {
+                    do {
+                        let image: Image
+                        if let platformImage = excalidrawLibItemsCache.object(
+                            forKey: NSString(string: item.libraryItems[0].id + (colorScheme == .dark ? "_dark" : "_light"))
+                        ) {
+                            image = Image(platformImage: platformImage)
+                        } else {
+                            let nsImage = try await webCoordinator.exportElementsToPNG(
+                                elements: item.libraryItems[0].elements,
+                                withBackground: false,
+                                colorScheme: colorScheme,
+                            )
+                            excalidrawLibItemsCache.setObject(nsImage, forKey: NSString(string: item.libraryItems[0].id + (colorScheme == .dark ? "_dark" : "_light")))
+                            image = Image(platformImage: nsImage)
+                        }
+                        await MainActor.run {
+                            self.image = image
+                        }
+                    } catch {
+                        dump(error)
                     }
-                    await MainActor.run {
-                        self.image = image
-                    }
-                } catch {
-                    dump(error)
                 }
             }
-        }
     }
     
     @MainActor @ViewBuilder
@@ -250,7 +260,48 @@ struct LibraryItemContentView: View {
         }
         .frame(height: size)
         .aspectRatio(1, contentMode: .fit)
-        .background(.white)
+        .contentShape(Rectangle())
+//        .apply { content in
+//            if #available(macOS 26.0, iOS 26.0, *) {
+//                content
+//                    .glassEffect(
+//                        .clear,
+//                        in: RoundedRectangle(cornerRadius: 20)
+//                    )
+//                    .background(.black, in: RoundedRectangle(cornerRadius: 20))
+//            } else {
+//                content
+//                    .background(
+//                        displayColorScheme == .dark ? Color(red: 18/255.0, green: 18/255.0, blue: 18/255.0) : .white,
+//                        in: RoundedRectangle(cornerRadius: 6)
+//                    )
+//            }
+//        }
     }
     
+}
+
+struct LibraryItemContentBackgroundModifier: ViewModifier {
+    @Environment(\.colorScheme) var colorScheme
+    @EnvironmentObject var appPreference: AppPreference
+    var displayColorScheme: ColorScheme {
+        appPreference.excalidrawAppearance == .dark || (appPreference.excalidrawAppearance == .auto && colorScheme == .dark) ? .dark : .light
+    }
+    func body(content: Content) -> some View {
+        content
+        .background {
+            let radius: CGFloat = if #available(macOS 26.0, iOS 26.0, *) {
+                20
+            } else {
+                6
+            }
+            
+            RoundedRectangle(cornerRadius: radius)
+                .stroke(.separator, lineWidth: 1)
+            RoundedRectangle(cornerRadius: radius)
+                .fill(
+                    displayColorScheme == .dark ? Color(red: 18/255.0, green: 18/255.0, blue: 18/255.0) : .white
+                )
+        }
+    }
 }

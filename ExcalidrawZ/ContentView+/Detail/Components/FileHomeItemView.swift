@@ -1,0 +1,422 @@
+//
+//  FileHomeItemView.swift
+//  ExcalidrawZ
+//
+//  Created by Dove Zachary on 8/3/25.
+//
+
+import SwiftUI
+import ChocofordUI
+
+extension Notification.Name {
+    static let filePreviewShouldRefresh = Notification.Name("FilePreviewShouldRefresh")
+}
+
+struct FileHomeItemPreferenceKey: PreferenceKey {
+    static var defaultValue: [String: Anchor<CGRect>] = [:]
+    
+    static func reduce(value: inout [String: Anchor<CGRect>], nextValue: () ->  [String: Anchor<CGRect>]) {
+        value.merge(nextValue()) { $1 }
+    }
+}
+
+class FileItemPreviewCache: NSCache<NSString, NSImage> {
+    static let shared = FileItemPreviewCache()
+
+    static func cacheKey(for file: FileState.ActiveFile, colorScheme: ColorScheme) -> NSString {
+        file.id + (colorScheme == .light ? "_light" : "_dark") as NSString
+    }
+    
+    func getPreviewCache(forFile file: FileState.ActiveFile, colorScheme: ColorScheme) -> NSImage? {
+        self.object(forKey: Self.cacheKey(for: file, colorScheme: colorScheme))
+    }
+    
+    func removePreviewCache(forFile file: FileState.ActiveFile, colorScheme: ColorScheme) {
+        self.removeObject(forKey: Self.cacheKey(for: file, colorScheme: colorScheme))
+    }
+    
+}
+
+struct FileHomeItemView: View {
+    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.managedObjectContext) var viewContext
+    @Environment(\.isEnabled) private var isEnabled
+    
+    @EnvironmentObject var fileState: FileState
+    @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
+
+    var file: FileState.ActiveFile
+    var canMultiSelect: Bool
+    var fileID: String
+    var filename: String
+    var excalidrawFileGetter: (FileState.ActiveFile, NSManagedObjectContext) -> ExcalidrawFile?
+    var customLabel: AnyView? = nil
+    
+    init(
+        file: FileState.ActiveFile,
+        canMultiSelect: Bool = true
+    ) {
+        self.file = file
+        self.canMultiSelect = canMultiSelect
+        switch file {
+            case .file(let file):
+                self.fileID = file.objectID.description
+                self.filename = file.name ?? String(localizable: .generalUntitled)
+            case .localFile(let url):
+                self.fileID = url.absoluteString
+                self.filename = url.deletingPathExtension().lastPathComponent.isEmpty
+                ? String(localizable: .generalUntitled)
+                : url.deletingPathExtension().lastPathComponent
+            case .temporaryFile(let url):
+                self.fileID = url.absoluteString
+                self.filename = url.deletingPathExtension().lastPathComponent.isEmpty
+                ? String(localizable: .generalUntitled)
+                : url.deletingPathExtension().lastPathComponent
+            case .collaborationFile(let collaborationFile):
+                self.fileID = collaborationFile.objectID.description
+                self.filename = collaborationFile.name ?? String(localizable: .generalUntitled)
+        }
+        self.excalidrawFileGetter = { activeFile, context in
+            do {
+                switch activeFile {
+                    case .file(let file):
+                        return try ExcalidrawFile(from: file.objectID, context: context)
+                    case .localFile(let url):
+                        return try ExcalidrawFile(contentsOf: url)
+                    case .temporaryFile(let url):
+                        return try ExcalidrawFile(contentsOf: url)
+                    case .collaborationFile(let collaborationFile):
+                        return try ExcalidrawFile(from: collaborationFile.objectID, context: context)
+                }
+            } catch {
+                print("excalidrawFileGetter error:", error)
+                return nil
+            }
+        }
+    }
+
+    init<Label: View>(
+        file: FileState.ActiveFile,
+        canMultiSelect: Bool = true,
+        @ViewBuilder customLabel: () -> Label
+    ) {
+        self.init(file: file, canMultiSelect: canMultiSelect)
+        self.customLabel = AnyView(customLabel())
+    }
+
+    @State private var coverImage: Image? = nil
+
+    @State private var width: CGFloat?
+    @State private var isHovered = false
+
+    static let roundedCornerRadius: CGFloat = 12
+
+    let cache = FileItemPreviewCache.shared
+    
+    var cacheKey: String {
+        colorScheme == .light ? fileID + "_light" : fileID + "_dark"
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if let coverImage {
+                Color.clear
+                    .overlay {
+                        coverImage
+                            .resizable()
+                            .scaledToFill()
+                            .allowsHitTesting(false)
+                    }
+                    .clipShape(Rectangle())
+                    .frame(height: width == nil ? 180 : width! * 0.5625)
+            } else {
+                Color.clear
+                    .overlay {
+                        ProgressView()
+                            .controlSize(.small)
+                            .padding(.bottom, 40)
+                    }
+                    .frame(height: width == nil ? 180 : width! * 0.5625)
+            }
+        }
+        .readWidth($width)
+        .overlay(alignment: .bottom) {
+            ZStack {
+                if let customLabel {
+                    customLabel
+                } else {
+                    HStack {
+                        Text(filename)
+                            .lineLimit(1)
+                            .font(.headline)
+                        Spacer()
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(.ultraThinMaterial)
+        }
+        .clipShape(
+            RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+        )
+        .background {
+            if #available(macOS 26.0, iOS 26.0, *) {
+                RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+                    .fill(
+                        colorScheme == .light
+                        ? AnyShapeStyle(HierarchicalShapeStyle.secondary)
+                        : AnyShapeStyle(Color.clear)
+                    )
+                    .glassEffect(.clear, in: .rect(cornerRadius: 12))
+                    .shadow(
+                        color: colorScheme == .light
+                        ? Color.gray.opacity(0.33)
+                        : Color.black.opacity(0.33),
+                        radius: isHovered
+                        ? colorScheme == .light ? 2 : 6
+                        : 0
+                    )
+            } else {
+                RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+                    .fill(.background)
+                    .shadow(
+                        color: colorScheme == .light
+                        ? Color.gray.opacity(0.33)
+                        : Color.black.opacity(0.33),
+                        radius: isHovered
+                        ? colorScheme == .light ? 2 : 6
+                        : 0
+                    )
+            }
+        }
+        .background {
+            Color.clear
+                .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
+                    [fileID+"SOURCE": value]
+                }
+        }
+        .overlay {
+            Color.clear
+                .contentShape(Rectangle())
+                .simultaneousGesture(TapGesture(count: 2).onEnded {
+                    openFile()
+                })
+                .modifier(
+                    FileHomeItemSelectModifier(
+                        file: file,
+                        sortField: fileState.sortField,
+                        canMultiSelect: canMultiSelect
+                    )
+                )
+                .modifier(FileHomeItemContextMenuModifier(file: file))
+                .onHover {
+                    isHovered = $0
+                }
+        }
+        .modifier(FileHomeItemDragModifier(file: file))
+        .opacity(fileHomeItemTransitionState.shouldHideItem == fileID ? 0 : 1)
+        .animation(.smooth(duration: 0.2), value: isHovered)
+        .onReceive(
+            NotificationCenter.default.publisher(for: .filePreviewShouldRefresh)
+        ) { notification in
+            guard let fileID = notification.object as? String,
+                  self.file.id == fileID else { return }
+            
+            print("Refreshing preview for file: \(fileID)")
+            
+            self.getElementsImage()
+        }
+        .onChange(of: file) { newValue in
+            self.getElementsImage()
+        }
+        .watchImmediately(of: colorScheme) { _ in
+            if let image = cache.getPreviewCache(forFile: file, colorScheme: colorScheme) {
+                Task.detached {
+                    let image = Image(platformImage: image)
+                    await MainActor.run {
+                        self.coverImage = image
+                    }
+                }
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.getElementsImage()
+                }
+            }
+        }
+    }
+
+    private func getElementsImage() {
+        // print("Generating preview for file 1: \(file.name)")
+        if let excalidrawFile = excalidrawFileGetter(file, viewContext) {
+            Task {
+                while fileState.excalidrawWebCoordinator?.isLoading == true {
+                    try? await Task.sleep(nanoseconds: UInt64(1e+9 * 1))
+                }
+                // print("Generating preview for file 2: \(file.name)")
+                if let image = try? await fileState.excalidrawWebCoordinator?.exportElementsToPNG(
+                    elements: excalidrawFile.elements,
+                    files: excalidrawFile.files.isEmpty ? nil : excalidrawFile.files,
+                    colorScheme: colorScheme
+                ) {
+                    Task.detached {
+                        await MainActor.run {
+                            cache.setObject(image, forKey: cacheKey as NSString)
+                        }
+                        let image = Image(platformImage: image)
+                        await MainActor.run {
+                            self.coverImage = image
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func openFile() {
+        guard isEnabled else { return }
+        fileState.currentActiveFile = file
+        
+        switch file {
+            case .file(let file):
+                
+                let getTrashGroup: () -> Group? = {
+                    let trashGroupFetchRequest = NSFetchRequest<Group>(entityName: "Group")
+                    trashGroupFetchRequest.predicate = NSPredicate(format: "type == 'trash'")
+                    return try? viewContext.fetch(trashGroupFetchRequest).first
+                }
+                
+                fileState.currentActiveGroup = file.group == nil
+                ? nil
+                : file.inTrash
+                ? .group(getTrashGroup() ?? file.group!)
+                : .group(file.group!)
+                
+                if let groupID = file.group?.objectID, file.inTrash == false {
+                    fileState.expandToGroup(groupID)
+                }
+            case .localFile(let url):
+                do {
+                    let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                    fetchRequest.predicate = NSPredicate(format: "url == %@", url.deletingLastPathComponent() as NSURL)
+                    fetchRequest.fetchLimit = 1
+                    let folders = try viewContext.fetch(fetchRequest)
+                    if let folder = folders.first {
+                        fileState.currentActiveGroup = .localFolder(folder)
+                    } else {
+                        // Handle case where local folder is not found
+                        fileState.currentActiveGroup = nil
+                    }
+                } catch {}
+            case .temporaryFile:
+                fileState.currentActiveGroup = .temporary
+            case .collaborationFile(let file):
+                fileState.currentActiveGroup = .collaboration
+                if !fileState.collaboratingFiles.contains(file) {
+                    fileState.collaboratingFiles.append(file)
+                }
+        }
+    }
+
+    @ViewBuilder
+    static func placeholder() -> some View {
+        ViewSizeReader { size in
+            let width = size.width > 0 ? size.width : nil
+            if #available(macOS 14.0, *) {
+                RoundedRectangle(cornerRadius: roundedCornerRadius)
+                    .fill(.placeholder)
+                    .opacity(0.2)
+                    .frame(height: width == nil ? 180 : width! * 0.5625)
+            } else {
+                RoundedRectangle(cornerRadius: roundedCornerRadius)
+                    .fill(Color.gray.opacity(0.1))
+                    .frame(height: width == nil ? 180 : width! * 0.5625)
+            }
+        }
+    }
+
+}
+
+private struct FileHomeItemContextMenuModifier: ViewModifier {
+    var file: FileState.ActiveFile
+    
+    func body(content: Content) -> some View {
+        switch file {
+            case .file(let file):
+                content
+                    .modifier(FileContextMenuModifier(file: file))
+            case .localFile(let url):
+                content
+                    .modifier(LocalFileRowContextMenuModifier(file: url))
+            case .temporaryFile(let url):
+                content
+                    .modifier(TemporaryFileContextMenuModifier(file: url))
+            case .collaborationFile(let collaborationFile):
+                content
+                    .modifier(CollaborationFileContextMenuModifier(file: collaborationFile))
+        }
+            
+    }
+}
+
+private struct FileHomeItemDragModifier: ViewModifier {
+    var file: FileState.ActiveFile
+    
+    func body(content: Content) -> some View {
+        switch file {
+            case .file(let file):
+                content
+                    .modifier(FileRowDragModifier(file: file))
+            case .localFile(let url):
+                content
+                    .modifier(LocalFileDragModifier(file: url))
+            case .temporaryFile(let url):
+                content
+                    .modifier(LocalFileDragModifier(file: url))
+            case .collaborationFile(let collaborationFile):
+                content
+                    .modifier(FileRowDragModifier(file: collaborationFile))
+                
+        }
+    }
+}
+
+
+private struct DatabaseFileHomeDropContianer<F: ExcalidrawFileRepresentable>: View {
+    var file: F
+    
+    @FetchRequest
+    private var files: FetchedResults<F>
+    
+    var content: (_ files: FetchedResults<F>) -> AnyView
+    
+    
+    init<Content: View>(
+        file: F,
+        @ViewBuilder content: @escaping (_ files: FetchedResults<F>) -> Content
+    ) where F == File {
+        self.file = file
+        self._files = FetchRequest<File>(
+            sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)],
+            predicate: NSPredicate(format: "group == %@", file.group ?? Group()),
+            animation: .smooth
+        )
+        self.content = { AnyView(content($0)) }
+    }
+    
+    init<Content: View>(
+        file: F,
+        @ViewBuilder content: @escaping (_ files: FetchedResults<F>) -> Content
+    ) where F == CollaborationFile {
+        self.file = file
+        self._files = FetchRequest<CollaborationFile>(
+            sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)],
+            animation: .smooth
+        )
+        self.content = { AnyView(content($0)) }
+    }
+    
+    var body: some View {
+        content(files)
+    }
+}

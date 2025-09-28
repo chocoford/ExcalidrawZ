@@ -327,13 +327,13 @@ extension ExcalidrawCore {
     
     func exportElementsToPNGData(
         elements: [ExcalidrawElement],
+        files: [String : ExcalidrawFile.ResourceFile]? = nil,
         embedScene: Bool = false,
         withBackground: Bool = true,
         colorScheme: ColorScheme
     ) async throws -> Data {
         let id = UUID().uuidString
-        let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified()), \(embedScene), \(withBackground), \(colorScheme == .dark)); 0;"
-        self.logger.debug("\(#function), script:\n\(script)")
+        let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified()), \(files?.jsonStringified() ?? "undefined"), \(embedScene), \(withBackground), \(colorScheme == .dark)); 0;"
         Task { @MainActor in
             do {
                 try await webView.evaluateJavaScript(script)
@@ -360,11 +360,13 @@ extension ExcalidrawCore {
     func exportElementsToPNG(
         elements: [ExcalidrawElement],
         embedScene: Bool = false,
+        files: [String : ExcalidrawFile.ResourceFile]? = nil,
         withBackground: Bool = true,
         colorScheme: ColorScheme
     ) async throws -> PlatformImage {
         let data = try await self.exportElementsToPNGData(
             elements: elements,
+            files: files,
             embedScene: embedScene,
             withBackground: withBackground,
             colorScheme: colorScheme
@@ -378,13 +380,13 @@ extension ExcalidrawCore {
     
     func exportElementsToSVGData(
         elements: [ExcalidrawElement],
+        files: [String : ExcalidrawFile.ResourceFile]? = nil,
         embedScene: Bool = false,
         withBackground: Bool = true,
         colorScheme: ColorScheme
     ) async throws -> Data {
         let id = UUID().uuidString
-        let script = try "window.excalidrawZHelper.exportElementsToSvg('\(id)', \(elements.jsonStringified()), \(embedScene), \(withBackground), \(colorScheme == .dark)); 0;"
-        self.logger.debug("\(#function)")
+        let script = try "window.excalidrawZHelper.exportElementsToSvg('\(id)', \(elements.jsonStringified()), \(files?.jsonStringified() ?? "undefined"), \(embedScene), \(withBackground), \(colorScheme == .dark)); 0;"
         Task { @MainActor in
             do {
                 try await webView.evaluateJavaScript(script)
@@ -436,12 +438,14 @@ extension ExcalidrawCore {
     }
     func exportElementsToSVG(
         elements: [ExcalidrawElement],
+        files: [String : ExcalidrawFile.ResourceFile]? = nil,
         embedScene: Bool = false,
         withBackground: Bool = true,
         colorScheme: ColorScheme
     ) async throws -> PlatformImage {
         let data = try await exportElementsToSVGData(
             elements: elements,
+            files: files,
             embedScene: embedScene,
             withBackground: withBackground,
             colorScheme: colorScheme

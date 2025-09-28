@@ -14,7 +14,7 @@ struct FileHistorySettingsView: View {
     
     var body: some View {
         
-        if let currentFile = fileState.currentFile {
+        if case .file(let currentFile) = fileState.currentActiveFile {
             HStack {
                 FileCheckpointListView(file: currentFile/*, selection: $currentCheckpoint*/)
                 if let currentCheckpoint {

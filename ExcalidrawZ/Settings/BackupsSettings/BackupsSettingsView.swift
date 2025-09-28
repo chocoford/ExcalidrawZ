@@ -68,7 +68,7 @@ struct BackupsSettingsView: View {
             .clipped()
             .animation(.default, value: route)
             .frame(width: 240)
-            .visualEffect(material: .sidebar)
+            // .visualEffect(material: .sidebar)
 
             Divider()
             
@@ -84,7 +84,7 @@ struct BackupsSettingsView: View {
             .frame(maxWidth: .infinity)
         }
         .confirmationDialog(
-            .localizable(.backupsDeleteConfirmationTitle),
+            String(localizable: .backupsDeleteConfirmationTitle),
             isPresented: Binding { backupToBeDeleted != nil } set: { if !$0 { backupToBeDeleted = nil } }
         ) {
             Button(role: .destructive) {

@@ -13,6 +13,7 @@ class SegmentedPickerModel<Selection>: ObservableObject where Selection : Hashab
 }
 
 struct SegmentedPicker<Selection, Content>: View where Selection : Hashable, Content : View {
+    @Environment(\.colorScheme) private var colorScheme
     
     @Binding var selection: Selection?
     var content: () -> Content
@@ -38,13 +39,27 @@ struct SegmentedPicker<Selection, Content>: View where Selection : Hashable, Con
             if let selection, let anchor = value[selection.hashValue] {
                 GeometryReader { geomerty in
                     let rect = geomerty[anchor]
-
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(.background)
-                        .shadow(radius: 1, y: 2)
-                        .frame(width: rect.width, height: rect.height)
-                        .offset(x: rect.minX, y: rect.minY)
-                        .animation(.bouncy, value: rect)
+                    SwiftUI.Group {
+                        if #available(macOS 26.0, iOS 26.0, *) {
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(
+                                    colorScheme == .dark
+                                    ? AnyShapeStyle(Color.clear)
+                                    : AnyShapeStyle(Material.ultraThickMaterial)
+                                )
+                                .glassEffect(
+                                    .clear,
+                                    in: .rect(cornerRadius: 10)
+                                )
+                        } else {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(.background)
+                                .shadow(radius: 1, y: 2)
+                        }
+                    }
+                    .frame(width: rect.width, height: rect.height)
+                    .offset(x: rect.minX, y: rect.minY)
+                    .animation(.bouncy, value: rect)
                 }
             }
         }
@@ -117,12 +132,32 @@ struct SegmentedPickerItem<Value>: View where Value : Hashable {
     var isSelected: Bool { value == viewModel.selection }
     
     var body: some View {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            buttonView()
+                .buttonStyle(
+                    .text(
+                        size: .xsmall,
+                        square: true,
+                        shape: .roundedRectangle(cornerRadius: 10)
+                    )
+                )
+        } else {
+            buttonView()
+                .buttonStyle(.borderless)
+        }
+    }
+    
+    
+    @MainActor @ViewBuilder
+    private func buttonView() -> some View {
         Button {
             viewModel.selection = value
         } label: {
             content
                 .foregroundStyle(
-                    isSelected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(HierarchicalShapeStyle.primary)
+                    isSelected
+                    ? AnyShapeStyle(Color.accentColor)
+                    : AnyShapeStyle(HierarchicalShapeStyle.primary)
                 )
                 .background {
                     Color.clear
@@ -134,7 +169,6 @@ struct SegmentedPickerItem<Value>: View where Value : Hashable {
                         }
                 }
         }
-        .buttonStyle(.borderless)
     }
 }
 

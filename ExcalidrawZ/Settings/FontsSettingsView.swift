@@ -116,6 +116,7 @@ struct MultiFontPickerView: View {
                     } label: {
                         Text(localizable: .settingsFontsAddedFontsButtonOpenFontBook)
                     }
+                    .modernButtonStyle(shape: .modern)
                 }
                 
                 Spacer()

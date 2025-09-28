@@ -17,6 +17,26 @@ struct LibrarySectionContent: View {
     @State private var isExpanded = false
 #endif
     
+    @FetchRequest
+    private var items: FetchedResults<LibraryItem>
+    
+    init(
+        allLibraries: FetchedResults<Library>,
+        library: Library,
+        selections: Binding<Set<LibraryItem>>?,
+        isExpanded: Bool = true
+    ) {
+        self.allLibraries = allLibraries
+        self.library = library
+        self.selections = selections
+        self.isExpanded = isExpanded
+        self._items = FetchRequest(
+            sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],
+            predicate: NSPredicate(format: "library = %@", library),
+            animation: .default
+        )
+    }
+    
     let columns = [
         GridItem(.flexible()),
         GridItem(.flexible()),
@@ -26,9 +46,7 @@ struct LibrarySectionContent: View {
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             LazyVGrid(columns: columns) {
-                ForEach(
-                    (library.items?.allObjects as? [LibraryItem])?.sorted(by: {$0.createdAt ?? .distantPast < $1.createdAt ?? .distantPast}) ?? []
-                ) { item in
+                ForEach(items) { item in
                     LibraryItemView(item: item, inSelectionMode: selections != nil, libraries: allLibraries)
                         .transition(.asymmetric(insertion: .identity, removal: .scale.animation(.bouncy)))
                         .overlay(alignment: .bottomTrailing) {
@@ -52,6 +70,7 @@ struct LibrarySectionContent: View {
                                 }
                                 .padding(2)
                                 .frame(width: size, height: size)
+                                .padding(4)
                             }
                         }
                         .simultaneousGesture(

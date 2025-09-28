@@ -16,13 +16,13 @@ struct FileHistoryButton: View {
     @State private var isPresented = false
     
     private var disabled: Bool {
-        fileState.currentGroup?.groupType == .trash ||
-        (
-            fileState.currentFile == nil &&
-            fileState.currentLocalFile == nil &&
-            fileState.currentTemporaryFile == nil &&
-            fileState.currentCollaborationFile == nil
-        )
+        {
+            if case .group(let group) = fileState.currentActiveGroup {
+                return group.groupType == .trash
+            }
+            return false
+        }() ||
+        fileState.currentActiveFile == nil
     }
 
     var body: some View {
@@ -35,39 +35,52 @@ struct FileHistoryButton: View {
         .help(.localizable(.checkpoints))
 #if os(macOS)
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-            if let file = fileState.currentFile {
-                FileCheckpointListView(file: file)
-            } else if let localFile = fileState.currentLocalFile {
-                FileCheckpointListView(localFile: localFile)
-            } else if let tempFile = fileState.currentTemporaryFile {
-                FileCheckpointListView(localFile: tempFile)
-            } else if case .room(let file) = fileState.currentCollaborationFile {
-                FileCheckpointListView(file: file)
+            switch fileState.currentActiveFile {
+                case .file(let file):
+                    FileCheckpointListView(file: file)
+                case .localFile(let url):
+                    FileCheckpointListView(localFile: url)
+                case .temporaryFile(let url):
+                    FileCheckpointListView(localFile: url)
+                case .collaborationFile(let collaborationFile):
+                    FileCheckpointListView(file: collaborationFile)
+                default:
+                    EmptyView()
             }
         }
 #elseif os(iOS)
         .sheet(isPresented: $isPresented) {
-            if let file = fileState.currentFile {
-                if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
-                    FileCheckpointListView(file: file)
-                        .presentationCompactAdaptation(.popover)
-                } else {
-                    FileCheckpointListView(file: file)
-                }
-            } else if let localFile = fileState.currentLocalFile {
-                if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
-                    FileCheckpointListView(localFile: localFile)
-                        .presentationCompactAdaptation(.popover)
-                } else {
-                    FileCheckpointListView(localFile: localFile)
-                }
-            } else if let tempFile = fileState.currentTemporaryFile {
-                if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
-                    FileCheckpointListView(localFile: tempFile)
-                        .presentationCompactAdaptation(.popover)
-                } else {
-                    FileCheckpointListView(localFile: tempFile)
-                }
+            switch fileState.currentActiveFile {
+                case .file(let file):
+                    if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
+                        FileCheckpointListView(file: file)
+                            .presentationCompactAdaptation(.popover)
+                    } else {
+                        FileCheckpointListView(file: file)
+                    }
+                case .localFile(let url):
+                    if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
+                        FileCheckpointListView(localFile: localFile)
+                            .presentationCompactAdaptation(.popover)
+                    } else {
+                        FileCheckpointListView(localFile: localFile)
+                    }
+                case .temporaryFile(let url):
+                    if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
+                        FileCheckpointListView(localFile: tempFile)
+                            .presentationCompactAdaptation(.popover)
+                    } else {
+                        FileCheckpointListView(localFile: tempFile)
+                    }
+                case .collaborationFile(let collaborationFile):
+                    if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
+                        FileCheckpointListView(file: collaborationFile)
+                            .presentationCompactAdaptation(.popover)
+                    } else {
+                        FileCheckpointListView(file: collaborationFile)
+                    }
+                default:
+                    EmptyView()
             }
         }
 #endif
@@ -106,36 +119,71 @@ struct FileCheckpointListView<Checkpoint: FileCheckpointRepresentable>: View {
     @State private var selection: Checkpoint?
     
     var body: some View {
+        content()
+    }
+    
+    
+    @MainActor @ViewBuilder
+    private func content() -> some View {
 #if os(iOS)
-            NavigationStack {
-                List(selection: $selection) {
-                    ForEach(fileCheckpoints) { checkpoint in
-                        FileCheckpointRowView(checkpoint: checkpoint)
-                    }
+        content_iOS()
+#else
+        content_macOS()
+#endif
+    }
+    
+#if os(iOS)
+
+    @MainActor @ViewBuilder
+    private func content_iOS() -> some View {
+        NavigationStack {
+            List(selection: $selection) {
+                ForEach(fileCheckpoints) { checkpoint in
+                    FileCheckpointRowView(checkpoint: checkpoint)
                 }
-                .navigationTitle("File history")
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        if containerVerticalSizeClass == .compact {
-                            Button {
-                                dismiss()
-                            } label: {
-                                Label(.localizable(.generalButtonClose), systemSymbol: .chevronDown)
-                            }
+            }
+            .navigationTitle("File history")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if containerVerticalSizeClass == .compact {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Label(.localizable(.generalButtonClose), systemSymbol: .chevronDown)
                         }
                     }
                 }
             }
+        }
+    }
 #else
+    @MainActor @ViewBuilder
+    private func content_macOS() -> some View {
+        let _ = print("[updateElements FileCheckpointListView] checkpoints count: \(fileCheckpoints.count), unique count: \(Set(fileCheckpoints).count), ids: \(fileCheckpoints.map { $0.objectID })")
+        
+        if #available(macOS 26.0, *) {
+            List {
+                ForEach(fileCheckpoints, id: \.objectID) { checkpoint in
+                    FileCheckpointRowView(checkpoint: checkpoint)
+                }
+            }
+            .scrollContentBackground(.hidden)
+        } else if #available(macOS 13.0, *) {
             List {
                 ForEach(fileCheckpoints) { checkpoint in
                     FileCheckpointRowView(checkpoint: checkpoint)
                 }
             }
-            .onAppear {
-                print("[TEST] checkpoints: \(fileCheckpoints.count)")
+            .scrollContentBackground(.hidden)
+        } else {
+            List {
+                ForEach(fileCheckpoints,  id: \.objectID) { checkpoint in
+                    FileCheckpointRowView(checkpoint: checkpoint)
+                }
             }
-#endif
+        }
     }
+#endif
+
 }
 

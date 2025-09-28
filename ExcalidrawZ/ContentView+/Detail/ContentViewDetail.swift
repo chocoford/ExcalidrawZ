@@ -6,37 +6,37 @@
 //
 
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 import ChocofordUI
+import SplitView
 
 struct ContentViewDetail: View {
+    @Environment(\.alertToast) var alertToast
+
     @EnvironmentObject var fileState: FileState
     
     @Binding var isSettingsPresented: Bool
     
     @StateObject private var toolState = ToolState()
-
+    
     var body: some View {
-        ExcalidrawContainerView()
-           .modifier(ExcalidrawContainerToolbarContentModifier())
-           .opacity(fileState.isInCollaborationSpace ? 0 : 1)
-           .overlay {
-               ExcalidrawCollabContainerView()
-                   .opacity(fileState.isInCollaborationSpace ? 1 : 0)
-                   .allowsHitTesting(fileState.isInCollaborationSpace)
-           }
+        splitViewsContent()
+            .modifier(ExcalidrawContainerToolbarContentModifier())
 #if os(iOS)
-           .modifier(ApplePencilToolbarModifier())
-           .sheet(isPresented: $isSettingsPresented) {
-               if #available(macOS 13.0, iOS 16.4, *) {
-                   SettingsView()
-                       .presentationContentInteraction(.scrolls)
-               } else {
-                   SettingsView()
-               }
-           }
+            .modifier(ApplePencilToolbarModifier())
+            .sheet(isPresented: $isSettingsPresented) {
+                if #available(macOS 13.0, iOS 16.4, *) {
+                    SettingsView()
+                        .presentationContentInteraction(.scrolls)
+                } else {
+                    SettingsView()
+                }
+            }
 #endif
-           .environmentObject(toolState)
+            .environmentObject(toolState)
     }
     
     private func applyToolStateWebCoordinator() {
@@ -50,4 +50,49 @@ struct ContentViewDetail: View {
 //            }
 //        }
     }
+    
+    @MainActor @ViewBuilder
+    private func splitViewsContent() -> some View {
+        if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *), false {
+            ExcalidrawSplitViewsContainer()
+        } else if fileState.activeFiles.count > 0 {
+            ExcalidrawHomeView(isSettingsPresented: $isSettingsPresented)
+                .modifier(FileHomeItemTransitionModifier())
+        }
+    }
 }
+
+extension FileState.ActiveFile: FlexibleItem {
+    var title: String {
+        name ?? .init(localizable: .generalUntitled)
+    }
+}
+
+@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
+struct ExcalidrawSplitViewsContainer: View {
+    @Environment(\.managedObjectContext) var viewContext
+    @Environment(\.alertToast) var alertToast
+
+    @EnvironmentObject var fileState: FileState
+    
+    var body: some View {
+//        FlexibleSplitView(items: $fileState.activeFiles) { file in
+//            withAnimation {
+//                fileState.activeFiles.removeAll(where: {$0?.id == file?.id})
+//            }
+//        } subView: { activeFile in
+//            ExcalidrawContainerWrapper(activeFile: activeFile)
+//                .modifier(FileHomeItemTransitionModifier())
+//        }
+    }
+}
+
+
+#Preview {
+    if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *) {
+        
+    } else {
+        EmptyView()
+    }
+}
+

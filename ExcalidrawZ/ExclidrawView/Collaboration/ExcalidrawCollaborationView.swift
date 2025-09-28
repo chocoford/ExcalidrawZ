@@ -24,7 +24,7 @@ struct ExcalidrawCollaborationView: View {
     
     var isActive: Bool {
         if fileState.isInCollaborationSpace,
-           case .room(let room) = fileState.currentCollaborationFile {
+           case .collaborationFile(let room) = fileState.currentActiveFile {
             return room == file
         } else {
             return false

@@ -21,6 +21,8 @@ struct ContentView: View {
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject var appPreference: AppPreference
     
+    @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
+    
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ContentView")
     
     @State private var hideContent: Bool = false
@@ -29,7 +31,7 @@ struct ContentView: View {
     @StateObject private var exportState = ExportState()
     @StateObject private var layoutState = LayoutState()
     @StateObject private var shareFileState = ShareFileState()
-    
+
 #if canImport(AppKit)
     @State private var window: NSWindow?
 #elseif canImport(UIKit)
@@ -57,6 +59,7 @@ struct ContentView: View {
             .environmentObject(exportState)
             .environmentObject(layoutState)
             .environmentObject(shareFileState)
+            .modifier(DragStateModifier())
             .swiftyAlert(logs: true)
             .bindWindow($window)
             .containerSizeClassInjection()
@@ -83,52 +86,14 @@ struct ContentView: View {
                 Color.clear
             } else if isFirstImporting == true {
                 if #available(macOS 13.0, *) {
-                    welcomeView()
+                    ICloudSyncingView(isFirstImporting: isFirstImporting)
                 } else {
-                    welcomeView()
+                    ICloudSyncingView(isFirstImporting: isFirstImporting)
                         .frame(width: 1150, height: 580)
                 }
             } else {
-                if #available(macOS 14.0, iOS 17.0, *), appPreference.inspectorLayout == .sidebar {
-                    contentView()
-                        .inspector(isPresented: $layoutState.isInspectorPresented) {
-                            LibraryView()
-                                .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
-                        }
-                } else {
-                    contentView()
-                    if appPreference.inspectorLayout == .floatingBar {
-                        HStack {
-                            Spacer()
-                            if layoutState.isInspectorPresented {
-                                LibraryView()
-                                    .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    .background {
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(.regularMaterial)
-                                            .shadow(radius: 4)
-                                    }
-                                    .transition(.move(edge: .trailing))
-                            }
-                        }
-                        .animation(.easeOut, value: layoutState.isInspectorPresented)
-                        .padding(.top, 10)
-                        .padding(.horizontal, 10)
-                        .padding(.bottom, 40)
-                    }
-                }
-            }
-        }
-        .onAppear {
-            // Wait for on open URL.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                defer { isFirstAppear = false }
-                if !fileState.hasAnyActiveGroup && isFirstAppear {
-                    Task {
-                        try? await fileState.setToDefaultGroup()
-                    }
-                }
+                contentView()
+                    .modifier(LibraryTrailingSidebarModifier())
             }
         }
     }
@@ -142,21 +107,6 @@ struct ContentView: View {
         }
     }
     
-    @MainActor @ViewBuilder
-    private func welcomeView() -> some View {
-        ProgressView {
-            VStack {
-                if isFirstImporting == true {
-                    Text(.localizable(.welcomeTitle)).font(.title)
-                    Text(.localizable(.welcomeDescription))
-                } else {
-                    Text(.localizable(.welcomeSyncing))
-                }
-            }
-        }
-        .padding(40)
-    }
-    
     private func handleImport(_ notification: Notification) {
         guard let urls = notification.object as? [URL] else { return }
         if window?.isKeyWindow == true {
@@ -165,18 +115,19 @@ struct ContentView: View {
                     try await fileState.importFiles(urls)
                 } catch {
                     await alertToast(error)
+                    print("[handleImport] error: \(error)")
                 }
             }
         }
     }
     
     private func handleOpenFromURLs(_ notification: Notification) {
-        if let urls = notification.object as? [URL] {
+        if let urls = notification.object as? [URL], !urls.isEmpty {
             fileState.temporaryFiles.append(contentsOf: urls)
             fileState.temporaryFiles = Array(Set(fileState.temporaryFiles))
-            if !fileState.isTemporaryGroupSelected || fileState.currentTemporaryFile == nil {
-                fileState.isTemporaryGroupSelected = true
-                fileState.currentTemporaryFile = fileState.temporaryFiles.first
+            if fileState.currentActiveFile == nil || fileState.currentActiveGroup != .temporary {
+                fileState.currentActiveGroup = .temporary
+                fileState.currentActiveFile = .localFile(fileState.temporaryFiles.first!)
             }
         }
     }
@@ -193,6 +144,12 @@ struct ContentView: View {
     // Check if it is first launch by checking the files count.
     private func prepare() async {
         do {
+            guard !isICloudDisabled else {
+                isFirstImporting = false
+                try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: viewContext)
+                return
+            }
+            
             let isEmpty = try viewContext.fetch(NSFetchRequest<File>(entityName: "File")).isEmpty
             isFirstImporting = isEmpty
             if isFirstImporting == true, try await CKContainer.default().accountStatus() != .available {

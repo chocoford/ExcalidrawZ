@@ -110,7 +110,7 @@ extension Store {
         var description: String {
             switch self {
                 case .roomLimit:
-                    "You’ve reached the maximum number of collaborative rooms limitation in current Plan."
+                    String(localizable: .paywallReachReasonRoomLimit)
             }
         }
     }

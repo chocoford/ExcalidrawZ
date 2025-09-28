@@ -14,12 +14,15 @@ protocol DragMovableFile: NSManagedObject {
     var updatedAt: Date? { get set }
     var createdAt: Date? { get set }
     var name: String? { get set }
-    var group: Group? { get }
+    var group: Group? { get set }
 }
 
 extension File: DragMovableFile {}
 extension CollaborationFile: DragMovableFile {
-    var group: Group? { nil }
+    var group: Group? {
+        get { nil }
+        set { }
+    }
 }
 
 @available(macOS 13.0, *)
@@ -37,313 +40,462 @@ struct FileRowTransferable: Transferable {
     }
 }
 
-extension Notification.Name {
-    static let didDropFileRow = Notification.Name("DidDropFileRow")
-}
-
 extension UTType {
     static let excalidrawFileRow = UTType("com.chocoford.excalidrawFileRow")!
 }
 
-struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
-    @Environment(\.managedObjectContext) private var viewContext
-    @EnvironmentObject private var fileState: FileState
+struct FileRowDragModifier<DraggableFile: DragMovableFile>: ViewModifier {
+    @EnvironmentObject private var sidebarDragState: ItemDragState
     
     var file: DraggableFile
     
-    @FetchRequest
-    private var files: FetchedResults<DraggableFile>
-    
-    init(file: File, sortField: ExcalidrawFileSortField) where DraggableFile == File {
-        self.file = file
-        let sortDescriptors: [SortDescriptor<File>] = {
-            switch sortField {
-                case .updatedAt:
-                    [
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse)
-                    ]
-                case .name:
-                    [
-                        SortDescriptor(\.name, order: .reverse),
-                    ]
-                case .rank:
-                    [
-                        SortDescriptor(\.rank, order: .forward),
-                    ]
+    func body(content: Content) -> some View {
+        content
+            .opacity({
+                sidebarDragState.currentDragItem == .file(file.objectID) ||
+                sidebarDragState.currentDragItem == .collaborationFile(file.objectID)
+            }() ? 0.3 : 1)
+            .contentShape(Rectangle())
+            .onDrag {
+                let url = file.objectID.uriRepresentation()
+                if let file = file as? File {
+                    sidebarDragState.currentDragItem = .file(file.objectID)
+                } else if let file = file as? CollaborationFile {
+                    sidebarDragState.currentDragItem = .collaborationFile(file.objectID)
+                }
+                return NSItemProvider(
+                    item: url.dataRepresentation as NSData,
+                    typeIdentifier: UTType.excalidrawFileRow.identifier
+                )
             }
-        }()
-        var predicate: NSPredicate? = nil
-        if let group = file.group {
-            predicate = NSPredicate(format: "group = %@ AND inTrash == false", group)
-        }
-        self._files = FetchRequest<File>(
-            sortDescriptors: sortDescriptors,
-            predicate: predicate,
-            animation: .smooth
-        )
+    }
+}
+
+struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
+    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.alertToast) private var alertToast
+    
+    @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var sidebarDragState: ItemDragState
+    
+    var file: DraggableFile
+    var files: FetchedResults<DraggableFile>
+    
+    init(
+        file: File,
+        sameGroupFiles files: FetchedResults<File>,
+    ) where DraggableFile == File {
+        self.file = file
+        self.files = files
     }
         
-    init(file: CollaborationFile, sortField: ExcalidrawFileSortField) where DraggableFile == CollaborationFile {
+    init(
+        file: CollaborationFile,
+        allCollaborationFiles files: FetchedResults<CollaborationFile>
+    ) where DraggableFile == CollaborationFile {
         self.file = file
-        let sortDescriptors: [SortDescriptor<CollaborationFile>] = {
-            switch sortField {
-                case .updatedAt:
-                    [
-                         SortDescriptor(\.updatedAt, order: .reverse),
-                         SortDescriptor(\.createdAt, order: .reverse)
-                    ]
-                case .name:
-                    [
-                         SortDescriptor(\.name, order: .reverse),
-                    ]
-                case .rank:
-                    [
-                         SortDescriptor(\.rank, order: .forward),
-                    ]
-            }
-        }()
-        self._files = FetchRequest<CollaborationFile>(
-            sortDescriptors: sortDescriptors,
-            predicate: nil,
-            animation: .smooth
-        )
+        self.files = files
     }
     
-    @State private var isDragging = false
+    
+    @State private var localFileWillBeDropped: (URL, ItemDragState.FileRowDropTarget)? = nil
+    @State private var collaborationFileWillBeDropped: (NSManagedObjectID, ItemDragState.FileRowDropTarget)? = nil
 
     func body(content: Content) -> some View {
-        if #available(macOS 13.0, iOS 16.0, *), false {
-            // No
-            content
-                .draggable(FileRowTransferable(objectID: file.objectID))
-                .dropDestination(for: FileRowTransferable.self) { items, location in
-                    for item in items {
-                        guard let objectID = item.objectID else { continue }
-                        sortFiles(
-                            draggedItemID: objectID,
-                            droppedItemID: file.objectID,
-                            files: files.map{$0},
-                            container: PersistenceController.shared.container
-                        ) {
-                            if fileState.sortField != .rank {
-                                withAnimation {
-                                    fileState.sortField = .rank
+        content
+            .modifier(FileRowDragModifier(file: file))
+            .overlay {
+                let canDrop = if case .file = sidebarDragState.currentDragItem {
+                    true
+                } else if case .localFile = sidebarDragState.currentDragItem {
+                    true
+                } else if case .collaborationFile = sidebarDragState.currentDragItem {
+                    true
+                } else if case .temporaryFile = sidebarDragState.currentDragItem  {
+                    true
+                } else {
+                    false
+                }
+                
+                if canDrop {
+                    VStack(spacing: 0) {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .modifier(
+                                SidebarRowDropModifier(
+                                    allow: [.excalidrawFileRow, .fileURL],
+                                    onTargeted: { val in
+                                        if val {
+                                            if let index = files.firstIndex(of: file) {
+                                                if index > 0 {
+                                                    sidebarDragState.currentDropFileRowTarget = .after(.file(files[index-1].objectID))
+                                                } else if let group = file.group {
+                                                    sidebarDragState.currentDropFileRowTarget = .startOfGroup(.group(group.objectID))
+                                                }
+                                            }
+                                        } else {
+                                            sidebarDragState.currentDropFileRowTarget = nil
+                                        }
+                                    },
+                                    onDrop: { item in
+                                        if let index = files.firstIndex(of: file) {
+                                            let dropTarget: ItemDragState.FileRowDropTarget = {
+                                                if index > 0 {
+                                                    return .after(.file(files[index-1].objectID))
+                                                } else if let group = file.group {
+                                                    return .startOfGroup(.group(group.objectID))
+                                                } else {
+                                                    return .after(.file(file.objectID))
+                                                }
+                                            }()
+                                            switch item {
+                                                case .file(let fileID):
+                                                    self.sortFiles(
+                                                        draggedItemID: fileID,
+                                                        droppedTargt: dropTarget,
+                                                        files: files.map{$0},
+                                                        context: viewContext
+                                                    )
+                                                case .localFile(let url):
+                                                    localFileWillBeDropped = (url, dropTarget)
+                                                case .collaborationFile(let roomID):
+                                                    collaborationFileWillBeDropped = (roomID, dropTarget)
+                                                case .temporaryFile(let url):
+                                                   handleDropTemporaryFile(payload: (url, dropTarget))
+                                                default:
+                                                    break
+                                            }
+                                        }
+
+                                    }
+                                )
+                            )
+                            .simultaneousGesture(TapGesture().onEnded {
+                                sidebarDragState.currentDragItem = nil
+                                sidebarDragState.currentDropFileRowTarget = nil
+                                sidebarDragState.currentDropGroupTarget = nil
+                            })
+                        
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .modifier(
+                                SidebarRowDropModifier(
+                                    allow: [
+                                        .excalidrawFileRow, .fileURL
+                                    ],
+                                    onTargeted: { isTargeted in
+                                        if isTargeted {
+                                            if let index = files.firstIndex(of: file) {
+                                                sidebarDragState.currentDropFileRowTarget = .after(.file(files[index].objectID))
+                                            }
+                                        } else {
+                                            sidebarDragState.currentDropFileRowTarget = nil
+                                        }
+                                    },
+                                    onDrop: { item in
+                                        let dropTarget: ItemDragState.FileRowDropTarget = .after(.file(file.objectID))
+                                        switch item {
+                                            case .file(let fileID):
+                                                self.sortFiles(
+                                                    draggedItemID: fileID,
+                                                    droppedTargt: dropTarget,
+                                                    files: files.map{$0},
+                                                    context: viewContext
+                                                )
+                                            case .localFile(let url):
+                                                localFileWillBeDropped = (url, dropTarget)
+                                            case .collaborationFile(let roomID):
+                                                collaborationFileWillBeDropped = (roomID, dropTarget)
+                                            case .temporaryFile(let url):
+                                                handleDropTemporaryFile(payload: (url, dropTarget))
+                                            default:
+                                                break
+                                        }
+                                    }
+                                )
+                            )
+                            .simultaneousGesture(TapGesture().onEnded {
+                                sidebarDragState.currentDragItem = nil
+                                sidebarDragState.currentDropFileRowTarget = nil
+                                sidebarDragState.currentDropGroupTarget = nil
+                            })
+                    }
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if sidebarDragState.currentDropFileRowTarget == .after(.file(file.objectID)) {
+                    DropTargetPlaceholder()
+                }
+            }
+            .sheet(
+                isPresented: Binding {
+                    collaborationFileWillBeDropped != nil
+                } set: { val in
+                    if !val {
+                        collaborationFileWillBeDropped = nil
+                    }
+                }
+            ) {
+                DropToGroupSheetView(
+                    object: collaborationFileWillBeDropped!,
+                    title: "Import collaboration room",
+                    message: "This will import the collaboration room to file stored in database, and it will be synced with iCloud.",
+                    deleteOldSourceLabel: "Also delete the collaboration room after import?",
+                ) { object, delete in
+                    self.perfromDropCollaborationFile(payload: object, delete: delete)
+                }
+            }
+            .sheet(isPresented: Binding {
+                localFileWillBeDropped != nil
+            } set: { val in
+                if !val { localFileWillBeDropped = nil }
+            }) {
+                DropToGroupSheetView(
+                    object: localFileWillBeDropped!,
+                    title: "Import local file",
+                    message: "This will import the local file to database, and it will be synced with iCloud.",
+                    deleteOldSourceLabel: "Also delete the local file after import.",
+                ) { object, delete in
+                    self.performDropLocalFile(payload: object, delete: delete)
+                }
+            }
+    }
+    
+    /// Drop to the position before the target file.
+    private func sortFiles<DragFile: DragMovableFile>(
+        draggedItemID draggedObjectID: NSManagedObjectID,
+        droppedTargt target: ItemDragState.FileRowDropTarget,
+        files allFiles: [DragFile],
+        context: NSManagedObjectContext,
+        completionHandler: (() -> Void)? = nil
+    ) {
+        // guard itemID != draggedObjectID else { return }
+        Task { [context, allFiles] in
+            try await context.perform {
+                guard let draggedFile = context.object(with: draggedObjectID) as? DragFile else {
+                    return
+                }
+                switch target {
+                    case .after(let item):
+                        guard case .file(let itemID) = item,
+                              let targetFile = context.object(with: itemID) as? DragFile else {
+                            return
+                        }
+                        // update rank
+                        guard let toIndex = allFiles.firstIndex(of: targetFile) else {
+                            return
+                        }
+                        
+                        
+                        if let fromIndex = allFiles.firstIndex(of: draggedFile) {
+                            // In Group Drag
+                            if fromIndex == toIndex { return }
+                            
+                            withAnimation {
+                                /// If  move up to a certain cell, it is always considered that you are moving to the cell above it.
+                                /// And vice versa.
+                                if fromIndex < toIndex { // Move down ⬇️
+                                    for (i, file) in allFiles.enumerated() {
+                                        if i < fromIndex {
+                                            file.rank = Int64(i)
+                                        } else if i <= toIndex {
+                                            file.rank = Int64(i-1)
+                                        } else {
+                                            file.rank = Int64(i)
+                                        }
+                                    }
+                                    draggedFile.rank = Int64(toIndex)
+                                } else if toIndex < fromIndex  { // Move up ⬆️
+                                    for (i, file) in allFiles.enumerated() {
+                                        if i <= toIndex {
+                                            file.rank = Int64(i)
+                                        } else if i <= fromIndex {
+                                            file.rank = Int64(i+1)
+                                        } else {
+                                            file.rank = Int64(i)
+                                        }
+                                    }
+                                    draggedFile.rank = Int64(toIndex+1)
+                                }
+                                
+                                print("perfrom rank. \(fromIndex) -> \(toIndex)")
+                            }
+                        } else {
+                            withAnimation {
+                                // Not in Group Drag
+                                for (i, file) in allFiles.enumerated() {
+                                    if i <= toIndex {
+                                        file.rank = Int64(i)
+                                    } else if i > toIndex {
+                                        file.rank = Int64(i+1)
+                                    }
+                                }
+                                draggedFile.group = targetFile.group
+                                draggedFile.rank = Int64(toIndex+1)
+                                
+                                if let group = targetFile.group {
+                                    fileState.expandToGroup(group.objectID)
                                 }
                             }
                         }
-                    }
-                    return true
-                } isTargeted: { isEntered in
-                    if isEntered {
                         
-                    }
+                        
+                    case .startOfGroup(let item):
+                        guard case .group(let groupID) = item else { return }
+                        if draggedFile.group?.objectID == groupID,
+                           let fromIndex = allFiles.firstIndex(of: draggedFile),
+                           fromIndex == 0 {
+                            return
+                        }
+                        
+                        withAnimation {
+                            for (i, file) in allFiles.enumerated() {
+                                if let fromIndex = allFiles.firstIndex(of: draggedFile),
+                                   i > fromIndex {
+                                    file.rank = Int64(i)
+                                } else {
+                                    file.rank = Int64(i+1)
+                                }
+                            }
+                            draggedFile.rank = Int64(0)
+                            
+                            if let group = context.object(with: groupID) as? Group {
+                                draggedFile.group = group
+                                fileState.expandToGroup(group.objectID)
+                            }
+                            
+                        }
+                        
                 }
-        } else {
-            content
-                .opacity(isDragging ? 0.3 : 1)
-                .contentShape(Rectangle())
-                .onDrag {
-                    let url = file.objectID.uriRepresentation()
-                    print("onDrag", url)
-                    withAnimation { isDragging = true }
-//                    return NSItemProvider(object: file.objectID.uriRepresentation() as NSURL)
-                    return NSItemProvider(
-                        item: url.dataRepresentation as NSData,
-                        typeIdentifier: UTType.excalidrawFileRow.identifier
-                    )
-                }
-                .onDrop(
-                    of: [.excalidrawFileRow],
-                    delegate: FileRowDropDelegate(
-                        item: file,
-                        allFiles: files,
-                        sortField: $fileState.sortField
-                    )
-                )
-                .onReceive(NotificationCenter.default.publisher(for: .didDropFileRow)) { output in
-                    withAnimation {
-                        self.isDragging = false
-                    }
-                }
+                
+                fileState.sortField = .rank
+
+                try context.save()
+            }
+            
+            await MainActor.run {
+                completionHandler?()
+            }
         }
     }
     
+    private func performDropLocalFile(payload: (URL, ItemDragState.FileRowDropTarget), delete: Bool) {
+        let (url, dropTarget) = payload
+        do {
+            let newFile = try File(url: url, context: viewContext)
+            
+            withAnimation {
+                viewContext.insert(newFile)
+            }
+            
+            self.sortFiles(
+                draggedItemID: newFile.objectID,
+                droppedTargt: dropTarget,
+                files: files.map{$0},
+                context: viewContext
+            )
+            
+            if delete {
+                try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+            }
+            
+            try viewContext.save()
+
+        } catch {
+            alertToast(error)
+        }
+    }
     
+    private func perfromDropCollaborationFile(payload: (NSManagedObjectID, ItemDragState.FileRowDropTarget), delete: Bool) {
+        let (roomID, dropTarget) = payload
+        guard let collaborationFile = viewContext.object(with: roomID) as? CollaborationFile,
+              let group = file.group else {
+            return
+        }
+        do {
+            try collaborationFile.archiveToLocal(
+                group: .group(group),
+                delete: delete,
+            ) { error, target in
+                switch target {
+                    case .file(_, let fileID):
+                        sortFiles(
+                            draggedItemID: fileID,
+                            droppedTargt: dropTarget,
+                            files: files.map{$0},
+                            context: viewContext
+                        )
+                    default:
+                        break
+                }
+            }
+        } catch {
+            alertToast(error)
+        }
+    }
+    
+    private func handleDropTemporaryFile(payload: (URL, ItemDragState.FileRowDropTarget)) {
+        let (url, dropTarget) = payload
+        guard let group = file.group else { return }
+        let groupID = group.objectID
+        Task.detached {
+            let context = PersistenceController.shared.container.newBackgroundContext()
+
+            do {
+                let fileID = try await context.perform {
+                    let file = try File(url: url, context: context)
+                    let group = context.object(with: groupID) as? Group
+                    file.group = group
+                                        
+                    withAnimation {
+                        context.insert(file)
+                    }
+                    
+                    try context.save()
+                    return file.objectID
+                }
+                
+                await MainActor.run {
+                    sortFiles(
+                        draggedItemID: fileID,
+                        droppedTargt: dropTarget,
+                        files: files.map{$0},
+                        context: viewContext
+                    )
+                    if let file = viewContext.object(with: fileID) as? File {
+                        if fileState.currentActiveFile == .temporaryFile(url) {
+                            fileState.currentActiveFile = .file(file)
+                            fileState.currentActiveGroup = .group(group)
+                        } else if fileState.currentActiveGroup == .temporary, fileState.temporaryFiles == [url] {
+                            fileState.currentActiveFile = .file(file)
+                            fileState.currentActiveGroup = .group(group)
+                        }
+                    }
+                    fileState.temporaryFiles.removeAll { $0 == url }
+                }
+                
+            } catch {
+                await alertToast(error)
+            }
+        }
+    }
 }
 
 fileprivate struct NotFoundError: Error {}
 
-struct FileRowDropDelegate<File: DragMovableFile>: DropDelegate {
-    let item: File
-    var allFiles: FetchedResults<File>
-    @Binding var sortField: ExcalidrawFileSortField
+struct DropTargetPlaceholder: View {
+    @Environment(\.diclosureGroupDepth) private var depth
 
-    let context = PersistenceController.shared.container.viewContext
-    
-    @State private var draggedFileID: NSManagedObjectID?
-    
-    func dropEntered(info: DropInfo) {
-        print("dropEntered", item.name ?? "")
-        performRank(info: info)
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        return DropProposal(operation: .move)
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        // print("performDrop", item.name ?? "")
-        Task {
-            do {
-                NotificationCenter.default.post(name: .didDropFileRow, object: nil)
-                try context.save()
-            } catch {
-            }
+    var body: some View {
+        HStack(spacing: 0) {
+            Circle()
+                .stroke(Color.accentColor, lineWidth: 2)
+                .frame(width: 5, height: 5)
+            Rectangle()
+                .fill(Color.accentColor)
+                .frame(height: 2)
         }
-        return true
-    }
-    
-    private func performRank(info: DropInfo) {
-        let itemID = item.objectID
-        let container = PersistenceController.shared.container
-        for provider in info.itemProviders(for: [UTType.excalidrawFileRow]) {
-            provider.loadItem(
-                forTypeIdentifier: UTType.excalidrawFileRow.identifier
-            ) { item, error in
-                if let error {
-                    print(error)
-                    return
-                }
-                guard let data = item as? Data,
-                      let url = URL(dataRepresentation: data, relativeTo: nil) else {
-                    return
-                }
-                print("Load Item: \(url)")
-                guard url.scheme == "x-coredata",
-                      let draggedObjectID = container.persistentStoreCoordinator.managedObjectID(forURIRepresentation: url) else {
-                    return
-                }
-                sortFiles(
-                    draggedItemID: draggedObjectID,
-                    droppedItemID: itemID,
-                    files: allFiles.map{$0},
-                    container: container
-                ) {
-                    if sortField != .rank {
-                        withAnimation {
-                            sortField = .rank
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    @MainActor
-    private func getDropFile(provider: NSItemProvider) async throws -> File? {
-        let itemID = item.objectID
-        let context = context
-        let objectID: NSManagedObjectID = try await withCheckedThrowingContinuation { continuation in
-            _ = provider.loadObject(ofClass: URL.self) { url, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-                if let url,
-                   !url.isFileURL,
-                   let objectID = PersistenceController.shared.container.persistentStoreCoordinator.managedObjectID(
-                    forURIRepresentation: url
-                   ),
-                   itemID != objectID {
-                    continuation.resume(returning: objectID)
-                    return
-                }
-                
-                continuation.resume(throwing: NotFoundError())
-            }
-        }
-        
-        return await context.perform {
-            context.object(with: objectID) as? File
-        }
-
-    }
-}
-
-// only for cancel
-struct FileListDropDelegate: DropDelegate {
-    func dropExited(info: DropInfo) {
-        NotificationCenter.default.post(name: .didDropFileRow, object: nil)
-    }
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
-    }
-    func performDrop(info: DropInfo) -> Bool {
-        NotificationCenter.default.post(name: .didDropFileRow, object: nil)
-        return true
-    }
-}
-
-fileprivate func sortFiles<File: DragMovableFile>(
-    draggedItemID draggedObjectID: NSManagedObjectID,
-    droppedItemID itemID: NSManagedObjectID,
-    files allFiles: [File],
-    container: NSPersistentContainer,
-    completionHandler: (() -> Void)? = nil
-) {
-    let context = container.viewContext
-    guard itemID != draggedObjectID else { return }
-    Task { [context, allFiles] in
-        await context.perform {
-            let targetFile = context.object(with: itemID) as? File
-            let draggedFile = context.object(with: draggedObjectID) as? File
-            if let draggedFile, let targetFile {
-                // update rank
-                let fromIndex = allFiles.firstIndex(of: draggedFile)!
-                let toIndex = allFiles.firstIndex(of: targetFile)!
-                withAnimation {
-                    /// If  move up to a certain cell, it is always considered that you are moving to the cell above it.
-                    /// And vice versa.
-                    if fromIndex < toIndex { // Move down ⬇️
-                        for (i, file) in allFiles.enumerated() {
-                            if i < fromIndex {
-                                file.rank = Int64(i)
-                            } else if i <= toIndex {
-                                file.rank = Int64(i-1)
-                            } else {
-                                file.rank = Int64(i)
-                            }
-                        }
-                        draggedFile.rank = Int64(toIndex)
-                        
-                    } else if toIndex < fromIndex  { // Move up ⬆️
-                        for (i, file) in allFiles.enumerated() {
-                            if i < toIndex {
-                                file.rank = Int64(i)
-                            } else if i <= fromIndex {
-                                file.rank = Int64(i+1)
-                            } else {
-                                file.rank = Int64(i)
-                            }
-                        }
-                        draggedFile.rank = Int64(toIndex)
-                    }
-                    
-                    print("perfrom rank. \(fromIndex) -> \(toIndex)")
-                }
-            }
-        }
-        
-        await MainActor.run {
-            completionHandler?()
-        }
-    }
-}
-
-extension View {
-    @MainActor @ViewBuilder
-    func fileListDropFallback() -> some View {
-        onDrop(of: [.url], delegate: FileListDropDelegate())
+        .frame(height: 5)
+        .padding(.leading, 14 + CGFloat(depth+1) * 8)
     }
 }

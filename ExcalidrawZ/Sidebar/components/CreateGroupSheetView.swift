@@ -7,6 +7,99 @@
 
 import SwiftUI
 
+struct CreateGroupModifier: ViewModifier {
+    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.alertToast) private var alertToast
+    @EnvironmentObject var fileState: FileState
+    
+    @FetchRequest
+    var groups: FetchedResults<Group>
+    
+    @Binding var isPresented: Bool
+    var parentGroupID: NSManagedObjectID?
+    
+    init(isPresented: Binding<Bool>, parentGroupID: NSManagedObjectID?) {
+        self._isPresented = isPresented
+        self.parentGroupID = parentGroupID
+        
+        self._groups = FetchRequest(
+            sortDescriptors: [
+                SortDescriptor(\.createdAt, order: .forward),
+            ],
+            predicate: parentGroupID != nil
+            ? NSPredicate(format: "parent = %@", parentGroupID!)
+            : NSPredicate(format: "parent = nil"),
+            animation: .smooth
+        )
+    }
+    
+    @State private var initialNewGroupName = ""
+    
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $isPresented) {
+                if containerHorizontalSizeClass == .compact {
+                    createFolderSheetView()
+#if os(iOS)
+                        .presentationDetents([.height(140)])
+                        .presentationDragIndicator(.visible)
+#endif
+                } else if #available(iOS 18.0, macOS 13.0, *) {
+                    createFolderSheetView()
+                        .scrollDisabled(true)
+                        .frame(width: 400, height: 140)
+#if os(iOS)
+                        .presentationSizing(.fitted)
+#endif
+                } else {
+                    createFolderSheetView()
+                }
+            }
+            .onChange(of: groups.count) { _ in
+                initialNewGroupName = getNextGroupName()
+            }
+            .onAppear {
+                initialNewGroupName = getNextGroupName()
+            }
+    }
+    
+    @MainActor @ViewBuilder
+    private func createFolderSheetView() -> some View {
+        CreateGroupSheetView(
+            name: $initialNewGroupName,
+            createType: .group
+        ) { name in
+            Task {
+                do {
+                    try await fileState.createNewGroup(
+                        name: name,
+                        activate: true,
+                        parentGroupID: parentGroupID,
+                        context: viewContext,
+                        animation: .smooth
+                    )
+                    
+                } catch {
+                    alertToast(error)
+                }
+            }
+        }
+        .controlSize(.large)
+    }
+    
+    func getNextGroupName() -> String {
+        let name = String(localizable: .sidebarGroupListCreateNewGroupNamePlaceholder)
+        var result = name
+        var i = 1
+        while groups.first(where: {$0.name == result}) != nil {
+            result = "\(name) \(i)"
+            i += 1
+        }
+        return result
+    }
+}
+
 struct CreateGroupSheetView: View {
     @Environment(\.dismiss) var dismiss
     
@@ -52,20 +145,6 @@ struct CreateGroupSheetView: View {
     private func content() -> some View {
         Form {
             Section {
-//                HStack {
-//                    Text("type:").frame(width: 40, alignment: .trailing)
-//
-//                    Picker(selection: $createType) {
-//                        Text("Group").tag(CreateGroupType.group)
-//                        Text("Folder").tag(CreateGroupType.localFolder)
-//                    } label: {
-//                        Text("type:")
-//                    }
-//                    .pickerStyle(.segmented)
-//                    .fixedSize()
-//                    .disabled(!canSelectCreateType)
-//                }
-                
                 HStack {
 #if os(macOS)
                     Text(.localizable(.sidebarGroupListCreateGroupName))
@@ -84,8 +163,12 @@ struct CreateGroupSheetView: View {
                         }
                 }
             } header: {
-                Text(createType == .group ? .localizable(.sidebarGroupListCreateTitle) : .localizable(.sidebarGroupListCreateFolderTitle))
-                    .fontWeight(.bold)
+                Text(
+                    createType == .group
+                    ? .localizable(.sidebarGroupListCreateTitle)
+                    : .localizable(.sidebarGroupListCreateFolderTitle)
+                )
+                .fontWeight(.bold)
             } footer: {
                 HStack {
                     Spacer()
@@ -94,23 +177,18 @@ struct CreateGroupSheetView: View {
                         onCreate(name)
                         dismiss()
                     }
-                    .buttonStyle(.borderedProminent)
+                    .modifier(ProminentButtonModifier())
                     .disabled(name.isEmpty)
                 }
             }
-//#if os(macOS)
-//            Divider()
-//#endif
-            
         }
         .labelsHidden()
 #if os(macOS)
         .padding()
-//#elseif os(iOS)
-//        .presentationDetents([.height(300)])
 #endif
     }
 }
+
 
 #Preview {
     CreateGroupSheetView(name: .constant(""), createType: .group) { newName in

@@ -13,6 +13,48 @@ import ChocofordEssentials
 import ChocofordUI
 import UniformTypeIdentifiers
 
+struct LibraryTrailingSidebarModifier: ViewModifier {
+    @EnvironmentObject private var appPreference: AppPreference
+    @EnvironmentObject private var layoutState: LayoutState
+    
+    @State private var librariesToImport: [ExcalidrawLibrary] = []
+    
+    func body(content: Content) -> some View {
+        ZStack {
+            if #available(macOS 14.0, iOS 17.0, *), appPreference.inspectorLayout == .sidebar {
+                content
+                    .inspector(isPresented: $layoutState.isInspectorPresented) {
+                        LibraryView(librariesToImport: $librariesToImport)
+                            .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
+                    }
+            } else {
+                content
+                if appPreference.inspectorLayout == .floatingBar {
+                    HStack {
+                        Spacer()
+                        if layoutState.isInspectorPresented {
+                            LibraryView(librariesToImport: $librariesToImport)
+                                .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .background {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(.regularMaterial)
+                                        .shadow(radius: 4)
+                                }
+                                .transition(.move(edge: .trailing))
+                        }
+                    }
+                    .animation(.easeOut, value: layoutState.isInspectorPresented)
+                    .padding(.top, 10)
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 40)
+                }
+            }
+        }
+        .modifier(ExcalidrawLibraryImporter(items: $librariesToImport))
+    }
+}
+
 struct LibraryView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
@@ -23,22 +65,27 @@ struct LibraryView: View {
         
     @FetchRequest(sortDescriptors: [SortDescriptor(\.id)], animation: .smooth)
     var libraries: FetchedResults<Library>
+
+    @Binding var librariesToImport: [ExcalidrawLibrary]
+    
+    init(
+        librariesToImport: Binding<[ExcalidrawLibrary]>
+    ) {
+        self._librariesToImport = librariesToImport
+    }
     
     @StateObject private var viewModel = LibraryViewModel()
     
     // each library contains one library item...
-    @State private var librariesToImport: [ExcalidrawLibrary] = []
     @State private var image: Image?
     
     @State private var isFileImpoterPresented: Bool = false
-    @State private var isImportSheetPresented: Bool = false
     @State private var isRemoveAllConfirmationPresented: Bool = false
     @State private var isRemoveSelectionsConfirmationPresented: Bool = false
     @State private var isFileExporterPresented: Bool = false
     
     @State private var scrollViewSize: CGSize = .zero
     
-    @State private var isDropTargeted: Bool = false
     
     @State private var inSelectionMode: Bool = false
     @State private var selectedItems = Set<LibraryItem>()
@@ -56,70 +103,22 @@ struct LibraryView: View {
                 }
             }
         }
-        .sheet(isPresented: $isImportSheetPresented) {
-            ExcalidrawLibraryImportSheetView(libraries: librariesToImport)
-                .frame(minWidth: 700)
-        }
-        .onDrop(of: [.excalidrawlibFile], isTargeted: $isDropTargeted) { providers in
-            librariesToImport.removeAll()
-            let canDrop = providers.contains(where: {$0.hasItemConformingToTypeIdentifier(UTType.excalidrawlibFile.identifier)})
-            print("canDrop: \(canDrop)")
-            guard canDrop else { return false }
-            Task {
-                do {
-                    for provider in providers {
-                        let url: URL? = try await withCheckedThrowingContinuation { continuation in
-                            provider.loadFileRepresentation(forTypeIdentifier: UTType.excalidrawlibFile.identifier) { url, error in
-                                if let error {
-                                    continuation.resume(throwing: error)
-                                    return
-                                }
-                                continuation.resume(returning: url)
-                            }
-                        }
-                        guard url != nil else { continue }
-                        let data: Data? = try await withCheckedThrowingContinuation { continuation in
-                            provider.loadDataRepresentation(forTypeIdentifier: UTType.excalidrawlibFile.identifier) { url, error in
-                                if let error {
-                                    continuation.resume(throwing: error)
-                                    return
-                                }
-                                continuation.resume(returning: url)
-                            }
-                        }
-                        guard data != nil else { continue }
-                        var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data!)
-                        library.name = url!.deletingPathExtension().lastPathComponent
-                        librariesToImport.append(library)
-                    }
-                    if !librariesToImport.isEmpty {
-                        isImportSheetPresented = true
-                    }
-                } catch {
-                    alertToast(error)
-                }
-            }
-            return true
-        }
+        .modifier(ExcalidrawLibraryDropHandler())
         .fileImporterWithAlert(
             isPresented: $isFileImpoterPresented,
             allowedContentTypes: [.excalidrawlibFile],
             allowsMultipleSelection: true
         ) { urls in
+            var libraries: [ExcalidrawLibrary] = []
             for url in urls {
                 _ = url.startAccessingSecurityScopedResource()
                 let data = try Data(contentsOf: url)
                 var library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data)
                 library.name = url.deletingPathExtension().lastPathComponent
-                self.librariesToImport.append(library)
+                libraries.append(library)
                 url.stopAccessingSecurityScopedResource()
             }
-            isImportSheetPresented.toggle()
-        }
-        .onChange(of: isImportSheetPresented) { newValue in
-            if !newValue {
-                librariesToImport.removeAll()
-            }
+            self.librariesToImport = libraries
         }
         .environmentObject(viewModel)
         .onAppear {
@@ -131,7 +130,9 @@ struct LibraryView: View {
     private func toolbar() -> some ToolbarContent {
 #if os(macOS)
         ToolbarItem(placement: .destructiveAction) {
-            Color.clear
+            if #available(macOS 26.0, *) {} else {
+                Color.clear
+            }
         }
         
         /// This is the key to make sidebar toggle at the right side.
@@ -150,12 +151,15 @@ struct LibraryView: View {
                 Text(.localizable(.librariesTitle))
                     .foregroundStyle(.secondary)
                     .font(.headline)
+                    .padding(.horizontal, 8)
                 if #available(macOS 15.0, iOS 18.0, *) {} else {
                     Spacer()
                 }
             } else {
-                Color.clear
-                    .frame(width: 1)
+                if #available(macOS 26.0, *) {} else {
+                    Color.clear
+                        .frame(width: 1)
+                }
             }
         }
         ToolbarItem(placement: .confirmationAction) {
@@ -231,11 +235,12 @@ struct LibraryView: View {
             }
             VStack(spacing: 8) {
                 importButton()
-                    .controlSize(.large)
+                    .modernButtonStyle(size: .large, shape: .modern)
                 Link(destination: URL(string: "https://libraries.excalidraw.com")!) {
                     Text(.localizable(.librariesNoItemsGoToExcalidrawLibraries))
                         .font(.callout)
                 }
+                .hoverCursor(.link)
             }
             
             Spacer()
@@ -279,11 +284,21 @@ struct LibraryView: View {
             Color.clear
                 .overlay(alignment: .center) {
                     if inSelectionMode {
-                        Text(.localizable(.librariesItemsSelected(selectedItems.count)))
-                            .foregroundStyle(.secondary)
+                        if #available(macOS 13.0, iOS 16.0, *) {
+                            Text(.localizable(.librariesItemsSelected(selectedItems.count)))
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(selectedItems.count.formatted())
+                                .foregroundStyle(.secondary)
+                        }
                     } else {
-                        Text(.localizable(.librariesItemsCount(libraries.reduce(0, {$0 + ($1.items?.count ?? 0)}))))
-                            .foregroundStyle(.secondary)
+                        if #available(macOS 13.0, iOS 16.0, *) {
+                            Text(.localizable(.librariesItemsCount(libraries.reduce(0, {$0 + ($1.items?.count ?? 0)}))))
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(libraries.reduce(0, {$0 + ($1.items?.count ?? 0)}).formatted())
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             
@@ -314,7 +329,10 @@ struct LibraryView: View {
                     }
                 }
         }
-        .confirmationDialog(.localizable(.librariesRemoveAllConfirmationTitle), isPresented: $isRemoveAllConfirmationPresented) {
+        .confirmationDialog(
+            String(localizable: .librariesRemoveAllConfirmationTitle),
+            isPresented: $isRemoveAllConfirmationPresented
+        ) {
             Button(role: .destructive) {
                 removeAllItems()
             } label: {
@@ -324,7 +342,13 @@ struct LibraryView: View {
             Text(.localizable(.generalCannotUndoMessage))
         }
         .confirmationDialog(
-            .localizable(.librariesRemoveSelectionsConfirmationTitle(selectedItems.count)),
+            {
+                if #available(macOS 13.0, iOS 16.0, *) {
+                    String(localizable: .librariesRemoveSelectionsConfirmationTitle(selectedItems.count))
+                } else {
+                    String(localizable: .generalButtonDelete)
+                }
+            }(),
             isPresented: $isRemoveSelectionsConfirmationPresented
         ) {
             Button(role: .destructive) {
@@ -420,12 +444,14 @@ struct LibraryView: View {
         let context = PersistenceController.shared.container.newBackgroundContext()
         let selectedItems = selectedItems
         let targetLibraryID = library.objectID
+        let selectedItemIDs = selectedItems.map{$0.objectID}
+        let libraryIDs = Array(Set(selectedItems.compactMap{$0.library})).map { $0.objectID }
         Task.detached {
             context.perform {
                 guard let targetLibrary = context.object(with: targetLibraryID) as? Library else { return }
                 do {
-                    for selectedItem in selectedItems {
-                        guard let item = context.object(with: selectedItem.objectID) as? LibraryItem else { continue }
+                    for selectedItemID in selectedItemIDs {
+                        guard let item = context.object(with: selectedItemID) as? LibraryItem else { continue }
                         
                         if targetLibrary == item.library {
                             // do nothing...
@@ -436,8 +462,8 @@ struct LibraryView: View {
                         }
                     }
                     try context.save()
-                    for library in Array(Set(selectedItems.compactMap{$0.library})) {
-                        guard let item = context.object(with: library.objectID) as? Library else { continue }
+                    for libraryID in libraryIDs {
+                        guard let item = context.object(with: libraryID) as? Library else { continue }
                         if (item.items?.count ?? 0) <= 0 {
                             context.delete(item)
                         }
@@ -459,17 +485,18 @@ struct LibraryView: View {
     private func removeSelectedItems() {
         let alertToast = alertToast
         let context = PersistenceController.shared.container.newBackgroundContext()
-        let selectedItems = selectedItems
+        let selectedItemIDs = selectedItems.map { $0.objectID }
+        let libraryIDs = Array(Set(selectedItems.compactMap{$0.library})).map { $0.objectID }
         Task.detached {
             context.perform {
                 do {
-                    for selectedItem in selectedItems {
-                        guard let item = context.object(with: selectedItem.objectID) as? LibraryItem else { continue }
+                    for id in selectedItemIDs {
+                        guard let item = context.object(with: id) as? LibraryItem else { continue }
                         context.delete(item)
                     }
                     try context.save()
-                    for library in Array(Set(selectedItems.compactMap{$0.library})) {
-                        guard let item = context.object(with: library.objectID) as? Library else { continue }
+                    for libraryID in libraryIDs {
+                        guard let item = context.object(with: libraryID) as? Library else { continue }
                         if (item.items?.count ?? 0) <= 0 {
                             context.delete(item)
                         }
@@ -551,7 +578,7 @@ struct LibraryPreviewView: View {
                 
             }
             .inspector(isPresented: .constant(true)) {
-                LibraryView()
+                LibraryView(librariesToImport: .constant([]))
             }
         } else {
             Color.clear

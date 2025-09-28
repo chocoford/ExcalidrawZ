@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import CoreData
+@preconcurrency import CoreData
 import os.log
 
 class PersistenceController {
@@ -78,7 +78,7 @@ class PersistenceController {
             cloudStoreDescription,
             localStoreDescription
         ]
-        print(container.persistentStoreDescriptions, container.persistentStoreDescriptions.map{$0.type})
+        // print(container.persistentStoreDescriptions, container.persistentStoreDescriptions.map{$0.type})
         container.viewContext.automaticallyMergesChangesFromParent = true
         /// Core Data 预设了四种合并冲突策略，分别为：
         /// * NSMergeByPropertyStoreTrumpMergePolicy
@@ -91,7 +91,7 @@ class PersistenceController {
         /// 持久化数据永远胜出
         container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
         do {
-              try container.viewContext.setQueryGenerationFrom(.current)
+            try container.viewContext.setQueryGenerationFrom(.current)
         } catch {
              fatalError("Failed to pin viewContext to the current generation:\(error)")
         }
@@ -114,7 +114,6 @@ class PersistenceController {
             coordinator: container.persistentStoreCoordinator
         )
 //        self.localSpotlightDelegate.startSpotlightIndexing()
-        
         #if DEBUG
 //        log()
         #endif

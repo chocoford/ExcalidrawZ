@@ -29,7 +29,7 @@ struct ExcalidrawLibrary: Codable, Hashable {
             case 1:
                 let items = try container.decode([[ExcalidrawElement]].self, forKey: .library)
                 self.libraryItems = items.map{
-                    Item(id: UUID().uuidString, status: .published, createdAt: .now, name: "Untitled", elements: $0)
+                    Item(id: UUID().uuidString, status: .published, createdAt: .now, name: String(localizable: .generalUntitled), elements: $0)
                 }
             default:
                 self.source = try container.decode(String.self, forKey: .source)
@@ -47,7 +47,6 @@ struct ExcalidrawLibrary: Codable, Hashable {
         self.libraryItems = libraryItems
     }
     
-    
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(self.type, forKey: .type)
@@ -61,7 +60,6 @@ struct ExcalidrawLibrary: Codable, Hashable {
         }
     }
     
-    
     struct Item: Codable, Hashable {
         enum Status: String, Codable {
             case published = "published"
@@ -73,6 +71,8 @@ struct ExcalidrawLibrary: Codable, Hashable {
         var createdAt: Date
         var name: String
         var elements: [ExcalidrawElement]
+        
+        var content: Data?
         
         enum CodingKeys: String, CodingKey {
             case id, status, name, elements

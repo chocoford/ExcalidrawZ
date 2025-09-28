@@ -52,8 +52,6 @@ struct ExportImageView: View {
     @State private var copied: Bool = false
     @State private var hasError: Bool = false
 
-    @State private var showBackButton = false
-    
     @State private var keepEditable = false
     @State private var exportWithBackground = true
     @State private var imageType: Int = 0
@@ -75,22 +73,8 @@ struct ExportImageView: View {
             Center {
                 content
             }
-#if os(macOS)
-            .overlay(alignment: .topLeading) {
-                if showBackButton {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemSymbol: .chevronLeft)
-                    }
-                    .transition(
-                        .offset(x: -10).combined(with: .opacity)
-                    )
-                }
-            }
-            .animation(.default, value: showBackButton)
-#endif
         }
+        .modifier(ShareSubViewBackButtonModifier(dismiss: dismiss))
         .padding(horizontalSizeClass == .compact ? 0 : 20)
         .onChange(of: keepEditable) { newValue in
             exportImageData()
@@ -115,10 +99,6 @@ struct ExportImageView: View {
                 return
             }
             exportImageData(initial: true)
-            showBackButton = true
-        }
-        .onDisappear {
-            showBackButton = false
         }
     }
     
@@ -330,7 +310,7 @@ struct ExportImageView: View {
                 )
             }
         }
-        .controlSize(.regular)
+        .modernButtonStyle(size: .regular, shape: .modern)
         .fileExporter(
             isPresented: $showFileExporter,
             document: ImageFile(url),

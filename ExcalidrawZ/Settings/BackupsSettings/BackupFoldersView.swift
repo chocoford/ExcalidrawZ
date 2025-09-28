@@ -40,9 +40,10 @@ struct BackupFoldersView: View {
                 // .symbolVariant(.fill)
                 .lineLimit(1)
                 .truncationMode(.middle)
+                
+                Spacer()
             }
-            .padding(.vertical, 4)
-            .padding(.leading, 6)
+            .padding(6)
         } childView: { url in
             if (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
                 BackupFoldersView(selection: $selection, folder: url, depth: depth + 1)
@@ -59,7 +60,9 @@ struct BackupFoldersView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                 }
-                .buttonStyle(ListButtonStyle(selected: selection == url))
+                .buttonStyle(
+                    .excalidrawSidebarRow(isSelected: selection == url, isMultiSelected: false)
+                )
             }
         }
         .onAppear {

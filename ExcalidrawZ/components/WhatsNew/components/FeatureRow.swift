@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import AVKit
 
 struct WhatsNewFeatureRow: View {
     

@@ -76,7 +76,7 @@ struct SettingsView: View {
     private var sidebar: some View {
 #if os(macOS)
         ScrollView {
-            VStack {
+            VStack(spacing: 0) {
                 ForEach(Route.allCases) { route in
                     Button {
                         selection = route
@@ -84,9 +84,9 @@ struct SettingsView: View {
                         Text(route.text)
                     }
                     .buttonStyle(
-                        ListButtonStyle(
-                            showIndicator: true,
-                            selected: selection == route
+                        .excalidrawSidebarRow(
+                            isSelected: selection == route,
+                            isMultiSelected: false
                         )
                     )
                 }
@@ -202,7 +202,7 @@ extension SettingsView {
                     return .localizable(.settingsBackupsName)
 #if os(macOS)
                 case .fonts:
-                    return "Fonts"
+                    return .localizable(.settingsFontsName)
 #elseif os(iOS)
                 case .pencil:
                     return "Apple Pencil"

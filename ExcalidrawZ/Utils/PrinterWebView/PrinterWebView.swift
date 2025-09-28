@@ -10,6 +10,20 @@ import WebKit
 import SwiftUIIntrospect
 import os.log
 
+#if DEBUG
+class PrinterWebView: WKWebView {
+    init(filename: String) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    public func print(fileURL: URL) async {}
+}
+#else
+
+
 class PrinterWebView: WKWebView {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "PrinterWebView")
     
@@ -138,73 +152,4 @@ extension PrinterWebView: WKNavigationDelegate {
         }
     }
 }
-
-@available(*, deprecated, message: "Directly use exportPDF(svgURL: URL)")
-struct PrintButton<Label: View>: View {
-    var filename: String
-    var fileURLGetter: () async -> URL?
-    
-    var label: (Bool) -> Label
-    
-    init(
-        filename: String,
-        fileURLGetter: @escaping () async -> URL?,
-        @ViewBuilder label: @escaping (Bool) -> Label
-    ) {
-        self.filename = filename
-        self.fileURLGetter = fileURLGetter
-        self.label = label
-    }
-
-#if os(macOS)
-    typealias PlatformView = NSView
-#elseif os(iOS)
-    typealias PlatformView = UIView
 #endif
-    
-    @State private var view: PlatformView?
-    @State private var isLoading: Bool = false
-    
-    var body: some View {
-        Button {
-            isLoading = true
-            Task {
-                defer {
-                    DispatchQueue.main.async {
-                        isLoading = false
-                    }
-                }
-                guard let url = await fileURLGetter() else {
-                    return
-                }
-                let printerWebView = PrinterWebView(filename: filename)
-                self.view?.addSubview(printerWebView)
-#if os(macOS)
-                printerWebView.frame = NSRect(origin: .zero, size: printerWebView.printInfo.paperSize)
-                await printerWebView.print(fileURL: url)
-#endif
-                printerWebView.removeFromSuperview()
-            }
-            
-        } label: {
-            self.label(self.isLoading)
-        }
-        .background {
-            Color.clear
-#if os(macOS)
-                .introspect(.view, on: .macOS(.v12, .v13, .v14, .v15)) { platformView in
-                    DispatchQueue.main.async {
-                        self.view = platformView
-                    }
-                }
-#elseif os(iOS)
-                .introspect(.view, on: .iOS(.v16, .v17, .v18)) { platformView in
-                    DispatchQueue.main.async {
-                        self.view = platformView
-                    }
-                }
-#endif
-        }
-    }
-}
-

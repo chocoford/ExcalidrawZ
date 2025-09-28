@@ -48,7 +48,7 @@ struct LibrarySectionHeader: View {
             menuContent(library: library)
         }
         .confirmationDialog(
-            .localizable(.librariesRemoveLibraryAllItemsConfirmationTitle),
+            String(localizable: .librariesRemoveLibraryAllItemsConfirmationTitle),
             isPresented: $isRemoveLibraryConfimationPresented
         ) {
             Button(role: .destructive) {

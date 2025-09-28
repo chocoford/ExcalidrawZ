@@ -25,6 +25,16 @@ struct NewFileButton: View {
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var collaborationState: CollaborationState
     
+    
+    var openWithDelay: Bool
+    
+    init(
+        openWithDelay: Bool = false
+    ) {
+        self.openWithDelay = openWithDelay
+    }
+
+    
 #if canImport(AppKit)
     @State private var window: NSWindow?
 #elseif canImport(UIKit)
@@ -35,8 +45,6 @@ struct NewFileButton: View {
     
     @FetchRequest(sortDescriptors: [])
     private var collaborationFiles: FetchedResults<CollaborationFile>
-    
-    init() {}
     
     var body: some View {
 #if os(iOS)
@@ -81,7 +89,7 @@ struct NewFileButton: View {
             Button {
                 createNewFile()
             } label: {
-                Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
+                Label(.localizable(.generalButtonCreateNewFile), systemSymbol: .squareAndPencil)
             }
             .keyboardShortcut("n", modifiers: [.command])
             
@@ -93,13 +101,28 @@ struct NewFileButton: View {
             }
             .keyboardShortcut("n", modifiers: [.command, .option, .shift])
         } label: {
-            Label(.localizable(.createNewFile), systemSymbol: .squareAndPencil)
+            ZStack {
+                Label(.localizable(.generalButtonCreateNewFile), systemSymbol: .squareAndPencil)
+                    .opacity(isCreatingFile ? 0.0 : 1.0)
+                
+                if isCreatingFile {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .controlSize(.small)
+                }
+            }
         } primaryAction: {
             createNewFile()
         }
+        .fixedSize()
         .bindWindow($window)
-        .help(.localizable(.createNewFile))
-        .disabled(fileState.currentGroup?.groupType == .trash || fileState.isTemporaryGroupSelected)
+        .help(.localizable(.generalButtonCreateNewFile))
+        .disabled({
+            if case .group(let group) = fileState.currentActiveGroup, group.groupType == .trash {
+                return true
+            }
+            return false
+        }() || fileState.currentActiveGroup == .temporary)
         .onReceive(NotificationCenter.default.publisher(for: .shouldHandleNewDraw)) { _ in
             guard window?.isKeyWindow == true else { return }
             
@@ -144,21 +167,86 @@ struct NewFileButton: View {
         .disabled(collaborationState.userCollaborationInfo.username.isEmpty)
     }
     
+    @State private var isCreatingFile = false
+    
     private func createNewFile() {
-        do {
-            if fileState.currentGroup != nil {
-                try fileState.createNewFile(context: viewContext)
-            } else if let folder = fileState.currentLocalFolder {
-                try folder.withSecurityScopedURL { scopedURL in
-                    do {
-                        try await fileState.createNewLocalFile(folderURL: scopedURL)
-                    } catch {
-                        alertToast(error)
+        guard !isCreatingFile else { return }
+        let delay: Double = 0.7
+        
+        isCreatingFile = true
+        
+        Task {
+            do {
+                if case .group(let group) = fileState.currentActiveGroup {
+                    createFile(in: group.objectID, delay: delay)
+                } else if case .localFolder(let folder) = fileState.currentActiveGroup {
+                    try await folder.withSecurityScopedURL { scopedURL in
+                        do {
+                            guard let url = try await fileState.createNewLocalFile(
+                                active: !openWithDelay,
+                                folderURL: scopedURL
+                            ) else {
+                                return
+                            }
+                            
+                            if openWithDelay {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                                    fileState.currentActiveFile = .localFile(url)
+                                    isCreatingFile = false
+                                }
+                            } else {
+                                isCreatingFile = false
+                            }
+                        } catch {
+                            alertToast(error)
+                        }
+                    }
+                } else if let defaultGroup = try PersistenceController.shared.getDefaultGroup(context: viewContext) {
+                    createFile(in: defaultGroup.objectID, delay: delay)
+                }
+            } catch {
+                alertToast(error)
+            }
+        }
+    }
+    
+    private func createFile(in groupID: NSManagedObjectID, delay: TimeInterval) {
+        Task {
+            do {
+                let fileID = try await fileState.createNewFile(
+                    active: !openWithDelay,
+                    in: groupID,
+                    context: viewContext,
+                    animation: .smooth
+                )
+                try await viewContext.perform {
+                    if let file = viewContext.object(with: fileID) as? File {
+                        file.visitedAt = .now
+                    }
+                    try viewContext.save()
+                }
+                
+                if openWithDelay {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                        if let file = viewContext.object(with: fileID) as? File {
+                            fileState.currentActiveFile = .file(file)
+                        }
+                        isCreatingFile = false
+                    }
+                } else {
+                    isCreatingFile = false
+                }
+                
+                DispatchQueue.main.asyncAfter(
+                    deadline: .now() + (openWithDelay ? delay : 0) + 0.2
+                ) {
+                    if let group = viewContext.object(with: groupID) as? Group {
+                        fileState.currentActiveGroup = .group(group)
                     }
                 }
+            } catch {
+                alertToast(error)
             }
-        } catch {
-            alertToast(error)
         }
     }
     
@@ -185,9 +273,19 @@ struct NewFileButton: View {
                     throw CanNotReadFromClipboardError()
                 }
 #endif
-                if fileState.currentGroup != nil {
-                    try fileState.createNewFile(context: viewContext)
-                } else if let folder = fileState.currentLocalFolder {
+                
+                
+//                if fileState.currentActiveGroup == nil {
+//                    try await fileState.setToDefaultGroup()
+//                }
+                
+                if case .group(let group) = fileState.currentActiveGroup {
+                    try await fileState.createNewFile(
+                        in: group.objectID,
+                        context: viewContext,
+                        animation: .smooth
+                    )
+                } else if case .localFolder(let folder) = fileState.currentActiveGroup {
                     try await folder.withSecurityScopedURL { scopedURL in
                         do {
                             try await fileState.createNewLocalFile(folderURL: scopedURL)
@@ -199,7 +297,10 @@ struct NewFileButton: View {
                 
                 try await Task.sleep(nanoseconds: UInt64(1e+9 * 0.5))
                 // drop clipboard data to current file
-                try await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(imageData: pngData, type: "png")
+                try await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
+                    imageData: pngData,
+                    type: "png"
+                )
             } catch {
                 alert(error: error)
             }

@@ -39,15 +39,16 @@ struct MediasSettingsView: View {
         HStack {
             mediaList()
                 .frame(width: 200)
-#if os(macOS)
-                .visualEffect(material: .sidebar)
-#elseif os(iOS)
+#if os(iOS)
                 .background {
                     Rectangle()
                         .fill(.regularMaterial)
                         .border(.trailing, color: .separatorColor)
                 }
-#endif
+#endif // os(iOS)
+            
+            Divider()
+            
             detailView()
                 .padding()
                 .frame(maxWidth: .infinity)
@@ -84,7 +85,7 @@ struct MediasSettingsView: View {
     @MainActor @ViewBuilder
     private func mediaList() -> some View {
         ScrollView {
-            LazyVStack {
+            LazyVStack(spacing: 0) {
                 ForEach(medias, id: \.objectID) { item in
                     Button {
                         selection = item
@@ -93,7 +94,12 @@ struct MediasSettingsView: View {
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
-                    .buttonStyle(.listCell(selected: selection == item))
+                    .buttonStyle(
+                        .excalidrawSidebarRow(
+                            isSelected: selection == item,
+                            isMultiSelected: false
+                        )
+                    )
                 }
             }
             .padding(10)

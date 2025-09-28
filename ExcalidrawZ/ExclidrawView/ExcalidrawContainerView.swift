@@ -13,103 +13,31 @@ import Combine
 import ChocofordUI
 
 struct ExcalidrawContainerView: View {
+    @Environment(\.colorScheme) var colorScheme
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
+
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var layoutState: LayoutState
-
-    @Environment(\.colorScheme) var colorScheme
-    
     @EnvironmentObject private var fileState: FileState
+
+    @Binding var file: ExcalidrawFile?
+    var interactionEnabled: Bool
     
+    init(
+        file: Binding<ExcalidrawFile?>,
+        interactionEnabled: Bool = true
+    ) {
+        self._file = file
+        self.interactionEnabled = interactionEnabled
+    }
+
     @State private var loadingState = ExcalidrawView.LoadingState.loading
     @State private var isProgressViewPresented = true
     
     @State private var isDropping: Bool = false
     @State private var cloudContainerEventChangeListener: AnyCancellable?
-
-    var fileBinding: Binding<ExcalidrawFile?> {
-        Binding {
-            do {
-                if let file = fileState.currentFile {
-                    let excalidrawFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
-                    return excalidrawFile
-                } else if let folder = fileState.currentLocalFolder,
-                          let file = fileState.currentLocalFile,
-                          let folderPath = folder.url?.filePath,
-                          file.filePath.contains(folderPath) {
-                    // Should startAccessingSecurityScopedResource for folderURL
-                    let file = try folder.withSecurityScopedURL { _ in
-                        return try ExcalidrawFile(contentsOf: file)
-                    }
-                    return file
-                } else if fileState.isTemporaryGroupSelected,
-                          let file = fileState.currentTemporaryFile {
-                    return try ExcalidrawFile(contentsOf: file)
-                }
-            } catch {
-                alertToast(error)
-            }
-            return nil
-        } set: { file in
-            guard let file else { return }
-            if let currentFile = fileState.currentFile,
-                  file.id == fileState.currentFile?.id {
-                do {
-                    // Everytime load a new file will cause an actual update.
-                    let oldElements = try ExcalidrawFile(from: currentFile.objectID, context: viewContext).elements
-                    if file.elements == oldElements {
-                        print("[updateCurrentFile] no updates, ignored.")
-                        return
-                    } else {
-                        print("[updateCurrentFile] elements changed.")
-                    }
-                } catch {
-                    alertToast(error)
-                }
-                fileState.updateCurrentFile(with: file)
-            } else if let folder = fileState.currentLocalFolder,
-                      let url = fileState.currentLocalFile {
-                Task {
-                    do {
-                        try folder.withSecurityScopedURL { _ in
-                            do {
-                                let oldElements = try ExcalidrawFile(contentsOf: url).elements
-                                if file.elements == oldElements {
-                                    print("[updateCurrentFile] no updates, ignored.")
-                                    return
-                                } else {
-                                    print("[updateCurrentFile] elements changed.")
-                                }
-                                try await fileState.updateLocalFile(to: url, with: file, context: viewContext)
-                            } catch {
-                                alertToast(error)
-                            }
-                        }
-                    } catch {
-                        alertToast(error)
-                    }
-                }
-            } else if fileState.isTemporaryGroupSelected,
-                      let url = fileState.currentTemporaryFile {
-                Task {
-                    do {
-                        let oldElements = try ExcalidrawFile(contentsOf: url).elements
-                        if file.elements == oldElements {
-                            print("[updateCurrentFile] no updates, ignored.")
-                            return
-                        } else {
-                            print("[updateCurrentFile] elements changed.")
-                        }
-                        try await fileState.updateLocalFile(to: url, with: file, context: viewContext)
-                    } catch {
-                        alertToast(error)
-                    }
-                }
-            }
-        }
-    }
 
     // everytime launch should sync data.
     @State private var isImporting = false
@@ -120,15 +48,15 @@ struct ExcalidrawContainerView: View {
     var body: some View {
         ZStack(alignment: .center) {
             ExcalidrawView(
-                file: fileBinding,
+                file: $file,
                 loadingState: $loadingState,
-                interactionEnabled: !fileState.isInCollaborationSpace
+                interactionEnabled: interactionEnabled,
             ) { error in
                 alertToast(error)
             }
             .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
             .opacity(isProgressViewPresented ? 0 : 1)
-            .opacity(fileBinding.wrappedValue == nil ? 0 : 1)
+            .opacity(file == nil ? 0 : 1)
             .onChange(of: loadingState, debounce: 1) { newVal in
                 isProgressViewPresented = newVal == .loading
             }
@@ -137,7 +65,7 @@ struct ExcalidrawContainerView: View {
                 selectFilePlaceholderView()
             }
             
-            if fileBinding.wrappedValue == nil {
+            if file == nil {
                 emptyFilePlaceholderview()
             }
 
@@ -147,13 +75,13 @@ struct ExcalidrawContainerView: View {
                         .progressViewStyle(.circular)
                     Text(.localizable(.webViewLoadingText))
                 }
-            } else if fileState.currentFile?.inTrash == true {
+            } else if case .file(let file) = fileState.currentActiveFile, file.inTrash {
                 recoverOverlayView
             }
         }
         .ignoresSafeArea(.container, edges: .bottom)
         .overlay(alignment: .top) {
-            if isImporting, loadingState == .loaded, fileState.currentGroup != nil {
+            if isImporting, loadingState == .loaded, fileState.currentActiveGroup != nil {
                 HStack {
                     ProgressView().controlSize(.small)
                     Text(.localizable(.iCloudSyncingDataTitle))
@@ -180,7 +108,7 @@ struct ExcalidrawContainerView: View {
                         DispatchQueue.main.async {
                             if event.type == .import, !event.succeeded {
                                 isImporting = true
-                                if let file = fileState.currentFile {
+                                if case .file(let file) = fileState.currentActiveFile {
                                     self.fileBeforeImporting = try? ExcalidrawFile(
                                         from: file.objectID,
                                         context: viewContext
@@ -189,7 +117,7 @@ struct ExcalidrawContainerView: View {
                             }
                             if event.type == .import, event.succeeded, isImporting {
                                 isImporting = false
-                                if let file = fileState.currentFile,
+                                if case .file(let file) = fileState.currentActiveFile,
                                    let fileAfterImporting = try? ExcalidrawFile(from: file.objectID, context: viewContext) {
                                      
                                     if fileBeforeImporting?.elements == fileAfterImporting.elements {
@@ -198,7 +126,10 @@ struct ExcalidrawContainerView: View {
                                         // if local changes is all beyond cloud, do nothing
                                     } else {
                                         // force reload current file.
-                                        fileState.excalidrawWebCoordinator?.loadFile(from: fileState.currentFile, force: true)
+                                        fileState.excalidrawWebCoordinator?.loadFile(
+                                            from: file,
+                                            force: true
+                                        )
                                     }
                                 }
                             }
@@ -218,7 +149,7 @@ struct ExcalidrawContainerView: View {
                 layoutState.isResotreAlertIsPresented.toggle()
             }
             .alert(
-                .localizable(.deletedFileRecoverAlertTitle),
+                String(localizable: .deletedFileRecoverAlertTitle),
                 isPresented: $layoutState.isResotreAlertIsPresented
             ) {
                 Button(role: .cancel) {
@@ -229,8 +160,17 @@ struct ExcalidrawContainerView: View {
                 
                 Button {
                     // Recover file
-                    if let currentFile = fileState.currentFile {
-                        fileState.recoverFile(currentFile)
+                    if case .file(let currentFile) = fileState.currentActiveFile {
+                        Task {
+                            let context = viewContext
+                            // PersistenceController.shared.container.newBackgroundContext()
+                            do {
+                                try await fileState
+                                    .recoverFile(fileID: currentFile.objectID, context: context)
+                            } catch {
+                                alertToast(error)
+                            }
+                        }
                     }
                 } label: {
                     Text(.localizable(.deletedFileRecoverAlertButtonRecover))
@@ -242,6 +182,25 @@ struct ExcalidrawContainerView: View {
     
     @MainActor @ViewBuilder
     private func selectFilePlaceholderView() -> some View {
+        ZStack {
+            if isSelectFilePlaceholderPresented {
+                if #available(macOS 14.0, iOS 17.0, *) {
+                    Rectangle()
+                        .fill(.windowBackground)
+                } else {
+                    Rectangle()
+                        .fill(Color.windowBackgroundColor)
+                }
+                ProgressView()
+            }
+        }
+        .onChange(of: fileState.currentActiveFile == nil, debounce: 0.1) { newValue in
+            isSelectFilePlaceholderPresented = newValue
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func emptyFilePlaceholderview() -> some View {
         ZStack {
             if isSelectFilePlaceholderPresented {
                 ZStack {
@@ -266,25 +225,9 @@ struct ExcalidrawContainerView: View {
             }
         }
         .animation(.default, value: isSelectFilePlaceholderPresented)
-        .onChange(
-            of: fileState.currentLocalFile == nil && fileState.currentFile == nil && fileState.currentTemporaryFile == nil && !fileState.isInCollaborationSpace,
-            debounce: 0.1
-        ) { newValue in
+        .onChange(of: fileState.currentActiveFile == nil, debounce: 0.1) { newValue in
             isSelectFilePlaceholderPresented = newValue
         }
         .contentShape(Rectangle())
     }
-    
-    @MainActor @ViewBuilder
-    private func emptyFilePlaceholderview() -> some View {
-        selectFilePlaceholderView()
-    }
 }
-
-
-#if DEBUG
-#Preview {
-    ExcalidrawContainerView()
-        .frame(width: 800, height: 600)
-}
-#endif

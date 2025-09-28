@@ -74,7 +74,7 @@ struct NewRoomModifier: ViewModifier {
             }
 #endif
             .confirmationDialog(
-                .localizable(.collaborationNewRoomConfirmationDialogTitle),
+                String(localizable: .collaborationNewRoomConfirmationDialogTitle),
                 isPresented: Binding {
 #if os(iOS)
                     UIDevice.current.userInterfaceIdiom != .pad ? state.isCreateRoomConfirmationDialogPresented : false
@@ -141,9 +141,6 @@ struct NewRoomModifier: ViewModifier {
                         alertToast(error)
                     }
                 }
-//#if os(iOS)
-//                .presentationDetents([.height(400)])
-//#endif
             }
             .sheet(isPresented: $state.isJoinRoomSheetPresented) {
                 JoinRoomSheetView()
@@ -172,7 +169,11 @@ struct NewRoomModifier: ViewModifier {
                     Task {
                         await MainActor.run {
                             if let collabFile = viewContext.object(with: fileID) as? CollaborationFile {
-                                fileState.currentCollaborationFile = .room(collabFile)
+                                fileState.currentActiveGroup = .collaboration
+                                fileState.currentActiveFile = .collaborationFile(collabFile)
+                                if !fileState.collaboratingFiles.contains(collabFile) {
+                                    fileState.collaboratingFiles.append(collabFile)
+                                }
                             }
                         }
                     }
@@ -190,11 +191,11 @@ func copyRoomShareLink(roomID: String, filename: String?) {
     var url: URL
     let urlString: String
     
-    let scheme = "https" // "excalidrawz"
-    let path = "collab"
+//    let scheme = "https" // "excalidrawz"
+//    let path = "collab"
         
-    let useExcalidrawScheme = true // Use Excalidraw scheme if needed
-    if useExcalidrawScheme {
+//    let useExcalidrawScheme = true // Use Excalidraw scheme if needed
+//    if useExcalidrawScheme {
         url = URL(string: "https://excalidraw.com/#room=\(roomID)")!
         
         if let filename, !filename.isEmpty, #available(macOS 13.0, *) {
@@ -203,15 +204,15 @@ func copyRoomShareLink(roomID: String, filename: String?) {
             ])
         }
         urlString = url.absoluteString
-    } else if #available(macOS 13.0, *) {
-        url = URL(string: "excalidrawz://collab/\(roomID)")!
-        url.append(queryItems: [
-            URLQueryItem(name: "name", value: filename?.isEmpty == false ? filename : nil)
-        ])
-        urlString = url.absoluteString
-    } else {
-        urlString = "excalidrawz://collab/\(roomID)" + (filename?.isEmpty == false ? "?name=\(filename!)" : "")
-    }
+//    } else if #available(macOS 13.0, *) {
+//        url = URL(string: "excalidrawz://collab/\(roomID)")!
+//        url.append(queryItems: [
+//            URLQueryItem(name: "name", value: filename?.isEmpty == false ? filename : nil)
+//        ])
+//        urlString = url.absoluteString
+//    } else {
+//        urlString = "excalidrawz://collab/\(roomID)" + (filename?.isEmpty == false ? "?name=\(filename!)" : "")
+//    }
 #if os(macOS)
     NSPasteboard.general.clearContents()
     NSPasteboard.general.setString(urlString, forType: .string)

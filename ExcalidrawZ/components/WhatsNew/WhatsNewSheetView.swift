@@ -47,9 +47,9 @@ struct WhatsNewSheetViewModifier: ViewModifier {
             }
             .bindWindow($window)
             .onAppear {
-//#if DEBUG
-//                isPresented = true
-//#endif
+#if DEBUG
+                isPresented = true
+#endif
                 if let buildString = Bundle.main.infoDictionary!["CFBundleVersion"] as? String,
                    lastBuild < (Int(buildString) ?? 0) {
                     isPresented = true
@@ -82,6 +82,8 @@ struct WhatsNewView: View {
 
     @State var route: Route? = nil
     
+    @State private var navigationMaxHeight: CGFloat = .zero
+    
     var body: some View {
         if #available(macOS 13.0, iOS 16.0, *) {
             NavigationStack {
@@ -90,7 +92,7 @@ struct WhatsNewView: View {
                         navigationContent()
                     } else {
                         navigationContent()
-                            .frame(width: 720)
+                           
                     }
                 }
                 .navigationDestination(for: Route.self) { route in
@@ -99,12 +101,13 @@ struct WhatsNewView: View {
                             allFeaturesList()
                         case .video(let url):
                             VideoPlayer(player: AVPlayer(url: url))
-#if os(macOS)
-                                .frame(width: 720, height: 500)
-#endif
                     }
                 }
             }
+#if os(macOS)
+            .frame(width: 720, height: nil)
+            .frame(minHeight: 500)
+#endif
         } else {
             if route == nil {
                 ZStack {
@@ -132,35 +135,23 @@ struct WhatsNewView: View {
             }
         }
         .readSize($navigationSize)
-        .toolbar {
-#if os(macOS)
-            ToolbarItem(placement: .cancellationAction) {
-                if #available(macOS 13.0, iOS 16.0, *) {
-                    Text("") // <-- only with this, the continue button below will show (macOS)
+//        .watchImmediately(of: navigationSize) { newValue in
+//            navigationMaxHeight = max(navigationMaxHeight, newValue.height)
+//        }
+        .overlay(alignment: .topLeading) {
+            ZStack {
+                if #available(macOS 26.0, *) {
+                    dismissButton()
+                        .buttonBorderShape(.circle)
+                        .buttonStyle(.glass)
+                        .controlSize(.extraLarge)
                 } else {
-                    if showContinue {
-                        Button {
-                            dismiss()
-                        } label: {
-                            Text(.localizable(.whatsNewButtonContinue))
-                                .padding(.horizontal)
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
+                    dismissButton()
+                        .buttonStyle(.borderless)
+                        .controlSize(.large)
                 }
             }
-#endif
-            ToolbarItem(placement: .primaryAction) {
-                if #available(macOS 13.0, iOS 16.0, *) {
-                    if showContinue {
-                        Button {
-                            dismiss()
-                        } label: {
-                            Text(.localizable(.whatsNewButtonContinue))
-                        }
-                    }
-                }
-            }
+            .padding(20)
         }
 #if os(iOS)
         .navigationTitle(Text(.localizable(.whatsNewTitle)))
@@ -178,15 +169,37 @@ struct WhatsNewView: View {
 #endif
             VStack(spacing: 6) {
                 VStack(alignment: .leading, spacing: 22) {
-                    Image("What's New Cover")
-                        .resizable()
-                        .scaledToFit()
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    if #available(macOS 13.0, iOS 16.0, *) {
+                        BeforeAfterSlider(
+                            slideMode: .drag,
+                            showHandlebar: true,
+                            initialPercentage: 0.0,
+                            autoplay: true,
+                            autoplayDuration: 6
+                        ) {
+                            Image("ExcalidrawZ - New")
+                                .resizable()
+                                .scaledToFit()
+                        } secondContent: {
+                            Image("ExcalidrawZ - Old")
+                                .resizable()
+                                .scaledToFit()
+                        } handle: {
+                            Image(systemName: "line.horizontal.3")
+                                .foregroundColor(.black)
+                        }
+                        .frame(height: 300)
+                    } else {
+                        Image("What's New Cover")
+                            .resizable()
+                            .scaledToFit()
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
 #if os(macOS)
-                        .padding(.horizontal, 80)
+                            .padding(.horizontal, 80)
 #endif
+                    }
                     
-                     featuresContent()
+                    featuresContent()
                 }
                 .padding(.vertical)
                 .fixedSize(horizontal: false, vertical: true)
@@ -246,8 +259,6 @@ struct WhatsNewView: View {
         .padding(.bottom, 40)
     }
     
-
-
     @MainActor @ViewBuilder
     private func warnningSection() -> some View {
         VStack {
@@ -318,63 +329,19 @@ struct WhatsNewView: View {
             }
         }
     }
+    
+    @MainActor @ViewBuilder
+    private func dismissButton() -> some View {
+        Button {
+            dismiss()
+        } label: {
+            Image(systemSymbol: .xmark)
+        }
+        .keyboardShortcut("w", modifiers: .command)
+    }
 }
 
-struct WhatsNewRowMediaPreviewView: View {
-    var url: URL?
-    
-    init(url: URL?) {
-        self.url = url
-    }
-    
-    @State private var mediaPreviewImage: Image?
-    
-    var body: some View {
-        ZStack {
-            if let mediaPreviewImage {
-                mediaPreviewImage
-                    .resizable()
-                    .scaledToFit()
-            } else {
-                Color.black
-            }
-        }
-        .frame(width: 120)
-        .frame(maxHeight: 120)
-        .overlay {
-            Image(systemSymbol: .playCircleFill)
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: 60, maxHeight: 60)
-                .padding(10)
-                .blendMode(.difference)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 4))
-        .contentShape(Rectangle())
-        .onAppear {
-            if let mediaURL = url {
-                let asset = AVAsset(url: mediaURL)
-                let imageGenerator = AVAssetImageGenerator(asset: asset)
-                imageGenerator.appliesPreferredTrackTransform = true
-                
-                if #available(macOS 13.0,  *) {
-                    imageGenerator.generateCGImageAsynchronously(for: .zero) { cgImage, time, error in
-                        Task.detached {
-                            if let cgImage {
-                                let image = Image(cgImage: cgImage)
-                                await MainActor.run {
-                                    self.mediaPreviewImage = image
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // Fallback on earlier versions
-                }
-            }
-        }
-    }
-}
+
 
 struct ChangeLogView: View {
     var body: some View {

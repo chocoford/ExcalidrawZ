@@ -26,6 +26,10 @@ struct RenameSheetViewModifier: ViewModifier {
                     .presentationDragIndicator(.visible)
                     .presentationCompactAdaptation(.sheet)
 #endif
+                } else if #available(macOS 26.0, *) {
+                    RenameSheetView(text: name) { newName in
+                        callback(newName)
+                    }
                 } else if #available(iOS 18.0, macOS 13.0, *) {
                     RenameSheetView(text: name) { newName in
                         callback(newName)
@@ -76,7 +80,7 @@ struct RenameSheetView: View {
             }
 #if os(macOS)
             .labelsHidden()
-            .padding()
+            .sheetPadding()
 #endif
 //        }
     }
@@ -115,7 +119,9 @@ struct RenameSheetView: View {
                         .frame(width: 64)
                 }
                 .disabled(text.isEmpty)
+                .modernButtonStyle(style: .glassProminent)
             }
+            .modernButtonStyle(shape: .modern)
         }
     }
 }

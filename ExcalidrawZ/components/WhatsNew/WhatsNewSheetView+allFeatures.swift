@@ -11,30 +11,16 @@ extension WhatsNewView {
     @MainActor @ViewBuilder
     func featuresContent() -> some View {
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewLiveCollaborationCompabilityTitle),
-            description: .localizable(.whatsNewLiveCollaborationCompabilityDescription),
-            icon: Image(systemSymbol: .person2CropSquareStack)
+            title: .localizable(.whatsNewRedesignUITitle),
+            description: .localizable(.whatsNewRedesignUIDescription),
+            icon: Image(systemSymbol: .macwindow)
         )
         
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewCustomFontTitle),
-            description: .localizable(.whatsNewCustomFontDescription),
-            icon: Image(systemSymbol: .character)
+            title: .localizable(.whatsNewEnhanceInteractiveExperienceTitle),
+            description: .localizable(.whatsNewEnhanceInteractiveExperienceDescription),
+            icon: Image(systemSymbol: .cursorarrowMotionlines)
         )
-        
-#if os(iOS)
-        if UIDevice().userInterfaceIdiom == .pad {
-            
-        } else if UIDevice().userInterfaceIdiom == .phone {
-            
-        }
-#else
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewSidebarFilesMultiSelectTitle),
-            description: .localizable(.whatsNewSidebarFilesMultiSelectDescription),
-            icon: Image(systemSymbol: .filemenuAndSelection)
-        )
-#endif
     }
     
     
@@ -49,12 +35,11 @@ extension WhatsNewView {
                     } label: {
                         Label(.localizable(.navigationButtonBack), systemSymbol: .chevronLeft)
                     }
-                    .buttonStyle(.borderless)
+                    .modernButtonStyle(style: .glass, shape: .circle)
+                    
                     Spacer()
                 }
                 .padding(4)
-                
-                Divider()
             }
             
             // Content
@@ -66,6 +51,17 @@ extension WhatsNewView {
                         featuresContent()
                     }
                     
+#if os(macOS)
+                    // MARK: - v1.5.1
+                    WhatsNewVersionSection(version: "v1.5.1") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewCustomFontTitle),
+                            description: .localizable(.whatsNewCustomFontDescription),
+                            icon: Image(systemSymbol: .character)
+                        )
+                    }
+#endif
+
                     // MARK: - v1.4.5
                     WhatsNewVersionSection(version: "v1.4.5") {
                         WhatsNewFeatureRow(
@@ -184,7 +180,7 @@ extension WhatsNewView {
                             description: .localizable(.whatsNewFallbackExcalifontDescription),
                             icon: Image(systemSymbol: .characterCursorIbeam)
                         ) {
-                            if let url = Bundle.main.url(forResource: "Fallback Excalifont 720p", withExtension: "mov") {
+                            if let url = URL(string: "https://pub-2983ae3d3c894bd08530707492e919db.r2.dev/Fallback Excalifont 720p.mov") {
                                 if #available(macOS 13.0, iOS 16.0, *) {
                                     NavigationLink(value: Route.video(url)) {
                                         WhatsNewRowMediaPreviewView(url: url)
@@ -295,18 +291,16 @@ extension WhatsNewView {
                 .padding(.top, 20)
                 .padding(.bottom, 40)
             }
-#if os(macOS)
-            .frame(width: navigationSize.width, height: max(0, navigationSize.height - 40))
-#endif
         }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .confirmationAction) {
                 Link(destination: URL(string: "https://github.com/chocoford/ExcalidrawZ/blob/main/CHANGELOG.md")!) {
                     HStack(spacing: 2) {
                         Text("Change Log")
                         Image(systemSymbol: .arrowRight)
                     }
                 }
+                .hoverCursor(.link)
             }
         }
     }

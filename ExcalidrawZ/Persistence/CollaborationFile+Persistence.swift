@@ -59,11 +59,119 @@ extension CollaborationFile {
         
     }
     
-//    public func updateRoomID(_ roomID: String) async throws {
-//        guard let context = self.managedObjectContext else { return }
-//        try await context.perform {
-//            self.roomID = roomID
-//            try context.save()
-//        }
-//    }
+    
+    enum ArchiveTarget {
+        case file(_ groupID: NSManagedObjectID, _ fileID: NSManagedObjectID)
+        case localFile(_ folderID: NSManagedObjectID, _ url: URL)
+    }
+    
+    func archiveToLocal(
+        group: FileState.ActiveGroup,
+        delete: Bool,
+        completionHandler: @escaping (_ error: Error?, _ target: ArchiveTarget?) -> Void
+    ) throws {
+        let roomID = self.objectID
+        let name = self.name ?? String(localizable: .generalUntitled)
+        let content = self.content
+        if case .group(let group) = group {
+            let groupID = group.objectID
+            Task.detached {
+                let context = PersistenceController.shared.container.newBackgroundContext()
+                do {
+                    let fileID: NSManagedObjectID? = try await context.perform {
+                        guard case let group as Group = context.object(with: groupID),
+                              let collaborationFile = context.object(with: roomID) as? CollaborationFile else { return nil }
+                        let newFile = File(name: name, context: context)
+                        newFile.group = group
+                        newFile.content = content
+                        newFile.inTrash = false
+                        
+                        context.insert(newFile)
+                        
+                        if delete {
+                            context.delete(collaborationFile)
+                        }
+                        
+                        try context.save()
+                        
+                        return newFile.objectID
+                    }
+                    
+                    if let fileID {
+                        await MainActor.run {
+                            completionHandler(nil, .file(groupID, fileID))
+                        }
+                    } else {
+                        await MainActor.run {
+                            completionHandler(nil, nil)
+                        }
+                    }
+                } catch {
+                    await MainActor.run {
+                        completionHandler(error, nil)
+                    }
+                }
+            }
+            
+        } else if case .localFolder(let localFolder) = group {
+            let localFolderID = localFolder.objectID
+            Task.detached {
+                let context = PersistenceController.shared.container.newBackgroundContext()
+                do {
+                    let fileURL: URL? = try await context.perform {
+                        guard case let localFolder as LocalFolder = context.object(with: localFolderID),
+                              let collaborationFile = context.object(with: roomID) as? CollaborationFile else { return nil }
+                        let fileURL = try localFolder.withSecurityScopedURL { scopedURL in
+                            var file = try ExcalidrawFile(from: roomID, context: context)
+                            try file.syncFiles(context: context)
+                            let fileURL = scopedURL.appendingPathComponent(
+                                name,
+                                conformingTo: .excalidrawFile
+                            )
+                            try file.content?.write(to: fileURL)
+                            return fileURL
+                        }
+    
+                        if delete {
+                            context.delete(collaborationFile)
+                        }
+                        
+                        try context.save()
+                        
+                        return fileURL
+                    }
+                    
+                    if let fileURL {
+                        await MainActor.run {
+                            completionHandler(nil, .localFile(localFolderID, fileURL))
+                        }
+                    } else {
+                        await MainActor.run {
+                            completionHandler(nil, nil)
+                        }
+                    }
+                } catch {
+                    completionHandler(error, nil)
+                }
+            }
+        }
+    }
+    
+    func delete(context: NSManagedObjectContext, save: Bool = true) throws {
+        context.delete(self)
+        
+        // also delete checkpoints
+        let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+        checkpointsFetchRequest.predicate = NSPredicate(format: "collaborationFile = %@", self)
+        let checkpoints = try context.fetch(checkpointsFetchRequest)
+        if !checkpoints.isEmpty {
+            let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: checkpoints.map{$0.objectID})
+            try context.executeAndMergeChanges(using: batchDeleteRequest)
+        }
+        
+        if save {
+            try context.save()
+        }
+    }
+    
 }

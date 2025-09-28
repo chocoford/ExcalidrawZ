@@ -152,6 +152,7 @@ struct Paywall: View {
                         .animation(.bouncy(duration: 0.3, extraBounce: 0.6), value: isPresented)
                     }
                 }
+            
             if horizontalSizeClass == .compact {
                 CompactPlansView(selection: $selectedPlan, plans: displayedPlans)
             } else {
@@ -307,16 +308,9 @@ struct Paywall: View {
         Button {
             isSwitchToAppStoreSheetPresented.toggle()
         } label: {
-            Text("Install App Store version and purchase")
+            Text(localizable: .paywallButtonInstallAppStoreVersion)
         }
-        .controlSize({
-            if #available(macOS 14.0, iOS 17.0, *) {
-                .extraLarge
-            } else {
-                .large
-            }
-        }())
-        .buttonStyle(.borderedProminent)
+        .modernButtonStyle(style: .glassProminent, size: .extraLarge, shape: .capsule)
         .modifier(SwitchAppStoreVersionViewViewModifier(isPresented: $isSwitchToAppStoreSheetPresented))
     }
 #endif

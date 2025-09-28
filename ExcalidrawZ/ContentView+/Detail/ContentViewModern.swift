@@ -21,12 +21,7 @@ struct ContentViewModern: View {
     
     var body: some View {
         ZStack {
-            // macOS always displays the content column.
-            if #available(macOS 14.0, iOS 17.0, *), false {
-                threeColumnNavigationSplitView()
-            } else {
-                twoColumnNavigationSplitView()
-            }
+            content()
         }
         .onChange(of: columnVisibility) { newValue in
             layoutState.isSidebarPresented = newValue != .detailOnly
@@ -45,18 +40,16 @@ struct ContentViewModern: View {
     }
     
     @MainActor @ViewBuilder
-    private func twoColumnNavigationSplitView() -> some View {
+    private func content() -> some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             if #available(macOS 14.0, iOS 17.0, *) {
 #if os(macOS)
                 SidebarView()
-                    .toolbar(content: sidebarToolbar)
-                    .toolbar(removing: .sidebarToggle)
+                     .toolbar(content: sidebarToolbar)
 #elseif os(iOS)
                 if horizontalSizeClass == .compact {
                     SidebarView()
                         .toolbar(content: sidebarToolbar)
-                        .toolbar(removing: .sidebarToggle)
                 } else {
                     SidebarView()
                         .toolbar(content: sidebarToolbar)
@@ -69,57 +62,25 @@ struct ContentViewModern: View {
         } detail: {
             ContentViewDetail(isSettingsPresented: $isSettingsPresented)
         }
-
-#if os(macOS)
-        .removeSettingsSidebarToggle()
-#endif
-    }
-    
-    
-    @StateObject private var localFolderState = LocalFolderState()
-    
-    @available(macOS 14.0, iOS 17.0, *)
-    @MainActor @ViewBuilder
-    private func threeColumnNavigationSplitView() -> some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-#if os(macOS)
-            GroupsSidebar()
-                .frame(minWidth: 270)
-                .toolbar(content: sidebarToolbar)
-                .toolbar(removing: .sidebarToggle)
-#elseif os(iOS)
-            if horizontalSizeClass == .compact {
-                SidebarView()
-                    .toolbar(content: sidebarToolbar)
-                    .toolbar(removing: .sidebarToggle)
-            } else {
-                SidebarView()
-                    .toolbar(content: sidebarToolbar)
-            }
-#endif
-        } content: {
-            FilesSidebar()
-        } detail: {
-            ContentViewDetail(isSettingsPresented: $isSettingsPresented)
-        }
-        .environmentObject(localFolderState)
     }
     
     @ToolbarContentBuilder
     private func sidebarToolbar() -> some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
             // create
-            NewFileButton()
+            NewFileButton(openWithDelay: fileState.currentActiveGroup != nil)
         }
         
 #if os(macOS)
         // in macOS 14.*, the horizontalSizeClass is not `.regular`
         // if horizontalSizeClass == .regular {
-            ToolbarItemGroup(placement: .destructiveAction) {
-                SidebarToggle(columnVisibility: $columnVisibility)
-                
-//                NewFileButton()
-            }
+//            ToolbarItemGroup(placement: .destructiveAction) {
+////                SidebarToggle(columnVisibility: $columnVisibility)
+//                if #available(macOS 26.0, iOS 26.0, *) {} else {
+//                    Color.clear.frame(width: 4, height: 4)
+//                }
+////                NewFileButton()
+//            }
         // }
 #elseif os(iOS)
         ToolbarItemGroup(placement: .topBarLeading) {
@@ -131,23 +92,29 @@ struct ContentViewModern: View {
         }
 #endif
 //        ToolbarItemGroup(placement: .confirmationAction) {
-//            Color.blue.frame(width: 10, height: 10)
+//            Color.blue.frame(width: 4, height: 4)
 //        }
 //        ToolbarItemGroup(placement: .status) {
-//            Color.yellow.frame(width: 10, height: 10)
+//            Color.yellow.frame(width: 4, height: 4)
 //        }
 //        ToolbarItemGroup(placement: .principal) {
-//            Color.green.frame(width: 10, height: 10)
+//            Color.green.frame(width: 4, height: 4)
 //        }
 //
 //        ToolbarItemGroup(placement: .cancellationAction) {
-//            Color.red.frame(width: 10, height: 10)
+//            // Color.red.frame(width: 4, height: 4)
+//            if #available(macOS 15.0, *) {
+//                Color.clear.frame(height: 1)
+//            }
 //        }
-//
+
 #if os(macOS)
         /// It is neccessary for macOS to `space-between` the new button and sidebar toggle.
+        /// In the latest macOS 26.0, this is not needed anymore. Otherwise, there will be a blank background.
         ToolbarItemGroup(placement: .secondaryAction) {
-            Color.clear
+            if #available(macOS 26.0, iOS 26.0, *) { } else {
+                Color.clear
+            }
         }
 #endif
     }

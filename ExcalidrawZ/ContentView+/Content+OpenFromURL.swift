@@ -14,7 +14,6 @@ import Combine
 
 import ChocofordUI
 
-
 struct OpenFromURLModifier: ViewModifier {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.openURL) private var openURL
@@ -99,6 +98,7 @@ struct OpenFromURLModifier: ViewModifier {
     }
     
     private func onOpenLocalFile(_ url: URL) {
+        guard let utType = UTType(filenameExtension: url.pathExtension) else { return }
         var targetURL = url
         
         // check if it is already in LocalFolder
@@ -114,12 +114,12 @@ struct OpenFromURLModifier: ViewModifier {
                 canAddToTemp = false
                 Task {
                     await MainActor.run {
-                        fileState.currentLocalFolder = folder
+                        fileState.currentActiveGroup = .localFolder(folder)
                         fileState.expandToGroup(folder.objectID)
                     }
                     try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.1))
                     await MainActor.run {
-                        fileState.currentLocalFile = url
+                        fileState.currentActiveFile = .localFile(url)
                     }
                 }
             }
@@ -132,10 +132,10 @@ struct OpenFromURLModifier: ViewModifier {
         
         logger.debug("on open url: \(url)")
         
+        // handle images
         var imageSendToNewFile: (Data, UTType)? = nil
         
-        if let utType = UTType(filenameExtension: url.pathExtension),
-           utType.conforms(to: .image) {
+        if utType.conforms(to: .image) {
             
             self.logger.info("Opening image file: \(url, privacy: .public), utType: \(utType.identifier, privacy: .public)")
             do {
@@ -163,42 +163,50 @@ struct OpenFromURLModifier: ViewModifier {
             }
         }
         
+        // handle library file
+        if utType == .excalidrawlibFile {
+            onOpenLibraryFile(url)
+            return
+        }
         
+        
+        // handle excalidraw file
         if !fileState.temporaryFiles.contains(where: {$0 == targetURL}) {
             fileState.temporaryFiles.append(targetURL)
         }
-        if !fileState.isTemporaryGroupSelected || fileState.currentTemporaryFile == nil {
-            fileState.isTemporaryGroupSelected = true
-            fileState.currentTemporaryFile = fileState.temporaryFiles.first
-            
-            if let imageSendToNewFile {
-                Task {
-                    // Wait for boot
-                    if fileState.excalidrawWebCoordinator == nil {
-                        try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
-                    }
-                    
-                    if fileState.excalidrawWebCoordinator?.isLoading == true {
-                        self.webViewIsLoadingCancellable = fileState.excalidrawWebCoordinator?.$isLoading.sink { isLoading in
-                            Task {
-                                try? await Task.sleep(nanoseconds: UInt64(1e+9 * 2.3))
-                                try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
-                                    imageData: imageSendToNewFile.0,
-                                    type: imageSendToNewFile.1 == .png ? "png" : "svg+xml"
-                                )
-                            }
-                            self.webViewIsLoadingCancellable?.cancel()
+
+        
+        fileState.currentActiveGroup = .temporary
+        fileState.currentActiveFile = .temporaryFile(targetURL)
+        
+        if let imageSendToNewFile {
+            Task {
+                // Wait for boot
+                if fileState.excalidrawWebCoordinator == nil {
+                    try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
+                }
+                
+                if fileState.excalidrawWebCoordinator?.isLoading == true {
+                    self.webViewIsLoadingCancellable = fileState.excalidrawWebCoordinator?.$isLoading.sink { isLoading in
+                        Task {
+                            try? await Task.sleep(nanoseconds: UInt64(1e+9 * 2.3))
+                            try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
+                                imageData: imageSendToNewFile.0,
+                                type: imageSendToNewFile.1 == .png ? "png" : "svg+xml"
+                            )
                         }
-                    } else {
-                        try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
-                        try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
-                            imageData: imageSendToNewFile.0,
-                            type: imageSendToNewFile.1 == .png ? "png" : "svg+xml"
-                        )
+                        self.webViewIsLoadingCancellable?.cancel()
                     }
+                } else {
+                    try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
+                    try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
+                        imageData: imageSendToNewFile.0,
+                        type: imageSendToNewFile.1 == .png ? "png" : "svg+xml"
+                    )
                 }
             }
         }
+
         // save a checkpoint immediately.
         Task.detached {
             do {
@@ -246,9 +254,9 @@ struct OpenFromURLModifier: ViewModifier {
                         let roomID = room.objectID
                         Task {
                             await MainActor.run {
-                                fileState.isInCollaborationSpace = true
+                                fileState.currentActiveGroup = .collaboration
                                 if case let room as CollaborationFile = viewContext.object(with: roomID) {
-                                    fileState.currentCollaborationFile = .room(room)
+                                    fileState.currentActiveFile = .collaborationFile(room)
                                 }
                             }
                         }
@@ -280,18 +288,22 @@ struct OpenFromURLModifier: ViewModifier {
                 if let file = object as? File {
                     if let group = file.group {
                         fileState.expandToGroup(group.objectID)
-                        fileState.currentGroup = group
+                        fileState.currentActiveGroup = .group(group)
                     }
-                    fileState.currentFile = file
+                    fileState.currentActiveFile = .file(file)
                 } else if let group = object as? Group {
                     fileState.expandToGroup(group.objectID)
-                    fileState.currentGroup = group
+                    fileState.currentActiveGroup = .group(group)
                 } else if let folder = object as? LocalFolder {
                     fileState.expandToGroup(folder.objectID)
-                    fileState.currentLocalFolder = folder
+                    fileState.currentActiveGroup = .localFolder(folder)
                 }
             }
         }
+    }
+    
+    private func onOpenLibraryFile(_ url: URL) {
+        NotificationCenter.default.post(name: .shouldImportExternalLibraryFile, object: url)
     }
 }
 

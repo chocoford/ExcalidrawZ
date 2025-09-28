@@ -1,0 +1,131 @@
+//
+//  HomeFolderItemView.swift
+//  ExcalidrawZ
+//
+//  Created by Dove Zachary on 8/3/25.
+//
+
+import SwiftUI
+import ChocofordUI
+
+struct HomeFolderItemView: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var dragState: ItemDragState
+
+    var isSelected: Bool
+    var isHighlighted: Bool
+    var name: String
+    var itemsCount: Int
+    
+    @State private var isHovered = false
+    
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemSymbol: .folderFill)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 24)
+                .foregroundStyle(Color(red: 12/255.0, green: 157/255.0, blue: 229/255.0))
+            
+            VStack(alignment: .leading) {
+                Text(name)
+                    .font(.headline)
+                    .lineLimit(1)
+                if #available(macOS 13.0, iOS 16.0, *) {
+                    Text(localizable: .homeGroupItemsFormatter(itemsCount))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                   
+                }
+            }
+                   
+            Spacer()
+            if #available(macOS 13.0, iOS 16.0, *) {} else {
+                Text(itemsCount.formatted())
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
+        .onHover { isHovered = $0 }
+        .background {
+            ZStack {
+                if #available(macOS 26.0, iOS 26.0, *) {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(
+                            isHighlighted
+                            ? AnyShapeStyle(Color.accentColor)
+                            : colorScheme == .light
+                            ? AnyShapeStyle(HierarchicalShapeStyle.secondary)
+                            : AnyShapeStyle(Color.clear)
+                        )
+                        .stroke(
+                            isSelected
+                            ? AnyShapeStyle(Color.accentColor)
+                            : AnyShapeStyle(SeparatorShapeStyle())
+                        )
+                        .glassEffect(.clear, in: .rect(cornerRadius: 12))
+                        .shadow(
+                            color: colorScheme == .light
+                            ? Color.gray.opacity(0.33)
+                            : Color.black.opacity(0.33),
+                            radius: isHovered
+                            ? colorScheme == .light ? 2 : 6
+                            : 0
+                        )
+                    
+                } else {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(
+                            isHighlighted
+                            ? AnyShapeStyle(Color.accentColor)
+                            : AnyShapeStyle(BackgroundStyle())
+                        )
+                        .shadow(
+                            color: colorScheme == .light
+                            ? Color.gray.opacity(0.2)
+                            : Color.black.opacity(0.2),
+                            radius: isHovered ? 4 : 0
+                        )
+                    
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(
+                            isSelected
+                            ? AnyShapeStyle(Color.accentColor)
+                            : AnyShapeStyle(SeparatorShapeStyle())
+                        )
+                }
+            }
+        }
+        .animation(.smooth(duration: 0.2), value: isHovered)
+    }
+}
+
+
+struct HomeFolderItemDropModifier<HomeGroup: ExcalidrawGroup>: ViewModifier {
+    var group: HomeGroup
+    
+    func body(content: Content) -> some View {
+        if let group = group as? Group {
+            content
+                .modifier(
+                    GroupRowDropModifier(group: group) { item in
+                            .below(item)
+                    }
+                )
+        } else if let folder = group as? LocalFolder {
+            content
+                .modifier(LocalFolderDropModifier(
+                    folder: folder,
+                    dropTarget: { item in
+                            .below(item)
+                    }
+                ))
+        }
+        
+    }
+}

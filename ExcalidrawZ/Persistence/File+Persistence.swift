@@ -20,7 +20,7 @@ extension File {
     
     convenience init(url: URL, context: NSManagedObjectContext) throws {
         let lastPathComponent = url.lastPathComponent
-
+        
         var fileNameURL = url
         for _ in 0..<lastPathComponent.count(where: {$0 == "."}) {
             fileNameURL.deletePathExtension()
@@ -44,28 +44,103 @@ extension File {
         
         self.content = contentData
         self.updatedAt = .now
-
-        let viewContext = self.managedObjectContext ?? PersistenceController.shared.container.newBackgroundContext()
+        
+        let context = self.managedObjectContext ?? PersistenceController.shared.container.newBackgroundContext()
         if newCheckpoint {
-            let checkpoint = FileCheckpoint(context: viewContext)
+            print("[updateElements] new checkpoint")
+            let checkpoint = FileCheckpoint(context: context)
             checkpoint.id = UUID()
             checkpoint.content = contentData
             checkpoint.filename = self.name
             checkpoint.updatedAt = .now
             self.addToCheckpoints(checkpoint)
             
-            if let checkpoints = try? PersistenceController.shared.fetchFileCheckpoints(of: self, viewContext: viewContext),
+            if let checkpoints = try? PersistenceController.shared.fetchFileCheckpoints(of: self, viewContext: context),
                checkpoints.count > 50 {
                 self.removeFromCheckpoints(checkpoints.last!)
             }
-        } else if let checkpoint = try? PersistenceController.shared.getLatestCheckpoint(of: self, viewContext: viewContext) {
+        } else if let checkpoint = try? PersistenceController.shared.getLatestCheckpoint(of: self, viewContext: context) {
+            print("[updateElements] update checkpoint")
             // update latest checkpoint
             checkpoint.content = contentData
             checkpoint.filename = self.name
             checkpoint.updatedAt = .now
         }
         
-//        return true
+        //        return true
+    }
+    
+//    func update(file: ExcalidrawFile, context: NSManagedObjectContext) async throws {
+//        try await context.perform {
+//            guard let file = context.object(with: id) as? File,
+//                  let content = excalidrawFile.content else { return }
+//
+//            try file.updateElements(
+//                with: content,
+//                newCheckpoint: !didUpdateFile
+//            )
+//            let newMedias = excalidrawFile.files.filter { (id, _) in
+//                file.medias?.contains(where: {
+//                    ($0 as? MediaItem)?.id == id
+//                }) != true
+//            }
+//
+//            // also update medias
+//            for (_, resource) in newMedias {
+//                let mediaItem = MediaItem(resource: resource, context: bgContext)
+//                mediaItem.file = file
+//                bgContext.insert(mediaItem)
+//            }
+//
+//            try bgContext.save()
+//        }
+//    }
+    
+    func exportToDisk(folder url: URL) {
+        let filemanager = FileManager.default
+        
+        var filename = self.name ?? String(localizable: .generalUntitled)
+        var i = 1
+        while filemanager.fileExists(
+            atPath: url.appendingPathComponent(filename, conformingTo: .excalidrawFile).filePath
+        ) {
+            filename = (self.name ?? String(localizable: .generalUntitled)) + " (\(i))"
+            i += 1
+        }
+        
+        let url = url.appendingPathComponent(filename, conformingTo: .excalidrawFile)
+        filemanager.createFile(atPath: url.filePath, contents: self.content)
+    }
+    
+    func delete(
+        context: NSManagedObjectContext,
+        forcePermanently: Bool = false,
+        save: Bool = true
+    ) throws {
+        if inTrash || forcePermanently {
+            let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(
+                entityName: "FileCheckpoint"
+            )
+            checkpointsFetchRequest.predicate = NSPredicate(
+                format: "file = %@", self
+            )
+            let fileCheckpoints = try context.fetch(checkpointsFetchRequest)
+            let objectIDsToBeDeleted = fileCheckpoints.map{$0.objectID}
+            if !objectIDsToBeDeleted.isEmpty {
+                let batchDeleteRequest = NSBatchDeleteRequest(
+                    objectIDs: objectIDsToBeDeleted
+                )
+                try context.executeAndMergeChanges(using: batchDeleteRequest)
+            }
+            context.delete(self)
+        } else {
+            self.inTrash = true
+            self.deletedAt = .now
+        }
+        
+        if save {
+            try context.save()
+        }
     }
 }
 
