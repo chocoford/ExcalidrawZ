@@ -1,9 +1,10 @@
 <div align="center" style="display:flex;flex-direction:column;">
   <a href="https://excalidraw.com">
-    <img src="./ExcalidrawZ/Assets.xcassets/AppIcon.appiconset/AppIcon-128.0x128.0@2x.png?raw=true" alt="ExcalidrawZ logo" />
+    <img src="./ExcalidrawZ/Assets.xcassets/AppIcon-macOS.imageset/ExcalidrawZ Icon 26-iOS-Default-83.5x83.5@3x.png?raw=true" alt="ExcalidrawZ logo" />
   </a>
   <h3>Excalidraw app for mac. Powered by pure SwiftUI.</h3>
 </div>
+
 
 ![GitHub](https://img.shields.io/github/license/chocoford/ExcalidrawZ) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40Chocoford)](https://twitter.com/dove_zachary) ![Discord](https://img.shields.io/discord/944160092914319361)
 
@@ -15,13 +16,13 @@
 
 [![Download Link - App Store](assets/README/Download_on_the_App_Store_Badge_US-UK.svg)](https://apps.apple.com/app/excalidrawz/id6636493997) 
 
-**Non-App Store version (Not Recommended)**
+**Non-App Store version**
 
 1. Download the latest image file (.dmg) from [Releases](https://github.com/chocoford/ExcalidrawZ/releases)
 2. Click the `.dmg` to install it
 
 ## Preview
-![App overview](assets/README/App%20overview.png)
+![App overview](assets/README/ExcalidrawZ - Overview.png)
 
 ## Features
 
@@ -85,7 +86,7 @@ ExcalidrawZ for iOS&iPadOS is now available. All data are synchronised by iCloud
 
 - [x] iCloud synchronization
 - [x] iOS support.
-- [ ] Support deep links.
+- [x] Support deep links.
 
 ## Contact me
 
