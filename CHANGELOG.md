@@ -3,7 +3,6 @@
 #### Optimizations
 
 - Completely redesigned UI
-
 - Refined interaction details to improve the user experience
   -  drag-and-drop to move
   -  reorder files and groups,
