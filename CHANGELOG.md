@@ -1,3 +1,28 @@
+## 1.6.0
+
+#### Optimizations
+
+- Completely redesigned UI
+
+- Refined interaction details to improve the user experience
+  -  drag-and-drop to move
+  -  reorder files and groups,
+  - double-clicking library (.lib) files to open them directly
+  -  and more...
+- Sidebar scroll when opening a group/folder
+
+#### Fixes
+
+- App froze when first launching iCloud syncing without network.
+- Library shapes are not loading correctly.
+- "Export All" creates empty folder.
+- Repeating beep sound when moving the canvas with space + drag
+- `The data could not be read because it is missing` when using arrow
+- Unexpected behavior when save temporary files 
+- Open temporary file without activate it.
+- Recovered file not selected
+- Crash during UI updates
+
 ## 1.5.1
 
 #### Optimizations
