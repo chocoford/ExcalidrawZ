@@ -59,6 +59,7 @@ enum ExcalidrawElementType: String, Codable {
     case selection = "selection"
     case diamond = "diamond"
     case image = "image"
+    case pdf = "pdf"
     case frame = "frame"
     case magicFrame = "magicframe"
     case embeddable = "embeddable"

@@ -119,7 +119,10 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                             self.parent?.fileState.collaborators[currentCollaborationFile] = collaborators
                         }
                     }
-                    
+
+                case .onDropPDF(let message):
+                    self.handleDropPDF(message.data)
+
                 case .log(let logMessage):
                     self.onWebLog(message: logMessage)
             }
@@ -287,7 +290,33 @@ extension ExcalidrawCore {
                 self.logger.log("Unhandled log: \(message)")
         }
     }
-    
+
+    func handleDropPDF(_ data: OnDropPDFMessage.OnDropPDFMessageData) {
+        // Parse base64 data to PDF data
+        guard let pdfData = Data(base64Encoded: data.base64Data) else {
+            logger.error("Failed to decode base64 PDF data")
+            return
+        }
+
+        // Create PDF drop info struct
+        let dropInfo = PDFDropInfo(
+            pdfData: pdfData,
+            fileName: data.fileName,
+            sceneX: data.sceneX,
+            sceneY: data.sceneY
+        )
+
+        // Post notification to trigger PDF insert sheet
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .showPDFInsertSheet,
+                object: dropInfo
+            )
+        }
+
+        logger.info("PDF drop event received: \(data.fileName) at (\(data.sceneX), \(data.sceneY))")
+    }
+
     func addToLibrary(item: ExcalidrawLibrary.Item) {
         let context = PersistenceController.shared.container.newBackgroundContext()
         let onError = self.publishError
@@ -320,7 +349,7 @@ extension ExcalidrawCore {
 extension ExcalidrawCore {
     enum ExcalidrawZEventType: String, Codable {
         case onload
-        
+
         case onStateChanged
         case saveFileDone
         case blobData
@@ -338,11 +367,14 @@ extension ExcalidrawCore {
         case didPenDown
         case didSelectElements
         case didUnselectAllElements
-        
+
         // Collab
         case didOpenLiveCollaboration
         case onCollaboratorsChanged
-        
+
+        // PDF
+        case onDropPDF
+
         case log
     }
     
@@ -365,11 +397,14 @@ extension ExcalidrawCore {
         case didPenDown
         case didSelectElements(DidSelectElementsMessage)
         case didUnselectAllElements
-        
+
         // Collab
         case didOpenLiveCollaboration(DidOpenLiveCollaborationMessage)
         case onCollaboratorsChanged(CollaboratorsChangedMessage)
-        
+
+        // PDF
+        case onDropPDF(OnDropPDFMessage)
+
         case log(LogMessage)
         
         enum CodingKeys: String, CodingKey {
@@ -423,7 +458,11 @@ extension ExcalidrawCore {
                     self = .didOpenLiveCollaboration(try DidOpenLiveCollaborationMessage(from: decoder))
                 case .onCollaboratorsChanged:
                     self = .onCollaboratorsChanged(try CollaboratorsChangedMessage(from: decoder))
-                    
+
+                // PDF
+                case .onDropPDF:
+                    self = .onDropPDF(try OnDropPDFMessage(from: decoder))
+
                 case .log:
                     self = .log(try LogMessage(from: decoder))
             }
@@ -628,7 +667,20 @@ extension ExcalidrawCore {
         var event: String
         var data: [ExcalidrawElement]
     }
-    
+
+    struct OnDropPDFMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: OnDropPDFMessageData
+
+        struct OnDropPDFMessageData: Codable {
+            var fileName: String
+            var fileSize: Double
+            var base64Data: String
+            var sceneX: Double
+            var sceneY: Double
+        }
+    }
+
     struct DidOpenLiveCollaborationMessage: AnyExcalidrawZMessage {
         var event: String
         var data: DidOpenLiveCollaborationMessageData
@@ -727,6 +779,19 @@ extension ExcalidrawCore {
     }
 }
 
+// MARK: - PDF Drop Info
+
+struct PDFDropInfo {
+    let pdfData: Data
+    let fileName: String
+    let sceneX: Double
+    let sceneY: Double
+}
+
+extension Notification.Name {
+    static let showPDFInsertSheet = Notification.Name("showPDFInsertSheet")
+}
+
 extension ExcalidrawFile {
     mutating func update(data: ExcalidrawView.Coordinator.ExcalidrawFileData) throws {
         guard let content = self.content else {
@@ -735,7 +800,7 @@ extension ExcalidrawFile {
             }
             throw EmptyContentError()
         }
-        
+
         var contentObject = try JSONSerialization.jsonObject(with: content) as! [String : Any]
         // print("[ExcalidrawFile] update with obj: \(contentObject)")
         guard let dataData = data.dataString.data(using: .utf8),
@@ -747,7 +812,7 @@ extension ExcalidrawFile {
         }
         contentObject["elements"] = fileDataJson["elements"]
         contentObject["files"] = fileDataJson["files"]
-        
+
         self.content = try JSONSerialization.data(withJSONObject: contentObject)
         self.elements = data.elements ?? []
         self.files = data.files

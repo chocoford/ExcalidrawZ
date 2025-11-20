@@ -16,6 +16,7 @@ enum ExcalidrawElement: Codable, Hashable, Sendable {
     case freeDraw(ExcalidrawFreeDrawElement)
     case draw(ExcalidrawDrawElement) // lagacy - only existed in v1
     case image(ExcalidrawImageElement)
+    case pdf(ExcalidrawPdfElement)
     case frameLike(ExcalidrawFrameLikeElement)
     case iframeLike(ExcalidrawIframeLikeElement)
     
@@ -42,6 +43,8 @@ enum ExcalidrawElement: Codable, Hashable, Sendable {
                 self = .draw(try ExcalidrawDrawElement(from: decoder))
             case .image:
                 self = .image(try ExcalidrawImageElement(from: decoder))
+            case .pdf:
+                self = .pdf(try ExcalidrawPdfElement(from: decoder))
             case .frame, .magicFrame:
                 self = .frameLike(try ExcalidrawFrameLikeElement(from: decoder))
             case .iframe, .embeddable:
@@ -65,6 +68,8 @@ enum ExcalidrawElement: Codable, Hashable, Sendable {
                 try excalidrawDrawElement.encode(to: encoder)
             case .image(let excalidrawImageElement):
                 try excalidrawImageElement.encode(to: encoder)
+            case .pdf(let excalidrawPdfElement):
+                try excalidrawPdfElement.encode(to: encoder)
             case .frameLike(let excalidrawFrameElement):
                 try excalidrawFrameElement.encode(to: encoder)
             case .iframeLike(let excalidrawIframeLikeElement):
@@ -91,6 +96,8 @@ extension ExcalidrawElement: Identifiable {
                 excalidrawDrawElement.id
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.id
+            case .pdf(let excalidrawPdfElement):
+                excalidrawPdfElement.id
             case .frameLike(let excalidrawFrameElement):
                 excalidrawFrameElement.id
             case .iframeLike(let excalidrawIframeLikeElement):
@@ -116,6 +123,8 @@ extension ExcalidrawElement {
                 excalidrawDrawElement.x
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.x
+            case .pdf(let excalidrawPdfElement):
+                excalidrawPdfElement.x
             case .frameLike(let excalidrawFrameElement):
                 excalidrawFrameElement.x
             case .iframeLike(let excalidrawIframeLikeElement):
@@ -139,6 +148,8 @@ extension ExcalidrawElement {
                 excalidrawDrawElement.y
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.y
+            case .pdf(let excalidrawPdfElement):
+                excalidrawPdfElement.y
             case .frameLike(let excalidrawFrameElement):
                 excalidrawFrameElement.y
             case .iframeLike(let excalidrawIframeLikeElement):
@@ -162,6 +173,8 @@ extension ExcalidrawElement {
                 excalidrawDrawElement.width
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.width
+            case .pdf(let excalidrawPdfElement):
+                excalidrawPdfElement.width
             case .frameLike(let excalidrawFrameElement):
                 excalidrawFrameElement.width
             case .iframeLike(let excalidrawIframeLikeElement):
@@ -185,6 +198,8 @@ extension ExcalidrawElement {
                 excalidrawDrawElement.height
             case .image(let excalidrawImageElement):
                 excalidrawImageElement.height
+            case .pdf(let excalidrawPdfElement):
+                excalidrawPdfElement.height
             case .frameLike(let excalidrawFrameElement):
                 excalidrawFrameElement.height
             case .iframeLike(let excalidrawIframeLikeElement):

@@ -26,8 +26,9 @@ struct ExcalidrawToolbar: View {
 #endif
     @State private var windowFrameCancellable: AnyCancellable?
     @State private var isApplePencilDisconnectConfirmationDialogPresented = false
-    
+
     @State private var isMathInputSheetPresented = false
+    @State private var isPDFPickerPresented = false
 
     
     var body: some View {
@@ -532,6 +533,12 @@ struct ExcalidrawToolbar: View {
             } label: {
                 Text(.localizable(.toolbarLatexMath))
             }
+
+            Button {
+                isPDFPickerPresented.toggle()
+            } label: {
+                Text(localizable: .toolbarInsertPDF)
+            }
         } label: {
             if #available(macOS 15.0, iOS 18.0, *) {
                 Label(.localizable(.toolbarMoreTools), systemImage: "xmark.triangle.circle.square")
@@ -546,6 +553,7 @@ struct ExcalidrawToolbar: View {
         .menuOrder(.fixed)
 #endif
         .modifier(MathInputSheetViewModifier(isPresented: $isMathInputSheetPresented))
+        .modifier(PDFInsertSheetViewModifier(isPresented: $isPDFPickerPresented))
     }
 }
 

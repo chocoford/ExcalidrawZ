@@ -10,15 +10,15 @@ import Foundation
 
 extension PersistenceController {
     func prepare() {
+        let context = self.container.viewContext
         Task {
             do {
                 let fetch: NSFetchRequest<Group> = NSFetchRequest(entityName: "Group")
-                
-                try await container.viewContext.perform {
+                try await context.perform {
                     let groups = try fetch.execute()
                     if groups.first(where: {$0.groupType == .default}) == nil {
                         // create the default group
-                        let group = Group(context: self.container.viewContext)
+                        let group = Group(context: context)
                         group.id = UUID()
                         group.name = "default"
                         group.createdAt = .now
@@ -26,7 +26,7 @@ extension PersistenceController {
                     }
                     
                     if groups.first(where: {$0.groupType == .default}) == nil {
-                        let group = Group(context: self.container.viewContext)
+                        let group = Group(context: context)
                         group.id = UUID()
                         group.name = "Recently deleted"
                         group.createdAt = .now
@@ -108,7 +108,7 @@ extension PersistenceController {
                                 
                                 let mediaItem = MediaItem(resource: media, context: context)
                                 mediaItem.file = file
-                                self.container.viewContext.insert(mediaItem)
+                                context.insert(mediaItem)
                                 insertedMediaID.insert(id)
                             }
                             file.content = try excalidrawFile.contentWithoutFiles()
@@ -131,7 +131,7 @@ extension PersistenceController {
                                 if insertedMediaID.contains(id) { continue }
                                 let mediaItem = MediaItem(resource: media, context: context)
                                 mediaItem.file = checkpoint.file
-                                self.container.viewContext.insert(mediaItem)
+                                context.insert(mediaItem)
                             }
                             checkpoint.content = try excalidrawFile.contentWithoutFiles()
                         } catch {
