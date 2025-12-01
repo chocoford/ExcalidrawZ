@@ -9,7 +9,7 @@ import SwiftUI
 import CoreData
 import WebKit
 import UniformTypeIdentifiers
-import os.log
+import Logging
 import Combine
 
 import ChocofordUI
@@ -22,7 +22,7 @@ struct OpenFromURLModifier: ViewModifier {
     
     @EnvironmentObject private var fileState: FileState
     
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "OpenFromURLModifier")
+    let logger = Logger(label: "OpenFromURLModifier")
     
     @State private var externalURLToBeOpen: URL?
     @State private var isCommandKeyDown = false
@@ -137,7 +137,7 @@ struct OpenFromURLModifier: ViewModifier {
         
         if utType.conforms(to: .image) {
             
-            self.logger.info("Opening image file: \(url, privacy: .public), utType: \(utType.identifier, privacy: .public)")
+            self.logger.info("Opening image file: \(url), utType: \(utType.identifier)")
             do {
                 // Create a new temp file
                 let tempURL = try FileManager.default.url(
@@ -159,7 +159,7 @@ struct OpenFromURLModifier: ViewModifier {
                 }
                 targetURL = tempURL
             } catch {
-                self.logger.error("Failed to create ExcalidrawFile from URL: \(url, privacy: .public), error: \(error, privacy: .public)")
+                self.logger.error("Failed to create ExcalidrawFile from URL: \(url), error: \(error)")
             }
         }
         

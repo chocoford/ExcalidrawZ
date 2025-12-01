@@ -28,7 +28,9 @@ struct TemporaryFilesHomeView: View {
                 HStack {
                     if #available(macOS 14.0, iOS 17.0, *) {
                         actionsMenu()
+#if canImport(AppKit)
                             .buttonStyle(.accessoryBar)
+#endif
                     } else {
                         actionsMenu()
                     }
@@ -57,9 +59,11 @@ struct TemporaryFilesHomeView: View {
             Color.clear
                 .contentShape(Rectangle())
                 .onTapGesture {
+#if canImport(AppKit)
                     if NSEvent.modifierFlags.contains(.command) || NSEvent.modifierFlags.contains(.shift) {
                         return
                     }
+#endif
                     fileState.resetSelections()
                 }
         }

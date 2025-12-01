@@ -296,8 +296,14 @@ struct LibraryItemContentBackgroundModifier: ViewModifier {
                 6
             }
             
-            RoundedRectangle(cornerRadius: radius)
-                .stroke(.separator, lineWidth: 1)
+            if #available(iOS 17.0, macOS 12.0, *) {
+                RoundedRectangle(cornerRadius: radius)
+                    .stroke(.separator, lineWidth: 1)
+            } else {
+                RoundedRectangle(cornerRadius: radius)
+                    .stroke(.secondary, lineWidth: 1)
+            }
+            
             RoundedRectangle(cornerRadius: radius)
                 .fill(
                     displayColorScheme == .dark ? Color(red: 18/255.0, green: 18/255.0, blue: 18/255.0) : .white

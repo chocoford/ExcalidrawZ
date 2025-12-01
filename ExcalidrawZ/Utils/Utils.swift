@@ -38,7 +38,8 @@ func loadResource<T: Decodable>(_ filename: String) -> T {
 
 
 #if canImport(AppKit)
-func archiveAllFiles(context: NSManagedObjectContext) throws {
+@MainActor
+func archiveAllFiles(context: NSManagedObjectContext, completionHandler: (() -> Void)? = nil) async throws {
     let panel = ExcalidrawOpenPanel.exportPanel
     if panel.runModal() == .OK {
         if let url = panel.url {
@@ -46,7 +47,8 @@ func archiveAllFiles(context: NSManagedObjectContext) throws {
             do {
                 let exportURL = url.appendingPathComponent("ExcalidrawZ exported at \(Date.now.formatted(date: .abbreviated, time: .shortened))", conformingTo: .directory)
                 try filemanager.createDirectory(at: exportURL, withIntermediateDirectories: false)
-                try archiveAllCloudFiles(to: exportURL, context: context)
+                try await archiveAllCloudFiles(to: exportURL, context: context)
+                completionHandler?()
             } catch {
                 print(error)
                 throw error
@@ -67,23 +69,23 @@ func getBackupsDir() throws -> URL {
     return backupsDir
 }
 
-func backupFiles(context: NSManagedObjectContext) throws {
+func backupFiles(context: NSManagedObjectContext) async throws {
     let fileManager = FileManager.default
     let backupsDir = try getBackupsDir()
-    
+
     let today = Date()
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy-MM-dd"
     let exportURL = backupsDir.appendingPathComponent(formatter.string(from: today), conformingTo: .directory)
     if fileManager.fileExists(at: exportURL) { return }
 
-    
+
     // Cloud
     let cloudExportURL = exportURL.appendingPathComponent("Cloud", conformingTo: .directory)
     do {
         print("[Backup Files] Start... \(cloudExportURL)")
         try fileManager.createDirectory(at: cloudExportURL, withIntermediateDirectories: true)
-        try archiveAllCloudFiles(to: cloudExportURL, context: context)
+        try await archiveAllCloudFiles(to: cloudExportURL, context: context)
     } catch {
         print("[Backup Files] backup cloud files done, but with error: \(error)")
     }
@@ -170,59 +172,7 @@ func backupFiles(context: NSManagedObjectContext) throws {
     }
 }
 
-func archiveAllCloudFiles(to url: URL, context: NSManagedObjectContext) throws {
-    let filemanager = FileManager.default
-    let allFiles:  [PersistenceController.ExcalidrawGroup : [File]] = try PersistenceController.shared.listAllFiles(context: context)
-    
-    var errorDuringArchive: Error?
-    
-    for groupFiles in allFiles {
-        let group = groupFiles.key
-        let files = groupFiles.value
-        var groupURL = url
-        for ancestor in group.ancestors {
-            groupURL = groupURL.appendingPathComponent(ancestor.name ?? "Untitled", conformingTo: .directory)
-        }
-        groupURL = groupURL.appendingPathComponent(group.group.name ?? "Untitled", conformingTo: .directory)
-        if !filemanager.fileExists(at: groupURL) {
-            try filemanager.createDirectory(at: groupURL, withIntermediateDirectories: true)
-        }
-        
-        for file in files {
-            do {
-                var file = try ExcalidrawFile(from: file)
-                try file.syncFiles(context: context)
-                var index = 1
-                var filename = file.name ?? String(localizable: .newFileNamePlaceholder)
-                var fileURL: URL = groupURL.appendingPathComponent(filename, conformingTo: .fileURL).appendingPathExtension("excalidraw")
-                var retryCount = 0
-                while filemanager.fileExists(at: fileURL), retryCount < 100 {
-                    if filename.hasSuffix(" (\(index))") {
-                        filename = filename.replacingOccurrences(of: " (\(index))", with: "")
-                        index += 1
-                    }
-                    filename = "\(filename) (\(index))"
-                    fileURL = fileURL
-                        .deletingLastPathComponent()
-                        .appendingPathComponent(filename, conformingTo: .excalidrawFile)
-                    retryCount += 1
-                }
-                let filePath: String = fileURL.filePath
-                if !filemanager.createFile(atPath: filePath, contents: file.content) {
-                    print("export file \(filePath) failed")
-                } else {
-                    print("Export file to url<\(filePath)> done")
-                }
-            } catch {
-                errorDuringArchive = error
-            }
-        }
-    }
-    
-    if let errorDuringArchive {
-        throw errorDuringArchive
-    }
-}
+
 
 // MARK: - Export PDF
 func exportPDF<Content: View>(@ViewBuilder content: () -> Content) {
@@ -365,6 +315,59 @@ func exportPDF(image: UIImage, name: String? = nil, to url: URL? = nil) throws -
 
 
 #endif
+func archiveAllCloudFiles(to url: URL, context: NSManagedObjectContext) async throws {
+    let filemanager = FileManager.default
+    let allFiles:  [PersistenceController.ExcalidrawGroup : [File]] = try PersistenceController.shared.listAllFiles(context: context)
+
+    var errorDuringArchive: Error?
+
+    for groupFiles in allFiles {
+        let group = groupFiles.key
+        let files = groupFiles.value
+        var groupURL = url
+        for ancestor in group.ancestors {
+            groupURL = groupURL.appendingPathComponent(ancestor.name ?? "Untitled", conformingTo: .directory)
+        }
+        groupURL = groupURL.appendingPathComponent(group.group.name ?? "Untitled", conformingTo: .directory)
+        if !filemanager.fileExists(at: groupURL) {
+            try filemanager.createDirectory(at: groupURL, withIntermediateDirectories: true)
+        }
+
+        for file in files {
+            do {
+                var excalidrawFile = try await ExcalidrawFile(from: file)
+                try await excalidrawFile.syncFiles(context: context)
+                var index = 1
+                var filename = excalidrawFile.name ?? String(localizable: .newFileNamePlaceholder)
+                var fileURL: URL = groupURL.appendingPathComponent(filename, conformingTo: .fileURL).appendingPathExtension("excalidraw")
+                var retryCount = 0
+                while filemanager.fileExists(at: fileURL), retryCount < 100 {
+                    if filename.hasSuffix(" (\(index))") {
+                        filename = filename.replacingOccurrences(of: " (\(index))", with: "")
+                        index += 1
+                    }
+                    filename = "\(filename) (\(index))"
+                    fileURL = fileURL
+                        .deletingLastPathComponent()
+                        .appendingPathComponent(filename, conformingTo: .excalidrawFile)
+                    retryCount += 1
+                }
+                let filePath: String = fileURL.filePath
+                if !filemanager.createFile(atPath: filePath, contents: excalidrawFile.content) {
+                    print("export file \(filePath) failed")
+                } else {
+                    print("Export file to url<\(filePath)> done")
+                }
+            } catch {
+                errorDuringArchive = error
+            }
+        }
+    }
+
+    if let errorDuringArchive {
+        throw errorDuringArchive
+    }
+}
 
 // MARK: - Clipboard
 func copyEntityURLToClipboard(objectID: NSManagedObjectID) {

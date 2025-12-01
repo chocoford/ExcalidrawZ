@@ -7,7 +7,7 @@
 
 import SwiftUI
 import Combine
-import os.log
+import Logging
 import CoreServices
 
 import ChocofordEssentials
@@ -78,10 +78,7 @@ final class DirectoryObserverObject: ObservableObject {
 }
 
 public class DirectoryMonitor {
-    private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
-        category: "DirectoryMonitor"
-    )
+    private let logger = Logger(label: "DirectoryMonitor")
     
     private var eventStream: FSEventStreamRef?
     let presentedItemURL: URL
@@ -214,10 +211,7 @@ private let eventCallback: @convention(c) (
 
 #elseif os(iOS)
 public class DirectoryMonitor: NSObject, NSFilePresenter {
-    private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
-        category: "DirectoryMonitor"
-    )
+    private let logger = Logger(label: "DirectoryMonitor")
     
     public lazy var presentedItemOperationQueue = OperationQueue.main
     public var presentedItemURL: URL?

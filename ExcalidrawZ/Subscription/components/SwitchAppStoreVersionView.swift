@@ -73,7 +73,7 @@ struct SwitchAppStoreVersionView: View {
                         .frame(maxHeight: .infinity, alignment: .top)
                         AsyncButton { @MainActor in
                             do {
-                                try archiveAllFiles(context: viewContext)
+                                try await archiveAllFiles(context: viewContext)
                             } catch {
                                 alertToast(
                                     .init(

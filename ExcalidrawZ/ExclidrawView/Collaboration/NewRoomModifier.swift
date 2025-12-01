@@ -119,26 +119,26 @@ struct NewRoomModifier: ViewModifier {
             }
             .sheet(isPresented: $state.isCreateRoomFromFileSheetPresented) {
                 ExcalidrawFileBrowser { selection in
-                    do {
-                        switch selection {
-                            case .file(let file):
-                                var excalidrawFile = try ExcalidrawFile(
-                                    from: file.objectID,
-                                    context: viewContext
-                                )
-                                try excalidrawFile.syncFiles(context: viewContext)
-                                createRoom(
-                                    name: file.name ?? String(localizable: .generalUntitled),
-                                    file: excalidrawFile
-                                )
-                            case .localFile(let url):
-                                createRoom(
-                                    name: url.deletingPathExtension().lastPathComponent,
-                                    file: try ExcalidrawFile(contentsOf: url)
-                                )
+                    Task {
+                        do {
+                            switch selection {
+                                case .file(let file):
+                                    let content = try await file.loadContent()
+                                    var excalidrawFile = try ExcalidrawFile(data: content, id: file.id)
+                                    try await excalidrawFile.syncFiles(context: viewContext)
+                                    createRoom(
+                                        name: file.name ?? String(localizable: .generalUntitled),
+                                        file: excalidrawFile
+                                    )
+                                case .localFile(let url):
+                                    createRoom(
+                                        name: url.deletingPathExtension().lastPathComponent,
+                                        file: try ExcalidrawFile(contentsOf: url)
+                                    )
+                            }
+                        } catch {
+                            alertToast(error)
                         }
-                    } catch {
-                        alertToast(error)
                     }
                 }
             }

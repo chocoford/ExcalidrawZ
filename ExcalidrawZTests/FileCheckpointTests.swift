@@ -347,7 +347,7 @@ final class FileCheckpointTests: XCTestCase {
     // MARK: - File Deletion with Checkpoint Cleanup Tests
 
     /// Test: Deleting file should cascade delete checkpoints
-    func testDeleteFileWithCheckpoints() throws {
+    func testDeleteFileWithCheckpoints() async throws {
         // Arrange - Create file and checkpoints
         let file = createTestFile()
         try viewContext.save()
@@ -367,7 +367,11 @@ final class FileCheckpointTests: XCTestCase {
         XCTAssertEqual(checkpointsBefore.count, 3, "Should have 3 checkpoints before deletion")
 
         // Act - Delete file (force permanently)
-        try file.delete(context: viewContext, forcePermanently: true, save: true)
+        try await PersistenceController.shared.fileRepository.delete(
+            fileObjectID: file.objectID,
+            forcePermanently: true,
+            save: true
+        )
 
         // Assert - Verify checkpoints are also deleted
         let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
@@ -383,7 +387,7 @@ final class FileCheckpointTests: XCTestCase {
     }
 
     /// Test: Soft deleting file (move to trash) keeps checkpoints
-    func testSoftDeleteFileKeepsCheckpoints() throws {
+    func testSoftDeleteFileKeepsCheckpoints() async throws {
         // Arrange
         let file = createTestFile()
         try viewContext.save()
@@ -400,7 +404,11 @@ final class FileCheckpointTests: XCTestCase {
         let originalCheckpointCount = checkpointsBefore.count
 
         // Act - Soft delete (move to trash)
-        try file.delete(context: viewContext, forcePermanently: false, save: true)
+        try await PersistenceController.shared.fileRepository.delete(
+            fileObjectID: file.objectID,
+            forcePermanently: false,
+            save: true
+        )
 
         // Assert - File should be marked as in trash
         XCTAssertTrue(file.inTrash, "File should be marked as in trash")

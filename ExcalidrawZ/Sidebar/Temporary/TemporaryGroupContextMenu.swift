@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 struct TemporaryGroupMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -75,7 +76,6 @@ struct TemporaryGroupMenuItems: View {
     
     private func moveFiles(to groupID: NSManagedObjectID) {
         let temporaryFiles = fileState.temporaryFiles
-        let context = PersistenceController.shared.container.newBackgroundContext()
         let currentFileURL: URL? = if case .temporaryFile(let file) = fileState.currentActiveFile {
             file
         } else {
@@ -84,20 +84,15 @@ struct TemporaryGroupMenuItems: View {
         
         Task.detached {
             do {
-                let currentTemporaryFileID: NSManagedObjectID? = try await context.perform {
-                    var currentFile: File?
-                    for file in temporaryFiles {
-                        let newFile = try File(url: file, context: context)
-                        guard case let group as Group = context.object(with: groupID) else { continue }
-                        newFile.group = group
-                        context.insert(newFile)
-                        if file == currentFileURL {
-                            currentFile = newFile
-                        }
+                var currentTemporaryFileID: NSManagedObjectID?
+                for file in temporaryFiles {
+                    let newFileID = try await PersistenceController.shared.fileRepository.createFileFromURL(
+                        file,
+                        groupObjectID: groupID
+                    )
+                    if file == currentFileURL {
+                        currentTemporaryFileID = newFileID
                     }
-                    try context.save()
-                    
-                    return currentFile?.objectID
                 }
                 
                 

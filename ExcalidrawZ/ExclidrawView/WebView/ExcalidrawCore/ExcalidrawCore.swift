@@ -7,7 +7,7 @@
 
 import SwiftUI
 import WebKit
-import OSLog
+import Logging
 import Combine
 
 typealias CollaborationInfo = ExcalidrawCore.CollaborationInfo
@@ -50,7 +50,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     typealias PlatformImage = UIImage
 #endif
     
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawCore")
+    let logger = Logger(label: "ExcalidrawCore")
     
     var parent: ExcalidrawView?
     lazy var errorStream: AsyncStream<Error> = {

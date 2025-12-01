@@ -7,6 +7,7 @@
 
 import Foundation
 import WebKit
+import Logging
 
 protocol AnyExcalidrawZMessage: Codable {
     associatedtype D = Codable
@@ -124,7 +125,9 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     self.handleDropPDF(message.data)
 
                 case .log(let logMessage):
-                    self.onWebLog(message: logMessage)
+                    _ = logMessage
+                    // self.onWebLog(message: logMessage)
+                    break
             }
         } catch {
             self.logger.error("[WKScriptMessageHandler] Decode received message failed. Raw data:\n\(String(describing: message.body))")
@@ -273,7 +276,7 @@ extension ExcalidrawCore {
         }.joined(separator: " ")
         switch method {
             case "log":
-                self.logger.log("Receive log from web:\n\(message)")
+                self.logger.log(level: .debug, "Receive log from web:\n\(message)")
                 break
             case "warn":
                 self.logger.warning("Receive warning from web:\n\(message)")
@@ -287,7 +290,7 @@ extension ExcalidrawCore {
             case "trace":
                 self.logger.trace("Receive warning from trace:\n\(message)")
             default:
-                self.logger.log("Unhandled log: \(message)")
+                self.logger.debug("Unhandled log: \(message)")
         }
     }
 

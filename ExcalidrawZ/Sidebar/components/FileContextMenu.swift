@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 struct FileMenuProvider: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -76,27 +77,20 @@ struct FileMenuProvider: View {
             [file.objectID]
         }
         
-        let context = PersistenceController.shared.container.newBackgroundContext()
         Task.detached {
             do {
-                try await context.perform {
-                    for fileID in fileIDsToDelete {
-                        guard case let file as File = context.object(with: fileID) else {
-                            return
-                        }
-                        try file.delete(context: context, save: false)
-                        try context.save()
-                    }
+                for fileID in fileIDsToDelete {
+                    try await PersistenceController.shared.fileRepository.delete(
+                        fileObjectID: fileID,
+                        forcePermanently: false,
+                        save: true
+                    )
                 }
                 await MainActor.run {
                     fileState.resetSelections()
                 }
             } catch {
                 await alertToast(error)
-            }
-            
-            await MainActor.run {
-                fileState.resetSelections()
             }
         }
     }
@@ -188,7 +182,9 @@ struct FileMenuItems: View {
             .disabled(!fileState.selectedFiles.isEmpty)
             
             Button {
-                duplicateFile()
+                Task {
+                    await duplicateFile()
+                }
             } label: {
                 Label {
                     if !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file),
@@ -214,7 +210,9 @@ struct FileMenuItems: View {
             .disabled(!fileState.selectedFiles.isEmpty)
 
             Button(role: .destructive) {
-                deleteFile()
+                Task {
+                    await deleteFile()
+                }
             } label: {
                 Label {
                     if !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file),
@@ -410,24 +408,26 @@ struct FileMenuItems: View {
         }
     }
     
-    private func duplicateFile() {
+    private func duplicateFile() async {
         do {
             if fileState.selectedFiles.contains(file) {
                 for selectedFile in fileState.selectedFiles {
-                    _ = try fileState.duplicateFile(
+                    _ = try await fileState.duplicateFile(
                         selectedFile,
                         context: viewContext
                     )
                 }
             } else {
-                let newFile = try fileState.duplicateFile(
+                let newFileID = try await fileState.duplicateFile(
                     file,
                     context: viewContext
                 )
-                
+
                 if containerHorizontalSizeClass != .compact,
                    fileState.currentActiveFile == .file(file) {
-                    fileState.currentActiveFile = .file(newFile)
+                    if let newFile = viewContext.object(with: newFileID) as? File {
+                        fileState.currentActiveFile = .file(newFile)
+                    }
                 }
             }
             fileState.resetSelections()
@@ -436,7 +436,7 @@ struct FileMenuItems: View {
         }
     }
     
-    private func deleteFile() {
+    private func deleteFile() async {
         let filesToBeDelete: [File] = if fileState.selectedFiles.contains(file) {
             Array(fileState.selectedFiles)
         } else {
@@ -444,7 +444,9 @@ struct FileMenuItems: View {
         }
         do {
             for selectedFile in filesToBeDelete {
-                try selectedFile.delete(context: viewContext, save: false)
+                try await PersistenceController.shared.fileRepository.delete(
+                    fileObjectID: selectedFile.objectID
+                )
             }
             try viewContext.save()
             

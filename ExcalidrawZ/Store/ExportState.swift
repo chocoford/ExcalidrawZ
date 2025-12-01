@@ -8,7 +8,7 @@
 import SwiftUI
 import WebKit
 import Combine
-import os.log
+import Logging
 import UniformTypeIdentifiers
 
 import ChocofordUI
@@ -20,7 +20,7 @@ struct ExportedImageData {
 }
 
 final class ExportState: ObservableObject {
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExportState")
+    let logger = Logger(label: "ExportState")
     enum Status {
         case notRequested
         case loading

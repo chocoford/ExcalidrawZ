@@ -19,40 +19,65 @@ struct LibraryTrailingSidebarModifier: ViewModifier {
     
     @State private var librariesToImport: [ExcalidrawLibrary] = []
     
+    var shouldUseFloatingInspector: Bool {
+        if appPreference.inspectorLayout == .floatingBar {
+            return true
+        } else if #available(iOS 26.0, *) {
+            return true
+        } else {
+            return false
+        }
+    }
+    
     func body(content: Content) -> some View {
         ZStack {
-            if #available(macOS 14.0, iOS 17.0, *), appPreference.inspectorLayout == .sidebar {
+            if shouldUseFloatingInspector {
+                floatingInspector(content: content)
+            } else if #available(macOS 14.0, iOS 17.0, *) {
                 content
                     .inspector(isPresented: $layoutState.isInspectorPresented) {
                         LibraryView(librariesToImport: $librariesToImport)
                             .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
                     }
             } else {
-                content
-                if appPreference.inspectorLayout == .floatingBar {
-                    HStack {
-                        Spacer()
-                        if layoutState.isInspectorPresented {
-                            LibraryView(librariesToImport: $librariesToImport)
-                                .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .background {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(.regularMaterial)
-                                        .shadow(radius: 4)
-                                }
-                                .transition(.move(edge: .trailing))
-                        }
-                    }
-                    .animation(.easeOut, value: layoutState.isInspectorPresented)
-                    .padding(.top, 10)
-                    .padding(.horizontal, 10)
-                    .padding(.bottom, 40)
-                }
+                floatingInspector(content: content)
             }
         }
         .modifier(ExcalidrawLibraryImporter(items: $librariesToImport))
     }
+    
+    
+    @MainActor @ViewBuilder
+    private func floatingInspector(content: Content) -> some View {
+        ZStack {
+            content
+            HStack {
+                Spacer()
+                if layoutState.isInspectorPresented {
+                    LibraryView(librariesToImport: $librariesToImport)
+                        .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .background {
+                            if #available(iOS 26.0, macOS 26.0, *) {
+                                RoundedRectangle(cornerRadius: 24)
+                                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24))
+                                    .shadow(radius: 4)
+                            } else {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(.regularMaterial)
+                                    .shadow(radius: 4)
+                            }
+                        }
+                        .transition(.move(edge: .trailing))
+                }
+            }
+            .animation(.easeOut, value: layoutState.isInspectorPresented)
+            .padding(.top, 10)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 40)
+        }
+    }
+    
 }
 
 struct LibraryView: View {
@@ -171,12 +196,12 @@ struct LibraryView: View {
             .keyboardShortcut("0", modifiers: [.command, .option])
         }
 #elseif os(iOS)
-        ToolbarItem(placement: .principal) {
-            Text(.localizable(.librariesTitle))
-                .foregroundStyle(.secondary)
-                .font(.headline)
-        }
-        
+//        ToolbarItem(placement: .principal) {
+//            Text(.localizable(.librariesTitle))
+//                .foregroundStyle(.secondary)
+//                .font(.headline)
+//        }
+//        
         ToolbarItem(placement: .topBarTrailing) {
             if containerHorizontalSizeClass == .regular {
                 Button {

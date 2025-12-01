@@ -8,7 +8,7 @@
 import SwiftUI
 import WebKit
 import Combine
-import os.log
+import Logging
 
 import ChocofordUI
 import UniformTypeIdentifiers

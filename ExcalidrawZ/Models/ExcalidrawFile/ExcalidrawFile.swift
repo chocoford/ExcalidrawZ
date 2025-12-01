@@ -50,6 +50,20 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
             case lastRetrievedAt = "lastRetrieved"
         }
         
+        init(
+            mimeType: String,
+            id: String,
+            createdAt: Date? = nil,
+            dataURL: String,
+            lastRetrievedAt: Date? = nil
+        ) {
+            self.mimeType = mimeType
+            self.id = id
+            self.createdAt = createdAt
+            self.dataURL = dataURL
+            self.lastRetrievedAt = lastRetrievedAt
+        }
+        
         init(from decoder: any Decoder) throws {
             let container: KeyedDecodingContainer<CodingKeys> = try decoder.container(keyedBy: CodingKeys.self)
             self.mimeType = try container.decode(String.self, forKey: ExcalidrawFile.ResourceFile.CodingKeys.mimeType)

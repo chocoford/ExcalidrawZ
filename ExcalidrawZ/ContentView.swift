@@ -9,7 +9,7 @@ import SwiftUI
 import CoreData
 import CloudKit
 import Combine
-import os.log
+import Logging
 
 import ChocofordUI
 import ChocofordEssentials
@@ -23,7 +23,7 @@ struct ContentView: View {
     
     @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
     
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ContentView")
+    let logger = Logger(label: "ContentView")
     
     @State private var hideContent: Bool = false
     
@@ -60,6 +60,7 @@ struct ContentView: View {
             .environmentObject(layoutState)
             .environmentObject(shareFileState)
             .modifier(DragStateModifier())
+            .modifier(CoreDataMigrationModifier())
             .swiftyAlert(logs: true)
             .bindWindow($window)
             .containerSizeClassInjection()
@@ -93,14 +94,17 @@ struct ContentView: View {
                 }
             } else {
                 contentView()
+#if os(macOS) /// iOS declare in NavigationSplitView (ContentViewModern.swift)
                     .modifier(LibraryTrailingSidebarModifier())
+#endif
             }
         }
     }
     
     @MainActor @ViewBuilder
     private func contentView() -> some View {
-        if #available(macOS 13.0, *), appPreference.sidebarLayout == .sidebar {
+        if #available(macOS 13.0, *),
+            appPreference.sidebarLayout == .sidebar {
             ContentViewModern()
         } else {
             ContentViewLagacy()

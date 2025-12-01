@@ -19,12 +19,25 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
     var checkpoint: Checkpoint
     
     @State private var file: ExcalidrawFile?
+    @State private var fileSize: Int = 0
     
     var body: some View {
         content()
             .watchImmediately(of: checkpoint) { newValue in
-                guard let content = newValue.content else { return }
-                file = try? JSONDecoder().decode(ExcalidrawFile.self, from: content)
+                Task {
+                    do {
+                        let content = try await PersistenceController.shared.checkpointRepository.loadCheckpointContent(
+                            checkpointObjectID: newValue.objectID
+                        )
+                        let file = try? JSONDecoder().decode(ExcalidrawFile.self, from: content)
+                        await MainActor.run {
+                            self.fileSize = content.count
+                            self.file = file
+                        }
+                    } catch {
+                        print(error)
+                    }
+                }
             }
     }
     
@@ -53,7 +66,7 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
     private func label() -> some View {
         VStack(alignment: .leading) {
             HStack {
-                Text((checkpoint.filename ?? "")/* + " - \(checkpoint.objectID)"*/)
+                Text((checkpoint.filename ?? ""))
                     .font(.headline)
                 Spacer()
             }
@@ -67,9 +80,9 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
                     }
                 }
                 Text(" · ")
-                if let content = checkpoint.content {
-                    Text("\(content.count.formatted(.byteCount(style: .file)))")
-                }
+                
+                Text("\(fileSize.formatted(.byteCount(style: .file)))")
+                
                 Text(" · ")
                 Text(checkpoint.updatedAt?.formatted() ?? "")
             }

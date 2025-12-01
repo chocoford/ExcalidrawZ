@@ -7,7 +7,7 @@
 
 import Foundation
 import SwiftUI
-import os.log
+import Logging
 import CoreSpotlight
 
 extension Notification.Name {
@@ -17,23 +17,22 @@ extension Notification.Name {
 #if os(macOS)
 import AppKit
 class AppDelegate: NSObject, NSApplicationDelegate {
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "AppDelegate")
+    let logger = Logger(label: "AppDelegate")
     
     func applicationWillTerminate(_ notification: Notification) {
         PersistenceController.shared.save()
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             do {
-                try backupFiles(context: PersistenceController.shared.container.viewContext)
+                try await backupFiles(context: PersistenceController.shared.container.viewContext)
             } catch {
                 print(error)
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                if NSApp.windows.filter({$0.canBecomeMain}).isEmpty {
-                    NSApp.terminate(nil)
-                }
+            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+            if NSApp.windows.filter({$0.canBecomeMain}).isEmpty {
+                NSApp.terminate(nil)
             }
         }
         return false
@@ -59,7 +58,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func application(_ application: NSApplication, open urls: [URL]) {
-        logger.info("\(#function), urls: \(urls, privacy: .public)")
+        logger.info("\(#function), urls: \(urls)")
     }
     
     // Continuous Activity
@@ -76,7 +75,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 #elseif os(iOS)
 import UIKit
 class AppDelegate: NSObject, UIApplicationDelegate {
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "AppDelegate")
+    let logger = Logger(label: "AppDelegate")
 
     func application(
         _ application: UIApplication,

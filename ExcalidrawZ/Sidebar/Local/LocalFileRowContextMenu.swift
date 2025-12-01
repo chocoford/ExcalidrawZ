@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 struct LocalFileMenuProvider: View {
     @Environment(\.managedObjectContext) private var viewContext

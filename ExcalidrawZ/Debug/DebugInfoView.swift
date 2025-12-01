@@ -43,30 +43,27 @@ struct DebugButton: View {
 @available(macOS 15.0, iOS 18.0, *)
 struct DebugInfoView: View {
     @Environment(\.managedObjectContext) private var viewContext
-    
+
     @EnvironmentObject private var fileState: FileState
-    
+
     enum Tabs {
         case fileContent
     }
-    
+
     @State private var selectedTab: Tabs = .fileContent
-    
+    @State private var excalidrawFile: ExcalidrawFile?
+
     var currentFile: File? {
         if case .file(let file) = fileState.currentActiveFile {
             return file
         }
         return nil
     }
-    
+
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("File Content", systemImage: "play", value: .fileContent) {
-                if case .file(let file) = fileState.currentActiveFile,
-                   let excalidrawFile = try? ExcalidrawFile.init(
-                    from: file.objectID,
-                    context: viewContext
-                ) {
+                if let excalidrawFile {
                     FileInfoDebugView(
                         file: excalidrawFile
                     )
@@ -79,6 +76,19 @@ struct DebugInfoView: View {
             // More tabs...
         }
         .tabViewStyle(.sidebarAdaptable)
+        .task(id: fileState.currentActiveFile) {
+            guard case .file(let file) = fileState.currentActiveFile else {
+                excalidrawFile = nil
+                return
+            }
+
+            do {
+                let content = try await file.loadContent()
+                excalidrawFile = try ExcalidrawFile(data: content, id: file.id)
+            } catch {
+                excalidrawFile = nil
+            }
+        }
     }
 }
 

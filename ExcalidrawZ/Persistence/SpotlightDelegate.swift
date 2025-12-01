@@ -8,10 +8,10 @@
 import Foundation
 import CoreData
 import CoreSpotlight
-import os.log
+import Logging
 
 class SpotlightDelegate: NSCoreDataCoreSpotlightDelegate {
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "SpotlightDelegate")
+    let logger = Logger(label: "SpotlightDelegate")
     
     override func domainIdentifier() -> String {
         "com.chocoford.excalidraw.model"

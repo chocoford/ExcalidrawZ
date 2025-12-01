@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 struct CreateFolderModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext

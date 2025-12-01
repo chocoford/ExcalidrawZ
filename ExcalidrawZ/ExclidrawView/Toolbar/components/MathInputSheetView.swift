@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import os.log
+import Logging
 
 import ChocofordUI
 import MathJaxSwift
@@ -43,7 +43,7 @@ struct MathInputSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.alertToast) private var alertToast
     
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "MathInputSheetView")
+    let logger = Logger(label: "MathInputSheetView")
     
     var onInsert: (_ svg: String) -> Void
     

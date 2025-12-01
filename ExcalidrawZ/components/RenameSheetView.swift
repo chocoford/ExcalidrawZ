@@ -26,7 +26,7 @@ struct RenameSheetViewModifier: ViewModifier {
                     .presentationDragIndicator(.visible)
                     .presentationCompactAdaptation(.sheet)
 #endif
-                } else if #available(macOS 26.0, *) {
+                } else if #available(macOS 26.0, iOS 26.0, *) {
                     RenameSheetView(text: name) { newName in
                         callback(newName)
                     }

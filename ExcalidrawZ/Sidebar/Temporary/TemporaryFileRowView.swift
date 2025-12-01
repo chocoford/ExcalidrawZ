@@ -56,7 +56,7 @@ struct TemporaryFileRowView: View {
                 fileState.selectedStartTemporaryFile = file
             }
 #else
-            fileState.currentTemporaryFile = file
+            fileState.currentActiveFile = .temporaryFile(file)
             fileState.selectedStartTemporaryFile = file
 #endif
         }

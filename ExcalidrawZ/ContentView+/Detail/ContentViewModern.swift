@@ -61,6 +61,9 @@ struct ContentViewModern: View {
             }
         } detail: {
             ContentViewDetail(isSettingsPresented: $isSettingsPresented)
+#if !os(macOS) // macOS declare in ContentView.swift
+                .modifier(LibraryTrailingSidebarModifier())
+#endif
         }
     }
     
@@ -82,14 +85,6 @@ struct ContentViewModern: View {
 ////                NewFileButton()
 //            }
         // }
-#elseif os(iOS)
-        ToolbarItemGroup(placement: .topBarLeading) {
-            Button {
-                isSettingsPresented.toggle()
-            } label: {
-                Label(.localizable(.settingsName), systemSymbol: .gear)
-            }
-        }
 #endif
 //        ToolbarItemGroup(placement: .confirmationAction) {
 //            Color.blue.frame(width: 4, height: 4)

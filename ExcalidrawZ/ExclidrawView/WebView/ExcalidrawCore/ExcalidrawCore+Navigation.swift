@@ -46,31 +46,34 @@ extension ExcalidrawCore: WKNavigationDelegate {
                     do {
                         let context = PersistenceController.shared.container.viewContext
                         let allMediasFetch = NSFetchRequest<MediaItem>(entityName: "MediaItem")
-                        
+
                         let allMedias = try context.fetch(allMediasFetch)
-                        try await self.insertMediaFiles(
-                            allMedias.compactMap{
-                                .init(mediaItem: $0)
+                        // Load media items using async method with iCloud Drive support
+                        var mediaFiles: [ExcalidrawFile.ResourceFile] = []
+                        for mediaItem in allMedias {
+                            if let resourceFile = try? await ExcalidrawFile.ResourceFile(mediaItem: mediaItem) {
+                                mediaFiles.append(resourceFile)
                             }
-                        )
+                        }
+                        try await self.insertMediaFiles(mediaFiles)
                         try await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
                         self.hasInjectIndexedDBData = true
-                        
+
                         // Open Collab mode if needed.
                         if self.parent?.type == .collaboration,
                            self.parent?.file?.roomID?.isEmpty != false,
                            let file = self.parent?.file,
-                           let fileContent = file.content {
+                           let content = file.content {
                             // load file content
                             try await self.webActor.loadFile(
                                 id: file.id,
-                                data: fileContent,
+                                data: content,
                                 force: true
                             )
                             // open collab mode
                             try await self.openCollabMode()
                         }
-                        
+
                         self.isNavigating = false
                     } catch {
                         self.parent?.onError(error)

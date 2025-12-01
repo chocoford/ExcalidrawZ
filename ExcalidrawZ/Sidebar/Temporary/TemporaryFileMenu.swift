@@ -157,24 +157,34 @@ struct TemporaryFileMenuItems: View {
         
         Task.detached {
             do {
-                
-                let currentTemporaryFileID: NSManagedObjectID? = try await context.perform {
-                    guard case let group as Group = context.object(with: groupID) else {
-                        return nil
-                    }
-                    var currentTemporaryFileID :NSManagedObjectID? = nil
-                    for file in filesToMove {
-                        let newFile = try File(url: file, context: context)
+                var currentTemporaryFileID :NSManagedObjectID? = nil
+                for file in filesToMove {
+                    let newFileID = try await PersistenceController.shared.fileRepository.createFileFromURL(
+                        file,
+                        groupObjectID: groupID
+                    )
+                    let id: NSManagedObjectID? = try await context.perform {
+                        guard case let group as Group = context.object(with: groupID) else {
+                            return nil
+                        }
+                        var currentTemporaryFileID :NSManagedObjectID? = nil
+                        guard let newFile = context.object(with: newFileID) as? File else {
+                            return nil
+                        }
                         newFile.group = group
                         context.insert(newFile)
                         if file == currentFileURL {
                             currentTemporaryFileID = newFile.objectID
                         }
+                        try context.save()
+                        return currentTemporaryFileID
                     }
-                    try context.save()
                     
-                    return currentTemporaryFileID
+                    if let id {
+                        currentTemporaryFileID = id
+                    }
                 }
+                
                 
                 await MainActor.run { [currentTemporaryFileID] in
                     fileState.expandToGroup(groupID)

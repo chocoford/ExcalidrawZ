@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 import ChocofordUI
 
@@ -50,11 +51,13 @@ struct LocalFilesListView: View {
 }
 
 struct LocalFilesProvider<Content: View>: View {
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.alertToast) private var alertToast
-
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var localFolderState: LocalFolderState
-
+    
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField
     var content: (_ files: [URL], _ updateFlag: [URL : Date]) -> Content
@@ -105,7 +108,7 @@ struct LocalFilesProvider<Content: View>: View {
             .watchImmediately(of: folder.url) { newValue in
                 DispatchQueue.main.async { getFolderContents() }
             }
-    #if os(macOS)
+#if os(macOS)
             .onReceive(
                 NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
             ) { notification in
@@ -126,20 +129,13 @@ struct LocalFilesProvider<Content: View>: View {
                     }
                 }
             }
-    #elseif os(iOS)
+#elseif os(iOS)
             .onChange(of: scenePhase) { newValue in
                 if newValue == .active {
-                    DispatchQueue.main.async {
-                        getFolderContents()
-                        if horizontalSizeClass != .compact {
-                            if fileState.currentLocalFile == nil || fileState.currentLocalFile?.deletingLastPathComponent() != folder.url {
-                                fileState.currentLocalFile = files.first
-                            }
-                        }
-                    }
+                    getFolderContents()
                 }
             }
-    #endif
+#endif
             .onChange(of: sortField) { newValue in
                 sortFiles(field: newValue)
             }
@@ -181,8 +177,8 @@ struct LocalFilesProvider<Content: View>: View {
                         self.sortFiles(field: self.sortField)
                         
                         if case .localFolder(let folder) = fileState.currentActiveGroup,
-                            folder == self.folder,
-                            case .localFile(let currentFile) = fileState.currentActiveFile {
+                           folder == self.folder,
+                           case .localFile(let currentFile) = fileState.currentActiveFile {
                             if !files.contains(currentFile) {
                                 fileState.currentActiveFile = nil
                             }
@@ -198,7 +194,7 @@ struct LocalFilesProvider<Content: View>: View {
             }
         }
     }
-
+    
     private func sortFiles(field: ExcalidrawFileSortField) {
         switch field {
             case .updatedAt, .rank:
@@ -241,8 +237,8 @@ struct LocalFilesProvider<Content: View>: View {
         guard let file = self.files.first(where: {$0.filePath == path}) else { return }
         self.updateFlags[file] = Date()
         self.files.sort {
-                ((try? FileManager.default.attributesOfItem(atPath: $0.filePath)[FileAttributeKey.modificationDate]) as? Date) ?? .distantPast > ((try? FileManager.default.attributesOfItem(atPath: $1.filePath)[FileAttributeKey.modificationDate]) as? Date) ?? .distantPast
-            }
+            ((try? FileManager.default.attributesOfItem(atPath: $0.filePath)[FileAttributeKey.modificationDate]) as? Date) ?? .distantPast > ((try? FileManager.default.attributesOfItem(atPath: $1.filePath)[FileAttributeKey.modificationDate]) as? Date) ?? .distantPast
+        }
     }
     
     private func handleItemRenamed(path: String) {
@@ -254,11 +250,11 @@ struct LocalFilesListContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.alertToast) private var alertToast
     @Environment(\.containerHorizontalSizeClass) private var horizontalSizeClass
-
+    
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var localFolderState: LocalFolderState
     @EnvironmentObject private var sidebarDragState: ItemDragState
-
+    
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField
     

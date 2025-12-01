@@ -6,8 +6,9 @@
 //
 
 import SwiftUI
-
 import CoreData
+
+import ChocofordUI
 
 struct ExcalidrawFileBrowser: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -19,9 +20,9 @@ struct ExcalidrawFileBrowser: View {
         case file(File)
         case localFile(URL)
     }
-    var action: (ActionPayload) -> Void
+    var action: (ActionPayload) async -> Void
     
-    init(selectAction: @escaping (_ selection: ActionPayload) -> Void) {
+    init(selectAction: @escaping (_ selection: ActionPayload) async -> Void) {
         self.action = selectAction
     }
     
@@ -67,16 +68,15 @@ struct ExcalidrawFileBrowser: View {
                     if case .group(let group) = fileState.currentActiveGroup {
                         ExcalidrawFileBrowserContentView(group: group) {
                             if case .file(let file) = fileState.currentActiveFile {
+                                await self.action(.file(file))
                                 dismiss()
-                                self.action(.file(file))
-                                
                             }
                         }
                     } else if case .localFolder(let folder) = fileState.currentActiveGroup {
                         ExcalidrawLocalFileBrowserContentView(folder: folder) {
                             if case .localFile(let file) = fileState.currentActiveFile {
+                                await self.action(.localFile(file))
                                 dismiss()
-                                self.action(.localFile(file))
                             }
                         }
                     }
@@ -101,13 +101,13 @@ struct ExcalidrawFileBrowser: View {
                     Text(.localizable(.generalButtonCancel))
                         .padding(.horizontal)
                 }
-                Button {
-                    dismiss()
+                AsyncButton {
                     if case .file(let file) = fileState.currentActiveFile {
-                        action(.file(file))
+                        await action(.file(file))
                     } else if case .localFile(let localFile) = fileState.currentActiveFile {
-                        action(.localFile(localFile))
+                        await action(.localFile(localFile))
                     }
+                    dismiss()
                 } label: {
                     Text(.localizable(.generalButtonCreate))
                         .padding(.horizontal)
@@ -125,9 +125,9 @@ struct ExcalidrawFileBrowserContentView: View {
     
     @FetchRequest
     private var files: FetchedResults<File>
-    var onDoubleClick: (() -> Void)?
+    var onDoubleClick: (() async -> Void)?
 
-    init(group: Group, onDoubleClick: (() -> Void)? = nil) {
+    init(group: Group, onDoubleClick: (() async -> Void)? = nil) {
         let fileFetchRequest = NSFetchRequest<File>(entityName: "File")
         fileFetchRequest.predicate = NSPredicate(format: "group = %@ AND inTrash = false", group)
         fileFetchRequest.sortDescriptors = [
@@ -138,7 +138,8 @@ struct ExcalidrawFileBrowserContentView: View {
     }
     
     @State private var fileIcon: Image?
-    
+    @State private var isPerformingAction = false
+
     var body: some View {
         ForEach(files) { file in
             ExcalidrawFileItemView(
@@ -160,8 +161,14 @@ struct ExcalidrawFileBrowserContentView: View {
                 UIImage.icon(for: .excalidrawFile) ?? UIImage.icon(forPathExtension: "json")
 #endif
             } onDoubleClick: {
-                onDoubleClick?()
+                if isPerformingAction {
+                    return
+                }
+                isPerformingAction = true
+                await onDoubleClick?()
+                isPerformingAction = false
             }
+            .disabled(isPerformingAction)
         }
     }
 }
@@ -171,14 +178,16 @@ struct ExcalidrawLocalFileBrowserContentView: View {
     @EnvironmentObject private var fileState: FileState
     
     var folder: LocalFolder
-    var onDoubleClick: (() -> Void)?
+    var onDoubleClick: (() async -> Void)?
     
-    init(folder: LocalFolder, onDoubleClick: (() -> Void)? = nil) {
+    init(folder: LocalFolder, onDoubleClick: (() async -> Void)? = nil) {
         self.folder = folder
         self.onDoubleClick = onDoubleClick
     }
     
     @State private var contents: [URL] = []
+    @State private var isPerformingAction = false
+    
     @StateObject private var localFolderState = LocalFolderState()
     var body: some View {
         LocalFilesProvider(folder: folder, sortField: .name) { files, updateFlags in
@@ -202,8 +211,14 @@ struct ExcalidrawLocalFileBrowserContentView: View {
                     UIImage.icon(forFileURL: url)
 #endif
                 } onDoubleClick: {
-                    onDoubleClick?()
+                    if isPerformingAction {
+                        return
+                    }
+                    isPerformingAction = true
+                    await onDoubleClick?()
+                    isPerformingAction = false
                 }
+                .disabled(isPerformingAction)
             }
         }
         .environmentObject(localFolderState)
@@ -213,9 +228,10 @@ struct ExcalidrawLocalFileBrowserContentView: View {
 }
 
 struct ExcalidrawFileItemView: View {
+    @Environment(\.isEnabled) private var isEnabled
     
     @Binding var isSelected: Bool
-    
+
 #if canImport(AppKit)
     typealias PlatformImage = NSImage
 #elseif canImport(UIKit)
@@ -224,13 +240,13 @@ struct ExcalidrawFileItemView: View {
     
     var filename: String
     var fileIconGenerator: () -> PlatformImage
-    var onDoubleClick: (() -> Void)?
+    var onDoubleClick: (() async -> Void)?
     
     init(
         isSelected: Binding<Bool>,
         filename: String,
         fileIconGenerator: @escaping () -> PlatformImage,
-        onDoubleClick: (() -> Void)? = nil
+        onDoubleClick: (() async -> Void)? = nil
     ) {
         self._isSelected = isSelected
         self.filename = filename
@@ -265,13 +281,18 @@ struct ExcalidrawFileItemView: View {
                 .multilineTextAlignment(.center)
                 .frame(height: 40, alignment: .top)
         }
+        .grayscale(isEnabled ? 0 : 1)
         .contentShape(Rectangle())
         .onTapGesture(count: 2) {
+            guard isEnabled else { return }
             isSelected = true
-            onDoubleClick?()
+            Task {
+                await onDoubleClick?()
+            }
         }
         .simultaneousGesture(
             TapGesture(count: 1).onEnded {
+                guard isEnabled else { return }
                 isSelected = true
             }
         )

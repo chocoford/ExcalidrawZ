@@ -14,6 +14,7 @@ struct MediasSettingsView: View {
     private var medias: FetchedResults<MediaItem>
     
     @State private var selection: MediaItem?
+    @State private var loadedDataURL: String?
     
     var body: some View {
         if containerHorizontalSizeClass == .compact, containerVerticalSizeClass == .regular {
@@ -52,6 +53,13 @@ struct MediasSettingsView: View {
             detailView()
                 .padding()
                 .frame(maxWidth: .infinity)
+                .task(id: selection?.objectID) {
+                    if let selection = selection {
+                        loadedDataURL = try? await selection.loadDataURL()
+                    } else {
+                        loadedDataURL = nil
+                    }
+                }
         }
     }
     
@@ -62,6 +70,13 @@ struct MediasSettingsView: View {
                 .padding()
                 .frame(maxWidth: .infinity)
                 .frame(height: 300)
+                .task(id: selection?.objectID) {
+                    if let selection = selection {
+                        loadedDataURL = try? await selection.loadDataURL()
+                    } else {
+                        loadedDataURL = nil
+                    }
+                }
             mediaList()
 #if os(macOS)
                 .visualEffect(material: .sidebar)
@@ -118,7 +133,7 @@ struct MediasSettingsView: View {
     private func detailView() -> some View {
         ZStack {
             if let item = selection,
-               let imageDataString = selection?.dataURL?.components(separatedBy: "base64,").last,
+               let imageDataString = loadedDataURL?.components(separatedBy: "base64,").last,
                let imageData = Data(base64Encoded: imageDataString) {
                 VStack {
                     DataImage(data: imageData)

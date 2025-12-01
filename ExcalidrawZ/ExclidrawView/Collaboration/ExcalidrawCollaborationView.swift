@@ -120,14 +120,14 @@ struct ExcalidrawCollaborationView: View {
             }
         }
         .opacity(isActive ? 1 : 0)
-        .onAppear {
-            let objectID = file.objectID
+        .task {
             do {
-                excalidrawFile = try ExcalidrawFile(
-                    from: objectID,
-                    context: viewContext
-                )
-                try excalidrawFile?.syncFiles(context: viewContext)
+                let content = try await file.loadContent()
+                var excalidrawFile = try ExcalidrawFile(data: content, id: file.id)
+                try await excalidrawFile.syncFiles(context: viewContext)
+                await MainActor.run {
+                    self.excalidrawFile = excalidrawFile
+                }
             } catch {
                 alertToast(error)
             }

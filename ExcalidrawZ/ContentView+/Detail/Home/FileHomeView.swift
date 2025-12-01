@@ -120,7 +120,7 @@ struct FileHomeContainer: View {
                     }
                     .mask {
                         if config.isPlaceholderPresented {
-                            if #available(macOS 14.0, iOS 16.0, *) {
+                            if #available(macOS 14.0, iOS 17.0, *) {
                                 Rectangle()
                                     .fill(
                                         SmoothLinearGradient(
@@ -146,7 +146,7 @@ struct FileHomeContainer: View {
                     }
                     .overlay {
                         if config.isPlaceholderPresented {
-                            if #available(macOS 14.0, iOS 16.0, *) {
+                            if #available(macOS 14.0, iOS 17.0, *) {
                                 Text(localizable: .homeNoFilesPlaceholder)
                                     .foregroundStyle(.placeholder)
                             } else {
@@ -339,7 +339,9 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 HStack {
                     if #available(macOS 14.0, iOS 17.0, *) {
                         actionsMenu()
+#if canImport(AppKit)
                             .buttonStyle(.accessoryBar)
+#endif
                     } else {
                         actionsMenu()
                     }

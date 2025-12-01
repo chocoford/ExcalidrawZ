@@ -95,6 +95,9 @@ struct ExcalidrawContainerView: View {
                 .transition(.move(edge: .top))
             }
         }
+        .overlay(alignment: .topTrailing) {
+            SyncStatusIndicator()
+        }
         .animation(.easeOut, value: isImporting)
         .transition(.opacity)
         .animation(.default, value: isProgressViewPresented)
@@ -105,31 +108,38 @@ struct ExcalidrawContainerView: View {
             ).sink { notification in
                 if let userInfo = notification.userInfo {
                     if let event = userInfo["event"] as? NSPersistentCloudKitContainer.Event {
-                        DispatchQueue.main.async {
+                        Task { @MainActor in
                             if event.type == .import, !event.succeeded {
                                 isImporting = true
                                 if case .file(let file) = fileState.currentActiveFile {
-                                    self.fileBeforeImporting = try? ExcalidrawFile(
-                                        from: file.objectID,
-                                        context: viewContext
-                                    )
+                                    do {
+                                        let content = try await file.loadContent()
+                                        self.fileBeforeImporting = try ExcalidrawFile(data: content, id: file.id)
+                                    } catch {
+                                        // Failed to load content, ignore
+                                    }
                                 }
                             }
                             if event.type == .import, event.succeeded, isImporting {
                                 isImporting = false
-                                if case .file(let file) = fileState.currentActiveFile,
-                                   let fileAfterImporting = try? ExcalidrawFile(from: file.objectID, context: viewContext) {
-                                     
-                                    if fileBeforeImporting?.elements == fileAfterImporting.elements {
-                                      // do nothing
-                                    } else if Set(fileAfterImporting.elements).isSubset(of: Set(fileBeforeImporting?.elements ?? [])) {
-                                        // if local changes is all beyond cloud, do nothing
-                                    } else {
-                                        // force reload current file.
-                                        fileState.excalidrawWebCoordinator?.loadFile(
-                                            from: file,
-                                            force: true
-                                        )
+                                if case .file(let file) = fileState.currentActiveFile {
+                                    do {
+                                        let content = try await file.loadContent()
+                                        let fileAfterImporting = try ExcalidrawFile(data: content, id: file.id)
+
+                                        if fileBeforeImporting?.elements == fileAfterImporting.elements {
+                                          // do nothing
+                                        } else if Set(fileAfterImporting.elements).isSubset(of: Set(fileBeforeImporting?.elements ?? [])) {
+                                            // if local changes is all beyond cloud, do nothing
+                                        } else {
+                                            // force reload current file.
+                                            fileState.excalidrawWebCoordinator?.loadFile(
+                                                from: file,
+                                                force: true
+                                            )
+                                        }
+                                    } catch {
+                                        // Failed to load content, ignore
                                     }
                                 }
                             }

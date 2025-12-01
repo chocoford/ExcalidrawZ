@@ -81,35 +81,56 @@ struct ArchiveRoomSheetView: View {
     
     private func archiveCollaborationFile()  {
         guard let activeGroup = fileState.currentActiveGroup else { return }
-        do {
-            try file.archiveToLocal(
-                group: activeGroup,
-                delete: false,
-            ) { error, target in
-                switch target {
-                    case .file(let groupID, let fileID):
-                        if let group = viewContext.object(with: groupID) as? Group {
-                            parentFileState.currentActiveGroup = .group(group)
-                            if let file = viewContext.object(with: fileID) as? File {
-                                parentFileState.currentActiveFile = .file(file)
-                            }
-                            parentFileState.expandToGroup(groupID)
-                        }
-                    case .localFile(let folderID, let url):
-                        if let localFolder = viewContext.object(with: folderID) as? LocalFolder {
-                            parentFileState.currentActiveGroup = .localFolder(localFolder)
-                            parentFileState.currentActiveFile = .localFile(url)
-                            parentFileState.expandToGroup(folderID)
-                        }
-                    case nil:
-                        if let error {
-                            alertToast(error)
-                        }
+        let fileID = file.objectID
+
+        Task.detached {
+            do {
+                let result: CollaborationFileRepository.ArchiveTarget
+
+                switch activeGroup {
+                    case .group(let group):
+                        let groupID = group.objectID
+                        result = try await PersistenceController.shared.collaborationFileRepository.archiveToGroup(
+                            collaborationFileObjectID: fileID,
+                            targetGroupObjectID: groupID,
+                            delete: false
+                        )
+
+                    case .localFolder(let localFolder):
+                        let folderID = localFolder.objectID
+                        result = try await PersistenceController.shared.collaborationFileRepository.archiveToLocalFolder(
+                            collaborationFileObjectID: fileID,
+                            targetLocalFolderObjectID: folderID,
+                            delete: false
+                        )
+
+                    default:
+                        return
                 }
-                dismiss()
+
+                await MainActor.run {
+                    switch result {
+                        case .file(let groupID, let newFileID):
+                            if let group = viewContext.object(with: groupID) as? Group {
+                                parentFileState.currentActiveGroup = .group(group)
+                                if let file = viewContext.object(with: newFileID) as? File {
+                                    parentFileState.currentActiveFile = .file(file)
+                                }
+                                parentFileState.expandToGroup(groupID)
+                            }
+
+                        case .localFile(let folderID, let url):
+                            if let localFolder = viewContext.object(with: folderID) as? LocalFolder {
+                                parentFileState.currentActiveGroup = .localFolder(localFolder)
+                                parentFileState.currentActiveFile = .localFile(url)
+                                parentFileState.expandToGroup(folderID)
+                            }
+                    }
+                    dismiss()
+                }
+            } catch {
+                await alertToast(error)
             }
-        } catch {
-            alertToast(error)
         }
     }
 }

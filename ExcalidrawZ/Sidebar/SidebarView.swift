@@ -25,10 +25,10 @@ struct SidebarView: View {
     @EnvironmentObject var dragState: ItemDragState
 
     var body: some View {
-        if #available(macOS 26.0, *) {
+        if #available(macOS 26.0, iOS 26.0, *) {
             oneColumnSidebar()
                 .navigationSplitViewColumnWidth(min: 280, ideal: 280, max: 340)
-        } else if #available(macOS 13.0, *) {
+        } else if #available(macOS 13.0, iOS 16.0, *) {
             oneColumnSidebar()
                 .navigationSplitViewColumnWidth(min: 260, ideal: 240, max: 340)
         } else {

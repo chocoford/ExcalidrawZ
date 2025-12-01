@@ -8,7 +8,7 @@
 import SwiftUI
 import WebKit
 import Combine
-import os.log
+import Logging
 
 import SFSafeSymbols
 
@@ -277,7 +277,7 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
 }
 
 final class ToolState: ObservableObject {
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ToolState")
+    let logger = Logger(label: "ToolState")
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
     // var excalidrawCollaborationWebCoordinator: ExcalidrawView.Coordinator?
 

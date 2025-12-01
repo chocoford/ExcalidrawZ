@@ -69,11 +69,16 @@ struct FileHomeItemSelectModifier: ViewModifier {
             }
         }
         .overlay {
+            let nonSelectedStrokeStyle = if #available(macOS 12.0, iOS 17.0, *) {
+                AnyShapeStyle(SeparatorShapeStyle())
+            } else {
+                AnyShapeStyle(HierarchicalShapeStyle.secondary)
+            }
             RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius)
                 .stroke(
                     isSelected
                     ? AnyShapeStyle(Color.accentColor)
-                    : AnyShapeStyle(SeparatorShapeStyle())
+                    : nonSelectedStrokeStyle
                 )
         }
     }

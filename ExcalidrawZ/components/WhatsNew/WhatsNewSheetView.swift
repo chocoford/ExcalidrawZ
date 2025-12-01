@@ -13,6 +13,8 @@ struct WhatsNewSheetViewModifier: ViewModifier {
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
     @AppStorage("WhatsNewLastBuild") var lastBuild = 0
     
+    @EnvironmentObject private var migrationState: MigrationState
+    
     @State private var isPresented = false
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -46,13 +48,15 @@ struct WhatsNewSheetViewModifier: ViewModifier {
                 sheetContent()
             }
             .bindWindow($window)
-            .onAppear {
+            .onChange(of: migrationState.phase) { newValue in
+                if newValue == .closed {
 #if DEBUG
-                isPresented = true
-#endif
-                if let buildString = Bundle.main.infoDictionary!["CFBundleVersion"] as? String,
-                   lastBuild < (Int(buildString) ?? 0) {
                     isPresented = true
+#endif
+                    if let buildString = Bundle.main.infoDictionary!["CFBundleVersion"] as? String,
+                       lastBuild < (Int(buildString) ?? 0) {
+                        isPresented = true
+                    }
                 }
             }
     }
@@ -140,7 +144,7 @@ struct WhatsNewView: View {
 //        }
         .overlay(alignment: .topLeading) {
             ZStack {
-                if #available(macOS 26.0, *) {
+                if #available(macOS 26.0, iOS 26.0, *) {
                     dismissButton()
                         .buttonBorderShape(.circle)
                         .buttonStyle(.glass)

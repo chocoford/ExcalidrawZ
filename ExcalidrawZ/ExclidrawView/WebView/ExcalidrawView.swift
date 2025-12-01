@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 import WebKit
 import Combine
-import OSLog
+import Logging
 import QuartzCore
 import UniformTypeIdentifiers
 
@@ -75,10 +75,7 @@ struct ExcalidrawView {
     @EnvironmentObject var exportState: ExportState
     @EnvironmentObject var toolState: ToolState
 
-    let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
-        category: "WebView"
-    )
+    let logger = Logger(label: "WebView")
     
     var roomIDBinding: Binding<String>?
     @Binding var file: ExcalidrawFile?

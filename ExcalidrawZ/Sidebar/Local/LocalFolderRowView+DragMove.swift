@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import CoreData
 
 extension UTType {
     static let excalidrawLocalFolderRow = UTType("com.chocoford.excalidrawLocalFolderRow")!
@@ -225,25 +226,28 @@ struct LocalFolderDropModifier: ViewModifier {
                         options: .forReplacing,
                         error: nil
                     ) { url in
-                        do {
-                            try group.exportToDisk(folder: url)
-                            continuation.resume(returning: true)
-                        } catch {
-                            alertToast(error)
-                            continuation.resume(returning: false)
+                        Task {
+                            do {
+                                try await PersistenceController.shared.groupRepository.exportToDisk(
+                                    groupObjectID: group.objectID,
+                                    folder: url
+                                )
+                                continuation.resume(returning: true)
+                            } catch {
+                                alertToast(error)
+                                continuation.resume(returning: false)
+                            }
                         }
                     }
                 }
             }
-            
+
             if delete {
-                try withAnimation {
-                    try group.delete(
-                        context: context,
-                        forcePermanently: true,
-                        save: true
-                    )
-                }
+                try await PersistenceController.shared.groupRepository.delete(
+                    groupObjectID: group.objectID,
+                    forcePermanently: true,
+                    save: true
+                )
             }
             
             return true
@@ -278,23 +282,34 @@ struct LocalFolderDropModifier: ViewModifier {
         do {
             try await folder.withSecurityScopedURL { (scopedURL: URL) async -> Void in
                 let fileCoordinator = NSFileCoordinator()
-                fileCoordinator.coordinate(
-                    writingItemAt: scopedURL,
-                    options: .forReplacing,
-                    error: nil
-                ) { url in
-                    file.exportToDisk(folder: url)
+                return await withCheckedContinuation { continuation in
+                    fileCoordinator.coordinate(
+                        writingItemAt: scopedURL,
+                        options: .forReplacing,
+                        error: nil
+                    ) { url in
+                        Task {
+                            do {
+                                try await PersistenceController.shared.fileRepository.exportToDisk(
+                                    fileObjectID: file.objectID,
+                                    folder: url
+                                )
+                                continuation.resume()
+                            } catch {
+                                alertToast(error)
+                                continuation.resume()
+                            }
+                        }
+                    }
                 }
             }
-            
+
             if delete {
-                try withAnimation {
-                    try file.delete(
-                        context: context,
-                        forcePermanently: true,
-                        save: true
-                    )
-                }
+                try await PersistenceController.shared.fileRepository.delete(
+                    fileObjectID: file.objectID,
+                    forcePermanently: true,
+                    save: true
+                )
             }
             
             return true
@@ -371,29 +386,22 @@ struct LocalFolderDropModifier: ViewModifier {
         delete: Bool,
         context: NSManagedObjectContext
     ) async -> Bool {
-        guard let collaborationFile = context.object(with: roomID) as? CollaborationFile else {
-            return false
-        }
-        
-        return await withCheckedContinuation { continuation in
-            do {
-                try collaborationFile.archiveToLocal(
-                    group: .localFolder(folder),
-                    delete: delete
-                ) { error, target in
-                    switch target {
-                        case .localFile:
-                            continuation.resume(returning: true)
-                        default:
-                            if let error {
-                                alertToast(error)
-                            }
-                            continuation.resume(returning: false)
-                    }
-                }
-            } catch {
-                alertToast(error)
+        let folderID = folder.objectID
+
+        do {
+            let result = try await PersistenceController.shared.collaborationFileRepository.archiveToLocalFolder(
+                collaborationFileObjectID: roomID,
+                targetLocalFolderObjectID: folderID,
+                delete: delete
+            )
+
+            if case .localFile = result {
+                return true
             }
+            return false
+        } catch {
+            alertToast(error)
+            return false
         }
     }
     

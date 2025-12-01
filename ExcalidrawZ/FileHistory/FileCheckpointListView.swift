@@ -60,17 +60,17 @@ struct FileHistoryButton: View {
                     }
                 case .localFile(let url):
                     if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
-                        FileCheckpointListView(localFile: localFile)
+                        FileCheckpointListView(localFile: url)
                             .presentationCompactAdaptation(.popover)
                     } else {
-                        FileCheckpointListView(localFile: localFile)
+                        FileCheckpointListView(localFile: url)
                     }
                 case .temporaryFile(let url):
                     if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {
-                        FileCheckpointListView(localFile: tempFile)
+                        FileCheckpointListView(localFile: url)
                             .presentationCompactAdaptation(.popover)
                     } else {
-                        FileCheckpointListView(localFile: tempFile)
+                        FileCheckpointListView(localFile: url)
                     }
                 case .collaborationFile(let collaborationFile):
                     if #available(macOS 13.3, iOS 16.4, *), horizontalSizeClass == .regular {

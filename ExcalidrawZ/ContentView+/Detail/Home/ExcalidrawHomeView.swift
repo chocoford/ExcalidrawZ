@@ -168,6 +168,9 @@ struct ExcalidrawHomeView: View {
                 }
             }
         }
+        .overlay(alignment: .bottomTrailing) {
+            SyncStatusPopover()
+        }
         .onChange(of: fileState.currentActiveFile) { newValue in
             if newValue == nil {
                 initCurrentGroups()

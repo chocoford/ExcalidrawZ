@@ -182,64 +182,7 @@ extension LocalFolder {
             return urls.filter({ $0.isDirectory })
         }
     }
-    
-    func importToGroup(
-        context: NSManagedObjectContext,
-        delete: Bool,
-        parentGroup: Group? = nil
-    ) throws -> Group {
-        try self.withSecurityScopedURL { scopedURL in
-            let folderOrURLs = try FileManager.default.contentsOfDirectory(
-                at: scopedURL,
-                includingPropertiesForKeys: [.isDirectoryKey]
-            )
-            
-            let rootGroup: Group? = parentGroup == nil
-            ? Group(name: scopedURL.lastPathComponent, context: context)
-            : nil
 
-            for url in folderOrURLs {
-                guard let isDirectory = try url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory else {
-                    continue
-                }
-                
-                if isDirectory {
-
-                } else if url.pathExtension == "excalidraw" {
-                    // transfer the file to a File instance
-                    let file = try File(url: url, context: context)
-                    (parentGroup ?? rootGroup)?.addToFiles(file)
-                }
-            }
-            
-            for case let folder as LocalFolder in self.children ?? [] {
-                if let url = folder.url {
-                    let p = Group(name: url.lastPathComponent, context: context)
-                    _ = try folder.importToGroup(
-                        context: context,
-                        delete: false,
-                        // animation: animation,
-                        parentGroup: p
-                    )
-                    (parentGroup ?? rootGroup)?.addToChildren(p)
-                }
-            }
-            
-            if delete {
-                let fileCoordinator = NSFileCoordinator()
-                fileCoordinator.coordinate(
-                    writingItemAt: scopedURL,
-                    options: .forMoving,
-                    error: nil
-                ) { url in
-                    try? FileManager.default.trashItem(at: url, resultingItemURL: nil)
-                }
-            }
-            
-            return (rootGroup ?? parentGroup)!
-        }
-    }
-    
 //    func moveUnder(destination url: URL) throws {
 //        guard let sourceURL = self.url,
 //              let enumerator = FileManager.default.enumerator(

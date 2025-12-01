@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import CoreData
+
 import ChocofordUI
 
 extension Notification.Name {
@@ -20,14 +22,20 @@ struct FileHomeItemPreferenceKey: PreferenceKey {
     }
 }
 
-class FileItemPreviewCache: NSCache<NSString, NSImage> {
+#if canImport(UIKit)
+typealias PlatformImage = UIImage
+#elseif canImport(AppKit)
+typealias PlatformImage = NSImage
+#endif
+
+class FileItemPreviewCache: NSCache<NSString, PlatformImage> {
     static let shared = FileItemPreviewCache()
 
     static func cacheKey(for file: FileState.ActiveFile, colorScheme: ColorScheme) -> NSString {
         file.id + (colorScheme == .light ? "_light" : "_dark") as NSString
     }
     
-    func getPreviewCache(forFile file: FileState.ActiveFile, colorScheme: ColorScheme) -> NSImage? {
+    func getPreviewCache(forFile file: FileState.ActiveFile, colorScheme: ColorScheme) -> PlatformImage? {
         self.object(forKey: Self.cacheKey(for: file, colorScheme: colorScheme))
     }
     
@@ -49,9 +57,8 @@ struct FileHomeItemView: View {
     var canMultiSelect: Bool
     var fileID: String
     var filename: String
-    var excalidrawFileGetter: (FileState.ActiveFile, NSManagedObjectContext) -> ExcalidrawFile?
     var customLabel: AnyView? = nil
-    
+
     init(
         file: FileState.ActiveFile,
         canMultiSelect: Bool = true
@@ -75,23 +82,6 @@ struct FileHomeItemView: View {
             case .collaborationFile(let collaborationFile):
                 self.fileID = collaborationFile.objectID.description
                 self.filename = collaborationFile.name ?? String(localizable: .generalUntitled)
-        }
-        self.excalidrawFileGetter = { activeFile, context in
-            do {
-                switch activeFile {
-                    case .file(let file):
-                        return try ExcalidrawFile(from: file.objectID, context: context)
-                    case .localFile(let url):
-                        return try ExcalidrawFile(contentsOf: url)
-                    case .temporaryFile(let url):
-                        return try ExcalidrawFile(contentsOf: url)
-                    case .collaborationFile(let collaborationFile):
-                        return try ExcalidrawFile(from: collaborationFile.objectID, context: context)
-                }
-            } catch {
-                print("excalidrawFileGetter error:", error)
-                return nil
-            }
         }
     }
 
@@ -141,6 +131,12 @@ struct FileHomeItemView: View {
         }
         .readWidth($width)
         .overlay(alignment: .bottom) {
+            HStack {
+                Spacer()
+                // Download progress indicator
+                FileDownloadProgressOverlay(fileID: fileID)
+                    .padding(8)
+            }
             ZStack {
                 if let customLabel {
                     customLabel
@@ -247,13 +243,30 @@ struct FileHomeItemView: View {
     }
 
     private func getElementsImage() {
-        // print("Generating preview for file 1: \(file.name)")
-        if let excalidrawFile = excalidrawFileGetter(file, viewContext) {
-            Task {
+        Task {
+            do {
+                // Load ExcalidrawFile asynchronously
+                let excalidrawFile: ExcalidrawFile
+
+                switch file {
+                    case .file(let file):
+                        let content = try await file.loadContent()
+                        excalidrawFile = try ExcalidrawFile(data: content, id: file.id)
+                    case .localFile(let url):
+                        excalidrawFile = try ExcalidrawFile(contentsOf: url)
+                    case .temporaryFile(let url):
+                        excalidrawFile = try ExcalidrawFile(contentsOf: url)
+                    case .collaborationFile(let collaborationFile):
+                        let content = try await collaborationFile.loadContent()
+                        excalidrawFile = try ExcalidrawFile(data: content, id: collaborationFile.id)
+                }
+
+                // Wait for coordinator to be ready
                 while fileState.excalidrawWebCoordinator?.isLoading == true {
                     try? await Task.sleep(nanoseconds: UInt64(1e+9 * 1))
                 }
-                // print("Generating preview for file 2: \(file.name)")
+
+                // Generate preview image
                 if let image = try? await fileState.excalidrawWebCoordinator?.exportElementsToPNG(
                     elements: excalidrawFile.elements,
                     files: excalidrawFile.files.isEmpty ? nil : excalidrawFile.files,
@@ -269,6 +282,8 @@ struct FileHomeItemView: View {
                         }
                     }
                 }
+            } catch {
+                print("Failed to load excalidraw file for preview:", error)
             }
         }
     }
@@ -322,7 +337,7 @@ struct FileHomeItemView: View {
     static func placeholder() -> some View {
         ViewSizeReader { size in
             let width = size.width > 0 ? size.width : nil
-            if #available(macOS 14.0, *) {
+            if #available(macOS 14.0, iOS 17.0, *) {
                 RoundedRectangle(cornerRadius: roundedCornerRadius)
                     .fill(.placeholder)
                     .opacity(0.2)

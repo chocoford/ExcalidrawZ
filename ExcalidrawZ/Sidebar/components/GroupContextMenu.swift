@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 struct GroupMenuProvider: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -149,12 +150,11 @@ struct GroupMenuProvider: View {
         Task.detached {
             // Handle empty trash action.
             do {
-                let context = PersistenceController.shared.container.newBackgroundContext()
-                try await context.perform {
-                    guard case let group as Group = context.object(with: groupID) else { return }
-                    try group.delete(context: context)
-                }
-
+                try await PersistenceController.shared.groupRepository.delete(
+                    groupObjectID: groupID,
+                    forcePermanently: false,
+                    save: true
+                )
             } catch {
                 await alertToast(error)
             }

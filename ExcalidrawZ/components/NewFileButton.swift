@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 import ChocofordUI
 
@@ -48,7 +49,7 @@ struct NewFileButton: View {
     
     var body: some View {
 #if os(iOS)
-        if fileState.currentGroup != nil {
+        if fileState.currentActiveGroup != nil {
             Button {
                 isFileImporterPresented.toggle()
             } label: {
@@ -216,8 +217,7 @@ struct NewFileButton: View {
                 let fileID = try await fileState.createNewFile(
                     active: !openWithDelay,
                     in: groupID,
-                    context: viewContext,
-                    animation: .smooth
+                    context: viewContext
                 )
                 try await viewContext.perform {
                     if let file = viewContext.object(with: fileID) as? File {
@@ -283,7 +283,6 @@ struct NewFileButton: View {
                     try await fileState.createNewFile(
                         in: group.objectID,
                         context: viewContext,
-                        animation: .smooth
                     )
                 } else if case .localFolder(let folder) = fileState.currentActiveGroup {
                     try await folder.withSecurityScopedURL { scopedURL in

@@ -27,8 +27,8 @@ struct ShareToolbarButton: View {
 #endif
     
     var body: some View {
-        Button {
-            performShareFile()
+        AsyncButton {
+            await performShareFile()
         } label: {
             Label(.localizable(.export), systemSymbol: .squareAndArrowUp)
         }
@@ -46,20 +46,23 @@ struct ShareToolbarButton: View {
         .bindWindow($window)
         .onReceive(NotificationCenter.default.publisher(for: .toggleShare)) { notification in
             guard window?.isKeyWindow == true else { return }
-            performShareFile()
+            Task {
+                await performShareFile()
+            }
         }
     }
-    
+
     @MainActor
-    private func performShareFile() {
-        print("[performShareFile] Thread: \(Thread.current)")
+    private func performShareFile() async {
+        print("[performShareFile] Thread: \(Thread())")
         do {
             switch fileState.currentActiveFile {
                 case .file(let file):
-                    self.shareFileState.currentSharedFile = try ExcalidrawFile(from: file.objectID, context: viewContext)
+                    let content = try await file.loadContent()
+                    self.shareFileState.currentSharedFile = try ExcalidrawFile(data: content, id: file.id)
                 case .localFile(let url):
                     if case .localFolder(let folder) = fileState.currentActiveGroup {
-                        try folder.withSecurityScopedURL { _ in
+                        try await folder.withSecurityScopedURL { (_: URL) async throws -> Void in
                             self.shareFileState.currentSharedFile = try ExcalidrawFile(contentsOf: url)
                         }
                     }
@@ -67,7 +70,8 @@ struct ShareToolbarButton: View {
                     self.shareFileState.currentSharedFile = try ExcalidrawFile(contentsOf: url)
 
                 case .collaborationFile(let collaborationFile):
-                    self.shareFileState.currentSharedFile = try ExcalidrawFile(from: collaborationFile.objectID, context: viewContext)
+                    let content = try await collaborationFile.loadContent()
+                    self.shareFileState.currentSharedFile = try ExcalidrawFile(data: content, id: collaborationFile.id)
                 default:
                     break
             }

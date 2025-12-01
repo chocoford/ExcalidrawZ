@@ -7,7 +7,7 @@
 
 import SwiftUI
 import StoreKit
-import os.log
+import Logging
 
 import ChocofordUI
 fileprivate typealias Transaction = StoreKit.Transaction
@@ -73,7 +73,7 @@ class Store: ObservableObject {
         SubscriptionItem.starter.id,
         SubscriptionItem.pro.id,
     ]
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Store")
+    private let logger = Logger(label: "Store")
 
     init() {
         subscriptions = []

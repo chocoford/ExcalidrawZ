@@ -95,8 +95,13 @@ struct HomeTipItemView: View {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.regularMaterial)
                     .shadow(color: .gray.opacity(0.2), radius: isHovered ? 4 : 0)
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(.separator)
+                if #available(macOS 12.0, iOS 17.0, *) {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(.separator)
+                } else {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(.secondary)
+                }
                 
                 image
                     .scaledToFit()
@@ -158,7 +163,7 @@ struct TipDetailContainer: View {
         .frame(maxHeight: 700)
         .overlay(alignment: .topLeading) {
             ZStack {
-                if #available(macOS 26.0, *) {
+                if #available(macOS 26.0, iOS 26.0, *) {
                     dismissButton()
                         .buttonBorderShape(.circle)
                         .buttonStyle(.glass)

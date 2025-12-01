@@ -139,7 +139,7 @@ struct ExcalidrawToolbar: View {
             toolState.toggleToolLock()
         } label: {
             SwiftUI.Group {
-                if #available(macOS 14.0, *) {
+                if #available(macOS 14.0, iOS 17.0, *) {
                     Label(.localizable(.toolbarButtonLockToolLabel), systemSymbol: toolState.isToolLocked ? .lock : .lockOpen)
                         .contentTransition(.symbolEffect(.replace))
                 } else {

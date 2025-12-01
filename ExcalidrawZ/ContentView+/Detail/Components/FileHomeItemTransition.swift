@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 final class FileHomeItemTransitionState: ObservableObject {
     
@@ -205,7 +206,7 @@ struct FileHomeItemHeroLayer: View {
         colorScheme == .light ? file.id + "_light" : file.id + "_dark"
     }
     
-    var platformImage: NSImage? {
+    var platformImage: PlatformImage? {
         FileItemPreviewCache.shared.object(forKey: cacheKey as NSString)
     }
     

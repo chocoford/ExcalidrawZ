@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 import ChocofordEssentials
 import ChocofordUI
@@ -238,16 +239,10 @@ struct GroupListView: View {
     @MainActor @ViewBuilder
     private func contentToolbar() -> some View {
         HStack {
-            if #available(macOS 26.0, iOS 26.0, *) {
-                SettingsLink().labelStyle(.iconOnly)
-            } else {
-                SettingsButton(useDefaultLabel: true) {
-                    Label(.localizable(.settingsName), systemSymbol: .gear)
-                        .labelStyle(.iconOnly)
-                }
-            }
-            
+            SettingsViewButton()
+
             Spacer()
+            
             if #available(macOS 13.0, *) {
                 sortMenuButton()
             } else {
@@ -318,6 +313,7 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
     
     @State private var isHovered = false
     @State private var isImportLocalFolderDialogPresented = false
+    @State private var isImportFilesDialogPresented = false
 
     
     func body(content: Content) -> some View {
@@ -351,21 +347,32 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
                         Menu {
                             SwiftUI.Group {
                                 newGroupButton()
-                                
+
+                                // New: Use fileImporter for cross-platform support
                                 Button {
-                                    let panel = ExcalidrawOpenPanel.importPanel
-                                    if panel.runModal() == .OK {
-                                        NotificationCenter.default.post(
-                                            name: .shouldHandleImport,
-                                            object: panel.urls
-                                        )
-                                    }
+                                    isImportFilesDialogPresented.toggle()
                                 } label: {
                                     Label(
                                         .localizable(.menubarButtonImport),
                                         systemSymbol: .squareAndArrowDown
                                     )
                                 }
+
+                                // Old: NSPanel approach (macOS only)
+                                // Button {
+                                //     let panel = ExcalidrawOpenPanel.importPanel
+                                //     if panel.runModal() == .OK {
+                                //         NotificationCenter.default.post(
+                                //             name: .shouldHandleImport,
+                                //             object: panel.urls
+                                //         )
+                                //     }
+                                // } label: {
+                                //     Label(
+                                //         .localizable(.menubarButtonImport),
+                                //         systemSymbol: .squareAndArrowDown
+                                //     )
+                                // }
                             }
                             .labelStyle(.titleAndIcon)
                         } label: {
@@ -387,6 +394,25 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
             allowsMultipleSelection: true
         ) { urls in
             importLocalFolders(urls: urls)
+        }
+        .fileImporter(
+            isPresented: $isImportFilesDialogPresented,
+            allowedContentTypes: [
+                .init(filenameExtension: "excalidraw") ?? .excalidrawFile,
+                .excalidrawPNG,
+                .excalidrawSVG,
+                .png,
+                .svg,
+                .folder  // Also allow directory selection
+            ],
+            allowsMultipleSelection: true
+        ) { result in
+            if case .success(let urls) = result {
+                NotificationCenter.default.post(
+                    name: .shouldHandleImport,
+                    object: urls
+                )
+            }
         }
     }
     

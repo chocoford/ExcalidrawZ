@@ -74,11 +74,7 @@ struct ShareView: View {
 
     
     var sharedFile: ExcalidrawFile
-    
-    init(sharedFile: File) {
-        self.sharedFile = (try? ExcalidrawFile(from: sharedFile)) ?? ExcalidrawFile()
-    }
-    
+
     init(sharedFile: ExcalidrawFile) {
         self.sharedFile = sharedFile
     }
@@ -144,10 +140,14 @@ struct ShareView: View {
                     } else {
 #if os(macOS)
                         SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
-                            do {
-                                try archiveAllFiles(context: viewContext)
-                            } catch {
-                                alertToast(error)
+                            Task {
+                                do {
+                                    try await archiveAllFiles(context: viewContext)
+                                } catch {
+                                    await MainActor.run {
+                                        alertToast(error)
+                                    }
+                                }
                             }
                         }
 #endif
@@ -325,10 +325,14 @@ struct ShareViewLagacy: View {
 //                .buttonStyle(ExportButtonStyle())
 #if os(macOS)
                 SquareButton(title: .localizable(.exportSheetButtonArchive), icon: .archivebox) {
-                    do {
-                        try archiveAllFiles(context: viewContext)
-                    } catch {
-                        alertToast(error)
+                    Task {
+                        do {
+                            try await archiveAllFiles(context: viewContext)
+                        } catch {
+                            await MainActor.run {
+                                alertToast(error)
+                            }
+                        }
                     }
                 }
 #endif

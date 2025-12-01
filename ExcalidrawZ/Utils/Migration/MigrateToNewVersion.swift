@@ -77,7 +77,7 @@ fileprivate struct MigrateToNewVersionSheetView: View {
                         }
                         .frame(maxHeight: .infinity, alignment: .top)
                         AsyncButton { @MainActor in
-                            try archiveAllFiles(context: viewContext)
+                            try await archiveAllFiles(context: viewContext)
                             didArchive = true
                         } label: {
                             Text(.localizable(.migrationSheetButtonArchive))

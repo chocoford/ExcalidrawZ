@@ -9,24 +9,14 @@ import Foundation
 import CoreData
 
 extension MediaItem {
+    /// Initialize MediaItem with metadata only
+    /// After calling this, you should call MediaItem.saveDataURL() to save the data URL to iCloud Drive
     convenience init(resource: ExcalidrawFile.ResourceFile, context: NSManagedObjectContext) {
         self.init(context: context)
         self.id = resource.id
         self.createdAt = resource.createdAt
-        self.dataURL = resource.dataURL
+        // Don't set dataURL here - caller should use MediaItem.saveDataURL() after insert
         self.mimeType = resource.mimeType
         self.lastRetrievedAt = resource.lastRetrievedAt
     }
-    
-    func update(with resourceFile: ExcalidrawFile.ResourceFile) {
-        guard self.id == resourceFile.id else { return }
-        self.createdAt = resourceFile.createdAt
-        self.dataURL = resourceFile.dataURL
-        self.mimeType = resourceFile.mimeType
-        self.lastRetrievedAt = resourceFile.lastRetrievedAt
-    }
-    
-//    var resourceFile: ExcalidrawFile.ResourceFile {
-//        ExcalidrawFile.ResourceFile(
-//    }
 }

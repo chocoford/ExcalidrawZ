@@ -57,19 +57,18 @@ struct CollaborationFileMenuProvider: View {
     }
     
     private func deleteCollaborationFile(file: CollaborationFile) {
-        let context = PersistenceController.shared.container.newBackgroundContext()
         let fileID = file.objectID
         Task.detached {
             do {
-                try await context.perform {
-                    guard let file = context.object(with: fileID) as? CollaborationFile else { return }
-                    try file.delete(context: context)
-                }
+                try await PersistenceController.shared.collaborationFileRepository.delete(
+                    collaborationFileObjectID: fileID,
+                    save: true
+                )
             } catch {
                 await alertToast(error)
             }
         }
-        
+
         fileState.collaboratingFiles.removeAll(where: {$0 == file})
         fileState.collaboratingFilesState[file] = nil
         if fileState.currentActiveFile == .collaborationFile(file) {

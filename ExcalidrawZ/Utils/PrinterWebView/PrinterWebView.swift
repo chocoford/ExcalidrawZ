@@ -8,7 +8,7 @@
 import SwiftUI
 import WebKit
 import SwiftUIIntrospect
-import os.log
+import Logging
 
 #if DEBUG
 class PrinterWebView: WKWebView {
@@ -20,12 +20,13 @@ class PrinterWebView: WKWebView {
         fatalError("init(coder:) has not been implemented")
     }
     public func print(fileURL: URL) async {}
+    
+    func exportPDF(fileURL: URL) async -> URL? { nil }
 }
 #else
 
-
 class PrinterWebView: WKWebView {
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "PrinterWebView")
+    let logger = Logger(label: "PrinterWebView")
     
     var filename: String
 #if canImport(AppKit)

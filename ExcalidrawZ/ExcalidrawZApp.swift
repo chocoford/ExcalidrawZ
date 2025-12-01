@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import os.log
+import Logging
 #if os(macOS)
 import ServiceManagement
 #endif
@@ -41,7 +41,6 @@ struct ExcalidrawZApp: App {
     private let updaterController: SPUStandardUpdaterController
 #endif
     init() {
-        print("init")
         // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
         // This is where you can also pass an updater delegate if you need one
 #if os(macOS) && !APP_STORE
@@ -77,6 +76,16 @@ struct ExcalidrawZApp: App {
                 }
             }
         }
+        
+        
+        // Perform startup sync between local and iCloud storage
+        Task {
+            do {
+                try await FileStorageManager.shared.performStartupSync()
+            } catch {
+                dump(error, name: "startup sync failed")
+            }
+        }
     }
     // Can not run agent in a sandboxed app.
     // let service = SMAppService.agent(plistName: "com.chocoford.excalidraw.ExcalidrawServer.agent.plist")
@@ -88,15 +97,17 @@ struct ExcalidrawZApp: App {
 #if os(macOS) && !APP_STORE
     @StateObject private var updateChecker = UpdateChecker()
 #endif
+    @ObservedObject private var syncState: SyncStatusState = .shared
     
     let server = ExcalidrawServer()
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawApp")
+    let logger = Logger(label: "ExcalidrawApp")
     
     var body: some Scene {
         WindowGroup {
             RootView()
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
+                .environmentObject(syncState)
                 .environmentObject(appPrefernece)
                 .environmentObject(store)
                 .onAppear {
@@ -106,7 +117,7 @@ struct ExcalidrawZApp: App {
                 }
         }
         .onChange(of: scenePhase) { newValue in
-            logger.info("On scene phase changed: \(String(describing: newValue), privacy: .public)")
+            logger.info("On scene phase changed: \(String(describing: newValue))")
         }
         // prevent window being open by urls.
         .handlesExternalEvents(matching: ["*"])
@@ -170,7 +181,9 @@ struct ExcalidrawZApp: App {
                 }
                 Button {
                     // MUST USE THIS INSTEAD OF VIEWCONTEXT
-                    try? archiveAllFiles(context: PersistenceController.shared.container.viewContext)
+                    Task {
+                        try? await archiveAllFiles(context: PersistenceController.shared.container.viewContext)
+                    }
                 } label: {
                     Label(.localizable(.menubarButtonExportAll), systemSymbol: .squareAndArrowUp)
                 }

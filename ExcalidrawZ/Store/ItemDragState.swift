@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 class ItemDragState: ObservableObject {
     enum DragItem: Hashable {

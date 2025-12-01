@@ -7,7 +7,7 @@
 
 import SwiftUI
 import QuickLook
-import os.log
+import Logging
 import WebKit
 import Combine
 import CoreData
@@ -23,7 +23,7 @@ class PreviewState: ObservableObject {
 import AppKit
 import QuickLookUI
 class PreviewViewController: NSViewController, QLPreviewingController {
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "PreviewViewController")
+    let logger = Logger(label: "PreviewViewController")
     /// Can not use `@StateObject` here
     var state = PreviewState()
     override func loadView() {
@@ -44,7 +44,7 @@ class PreviewViewController: NSViewController, QLPreviewingController {
 import UIKit
 
 class PreviewViewController: UIViewController, QLPreviewingController {
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "PreviewViewController")
+    let logger = Logger(label: "PreviewViewController")
     /// Can not use `@StateObject` here
     var state = PreviewState()
     

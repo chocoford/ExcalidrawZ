@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+#if canImport(AppKit)
 import AppKit
 
 struct EdgeHoverView: NSViewRepresentable {
@@ -93,3 +94,4 @@ struct EdgeHoverView: NSViewRepresentable {
         }
     }
 }
+#endif

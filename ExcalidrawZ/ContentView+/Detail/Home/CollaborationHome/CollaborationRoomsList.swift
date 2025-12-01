@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 struct CollaborationRoomsList: View {
     @EnvironmentObject private var fileState: FileState
