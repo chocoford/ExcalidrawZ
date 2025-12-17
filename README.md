@@ -21,7 +21,7 @@
 2. Click the `.dmg` to install it
 
 ## Preview
-![App overview](assets/README/ExcalidrawZ - Overview.png)
+![App overview](assets/README/ExcalidrawZ%20-%20Overview.png)
 
 ## Features
 
