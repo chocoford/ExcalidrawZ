@@ -26,15 +26,20 @@ struct ExcalidrawContainerWrapper: View {
     
     var localFileBinding: Binding<ExcalidrawFile?> {
         Binding<ExcalidrawFile?> {
-            switch activeFile {
-                case .file(let file):
-                    return try? ExcalidrawFile(from: file.objectID, context: viewContext)
-                case .localFile(let url):
-                    return try? ExcalidrawFile(contentsOf: url)
-                case .temporaryFile(let url):
-                    return try? ExcalidrawFile(contentsOf: url)
-                default:
-                    return nil
+            do {
+                switch activeFile {
+                    case .file(let file):
+                        return try ExcalidrawFile(from: file.objectID, context: viewContext)
+                    case .localFile(let url):
+                        return try ExcalidrawFile(contentsOf: url)
+                    case .temporaryFile(let url):
+                        return try ExcalidrawFile(contentsOf: url)
+                    default:
+                        return nil
+                }
+            } catch {
+                print("[ExcalidrawContainerWrapper] load file failed:", error)
+                return nil
             }
         } set: { val in
             guard let val else { return }

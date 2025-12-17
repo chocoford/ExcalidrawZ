@@ -16,7 +16,33 @@ extension CGPoint : @retroactive Hashable {
   }
 }
 
-struct PointBinding: Codable, Hashable {
+struct FixedPointBinding: Codable, Hashable {
+    typealias FixedPoint = [Double]
+    enum BindMode: String, Codable {
+        case inside, orbit, skip
+    }
+    
+    var elementID: String
+
+    // Represents the fixed point binding information in form of a vertical and
+    // horizontal ratio (i.e. a percentage value in the 0.0-1.0 range). This ratio
+    // gives the user selected fixed point by multiplying the bound element width
+    // with fixedPoint[0] and the bound element height with fixedPoint[1] to get the
+    // bound element-local point coordinate.
+    var fixedPoint: FixedPoint
+
+    // Determines whether the arrow remains outside the shape or is allowed to
+    // go all the way inside the shape up to the exact fixed point.
+    var mode: BindMode
+    
+    enum CodingKeys: String, CodingKey {
+        case elementID = "elementId"
+        case fixedPoint
+        case mode
+    }
+}
+
+struct LagacyPointBinding: Codable, Hashable {
     var elementID: String
     var focus: Double
     var gap: Double
@@ -28,6 +54,20 @@ struct PointBinding: Codable, Hashable {
     }
 }
 
+enum PointBinding: Codable, Hashable {
+    case fixed(FixedPointBinding)
+    case lagacy(LagacyPointBinding)
+    
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let pointBinding = try? container.decode(FixedPointBinding.self) {
+            self = .fixed(pointBinding)
+        } else {
+            self = try .lagacy(LagacyPointBinding(from: decoder))
+        }
+    }
+}
+ 
 enum Arrowhead: String, Codable {
     case arrow
     case bar
