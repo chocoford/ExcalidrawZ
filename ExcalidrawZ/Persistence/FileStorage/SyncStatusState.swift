@@ -103,6 +103,7 @@ struct FileSyncInfo: Equatable {
 
 /// Observable state for tracking file synchronization status
 /// Use this in SwiftUI views to display sync status for each file
+/// This is for iCloud files...
 ///
 /// Usage in SwiftUI:
 /// ```swift

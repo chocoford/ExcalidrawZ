@@ -32,6 +32,7 @@ class ExcalidrawWebView: WKWebView {
         super.init(frame: frame, configuration: configuration)
 #if canImport(UIKit)
         self.scrollView.isScrollEnabled = false
+        self.scrollView.backgroundColor = .clear
 #endif
     }
     

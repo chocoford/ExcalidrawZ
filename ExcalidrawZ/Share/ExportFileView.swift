@@ -45,30 +45,47 @@ struct ExportFileView: View {
     @State private var fileDocument: ExcalidrawFile?
         
     var body: some View {
-        Center {
-#if canImport(AppKit)
-            if #available(macOS 13.0, *) {
-                Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(height: 80)
-                    .draggable(file)
-                    .padding()
-            } else {
-                Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(height: 80)
-                    .padding()
+        SwiftUI.Group {
+#if os(macOS)
+            Center {
+                if #available(macOS 13.0, *) {
+                    Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 80)
+                        .draggable(file)
+                        .padding()
+                } else {
+                    Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 80)
+                        .padding()
+                }
+                actionsView()
             }
 #else
-            Image(systemSymbol: .docText)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(height: 80)
-                .padding()
+            VStack(spacing: 20) {
+                VStack(spacing: 4) {
+                    Image(systemSymbol: .docText)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 80)
+                        .padding()
+                    Text(fileName + ".excalidraw")
+                }
+                actionsView()
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemSymbol: .xmark)
+                    }
+                }
+            }
 #endif
-            actionsView()
         }
         .modifier(ShareSubViewBackButtonModifier(dismiss: dismiss))
         .padding(horizontalSizeClass == .compact ? 0 : 20)
@@ -163,7 +180,7 @@ struct ExportFileView: View {
             
             Spacer()
         }
-        .modernButtonStyle(shape:. modern)
+        .modernButtonStyle(style: .glass, shape: .modern)
         .fileExporter(
             isPresented: $showFileExporter,
             document: fileDocument,

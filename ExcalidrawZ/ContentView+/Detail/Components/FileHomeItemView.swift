@@ -10,6 +10,11 @@ import CoreData
 
 import ChocofordUI
 
+enum FileHomeItemStyle {
+    case card
+    case file
+}
+
 extension Notification.Name {
     static let filePreviewShouldRefresh = Notification.Name("FilePreviewShouldRefresh")
 }
@@ -42,21 +47,25 @@ class FileItemPreviewCache: NSCache<NSString, PlatformImage> {
     func removePreviewCache(forFile file: FileState.ActiveFile, colorScheme: ColorScheme) {
         self.removeObject(forKey: Self.cacheKey(for: file, colorScheme: colorScheme))
     }
-    
 }
+
 
 struct FileHomeItemView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.isEnabled) private var isEnabled
+#if os(iOS)
+    @Environment(\.editMode) private var editMode
+#endif
     
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
-
+    
     var file: FileState.ActiveFile
     var canMultiSelect: Bool
     var fileID: String
     var filename: String
+    var updatedAt: Date?
     var customLabel: AnyView? = nil
 
     init(
@@ -69,19 +78,24 @@ struct FileHomeItemView: View {
             case .file(let file):
                 self.fileID = file.objectID.description
                 self.filename = file.name ?? String(localizable: .generalUntitled)
+                self.updatedAt = file.updatedAt
             case .localFile(let url):
                 self.fileID = url.absoluteString
                 self.filename = url.deletingPathExtension().lastPathComponent.isEmpty
                 ? String(localizable: .generalUntitled)
                 : url.deletingPathExtension().lastPathComponent
+                self.updatedAt = file.updatedAt
+
             case .temporaryFile(let url):
                 self.fileID = url.absoluteString
                 self.filename = url.deletingPathExtension().lastPathComponent.isEmpty
                 ? String(localizable: .generalUntitled)
                 : url.deletingPathExtension().lastPathComponent
+                self.updatedAt = (try? FileManager().attributesOfItem(atPath: url.filePath)[FileAttributeKey.modificationDate]) as? Date
             case .collaborationFile(let collaborationFile):
                 self.fileID = collaborationFile.objectID.description
                 self.filename = collaborationFile.name ?? String(localizable: .generalUntitled)
+                self.updatedAt = file.updatedAt
         }
     }
 
@@ -93,200 +107,89 @@ struct FileHomeItemView: View {
         self.init(file: file, canMultiSelect: canMultiSelect)
         self.customLabel = AnyView(customLabel())
     }
+    
 
-    @State private var coverImage: Image? = nil
-
-    @State private var width: CGFloat?
     @State private var isHovered = false
 
     static let roundedCornerRadius: CGFloat = 12
 
-    let cache = FileItemPreviewCache.shared
-    
-    var cacheKey: String {
-        colorScheme == .light ? fileID + "_light" : fileID + "_dark"
-    }
+    var config = Config()
 
     var body: some View {
-        VStack(spacing: 0) {
-            if let coverImage {
-                Color.clear
-                    .overlay {
-                        coverImage
-                            .resizable()
-                            .scaledToFill()
-                            .allowsHitTesting(false)
-                    }
-                    .clipShape(Rectangle())
-                    .frame(height: width == nil ? 180 : width! * 0.5625)
-            } else {
-                Color.clear
-                    .overlay {
-                        ProgressView()
-                            .controlSize(.small)
-                            .padding(.bottom, 40)
-                    }
-                    .frame(height: width == nil ? 180 : width! * 0.5625)
-            }
-        }
-        .readWidth($width)
-        .overlay(alignment: .bottom) {
-            HStack {
-                Spacer()
-                // Download progress indicator
-                FileDownloadProgressOverlay(fileID: fileID)
-                    .padding(8)
-            }
-            ZStack {
-                if let customLabel {
-                    customLabel
-                } else {
-                    HStack {
-                        Text(filename)
-                            .lineLimit(1)
-                            .font(.headline)
-                        Spacer()
-                    }
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-            .background(.ultraThinMaterial)
-        }
-        .clipShape(
-            RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+        FileHomeItemContentView(
+            style: config.style,
+            file: file,
+            fileID: fileID,
+            filename: filename,
+            updatedAt: updatedAt,
+            customLabel: customLabel
         )
+        .modifier(FileHomeItemICloudStatusProvider(file: file))
+#if os(iOS)
+        .opacity(editMode?.wrappedValue.isEditing == true ? 0.7 : 1.0)
+#endif
         .background {
-            if #available(macOS 26.0, iOS 26.0, *) {
-                RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
-                    .fill(
-                        colorScheme == .light
-                        ? AnyShapeStyle(HierarchicalShapeStyle.secondary)
-                        : AnyShapeStyle(Color.clear)
-                    )
-                    .glassEffect(.clear, in: .rect(cornerRadius: 12))
-                    .shadow(
-                        color: colorScheme == .light
-                        ? Color.gray.opacity(0.33)
-                        : Color.black.opacity(0.33),
-                        radius: isHovered
-                        ? colorScheme == .light ? 2 : 6
-                        : 0
-                    )
-            } else {
-                RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
-                    .fill(.background)
-                    .shadow(
-                        color: colorScheme == .light
-                        ? Color.gray.opacity(0.33)
-                        : Color.black.opacity(0.33),
-                        radius: isHovered
-                        ? colorScheme == .light ? 2 : 6
-                        : 0
-                    )
+            if config.style == .card {
+                if #available(macOS 26.0, iOS 26.0, *) {
+                    RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+                        .fill(
+                            colorScheme == .light
+                            ? AnyShapeStyle(HierarchicalShapeStyle.secondary)
+                            : AnyShapeStyle(Color.clear)
+                        )
+                        .glassEffect(.clear, in: .rect(cornerRadius: 12))
+                        .shadow(
+                            color: colorScheme == .light
+                            ? Color.gray.opacity(0.33)
+                            : Color.black.opacity(0.33),
+                            radius: isHovered
+                            ? colorScheme == .light ? 2 : 6
+                            : 0
+                        )
+                } else {
+                    RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+                        .fill(.background)
+                        .shadow(
+                            color: colorScheme == .light
+                            ? Color.gray.opacity(0.33)
+                            : Color.black.opacity(0.33),
+                            radius: isHovered
+                            ? colorScheme == .light ? 2 : 6
+                            : 0
+                        )
+                }
             }
         }
-        .background {
-            Color.clear
-                .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
-                    [fileID+"SOURCE": value]
-                }
+//        .overlay {
+//            Color.clear
+        .contentShape(Rectangle())
+#if os(macOS)
+        .simultaneousGesture(TapGesture(count: 2).onEnded {
+            openFile()
+        })
+#elseif os(iOS)
+        .simultaneousGesture(TapGesture().onEnded {
+            openFile()
+        }, isEnabled: editMode?.wrappedValue.isEditing != true)
+#endif
+        .modifier(
+            FileHomeItemSelectModifier(
+                file: file,
+                sortField: fileState.sortField,
+                canMultiSelect: canMultiSelect,
+                style: config.style
+            )
+        )
+        .modifier(FileHomeItemContextMenuModifier(file: file))
+        .onHover {
+            isHovered = $0
         }
-        .overlay {
-            Color.clear
-                .contentShape(Rectangle())
-                .simultaneousGesture(TapGesture(count: 2).onEnded {
-                    openFile()
-                })
-                .modifier(
-                    FileHomeItemSelectModifier(
-                        file: file,
-                        sortField: fileState.sortField,
-                        canMultiSelect: canMultiSelect
-                    )
-                )
-                .modifier(FileHomeItemContextMenuModifier(file: file))
-                .onHover {
-                    isHovered = $0
-                }
-        }
+//        }
         .modifier(FileHomeItemDragModifier(file: file))
         .opacity(fileHomeItemTransitionState.shouldHideItem == fileID ? 0 : 1)
         .animation(.smooth(duration: 0.2), value: isHovered)
-        .onReceive(
-            NotificationCenter.default.publisher(for: .filePreviewShouldRefresh)
-        ) { notification in
-            guard let fileID = notification.object as? String,
-                  self.file.id == fileID else { return }
-            
-            print("Refreshing preview for file: \(fileID)")
-            
-            self.getElementsImage()
-        }
-        .onChange(of: file) { newValue in
-            self.getElementsImage()
-        }
-        .watchImmediately(of: colorScheme) { _ in
-            if let image = cache.getPreviewCache(forFile: file, colorScheme: colorScheme) {
-                Task.detached {
-                    let image = Image(platformImage: image)
-                    await MainActor.run {
-                        self.coverImage = image
-                    }
-                }
-            } else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    self.getElementsImage()
-                }
-            }
-        }
     }
 
-    private func getElementsImage() {
-        Task {
-            do {
-                // Load ExcalidrawFile asynchronously
-                let excalidrawFile: ExcalidrawFile
-
-                switch file {
-                    case .file(let file):
-                        let content = try await file.loadContent()
-                        excalidrawFile = try ExcalidrawFile(data: content, id: file.id)
-                    case .localFile(let url):
-                        excalidrawFile = try ExcalidrawFile(contentsOf: url)
-                    case .temporaryFile(let url):
-                        excalidrawFile = try ExcalidrawFile(contentsOf: url)
-                    case .collaborationFile(let collaborationFile):
-                        let content = try await collaborationFile.loadContent()
-                        excalidrawFile = try ExcalidrawFile(data: content, id: collaborationFile.id)
-                }
-
-                // Wait for coordinator to be ready
-                while fileState.excalidrawWebCoordinator?.isLoading == true {
-                    try? await Task.sleep(nanoseconds: UInt64(1e+9 * 1))
-                }
-
-                // Generate preview image
-                if let image = try? await fileState.excalidrawWebCoordinator?.exportElementsToPNG(
-                    elements: excalidrawFile.elements,
-                    files: excalidrawFile.files.isEmpty ? nil : excalidrawFile.files,
-                    colorScheme: colorScheme
-                ) {
-                    Task.detached {
-                        await MainActor.run {
-                            cache.setObject(image, forKey: cacheKey as NSString)
-                        }
-                        let image = Image(platformImage: image)
-                        await MainActor.run {
-                            self.coverImage = image
-                        }
-                    }
-                }
-            } catch {
-                print("Failed to load excalidraw file for preview:", error)
-            }
-        }
-    }
 
     private func openFile() {
         guard isEnabled else { return }
@@ -350,6 +253,299 @@ struct FileHomeItemView: View {
         }
     }
 
+    
+    class Config {
+        var style: FileHomeItemStyle = .card
+    }
+    
+    @MainActor
+    public func fileHomeItemStyle(_ style: FileHomeItemStyle) -> FileHomeItemView {
+        self.config.style = style
+        return self
+    }
+}
+
+private struct FileHomeItemContentView: View {
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.colorScheme) var colorScheme
+
+    @EnvironmentObject private var layoutState: LayoutState
+    @EnvironmentObject private var fileState: FileState
+
+    var style: FileHomeItemStyle
+    var file: FileState.ActiveFile
+    var fileID: String
+    var filename: String
+    var updatedAt: Date?
+    var customLabel: AnyView?
+    
+    init(
+        style: FileHomeItemStyle,
+        file: FileState.ActiveFile,
+        fileID: String,
+        filename: String,
+        updatedAt: Date?,
+        customLabel: AnyView?
+    ) {
+        self.style = style
+        self.file = file
+        self.fileID = fileID
+        self.filename = filename
+        self.updatedAt = updatedAt
+        self.customLabel = customLabel
+    }
+    
+    @State private var coverImage: Image? = nil
+    @State private var width: CGFloat?
+
+    let cache = FileItemPreviewCache.shared
+    
+    var cacheKey: String {
+        colorScheme == .light ? fileID + "_light" : fileID + "_dark"
+    }
+    
+    @available(macOS 13.0, *)
+    var layout: AnyLayout {
+        if style == .card {
+            return AnyLayout(VStackLayout(alignment: .center, spacing: 0))
+        }
+        switch layoutState.compactBrowserLayout {
+            case .grid:
+                return AnyLayout(VStackLayout(alignment: .center, spacing: 0))
+            case .list:
+                return AnyLayout(HStackLayout(alignment: .center, spacing: 8))
+        }
+    }
+    
+    var body: some View {
+        SwiftUI.Group {
+            if #available(macOS 13.0, *) {
+                layout {
+                    content()
+                }
+                .clipShape(
+                    style == .file
+                    ? AnyShape(Rectangle())
+                    : AnyShape(RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius))
+                )
+            } else {
+                VStack(spacing :0) {
+                    content()
+                }
+                .clipShape(RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius))
+            }
+        }
+        .readWidth($width)
+        .onReceive(
+            NotificationCenter.default.publisher(for: .filePreviewShouldRefresh)
+        ) { notification in
+            guard let fileID = notification.object as? String,
+                  self.file.id == fileID else { return }
+            
+            print("Refreshing preview for file: \(fileID)")
+            
+            self.getElementsImage()
+        }
+        .onChange(of: file) { newValue in
+            self.getElementsImage()
+        }
+        .watchImmediately(of: colorScheme) { _ in
+            if let image = cache.getPreviewCache(forFile: file, colorScheme: colorScheme) {
+                Task.detached {
+                    let image = Image(platformImage: image)
+                    await MainActor.run {
+                        self.coverImage = image
+                    }
+                }
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.getElementsImage()
+                }
+            }
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func content() -> some View {
+        // Cover
+        ZStack {
+            var height: CGFloat {
+                style == .file && layoutState.compactBrowserLayout == .list
+                ? 60
+                : width == nil
+                ? 180
+                : width! * (style == .file ? 0.75 : 0.46)
+            }
+            
+            if let coverImage {
+                Color.clear
+                    .overlay {
+                        coverImage
+                            .resizable()
+                            .scaledToFill()
+                            .allowsHitTesting(false)
+                    }
+                    .clipShape(Rectangle())
+                    .frame(height: height)
+            } else {
+                Color.clear
+                    .overlay {
+                        ProgressView()
+                            .controlSize(.small)
+                            // .padding(.bottom, 40)
+                    }
+                    .frame(height: height)
+            }
+        }
+        .background {
+            Color.clear
+                .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
+                    [fileID+"SOURCE": value]
+                }
+        }
+        .background {
+            FileICloudStatusProvider { status in
+                Color.clear.onChange(of: status) { newValue in
+                    if newValue == .downloaded {
+                        self.getElementsImage()
+                    }
+                }
+            }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            // Download progress indicator
+            FileDownloadProgressView(fileID: fileID)
+                .padding(8)
+        }
+        .overlay {
+            if style == .file {
+                RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius)
+                    .stroke(.secondary, lineWidth: 0.5)
+            }
+        }
+        .padding(.horizontal, style == .file && layoutState.compactBrowserLayout == .list ? 10 : 0)
+        .frame(width: style == .file && layoutState.compactBrowserLayout == .list ? 80 : nil)
+
+        // Label
+        ZStack {
+            if let customLabel {
+                customLabel
+            } else {
+                HStack {
+                    if style == .file, layoutState.compactBrowserLayout == .grid {
+                        Spacer(minLength: 0)
+                    }
+                    VStack(
+                        alignment: style == .file && layoutState.compactBrowserLayout != .list
+                        ? .center
+                        : .leading
+                    ) {
+                        Text(filename)
+                            .lineLimit(1)
+                            .font(
+                                containerHorizontalSizeClass == .regular
+                                ? .headline.weight(.semibold)
+                                : style == .file && layoutState.compactBrowserLayout == .list
+                                ? .body.weight(.regular)
+                                : .caption.weight(.semibold)
+                            )
+                        
+                        HStack {
+                            Text(updatedAt?.formatted() ?? "Never modified")
+                                .lineLimit(1)
+                            
+                            Spacer(minLength: 0)
+                            
+                        }
+                        .font(
+                            containerHorizontalSizeClass == .regular
+                            ? .footnote
+                            : style == .file && layoutState.compactBrowserLayout == .list
+                            ? .footnote
+                            : .caption2
+                        )
+                        .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            ZStack {
+                if style == .card {
+                    switch file {
+                        case .file:
+                            EmptyView()
+                            // ExcalidrawIconView().frame(height: 8)
+                        case .localFile:
+                            FileICloudStatusIndicator {
+                                Image(systemSymbol: .externaldrive)
+                            }
+                            .controlSize(.mini)
+                        case .temporaryFile:
+                            Image(systemSymbol: .clock)
+                        case .collaborationFile:
+                            Image(systemSymbol: .person3Fill)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, containerHorizontalSizeClass == .regular ? 8 : 6)
+        .padding(.vertical, containerHorizontalSizeClass == .regular ? 8 : 6)
+        .background {
+            if style == .card {
+                Rectangle().fill(.ultraThinMaterial)
+            }
+        }
+    }
+    
+    
+    
+    private func getElementsImage() {
+        Task {
+            do {
+                // Load ExcalidrawFile asynchronously
+                let excalidrawFile: ExcalidrawFile
+
+                switch file {
+                    case .file(let file):
+                        let content = try await file.loadContent()
+                        excalidrawFile = try ExcalidrawFile(data: content, id: file.id)
+                    case .localFile(let url):
+                        excalidrawFile = try ExcalidrawFile(contentsOf: url)
+                    case .temporaryFile(let url):
+                        excalidrawFile = try ExcalidrawFile(contentsOf: url)
+                    case .collaborationFile(let collaborationFile):
+                        let content = try await collaborationFile.loadContent()
+                        excalidrawFile = try ExcalidrawFile(data: content, id: collaborationFile.id)
+                }
+
+                // Wait for coordinator to be ready
+                while fileState.excalidrawWebCoordinator?.isLoading == true {
+                    try? await Task.sleep(nanoseconds: UInt64(1e+9 * 1))
+                }
+
+                // Generate preview image
+                if let image = try? await fileState.excalidrawWebCoordinator?.exportElementsToPNG(
+                    elements: excalidrawFile.elements,
+                    files: excalidrawFile.files.isEmpty ? nil : excalidrawFile.files,
+                    colorScheme: colorScheme
+                ) {
+                    Task.detached {
+                        await MainActor.run {
+                            cache.setObject(image, forKey: cacheKey as NSString)
+                        }
+                        let image = Image(platformImage: image)
+                        await MainActor.run {
+                            self.coverImage = image
+                        }
+                    }
+                }
+            } catch {
+                print("Failed to load excalidraw file for preview:", error)
+            }
+        }
+    }
 }
 
 private struct FileHomeItemContextMenuModifier: ViewModifier {
@@ -359,7 +555,7 @@ private struct FileHomeItemContextMenuModifier: ViewModifier {
         switch file {
             case .file(let file):
                 content
-                    .modifier(FileContextMenuModifier(file: file))
+                    .modifier(FileContextMenuModifier(files: [file]))
             case .localFile(let url):
                 content
                     .modifier(LocalFileRowContextMenuModifier(file: url))
@@ -370,7 +566,7 @@ private struct FileHomeItemContextMenuModifier: ViewModifier {
                 content
                     .modifier(CollaborationFileContextMenuModifier(file: collaborationFile))
         }
-            
+
     }
 }
 

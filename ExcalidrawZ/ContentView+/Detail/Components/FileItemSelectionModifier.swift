@@ -8,11 +8,27 @@
 import SwiftUI
 
 struct FileHomeItemSelectModifier: ViewModifier {
+#if os(iOS)
+    @Environment(\.editMode) private var editMode
+#endif
     @EnvironmentObject var fileState: FileState
     
     var file: FileState.ActiveFile
     var sortField: ExcalidrawFileSortField
     var canMultiSelect: Bool
+    var style: FileHomeItemStyle
+    
+    init(
+        file: FileState.ActiveFile,
+        sortField: ExcalidrawFileSortField,
+        canMultiSelect: Bool,
+        style: FileHomeItemStyle
+    ) {
+        self.file = file
+        self.sortField = sortField
+        self.canMultiSelect = canMultiSelect
+        self.style = style
+    }
     
     @StateObject private var localFolderState = LocalFolderState()
     
@@ -68,23 +84,53 @@ struct FileHomeItemSelectModifier: ViewModifier {
                     content
             }
         }
+#if os(iOS)
         .overlay {
-            let nonSelectedStrokeStyle = if #available(macOS 12.0, iOS 17.0, *) {
+            if editMode?.wrappedValue.isEditing == true {
+                Circle()
+                    .stroke(.white)
+                    .frame(width: 20, height: 20)
+                    .background {
+                        if #available(iOS 26.0, macOS 26.0, *) {
+                            Image(systemSymbol: .checkmarkCircleFill)
+                                .resizable()
+                                .scaledToFit()
+                                .symbolRenderingMode(.multicolor)
+                                .symbolEffect(.drawOn, options: .speed(2), isActive: !isSelected)
+                        } else {
+                            Image(systemSymbol: .checkmarkCircleFill)
+                                .resizable()
+                                .scaledToFit()
+                                .opacity(isSelected ? 1 : 0)
+                                .animation(.default, value: isSelected)
+                        }
+                    }
+            }
+        }
+#endif
+        .overlay {
+            let cardNotSelectedStyle = if #available(macOS 12.0, iOS 17.0, *) {
                 AnyShapeStyle(SeparatorShapeStyle())
             } else {
                 AnyShapeStyle(HierarchicalShapeStyle.secondary)
             }
-            RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius)
-                .stroke(
-                    isSelected
-                    ? AnyShapeStyle(Color.accentColor)
-                    : nonSelectedStrokeStyle
-                )
+            if style == .card {
+                RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius)
+                    .stroke(
+                        isSelected
+                        ? AnyShapeStyle(Color.accentColor)
+                        : cardNotSelectedStyle,
+                        lineWidth: 0.5
+                    )
+            }
         }
     }
 }
 
 struct FileSelectionModifier: ViewModifier {
+#if os(iOS)
+    @Environment(\.editMode) private var editMode
+#endif
     @EnvironmentObject var fileState: FileState
     
     var file: File
@@ -171,13 +217,18 @@ struct FileSelectionModifier: ViewModifier {
             fileState.selectedStartFile = file
         }
 #else
-        fileState.selectedFiles = [file]
-        fileState.selectedStartFile = file
+        if editMode?.wrappedValue.isEditing == true {
+            fileState.selectedFiles.insertOrRemove(file)
+            fileState.selectedStartFile = file
+        }
 #endif
     }
 }
 
 struct LocalFileSelectionModifier: ViewModifier {
+#if os(iOS)
+    @Environment(\.editMode) private var editMode
+#endif
     @EnvironmentObject var fileState: FileState
     
     var file: URL
@@ -226,14 +277,19 @@ struct LocalFileSelectionModifier: ViewModifier {
             fileState.selectedStartLocalFile = file
         }
 #else
-        fileState.selectedLocalFiles = [file]
-        fileState.selectedStartLocalFile = file
+        if editMode?.wrappedValue.isEditing == true {
+            fileState.selectedLocalFiles = [file]
+            fileState.selectedStartLocalFile = file
+        }
 #endif
     }
     
 }
 
 struct TemporaryFileSelectionModifier: ViewModifier {
+#if os(iOS)
+    @Environment(\.editMode) private var editMode
+#endif
     @EnvironmentObject var fileState: FileState
     
     var file: URL
@@ -281,8 +337,10 @@ struct TemporaryFileSelectionModifier: ViewModifier {
                 fileState.selectedStartTemporaryFile = file
             }
 #else
-        fileState.selectedTemporaryFiles = [file]
-        fileState.selectedStartTemporaryFile = file
+        if editMode?.wrappedValue.isEditing == true {   
+            fileState.selectedTemporaryFiles = [file]
+            fileState.selectedStartTemporaryFile = file
+        }
 #endif
     }
     

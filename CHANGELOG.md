@@ -1,3 +1,7 @@
+## 1.6.1
+
+Update excalidraw core.
+
 ## 1.6.0
 
 #### Optimizations

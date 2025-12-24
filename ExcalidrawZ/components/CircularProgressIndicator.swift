@@ -47,7 +47,7 @@ struct CircularProgressIndicator: View {
 }
 
 /// File download progress overlay for FileHomeItemView
-struct FileDownloadProgressOverlay: View {
+struct FileDownloadProgressView: View {
     @ObservedObject private var syncStatus: SyncStatusState
     let fileID: String
 
@@ -64,3 +64,4 @@ struct FileDownloadProgressOverlay: View {
         }
     }
 }
+

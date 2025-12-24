@@ -96,7 +96,10 @@ struct ExcalidrawContainerView: View {
             }
         }
         .overlay(alignment: .topTrailing) {
-            SyncStatusIndicator()
+            if #available(iOS 17.0, macOS 14.0, *) {
+                SyncStatusIndicator()
+                    .safeAreaPadding(.all)
+            }
         }
         .animation(.easeOut, value: isImporting)
         .transition(.opacity)

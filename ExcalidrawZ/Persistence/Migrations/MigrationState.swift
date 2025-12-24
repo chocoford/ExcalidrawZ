@@ -68,7 +68,6 @@ final class MigrationState: ObservableObject {
     }
 }
 
-
 struct CoreDataMigrationModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
 
@@ -78,7 +77,7 @@ struct CoreDataMigrationModifier: ViewModifier {
     let migrationManager = MigrationManager.shared
 
     #if DEBUG
-    private let isDev = false
+    private let isDev = true
     #else
     private let isDev = false
     #endif
@@ -96,9 +95,6 @@ struct CoreDataMigrationModifier: ViewModifier {
                 .swiftyAlert()
             }
             .onAppear {
-                if isDev {
-                    showMigrationSheet = true
-                }
                 Task {
                     await checkMigrations()
                 }
@@ -112,7 +108,13 @@ struct CoreDataMigrationModifier: ViewModifier {
             // Dev: always show sheet
             // Non-Dev: only show if migration is needed
             if isDev || needsMigration {
+                if isDev {
+                    migrationState.phase = .idle
+                }
                 showMigrationSheet = true
+            } else {
+                // No migrations needed
+                migrationState.phase = .closed
             }
         } catch {
             alertToast(error)

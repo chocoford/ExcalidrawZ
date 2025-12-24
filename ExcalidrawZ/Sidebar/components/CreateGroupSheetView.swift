@@ -42,10 +42,6 @@ struct CreateGroupModifier: ViewModifier {
             .sheet(isPresented: $isPresented) {
                 if containerHorizontalSizeClass == .compact {
                     createFolderSheetView()
-#if os(iOS)
-                        .presentationDetents([.height(140)])
-                        .presentationDragIndicator(.visible)
-#endif
                 } else if #available(iOS 18.0, macOS 13.0, *) {
                     createFolderSheetView()
                         .scrollDisabled(true)
@@ -102,6 +98,8 @@ struct CreateGroupModifier: ViewModifier {
 }
 
 struct CreateGroupSheetView: View {
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+
     @Environment(\.dismiss) var dismiss
     
     init(
@@ -132,9 +130,21 @@ struct CreateGroupSheetView: View {
     @State private var createType: CreateGroupType = .group
     var canSelectCreateType: Bool
     
+    @FocusState private var isFieldFocused: Bool
+    
     var body: some View {
         if #available(macOS 13.0, *) {
+#if os(iOS)
+            if containerHorizontalSizeClass == .compact {
+                NavigationStack {
+                    content()
+                }
+            } else {
+                content()
+            }
+#else
             content()
+#endif
         } else {
             content()
                 .frame(width: 400)
@@ -147,11 +157,12 @@ struct CreateGroupSheetView: View {
         Form {
             Section {
                 HStack {
-#if os(macOS)
                     Text(.localizable(.sidebarGroupListCreateGroupName))
+#if os(macOS)
                         .frame(width: 40, alignment: .trailing)
 #endif
-                    TextField(.localizable(.sidebarGroupListCreateGroupName), text: $name)
+                    TextField("", text: $name, prompt: Text("My new group"))
+                        .focused($isFieldFocused)
                         .submitLabel(.done)
 #if os(macOS)
                         .textFieldStyle(.roundedBorder)
@@ -159,34 +170,67 @@ struct CreateGroupSheetView: View {
                         .onSubmit {
                             if !name.isEmpty {
                                 onCreate(name)
+                                
                                 dismiss()
                             }
                         }
+                    
                 }
             } header: {
-                Text(
-                    createType == .group
-                    ? .localizable(.sidebarGroupListCreateTitle)
-                    : .localizable(.sidebarGroupListCreateFolderTitle)
-                )
-                .fontWeight(.bold)
+                if containerHorizontalSizeClass == .regular {
+                    Text(
+                        createType == .group
+                        ? .localizable(.sidebarGroupListCreateTitle)
+                        : .localizable(.sidebarGroupListCreateFolderTitle)
+                    )
+                    .fontWeight(.bold)
+                }
             } footer: {
-                HStack {
-                    Spacer()
-                    Button(.localizable(.sidebarGroupListCreateButtonCancel)) { dismiss() }
-                    Button(.localizable(.sidebarGroupListCreateButtonCreate)) {
-                        onCreate(name)
-                        dismiss()
+                if containerHorizontalSizeClass == .regular {
+                    HStack {
+                        Spacer()
+                        Button(.localizable(.sidebarGroupListCreateButtonCancel)) { dismiss() }
+                        Button(.localizable(.sidebarGroupListCreateButtonCreate)) {
+                            onCreate(name)
+                            dismiss()
+                        }
+                        .modifier(ProminentButtonModifier())
+                        .disabled(name.isEmpty)
                     }
-                    .modifier(ProminentButtonModifier())
-                    .disabled(name.isEmpty)
                 }
             }
         }
         .labelsHidden()
 #if os(macOS)
         .padding()
+#else
+        .navigationTitle(
+            createType == .group
+            ? .localizable(.sidebarGroupListCreateTitle)
+            : .localizable(.sidebarGroupListCreateFolderTitle)
+        )
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                if containerHorizontalSizeClass == .compact {
+                    ToolbarDismissButton()
+                }
+            }
+            
+            ToolbarItem(placement: .topBarTrailing) {
+                if containerHorizontalSizeClass == .compact {
+                    ToolbarDoneButton {
+                        onCreate(name)
+                        dismiss()
+                    }
+                    .disabled(name.isEmpty)
+                }
+            }
+        }
 #endif
+        .onAppear {
+            isFieldFocused = true
+        }
     }
 }
 

@@ -68,6 +68,88 @@ struct SearchableModifier: ViewModifier {
     }
 }
 
+struct SearchResultsProvider: View {
+    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.alertToast) private var alertToast
+    
+    var searchText: String
+    var content: ([FileState.ActiveFile]) -> AnyView
+    
+    init<Content: View>(
+        searchText: String,
+        @ViewBuilder content: @escaping ([FileState.ActiveFile]) -> Content
+    ) {
+        self.searchText = searchText
+        self.content = { files in
+            AnyView(content(files))
+        }
+    }
+    
+    @State private var searchResults: [FileState.ActiveFile] = []
+        
+    @State private var isSearching = false
+    
+    var body: some View {
+        content(searchResults)
+            .onChange(of: searchText, initial: true, throttle: 0.5, latest: true) { newValue in
+                guard !isSearching else { return }
+                fetchFiles()
+            }
+    }
+    
+    private func fetchFiles() {
+        Task {
+            isSearching = true
+            do {
+                try await viewContext.perform {
+                    let fileFetchRequest = NSFetchRequest<File>(entityName: "File")
+                    if !searchText.isEmpty {
+                        fileFetchRequest.predicate = NSPredicate(format: "name contains %@", searchText)
+                    }
+                    let searchFiles = try viewContext.fetch(fileFetchRequest)
+                    
+                    var searchLocalFiles: [URL] = []
+                    let localFolderFetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                    let localFolders = try viewContext.fetch(localFolderFetchRequest)
+                    for folder in localFolders {
+                        let localFiles = try folder.withSecurityScopedURL { scopedURL in
+                            let contents = try FileManager.default.contentsOfDirectory(at: scopedURL, includingPropertiesForKeys: [])
+                            return contents
+                                .filter({$0.pathExtension == "excalidraw"})
+                                .filter({
+                                    searchText.isEmpty ||
+                                    $0.deletingPathExtension().lastPathComponent.contains(searchText)
+                                })
+                        }
+                        searchLocalFiles.append(contentsOf: localFiles)
+                    }
+                    
+                    let collaborationFilesFetchRequest = NSFetchRequest<CollaborationFile>(entityName: "CollaborationFile")
+                    if !searchText.isEmpty {
+                        collaborationFilesFetchRequest.predicate = NSPredicate(format: "name contains %@", searchText)
+                    }
+                    let searchCollaborationFiles = try viewContext.fetch(collaborationFilesFetchRequest)
+                    
+                    let searchResults: [FileState.ActiveFile] = searchFiles.map {
+                        .file($0)
+                    } + searchLocalFiles.map {
+                        .localFile($0)
+                    } + searchCollaborationFiles.map {
+                        .collaborationFile($0)
+                    }
+                    
+                    withAnimation(.smooth) {
+                        self.searchResults = searchResults
+                    }
+                }
+            } catch {
+                alertToast(error)
+            }
+            isSearching = false
+        }
+    }
+}
+
 struct SerachContent: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast

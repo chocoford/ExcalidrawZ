@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import ChocofordUI
 
 struct SettingsViewButton: View {
     @State private var isSettingsPresented = false
@@ -30,7 +31,7 @@ struct SettingsViewButton: View {
 #endif
         }
         .sheet(isPresented: $isSettingsPresented) {
-            if #available(macOS 13.0, iOS 16.4, *) {
+            if #available(macOS 13.3, iOS 16.4, *) {
                 SettingsView()
                     .presentationContentInteraction(.scrolls)
             } else {

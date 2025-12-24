@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import ChocofordUI
 
 struct MediasSettingsView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
@@ -21,13 +22,14 @@ struct MediasSettingsView: View {
             horizontalCompactContent()
         } else {
 #if os(iOS)
-            if #available(iOS 18.0, *) {
-                regularContent()
-                    .toolbarVisibility(.visible, for: .navigationBar)
-            } else {
-                regularContent()
-                    .toolbar(.visible, for: .navigationBar)
-            }
+            galleryView()
+//            if #available(iOS 18.0, *) {
+//                regularContent()
+//                    .toolbarVisibility(.visible, for: .navigationBar)
+//            } else {
+//                regularContent()
+//                    .toolbar(.visible, for: .navigationBar)
+//            }
 #elseif os(macOS)
             regularContent()
 #endif
@@ -40,13 +42,6 @@ struct MediasSettingsView: View {
         HStack {
             mediaList()
                 .frame(width: 200)
-#if os(iOS)
-                .background {
-                    Rectangle()
-                        .fill(.regularMaterial)
-                        .border(.trailing, color: .separatorColor)
-                }
-#endif // os(iOS)
             
             Divider()
             
@@ -221,12 +216,43 @@ struct MediasSettingsView: View {
     }
     
     @MainActor @ViewBuilder
-    private func content() -> some View {
-        
+    private func galleryView() -> some View {
+        ScrollView {
+            LazyVGrid(columns: [.init(.adaptive(minimum: 120, maximum: 300))]) {
+                ForEach(medias, id: \.objectID) { item in
+                    MediaItemImageView(item: item)
+                        .aspectRatio(1, contentMode: .fill)
+                }
+            }
+        }
     }
 }
 
-
+struct MediaItemImageView: View {
+    var item: MediaItem
+    
+    @State private var data: Data? = nil
+    
+    var body: some View {
+        Color.clear
+            .overlay {
+                if let data {
+                    DataImage(data: data)
+                        .scaledToFit()
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .task {
+                let dataURLString = try? await item.loadDataURL()
+                if let imageDataString = dataURLString?.components(separatedBy: "base64,").last,
+                   let imageData = Data(base64Encoded: imageDataString) {
+                    await MainActor.run {
+                        self.data = imageData
+                    }
+                }
+            }
+    }
+}
 
 struct DataImage: View {
     var data: Data
@@ -236,28 +262,43 @@ struct DataImage: View {
     }
     
     @State private var image: Image?
+#if canImport(AppKit)
+    @State private var platformImage: NSImage?
+#elseif canImport(UIKit)
+    @State private var platformImage: UIImage?
+#endif
     
     var body: some View {
         ZStack {
-            if let image {
+            ThumbnailImage(
+                platformImage, size: CGSize(width: 500, height: 500)
+            ) { image in
                 image
                     .resizable()
-            } else {
+            } placeholder: {
                 Rectangle()
                     .fill(.secondary)
-                    .shimmering()
             }
         }
         .watchImmediately(of: data) { newValue in
             Task.detached {
                 let image = Image(data: newValue)
+#if canImport(AppKit)
+                let platformImage = NSImage(data: newValue)
+#elseif canImport(UIKit)
+                let platformImage = UIImage(data: newValue)
+#endif
+
+                
                 await MainActor.run {
+                    self.platformImage = platformImage
                     self.image = image
                 }
             }
         }
     }
 }
+
 
 #Preview {
     MediasSettingsView()

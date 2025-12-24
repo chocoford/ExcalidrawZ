@@ -133,21 +133,6 @@ struct ExcalidrawContainerWrapper: View {
                 .transition(.opacity)
             }
         }
-#if os(iOS)
-        .modifier(ApplePencilToolbarModifier())
-        .sheet(isPresented: $isSettingsPresented) {
-            if #available(macOS 13.0, iOS 16.4, *) {
-                SettingsView()
-                    .presentationContentInteraction(.scrolls)
-            } else {
-                SettingsView()
-            }
-        }
-#endif
-//        .environmentObject(toolState)
-//        .overlay {
-//            splitViewsContent()
-//        }
         .allowsHitTesting(interactionEnabled)
         .animation(.easeInOut(duration: 0.2), value: shouldShowLoadingMask)
         .onChange(of: activeFile) { (newFile: FileState.ActiveFile?) in

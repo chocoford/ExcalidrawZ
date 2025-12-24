@@ -40,7 +40,9 @@ actor CollaborationFileRepository {
         }
 
         // Save to storage (this will clear content and set filePath)
-        try await saveCollaborationFileContentToStorage(collaborationFileObjectID: collaborationFileObjectID)
+        try await saveCollaborationFileContentToStorage(
+            collaborationFileObjectID: collaborationFileObjectID
+        )
 
         // Create or update checkpoint
         if newCheckpoint {
@@ -95,7 +97,7 @@ actor CollaborationFileRepository {
         collaborationFileObjectID: NSManagedObjectID,
         content: Data
     ) async throws {
-        try await context.perform {
+        let checkpointObjectID = try await context.perform {
             guard let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else {
                 throw AppError.fileError(.notFound)
             }
@@ -118,7 +120,12 @@ actor CollaborationFileRepository {
                 let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: checkpoints.suffix(checkpoints.count - 50).map{$0.objectID})
                 try self.context.executeAndMergeChanges(using: batchDeleteRequest)
             }
+
+            return checkpoint.objectID
         }
+
+        // Save checkpoint to storage using CheckpointRepository
+        try await PersistenceController.shared.checkpointRepository.saveCheckpointToStorage(checkpointObjectID: checkpointObjectID)
     }
 
     /// Update the latest checkpoint for the collaboration file
@@ -129,9 +136,9 @@ actor CollaborationFileRepository {
         collaborationFileObjectID: NSManagedObjectID,
         content: Data
     ) async throws {
-        try await context.perform {
+        let checkpointObjectID: NSManagedObjectID? = try await context.perform {
             guard let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else {
-                return
+                return nil
             }
 
             // MUST Inline fetch
@@ -139,7 +146,7 @@ actor CollaborationFileRepository {
             fetchRequest.predicate = NSPredicate(format: "collaborationFile = %@", collaborationFile)
             fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
             guard let checkpoint = try self.context.fetch(fetchRequest).first else {
-                return
+                return nil
             }
 
             self.logger.info("Updating latest checkpoint")
@@ -148,6 +155,13 @@ actor CollaborationFileRepository {
             checkpoint.updatedAt = .now
 
             try self.context.save()
+
+            return checkpoint.objectID
+        }
+
+        // Save checkpoint to storage if it exists
+        if let checkpointObjectID = checkpointObjectID {
+            try await PersistenceController.shared.checkpointRepository.saveCheckpointToStorage(checkpointObjectID: checkpointObjectID)
         }
     }
 

@@ -29,6 +29,7 @@ struct Migration_MoveContentToICloudDrive: MigrationVersion {
             fileFetchRequest.fetchLimit = 1
 
             if let fileCount = try? context.count(for: fileFetchRequest), fileCount > 0 {
+                logger.info("Need migrate files: \(fileCount)")
                 return true
             }
 
@@ -38,6 +39,7 @@ struct Migration_MoveContentToICloudDrive: MigrationVersion {
             mediaFetchRequest.fetchLimit = 1
 
             if let mediaCount = try? context.count(for: mediaFetchRequest), mediaCount > 0 {
+                logger.info("Need migrate media: \(mediaCount)")
                 return true
             }
 
@@ -51,6 +53,20 @@ struct Migration_MoveContentToICloudDrive: MigrationVersion {
             if let checkpointCount = try? context.count(for: checkpointFetchRequest),
                 checkpointCount > 0
             {
+                logger.info("Need migrate checkpointCount: \(checkpointCount)")
+
+                return true
+            }
+
+            // Check if there are any CollaborationFile entities with content but no filePath
+            let collaborationFileFetchRequest = NSFetchRequest<CollaborationFile>(entityName: "CollaborationFile")
+            collaborationFileFetchRequest.predicate = NSPredicate(format: "content != nil AND filePath == nil")
+            collaborationFileFetchRequest.fetchLimit = 1
+
+            if let collaborationFileCount = try? context.count(for: collaborationFileFetchRequest),
+               collaborationFileCount > 0
+            {
+                logger.info("Need migrate collaboration files: \(collaborationFileCount)")
                 return true
             }
 
@@ -65,19 +81,24 @@ struct Migration_MoveContentToICloudDrive: MigrationVersion {
         logger.info("🔧 Starting migration: CoreData content → File Storage")
         let start = Date()
 
-        // Migrate Files (0 - 1/3)
+        // Migrate Files (0 - 1/4)
         try await migrateFiles { description, progress in
-            await progressHandler(description, progress / 3)
+            await progressHandler(description, progress / 4)
         }
 
-        // Migrate MediaItems (1/3 - 2/3)
+        // Migrate CollaborationFiles (1/4 - 2/4)
+        try await migrateCollaborationFiles { description, progress in
+            await progressHandler(description, 1.0 / 4.0 + progress / 4)
+        }
+
+        // Migrate MediaItems (2/4 - 3/4)
         try await migrateMediaItems { description, progress in
-            await progressHandler(description, 1.0 / 3.0 + progress / 3)
+            await progressHandler(description, 2.0 / 4.0 + progress / 4)
         }
 
-        // Migrate FileCheckpoints (2/3 - 1)
+        // Migrate FileCheckpoints (3/4 - 1)
         try await migrateCheckpoints { description, progress in
-            await progressHandler(description, 2.0 / 3.0 + progress / 3)
+            await progressHandler(description, 3.0 / 4.0 + progress / 4)
         }
 
         logger.info("🎉 Migration completed. Time cost: \(-start.timeIntervalSinceNow) s")
@@ -143,6 +164,76 @@ struct Migration_MoveContentToICloudDrive: MigrationVersion {
             } catch {
                 logger.error(
                     "Failed migrating file \(fileName ?? "Unnamed"): \(error)")
+            }
+            if waitingInterval > 0.02 {
+                try await Task.sleep(nanoseconds: UInt64(waitingInterval * 1e+9))
+            }
+        }
+    }
+
+    private func migrateCollaborationFiles(
+        progressHandler: @escaping (_ description: String, _ progress: Double) async -> Void
+    ) async throws {
+        let fetchRequest = NSFetchRequest<CollaborationFile>(entityName: "CollaborationFile")
+        fetchRequest.predicate = NSPredicate(format: "filePath == nil AND content != nil")
+
+        let collaborationFiles = try await context.perform {
+            try self.context.fetch(fetchRequest)
+        }
+
+        guard !collaborationFiles.isEmpty else {
+            logger.info("No collaboration files to migrate")
+            return
+        }
+
+        let waitingInterval: TimeInterval = 2 / Double(collaborationFiles.count)
+
+        logger.info("Migrating \(collaborationFiles.count) collaboration files to file storage")
+
+        for (i, collaborationFile) in collaborationFiles.enumerated() {
+            let objectID = collaborationFile.objectID
+
+            // Step 1: Extract data from CoreData
+            let (content, fileID, fileName, updatedAt) = try await context.perform {
+                guard let file = self.context.object(with: objectID) as? CollaborationFile else {
+                    throw AppError.fileError(.notFound)
+                }
+                guard let content = file.content,
+                    let fileID = file.id else {
+                    throw AppError.fileError(
+                        .contentNotAvailable(
+                            filename: file.name ?? String(localizable: .generalUnknown)
+                        )
+                    )
+                }
+                return (content, fileID, file.name, file.updatedAt)
+            }
+
+            await progressHandler(
+                "Migrating collaboration file '\(fileName ?? String(localizable: .generalUntitled))'",
+                Double(i) / Double(collaborationFiles.count)
+            )
+
+            do {
+                // Step 2: Save to FileStorageManager
+                let relativePath = try await FileStorageManager.shared.saveContent(
+                    content,
+                    fileID: fileID.uuidString,
+                    type: .file,
+                    updatedAt: updatedAt
+                )
+
+                // Step 3: Update entity in separate context.perform
+                try await context.perform {
+                    guard let file = self.context.object(with: objectID) as? CollaborationFile else { return }
+                    file.updateAfterSavingToStorage(filePath: relativePath)
+                    try self.context.save()
+                }
+
+                logger.info("Migrated collaboration file: \(fileName ?? "Unnamed") → \(relativePath)")
+            } catch {
+                logger.error(
+                    "Failed migrating collaboration file \(fileName ?? "Unnamed"): \(error)")
             }
             if waitingInterval > 0.02 {
                 try await Task.sleep(nanoseconds: UInt64(waitingInterval * 1e+9))

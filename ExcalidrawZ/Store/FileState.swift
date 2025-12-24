@@ -124,7 +124,7 @@ final class FileState: ObservableObject {
             }
             return nil
         }
-        
+
         set {
             if let currentActiveFileID = self.currentActiveFile?.id {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
@@ -144,7 +144,7 @@ final class FileState: ObservableObject {
                     activeFiles[activeFileIndex] = nil
                 }
             }
-            
+
             shouldIgnoreUpdate = true
             recoverWatchUpdate()
             currentFilePublisherCancellables.forEach{$0.cancel()}
@@ -157,6 +157,45 @@ final class FileState: ObservableObject {
             }
         }
     }
+
+    /// Set active file with automatic iCloud download handling
+    ///
+    /// This method checks if the file needs to be downloaded from iCloud
+    /// and waits for the download to complete before setting it as active.
+    ///
+    /// Use this method instead of directly setting `currentActiveFile` when
+    /// the file might need to be downloaded from iCloud.
+    ///
+    /// - Parameter file: The file to activate
+    /// - Throws: FileAccessError if download fails
+    @MainActor
+    func setActiveFile(_ file: ActiveFile) async throws {
+        // Check if file needs download
+        switch file {
+        case .localFile(let url):
+            // Check iCloud status
+            let statusBox = await FileSyncCoordinator.shared.statusBox(for: url)
+            let status = statusBox.status
+
+            logger.debug("Setting active file: \(url.lastPathComponent), status: \(status)")
+
+            // Download if needed (notDownloaded, outdated, or currently downloading)
+            if status == .notDownloaded || status == .outdated || status.isInProgress {
+                logger.info("Downloading file before opening: \(url.lastPathComponent)")
+                try await FileSyncCoordinator.shared.downloadFile(url)
+            }
+
+        case .file, .temporaryFile, .collaborationFile:
+            // Database files, temporary files, and collaboration files don't need download check
+            break
+        }
+
+        // Set current active file after download completes (or immediately if no download needed)
+        self.currentActiveFile = file
+    }
+
+    @Published var selectedGroups: Set<NSManagedObjectID> = []
+    // @Published var selectedLocalFolders: Set<LocalFolder> = []
     
     @Published var selectedFiles: Set<File> = []
     @Published var selectedStartFile: File?
@@ -835,7 +874,7 @@ final class FileState: ObservableObject {
 
     func mergeDefaultGroupAndTrashIfNeeded(context: NSManagedObjectContext) async throws {
         print("mergeDefaultGroupAndTrashIfNeeded...")
-        let theEearlisetGroup = try await context.perform {
+        try await context.perform {
             let groups = try context.fetch(NSFetchRequest<Group>(entityName: "Group"))
             
             let defaultGroups = groups.filter({$0.groupType == .default})
@@ -864,16 +903,6 @@ final class FileState: ObservableObject {
                 context.delete(trash)
             }
             try context.save()
-            
-            return theEearlisetGroup
-        }
-        
-        if let theEearlisetGroupID = theEearlisetGroup?.objectID {
-            await MainActor.run {
-                if let theEearlisetGroup = context.object(with: theEearlisetGroupID) as? Group {
-                    self.currentActiveGroup = .group(theEearlisetGroup)
-                }
-            }
         }
     }
     

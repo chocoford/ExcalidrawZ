@@ -43,9 +43,9 @@ struct FixedPointBinding: Codable, Hashable {
 }
 
 struct LagacyPointBinding: Codable, Hashable {
-    var elementID: String
-    var focus: Double
-    var gap: Double
+    var elementID: String?
+    var focus: Double?
+    var gap: Double?
     
     enum CodingKeys: String, CodingKey {
         case elementID = "elementId"

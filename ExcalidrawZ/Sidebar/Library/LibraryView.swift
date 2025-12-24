@@ -14,6 +14,8 @@ import ChocofordUI
 import UniformTypeIdentifiers
 
 struct LibraryTrailingSidebarModifier: ViewModifier {
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    
     @EnvironmentObject private var appPreference: AppPreference
     @EnvironmentObject private var layoutState: LayoutState
     
@@ -23,7 +25,16 @@ struct LibraryTrailingSidebarModifier: ViewModifier {
         if appPreference.inspectorLayout == .floatingBar {
             return true
         } else if #available(iOS 26.0, *) {
-            return true
+            #if canImport(UIKit)
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                /// inspector cause sidebar layout wierd in iPad
+                return true
+            } else {
+                return false
+            }
+            #else
+            return false
+            #endif
         } else {
             return false
         }
@@ -33,6 +44,11 @@ struct LibraryTrailingSidebarModifier: ViewModifier {
         ZStack {
             if shouldUseFloatingInspector {
                 floatingInspector(content: content)
+            } else if containerHorizontalSizeClass == .compact {
+                content
+                    .sheet(isPresented: $layoutState.isInspectorPresented) {
+                        LibraryView(librariesToImport: $librariesToImport)
+                    }
             } else if #available(macOS 14.0, iOS 17.0, *) {
                 content
                     .inspector(isPresented: $layoutState.isInspectorPresented) {
@@ -54,27 +70,55 @@ struct LibraryTrailingSidebarModifier: ViewModifier {
             HStack {
                 Spacer()
                 if layoutState.isInspectorPresented {
-                    LibraryView(librariesToImport: $librariesToImport)
-                        .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .background {
-                            if #available(iOS 26.0, macOS 26.0, *) {
-                                RoundedRectangle(cornerRadius: 24)
-                                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24))
-                                    .shadow(radius: 4)
-                            } else {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(.regularMaterial)
-                                    .shadow(radius: 4)
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Button {
+                                layoutState.isInspectorPresented.toggle()
+                            } label: {
+                                Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
                             }
+                            .labelStyle(.iconOnly)
+                            .modernButtonStyle(style: .glass, shape: .circle)
                         }
-                        .transition(.move(edge: .trailing))
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 4)
+                        .overlay {
+                            Text(.localizable(.librariesTitle))
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        
+                        LibraryView(librariesToImport: $librariesToImport)
+                    }
+                    .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .background {
+                        if #available(iOS 26.0, macOS 26.0, *) {
+                            RoundedRectangle(cornerRadius: 24)
+                                .fill(.background)
+                                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24))
+#if os(macOS)
+                                .shadow(radius: 4)
+#endif
+                        } else {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.regularMaterial)
+                                .shadow(radius: 4)
+                        }
+                    }
+                    .transition(.move(edge: .trailing))
                 }
             }
             .animation(.easeOut, value: layoutState.isInspectorPresented)
+#if os(macOS)
             .padding(.top, 10)
-            .padding(.horizontal, 10)
             .padding(.bottom, 40)
+#else
+            .padding(.bottom, 10)
+#endif
+            .padding(.horizontal, 10)
+            .ignoresSafeArea(edges: .bottom)
         }
     }
     
@@ -119,7 +163,9 @@ struct LibraryView: View {
         ZStack {
             if #available(macOS 13.0, *), appPreference.inspectorLayout == .sidebar {
                 content()
+#if os(macOS)
                     .toolbar(content: toolbar)
+#endif
                     .presentationDetents([.medium])
             } else {
                 VStack(spacing: 0) {
@@ -151,9 +197,9 @@ struct LibraryView: View {
         }
     }
     
+#if os(macOS)
     @MainActor @ToolbarContentBuilder
     private func toolbar() -> some ToolbarContent {
-#if os(macOS)
         ToolbarItem(placement: .destructiveAction) {
             if #available(macOS 26.0, *) {} else {
                 Color.clear
@@ -195,49 +241,69 @@ struct LibraryView: View {
             }
             .keyboardShortcut("0", modifiers: [.command, .option])
         }
-#elseif os(iOS)
-//        ToolbarItem(placement: .principal) {
-//            Text(.localizable(.librariesTitle))
-//                .foregroundStyle(.secondary)
-//                .font(.headline)
-//        }
-//        
-        ToolbarItem(placement: .topBarTrailing) {
-            if containerHorizontalSizeClass == .regular {
-                Button {
-                    layoutState.isInspectorPresented.toggle()
-                } label: {
-                    Label(.localizable(.librariesTitle), systemSymbol: .sidebarRight)
-                }
-            } else if containerVerticalSizeClass == .compact {
-                Button {
-                    layoutState.isInspectorPresented.toggle()
-                } label: {
-                    Label(.localizable(.librariesTitle), systemSymbol: .chevronDown)
-                }
-            }
-        }
-#endif
     }
-    
+#endif
+
     @MainActor @ViewBuilder
     private func content() -> some View {
         if libraries.isEmpty {
             emptyPlaceholder()
         } else {
-            VStack(spacing: 0) {
-                scrollContent()
-                    .readSize($scrollViewSize)
-                
-                Divider()
-                
-                bottomBar()
-                    .padding(.vertical, 2)
-                    .padding(.horizontal, 8)
-                    .frame(height: 32)
+            if containerHorizontalSizeClass == .compact {
+#if os(iOS)
+                compactContent()
+#endif
+            } else {
+                VStack(spacing: 0) {
+                    
+                    scrollContent()
+                        .readSize($scrollViewSize)
+                    
+                    Divider()
+                    
+                    bottomBar()
+#if os(iOS)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .frame(height: 56, alignment: .top)
+#else
+                        .padding(.vertical, 2)
+                        .padding(.horizontal, 8)
+                        .frame(height: 32)
+#endif
+                }
             }
         }
     }
+    
+#if os(iOS)
+    @MainActor @ViewBuilder
+    private func compactContent() -> some View {
+        NavigationStack {
+            scrollContent()
+                .readSize($scrollViewSize)
+                .navigationTitle(.localizable(.librariesTitle))
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigation) {
+                        ToolbarDismissButton()
+                    }
+                    
+                    ToolbarItem(placement: .automatic) {
+                        if inSelectionMode {
+                            ToolbarDoneButton {
+                                inSelectionMode.toggle()
+                            }
+                        } else {
+                            bottomBarMenu()
+                        }
+                    }
+                }
+        }
+    }
+#endif
+    
+    
     
     @MainActor @ViewBuilder
     private func emptyPlaceholder() -> some View {
@@ -303,6 +369,9 @@ struct LibraryView: View {
                             Text(.localizable(inSelectionMode ? .librariesButtonSelectCancel : .librariesButtonSelect))
                         }
                         .buttonStyle(.borderless)
+#if os(iOS)
+                        .hoverEffect()
+#endif
                     }
                 }
             
@@ -339,6 +408,9 @@ struct LibraryView: View {
                             .labelStyle(.iconOnly)
                             .disabled(selectedItems.isEmpty)
                             .buttonStyle(.borderless)
+#if os(iOS)
+                            .hoverEffect()
+#endif
                         }
                         
                         if !inSelectionMode || libraries.count > 1 {
@@ -346,6 +418,9 @@ struct LibraryView: View {
                                 bottomBarMenu()
                                     .menuStyle(.button)
                                     .buttonStyle(.borderless)
+#if os(iOS)
+                                    .hoverEffect()
+#endif
                             } else {
                                 bottomBarMenu()
                                     .menuStyle(.borderlessButton)
@@ -399,6 +474,8 @@ struct LibraryView: View {
             }
         }
     }
+    
+    
     
     @MainActor @ViewBuilder
     private func bottomBarMenu() -> some View {

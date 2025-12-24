@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PencilSettingsView: View {
-    @EnvironmentObject var toolState: ToolState
+    @StateObject var toolState = ToolState()
     
     var body: some View {
         if #available(macOS 14.0, *) {

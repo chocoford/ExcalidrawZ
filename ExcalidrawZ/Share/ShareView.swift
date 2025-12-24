@@ -12,41 +12,35 @@ import ChocofordUI
 import SwiftyAlert
 import SFSafeSymbols
 
+
 struct ShareFileModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var shareFileState: ShareFileState
-    @EnvironmentObject private var fileState: FileState
     
-
     func body(content: Content) -> some View {
         content
             .sheet(item: $shareFileState.currentSharedFile) { file in
-                if horizontalSizeClass == .compact {
-                    self.content(file)
-#if os(iOS)
-                        .presentationDetents([.fraction(0.4)])
-                        .presentationDragIndicator(.visible)
-#endif
-                } else {
-                    self.content(file)
+#if os(macOS)
+                self.content(file)
+#else
+                switch shareFileState.shareTarget {
+                    case .image:
+                        ExportImageView(file: file)
+                    case .file:
+                        ExportFileView(file: file)
+                    case .none:
+                        EmptyView()
                 }
+#endif
             }
     }
     
     @MainActor @ViewBuilder
     private func content(_ file: ExcalidrawFile) -> some View {
         ZStack {
-//            if #available(macOS 26.0, iOS 26.0, *) {
-//                ShareView(sharedFile: file)
-//                    .swiftyAlert()
-//                    .presentationBackground {
-//                        Rectangle()
-//                            .glassEffect(in: .containerRelative)
-//                    }
-//            } else
-        if #available(macOS 13.0, iOS 16.0, *) {
-                ShareView(sharedFile: file)
+            if #available(macOS 13.0, iOS 16.0, *) {
+                ShareView(sharedFile: file, containerSizeClass: horizontalSizeClass)
                     .swiftyAlert()
             } else {
                 ShareViewLagacy(sharedFile: file)
@@ -74,9 +68,11 @@ struct ShareView: View {
 
     
     var sharedFile: ExcalidrawFile
+    var containerSizeClass: UserInterfaceSizeClass?
 
-    init(sharedFile: ExcalidrawFile) {
+    init(sharedFile: ExcalidrawFile, containerSizeClass: UserInterfaceSizeClass?) {
         self.sharedFile = sharedFile
+        self.containerSizeClass = containerSizeClass
     }
     
     enum Route: Hashable {
@@ -96,10 +92,11 @@ struct ShareView: View {
     var body: some View {
         NavigationStack(path: $route) {
             VStack(spacing: horizontalSizeClass == .compact ? 10 : 20) {
+#if os(macOS)
                 Text(.localizable(.exportSheetHeadline))
-                    .font(horizontalSizeClass == .compact ? .headline : .largeTitle)
+                    .font(containerSizeClass == .compact ? .headline : .title)
+#endif
                 Spacer()
-                //                VStack(spacing: 10) {
                 HStack(spacing: 10) {
                     SquareButton(title: .localizable(.exportSheetButtonImage), icon: .photo) {
                         route.append(Route.exportImage)
@@ -153,7 +150,6 @@ struct ShareView: View {
 #endif
                     }
                 }
-                //                }
                 Spacer()
                 Spacer()
             }
@@ -172,6 +168,7 @@ struct ShareView: View {
                 }
             }
             .padding(40)
+#if os(macOS)
             .overlay(alignment: .topLeading) {
                 Button {
                     dismiss()
@@ -182,8 +179,19 @@ struct ShareView: View {
                 .modernButtonStyle(style: .glass, size: .large, shape: .modernCircle)
                 .padding(24)
             }
-#if os(macOS)
             .toolbar(.hidden, for: .windowToolbar)
+#else
+            .navigationTitle(.localizable(.exportSheetHeadline))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemSymbol: .xmark)
+                    }
+                }
+            }
 #endif
         }
     }
@@ -413,13 +421,35 @@ fileprivate struct SquareButton: View {
 
 
 #if DEBUG
-#Preview {
-    if #available(macOS 13.0, *) {
-        ShareView(sharedFile: ExcalidrawFile.preview)
-            .environmentObject(ExportState())
-    } else {
-        ShareViewLagacy(sharedFile: .preview)
-            .environmentObject(ExportState())
+struct SharePreviewView: View {
+    @StateObject private var fileState = FileState()
+    @StateObject private var shareFileState = ShareFileState()
+    
+    var body: some View {
+        VStack {
+            Text("Hello Share View")
+            Button {
+                shareFileState.currentSharedFile = ExcalidrawFile(
+                    source: "",
+                    files: [:],
+                    version: 2,
+                    elements: [],
+                    appState: .init(),
+                    type: ""
+                )
+            } label: {
+                Text("Toggle Sheet")
+            }
+        }
+        .modifier(ShareFileModifier())
+        .environmentObject(ExportState())
+        .environmentObject(shareFileState)
+        .environmentObject(fileState)
     }
+}
+
+
+#Preview {
+    SharePreviewView()
 }
 #endif

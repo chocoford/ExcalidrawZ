@@ -299,8 +299,15 @@ struct GroupMenuItems: View {
             }
         }
         
-        Button {
-            copyEntityURLToClipboard(objectID: group.objectID)
+        SensoryFeedbackButton {
+            try copyEntityURLToClipboard(objectID: group.objectID)
+            alertToast(
+                .init(
+                    displayMode: .hud,
+                    type: .complete(.green),
+                    title: String(localizable: .exportActionCopied)
+                )
+            )
         } label: {
             Label(.localizable(.sidebarGroupRowContextMenuCopyGroupLink), systemSymbol: .link)
         }

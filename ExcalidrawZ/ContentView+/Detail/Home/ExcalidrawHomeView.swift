@@ -224,10 +224,7 @@ struct ExcalidrawHomeView: View {
                 default:
                     currentGroups.removeAll()
             }
-            
-            
-            
-            
+
             if fileState.currentActiveFile == nil {
                 updateLastHomeType()
             }

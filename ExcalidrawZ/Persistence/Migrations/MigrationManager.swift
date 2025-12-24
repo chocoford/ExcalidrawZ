@@ -75,10 +75,6 @@ actor MigrationManager {
                 }
             }
             
-            // No migrations needed
-            await MainActor.run {
-                state.phase = .closed
-            }
             return false
         } catch {
             print(error)

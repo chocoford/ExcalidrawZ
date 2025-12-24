@@ -1,8 +1,8 @@
 //
-//  LocalFileRowContextMenu.swift
+//  LocalFileContextMenu.swift
 //  ExcalidrawZ
 //
-//  Created by Dove Zachary on 8/7/25.
+//  Created by Chocoford on 8/7/25.
 //
 
 import SwiftUI
@@ -40,6 +40,7 @@ struct LocalFileMenuProvider: View {
     
     var body: some View {
         content(triggers)
+            .modifier(FileHomeItemICloudStatusProvider(file: .localFile(file)))
             .modifier(
                 RenameSheetViewModifier(
                     isPresented: $isRenameSheetPresented,
@@ -143,7 +144,9 @@ struct LocalFileMenu: View {
 
 struct LocalFileRowMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
+    
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var localFolderState: LocalFolderState
 
@@ -159,6 +162,43 @@ struct LocalFileRowMenuItems: View {
     private var topLevelLocalFolders: FetchedResults<LocalFolder>
     
     var body: some View {
+        if containerHorizontalSizeClass != .compact {
+            // Open
+            Button {
+                fileState.currentActiveFile = .localFile(file)
+            } label: {
+                Label(
+                    "Open",
+                    systemSymbol: .arrowUpRightSquare
+                )
+            }
+            
+            // Download / Remove download
+            FileICloudStatusProvider { status in
+                if status != .local {
+                    Button {
+                        Task {
+                            do {
+                                if status == .downloaded {
+                                    try await FileAccessor.shared.evictLocalCopy(of: file)
+                                } else {
+                                    try await FileAccessor.shared.downloadFile(file)
+                                }
+                            } catch {
+                                alertToast(error)
+                            }
+                        }
+                            
+                    } label: {
+                        Label(
+                            status == .downloaded ? "Remove download" : "Download",
+                            systemSymbol: status == .downloaded ? .xmarkCircle : .icloudAndArrowDown
+                        )
+                    }
+                }
+            }
+        }
+        
         // Rename
         Button {
             onToggleRename()

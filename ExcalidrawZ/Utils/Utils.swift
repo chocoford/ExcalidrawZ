@@ -370,11 +370,17 @@ func archiveAllCloudFiles(to url: URL, context: NSManagedObjectContext) async th
 }
 
 // MARK: - Clipboard
-func copyEntityURLToClipboard(objectID: NSManagedObjectID) {
+func copyEntityURLToClipboard(objectID: NSManagedObjectID) throws {
     let uri = objectID.uriRepresentation().absoluteString
     guard let encodedURI = uri.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
           let url = URL(string: "excalidrawz://entity?objectURI=\(encodedURI)") else {
-        return
+        struct InvalidURIError: LocalizedError {
+            var errorDescription: String? {
+                "Invalid File"
+            }
+        }
+        
+        throw InvalidURIError()
     }
     
 #if canImport(AppKit)

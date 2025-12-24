@@ -101,17 +101,6 @@ struct SettingsView: View {
                         Text(route.text)
                     }
                 }
-            } footer: {
-                if containerVerticalSizeClass == .compact {
-                    HStack {
-                        Spacer()
-                        Button(role: .cancel) {
-                            dismiss()
-                        } label: {
-                            Text(.localizable(.generalButtonClose))
-                        }
-                    }
-                }
             }
 //            ForEach(Route.allCases) { route in
 //                Button {
@@ -126,6 +115,17 @@ struct SettingsView: View {
 //                    )
 //                )
 //            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                if containerVerticalSizeClass == .compact {
+                    Button(role: .cancel) {
+                        dismiss()
+                    } label: {
+                        Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
+                    }
+                }
+            }
         }
 #endif
     }

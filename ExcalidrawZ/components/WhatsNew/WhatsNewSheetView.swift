@@ -96,7 +96,6 @@ struct WhatsNewView: View {
                         navigationContent()
                     } else {
                         navigationContent()
-                           
                     }
                 }
                 .navigationDestination(for: Route.self) { route in
@@ -142,6 +141,7 @@ struct WhatsNewView: View {
 //        .watchImmediately(of: navigationSize) { newValue in
 //            navigationMaxHeight = max(navigationMaxHeight, newValue.height)
 //        }
+#if os(macOS)
         .overlay(alignment: .topLeading) {
             ZStack {
                 if #available(macOS 26.0, iOS 26.0, *) {
@@ -157,9 +157,14 @@ struct WhatsNewView: View {
             }
             .padding(20)
         }
-#if os(iOS)
+#elseif os(iOS)
         .navigationTitle(Text(.localizable(.whatsNewTitle)))
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                dismissButton()
+            }
+        }
 #endif
     }
     
@@ -189,7 +194,7 @@ struct WhatsNewView: View {
                                 .resizable()
                                 .scaledToFit()
                         } handle: {
-                            Image(systemName: "line.horizontal.3")
+                            Image(systemSymbol: .line3Horizontal)
                                 .foregroundColor(.black)
                         }
                         .frame(height: 300)
@@ -203,7 +208,7 @@ struct WhatsNewView: View {
 #endif
                     }
                     
-                    featuresContent()
+                     featuresContent()
                 }
                 .padding(.vertical)
                 .fixedSize(horizontal: false, vertical: true)

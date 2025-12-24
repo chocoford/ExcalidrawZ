@@ -14,6 +14,7 @@ import Logging
 import ChocofordUI
 import ChocofordEssentials
 import SwiftyAlert
+import SFSafeSymbols
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) var viewContext
@@ -55,6 +56,7 @@ struct ContentView: View {
             .modifier(OpenFromURLModifier())
             .modifier(UserActivityHandlerModifier())
             .modifier(ShareFileModifier())
+            .modifier(LocalFolderMonitorModifier())
             .environmentObject(fileState)
             .environmentObject(exportState)
             .environmentObject(layoutState)
@@ -92,11 +94,12 @@ struct ContentView: View {
                     ICloudSyncingView(isFirstImporting: isFirstImporting)
                         .frame(width: 1150, height: 580)
                 }
-            } else {
+            } else if horizontalSizeClass == .regular {
                 contentView()
-#if os(macOS) /// iOS declare in NavigationSplitView (ContentViewModern.swift)
                     .modifier(LibraryTrailingSidebarModifier())
-#endif
+            } else {
+                // Compact uses TabView, can not use library here.
+                contentView()
             }
         }
     }

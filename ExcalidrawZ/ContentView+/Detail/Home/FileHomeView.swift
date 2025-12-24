@@ -423,7 +423,11 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 
                 Spacer()
             }
-            .controlSize(.large)
+#if os(iOS)
+            .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
+#else
+            .modernButtonStyle(shape: .capsule)
+#endif
         }
     }
     

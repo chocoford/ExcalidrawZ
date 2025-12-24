@@ -160,10 +160,18 @@ struct HomeView: View {
     
 }
 
-private struct RecentlyFilesSection: View {
+struct RecentlyFilesProvider: View {
     @Environment(\.scenePhase) private var scenePhase
+
+    var content: ([FileState.ActiveFile]) -> AnyView
     
-    init() {}
+    init<Content: View>(
+        @ViewBuilder content: @escaping ([FileState.ActiveFile]) -> Content
+    ) {
+        self.content = { files in
+            AnyView(content(files))
+        }
+    }
     
     @FetchRequest(
         sortDescriptors: [
@@ -194,47 +202,16 @@ private struct RecentlyFilesSection: View {
     @State private var recentlyFiles: [FileState.ActiveFile] = []
     
     var body: some View {
-        ZStack {
-            if !recentlyFiles.isEmpty {
-                content()
+        content(recentlyFiles)
+            .onHover { isHovered in
+                if isHovered { getRecentlyFiles() }
             }
-        }
-        .animation(.default, value: recentlyFiles.isEmpty)
-        .onChange(of: scenePhase) { _ in
-            getRecentlyFiles()
-        }
-        .onAppear {
-            getRecentlyFiles()
-        }
-    }
-    
-    @MainActor @ViewBuilder
-    private func content() -> some View {
-        VStack(alignment: .leading) {
-            HStack {
-                Image(systemSymbol: .clock)
-                Text(.localizable(.homeRecentlyVisitedTitle))
+            .onChange(of: scenePhase) { _ in
+                getRecentlyFiles()
             }
-            .font(.headline)
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(recentlyFiles) { file in
-                        FileHomeItemView(
-                            file: file,
-                            canMultiSelect: false
-                        )
-                        .frame(width: 200)
-                    }
-                }
-                .padding(10)
+            .onAppear {
+                getRecentlyFiles()
             }
-            .offset(x: -10)
-            .scrollClipDisabledIfAvailable()
-        }
-        .onHover { isHovered in
-            if isHovered { getRecentlyFiles() }
-        }
     }
     
     private func getRecentlyFiles() {
@@ -281,6 +258,48 @@ private struct RecentlyFilesSection: View {
         
         self.recentlyFiles = Array(sortedAllFiles.prefix(20))
     }
+}
+
+private struct RecentlyFilesSection: View {
+    
+    init() {}
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            HStack {
+                Image(systemSymbol: .clock)
+                Text(.localizable(.homeRecentlyVisitedTitle))
+            }
+            .font(.headline)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    RecentlyFilesProvider { recentlyFiles in
+                        ForEach(recentlyFiles) { file in
+                            FileHomeItemView(
+                                file: file,
+                                canMultiSelect: false
+                            )
+                            .frame(width: 200)
+                        }
+                        
+                        if recentlyFiles.isEmpty {
+                            ForEach(0..<10) { _ in
+                                Rectangle()
+                                    .fill(.secondary)
+                                    .frame(width: 200, height: 200 * 0.45)
+                            }
+                        }
+                    }
+                    
+                }
+                .padding(10)
+            }
+            .offset(x: -10)
+            .scrollClipDisabledIfAvailable()
+        }
+    }
+
 }
 
 private struct TemplatesSection: View {

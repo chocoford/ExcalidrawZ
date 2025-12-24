@@ -21,11 +21,6 @@ struct RenameSheetViewModifier: ViewModifier {
                     RenameSheetView(text: name) { newName in
                         callback(newName)
                     }
-#if canImport(UIKit)
-                    .presentationDetents([.height(140)])
-                    .presentationDragIndicator(.visible)
-                    .presentationCompactAdaptation(.sheet)
-#endif
                 } else if #available(macOS 26.0, iOS 26.0, *) {
                     RenameSheetView(text: name) { newName in
                         callback(newName)
@@ -62,6 +57,8 @@ struct RenameSheetView: View {
     
     var onConfirm: (String) -> Void
     @State private var text: String = ""
+    
+    @FocusState private var isFocused: Bool
 
     init(text: String = "", onConfirm: @escaping (String) -> Void) {
         self._text = State(initialValue: text)
@@ -69,12 +66,29 @@ struct RenameSheetView: View {
     }
 
     var body: some View {
-//        if containerHorizontalSizeClass == .compact {
-//            VStack {
-//                content()
-//            }
-//            .padding()
-//        } else {
+        if containerHorizontalSizeClass == .compact, #available(macOS 13.0, *) {
+            NavigationStack {
+                Form {
+                    content()
+                }
+                .formStyle(.grouped)
+                .navigationTitle(.localizable(.renameSheetHeadline))
+#if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        ToolbarDismissButton()
+                    }
+                    ToolbarItem(placement: .automatic) {
+                        ToolbarDoneButton {
+                            onConfirm(text)
+                            dismiss()
+                        }
+                    }
+                }
+#endif
+            }
+        } else {
             Form {
                 content()
             }
@@ -82,46 +96,60 @@ struct RenameSheetView: View {
             .labelsHidden()
             .sheetPadding()
 #endif
-//        }
+        }
     }
     
     @MainActor @ViewBuilder
     private func content() -> some View {
         Section {
-            TextField("", text: $text)
-                .submitLabel(.done)
-#if os(macOS)
-                .textFieldStyle(.roundedBorder)
-                .onSubmit {
-                    if !text.isEmpty {
-                        onConfirm(text)
-                        dismiss()
-                    }
-                }
-#endif
-        } header: {
-            Text(.localizable(.renameSheetHeadline))
-                .font(.headline)
-        } footer: {
             HStack {
-                Spacer()
-                Button {
-                    dismiss()
-                } label: {
-                    Text(.localizable(.renameSheetButtonCancel))
-                        .frame(width: 64)
+                if containerHorizontalSizeClass == .compact {
+                    Text(localizable: .generalName)
                 }
-                Button {
-                    self.onConfirm(text)
-                    dismiss()
-                } label: {
-                    Text(.localizable(.renameSheetButtonConfirm))
-                        .frame(width: 64)
-                }
-                .disabled(text.isEmpty)
-                .modernButtonStyle(style: .glassProminent)
+                
+                TextField("", text: $text)
+                    .focused($isFocused)
+                    .submitLabel(.done)
+#if os(macOS)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit {
+                        if !text.isEmpty {
+                            onConfirm(text)
+                            dismiss()
+                        }
+                    }
+#endif
             }
-            .modernButtonStyle(shape: .modern)
+        } header: {
+            if containerHorizontalSizeClass != .compact {
+                Text(.localizable(.renameSheetHeadline))
+                    .font(.headline)
+            }
+        } footer: {
+            if containerHorizontalSizeClass != .compact {
+                HStack {
+                    Spacer()
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text(.localizable(.renameSheetButtonCancel))
+                            .frame(width: 64)
+                    }
+                    Button {
+                        self.onConfirm(text)
+                        dismiss()
+                    } label: {
+                        Text(.localizable(.renameSheetButtonConfirm))
+                            .frame(width: 64)
+                    }
+                    .disabled(text.isEmpty)
+                    .modernButtonStyle(style: .glassProminent)
+                }
+                .modernButtonStyle(shape: .modern)
+            }
+        }
+        .onAppear {
+            isFocused = true
         }
     }
 }

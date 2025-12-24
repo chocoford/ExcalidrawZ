@@ -10,23 +10,41 @@ import SwiftUI
 import ChocofordUI
 
 class ShareFileState: ObservableObject {
-    @Published var currentSharedFile: ExcalidrawFile?
+    enum ShareTarget {
+        case image, file
+    }
+    
+    @Published var currentSharedFile: ExcalidrawFile? {
+        didSet {
+            if currentSharedFile == nil {
+                shareTarget = nil
+            }
+        }
+    }
+    @Published var shareTarget: ShareTarget?
 }
 
 struct ShareToolbarButton: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
-
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject private var shareFileState: ShareFileState
     
+    @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var shareFileState: ShareFileState
+    @EnvironmentObject private var exportState: ExportState
+
 #if canImport(AppKit)
     @State private var window: NSWindow?
 #elseif canImport(UIKit)
     @State private var window: UIWindow?
 #endif
     
+    
+#if os(iOS)
+    @State private var exportedPDFURL: URL?
+#endif
+    
     var body: some View {
+#if os(macOS)
         AsyncButton {
             await performShareFile()
         } label: {
@@ -50,8 +68,51 @@ struct ShareToolbarButton: View {
                 await performShareFile()
             }
         }
+#else
+        Menu {
+            Button {
+                Task {
+                    shareFileState.shareTarget = .image
+                    await performShareFile()
+                }
+            } label: {
+                Label(.localizable(.exportSheetButtonImage), systemSymbol: .photo)
+            }
+            
+            Button {
+                Task {
+                    shareFileState.shareTarget = .file
+                    await performShareFile()
+                }
+            } label: {
+                Label(.localizable(.exportSheetButtonFile), systemSymbol: .doc)
+            }
+            
+            Button {
+                Task {
+                    do {
+                        let imageData = try await exportState.exportCurrentFileToImage(
+                            type: .svg,
+                            embedScene: false,
+                            withBackground: true,
+                            colorScheme: .light
+                        )
+                        exportedPDFURL = await exportPDF(name: imageData.name, svgURL: imageData.url)
+                    } catch {
+                        alertToast(error)
+                    }
+                }
+            } label: {
+                Label(.localizable(.exportSheetButtonPDF), systemSymbol: .docRichtext)
+            }
+            
+        } label: {
+            Label(.localizable(.export), systemSymbol: .squareAndArrowUp)
+        }
+        .activitySheet(item: $exportedPDFURL)
+#endif
     }
-
+    
     @MainActor
     private func performShareFile() async {
         print("[performShareFile] Thread: \(Thread())")
@@ -68,7 +129,7 @@ struct ShareToolbarButton: View {
                     }
                 case .temporaryFile(let url):
                     self.shareFileState.currentSharedFile = try ExcalidrawFile(contentsOf: url)
-
+                    
                 case .collaborationFile(let collaborationFile):
                     let content = try await collaborationFile.loadContent()
                     self.shareFileState.currentSharedFile = try ExcalidrawFile(data: content, id: collaborationFile.id)

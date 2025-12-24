@@ -52,16 +52,23 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     if message.data.type == .hand {
                         self.parent?.toolState.inDragMode = true
                         self.lastTool = .hand
-                        self.parent?.toolState.activatedTool = .hand
+                        DispatchQueue.main.async {
+                            self.parent?.toolState.setActivedTool(.hand)
+                        }
                     } else {
                         self.parent?.toolState.previousActivatedTool = self.parent?.toolState.activatedTool
-                        let tool = ExcalidrawTool(from: message.data.type)
-                        self.lastTool = tool
-                        self.parent?.toolState.activatedTool = tool
-                        self.parent?.toolState.inDragMode = false
+                        if let tool = ExcalidrawTool(from: message.data.type) {
+                            self.lastTool = tool
+                            DispatchQueue.main.async {
+                                self.parent?.toolState.setActivedTool(tool)
+                                self.parent?.toolState.inDragMode = false
+                            }
+                        }
                     }
                 case .didToggleToolLock(let message):
-                    self.parent?.toolState.isToolLocked = message.data
+                    DispatchQueue.main.async {
+                        self.parent?.toolState.isToolLocked = message.data
+                    }
                 case .getElementsBlob(let blobData):
                     Task {
                         await self.exportImageManager.responseExport(id: blobData.data.id, blobString: blobData.data.blobData)
@@ -90,17 +97,19 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     self.parent?.toolState.inDragMode = false
                     NotificationCenter.default.post(name: .didPencilConnected, object: nil)
                 case .didSelectElements:
-                    DispatchQueue.main.async {
-                        if self.parent?.toolState.isBottomBarPresented == true {
-                            self.parent?.toolState.isBottomBarPresented = false
-                        }
-                    }
+                    break
+//                    DispatchQueue.main.async {
+//                        if self.parent?.toolState.isBottomBarPresented == true {
+//                            self.parent?.toolState.isBottomBarPresented = false
+//                        }
+//                    }
                 case .didUnselectAllElements:
-                    DispatchQueue.main.async {
-                        if self.parent?.toolState.isBottomBarPresented == false {
-                            self.parent?.toolState.isBottomBarPresented = true
-                        }
-                    }
+                    break
+//                    DispatchQueue.main.async {
+//                        if self.parent?.toolState.isBottomBarPresented == false {
+//                            self.parent?.toolState.isBottomBarPresented = true
+//                        }
+//                    }
                     
                 // Collab
                 case .didOpenLiveCollaboration(let message):

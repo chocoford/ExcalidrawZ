@@ -10,21 +10,25 @@ import ChocofordUI
 import SFSafeSymbols
 
 struct MigrationProgressSheet: View {
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.dismiss) private var dismiss
     @Environment(\.alertToast) private var alertToast
 
     @ObservedObject var migrationState: MigrationState
     
-    let migrationManager = MigrationManager.shared
-    let isDev: Bool
+    var migrationManager = MigrationManager.shared
+    var isDev: Bool
+    
+    init(migrationState: MigrationState, isDev: Bool) {
+        self.migrationState = migrationState
+        self.isDev = isDev
+        self._didArchiveFiles = State(initialValue: isDev)
+    }
 
     @State private var isArchiving = false
     @State private var showArchiveExporter = false
-#if DEBUG
-    @State private var didArchiveFiles = true
-#else
-    @State private var didArchiveFiles = false
-#endif
+    @State private var didArchiveFiles: Bool
+
 
     private var hasPendingMigrations: Bool {
         migrationState.migrations.contains { item in
@@ -35,7 +39,9 @@ struct MigrationProgressSheet: View {
         }
     }
 
-    private var sheetPadding: CGFloat { 26 }
+    private var sheetPadding: CGFloat {
+        26
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -51,7 +57,7 @@ struct MigrationProgressSheet: View {
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
+                    .padding(.horizontal, containerHorizontalSizeClass != .compact ? 40 : 0)
             }
             .padding(.horizontal, sheetPadding)
             // Migration items list
@@ -68,58 +74,24 @@ struct MigrationProgressSheet: View {
             // Bottom Buttons
             if migrationState.phase == .idle && hasPendingMigrations {
                 // Show Archive and Start buttons when migration is needed
-                HStack(spacing: 12) {
-                    Button {
-                        isArchiving = true
-                        Task {
-                            await archiveFiles()
-                        }
-                    } label: {
-                        if isArchiving {
-                            HStack {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text("Archiving...")
-                            }
-                            .frame(maxWidth: .infinity)
-                        } else {
-                            Text("Archive Files First")
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .modernButtonStyle(style: .glass, size: .large, shape: .capsule)
-                    .disabled(isArchiving)
-
-                    var isMigrating: Bool {
-                        if case .migrating = migrationState.phase { true } else { false }
+                
+                if #available(macOS 13.0, *) {
+                    let layout = if containerHorizontalSizeClass != .compact {
+                        AnyLayout(HStackLayout(spacing: 12))
+                    } else {
+                        AnyLayout(VStackLayout(spacing: 12))
                     }
                     
-                    Button {
-                        if !didArchiveFiles {
-                            return
-                        }
-                        Task {
-                            await runMigrations()
-                        }
-                    } label: {
-                        Text("Start Migration")
-                            .frame(maxWidth: .infinity)
-                            .opacity(isMigrating ? 0 : 1)
-                            .overlay {
-                                if isMigrating {
-                                    ProgressView().controlSize(.small)
-                                }
-                            }
+                    layout {
+                        actionsView()
                     }
-                    .if(!didArchiveFiles) {
-                        $0
-                            .opacity(0.5)
-                            .popoverHelp("Please archive files first")
+                    .padding(.horizontal, sheetPadding)
+                } else {
+                    HStack(spacing: 12) {
+                        actionsView()
                     }
-                    .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
-                    .disabled(isArchiving)
+                    .padding(.horizontal, sheetPadding)
                 }
-                .padding(.horizontal, sheetPadding)
             } else {
                 // Single button for other states
                 Button {
@@ -134,7 +106,10 @@ struct MigrationProgressSheet: View {
             }
         }
         .padding(.vertical, sheetPadding)
-        .frame(width: 500, height: 500)
+        .frame(
+            width: containerHorizontalSizeClass != .compact ? 500 : nil,
+            height: containerHorizontalSizeClass != .compact ? 500 : nil
+        )
         .interactiveDismissDisabled(!canDismiss)
         .archiveFilesExporter(
             isPresented: $showArchiveExporter,
@@ -142,6 +117,59 @@ struct MigrationProgressSheet: View {
         ) { result in
             handleArchiveResult(result)
         }
+    }
+    
+    @MainActor @ViewBuilder
+    private func actionsView() -> some View {
+        Button {
+            isArchiving = true
+            Task {
+                await archiveFiles()
+            }
+        } label: {
+            if isArchiving {
+                HStack {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Archiving...")
+                }
+                .frame(maxWidth: .infinity)
+            } else {
+                Text("Archive Files First")
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .modernButtonStyle(style: .glass, size: .large, shape: .capsule)
+        .disabled(isArchiving)
+
+        var isMigrating: Bool {
+            if case .migrating = migrationState.phase { true } else { false }
+        }
+        
+        Button {
+            if !didArchiveFiles {
+                return
+            }
+            Task {
+                await runMigrations()
+            }
+        } label: {
+            Text("Start Migration")
+                .frame(maxWidth: .infinity)
+                .opacity(isMigrating ? 0 : 1)
+                .overlay {
+                    if isMigrating {
+                        ProgressView().controlSize(.small)
+                    }
+                }
+        }
+        .if(!didArchiveFiles) {
+            $0
+                .opacity(0.5)
+                .popoverHelp("Please archive files first")
+        }
+        .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
+        .disabled(isArchiving)
     }
 
     private func isCurrentlyMigrating(_ item: MigrationItem) -> Bool {
@@ -231,7 +259,7 @@ struct MigrationProgressSheet: View {
             case .completed:
                 return true
             case .idle:
-                return !hasPendingMigrations || !isDev
+                return !hasPendingMigrations || isDev
             default:
                 return false
         }

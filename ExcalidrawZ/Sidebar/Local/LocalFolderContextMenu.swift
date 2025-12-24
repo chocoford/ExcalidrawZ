@@ -176,8 +176,15 @@ struct LocalFolderMenuItems: View {
             Label(.localizable(.sidebarLocalFolderRowContextMenuAddSubfolder), systemSymbol: .folderBadgePlus)
         }
         
-        Button {
-            copyEntityURLToClipboard(objectID: folder.objectID)
+        SensoryFeedbackButton {
+            try copyEntityURLToClipboard(objectID: folder.objectID)
+            alertToast(
+                .init(
+                    displayMode: .hud,
+                    type: .complete(.green),
+                    title: String(localizable: .exportActionCopied)
+                )
+            )
         } label: {
             Label(.localizable(.sidebarLocalFolderRowContextMenuCopyFolderLink), systemSymbol: .link)
         }

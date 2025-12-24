@@ -51,10 +51,12 @@ struct FileRowDragModifier<DraggableFile: DragMovableFile>: ViewModifier {
     
     func body(content: Content) -> some View {
         content
+#if os(macOS)
             .opacity({
                 sidebarDragState.currentDragItem == .file(file.objectID) ||
                 sidebarDragState.currentDragItem == .collaborationFile(file.objectID)
             }() ? 0.3 : 1)
+#endif
             .contentShape(Rectangle())
             .onDrag {
                 let url = file.objectID.uriRepresentation()

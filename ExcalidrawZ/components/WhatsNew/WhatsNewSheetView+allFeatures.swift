@@ -10,6 +10,7 @@ import SwiftUI
 extension WhatsNewView {
     @MainActor @ViewBuilder
     func featuresContent() -> some View {
+#if os(iOS)
         WhatsNewFeatureRow(
             title: .localizable(.whatsNewRedesignUITitle),
             description: .localizable(.whatsNewRedesignUIDescription),
@@ -21,6 +22,14 @@ extension WhatsNewView {
             description: .localizable(.whatsNewEnhanceInteractiveExperienceDescription),
             icon: Image(systemSymbol: .cursorarrowMotionlines)
         )
+#endif
+        WhatsNewFeatureRow(
+            title: "Update Excalidraw Core",
+            description: "Update the version of excalidraw core to the latest version."
+        ) {
+            ExcalidrawIconView()
+                .frame(height: 30)
+        }
     }
     
     
@@ -50,8 +59,22 @@ extension WhatsNewView {
                     ) {
                         featuresContent()
                     }
-                    
+
 #if os(macOS)
+                    // MARK: - v1.6.0
+                    WhatsNewVersionSection(version: "v1.6.0") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewRedesignUITitle),
+                            description: .localizable(.whatsNewRedesignUIDescription),
+                            icon: Image(systemSymbol: .macwindow)
+                        )
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewEnhanceInteractiveExperienceTitle),
+                            description: .localizable(.whatsNewEnhanceInteractiveExperienceDescription),
+                            icon: Image(systemSymbol: .cursorarrowMotionlines)
+                        )
+                    }
                     // MARK: - v1.5.1
                     WhatsNewVersionSection(version: "v1.5.1") {
                         WhatsNewFeatureRow(

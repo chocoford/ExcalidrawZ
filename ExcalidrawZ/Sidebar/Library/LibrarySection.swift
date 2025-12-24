@@ -83,7 +83,11 @@ struct LibrarySectionContent: View {
             }
         } label: {
             LibrarySectionHeader(allLibraries: allLibraries, library: library, inSelectionMode: selections != nil)
+                .padding(.leading, 10)
         }
+#if os(iOS)
+        .disclosureGroupStyle(.leadingChevron)
+#endif
         .animation(.default, value: selections != nil)
     }
 }

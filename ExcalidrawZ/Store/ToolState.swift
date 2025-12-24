@@ -298,6 +298,12 @@ final class ToolState: ObservableObject {
 
     @AppStorage("PencilInteractionMode") var pencilInteractionMode: PencilInteractionMode = .fingerSelect
     
+    func setActivedTool(_ tool: ExcalidrawTool?, animation: Animation? = .smooth) {
+        withAnimation(animation) {
+            self.activatedTool = tool
+        }
+    }
+    
     func toggleTool(_ tool: ExcalidrawTool) async throws {
         logger.info("Toggle tool: \(String(describing: tool))")
         switch tool {

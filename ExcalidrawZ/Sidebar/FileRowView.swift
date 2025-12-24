@@ -88,7 +88,7 @@ struct FileRowView: View {
 #endif
         }
         .modifier(FileRowDragDropModifier(file: file, sameGroupFiles: files))
-        .modifier(FileContextMenuModifier(file: file))
+        .modifier(FileContextMenuModifier(files: [file]))
     }
     
     private func activeFile(_ file: File) {
