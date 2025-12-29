@@ -71,7 +71,7 @@ struct LocalFolderMonitorModifier: ViewModifier {
                             // Store URL for future removal
                             folderURLs[folderID] = scopedURL
                         }
-                        logger.info("Registered folder with FileSyncCoordinator: \(scopedURL.lastPathComponent)")
+                        logger.info("Registered folder with FileSyncCoordinator: \(scopedURL.filePath)")
                     }
                 } catch {
                     logger.error("Failed to access security-scoped URL: \(error)")

@@ -38,6 +38,11 @@ enum FileStatus: Equatable, Sendable {
     /// - Parameter message: Error description
     case error(String)
     
+    #if os(iOS)
+    /// Not a real status, only for iOS to represent current file is syncing
+    case syncing
+    #endif
+    
     // MARK: - Helper Properties
     
     /// Whether the file is available for immediate reading
@@ -45,7 +50,7 @@ enum FileStatus: Equatable, Sendable {
         switch self {
             case .local, .downloaded, .outdated:
                 return true
-            case .loading, .notDownloaded, .downloading, .uploading, .conflict, .error:
+            default:
                 return false
         }
     }
@@ -55,7 +60,7 @@ enum FileStatus: Equatable, Sendable {
         switch self {
             case .local, .loading, .error:
                 return false
-            case .notDownloaded, .downloading, .downloaded, .outdated, .uploading, .conflict:
+            default:
                 return true
         }
     }
@@ -63,9 +68,13 @@ enum FileStatus: Equatable, Sendable {
     /// Whether an action is in progress
     var isInProgress: Bool {
         switch self {
+#if os(iOS)
+            case .syncing:
+                return true
+#endif
             case .downloading, .uploading:
                 return true
-            case .loading, .local, .notDownloaded, .downloaded, .outdated, .conflict, .error:
+            default:
                 return false
         }
     }
@@ -75,7 +84,7 @@ enum FileStatus: Equatable, Sendable {
         switch self {
             case .outdated:
                 return true
-            case .loading, .local, .notDownloaded, .downloading, .downloaded, .uploading, .conflict, .error:
+            default:
                 return false
         }
     }

@@ -134,7 +134,7 @@ struct ContentView: View {
             fileState.temporaryFiles = Array(Set(fileState.temporaryFiles))
             if fileState.currentActiveFile == nil || fileState.currentActiveGroup != .temporary {
                 fileState.currentActiveGroup = .temporary
-                fileState.currentActiveFile = .localFile(fileState.temporaryFiles.first!)
+                fileState.setActiveFile(.localFile(fileState.temporaryFiles.first!))
             }
         }
     }

@@ -92,7 +92,7 @@ struct FileRowView: View {
     }
     
     private func activeFile(_ file: File) {
-        fileState.currentActiveFile = .file(file)
+        fileState.setActiveFile(.file(file))
 
         withOpenFileDelay {
             if file.inTrash {

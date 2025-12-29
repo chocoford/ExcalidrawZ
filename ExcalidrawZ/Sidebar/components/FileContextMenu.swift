@@ -351,7 +351,7 @@ struct FileMenuItems: View {
                         guard case let group as Group = viewContext.object(with: groupID),
                               case let file as File = viewContext.object(with: fileID) else { return }
                         fileState.currentActiveGroup = .group(group)
-                        fileState.currentActiveFile = .file(file)
+                        fileState.setActiveFile(.file(file))
 
                         fileState.expandToGroup(group.objectID)
                     }
@@ -383,7 +383,7 @@ struct FileMenuItems: View {
                fileState.currentActiveFile == .file(firstFile),
                let newFileID = lastNewFileID,
                let newFile = viewContext.object(with: newFileID) as? File {
-                fileState.currentActiveFile = .file(newFile)
+                fileState.setActiveFile(.file(newFile))
             }
 
             fileState.resetSelections()
@@ -403,7 +403,7 @@ struct FileMenuItems: View {
 
             // If the current file was deleted, clear it
             if let firstFile, .file(firstFile) == fileState.currentActiveFile {
-                fileState.currentActiveFile = nil
+                fileState.setActiveFile(nil)
             }
 
             fileState.resetSelections()

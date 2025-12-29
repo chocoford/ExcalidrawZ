@@ -136,7 +136,7 @@ struct GroupMenuProvider: View {
         
         if case .file(let file) = fileState.currentActiveFile,
            file.group?.objectID == groupID {
-            fileState.currentActiveFile = nil
+            fileState.setActiveFile(nil)
         }
         if case .group(let group) = fileState.currentActiveGroup,
            group.objectID == groupID {

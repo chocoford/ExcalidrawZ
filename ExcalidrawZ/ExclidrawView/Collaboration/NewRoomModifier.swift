@@ -170,7 +170,7 @@ struct NewRoomModifier: ViewModifier {
                         await MainActor.run {
                             if let collabFile = viewContext.object(with: fileID) as? CollaborationFile {
                                 fileState.currentActiveGroup = .collaboration
-                                fileState.currentActiveFile = .collaborationFile(collabFile)
+                                fileState.setActiveFile(.collaborationFile(collabFile))
                                 if !fileState.collaboratingFiles.contains(collabFile) {
                                     fileState.collaboratingFiles.append(collabFile)
                                 }

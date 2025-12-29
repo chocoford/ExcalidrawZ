@@ -60,7 +60,7 @@ struct LocalFolderRowView: View {
         } else {
             Button {
                 fileState.currentActiveGroup = .localFolder(folder)
-                fileState.currentActiveFile = nil
+                fileState.setActiveFile(nil)
             } label: {
                 HStack(spacing: 6) {
                     Image(systemSymbol: .folderFill)

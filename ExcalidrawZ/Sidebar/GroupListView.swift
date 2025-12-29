@@ -95,7 +95,7 @@ struct GroupListView: View {
                         VStack(spacing: 8) {
                             VStack(spacing: 0) {
                                 Button {
-                                    fileState.currentActiveFile = nil
+                                    fileState.setActiveFile(nil)
                                     fileState.currentActiveGroup = nil
                                 } label: {
                                     HStack {
@@ -113,7 +113,7 @@ struct GroupListView: View {
                                 .id("home")
                                 
                                 Button {
-                                    fileState.currentActiveFile = nil
+                                    fileState.setActiveFile(nil)
                                     fileState.currentActiveGroup = .collaboration
                                 } label: {
                                     HStack {
@@ -229,7 +229,7 @@ struct GroupListView: View {
             if count == 0,
                case .group(let group) = fileState.currentActiveGroup,
                group.groupType == .trash {
-                fileState.currentActiveFile = nil
+                fileState.setActiveFile(nil)
                 fileState.currentActiveGroup = nil
             }
         }

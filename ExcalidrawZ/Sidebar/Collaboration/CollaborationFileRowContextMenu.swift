@@ -72,7 +72,7 @@ struct CollaborationFileMenuProvider: View {
         fileState.collaboratingFiles.removeAll(where: {$0 == file})
         fileState.collaboratingFilesState[file] = nil
         if fileState.currentActiveFile == .collaborationFile(file) {
-            fileState.currentActiveFile = nil
+            fileState.setActiveFile(nil)
         }
     }
 }
@@ -158,7 +158,7 @@ struct CollaborationFileMenuItems: View {
             fileState.collaboratingFiles.removeAll(where: {$0 == file})
             fileState.collaboratingFilesState[file] = nil
             if fileState.currentActiveFile == .collaborationFile(file) {
-                fileState.currentActiveFile = nil
+                fileState.setActiveFile(nil)
             }
         } label: {
             Label(

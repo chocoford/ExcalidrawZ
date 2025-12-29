@@ -41,7 +41,7 @@ final class FileState: ObservableObject {
             }
         }
     }
-  
+    
     @Published var currentActiveGroup: ActiveGroup? {
         didSet {
             currentGroupPublisherCancellables.forEach {$0.cancel()}
@@ -60,7 +60,7 @@ final class FileState: ObservableObject {
             }
         }
     }
-
+    
     enum ActiveFile: Identifiable, Hashable {
         case file(File)
         case localFile(URL)
@@ -76,7 +76,7 @@ final class FileState: ObservableObject {
                 case .temporaryFile(let url):
                     url.absoluteString
                 case .collaborationFile(let collaborationFile):
-                    collaborationFile.objectID.description 
+                    collaborationFile.objectID.description
             }
         }
         
@@ -124,7 +124,7 @@ final class FileState: ObservableObject {
             }
             return nil
         }
-
+        
         set {
             if let currentActiveFileID = self.currentActiveFile?.id {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
@@ -144,7 +144,7 @@ final class FileState: ObservableObject {
                     activeFiles[activeFileIndex] = nil
                 }
             }
-
+            
             shouldIgnoreUpdate = true
             recoverWatchUpdate()
             currentFilePublisherCancellables.forEach{$0.cancel()}
@@ -157,7 +157,7 @@ final class FileState: ObservableObject {
             }
         }
     }
-
+    
     /// Set active file with automatic iCloud download handling
     ///
     /// This method checks if the file needs to be downloaded from iCloud
@@ -169,31 +169,36 @@ final class FileState: ObservableObject {
     /// - Parameter file: The file to activate
     /// - Throws: FileAccessError if download fails
     @MainActor
-    func setActiveFile(_ file: ActiveFile) async throws {
+    func setActiveFile(_ file: ActiveFile?) {
         // Check if file needs download
         switch file {
-        case .localFile(let url):
-            // Check iCloud status
-            let statusBox = await FileSyncCoordinator.shared.statusBox(for: url)
-            let status = statusBox.status
-
-            logger.debug("Setting active file: \(url.lastPathComponent), status: \(status)")
-
-            // Download if needed (notDownloaded, outdated, or currently downloading)
-            if status == .notDownloaded || status == .outdated || status.isInProgress {
-                logger.info("Downloading file before opening: \(url.lastPathComponent)")
-                try await FileSyncCoordinator.shared.downloadFile(url)
-            }
-
-        case .file, .temporaryFile, .collaborationFile:
-            // Database files, temporary files, and collaboration files don't need download check
-            break
+            case .localFile(let url):
+                // Check iCloud status
+                let statusBox = FileSyncCoordinator.shared.statusBox(for: url)
+                let status = statusBox.status
+                
+                logger.debug("Setting active file: \(url.lastPathComponent), status: \(status)")
+                
+                // Download if needed (notDownloaded, outdated, or currently downloading)
+                if status == .notDownloaded || status == .outdated || status.isInProgress {
+                    logger.info("Downloading file: \(url.lastPathComponent)")
+                    Task {
+                        do {
+                            try await FileSyncCoordinator.shared.downloadFile(url)
+                        } catch {
+                            print(error)
+                        }
+                    }
+                }
+                self.currentActiveFile = file
+            case .file, .temporaryFile, .collaborationFile:
+                // Database files, temporary files, and collaboration files don't need download check
+                self.currentActiveFile = file
+            case .none:
+                self.currentActiveFile = file
         }
-
-        // Set current active file after download completes (or immediately if no download needed)
-        self.currentActiveFile = file
     }
-
+    
     @Published var selectedGroups: Set<NSManagedObjectID> = []
     // @Published var selectedLocalFolders: Set<LocalFolder> = []
     
@@ -202,7 +207,7 @@ final class FileState: ObservableObject {
     
     @Published var selectedLocalFiles: Set<URL> = []
     @Published var selectedStartLocalFile: URL?
-
+    
     @Published var temporaryFiles: [URL] = []
     
     @Published var selectedTemporaryFiles: Set<URL> = []
@@ -218,7 +223,7 @@ final class FileState: ObservableObject {
         }
         return false
     }
-
+    
     /// Files that is currently under collaboration.
     @Published var collaboratingFiles: [CollaborationFile] = []
     @Published var collaboratingFilesState: [CollaborationFile : ExcalidrawView.LoadingState] = [:]
@@ -323,12 +328,12 @@ final class FileState: ObservableObject {
             }
             return nil
         }() else { throw AppError.stateError(.currentGroupNil) }
-
+        
         guard let templateURL = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else {
             throw AppError.fileError(.notFound)
         }
         let templateData = try Data(contentsOf: templateURL)
-
+        
         // Create file through repository (creates entity and saves to iCloud Drive)
         let fileID = try await PersistenceController.shared.fileRepository.createFile(
             name: String(localizable: .newFileNamePlaceholder),
@@ -339,18 +344,18 @@ final class FileState: ObservableObject {
         if active {
             await MainActor.run {
                 if let file = context.object(with: fileID) as? File {
-                    self.currentActiveFile = .file(file)
+                    self.setActiveFile(.file(file))
                     if let group = file.group {
                         self.currentActiveGroup = .group(group)
                         self.expandToGroup(group.objectID)
-                    }	
+                    }
                 }
             }
         }
         
         return fileID
     }
-
+    
     func updateCurrentFile(with excalidrawFile: ExcalidrawFile) {
         if case .file(let file) = self.currentActiveFile {
             updateFile(file, with: excalidrawFile)
@@ -365,20 +370,20 @@ final class FileState: ObservableObject {
         Task.detached {
             do {
                 guard let content = excalidrawFile.content else { return }
-
+                
                 // Step 1: Sync media items from ExcalidrawFile (creates new ones and saves to iCloud Drive)
                 _ = try await PersistenceController.shared.mediaItemRepository.syncMediaItemsForFile(
                     excalidrawFile: excalidrawFile,
                     fileObjectID: id
                 )
-
+                
                 // Step 2: Update file elements through repository
                 try await PersistenceController.shared.fileRepository.updateElements(
                     fileObjectID: id,
                     fileData: content,
                     newCheckpoint: !didUpdateFile
                 )
-
+                self.logger.info("updateFile done...")
                 await MainActor.run {
                     // already throttled
                     self.objectWillChange.send()
@@ -427,7 +432,7 @@ final class FileState: ObservableObject {
         
         if active {
             await MainActor.run {
-                self.currentActiveFile = .localFile(fileURL)
+                self.setActiveFile(.localFile(fileURL))
             }
         }
         
@@ -476,32 +481,32 @@ final class FileState: ObservableObject {
         let didUpdateFile = didUpdateFile
         let id = excalidrawFile.id
         let context = PersistenceController.shared.newTaskContext()
-
+        
         Task.detached {
             do {
                 // Step 1: Get collaboration file objectID and update roomID
                 let fileObjectID = try await context.perform {
                     let fetchRequest = NSFetchRequest<CollaborationFile>(entityName: "CollaborationFile")
                     fetchRequest.predicate = NSPredicate(format: "id = %@", id as CVarArg)
-
+                    
                     guard let file = try context.fetch(fetchRequest).first else {
                         throw AppError.fileError(.contentNotAvailable(filename: excalidrawFile.name ?? String(localizable: .generalUnknown)))
                     }
-
+                    
                     // Update roomID
                     file.roomID = excalidrawFile.roomID
-
+                    
                     try context.save()
-
+                    
                     return file.objectID
                 }
-
+                
                 // Sync media items from ExcalidrawFile (creates new ones and saves to iCloud Drive)
                 _ = try await PersistenceController.shared.mediaItemRepository.syncMediaItemsForCollaborationFile(
                     excalidrawFile: excalidrawFile,
                     collaborationFileObjectID: fileObjectID
                 )
-
+                
                 // Step 2: Update content using repository (saves to iCloud Drive and creates checkpoint)
                 guard let content = excalidrawFile.content else { return }
                 try await PersistenceController.shared.collaborationFileRepository.updateElements(
@@ -509,7 +514,7 @@ final class FileState: ObservableObject {
                     content: content,
                     newCheckpoint: !didUpdateFile
                 )
-
+                
                 await MainActor.run {
                     self.didUpdateFile = true
                 }
@@ -536,11 +541,11 @@ final class FileState: ObservableObject {
         let currentGroupID = currentGroup?.objectID
         
         let fileContentData = try excalidrawFile.contentWithoutFiles()
-
+        
         // Get target group ID
         let targetGroupID = try await context.perform {
             var targetGroup: Group?
-
+            
             if targetGroupType == .default || currentGroupID == nil {
                 let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
                 fetchRequest.predicate = NSPredicate(format: "type == %@", "default")
@@ -552,22 +557,22 @@ final class FileState: ObservableObject {
                 fetchRequest.fetchLimit = 1
                 targetGroup = (try context.fetch(fetchRequest).first) as Group?
             }
-
+            
             guard let group = targetGroup ?? {
                 guard let currentGroupID else { return nil }
                 return context.object(with: currentGroupID) as? Group
             }() else { throw AppError.stateError(.currentGroupNil) }
-
+            
             return group.objectID
         }
-
+        
         // Create file through repository (creates entity and saves to iCloud Drive)
         let fileID = try await PersistenceController.shared.fileRepository.createFile(
             name: excalidrawFile.name ?? "Untitled",
             content: fileContentData,
             groupObjectID: targetGroupID
         )
-
+        
         // Get media items that need to be imported
         let mediaItemsNeedImport = try await context.perform {
             let mediaItems = try context.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
@@ -575,7 +580,7 @@ final class FileState: ObservableObject {
                 !mediaItems.contains(where: { $0.id == item.id })
             }
         }
-
+        
         // Create media items through repository (creates entities and saves to iCloud Drive)
         if !mediaItemsNeedImport.isEmpty {
             _ = try await PersistenceController.shared.mediaItemRepository.createMediaItems(
@@ -583,11 +588,11 @@ final class FileState: ObservableObject {
                 fileObjectID: fileID
             )
         }
-
+        
         try? await self.excalidrawWebCoordinator?.insertMediaFiles(Array(mediaItemsNeedImport))
         await MainActor.run {
             if let file = context.object(with: fileID) as? File {
-                self.currentActiveFile = .file(file)
+                self.setActiveFile(.file(file))
                 if let group = file.group {
                     self.currentActiveGroup = .group(group)
                     self.expandToGroup(group.objectID)
@@ -605,7 +610,7 @@ final class FileState: ObservableObject {
     /// * folders & files: Create groups by folders & Group remains files to `Ungrouped`
     func importFiles(_ urls: [URL]) async throws {
         let context = PersistenceController.shared.container.viewContext
-
+        
         let currentGroup: Group? = if case .group(let currentGroup) = self.currentActiveGroup {
             currentGroup
         } else {
@@ -643,7 +648,7 @@ final class FileState: ObservableObject {
                 fileURL.stopAccessingSecurityScopedResource()
                 fileDataPairs.append((fileURL, data))
             }
-
+            
             // Get target group ID
             let targetGroupID = try await context.perform {
                 let fetchRequest = NSFetchRequest<Group>()
@@ -660,10 +665,10 @@ final class FileState: ObservableObject {
                     group = defaultGroup
                 }
                 guard let group else { throw AppError.stateError(.currentGroupNil) }
-
+                
                 return group.objectID
             }
-
+            
             // Create files through repository (creates entities and saves to iCloud Drive)
             for (fileURL, data) in fileDataPairs {
                 _ = try await PersistenceController.shared.fileRepository.createFile(
@@ -712,7 +717,7 @@ final class FileState: ObservableObject {
             return group
         }
         let groupID = group.objectID
-
+        
         // contents
         let urls = try FileManager.default.contentsOfDirectory(
             at: url,
@@ -727,36 +732,36 @@ final class FileState: ObservableObject {
         for fileURL in urls where fileURL.pathExtension == UTType.excalidrawFile.preferredFilenameExtension  {
             let excalidrawFile = try ExcalidrawFile(contentsOf: fileURL)
             let data = try Data(contentsOf: fileURL, options: .uncached)
-
+            
             // Create file through repository (creates entity and saves to iCloud Drive)
             let fileID = try await PersistenceController.shared.fileRepository.createFile(
                 name: fileURL.deletingPathExtension().lastPathComponent,
                 content: data,
                 groupObjectID: groupID
             )
-
+            
             // Import medias
             let mediasToImport = excalidrawFile.files.values.filter { item in
                 !insertedMediaID.contains(item.id) &&
                 !allMediaItems.contains(where: {$0.id == item.id})
             }
-
+            
             if !mediasToImport.isEmpty {
                 // Create media items through repository (creates entities and saves to iCloud Drive)
                 _ = try await PersistenceController.shared.mediaItemRepository.createMediaItems(
                     resources: Array(mediasToImport),
                     fileObjectID: fileID
                 )
-
+                
                 // Mark as inserted to avoid duplicates in next iterations
                 mediasToImport.forEach { insertedMediaID.insert($0.id) }
-
+                
                 Task {
                     try? await self.excalidrawWebCoordinator?.insertMediaFiles(Array(mediasToImport))
                 }
             }
         }
-
+        
         // folders
         for folderURL in urls where FileManager.default.isDirectory(folderURL) {
             try await self.importGroup(
@@ -765,7 +770,7 @@ final class FileState: ObservableObject {
                 context: context
             )
         }
-
+        
         try context.save()
     }
     
@@ -783,7 +788,7 @@ final class FileState: ObservableObject {
         PersistenceController.shared.save()
         self.objectWillChange.send()
     }
-
+    
     @discardableResult
     func duplicateFile(_ file: File, context: NSManagedObjectContext) async throws -> NSManagedObjectID {
         let fileID = file.objectID
@@ -811,7 +816,7 @@ final class FileState: ObservableObject {
             let medias = file.medias?.allObjects as? [MediaItem] ?? []
             return medias
         }
-
+        
         if !mediaItemsToCopy.isEmpty {
             // Load media resources
             var resources: [ExcalidrawFile.ResourceFile] = []
@@ -820,7 +825,7 @@ final class FileState: ObservableObject {
                     resources.append(resource)
                 }
             }
-
+            
             // Create media items for the new file
             if !resources.isEmpty {
                 _ = try await PersistenceController.shared.mediaItemRepository.createMediaItems(
@@ -829,7 +834,7 @@ final class FileState: ObservableObject {
                 )
             }
         }
-
+        
         return newFileID
     }
     
@@ -865,13 +870,13 @@ final class FileState: ObservableObject {
                 if self.currentActiveFile == .file(file) {
                     if let group = file.group {
                         self.currentActiveGroup = .group(group)
-                        self.expandToGroup(group.objectID)  
+                        self.expandToGroup(group.objectID)
                     }
                 }
             }
         }
     }
-
+    
     func mergeDefaultGroupAndTrashIfNeeded(context: NSManagedObjectContext) async throws {
         print("mergeDefaultGroupAndTrashIfNeeded...")
         try await context.perform {
@@ -973,9 +978,9 @@ final class FileState: ObservableObject {
         if let group {
             self.currentActiveGroup = .group(group)
             self.expandToGroup(group.objectID)
-//            if let file {
-//                self.currentActiveFile = .file(file)
-//            }
+            //            if let file {
+            //                self.setActiveFile(.file(file))
+            //            }
         }
     }
     

@@ -42,7 +42,6 @@ final class FileStatusRegistry {
     func updateStatus(for url: URL, status: FileStatus) {
         let statusBox = box(for: url)
         statusBox.updateStatus(status)
-        logger.info("Updated status for \(url.lastPathComponent): \(String(describing: status))")
     }
 
     /// Remove a FileStatusBox (e.g., when file is deleted)

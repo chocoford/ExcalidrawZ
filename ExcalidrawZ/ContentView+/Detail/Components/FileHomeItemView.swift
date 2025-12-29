@@ -124,7 +124,6 @@ struct FileHomeItemView: View {
             updatedAt: updatedAt,
             customLabel: customLabel
         )
-        .modifier(FileHomeItemICloudStatusProvider(file: file))
 #if os(iOS)
         .opacity(editMode?.wrappedValue.isEditing == true ? 0.7 : 1.0)
 #endif
@@ -193,7 +192,7 @@ struct FileHomeItemView: View {
 
     private func openFile() {
         guard isEnabled else { return }
-        fileState.currentActiveFile = file
+        fileState.setActiveFile(file)
         
         switch file {
             case .file(let file):
@@ -296,6 +295,7 @@ private struct FileHomeItemContentView: View {
     }
     
     @State private var coverImage: Image? = nil
+    @State private var error: Error?
     @State private var width: CGFloat?
 
     let cache = FileItemPreviewCache.shared
@@ -385,7 +385,14 @@ private struct FileHomeItemContentView: View {
                             .scaledToFill()
                             .allowsHitTesting(false)
                     }
-                    .clipShape(Rectangle())
+                    .clipShape(RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius))
+                    .frame(height: height)
+            } else if error != nil {
+                Color.clear
+                    .overlay {
+                        Image(systemSymbol: .exclamationmarkTriangle)
+                            .foregroundStyle(.secondary)
+                    }
                     .frame(height: height)
             } else {
                 Color.clear
@@ -403,14 +410,12 @@ private struct FileHomeItemContentView: View {
                     [fileID+"SOURCE": value]
                 }
         }
-        .background {
-            FileICloudStatusProvider { status in
-                Color.clear.onChange(of: status) { newValue in
-                    if newValue == .downloaded {
-                        self.getElementsImage()
-                    }
-                }
+        .observeFileStatus(for: file) { status in
+#if os(macOS)
+            if status == .outdated {
+                self.getElementsImage()
             }
+#endif
         }
         .overlay(alignment: .bottomTrailing) {
             // Download progress indicator
@@ -440,15 +445,23 @@ private struct FileHomeItemContentView: View {
                         ? .center
                         : .leading
                     ) {
-                        Text(filename)
-                            .lineLimit(1)
-                            .font(
-                                containerHorizontalSizeClass == .regular
-                                ? .headline.weight(.semibold)
-                                : style == .file && layoutState.compactBrowserLayout == .list
-                                ? .body.weight(.regular)
-                                : .caption.weight(.semibold)
-                            )
+                        HStack {
+                            Text(filename)
+                                .lineLimit(1)
+                                
+                            if style == .file {
+                                FileICloudStatusIndicator(file: file)
+                                    .controlSize(.mini)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .font(
+                            containerHorizontalSizeClass == .regular
+                            ? .headline.weight(.semibold)
+                            : style == .file && layoutState.compactBrowserLayout == .list
+                            ? .body.weight(.regular)
+                            : .caption.weight(.semibold)
+                        )
                         
                         HStack {
                             Text(updatedAt?.formatted() ?? "Never modified")
@@ -478,7 +491,7 @@ private struct FileHomeItemContentView: View {
                             EmptyView()
                             // ExcalidrawIconView().frame(height: 8)
                         case .localFile:
-                            FileICloudStatusIndicator {
+                            FileICloudStatusIndicator(file: file) {
                                 Image(systemSymbol: .externaldrive)
                             }
                             .controlSize(.mini)
@@ -512,6 +525,7 @@ private struct FileHomeItemContentView: View {
                         let content = try await file.loadContent()
                         excalidrawFile = try ExcalidrawFile(data: content, id: file.id)
                     case .localFile(let url):
+                        try await FileAccessor.shared.downloadFile(url)
                         excalidrawFile = try ExcalidrawFile(contentsOf: url)
                     case .temporaryFile(let url):
                         excalidrawFile = try ExcalidrawFile(contentsOf: url)
@@ -538,11 +552,13 @@ private struct FileHomeItemContentView: View {
                         let image = Image(platformImage: image)
                         await MainActor.run {
                             self.coverImage = image
+                            self.error = nil
                         }
                     }
                 }
             } catch {
                 print("Failed to load excalidraw file for preview:", error)
+                self.error = error
             }
         }
     }
@@ -630,4 +646,186 @@ private struct DatabaseFileHomeDropContianer<F: ExcalidrawFileRepresentable>: Vi
     var body: some View {
         content(files)
     }
+}
+
+
+struct FileICloudStatusIndicator: View {
+    var file: FileState.ActiveFile
+    
+    var downloadedFallbackView: AnyView?
+    
+    init<Content: View>(
+        file: FileState.ActiveFile,
+        @ViewBuilder downloadedFallbackView: () -> Content
+    ) {
+        self.file = file
+        self.downloadedFallbackView = AnyView(downloadedFallbackView())
+    }
+    
+    init(
+        file: FileState.ActiveFile,
+    ) {
+        self.file = file
+    }
+    
+    @State private var iCloudFileStatus: FileStatus? = nil
+    
+    var body: some View {
+        ZStack {
+            if #available(macOS 26.0, iOS 26.0, *) {
+                switch iCloudFileStatus {
+                    case .notDownloaded:
+                        Image(systemSymbol: .icloudAndArrowDown)
+                            .symbolEffect(.drawOn, options: .speed(2), isActive: iCloudFileStatus == .notDownloaded)
+                    case .downloading(let progress):
+                        CircularProgressIndicator(progress: progress ?? 0)
+                    case .downloaded:
+                        downloadedFallbackView
+                            .symbolEffect(.drawOn, options: .speed(2), isActive: iCloudFileStatus == .downloaded)
+                    case .outdated:
+                        Image(systemName: "icloud.dashed")
+                    case .loading:
+                        ProgressView()
+                    case .local:
+                        EmptyView()
+                    case .uploading:
+                        Image(systemSymbol: .icloudAndArrowUp)
+                            .symbolEffect(.drawOn, options: .speed(2), isActive: iCloudFileStatus == .uploading)
+                    case .conflict:
+                        Image(systemSymbol: .xmarkIcloud)
+                            .symbolEffect(.drawOn, options: .speed(2), isActive: iCloudFileStatus == .conflict)
+                    case .error(_):
+                        Image(systemSymbol: .exclamationmarkTriangle)
+                            .symbolEffect(.drawOn, options: .speed(2), isActive: {
+                                if case .error = iCloudFileStatus {
+                                    return true
+                                }
+                                return false
+                            }())
+                    default:
+                        EmptyView()
+                }
+            } else {
+                switch iCloudFileStatus {
+                    case .notDownloaded:
+                        Image(systemSymbol: .icloudAndArrowDown)
+                    case .downloading(let progress):
+                        CircularProgressIndicator(progress: progress ?? 0)
+                    case .downloaded:
+                        downloadedFallbackView
+                    case .outdated:
+                        Image(systemName: "icloud.dashed")
+                    case .loading:
+                        ProgressView()
+                    case .local:
+                        EmptyView()
+                    case .uploading:
+                        Image(systemSymbol: .icloudAndArrowUp)
+                    case .conflict:
+                        Image(systemSymbol: .xmarkIcloud)
+                    case .error(_):
+                        Image(systemSymbol: .exclamationmarkTriangle)
+                    default:
+                        EmptyView()
+                }
+            }
+        }
+        .bindFileStatus(for: file, status: $iCloudFileStatus)
+        .symbolRenderingMode(.multicolor)
+        .animation(.smooth, value: iCloudFileStatus)
+    }
+}
+
+#if os(iOS)
+/// A View only for showing syncing status
+struct FileICloudSyncStatusIndicator: View {
+    var file: FileState.ActiveFile
+    
+    @State private var iCloudFileStatus: FileStatus? = nil
+    var body: some View {
+        ZStack {
+            if #available(macOS 26.0, iOS 26.0, *) {
+                ZStack {
+                    if iCloudFileStatus == .syncing {
+                        Image(systemSymbol: .arrowTrianglehead2ClockwiseRotate90Icloud)
+                            .drawOnAppear(options: .speed(2))
+                    } else {
+                        Image(systemSymbol: .checkmarkIcloud)
+                            .drawOnAppear(options: .speed(2))
+                            .foregroundStyle(.green)
+                    }
+                }
+            } else {
+                if iCloudFileStatus == .syncing {
+                    if #available(macOS 15.0, iOS 18.0, *) {
+                        Image(systemSymbol: .arrowTrianglehead2ClockwiseRotate90Icloud)
+                    } else {
+                        Image(systemSymbol: .arrowTriangle2Circlepath)
+                    }
+                } else if case .downloaded = iCloudFileStatus {
+                    Image(systemSymbol: .checkmarkIcloud)
+                        .foregroundStyle(.green)
+                }
+            }
+        }
+        .bindFileStatus(for: file, status: $iCloudFileStatus)
+        .symbolRenderingMode(.multicolor)
+        .animation(.smooth, value: iCloudFileStatus)
+    }
+}
+#endif
+
+@available(macOS 26.0, iOS 26.0, *)
+struct DrawOnAppearModifier: ViewModifier {
+    
+     var options: SymbolEffectOptions = .default
+    
+    @State private var isActive = false
+    
+    func body(content: Content) -> some View {
+        content
+            .symbolEffect(.drawOn, options: options, isActive: !isActive)
+            .animation(.smooth, value: isActive)
+            .onAppear {
+                isActive = true
+            }
+    }
+}
+
+extension View {
+    @available(macOS 26.0, iOS 26.0, *)
+    @ViewBuilder
+    func drawOnAppear(options: SymbolEffectOptions = .default) -> some View {
+        modifier(DrawOnAppearModifier(options: options))
+    }
+}
+
+private struct PreviewView: View {
+    @State private var isOn = false
+    
+    var body: some View {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            VStack {
+                ZStack {
+                    if isOn {
+                        Image(systemSymbol: .arrowTrianglehead2ClockwiseRotate90Icloud)
+                            .drawOnAppear(options: .speed(2))
+                    } else {
+                        Image(systemSymbol: .checkmarkIcloud)
+                            .drawOnAppear(options: .speed(2))
+                    }
+                }.border(.red)
+                
+                Button {
+                    isOn.toggle()
+                } label: {
+                    Text("Toggle")
+                }
+            }
+        }
+    }
+}
+
+#Preview {
+    PreviewView()
 }

@@ -53,7 +53,7 @@ struct UserActivityHandlerModifier: ViewModifier {
             if case let file as File = object {
                 if let group = file.group {
                     fileState.currentActiveGroup = .group(group)
-                    fileState.currentActiveFile = .file(file)
+                    fileState.setActiveFile(.file(file))
                     fileState.expandToGroup(group.objectID)
                 }
             }

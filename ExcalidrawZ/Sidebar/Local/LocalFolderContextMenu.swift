@@ -220,7 +220,7 @@ struct LocalFolderMenuItems: View {
             Button(role: .destructive) {
                 if case .localFile(let file) = fileState.currentActiveFile,
                    file.deletingLastPathComponent() == folder.url {
-                    fileState.currentActiveFile = nil
+                    fileState.setActiveFile(nil)
                 }
                 if let parent = folder.parent {
                     fileState.currentActiveGroup = .localFolder(parent)
@@ -351,7 +351,7 @@ struct LocalFolderMenuItems: View {
         }
         
         if case .localFolder(let localFoder) = fileState.currentActiveGroup, localFoder == folder {
-            fileState.currentActiveFile = nil
+            fileState.setActiveFile(nil)
             fileState.currentActiveGroup = nil
         }
     }

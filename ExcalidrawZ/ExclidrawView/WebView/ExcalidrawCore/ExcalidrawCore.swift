@@ -64,30 +64,10 @@ class ExcalidrawCore: NSObject, ObservableObject {
     var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in }
     lazy var webActor = ExcalidrawWebActor(coordinator: self)
     
-    init(_ parent: ExcalidrawView?) {
-        self.parent = parent
+    override init() {
         self.publishError = { error in }
         super.init()
         self.configWebView()
-        
-        switch parent?.type {
-            case .normal:
-                Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
-                    .map { isNavigating, isDocumentLoaded in
-                        isNavigating || !isDocumentLoaded
-                    }
-                    .assign(to: &$isLoading)
-            case .collaboration:
-                Publishers.CombineLatest(
-                    Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
-                        .map { $0 || !$1 },
-                    $isCollabEnabled
-                )
-                .map { $0 || !$1 }
-                .assign(to: &$isLoading)
-            default:
-                break
-        }
     }
     
     @Published var isNavigating = true
@@ -112,7 +92,31 @@ class ExcalidrawCore: NSObject, ObservableObject {
     
     internal var lastTool: ExcalidrawTool?
     
+    @MainActor
+    func setup(parent: ExcalidrawView) {
+        self.parent = parent
+        switch parent.type {
+            case .normal:
+                Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
+                    .map { isNavigating, isDocumentLoaded in
+                        isNavigating || !isDocumentLoaded
+                    }
+                    .assign(to: &$isLoading)
+            case .collaboration:
+                Publishers.CombineLatest(
+                    Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
+                        .map { $0 || !$1 },
+                    $isCollabEnabled
+                )
+                .map { $0 || !$1 }
+                .assign(to: &$isLoading)
+//            default:
+//                break
+        }
+    }
+    
     func configWebView() {
+        logger.info("Configure Web View...")
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .nonPersistent()
         
@@ -181,6 +185,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     }
     
     public func refresh() {
+        self.logger.info("refreshing...")
         let request: URLRequest
         switch self.parent?.type {
             case .normal:
@@ -202,7 +207,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
                     self.isCollabEnabled = true
                 }
                 request = URLRequest(url: url)
-                self.logger.info("[ExcalidrawCore] navigate to \(url), roomID: \(String(describing: self.parent?.file?.roomID))")
+                self.logger.info("navigate to \(url), roomID: \(String(describing: self.parent?.file?.roomID))")
                 self.webView.load(request)
             case nil:
                 break

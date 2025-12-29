@@ -52,11 +52,11 @@ struct TemporaryFileRowView: View {
                 fileState.selectedTemporaryFiles.insertOrRemove(file)
                 fileState.selectedStartTemporaryFile = file
             } else {
-                fileState.currentActiveFile = .temporaryFile(file)
+                fileState.setActiveFile(.temporaryFile(file))
                 fileState.selectedStartTemporaryFile = file
             }
 #else
-            fileState.currentActiveFile = .temporaryFile(file)
+            fileState.setActiveFile(.temporaryFile(file))
             fileState.selectedStartTemporaryFile = file
 #endif
         }

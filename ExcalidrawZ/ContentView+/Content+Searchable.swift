@@ -317,7 +317,7 @@ struct SerachContent: View {
                             store.togglePaywall(reason: .roomLimit)
                         } else {
                             fileState.currentActiveGroup = .collaboration
-                            fileState.currentActiveFile = .collaborationFile(room)
+                            fileState.setActiveFile(.collaborationFile(room))
                         }
                     }
                 }
@@ -350,7 +350,7 @@ struct SerachContent: View {
                     .onTapGesture(count: tapSelectCount) {
                         if let group = file.group {
                             fileState.currentActiveGroup = .group(group)
-                            fileState.currentActiveFile = .file(file)
+                            fileState.setActiveFile(.file(file))
                             fileState.expandToGroup(group.objectID)
                             dismiss()
                         }
@@ -385,15 +385,16 @@ struct SerachContent: View {
                     .onTapGesture(count: tapSelectCount) {
                         Task {
                             do {
-                                try await viewContext.perform {
+                                let folder = try await viewContext.perform {
                                     let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
                                     fetchRequest.predicate = NSPredicate(format: "filePath = %@", file.deletingLastPathComponent().filePath)
-                                    if let folder = try viewContext.fetch(fetchRequest).first {
-                                        fileState.currentActiveGroup = .localFolder(folder)
-                                        fileState.currentActiveFile = .localFile(file)
-                                        fileState.expandToGroup(folder.objectID)
-                                        dismiss()
-                                    }
+                                    return try viewContext.fetch(fetchRequest).first
+                                }
+                                if let folder {
+                                    fileState.currentActiveGroup = .localFolder(folder)
+                                    fileState.setActiveFile(.localFile(file))
+                                    fileState.expandToGroup(folder.objectID)
+                                    dismiss()
                                 }
                             } catch {
                                 alertToast(error)
@@ -511,13 +512,13 @@ struct SerachContent: View {
                 store.togglePaywall(reason: .roomLimit)
             } else {
                 fileState.currentActiveGroup = .collaboration
-                fileState.currentActiveFile = .collaborationFile(file)
+                fileState.setActiveFile(.collaborationFile(file))
             }
         } else if index < searchCollaborationFiles.count + searchFiles.count {
             let file = searchFiles[index - searchCollaborationFiles.count]
             if let group = file.group {
                 fileState.currentActiveGroup = .group(group)
-                fileState.currentActiveFile = .file(file)
+                fileState.setActiveFile(.file(file))
                 fileState.expandToGroup(group.objectID)
                 dismiss()
             }
@@ -525,15 +526,17 @@ struct SerachContent: View {
             Task {
                 let file = searchLocalFiles[index - searchCollaborationFiles.count - searchFiles.count]
                 do {
-                    try await viewContext.perform {
+                    let folder = try await viewContext.perform {
                         let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
                         fetchRequest.predicate = NSPredicate(format: "filePath = %@", file.deletingLastPathComponent().filePath)
-                        if let folder = try viewContext.fetch(fetchRequest).first {
-                            fileState.currentActiveGroup = .localFolder(folder)
-                            fileState.currentActiveFile = .localFile(file)
-                            fileState.expandToGroup(folder.objectID)
-                            dismiss()
-                        }
+                        return try viewContext.fetch(fetchRequest).first
+                    }
+                    
+                    if let folder {
+                        fileState.currentActiveGroup = .localFolder(folder)
+                        fileState.setActiveFile(.localFile(file))
+                        fileState.expandToGroup(folder.objectID)
+                        dismiss()
                     }
                 } catch {
                     alertToast(error)

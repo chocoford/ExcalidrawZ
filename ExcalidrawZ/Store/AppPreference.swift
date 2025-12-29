@@ -147,7 +147,7 @@ final class AppPreference: ObservableObject {
 }
 
 
-struct AntiInvertImageSettings: Codable {
+struct AntiInvertImageSettings: Codable, Hashable {
     var png: Bool = true
     var svg: Bool = false
 }

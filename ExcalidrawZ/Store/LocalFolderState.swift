@@ -15,6 +15,16 @@ final class LocalFolderState: ObservableObject {
     var itemRenamedPublisher = PassthroughSubject<String, Never>()
     var itemCreatedPublisher = PassthroughSubject<String, Never>()
     var itemUpdatedPublisher = PassthroughSubject<String, Never>()
+
+    // MARK: - File Status Management
+
+    /// Get status box for a local file
+    /// - Parameter url: The file URL
+    /// - Returns: FileStatusBox for observing file status
+    @MainActor
+    func statusBox(for url: URL) -> FileStatusBox {
+        return FileSyncCoordinator.shared.statusBox(for: url)
+    }
     
     public func moveLocalFolder(
         _ folderID: NSManagedObjectID,

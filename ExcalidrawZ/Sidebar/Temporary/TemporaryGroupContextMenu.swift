@@ -66,7 +66,7 @@ struct TemporaryGroupMenuItems: View {
         
         Divider()
         Button {
-            fileState.currentActiveFile = nil
+            fileState.setActiveFile(nil)
             fileState.temporaryFiles.removeAll()
             fileState.currentActiveGroup = nil
         } label: {
@@ -106,7 +106,7 @@ struct TemporaryGroupMenuItems: View {
                     // in temprary but no destination group.
                     guard case let group as Group = viewContext.object(with: groupID) else {
                         fileState.currentActiveGroup = nil
-                        fileState.currentActiveFile = nil
+                        fileState.setActiveFile(nil)
                         return
                     }
                     
@@ -116,9 +116,9 @@ struct TemporaryGroupMenuItems: View {
                        fileState.currentActiveFile == .temporaryFile(currentFileURL),
                        let currentTemporaryFileID,
                        case let file as File = viewContext.object(with: currentTemporaryFileID) {
-                        fileState.currentActiveFile = .file(file)
+                        fileState.setActiveFile(.file(file))
                     } else {
-                        fileState.currentActiveFile = nil
+                        fileState.setActiveFile(nil)
                     }
                     
                 }
@@ -157,7 +157,7 @@ struct TemporaryGroupMenuItems: View {
                     // in temprary but no destination folder.
                     guard let localFolder = viewContext.object(with: targetFolderID) as? LocalFolder else {
                         fileState.currentActiveGroup = nil
-                        fileState.currentActiveFile = nil
+                        fileState.setActiveFile(nil)
                         return
                     }
                     fileState.currentActiveGroup = .localFolder(localFolder)
@@ -166,11 +166,11 @@ struct TemporaryGroupMenuItems: View {
                     guard let currentFileURL,
                           fileState.currentActiveFile == .temporaryFile(currentFileURL),
                           let currentFileNewURL = mapping[currentFileURL] else {
-                        fileState.currentActiveFile = nil
+                        fileState.setActiveFile(nil)
                         return
                     }
                     
-                    fileState.currentActiveFile = .localFile(currentFileNewURL)
+                    fileState.setActiveFile(.localFile(currentFileNewURL))
                 }
             } catch {
                 await alertToast(error)

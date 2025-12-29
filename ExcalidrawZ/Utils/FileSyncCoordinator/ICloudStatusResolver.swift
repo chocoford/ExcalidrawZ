@@ -31,19 +31,17 @@ actor ICloudStatusResolver {
                     return
                 }
                 
-                // Get iCloud-specific resource values
+                // Get iCloud-specific resource values for basic status
                 let keys: Set<URLResourceKey> = [
                     .ubiquitousItemDownloadingStatusKey,
                     .ubiquitousItemIsDownloadingKey,
-                    .ubiquitousItemDownloadingErrorKey,
-                    .ubiquitousItemUploadingErrorKey,
                     .ubiquitousItemIsUploadingKey,
                     .ubiquitousItemHasUnresolvedConflictsKey,
                 ]
                 
                 let values = try url.resourceValues(forKeys: keys)
                 
-                // Check for conflicts first
+                // Check for conflicts first (fast check using resourceValues)
                 if values.ubiquitousItemHasUnresolvedConflicts == true {
                     continuation.resume(returning: .conflict)
                     return
@@ -55,33 +53,38 @@ actor ICloudStatusResolver {
                     return
                 }
                 
-                // Check download status
+                // Check downloading status
+                if values.ubiquitousItemIsDownloading == true {
+                    continuation.resume(returning: .downloading(progress: nil))
+                    return
+                }
+                
+                // Check download status using ubiquitousItemDownloadingStatus
+                // This is the source of truth for file sync state:
+                // - .notDownloaded: File exists in cloud but not downloaded locally
+                // - .downloaded: File is downloaded but may not be current (outdated)
+                // - .current: File is up to date with iCloud
                 if let downloadStatus = values.ubiquitousItemDownloadingStatus {
                     switch downloadStatus {
                         case .notDownloaded:
                             continuation.resume(returning: .notDownloaded)
-
-                        case .current:
-                            // File is downloaded and up-to-date
-                            continuation.resume(returning: .downloaded)
-
+                            return
                         case .downloaded:
-                            // File is downloaded but iCloud has a newer version
+                            // File is downloaded but not current - cloud has newer version
                             continuation.resume(returning: .outdated)
-
+                            return
+                        case .current:
+                            // File is up to date
+                            continuation.resume(returning: .downloaded)
+                            return
                         default:
-                            // Assume downloading
-                            if values.ubiquitousItemIsDownloading == true {
-                                // Try to get progress (not directly available via resourceValues)
-                                continuation.resume(returning: .downloading(progress: nil))
-                            } else {
-                                continuation.resume(returning: .downloaded)
-                            }
+                            break
                     }
-                } else {
-                    // No download status available, assume local or downloaded
-                    continuation.resume(returning: .downloaded)
                 }
+                
+                // Fallback: assume file is downloaded
+                continuation.resume(returning: .downloaded)
+                
             } catch {
                 logger.error("Failed to check iCloud status for \(url.lastPathComponent): \(error)")
                 continuation.resume(throwing: error)

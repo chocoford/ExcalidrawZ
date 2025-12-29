@@ -15494,6 +15494,28 @@
         }
       }
     },
+    "iCloudStatusSyncing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syncing…"
+          }
+        }
+      }
+    },
+    "iCloudStatusUpdating" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updating…"
+          }
+        }
+      }
+    },
     "iCloudSyncingDataDescription" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -55,13 +55,16 @@ ExcalidrawZ 支持用户：
 - **不能**: 判断 iCloud 状态和下载进度
 
 ### 2️⃣ iCloud 状态查询（File-level）
-- **API**: `url.resourceValues(forKeys:)`, NSMetadataQuery (iCloud scope)
+- **API**: `url.resourceValues(forKeys:)`, NSMetadataQuery
 - **擅长**: 查询 iCloud 状态、下载进度、上传状态、冲突
 - **不能**: 枚举普通文件夹
+- **⚠️ 关键**: `ubiquitousItemDownloadingStatus`（.notDownloaded/.downloaded/.current），其中 `.downloaded` = 已下载但有云端更新
+- **⚠️ iOS 限制**: NSMetadataQuery 不可靠，需轮询 + auto-sync
 
-### 3️⃣ 安全读写（File-level）
-- **API**: NSFileCoordinator, NSFilePresenter
-- **职责**: 协调读写、避免冲突、确保版本正确
+### 3️⃣ 安全读写与冲突解析（File-level）
+- **API**: NSFileCoordinator, NSFilePresenter, NSFileVersion
+- **职责**: 协调读写、监听变化、解析冲突
+- **⚠️ 注意**: `NSFileVersion.otherVersionsOfItem` 仅返回冲突版本，不是云端新版本
 
 ---
 
@@ -126,22 +129,18 @@ FileSyncCoordinator (actor, singleton)
                         │       │   └── deleted
                         │       └── 回调 → FolderMonitor.onFileEvent()
                         │
-                        └── iCloud 状态监听（可选，仅 iCloud 文件夹）
+                        └── iCloud 状态监听（⚠️ 仅 iCloud Drive 文件夹，纯本地文件夹不启动）
                             └── ICloudStatusMonitor (actor)
-                                ├── 使用 NSMetadataQuery 监听文件变化事件
-                                ├── 使用 ICloudStatusResolver 查询实际 iCloud 状态
-                                ├── 监听的 iCloud 状态
-                                │   ├── notDownloaded
-                                │   ├── downloading(progress)
-                                │   ├── downloaded
-                                │   ├── uploading
-                                │   └── conflict
-                                └── 直接调用 → FileSyncCoordinator.updateFileStatus()
+                                ├── macOS: NSMetadataQuery 监听文件变化
+                                ├── iOS: URLResourceValues 轮询 + NSFilePresenter
+                                │   ├── 活跃文件：1-2秒
+                                │   ├── 可见文件：5-10秒
+                                │   └── 后台文件：30-60秒或不轮询
+                                ├── 使用 ICloudStatusResolver 查询状态
+                                └── 监听状态：notDownloaded, downloading, downloaded, uploading, outdated, conflict
 
-                                注：NSMetadataQuery 只能告诉我们"文件发生了变化"，
-                                    但无法直接获取 iCloud 状态属性。
-                                    ICloudStatusResolver 通过 url.resourceValues
-                                    提供实际的状态查询能力。
+                                注：纯本地文件状态固定为 .local，由 FileSystemMonitor 处理变化，
+                                    无需 iCloud 监听。只有 iCloud 文件需要轮询（协作场景状态频繁变化）。
 
 辅助组件：
 ├── FileAccessor (actor)
@@ -179,15 +178,9 @@ FileSyncCoordinator (actor, singleton)
 │
 └── ICloudStatusResolver (actor)
     ├── 职责：查询文件的实际 iCloud 状态
-    ├── 被 ICloudStatusMonitor 使用（必需组件）
     ├── checkStatus(for: URL) async throws → FileStatus
-    │   ├── 使用 url.resourceValues(forKeys: [.ubiquitousItem...])
-    │   ├── 检查是否为 iCloud 文件 (.isUbiquitousItemKey)
-    │   ├── 获取下载/上传状态
-    │   ├── 检测冲突
-    │   └── 返回准确的 FileStatus
-    └── batchCheckStatus(_ urls: [URL]) async throws → [URL: FileStatus]
-        └── 并发批量查询，用于优化性能
+    │   └── 使用 ubiquitousItemDownloadingStatus 判断状态
+    └── batchCheckStatus(_ urls: [URL]) → 并发批量查询
 
 核心数据结构：
 ├── FileStatusRegistry (@MainActor class)
@@ -505,6 +498,43 @@ struct LocalFolderMonitorModifier: ViewModifier {
 | 读写操作 | **始终使用 `NSFileCoordinator`** |
 | 后台刷新 | 批量查询，避免逐个轮询 |
 
+### iOS 平台 iCloud 监控策略
+
+**⚠️ 仅针对 iCloud Drive 文件夹**（纯本地文件夹不需要）
+
+#### 1. 可见/后台文件状态轮询
+
+| 文件层级 | 轮询间隔 | 用途 |
+|---------|---------|------|
+| 可见文件 | 7.5秒 | 列表显示状态图标 |
+| 后台文件 | 45秒 | 后台状态更新 |
+
+监控文件状态（上传/下载/冲突等），使用 URLResourceValues 查询。
+
+#### 2. 活跃文件自动同步
+
+- **触发条件**：文件处于只读模式（`inDragMode = true`）且为 iCloud 文件
+- **同步间隔**：5秒
+- **同步方式**：强制下载 → Data 对比 → 内容变化则重新加载
+- **目的**：浏览模式下保持内容最新
+
+**注意**：
+- 活跃文件不轮询（自动同步已覆盖状态检测）
+- 编辑模式下不自动同步，由 iCloud 处理冲突
+
+#### 关键 URLResourceValues 属性
+
+| 属性 | 说明 |
+|-----|------|
+| `.isUbiquitousItemKey` | 是否为 iCloud 文件 |
+| `.ubiquitousItemDownloadingStatusKey` | 下载状态（notDownloaded/downloaded/current） |
+| `.ubiquitousItemHasUnresolvedConflictsKey` | 是否有冲突 |
+| `.ubiquitousItemIsUploadingKey` | 是否正在上传 |
+
+#### 性能目标
+
+- CPU < 5%，内存 < 10MB (1000文件)，活跃文件延迟 < 2秒
+
 ---
 
 ## 十四、设计优势
@@ -538,6 +568,20 @@ struct LocalFolderMonitorModifier: ViewModifier {
 1. `SafeFileAccessor` 实现
 2. `NSFileCoordinator` 集成
 3. 自动下载逻辑
+
+### Phase 5: iOS 监控优化
+1. **阶段1**（立即实施）：基础轮询
+   - 活跃文件：1秒轮询
+   - 其他文件：按需检查
+   - 使用 URLResourceValues 查询状态
+2. **阶段2**（后续改进）：混合策略
+   - 加入 NSFilePresenter 被动监听
+   - 减少轮询频率
+   - 降低资源消耗
+3. **阶段3**（未来）：智能调度
+   - App 前台：高频监听
+   - App 后台：降低频率或暂停
+   - 用户交互时：立即检查
 
 ---
 

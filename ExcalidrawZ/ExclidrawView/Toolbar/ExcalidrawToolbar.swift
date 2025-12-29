@@ -70,10 +70,6 @@ struct ExcalidrawToolbar: View {
 #if os(iOS)
         if horizontalSizeClass == .compact {
             compactContent()
-                .onAppear {
-                    // initial drag at ExcalidrawView line 171
-                    toolState.inDragMode = true
-                }
         } else if containerHorizontalSizeClass != .compact, !toolState.inPenMode {
             HStack {
                 compactContent()
@@ -95,10 +91,6 @@ struct ExcalidrawToolbar: View {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(.regularMaterial)
                 }
-            }
-            .onAppear {
-                // initial drag at ExcalidrawView line 171
-                toolState.inDragMode = true
             }
         } else if toolState.inPenMode {
             HStack(spacing: 10) {
@@ -335,14 +327,30 @@ struct ExcalidrawToolbar: View {
             HStack(spacing: 20) {
                 Color.clear
                     .overlay(alignment: .leading) {
-                        if containerHorizontalSizeClass == .compact,
-                           case .collaborationFile = fileState.currentActiveFile {
-                            CollaborationMembersPopoverButton()
+                        if containerHorizontalSizeClass == .compact {
+                            if let activeFile = fileState.currentActiveFile,
+                               case .localFile = activeFile {
+#if os(iOS)
+                                FileICloudSyncStatusIndicator(file: activeFile)
+                                    .padding(.horizontal, 8)
+#endif
+                            } else if case .collaborationFile = fileState.currentActiveFile {
+                                CollaborationMembersPopoverButton()
+                            }
                         }
                     }
                 Color.clear
                     .overlay(alignment: .center) {
-                        Text(.localizable(.toolbarViewMode))
+#if os(iOS)
+                        FileStatusProvider(file: fileState.currentActiveFile) { status in
+                            Text(
+                                status == .syncing
+                                ? .localizable(.iCloudStatusSyncing)
+                                : .localizable(.toolbarViewMode)
+                            )
+                            .animation(.smooth, value: status == .syncing)
+                        }
+#endif
                     }
                 Color.clear
                     .overlay(alignment: .trailing) {

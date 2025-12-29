@@ -57,7 +57,7 @@ struct LocalFoldersView: View {
             DispatchQueue.main.async {
                 if val {
                     fileState.currentActiveGroup = .localFolder(folder)
-                    fileState.currentActiveFile = nil
+                    fileState.setActiveFile(nil)
                 }
             }
         }

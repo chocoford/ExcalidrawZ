@@ -13,7 +13,10 @@ import CoreData
 // MARK: - Generic Browser Content View
 
 struct CompactBrowserContentView<HomeGroup: ExcalidrawGroup>: View {
+    @Environment(\.isPresented) private var isPresented
     @EnvironmentObject private var layoutState: LayoutState
+    @EnvironmentObject private var fileState: FileState
+    
     
     var title: String
     var group: HomeGroup
@@ -74,6 +77,48 @@ struct CompactBrowserContentView<HomeGroup: ExcalidrawGroup>: View {
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .animation(.smooth, value: layoutState.compactBrowserLayout)
+        .onChange(of: fileState.currentActiveFile) { activeFile in
+            Task {
+                if activeFile == nil {
+                    await setLocalFilesMonitoringLevel(
+                        files: files,
+                        level: .visible
+                    )
+                } else {
+                    await setLocalFilesMonitoringLevel(
+                        files: files,
+                        level: .never
+                    )
+                }
+            }
+        }
+        .task(id: files) {
+            // Everytime calls
+            await setLocalFilesMonitoringLevel(
+                files: files,
+                level: fileState.currentActiveFile != nil ? .never : .visible
+            )
+        }
+        .onDisappear {
+            // remove visible monitoring
+            Task {
+                await setLocalFilesMonitoringLevel(files: files, level: .never)
+            }
+        }
+    }
+    
+    
+    private func setLocalFilesMonitoringLevel(
+        files: [FileState.ActiveFile],
+        level: FileMonitoringLevel
+    ) async {
+        await FileSyncCoordinator.shared.setFilesMonitoringLevel(
+            files.compactMap {
+                if case .localFile(let url) = $0 { return url }
+                return nil
+            },
+            level: level
+        )
     }
 }
 
@@ -147,7 +192,6 @@ struct CompactLocalFolderBrowserView: View {
                 files: files
             )
         }
-        
     }
 }
 

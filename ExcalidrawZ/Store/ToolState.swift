@@ -279,12 +279,13 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
 final class ToolState: ObservableObject {
     let logger = Logger(label: "ToolState")
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
-    // var excalidrawCollaborationWebCoordinator: ExcalidrawView.Coordinator?
 
     @Published var activatedTool: ExcalidrawTool? = .cursor
     @Published var isToolLocked: Bool = false
     @Published var previousActivatedTool: ExcalidrawTool? = nil
-    @Published var inDragMode: Bool = false
+    var inDragMode: Bool {
+        !inPenMode && activatedTool == .hand
+    }
     
     @Published var inPenMode: Bool = false
     

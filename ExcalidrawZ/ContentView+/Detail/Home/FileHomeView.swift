@@ -310,7 +310,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
             HStack(spacing: 2) {
                 ForEach(parentGroups) { group in
                     Button {
-                        fileState.currentActiveFile = nil
+                        fileState.setActiveFile(nil)
                         fileState.currentActiveGroup = futureActiveGroup(group)
                     } label: {
                         Text(group.name ?? String(localizable: .generalUntitled))

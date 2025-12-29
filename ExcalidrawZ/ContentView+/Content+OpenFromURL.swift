@@ -119,7 +119,7 @@ struct OpenFromURLModifier: ViewModifier {
                     }
                     try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.1))
                     await MainActor.run {
-                        fileState.currentActiveFile = .localFile(url)
+                        fileState.setActiveFile(.localFile(url))
                     }
                 }
             }
@@ -177,7 +177,7 @@ struct OpenFromURLModifier: ViewModifier {
 
         
         fileState.currentActiveGroup = .temporary
-        fileState.currentActiveFile = .temporaryFile(targetURL)
+        fileState.setActiveFile(.temporaryFile(targetURL))
         
         if let imageSendToNewFile {
             Task {
@@ -256,7 +256,7 @@ struct OpenFromURLModifier: ViewModifier {
                             await MainActor.run {
                                 fileState.currentActiveGroup = .collaboration
                                 if case let room as CollaborationFile = viewContext.object(with: roomID) {
-                                    fileState.currentActiveFile = .collaborationFile(room)
+                                    fileState.setActiveFile(.collaborationFile(room))
                                 }
                             }
                         }
@@ -282,22 +282,21 @@ struct OpenFromURLModifier: ViewModifier {
         let context = viewContext
         
         Task {
-            await context.perform {
-                let object = context.object(with: objectID)
-                
-                if let file = object as? File {
-                    if let group = file.group {
-                        fileState.expandToGroup(group.objectID)
-                        fileState.currentActiveGroup = .group(group)
-                    }
-                    fileState.currentActiveFile = .file(file)
-                } else if let group = object as? Group {
+            let object = await context.perform {
+                context.object(with: objectID)
+            }
+            if let file = object as? File {
+                if let group = file.group {
                     fileState.expandToGroup(group.objectID)
                     fileState.currentActiveGroup = .group(group)
-                } else if let folder = object as? LocalFolder {
-                    fileState.expandToGroup(folder.objectID)
-                    fileState.currentActiveGroup = .localFolder(folder)
                 }
+                fileState.setActiveFile(.file(file))
+            } else if let group = object as? Group {
+                fileState.expandToGroup(group.objectID)
+                fileState.currentActiveGroup = .group(group)
+            } else if let folder = object as? LocalFolder {
+                fileState.expandToGroup(folder.objectID)
+                fileState.currentActiveGroup = .localFolder(folder)
             }
         }
     }

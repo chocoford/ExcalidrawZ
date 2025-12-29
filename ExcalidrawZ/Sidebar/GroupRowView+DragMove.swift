@@ -353,9 +353,9 @@ struct GroupRowDropModifier: ViewModifier {
                     if fileState.currentActiveFile?.id == roomID.description {
                         fileState.currentActiveGroup = .group(self.group)
                         if let file = viewContext.object(with: fileID) as? File {
-                            fileState.currentActiveFile = .file(file)
+                            fileState.setActiveFile(.file(file))
                         } else {
-                            fileState.currentActiveFile = nil
+                            fileState.setActiveFile(nil)
                         }
                     }
                 }
@@ -381,12 +381,12 @@ struct GroupRowDropModifier: ViewModifier {
                 if let file = viewContext.object(with: fileID) as? File ?? group.files?.allObjects.first as? File {
                     if fileState.currentActiveGroup == .temporary && fileState.temporaryFiles == [url] ||
                         fileState.currentActiveFile == .temporaryFile(url) {
-                        fileState.currentActiveFile = .file(file)
+                        fileState.setActiveFile(.file(file))
                         fileState.currentActiveGroup = .group(group)
                     }
                 } else {
                     fileState.currentActiveGroup = .group(group)
-                    fileState.currentActiveFile = nil
+                    fileState.setActiveFile(nil)
                 }
                 fileState.temporaryFiles.removeAll(where: {$0 == url})
                 fileState.expandToGroup(group.objectID)

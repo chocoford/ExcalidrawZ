@@ -113,10 +113,9 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             if fileState.currentActiveGroup != nil {
                 HStack {
                     NavigationBackButton()
-                    if containerHorizontalSizeClass == .compact {
-                        title()
-                        titleBarActionsMenu()
-                    }
+                    title()
+                    titleBarActionsMenu()
+                    
                 }
             }
             
@@ -387,7 +386,7 @@ struct NavigationBackButton: View {
     var body: some View {
         Button {
             if fileState.currentActiveFile != nil {
-                fileState.currentActiveFile = nil
+                fileState.setActiveFile(nil)
             } else {
                 switch fileState.currentActiveGroup {
                     case .group(let group):

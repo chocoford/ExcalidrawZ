@@ -162,7 +162,7 @@ struct LocalFileRowView: View {
     }
     
     private func activeFile(_ file: URL) {
-        fileState.currentActiveFile = .localFile(file)
+        fileState.setActiveFile(.localFile(file))
 
         withOpenFileDelay {
             // fetch file's folder
@@ -219,7 +219,7 @@ struct LocalFileRowView: View {
                 
                 if isWaitingForOpeningFile, iCloudState.downloadStatus == .current {
                     isWaitingForOpeningFile = false
-                    fileState.currentActiveFile = .localFile(file)
+                    fileState.setActiveFile(.localFile(file))
                 }
             } else {
                 iCloudState = nil

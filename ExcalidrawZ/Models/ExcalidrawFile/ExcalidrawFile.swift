@@ -158,7 +158,7 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
         try! self.init(contentsOf: Bundle.main.url(forResource: "template", withExtension: "excalidraw")!)
     }
     
-    init(contentsOf url: URL) throws {
+    init(contentsOf url: URL, refresh: Bool = false) throws {
         let fileType: UTType = {
             let lastPathComponent = url.lastPathComponent
             
@@ -195,7 +195,7 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
                 struct UnrecognizedURLError: Error {}
                 throw UnrecognizedURLError()
         }
-        let id = Self.localFileURLIDMapping[url] ?? UUID()
+        let id = refresh ? UUID () : (Self.localFileURLIDMapping[url] ?? UUID())
         Self.localFileURLIDMapping[url] = id
         try self.init(data: data, id: id)
         switch fileType {

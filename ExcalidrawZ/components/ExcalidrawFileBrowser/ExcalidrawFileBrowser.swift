@@ -86,7 +86,7 @@ struct ExcalidrawFileBrowser: View {
                     Color.clear
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            fileState.currentActiveFile = nil
+                            fileState.setActiveFile(nil)
                         }
                 }
             }
@@ -150,7 +150,7 @@ struct ExcalidrawFileBrowserContentView: View {
                     return false
                 } set: { val in
                     if val {
-                        fileState.currentActiveFile = .file(file)
+                        fileState.setActiveFile(.file(file))
                     }
                 },
                 filename: file.name ?? String(localizable: .generalUnknown)
@@ -200,7 +200,7 @@ struct ExcalidrawLocalFileBrowserContentView: View {
                         return false
                     } set: { val in
                         if val {
-                            fileState.currentActiveFile = .localFile(url)
+                            fileState.setActiveFile(.localFile(url))
                         }
                     },
                     filename: url.lastPathComponent

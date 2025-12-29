@@ -76,11 +76,9 @@ actor FileSyncCoordinator {
         
         // Check if already monitoring
         guard folderMonitors[url] == nil else {
-            logger.warning("Folder already being monitored: \(url.lastPathComponent)")
+            logger.warning("Folder already being monitored: \(url.filePath)")
             throw FolderError.alreadyMonitoring
         }
-        
-        logger.info("Adding folder for monitoring: \(url.lastPathComponent)")
         
         // Create and start monitor
         let monitor = FolderMonitor(
@@ -94,7 +92,7 @@ actor FileSyncCoordinator {
         folderMonitors[url] = monitor
         try await monitor.start()
         
-        logger.info("Successfully started monitoring folder: \(url.lastPathComponent)")
+        logger.info("Successfully started monitoring folder: \(url.filePath)")
     }
     
     /// Remove a folder from monitoring
@@ -158,6 +156,44 @@ actor FileSyncCoordinator {
         // Emit status change event
         eventContinuation?.yield(.statusChanged(url: fileURL, status: status))
     }
+
+#if os(iOS)
+    /// Set monitoring level for an iCloud file (iOS only)
+    ///
+    /// This method allows UI to control polling frequency for iCloud files:
+    /// - Set to `.active` when user opens/edits a file
+    /// - Set to `.visible` when file is shown in a list
+    /// - Set to `.background` when file is no longer visible
+    ///
+    /// - Parameters:
+    ///   - fileURL: The file URL to monitor
+    ///   - level: The monitoring level
+    func setFileMonitoringLevel(_ fileURL: URL, level: FileMonitoringLevel) async {
+        await setFilesMonitoringLevel([fileURL], level: level)
+    }
+    
+    func setFilesMonitoringLevel(_ filesURL: [URL], level: FileMonitoringLevel) async {
+        var monitors: [URL: (FolderMonitor, [URL])] = [:]
+        for fileURL in filesURL {
+            // Find the folder monitor for this file
+            let folderURL = fileURL.deletingLastPathComponent()
+            if monitors[folderURL] != nil {
+                monitors[folderURL]?.1.append(fileURL)
+                continue
+            }
+            
+            guard let monitor = folderMonitors.first(where: {folderURL.filePath.hasPrefix($0.key.filePath)})?.value else {
+                logger.warning("No folder monitor found for: \(folderURL.filePath)")
+                continue
+            }
+            monitors[folderURL] = (monitor, [fileURL])
+        }
+
+        for (monitor, filesURL) in monitors.values {
+            await monitor.setFilesMonitoringLevel(filesURL, level: level)
+        }
+    }
+#endif
 
     // MARK: - File Change Events
 
@@ -296,7 +332,7 @@ enum FolderError: LocalizedError {
     case folderNotFound
     case invalidFolder
     case alreadyMonitoring
-    
+
     var errorDescription: String? {
         switch self {
             case .permissionDenied:
@@ -307,6 +343,26 @@ enum FolderError: LocalizedError {
                 return "Invalid folder"
             case .alreadyMonitoring:
                 return "Folder is already being monitored"
+        }
+    }
+}
+
+// MARK: - File Monitoring Level
+
+/// Monitoring level for iCloud files (iOS only)
+enum FileMonitoringLevel: Sendable {
+    case active
+    case visible
+    case background
+    case never
+
+    /// Polling interval in seconds
+    var pollingInterval: TimeInterval {
+        switch self {
+            case .active: return 3
+            case .visible: return 15.0
+            case .background: return 45.0
+            case .never: return Double.greatestFiniteMagnitude
         }
     }
 }

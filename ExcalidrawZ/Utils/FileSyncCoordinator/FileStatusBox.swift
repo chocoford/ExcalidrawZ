@@ -5,8 +5,8 @@
 //  Created by Claude on 12/23/25.
 //
 
-import Foundation
 import SwiftUI
+import Logging
 
 /// A per-file ObservableObject that holds the current status of a file.
 ///
@@ -28,6 +28,7 @@ import SwiftUI
 /// ```
 @MainActor
 final class FileStatusBox: ObservableObject, @MainActor Identifiable {
+    private let logger = Logger(label: "FileStatusBox")
     /// The current status of this file
     @Published var status: FileStatus
 
@@ -48,6 +49,7 @@ final class FileStatusBox: ObservableObject, @MainActor Identifiable {
     /// Update the status and refresh timestamp
     func updateStatus(_ newStatus: FileStatus) {
         guard status != newStatus else { return }
+        // logger.info("status updated: \(newStatus)")
         status = newStatus
         lastUpdated = Date()
     }

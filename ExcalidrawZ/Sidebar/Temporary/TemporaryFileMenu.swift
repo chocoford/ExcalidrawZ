@@ -114,7 +114,7 @@ struct TemporaryFileMenuItems: View {
                 [file]
             }
             
-            fileState.currentActiveFile = nil
+            fileState.setActiveFile(nil)
             
             for file in filesToClose {
                 fileState.temporaryFiles.removeAll(where: {$0 == file})
@@ -124,7 +124,7 @@ struct TemporaryFileMenuItems: View {
                 fileState.currentActiveGroup = nil
             } else {
                 let file = fileState.temporaryFiles.first
-                fileState.currentActiveFile = file != nil ? .temporaryFile(file!) : nil
+                fileState.setActiveFile(file != nil ? .temporaryFile(file!) : nil) 
             }
         } label: {
             Label {
@@ -195,7 +195,7 @@ struct TemporaryFileMenuItems: View {
                     // in temporary group, but no destination group.
                     guard case let group as Group = viewContext.object(with: groupID) else {
                         if fileState.temporaryFiles.isEmpty {
-                            fileState.currentActiveFile = nil
+                            fileState.setActiveFile(nil)
                             fileState.currentActiveGroup = nil
                         }
                         return
@@ -207,9 +207,9 @@ struct TemporaryFileMenuItems: View {
                        fileState.currentActiveFile == .temporaryFile(currentFileURL),
                        let currentTemporaryFileID,
                        case let file as File = viewContext.object(with: currentTemporaryFileID) {
-                        fileState.currentActiveFile = .file(file)
+                        fileState.setActiveFile(.file(file))
                     } else {
-                        fileState.currentActiveFile = nil
+                        fileState.setActiveFile(nil)
                     }
                 }
             } catch {
@@ -242,7 +242,7 @@ struct TemporaryFileMenuItems: View {
                     // in temporary group, but no destination folder.
                     guard let folder = viewContext.object(with: targetFolderID) as? LocalFolder else {
                         if fileState.temporaryFiles.isEmpty {
-                            fileState.currentActiveFile = nil
+                            fileState.setActiveFile(nil)
                             fileState.currentActiveGroup = nil
                         }
                         return
@@ -255,10 +255,10 @@ struct TemporaryFileMenuItems: View {
                     if case .temporaryFile(let localFile) = fileState.currentActiveFile,
                        localFile == file,
                        let newURL = mapping[localFile] {
-                        fileState.currentActiveFile = .localFile(newURL)
+                        fileState.setActiveFile(.localFile(newURL))
                     } else {
                         if fileState.temporaryFiles.isEmpty {
-                            fileState.currentActiveFile = nil
+                            fileState.setActiveFile(nil)
                         }
                     }
                 }

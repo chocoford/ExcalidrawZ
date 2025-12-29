@@ -32,11 +32,11 @@ extension ExcalidrawCore: WKNavigationDelegate {
     
     
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        logger.error("[ExcalidrawCore] didFail: \(error)")
+        logger.error("didFail: \(error)")
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        logger.info("[ExcalidrawCore] did finish navigation")
+        logger.info("didFinish - URL: \(webView.url?.absoluteString ?? "nil"), hasInjectIndexedDBData: \(self.hasInjectIndexedDBData)")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             if !self.hasInjectIndexedDBData {
                 // Should import medias as soon as possible.
@@ -92,6 +92,7 @@ extension ExcalidrawCore: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        logger.info("didCommit...")
         self.parent?.loadingState = .loading
         DispatchQueue.main.async {
             self.isNavigating = true
@@ -100,6 +101,7 @@ extension ExcalidrawCore: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        logger.info("didStartProvisionalNavigation - \(Thread.callStackSymbols)")
         self.parent?.loadingState = .loading
         DispatchQueue.main.async {
             self.isNavigating = true

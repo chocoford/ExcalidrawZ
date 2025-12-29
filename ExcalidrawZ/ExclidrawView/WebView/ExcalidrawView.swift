@@ -65,21 +65,22 @@ class ExcalidrawWebView: WKWebView {
 #endif
 }
 
-struct ExcalidrawView {
-    @Environment(\.colorScheme) var colorScheme
-    @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    
+extension Notification.Name {
+    static let forceReloadExcalidrawFile = Notification.Name("ForceReloadExcalidrawFile")
+}
+
+struct ExcalidrawView: View {
     @AppStorage("addedFontsData") private var addedFontsData: Data = Data()
     
+    @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var exportState: ExportState
     @EnvironmentObject var toolState: ToolState
 
-    let logger = Logger(label: "WebView")
+    let logger = Logger(label: "ExcalidrawView")
     
-    var roomIDBinding: Binding<String>?
-    @Binding var file: ExcalidrawFile?
+    typealias Coordinator = ExcalidrawCore
     
     enum LoadingState: Equatable {
         case idle
@@ -103,20 +104,34 @@ struct ExcalidrawView {
             return false
         }
     }
-    @Binding var loadingState: LoadingState
-    
-    var savingType: UTType
-    var onError: (Error) -> Void
-    
-    var interactionEnabled: Bool
     
     enum ExcalidrawType {
         case normal
         case collaboration
     }
-    var type: ExcalidrawType
     
-    // TODO: isLoadingFile is not used yet.
+    var type: ExcalidrawType
+    var roomIDBinding: Binding<String>?
+    @Binding var file: ExcalidrawFile?
+    @Binding var loadingState: LoadingState
+    var savingType: UTType
+    var onError: (Error) -> Void
+    var interactionEnabled: Bool
+    
+    
+    // MARK: - State
+    
+    @StateObject private var excalidrawCore = ExcalidrawCore()
+    @State private var hasSetupCore = false
+    
+    // MARK: - Computed Properties
+    
+    private var addedFonts: [String] {
+        (try? JSONDecoder().decode([String].self, from: addedFontsData)) ?? []
+    }
+    
+    // MARK: - Init
+    
     init(
         type: ExcalidrawType = .normal,
         roomID: Binding<String>? = nil,
@@ -135,112 +150,195 @@ struct ExcalidrawView {
         self.onError = onError
     }
     
-    var addedFonts: [String] {
-        (try? JSONDecoder().decode([String].self, from: addedFontsData)) ?? []
-    }
+    // MARK: - Body
     
-    @State private var cancellables = Set<AnyCancellable>()
-}
-
-extension ExcalidrawView {
-    func makeExcalidrawWebView(context: Context) -> ExcalidrawWebView {
-        DispatchQueue.main.async {
-            cancellables.insert(
-                context.coordinator.$isLoading.sink { newValue in
-                    DispatchQueue.main.async {
-                        self.loadingState = newValue ? .loading : .loaded
-#if os(iOS)
-                        if !newValue/*, horizontalSizeClass == .compact*/ {
-                            Task { @MainActor in
-                                try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.5))
-                                try? await context.coordinator.toggleToolbarAction(key: "h")
-                            }
-                        }
-#endif
-                    }
+    var body: some View {
+        ExcalidrawViewRepresentable()
+            .environmentObject(excalidrawCore)
+            .onReceive(NotificationCenter.default.publisher(for: .forceReloadExcalidrawFile)) { _ in
+                excalidrawCore.loadFile(from: file, force: true)
+            }
+            .onChange(of: interactionEnabled) { enabled in
+                Task {
+                    try? await excalidrawCore.toggleWebPointerEvents(enabled: enabled)
                 }
-            )
-            Task {
-                for await error in context.coordinator.errorStream {
-                    self.onError(error)
+                // setupCoordinators()
+            }
+            .onChange(of: file) { newFile in
+                handleFileChange(newFile)
+            }
+            .onChange(of: colorScheme) { _ in
+                applyColorMode()
+            }
+            .onChange(of: appPreference.excalidrawAppearance) { _ in
+                applyColorMode()
+            }
+            .onChange(of: appPreference.autoInvertImage) { _ in
+                applyImageInversion()
+            }
+            .onChange(of: appPreference.antiInvertImageSettings) { _ in
+                applyImageInversion()
+            }
+            .onChange(of: loadingState) { state in
+                if state == .loaded {
+                    applyAllSettings()
                 }
             }
+            .task {
+                await listenToLoadingState()
+            }
+            .task {
+                await listenToErrors()
+            }
+            .onAppear {
+                setupCore()
+            }
+    }
+    
+    // MARK: - Setup Methods
+    
+    private func setupCore() {
+        guard !hasSetupCore else { return }
+        hasSetupCore = true
+        excalidrawCore.setup(parent: self)
+        setupCoordinators()
+    }
+    
+    private func setupCoordinators() {
+        toolState.excalidrawWebCoordinator = excalidrawCore
+        if interactionEnabled {
+            
         }
+        
+        switch type {
+            case .normal:
+                exportState.excalidrawWebCoordinator = excalidrawCore
+                fileState.excalidrawWebCoordinator = excalidrawCore
+            case .collaboration:
+                if interactionEnabled {
+                    exportState.excalidrawCollaborationWebCoordinator = excalidrawCore
+                    fileState.excalidrawCollaborationWebCoordinator = excalidrawCore
+                }
+        }
+    }
+    
+    // MARK: - Async Listeners
+    
+    private func listenToLoadingState() async {
+        for await isLoading in excalidrawCore.$isLoading.values {
+            await MainActor.run {
+                loadingState = isLoading ? .loading : .loaded
+            }
+            
+#if os(iOS)
+            if !isLoading {
+                try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.5))
+                try? await excalidrawCore.toggleToolbarAction(key: "h")
+            }
+#endif
+        }
+    }
+    
+    private func listenToErrors() async {
+        for await error in excalidrawCore.errorStream {
+            await MainActor.run {
+                onError(error)
+            }
+        }
+    }
+    
+    // MARK: - Event Handlers
+    
+    private func handleFileChange(_ newFile: ExcalidrawFile?) {
+        guard !excalidrawCore.webView.isLoading else { return }
+        
+        if type == .collaboration {
+            if newFile?.roomID?.isEmpty == false {
+                // has roomID
+            }
+        } else if let newFile {
+            excalidrawCore.loadFile(from: newFile)
+        }
+    }
+    
+    // MARK: - Settings Application
+    
+    private func applyAllSettings() {
+        applyFonts()
+        applyColorMode()
+        applyImageInversion()
+    }
+    
+    private func applyFonts() {
+        guard loadingState == .loaded else { return }
+
+        Task {
+            do {
+                try await excalidrawCore.setAvailableFonts(fontFamilies: addedFonts)
+            } catch {
+                onError(error)
+            }
+        }
+    }
+    
+    private func applyColorMode() {
+        guard loadingState == .loaded else { return }
+
+        Task {
+            do {
+                let isDark: Bool
+                if appPreference.excalidrawAppearance == .auto {
+                    isDark = colorScheme == .dark
+                } else {
+                    isDark = (appPreference.excalidrawAppearance.colorScheme ?? colorScheme) == .dark
+                }
+                try await excalidrawCore.changeColorMode(dark: isDark)
+            } catch {
+                onError(error)
+            }
+        }
+    }
+    
+    private func applyImageInversion() {
+        guard loadingState == .loaded else { return }
+
+        Task {
+            do {
+                let shouldInvert = appPreference.autoInvertImage &&
+                (appPreference.excalidrawAppearance == .dark ||
+                 (colorScheme == .dark && appPreference.excalidrawAppearance == .auto))
+
+                try await excalidrawCore.applyAntiInvertImageSettings(
+                    payload: appPreference.antiInvertImageSettings
+                )
+                try await excalidrawCore.toggleInvertImageSwitch(autoInvert: shouldInvert)
+            } catch {
+                onError(error)
+            }
+        }
+    }
+}
+
+
+/// Minimal wrapper to bridge WKWebView to SwiftUI
+struct ExcalidrawViewRepresentable {
+    @EnvironmentObject private var core: ExcalidrawCore
+    
+    func makeExcalidrawWebView(context: Context) -> ExcalidrawWebView {
         return context.coordinator.webView
     }
     
     func updateExcalidrawWebView(_ webView: ExcalidrawWebView, context: Context) {
-        
-        Task {
-            try? await context.coordinator.toggleWebPointerEvents(enabled: interactionEnabled)
-        }
-        context.coordinator.parent = self
-        // Move to `ContentViewDetail`
-        if self.interactionEnabled {
-            toolState.excalidrawWebCoordinator = context.coordinator
-        }
-        switch self.type {
-            case .normal:
-                exportState.excalidrawWebCoordinator = context.coordinator
-                fileState.excalidrawWebCoordinator = context.coordinator
-                // toolState.excalidrawWebCoordinator = context.coordinator
-            case .collaboration:
-                if self.interactionEnabled {
-                    exportState.excalidrawCollaborationWebCoordinator = context.coordinator
-                    fileState.excalidrawCollaborationWebCoordinator = context.coordinator
-                }
-        }
-        guard !webView.isLoading, case .loaded = loadingState else { return }
-        Task {
-            // inject fonts
-            do {
-                let fontFamilies = addedFonts
-                try await context.coordinator.setAvailableFonts(fontFamilies: fontFamilies)
-            } catch {
-                self.onError(error)
-            }
-            
-            do {
-                if appPreference.excalidrawAppearance == .auto {
-                    try await context.coordinator.changeColorMode(dark: colorScheme == .dark)
-                } else {
-                    try await context.coordinator.changeColorMode(dark: appPreference.excalidrawAppearance.colorScheme ?? colorScheme == .dark)
-                }
-            } catch {
-                self.onError(error)
-            }
-            do {
-                if appPreference.autoInvertImage,
-                   appPreference.excalidrawAppearance == .dark || colorScheme == .dark && appPreference.excalidrawAppearance == .auto {
-                    try await context.coordinator.applyAntiInvertImageSettings(payload: appPreference.antiInvertImageSettings)
-                    try await context.coordinator.toggleInvertImageSwitch(autoInvert: true)
-                } else {
-                    try await context.coordinator.applyAntiInvertImageSettings(payload: appPreference.antiInvertImageSettings)
-                    try await context.coordinator.toggleInvertImageSwitch(autoInvert: false)
-                }
-            } catch {
-                self.onError(error)
-            }
-        }
-        if type == .collaboration {
-            if file?.roomID?.isEmpty == false {
-                // has roomID
-            } else {
-                // context.coordinator.loadFile(from: file)
-            }
-        } else if let file {
-            context.coordinator.loadFile(from: file)
-        }
     }
     
     func makeCoordinator() -> ExcalidrawCore {
-        ExcalidrawCore(self)
+        return core
     }
 }
 
 #if os(macOS)
-extension ExcalidrawView: NSViewRepresentable {
-
+extension ExcalidrawViewRepresentable: NSViewRepresentable {
+    
     func makeNSView(context: Context) -> ExcalidrawWebView {
         makeExcalidrawWebView(context: context)
     }
@@ -250,7 +348,7 @@ extension ExcalidrawView: NSViewRepresentable {
     }
 }
 #elseif os(iOS)
-extension ExcalidrawView: UIViewRepresentable {
+extension ExcalidrawViewRepresentable: UIViewRepresentable {
     func makeUIView(context: Context) -> ExcalidrawWebView {
         makeExcalidrawWebView(context: context)
     }

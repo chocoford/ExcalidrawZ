@@ -36,6 +36,10 @@ actor FileAccessor {
     private let logger = Logger(label: "FileAccessor")
     private let statusResolver = ICloudStatusResolver()
 
+    /// Cache of ongoing file operations (for deduplication)
+    /// Used by both openFile and downloadFile to prevent duplicate operations
+    private var ongoingOperations: [URL: Task<Data, Error>] = [:]
+
     // MARK: - Initialization
 
     private init() {
@@ -45,31 +49,49 @@ actor FileAccessor {
     // MARK: - Public API
 
     /// Open a file safely, downloading if necessary with progress tracking
+    ///
+    /// This method ensures operation deduplication: if the same file is being
+    /// opened/downloaded by another caller, this will wait for that operation
+    /// to complete instead of starting a new one.
+    ///
     /// - Parameter url: The file URL to open
     /// - Returns: File data
     /// - Throws: FileAccessError if unable to open file
     func openFile(_ url: URL) async throws -> Data {
+        // If operation is already in progress, wait for existing task
+        if let existingTask = ongoingOperations[url] {
+            logger.info("File operation already in progress, waiting: \(url.lastPathComponent)")
+            return try await existingTask.value
+        }
+
         logger.info("Opening file: \(url.lastPathComponent)")
 
         // Check file status to determine if download/wait is needed
         let status = try await statusResolver.checkStatus(for: url)
 
         // Track progress for files that need downloading or are downloading
-        // - .notDownloaded: needs to trigger download
-        // - .outdated: needs to re-download latest version
-        // - .downloading: already downloading, wait for completion
         let trackProgress = switch status {
             case .notDownloaded, .outdated, .downloading:
                 true
-            case .downloaded, .local, .loading, .uploading, .conflict, .error:
+            default:
                 false
         }
 
-        logger.debug("File status: \(status), trackProgress: \(trackProgress)")
+        // Create new read task
+        let readTask = Task<Data, Error> {
+            defer {
+                // Clean up cache after completion (success or failure)
+                self.removeOperation(for: url)
+            }
 
-        // Read file with progress tracking if needed
-        // NSFileCoordinator.coordinate will automatically wait for downloads
-        return try await coordinatedRead(url: url, trackProgress: trackProgress)
+            return try await self.coordinatedRead(url: url, trackProgress: trackProgress)
+        }
+
+        // Cache the task
+        ongoingOperations[url] = readTask
+
+        // Wait for completion
+        return try await readTask.value
     }
 
     /// Save data to a file safely
@@ -107,20 +129,52 @@ actor FileAccessor {
     }
 
     /// Download an iCloud file with progress tracking
+    ///
+    /// This method shares the same deduplication cache as openFile:
+    /// - If another caller is opening/downloading the same file, waits for that operation
+    /// - If this triggers a new download, subsequent openFile calls will wait for it
+    ///
     /// - Parameter url: The file URL to download
     /// - Throws: FileAccessError if unable to download
     func downloadFile(_ url: URL) async throws {
-        logger.info("Downloading file: \(url.lastPathComponent)")
-
-        // Check if file is in iCloud
+        // Check if file is in iCloud first (before checking cache)
         let status = try await statusResolver.checkStatus(for: url)
         guard status.isICloudFile else {
-            logger.debug("File is not in iCloud, skipping download: \(url.lastPathComponent)")
+            logger.info("File is not in iCloud, skipping download: \(url.lastPathComponent)")
             return
         }
-        // Trigger download by attempting to read file (will track progress)
-        _ = try await coordinatedRead(url: url, trackProgress: true)
-        logger.info("Download completed: \(url.lastPathComponent)")
+
+        // If operation is already in progress, wait for existing task
+        if let existingTask = ongoingOperations[url] {
+            logger.info("File operation already in progress, waiting: \(url.lastPathComponent)")
+            _ = try await existingTask.value  // Ignore returned data
+            return
+        }
+
+        logger.info("Starting download: \(url.lastPathComponent)")
+
+        // Create new read task with progress tracking
+        let readTask = Task<Data, Error> {
+            defer {
+                // Clean up cache after completion (success or failure)
+                self.removeOperation(for: url)
+            }
+
+            let data = try await self.coordinatedRead(url: url, trackProgress: true)
+            self.logger.info("Download completed: \(url.lastPathComponent)")
+            return data
+        }
+
+        // Cache the task
+        ongoingOperations[url] = readTask
+
+        // Wait for completion, ignore returned data
+        _ = try await readTask.value
+    }
+
+    /// Remove operation task from cache
+    private func removeOperation(for url: URL) {
+        ongoingOperations.removeValue(forKey: url)
     }
 
     
@@ -196,7 +250,6 @@ actor FileAccessor {
 
                 var coordinationError: NSError?
                 let coordinator = NSFileCoordinator()
-
                 coordinator.coordinate(
                     readingItemAt: url,
                     options: [],

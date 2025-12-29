@@ -84,7 +84,7 @@ struct LocalFilesProvider<Content: View>: View {
                                 return true
                             }
                         }() {
-                            fileState.currentActiveFile = nil
+                            fileState.setActiveFile(nil)
                         }
                     }
                 }
@@ -115,7 +115,7 @@ struct LocalFilesProvider<Content: View>: View {
                 getFolderContents()
                 if case .localFile(let file) = fileState.currentActiveFile,
                    !files.contains(file) {
-                    fileState.currentActiveFile = nil
+                    fileState.setActiveFile(nil)
                 }
             }
     }
@@ -140,7 +140,7 @@ struct LocalFilesProvider<Content: View>: View {
                            folder == self.folder,
                            case .localFile(let currentFile) = fileState.currentActiveFile {
                             if !files.contains(currentFile) {
-                                fileState.currentActiveFile = nil
+                                fileState.setActiveFile(nil)
                             }
                         }
                     }
@@ -182,12 +182,12 @@ struct LocalFilesProvider<Content: View>: View {
             let index = files.firstIndex(where: {$0.filePath == path}) ?? -1
             if index <= 0 {
                 if files.count <= 1 {
-                    fileState.currentActiveFile = nil
+                    fileState.setActiveFile(nil)
                 } else {
-                    fileState.currentActiveFile = .localFile(files[1])
+                    fileState.setActiveFile(.localFile(files[1]))
                 }
             } else {
-                fileState.currentActiveFile = .localFile(files[0])
+                fileState.setActiveFile(.localFile(files[0]))
             }
         }
         files.removeAll(where: { $0.filePath == path })

@@ -192,7 +192,7 @@ struct NewFileButton: View {
                             
                             if openWithDelay {
                                 DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                                    fileState.currentActiveFile = .localFile(url)
+                                    fileState.setActiveFile(.localFile(url))
                                     isCreatingFile = false
                                 }
                             } else {
@@ -229,7 +229,7 @@ struct NewFileButton: View {
                 if openWithDelay {
                     DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                         if let file = viewContext.object(with: fileID) as? File {
-                            fileState.currentActiveFile = .file(file)
+                            fileState.setActiveFile(.file(file))
                         }
                         isCreatingFile = false
                     }

@@ -89,6 +89,14 @@ actor FolderMonitor {
         logger.info("Successfully stopped monitoring: \(folderURL.lastPathComponent)")
     }
 
+#if os(iOS)
+    /// Set monitoring level for a file (iOS only)
+    func setFilesMonitoringLevel(_ filesURL: [URL], level: FileMonitoringLevel) async {
+        guard options.autoCheckICloudStatus else { return }
+        await iCloudMonitor?.setFilesMonitoringLevel(filesURL, level: level)
+    }
+#endif
+
     // MARK: - File System Monitoring
 
     private func startFileSystemMonitoring() async throws {
@@ -101,7 +109,7 @@ actor FolderMonitor {
             }
         )
         #elseif os(iOS)
-        fileSystemMonitor = await IOSFileSystemMonitor(
+        fileSystemMonitor = IOSFileSystemMonitor(
             folderURL: folderURL,
             options: options,
             onEvent: { [weak self] event in
@@ -111,13 +119,13 @@ actor FolderMonitor {
         #endif
 
         try await fileSystemMonitor?.start()
-        logger.debug("File system monitoring started")
+        logger.info("File system monitoring started")
     }
 
     private func stopFileSystemMonitoring() async {
         await fileSystemMonitor?.stop()
         fileSystemMonitor = nil
-        logger.debug("File system monitoring stopped")
+        logger.info("File system monitoring stopped")
     }
 
     // MARK: - iCloud Monitoring
@@ -125,7 +133,7 @@ actor FolderMonitor {
     private func startICloudMonitoring() async {
         // Check if folder is in iCloud Drive
         guard isInICloudDrive(url: folderURL) else {
-            logger.debug("Folder not in iCloud Drive, skipping iCloud monitoring")
+            logger.info("Folder not in iCloud Drive, skipping iCloud monitoring")
             return
         }
 
@@ -135,13 +143,13 @@ actor FolderMonitor {
         )
 
         await iCloudMonitor?.start()
-        logger.debug("iCloud status monitoring started")
+        logger.info("iCloud status monitoring started")
     }
 
     private func stopICloudMonitoring() async {
         await iCloudMonitor?.stop()
         iCloudMonitor = nil
-        logger.debug("iCloud status monitoring stopped")
+        logger.info("iCloud status monitoring stopped")
     }
 
     // MARK: - Helpers
@@ -270,7 +278,7 @@ actor IOSFileSystemMonitor: NSObject, FileSystemMonitorProtocol, NSFilePresenter
 
     // NSFilePresenter requirements
     nonisolated var presentedItemURL: URL? { folderURL }
-    nonisolated lazy var presentedItemOperationQueue = OperationQueue.main
+    nonisolated var presentedItemOperationQueue: OperationQueue { OperationQueue.main }
 
     private var isActive = false
 
@@ -350,143 +358,3 @@ actor IOSFileSystemMonitor: NSObject, FileSystemMonitorProtocol, NSFilePresenter
     }
 }
 #endif
-
-// MARK: - iCloud Status Monitor
-
-actor ICloudStatusMonitor {
-    private let logger = Logger(label: "ICloudStatusMonitor")
-
-    private let folderURL: URL
-    private let options: FolderSyncOptions
-    private let statusResolver = ICloudStatusResolver()
-
-    @MainActor
-    private var query: NSMetadataQuery?
-    private var isMonitoring = false
-
-    init(folderURL: URL, options: FolderSyncOptions) {
-        self.folderURL = folderURL
-        self.options = options
-    }
-
-    func start() async {
-        guard !isMonitoring else { return }
-
-        await MainActor.run {
-            setupMetadataQuery()
-        }
-
-        isMonitoring = true
-        logger.info("iCloud monitoring started for: \(folderURL.filePath)")
-    }
-
-    func stop() async {
-        guard isMonitoring else { return }
-
-        await MainActor.run {
-            query?.stop()
-            query = nil
-            NotificationCenter.default.removeObserver(self)
-        }
-
-        isMonitoring = false
-        logger.info("iCloud monitoring stopped for: \(folderURL.filePath)")
-    }
-
-    @MainActor
-    private func setupMetadataQuery() {
-        query = NSMetadataQuery()
-        guard let query = query else { return }
-
-        // Set search scope to this specific folder
-        query.searchScopes = [folderURL]
-
-        // Build predicate for file extensions
-        let predicates: [NSPredicate]
-        if options.fileExtensions.isEmpty {
-            predicates = []
-        } else {
-            predicates = options.fileExtensions.map { ext in
-                NSPredicate(format: "%K LIKE %@", NSMetadataItemFSNameKey, "*.\(ext)")
-            }
-        }
-
-        query.predicate = predicates.count > 1
-        ? NSCompoundPredicate(orPredicateWithSubpredicates: predicates)
-        : predicates.first
-        
-        // Register for notifications
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(metadataQueryDidUpdate(_:)),
-            name: .NSMetadataQueryDidUpdate,
-            object: query
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(metadataQueryDidFinishGathering(_:)),
-            name: .NSMetadataQueryDidFinishGathering,
-            object: query
-        )
-
-        query.start()
-    }
-
-    @MainActor
-    @objc private func metadataQueryDidFinishGathering(_ notification: Notification) {
-        Task {
-            guard let query = notification.object as? NSMetadataQuery else { return }
-            query.disableUpdates()
-            await processMetadataResults(query.results)
-            query.enableUpdates()
-        }
-
-    }
-    
-    @MainActor
-    @objc private func metadataQueryDidUpdate(_ notification: Notification) {
-        Task {
-            guard let query = notification.object as? NSMetadataQuery else { return }
-            query.disableUpdates()
-            await processMetadataResults(query.results)
-            query.enableUpdates()
-        }
-    }
-
-    private func processMetadataResults(_ results: [Any]) async {
-        for item in results {
-            guard let metadataItem = item as? NSMetadataItem else { continue }
-            await processMetadataItem(metadataItem)
-        }
-    }
-
-    private func processMetadataItem(_ item: NSMetadataItem) async {
-        // Extract file URL
-        let fileURL: URL?
-
-        if let url = item.value(forAttribute: NSMetadataItemURLKey) as? URL {
-            fileURL = url
-        } else if let path = item.value(forAttribute: NSMetadataItemPathKey) as? String {
-            fileURL = URL(fileURLWithPath: path)
-        } else {
-            fileURL = nil
-        }
-        guard let fileURL else { return }
-        guard fileURL.filePath.hasPrefix(folderURL.filePath) else { return }
-
-        // Use ICloudStatusResolver to get actual iCloud status
-        // NSMetadataQuery only tells us the file changed, not its actual status
-        let status: FileStatus
-        do {
-            status = try await statusResolver.checkStatus(for: fileURL)
-            logger.info("Resolved iCloud status for \(fileURL.lastPathComponent): \(String(describing: status))")
-        } catch {
-            logger.error("Failed to resolve iCloud status for \(fileURL.lastPathComponent): \(error)")
-            status = .error(error.localizedDescription)
-        }
-
-        // Update status registry directly
-        await FileSyncCoordinator.shared.updateFileStatus(for: fileURL, status: status)
-    }
-
-}

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreData
+import ChocofordUI
 
 struct LocalFileMenuProvider: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -40,7 +41,6 @@ struct LocalFileMenuProvider: View {
     
     var body: some View {
         content(triggers)
-            .modifier(FileHomeItemICloudStatusProvider(file: .localFile(file)))
             .modifier(
                 RenameSheetViewModifier(
                     isPresented: $isRenameSheetPresented,
@@ -165,7 +165,7 @@ struct LocalFileRowMenuItems: View {
         if containerHorizontalSizeClass != .compact {
             // Open
             Button {
-                fileState.currentActiveFile = .localFile(file)
+                fileState.setActiveFile(.localFile(file))
             } label: {
                 Label(
                     "Open",
@@ -174,28 +174,29 @@ struct LocalFileRowMenuItems: View {
             }
             
             // Download / Remove download
-            FileICloudStatusProvider { status in
-                if status != .local {
-                    Button {
-                        Task {
-                            do {
-                                if status == .downloaded {
-                                    try await FileAccessor.shared.evictLocalCopy(of: file)
-                                } else {
-                                    try await FileAccessor.shared.downloadFile(file)
-                                }
-                            } catch {
-                                alertToast(error)
-                            }
-                        }
-                            
+            FileStatusProvider(file: .localFile(file)) { fileStatus in
+                if fileStatus == .conflict {
+                    
+                } else if fileStatus == .downloaded {
+                    AsyncButton {
+                        try await FileAccessor.shared.evictLocalCopy(of: file)
                     } label: {
                         Label(
-                            status == .downloaded ? "Remove download" : "Download",
-                            systemSymbol: status == .downloaded ? .xmarkCircle : .icloudAndArrowDown
+                            "Remove download",
+                            systemSymbol: .xmarkCircle
+                        )
+                    }
+                } else if fileStatus == .outdated {
+                    AsyncButton {
+                        try await FileAccessor.shared.downloadFile(file)
+                    } label: {
+                        Label(
+                            "Download",
+                            systemSymbol: .icloudAndArrowDown
                         )
                     }
                 }
+                
             }
         }
         
@@ -376,7 +377,7 @@ struct LocalFileRowMenuItems: View {
                 }
                 if let fileToBeActive,
                    fileState.currentActiveFile == .localFile(file) {
-                    fileState.currentActiveFile = .localFile(fileToBeActive)
+                    fileState.setActiveFile(.localFile(fileToBeActive))
                 }
             }
         } catch {
@@ -399,7 +400,7 @@ struct LocalFileRowMenuItems: View {
                     if let folder = viewContext.object(with: targetFolderID) as? LocalFolder {
                         fileState.currentActiveGroup = .localFolder(folder)
                     }
-                    fileState.currentActiveFile = .localFile(newURL)
+                    fileState.setActiveFile(.localFile(newURL))
                     fileState.expandToGroup(targetFolderID)
                 }
             }
@@ -439,13 +440,13 @@ struct LocalFileRowMenuItems: View {
                     }
                 }
                 
-                fileState.currentActiveFile = nil
+                fileState.setActiveFile(nil)
                 
                 // Should change current local file...
 //                let folderURL = self.file.deletingLastPathComponent()
 //                let contents = try FileManager.default.contentsOfDirectory(at: folderURL, includingPropertiesForKeys: [.nameKey])
 //                let file = contents.first(where: {$0.pathExtension == "excalidraw"})
-//                fileState.currentActiveFile = file == nil ? nil : .localFile(file!)
+//                fileState.setActiveFile(file) == nil ? nil : .localFile(file!)
             }
         } catch {
             alertToast(error)

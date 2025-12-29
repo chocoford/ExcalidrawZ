@@ -50,7 +50,6 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     guard !self.isLoading else { return }
                     if message.data.type == .lasso { return }
                     if message.data.type == .hand {
-                        self.parent?.toolState.inDragMode = true
                         self.lastTool = .hand
                         DispatchQueue.main.async {
                             self.parent?.toolState.setActivedTool(.hand)
@@ -61,7 +60,6 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                             self.lastTool = tool
                             DispatchQueue.main.async {
                                 self.parent?.toolState.setActivedTool(tool)
-                                self.parent?.toolState.inDragMode = false
                             }
                         }
                     }
@@ -94,22 +92,11 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     }
                 case .didPenDown:
                     self.parent?.toolState.inPenMode = true
-                    self.parent?.toolState.inDragMode = false
                     NotificationCenter.default.post(name: .didPencilConnected, object: nil)
                 case .didSelectElements:
                     break
-//                    DispatchQueue.main.async {
-//                        if self.parent?.toolState.isBottomBarPresented == true {
-//                            self.parent?.toolState.isBottomBarPresented = false
-//                        }
-//                    }
                 case .didUnselectAllElements:
                     break
-//                    DispatchQueue.main.async {
-//                        if self.parent?.toolState.isBottomBarPresented == false {
-//                            self.parent?.toolState.isBottomBarPresented = true
-//                        }
-//                    }
                     
                 // Collab
                 case .didOpenLiveCollaboration(let message):

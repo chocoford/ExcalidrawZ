@@ -28,7 +28,7 @@ actor ExcalidrawWebActor {
         data.copyBytes(to: &buffer, count: data.count)
         let buf = buffer
         await MainActor.run {
-            webView.evaluateJavaScript("window.excalidrawZHelper.loadFileBuffer(\(buf)); 0;")
+            webView.evaluateJavaScript("window.excalidrawZHelper.loadFileBuffer(\(buf), '\(id.uuidString)'); 0;")
         }
     }
 }

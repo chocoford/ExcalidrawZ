@@ -357,7 +357,7 @@ struct LocalFolderDropModifier: ViewModifier {
                     if let folder = viewContext.object(with: folder.objectID) as? LocalFolder {
                         fileState.currentActiveGroup = .localFolder(folder)
                     }
-                    fileState.currentActiveFile = .localFile(newURL)
+                    fileState.setActiveFile(.localFile(newURL))
                 }
             }
             return true
@@ -421,10 +421,10 @@ struct LocalFolderDropModifier: ViewModifier {
                    fileState.currentActiveFile == .temporaryFile(url) ||
                     fileState.currentActiveGroup == .temporary && fileState.temporaryFiles == [url] {
                     fileState.currentActiveGroup = .localFolder(folder)
-                    fileState.currentActiveFile = .localFile(newURL)
+                    fileState.setActiveFile(.localFile(newURL))
                 } else {
                     fileState.currentActiveGroup = .localFolder(folder)
-                    fileState.currentActiveFile = nil
+                    fileState.setActiveFile(nil)
                 }
                 fileState.temporaryFiles.removeAll(where: {$0 == url})
             }
