@@ -267,6 +267,7 @@ struct FileHomeItemView: View {
 private struct FileHomeItemContentView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.scenePhase) var scenePhase
 
     @EnvironmentObject private var layoutState: LayoutState
     @EnvironmentObject private var fileState: FileState
@@ -292,11 +293,13 @@ private struct FileHomeItemContentView: View {
         self.filename = filename
         self.updatedAt = updatedAt
         self.customLabel = customLabel
+        self._localUpdatedAt = State(initialValue: updatedAt)
     }
     
     @State private var coverImage: Image? = nil
     @State private var error: Error?
     @State private var width: CGFloat?
+    @State private var localUpdatedAt: Date?
 
     let cache = FileItemPreviewCache.shared
     
@@ -350,6 +353,7 @@ private struct FileHomeItemContentView: View {
             self.getElementsImage()
         }
         .watchImmediately(of: colorScheme) { _ in
+            guard scenePhase == .active else { return }
             if let image = cache.getPreviewCache(forFile: file, colorScheme: colorScheme) {
                 Task.detached {
                     let image = Image(platformImage: image)
@@ -360,6 +364,23 @@ private struct FileHomeItemContentView: View {
             } else {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     self.getElementsImage()
+                }
+            }
+        }
+        .onChange(of: scenePhase) { newValue in
+            guard fileState.currentActiveFile == nil else { return }
+            if newValue == .active {
+                if let image = cache.getPreviewCache(forFile: file, colorScheme: colorScheme) {
+                    Task.detached {
+                        let image = Image(platformImage: image)
+                        await MainActor.run {
+                            self.coverImage = image
+                        }
+                    }
+                } else {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        self.getElementsImage()
+                    }
                 }
             }
         }
@@ -385,7 +406,7 @@ private struct FileHomeItemContentView: View {
                             .scaledToFill()
                             .allowsHitTesting(false)
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius))
+                    .apply(coverImageClip)
                     .frame(height: height)
             } else if error != nil {
                 Color.clear
@@ -464,8 +485,11 @@ private struct FileHomeItemContentView: View {
                         )
                         
                         HStack {
-                            Text(updatedAt?.formatted() ?? "Never modified")
+                            Text(localUpdatedAt?.formatted() ?? "Never modified")
                                 .lineLimit(1)
+                                .onChange(of: updatedAt) { newValue in
+                                    localUpdatedAt = newValue
+                                }
                             
                             Spacer(minLength: 0)
                             
@@ -512,9 +536,26 @@ private struct FileHomeItemContentView: View {
         }
     }
     
-    
+    @ViewBuilder
+    private func coverImageClip<Content: View>(
+        content: Content
+    ) -> some View {
+        if #available(macOS 13.0, *) {
+            content
+                .clipShape(
+                    style == .file
+                    ? AnyShape(RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius))
+                    : AnyShape(Rectangle())
+                )
+        } else {
+            content
+                .clipShape(RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius))
+        }
+    }
     
     private func getElementsImage() {
+        
+        
         Task {
             do {
                 // Load ExcalidrawFile asynchronously

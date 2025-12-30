@@ -73,6 +73,7 @@ struct ExcalidrawView: View {
     @AppStorage("addedFontsData") private var addedFontsData: Data = Data()
     
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.scenePhase) var scenePhase
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var exportState: ExportState
@@ -184,6 +185,11 @@ struct ExcalidrawView: View {
                     applyAllSettings()
                 }
             }
+//            .onChange(of: scenePhase) { scenePhase in
+//                if scenePhase == .active {
+//                    applyColorMode()
+//                }
+//            }
             .task {
                 await listenToLoadingState()
             }
@@ -282,7 +288,7 @@ struct ExcalidrawView: View {
     }
     
     private func applyColorMode() {
-        guard loadingState == .loaded else { return }
+        guard loadingState == .loaded, scenePhase == .active else { return }
 
         Task {
             do {
@@ -292,6 +298,7 @@ struct ExcalidrawView: View {
                 } else {
                     isDark = (appPreference.excalidrawAppearance.colorScheme ?? colorScheme) == .dark
                 }
+                self.logger.info("apply color mode: \(isDark ? "dark" : "light")")
                 try await excalidrawCore.changeColorMode(dark: isDark)
             } catch {
                 onError(error)
@@ -300,7 +307,7 @@ struct ExcalidrawView: View {
     }
     
     private func applyImageInversion() {
-        guard loadingState == .loaded else { return }
+        guard loadingState == .loaded, scenePhase == .active else { return }
 
         Task {
             do {

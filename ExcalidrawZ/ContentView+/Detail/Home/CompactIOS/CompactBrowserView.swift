@@ -14,6 +14,7 @@ import CoreData
 
 struct CompactBrowserContentView<HomeGroup: ExcalidrawGroup>: View {
     @Environment(\.isPresented) private var isPresented
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var layoutState: LayoutState
     @EnvironmentObject private var fileState: FileState
     
@@ -66,10 +67,10 @@ struct CompactBrowserContentView<HomeGroup: ExcalidrawGroup>: View {
                         )
                     }
                 }
-                
+
                 ForEach(files) { file in
                     FileHomeItemView(file: file)
-                        .fileHomeItemStyle(.file)
+                         .fileHomeItemStyle(.file)
                 }
             }
             .padding()
@@ -85,6 +86,21 @@ struct CompactBrowserContentView<HomeGroup: ExcalidrawGroup>: View {
                         level: .visible
                     )
                 } else {
+                    await setLocalFilesMonitoringLevel(
+                        files: files,
+                        level: .never
+                    )
+                }
+            }
+        }
+        .onChange(of: scenePhase) { newValue in
+            Task {
+                if newValue == .active {
+                    await setLocalFilesMonitoringLevel(
+                        files: files,
+                        level: .visible
+                    )
+                } else if scenePhase != .active, newValue == .background {
                     await setLocalFilesMonitoringLevel(
                         files: files,
                         level: .never

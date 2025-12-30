@@ -115,7 +115,6 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
                     NavigationBackButton()
                     title()
                     titleBarActionsMenu()
-                    
                 }
             }
             
