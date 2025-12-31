@@ -175,20 +175,20 @@ struct LocalFileRowMenuItems: View {
             
             // Download / Remove download
             FileStatusProvider(file: .localFile(file)) { fileStatus in
-                if fileStatus == .conflict {
+                if fileStatus?.iCloudStatus == .conflict {
                     
-                } else if fileStatus == .downloaded {
+                } else if fileStatus?.iCloudStatus == .downloaded {
                     AsyncButton {
-                        try await FileAccessor.shared.evictLocalCopy(of: file)
+                        try await FileCoordinator.shared.evictLocalCopy(of: file)
                     } label: {
                         Label(
                             "Remove download",
                             systemSymbol: .xmarkCircle
                         )
                     }
-                } else if fileStatus == .outdated {
+                } else if fileStatus?.iCloudStatus == .outdated {
                     AsyncButton {
-                        try await FileAccessor.shared.downloadFile(file)
+                        try await FileCoordinator.shared.downloadFile(url: file)
                     } label: {
                         Label(
                             "Download",

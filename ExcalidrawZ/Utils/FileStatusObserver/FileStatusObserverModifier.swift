@@ -2,13 +2,12 @@
 //  FileStatusObserverModifier.swift
 //  ExcalidrawZ
 //
-//  Created by Claude on 12/25/25.
+//  Created by Chocoford on 12/31/25.
 //
 
 import SwiftUI
 import Combine
 
-// MARK: - View Extension
 
 extension View {
     /// Observe file status changes for the active file
@@ -22,13 +21,12 @@ extension View {
         onChange: @escaping (FileStatus) -> Void
     ) -> some View {
         background {
-            if case .localFile(let url) = activeFile {
-                FileStatusObserverView(url: url, onChange: onChange)
-                    .id(url)
+            if let activeFile {
+                FileStatusObserverView(file: activeFile, onChange: onChange)
             }
         }
     }
-    
+
     @ViewBuilder
     func bindFileStatus(
         for activeFile: FileState.ActiveFile?,
@@ -41,7 +39,7 @@ extension View {
 }
 
 struct FileStatusProvider: View {
-    
+
     var file: FileState.ActiveFile?
     var content: (FileStatus?) -> AnyView
 
@@ -54,30 +52,32 @@ struct FileStatusProvider: View {
             AnyView(content($0))
         }
     }
-    
+
     @State private var fileStatus: FileStatus?
-    
+
     var body: some View {
         content(fileStatus)
             .bindFileStatus(for: file, status: $fileStatus)
     }
 }
 
-
 private struct FileStatusObserverView: View {
     @ObservedObject private var fileStatusBox: FileStatusBox
+    var file: FileState.ActiveFile
     var onChange: (FileStatus) -> Void
-    
-    init(url: URL, onChange: @escaping (FileStatus) -> Void) {
-        self.fileStatusBox = FileSyncCoordinator.shared.statusBox(for: url)
+
+    init(file: FileState.ActiveFile, onChange: @escaping (FileStatus) -> Void) {
+        self.file = file
+        self.fileStatusBox = FileStatusService.shared.statusBox(for: file)
         self.onChange = onChange
     }
-    
+
     @State private var oldValue: FileStatus?
 
     var body: some View {
         Color.clear
             .onReceive(fileStatusBox.$status) { newValue in
+                print("[DEBUG] Receive fileStatusBox.$status", file.id, newValue)
                 guard oldValue != newValue else { return }
                 onChange(newValue)
                 oldValue = newValue

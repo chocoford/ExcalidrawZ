@@ -13,7 +13,7 @@ actor ICloudStatusMonitor {
     
     private let folderURL: URL
     private let options: FolderSyncOptions
-    private let statusResolver = ICloudStatusResolver()
+    private let statusChecker = ICloudStatusChecker.shared
     
 #if os(macOS)
     @MainActor
@@ -158,11 +158,11 @@ actor ICloudStatusMonitor {
         guard let fileURL else { return }
         guard fileURL.filePath.hasPrefix(folderURL.filePath) else { return }
         
-        // Use ICloudStatusResolver to get actual iCloud status
+        // Use ICloudStatusChecker to get actual iCloud status
         // NSMetadataQuery only tells us the file changed, not its actual status
-        let status: FileStatus
+        let status: ICloudFileStatus
         do {
-            status = try await statusResolver.checkStatus(for: fileURL)
+            status = try await statusChecker.checkStatus(for: fileURL)
             logger.info("Resolved iCloud status for \(fileURL.lastPathComponent): \(String(describing: status))")
         } catch {
             logger.error("Failed to resolve iCloud status for \(fileURL.lastPathComponent): \(error)")
@@ -245,9 +245,9 @@ actor ICloudStatusMonitor {
         for fileURL in files {
             guard !Task.isCancelled else { break }
             
-            let status: FileStatus
+            let status: ICloudFileStatus
             do {
-                status = try await statusResolver.checkStatus(for: fileURL)
+                status = try await statusChecker.checkStatus(for: fileURL)
             } catch {
                 logger.error("Failed to check status for \(fileURL.lastPathComponent): \(error)")
                 status = .error(error.localizedDescription)

@@ -22,7 +22,7 @@ struct ConflictResolutionSheetView: View {
     var onResolved: () -> Void
     var onCancelled: () -> Void
 
-    var resolver: ConflictResolver
+    var resolver: ICloudConflictResolver
 
     @State private var versions: [FileVersion] = []
     @State private var selectedVersion: FileVersion?
@@ -44,7 +44,7 @@ struct ConflictResolutionSheetView: View {
         self.fileURL = fileURL
         self.onResolved = onResolved
         self.onCancelled = onCancelled
-        self.resolver = ConflictResolver(fileURL: fileURL)
+        self.resolver = ICloudConflictResolver(fileURL: fileURL)
     }
 
     var body: some View {

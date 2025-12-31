@@ -10,57 +10,67 @@ import SwiftUI
 /// Sync status popover with MediaItems progress and detailed info
 /// Displays as a rectangular card at bottom-trailing of ExcalidrawHomeView
 struct SyncStatusPopover: View {
-    @ObservedObject private var syncStatus: SyncStatusState
+    @EnvironmentObject private var statusService: FileStatusService
     @EnvironmentObject private var fileState: FileState
+    @State private var fileStatus: FileStatus?
 
-    init() {
-        self.syncStatus = .shared
-    }
+    init() {}
 
     var body: some View {
-        if syncStatus.hasActiveSyncOperations || shouldShowFileStatus {
-            VStack(alignment: .leading, spacing: 12) {
-                // File-specific sync status
-                if let fileID = getCurrentFileID(),
-                   let status = getFileStatus(fileID),
-                   status != .synced {
-                    fileStatusRow(status: status)
-                    if hasOtherItems {
-                        Divider()
-                    }
-                }
-
-                // MediaItems download progress
-                if let progress = syncStatus.mediaItemsDownloadProgress {
-                    mediaItemsProgressRow(current: progress.current, total: progress.total)
-                    if hasOtherItemsAfterMedia {
-                        Divider()
-                    }
-                }
-
-                // Overall sync message
-                if let message = syncStatus.syncProgressMessage {
-                    overallSyncMessageRow(message: message)
-                    if syncStatus.syncingFilesCount > 0 {
-                        Divider()
-                    }
-                }
-
-                // Active files syncing count
-                if syncStatus.syncingFilesCount > 0 {
-                    activeSyncCountRow(count: syncStatus.syncingFilesCount)
+        if statusService.hasActiveSyncOperations {
+            content()
+        }
+    }
+    
+    @ViewBuilder
+    private func content() -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // File-specific sync status
+            if let syncStatus = fileStatus?.syncStatus,
+               syncStatus != .synced {
+                fileStatusRow(status: syncStatus)
+                if hasOtherItems {
+                    Divider()
                 }
             }
-            .padding(16)
-            .background {
+
+            // MediaItems download progress
+            if let progress = statusService.mediaItemsDownloadProgress {
+                mediaItemsProgressRow(current: progress.current, total: progress.total)
+                if hasOtherItemsAfterMedia {
+                    Divider()
+                }
+            }
+
+            // Overall sync message
+            if let message = statusService.syncProgressMessage {
+                overallSyncMessageRow(message: message)
+                if statusService.syncingFilesCount > 0 {
+                    Divider()
+                }
+            }
+
+            // Active files syncing count
+            if statusService.syncingFilesCount > 0 {
+                activeSyncCountRow(count: statusService.syncingFilesCount)
+            }
+        }
+        .bindFileStatus(for: fileState.currentActiveFile, status: $fileStatus)
+        .padding(16)
+        .frame(maxWidth: .infinity)
+        .background {
+            if #available(iOS 26.0, macOS 26.0, *) {
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.background)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24))
+            } else {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.regularMaterial)
                     .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
             }
-            .frame(minWidth: 240)
-            .padding()
-            .transition(.move(edge: .trailing).combined(with: .opacity))
         }
+        .padding(7)
+        .transition(.move(edge: .trailing).combined(with: .opacity))
     }
 
     // MARK: - Sub Views
@@ -119,9 +129,18 @@ struct SyncStatusPopover: View {
     @ViewBuilder
     private func activeSyncCountRow(count: Int) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: "arrow.triangle.2.circlepath")
-                .font(.system(size: 16))
-                .frame(width: 20)
+            ZStack {
+                if #available(macOS 15.0, iOS 18.0, *) {
+                    Image(systemSymbol: .arrowTrianglehead2ClockwiseRotate90)
+                        .symbolEffect(.rotate, isActive: true)
+                } else {
+                    Image(systemSymbol: .arrowTriangle2Circlepath)
+                }
+            }
+            .font(.system(size: 16))
+            .frame(width: 20)
+            
+            
             VStack(alignment: .leading, spacing: 2) {
                 Text("Sync Queue")
                     .font(.caption2)
@@ -137,38 +156,19 @@ struct SyncStatusPopover: View {
     // MARK: - Helper Properties
 
     private var hasOtherItems: Bool {
-        syncStatus.mediaItemsDownloadProgress != nil ||
-        syncStatus.syncProgressMessage != nil ||
-        syncStatus.syncingFilesCount > 0
+        statusService.mediaItemsDownloadProgress != nil ||
+        statusService.syncProgressMessage != nil ||
+        statusService.syncingFilesCount > 0
     }
 
     private var hasOtherItemsAfterMedia: Bool {
-        syncStatus.syncProgressMessage != nil ||
-        syncStatus.syncingFilesCount > 0
+        statusService.syncProgressMessage != nil ||
+        statusService.syncingFilesCount > 0
     }
 
     private var shouldShowFileStatus: Bool {
-        guard let fileID = getCurrentFileID() else { return false }
-        let status = syncStatus.getStatus(for: fileID)
-        return status != .synced
-    }
-
-    // MARK: - Helper Methods
-
-    private func getCurrentFileID() -> String? {
-        switch fileState.currentActiveFile {
-            case .file(let file):
-                return file.id?.uuidString
-            case .collaborationFile(let collabFile):
-                return collabFile.id?.uuidString
-            default:
-                return nil
-        }
-    }
-
-    private func getFileStatus(_ fileID: String) -> FileSyncStatus? {
-        let status = syncStatus.getStatus(for: fileID)
-        return status != .synced ? status : nil
+        guard let syncStatus = fileStatus?.syncStatus else { return false }
+        return syncStatus != .synced
     }
 
     @ViewBuilder

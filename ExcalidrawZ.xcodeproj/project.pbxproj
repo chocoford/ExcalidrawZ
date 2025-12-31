@@ -193,6 +193,10 @@
 		396603652D096D2900870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				FileSyncCoordinator/.claude,
+				FileSyncCoordinator/IMPLEMENTATION.md,
+				FileSyncCoordinator/README.md,
+				ICloudFileKit/README.md,
 				Migration/MigrateToNewVersion.swift,
 			);
 			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ (AppStore) */;
@@ -200,6 +204,10 @@
 		396603662D096D2900870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				FileSyncCoordinator/.claude,
+				FileSyncCoordinator/IMPLEMENTATION.md,
+				FileSyncCoordinator/README.md,
+				ICloudFileKit/README.md,
 				Migration/MigrateToNewVersion.swift,
 			);
 			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
@@ -281,6 +289,8 @@
 		39A28CC02D92B04B00B079B1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				FileStorage/README.md,
+				Migrations/README.md,
 				"PersistenceController+PreviewExt.swift",
 			);
 			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ (AppStore) */;
@@ -288,6 +298,8 @@
 		39A28CC12D92B04C00B079B1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				FileStorage/README.md,
+				Migrations/README.md,
 				"PersistenceController+PreviewExt.swift",
 			);
 			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
@@ -310,6 +322,7 @@
 		39B69A0A2D831503003369E8 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"ExcalidrawFile/ExcalidrawFile+ActiveFile.swift",
 				"ExcalidrawFile/ExcalidrawFile+Persistence.swift",
 				"ExcalidrawFile/ExcalidrawFile+Transferable.swift",
 			);

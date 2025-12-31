@@ -17,6 +17,7 @@ enum FileStorageError: LocalizedError {
     case readFailed(String)
     case writeFailed(String)
     case deleteFailed(String)
+    case fileTemporarilyUnavailable(String)
 
     var errorDescription: String? {
         switch self {
@@ -30,6 +31,8 @@ enum FileStorageError: LocalizedError {
                 return "Failed to write file: \(reason)"
             case .deleteFailed(let reason):
                 return "Failed to delete file: \(reason)"
+            case .fileTemporarilyUnavailable(let reason):
+                return reason
         }
     }
 }
@@ -41,11 +44,61 @@ struct FileChangeEvent {
         case modified
         case deleted
     }
-    
+
     let fileID: UUID
     let relativePath: String
     let changeType: ChangeType
     let timestamp: Date
+}
+
+// MARK: - Failure Tracker
+
+/// Tracks load failures to avoid excessive retry attempts
+private actor FailureTracker {
+    private var failures: [String: FailureRecord] = [:]
+    private let logger = Logger(label: "FailureTracker")
+
+    struct FailureRecord {
+        var count: Int
+        var lastAttempt: Date
+        var firstFailure: Date
+    }
+
+    /// Record a load failure for a file
+    /// - Returns: The total failure count for this file
+    func recordFailure(for fileID: String) -> Int {
+        if var record = failures[fileID] {
+            record.count += 1
+            record.lastAttempt = Date()
+            failures[fileID] = record
+        } else {
+            failures[fileID] = FailureRecord(
+                count: 1,
+                lastAttempt: Date(),
+                firstFailure: Date()
+            )
+        }
+
+        let record = failures[fileID]!
+        logger.warning("File load failed [\(record.count)x]: \(fileID)")
+        return record.count
+    }
+
+    /// Check if file is marked as missing (3+ failures)
+    /// User can always attempt to load, but UI can use this to show warning
+    func isMissing(fileID: String) -> Bool {
+        guard let record = failures[fileID] else {
+            return false
+        }
+        return record.count >= 3
+    }
+
+    /// Reset failure record for a file (called after successful load)
+    func reset(fileID: String) {
+        if failures.removeValue(forKey: fileID) != nil {
+            logger.info("Reset failure record for: \(fileID)")
+        }
+    }
 }
 
 /// Unified file storage manager (Coordinator Layer)
@@ -59,7 +112,12 @@ actor FileStorageManager {
     // Managed components
     private let localManager: LocalStorageManager
     private let iCloudManager: iCloudDriveFileManager
-    private let syncCoordinator: SyncCoordinator
+
+    // SyncCoordinator is initialized after migration completes
+    private var syncCoordinator: SyncCoordinator?
+
+    // Failure tracking for missing files
+    private let failureTracker = FailureTracker()
 
     // MARK: - Type Aliases for external use
 
@@ -71,12 +129,26 @@ actor FileStorageManager {
     private init() {
         self.localManager = LocalStorageManager()
         self.iCloudManager = iCloudDriveFileManager()
-        self.syncCoordinator = SyncCoordinator(
-            localManager: self.localManager,
-            iCloudManager: self.iCloudManager
-        )
+        // SyncCoordinator will be initialized after migration via enableSync()
     }
-    
+
+    // MARK: - Sync Control
+
+    /// Enable sync after migration completes
+    /// Should be called by StartupSyncModifier when migration phase becomes .closed
+    func enableSync() {
+        guard syncCoordinator == nil else {
+            logger.warning("Sync already enabled, ignoring duplicate enableSync() call")
+            return
+        }
+        logger.info("Initializing SyncCoordinator...")
+        syncCoordinator = SyncCoordinator(
+            localManager: localManager,
+            iCloudManager: iCloudManager
+        )
+        logger.info("FileStorage sync enabled")
+    }
+
     // MARK: - Core Storage Operations (Public API)
     
     /// Save content to storage (local + iCloud sync)
@@ -103,7 +175,7 @@ actor FileStorageManager {
         // Step 2: Queue for iCloud sync only if content was actually modified
         if saveResult.wasModified {
             Task {
-                await syncCoordinator.queueUpload(fileID: fileID, relativePath: saveResult.relativePath)
+                await syncCoordinator?.queueUpload(fileID: fileID, relativePath: saveResult.relativePath)
             }
         } else {
             logger.debug("Content unchanged, skipping iCloud sync queue for: \(fileID)")
@@ -119,8 +191,33 @@ actor FileStorageManager {
     ///   - fileID: The file identifier (String, typically UUID) for sync checking
     /// - Returns: The content data
     func loadContent(relativePath: String, fileID: String) async throws -> Data {
-        // Use SyncCoordinator to load with version checking
-        return try await syncCoordinator.loadContentWithSync(relativePath: relativePath, fileID: fileID)
+        do {
+            // Use SyncCoordinator to load with version checking (if sync enabled)
+            let data: Data
+            if let syncCoordinator = syncCoordinator {
+                data = try await syncCoordinator.loadContentWithSync(relativePath: relativePath, fileID: fileID)
+            } else {
+                // Migration not complete, load from local only
+                data = try await localManager.loadContent(relativePath: relativePath)
+            }
+
+            // Success - reset failure record and update status
+            await failureTracker.reset(fileID: fileID)
+            Task { @MainActor in
+                FileStatusService.shared.markAvailable(fileID: fileID)
+            }
+            return data
+
+        } catch {
+            // Record failure for file not found errors (passive tracking)
+            if case FileStorageError.fileNotFound = error {
+                let failureCount = await failureTracker.recordFailure(for: fileID)
+                Task { @MainActor in
+                    FileStatusService.shared.markMissing(fileID: fileID, failureCount: failureCount)
+                }
+            }
+            throw error
+        }
     }
 
     /// Load content from storage (legacy method without fileID)
@@ -142,7 +239,7 @@ actor FileStorageManager {
 
         // Step 2: Queue iCloud deletion (auto-processes after debounce)
         Task {
-            await syncCoordinator.queueCloudDelete(fileID: fileID, relativePath: relativePath)
+            await syncCoordinator?.queueCloudDelete(fileID: fileID, relativePath: relativePath)
         }
     }
     
@@ -188,9 +285,8 @@ actor FileStorageManager {
             timestamp: Date()
         )
         Task {
-            await syncCoordinator.enqueue(syncEvent)
+            await syncCoordinator?.enqueue(syncEvent)
         }
-        
 
         return relativePath
     }
@@ -219,14 +315,19 @@ actor FileStorageManager {
 
     /// Get number of pending sync operations
     func getPendingSyncCount() async -> Int {
+        guard let syncCoordinator = syncCoordinator else { return 0 }
         return await syncCoordinator.getQueueCount()
     }
 
     // MARK: - Sync Management (Public API)
 
     /// Trigger DiffScan to synchronize local and iCloud storage
-    /// Should be called on app startup
+    /// Should be called after migration completes
     func performStartupSync() async throws {
+        guard let syncCoordinator = syncCoordinator else {
+            logger.warning("performStartupSync called before sync enabled, ignoring")
+            return
+        }
         logger.info("Starting startup sync...")
         try await syncCoordinator.performDiffScan()
         logger.info("Startup sync completed")
@@ -234,6 +335,39 @@ actor FileStorageManager {
 
     /// Manually trigger sync queue processing
     func processPendingSync() async {
-        await syncCoordinator.processQueue()
+        await syncCoordinator?.processQueue()
+    }
+
+    // MARK: - File Status Query (Public API)
+
+    /// Check if a file is marked as missing (3+ load failures)
+    /// UI can use this to display warning icons
+    /// - Parameter fileID: The file identifier to check
+    /// - Returns: True if file has failed to load 3 or more times
+    func isFileMissing(fileID: String) async -> Bool {
+        return await failureTracker.isMissing(fileID: fileID)
+    }
+
+    /// Attempt to recover a missing file by re-syncing from iCloud
+    /// - Parameters:
+    ///   - fileID: The file identifier to recover
+    ///   - contentType: The content type (defaults to .file)
+    /// - Throws: FileStorageError if recovery fails
+    func attemptRecovery(fileID: String, contentType: ContentType = .file) async throws {
+        logger.info("Attempting to recover file: \(fileID)")
+
+        // Update UI status to loading
+        Task { @MainActor in
+            FileStatusService.shared.markLoading(fileID: fileID)
+        }
+
+        // Generate relativePath internally using contentType's utility method
+        let relativePath = contentType.generateRelativePath(fileID: fileID)
+
+        // Try to load content with iCloud sync check
+        // If successful, loadContent() will automatically reset failure tracking and mark as available
+        // If failed, it will throw an error and UI can show alert
+        _ = try await loadContent(relativePath: relativePath, fileID: fileID)
+        logger.info("Successfully recovered file: \(fileID)")
     }
 }

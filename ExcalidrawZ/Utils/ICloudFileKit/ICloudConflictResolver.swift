@@ -1,8 +1,8 @@
 //
-//  ConflictResolver.swift
+//  ICloudConflictResolver.swift
 //  ExcalidrawZ
 //
-//  Created by Claude on 12/25/25.
+//  Created by Claude on 12/30/25.
 //
 
 import Foundation
@@ -15,21 +15,21 @@ import Logging
 ///
 /// Usage:
 /// ```swift
-/// let resolver = ConflictResolver(fileURL: fileURL)
+/// let resolver = ICloudConflictResolver(fileURL: fileURL)
 /// let versions = try await resolver.getConflictVersions()
 /// try await resolver.resolveConflict(keepingVersion: selectedVersion)
 /// ```
-actor ConflictResolver {
+public actor ICloudConflictResolver {
     // MARK: - Properties
 
     private let fileURL: URL
-    private let logger = Logger(label: "ConflictResolver")
+    private let logger = Logger(label: "ICloudConflictResolver")
 
     // MARK: - Initialization
 
-    init(fileURL: URL) {
+    public init(fileURL: URL) {
         self.fileURL = fileURL
-        logger.info("ConflictResolver initialized for: \(fileURL.lastPathComponent)")
+        logger.info("ICloudConflictResolver initialized for: \(fileURL.lastPathComponent)")
     }
 
     // MARK: - Public API
@@ -37,7 +37,7 @@ actor ConflictResolver {
     /// Get all conflicting versions of the file
     /// - Returns: Array of file versions (current + conflicting versions)
     /// - Throws: ConflictError if unable to get versions
-    func getConflictVersions() throws -> [FileVersion] {
+    public func getConflictVersions() throws -> [FileVersion] {
         logger.info("Getting conflict versions for: \(fileURL.lastPathComponent)")
 
         // Get current version
@@ -83,7 +83,7 @@ actor ConflictResolver {
     /// Resolve conflict by keeping the specified version
     /// - Parameter versionToKeep: The version to keep
     /// - Throws: ConflictError if resolution fails
-    func resolveConflict(keepingVersion versionToKeep: FileVersion) throws {
+    public func resolveConflict(keepingVersion versionToKeep: FileVersion) throws {
         logger.info("Resolving conflict for: \(fileURL.lastPathComponent), keeping version from \(versionToKeep.deviceName)")
 
         // Get all versions
@@ -133,28 +133,23 @@ actor ConflictResolver {
             logger.error("Failed to remove other versions: \(error)")
             throw ConflictError.cleanupFailed(error)
         }
-
-        // Update file status
-        Task {
-            await FileSyncCoordinator.shared.updateFileStatus(for: fileURL, status: .downloaded)
-        }
     }
 }
 
 // MARK: - Models
 
 /// Represents a file version in a conflict
-struct FileVersion: Identifiable {
-    let id = UUID()
-    let url: URL
-    let modificationDate: Date
-    let deviceName: String
-    let isCurrent: Bool
+public struct FileVersion: Identifiable {
+    public let id = UUID()
+    public let url: URL
+    public let modificationDate: Date
+    public let deviceName: String
+    public let isCurrent: Bool
 
     /// Internal NSFileVersion reference
     fileprivate let nsFileVersion: NSFileVersion
 
-    var displayName: String {
+    public var displayName: String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
@@ -169,13 +164,13 @@ struct FileVersion: Identifiable {
 
 // MARK: - Errors
 
-enum ConflictError: LocalizedError {
+public enum ConflictError: LocalizedError {
     case noCurrentVersion
     case noConflicts
     case replaceFailed(Error)
     case cleanupFailed(Error)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .noCurrentVersion:
             return "No current version found"

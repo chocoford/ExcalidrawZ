@@ -76,16 +76,6 @@ struct ExcalidrawZApp: App {
                 }
             }
         }
-        
-        
-        // Perform startup sync between local and iCloud storage
-        Task {
-            do {
-                try await FileStorageManager.shared.performStartupSync()
-            } catch {
-                dump(error, name: "startup sync failed")
-            }
-        }
     }
     // Can not run agent in a sandboxed app.
     // let service = SMAppService.agent(plistName: "com.chocoford.excalidraw.ExcalidrawServer.agent.plist")
@@ -94,11 +84,11 @@ struct ExcalidrawZApp: App {
     
     @StateObject private var appPrefernece = AppPreference()
     @StateObject private var store = Store()
+    @StateObject private var fileStatusServices = FileStatusService.shared
 #if os(macOS) && !APP_STORE
     @StateObject private var updateChecker = UpdateChecker()
 #endif
-    @ObservedObject private var syncState: SyncStatusState = .shared
-    
+
     let server = ExcalidrawServer()
     let logger = Logger(label: "ExcalidrawApp")
     
@@ -107,7 +97,7 @@ struct ExcalidrawZApp: App {
             RootView()
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-                .environmentObject(syncState)
+                .environmentObject(fileStatusServices)
                 .environmentObject(appPrefernece)
                 .environmentObject(store)
                 .onAppear {

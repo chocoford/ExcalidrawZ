@@ -70,13 +70,15 @@ final class FileState: ObservableObject {
         var id: String {
             switch self {
                 case .file(let file):
-                    file.objectID.description
+                    // file.objectID.description
+                    file.id?.uuidString ?? UUID().uuidString
                 case .localFile(let url):
                     url.absoluteString
                 case .temporaryFile(let url):
                     url.absoluteString
                 case .collaborationFile(let collaborationFile):
-                    collaborationFile.objectID.description
+                    // collaborationFile.objectID.description
+                    collaborationFile.id?.uuidString ?? UUID().uuidString
             }
         }
         
@@ -170,17 +172,21 @@ final class FileState: ObservableObject {
     /// - Throws: FileAccessError if download fails
     @MainActor
     func setActiveFile(_ file: ActiveFile?) {
+        guard let file else {
+            self.currentActiveFile = nil
+            return
+        }
         // Check if file needs download
         switch file {
             case .localFile(let url):
                 // Check iCloud status
-                let statusBox = FileSyncCoordinator.shared.statusBox(for: url)
+                let statusBox = FileStatusService.shared.statusBox(for: file)
                 let status = statusBox.status
-                
+
                 logger.debug("Setting active file: \(url.lastPathComponent), status: \(status)")
-                
+
                 // Download if needed (notDownloaded, outdated, or currently downloading)
-                if status == .notDownloaded || status == .outdated || status.isInProgress {
+                if status.iCloudStatus == .notDownloaded || status.iCloudStatus == .outdated || status.iCloudStatus.isInProgress {
                     logger.info("Downloading file: \(url.lastPathComponent)")
                     Task {
                         do {
@@ -193,8 +199,6 @@ final class FileState: ObservableObject {
                 self.currentActiveFile = file
             case .file, .temporaryFile, .collaborationFile:
                 // Database files, temporary files, and collaboration files don't need download check
-                self.currentActiveFile = file
-            case .none:
                 self.currentActiveFile = file
         }
     }
@@ -1014,4 +1018,3 @@ final class FileState: ObservableObject {
         self.selectedTemporaryFiles = []
     }
 }
-

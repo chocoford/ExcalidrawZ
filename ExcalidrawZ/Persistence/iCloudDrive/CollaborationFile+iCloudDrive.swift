@@ -20,7 +20,7 @@ extension CollaborationFile {
             do {
                 return try await FileStorageManager.shared.loadContent(relativePath: filePath, fileID: fileID.uuidString)
             } catch {
-                Self.logger.warning("Failed to load content from storage, falling back to CoreData: \(error.localizedDescription)")
+                Self.logger.warning("\(error.localizedDescription), falling back to CoreData")
             }
         }
 

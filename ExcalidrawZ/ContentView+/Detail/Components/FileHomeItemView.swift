@@ -27,29 +27,6 @@ struct FileHomeItemPreferenceKey: PreferenceKey {
     }
 }
 
-#if canImport(UIKit)
-typealias PlatformImage = UIImage
-#elseif canImport(AppKit)
-typealias PlatformImage = NSImage
-#endif
-
-class FileItemPreviewCache: NSCache<NSString, PlatformImage> {
-    static let shared = FileItemPreviewCache()
-
-    static func cacheKey(for file: FileState.ActiveFile, colorScheme: ColorScheme) -> NSString {
-        file.id + (colorScheme == .light ? "_light" : "_dark") as NSString
-    }
-    
-    func getPreviewCache(forFile file: FileState.ActiveFile, colorScheme: ColorScheme) -> PlatformImage? {
-        self.object(forKey: Self.cacheKey(for: file, colorScheme: colorScheme))
-    }
-    
-    func removePreviewCache(forFile file: FileState.ActiveFile, colorScheme: ColorScheme) {
-        self.removeObject(forKey: Self.cacheKey(for: file, colorScheme: colorScheme))
-    }
-}
-
-
 struct FileHomeItemView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.managedObjectContext) var viewContext
@@ -63,9 +40,9 @@ struct FileHomeItemView: View {
     
     var file: FileState.ActiveFile
     var canMultiSelect: Bool
-    var fileID: String
-    var filename: String
-    var updatedAt: Date?
+    var fileID: String { file.id }
+    var filename: String { file.name ?? String(localizable: .generalUntitled) }
+    var updatedAt: Date? { file.updatedAt }
     var customLabel: AnyView? = nil
 
     init(
@@ -74,29 +51,6 @@ struct FileHomeItemView: View {
     ) {
         self.file = file
         self.canMultiSelect = canMultiSelect
-        switch file {
-            case .file(let file):
-                self.fileID = file.objectID.description
-                self.filename = file.name ?? String(localizable: .generalUntitled)
-                self.updatedAt = file.updatedAt
-            case .localFile(let url):
-                self.fileID = url.absoluteString
-                self.filename = url.deletingPathExtension().lastPathComponent.isEmpty
-                ? String(localizable: .generalUntitled)
-                : url.deletingPathExtension().lastPathComponent
-                self.updatedAt = file.updatedAt
-
-            case .temporaryFile(let url):
-                self.fileID = url.absoluteString
-                self.filename = url.deletingPathExtension().lastPathComponent.isEmpty
-                ? String(localizable: .generalUntitled)
-                : url.deletingPathExtension().lastPathComponent
-                self.updatedAt = (try? FileManager().attributesOfItem(atPath: url.filePath)[FileAttributeKey.modificationDate]) as? Date
-            case .collaborationFile(let collaborationFile):
-                self.fileID = collaborationFile.objectID.description
-                self.filename = collaborationFile.name ?? String(localizable: .generalUntitled)
-                self.updatedAt = file.updatedAt
-        }
     }
 
     init<Label: View>(
@@ -116,77 +70,92 @@ struct FileHomeItemView: View {
     var config = Config()
 
     var body: some View {
-        FileHomeItemContentView(
-            style: config.style,
-            file: file,
-            fileID: fileID,
-            filename: filename,
-            updatedAt: updatedAt,
-            customLabel: customLabel
-        )
+        FileStatusProvider(file: file) { status in
+            content()
+                .modifier(MissingFileHomeItemViewModifier(isActive: status?.contentAvailability == .missing))
+                .contentShape(Rectangle())
+                .modifier(FileHomeItemContextMenuModifier(file: file, isMissing: status?.contentAvailability == .missing))
+        }
+    }
+    
+    @ViewBuilder
+    private func content() -> some View {
+        MissingFileMenuProvider(files: [file]) { triggers in
+         
+            FileHomeItemContentView(
+                style: config.style,
+                file: file,
+                customLabel: customLabel
+            )
 #if os(iOS)
-        .opacity(editMode?.wrappedValue.isEditing == true ? 0.7 : 1.0)
+            .opacity(editMode?.wrappedValue.isEditing == true ? 0.7 : 1.0)
 #endif
-        .background {
-            if config.style == .card {
-                if #available(macOS 26.0, iOS 26.0, *) {
-                    RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
-                        .fill(
-                            colorScheme == .light
-                            ? AnyShapeStyle(HierarchicalShapeStyle.secondary)
-                            : AnyShapeStyle(Color.clear)
-                        )
-                        .glassEffect(.clear, in: .rect(cornerRadius: 12))
-                        .shadow(
-                            color: colorScheme == .light
-                            ? Color.gray.opacity(0.33)
-                            : Color.black.opacity(0.33),
-                            radius: isHovered
-                            ? colorScheme == .light ? 2 : 6
-                            : 0
-                        )
-                } else {
-                    RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
-                        .fill(.background)
-                        .shadow(
-                            color: colorScheme == .light
-                            ? Color.gray.opacity(0.33)
-                            : Color.black.opacity(0.33),
-                            radius: isHovered
-                            ? colorScheme == .light ? 2 : 6
-                            : 0
-                        )
+            .background {
+                if config.style == .card {
+                    if #available(macOS 26.0, iOS 26.0, *) {
+                        RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+                            .fill(
+                                colorScheme == .light
+                                ? AnyShapeStyle(HierarchicalShapeStyle.secondary)
+                                : AnyShapeStyle(Color.clear)
+                            )
+                            .glassEffect(.clear, in: .rect(cornerRadius: 12))
+                            .shadow(
+                                color: colorScheme == .light
+                                ? Color.gray.opacity(0.33)
+                                : Color.black.opacity(0.33),
+                                radius: isHovered
+                                ? colorScheme == .light ? 2 : 6
+                                : 0
+                            )
+                    } else {
+                        RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+                            .fill(.background)
+                            .shadow(
+                                color: colorScheme == .light
+                                ? Color.gray.opacity(0.33)
+                                : Color.black.opacity(0.33),
+                                radius: isHovered
+                                ? colorScheme == .light ? 2 : 6
+                                : 0
+                            )
+                    }
                 }
             }
-        }
-//        .overlay {
-//            Color.clear
-        .contentShape(Rectangle())
+            .contentShape(Rectangle())
 #if os(macOS)
-        .simultaneousGesture(TapGesture(count: 2).onEnded {
-            openFile()
-        })
+            .simultaneousGesture(TapGesture(count: 2).onEnded {
+                if FileStatusService.shared.statusBox(for: file).status.contentAvailability == .missing {
+                    triggers.onToggleTryToRecover()
+                } else {
+                    openFile()
+                }
+            })
 #elseif os(iOS)
-        .simultaneousGesture(TapGesture().onEnded {
-            openFile()
-        }, isEnabled: editMode?.wrappedValue.isEditing != true)
+            .simultaneousGesture(TapGesture().onEnded {
+                if FileStatusService.shared.statusBox(for: file).status.contentAvailability == .missing {
+                    triggers.onToggleTryToRecover()
+                } else {
+                    openFile()
+                }
+            }, isEnabled: editMode?.wrappedValue.isEditing != true)
 #endif
-        .modifier(
-            FileHomeItemSelectModifier(
-                file: file,
-                sortField: fileState.sortField,
-                canMultiSelect: canMultiSelect,
-                style: config.style
+            .modifier(
+                FileHomeItemSelectModifier(
+                    file: file,
+                    sortField: fileState.sortField,
+                    canMultiSelect: canMultiSelect,
+                    style: config.style
+                )
             )
-        )
-        .modifier(FileHomeItemContextMenuModifier(file: file))
-        .onHover {
-            isHovered = $0
+            .onHover {
+                isHovered = $0
+            }
+            .modifier(FileHomeItemDragModifier(file: file))
+            .opacity(fileHomeItemTransitionState.shouldHideItem == fileID ? 0 : 1)
+            .animation(.smooth(duration: 0.2), value: isHovered)
+            
         }
-//        }
-        .modifier(FileHomeItemDragModifier(file: file))
-        .opacity(fileHomeItemTransitionState.shouldHideItem == fileID ? 0 : 1)
-        .animation(.smooth(duration: 0.2), value: isHovered)
     }
 
 
@@ -274,38 +243,28 @@ private struct FileHomeItemContentView: View {
 
     var style: FileHomeItemStyle
     var file: FileState.ActiveFile
-    var fileID: String
-    var filename: String
-    var updatedAt: Date?
     var customLabel: AnyView?
+    
+    var fileID: String { file.id }
+    var filename: String { file.name ?? String(localizable: .generalUntitled) }
+    var updatedAt: Date? { file.updatedAt }
     
     init(
         style: FileHomeItemStyle,
         file: FileState.ActiveFile,
-        fileID: String,
-        filename: String,
-        updatedAt: Date?,
         customLabel: AnyView?
     ) {
         self.style = style
         self.file = file
-        self.fileID = fileID
-        self.filename = filename
-        self.updatedAt = updatedAt
         self.customLabel = customLabel
         self._localUpdatedAt = State(initialValue: updatedAt)
     }
     
-    @State private var coverImage: Image? = nil
-    @State private var error: Error?
     @State private var width: CGFloat?
     @State private var localUpdatedAt: Date?
 
-    let cache = FileItemPreviewCache.shared
     
-    var cacheKey: String {
-        colorScheme == .light ? fileID + "_light" : fileID + "_dark"
-    }
+
     
     @available(macOS 13.0, *)
     var layout: AnyLayout {
@@ -339,51 +298,6 @@ private struct FileHomeItemContentView: View {
             }
         }
         .readWidth($width)
-        .onReceive(
-            NotificationCenter.default.publisher(for: .filePreviewShouldRefresh)
-        ) { notification in
-            guard let fileID = notification.object as? String,
-                  self.file.id == fileID else { return }
-            
-            print("Refreshing preview for file: \(fileID)")
-            
-            self.getElementsImage()
-        }
-        .onChange(of: file) { newValue in
-            self.getElementsImage()
-        }
-        .watchImmediately(of: colorScheme) { _ in
-            guard scenePhase == .active else { return }
-            if let image = cache.getPreviewCache(forFile: file, colorScheme: colorScheme) {
-                Task.detached {
-                    let image = Image(platformImage: image)
-                    await MainActor.run {
-                        self.coverImage = image
-                    }
-                }
-            } else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    self.getElementsImage()
-                }
-            }
-        }
-        .onChange(of: scenePhase) { newValue in
-            guard fileState.currentActiveFile == nil else { return }
-            if newValue == .active {
-                if let image = cache.getPreviewCache(forFile: file, colorScheme: colorScheme) {
-                    Task.detached {
-                        let image = Image(platformImage: image)
-                        await MainActor.run {
-                            self.coverImage = image
-                        }
-                    }
-                } else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        self.getElementsImage()
-                    }
-                }
-            }
-        }
     }
     
     @MainActor @ViewBuilder
@@ -397,46 +311,21 @@ private struct FileHomeItemContentView: View {
                 ? 180
                 : width! * (style == .file ? 0.75 : 0.46)
             }
-            
-            if let coverImage {
-                Color.clear
-                    .overlay {
-                        coverImage
-                            .resizable()
-                            .scaledToFill()
-                            .allowsHitTesting(false)
-                    }
-                    .apply(coverImageClip)
-                    .frame(height: height)
-            } else if error != nil {
-                Color.clear
-                    .overlay {
-                        Image(systemSymbol: .exclamationmarkTriangle)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(height: height)
-            } else {
-                Color.clear
-                    .overlay {
-                        ProgressView()
-                            .controlSize(.small)
-                            // .padding(.bottom, 40)
-                    }
-                    .frame(height: height)
-            }
+          
+            Color.clear
+                .overlay {
+                    ExcalidrawFileCover(file: file)
+                        .scaledToFill()
+                        .allowsHitTesting(false)
+                }
+                .frame(height: height)
+                .apply(coverImageClip)
         }
         .background {
             Color.clear
                 .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
                     [fileID+"SOURCE": value]
                 }
-        }
-        .observeFileStatus(for: file) { status in
-#if os(macOS)
-            if status == .outdated {
-                self.getElementsImage()
-            }
-#endif
         }
         .overlay(alignment: .bottomTrailing) {
             // Download progress indicator
@@ -552,78 +441,45 @@ private struct FileHomeItemContentView: View {
                 .clipShape(RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius))
         }
     }
-    
-    private func getElementsImage() {
-        
-        
-        Task {
-            do {
-                // Load ExcalidrawFile asynchronously
-                let excalidrawFile: ExcalidrawFile
-
-                switch file {
-                    case .file(let file):
-                        let content = try await file.loadContent()
-                        excalidrawFile = try ExcalidrawFile(data: content, id: file.id)
-                    case .localFile(let url):
-                        try await FileAccessor.shared.downloadFile(url)
-                        excalidrawFile = try ExcalidrawFile(contentsOf: url)
-                    case .temporaryFile(let url):
-                        excalidrawFile = try ExcalidrawFile(contentsOf: url)
-                    case .collaborationFile(let collaborationFile):
-                        let content = try await collaborationFile.loadContent()
-                        excalidrawFile = try ExcalidrawFile(data: content, id: collaborationFile.id)
-                }
-
-                // Wait for coordinator to be ready
-                while fileState.excalidrawWebCoordinator?.isLoading == true {
-                    try? await Task.sleep(nanoseconds: UInt64(1e+9 * 1))
-                }
-
-                // Generate preview image
-                if let image = try? await fileState.excalidrawWebCoordinator?.exportElementsToPNG(
-                    elements: excalidrawFile.elements,
-                    files: excalidrawFile.files.isEmpty ? nil : excalidrawFile.files,
-                    colorScheme: colorScheme
-                ) {
-                    Task.detached {
-                        await MainActor.run {
-                            cache.setObject(image, forKey: cacheKey as NSString)
-                        }
-                        let image = Image(platformImage: image)
-                        await MainActor.run {
-                            self.coverImage = image
-                            self.error = nil
-                        }
-                    }
-                }
-            } catch {
-                print("Failed to load excalidraw file for preview:", error)
-                self.error = error
-            }
-        }
-    }
 }
 
 private struct FileHomeItemContextMenuModifier: ViewModifier {
     var file: FileState.ActiveFile
+    var isMissing: Bool
     
     func body(content: Content) -> some View {
-        switch file {
-            case .file(let file):
-                content
-                    .modifier(FileContextMenuModifier(files: [file]))
-            case .localFile(let url):
-                content
-                    .modifier(LocalFileRowContextMenuModifier(file: url))
-            case .temporaryFile(let url):
-                content
-                    .modifier(TemporaryFileContextMenuModifier(file: url))
-            case .collaborationFile(let collaborationFile):
-                content
-                    .modifier(CollaborationFileContextMenuModifier(file: collaborationFile))
+        if isMissing {
+            switch file {
+                case .file:
+                    content
+                        .modifier(MissingFileContextMenuModifier(files: [file]))
+                case .localFile:
+                    // Localfile never missing
+                    content
+                case .temporaryFile:
+                    // TemporaryFile never missing
+                    content
+                case .collaborationFile(let room):
+                    // Missing CollaborationFile no matter
+                    content
+                        .modifier(CollaborationFileContextMenuModifier(file: room))
+            }
+        } else {
+            switch file {
+                case .file(let file):
+                    content
+                        .modifier(FileContextMenuModifier(files: [file]))
+                case .localFile(let url):
+                    content
+                        .modifier(LocalFileRowContextMenuModifier(file: url))
+                case .temporaryFile(let url):
+                    content
+                        .modifier(TemporaryFileContextMenuModifier(file: url))
+                case .collaborationFile(let collaborationFile):
+                    content
+                        .modifier(CollaborationFileContextMenuModifier(file: collaborationFile))
+            }
         }
-
     }
 }
 
@@ -649,6 +505,39 @@ private struct FileHomeItemDragModifier: ViewModifier {
     }
 }
 
+private struct MissingFileHomeItemViewModifier: ViewModifier {
+    // 状态控制
+    var isActive: Bool
+    // 内部动画状态
+    @State private var isBreathing = false
+    @State private var isVisible = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(isActive ? 0.5 + (isBreathing ? 0.25 : 0.0) : 1)
+//            .onAppear {
+//                isVisible = true
+//                // 只在视图激活时启动动画
+//                if isActive {
+//                    startBreathingAnimation()
+//                }
+//            }
+//            .onDisappear {
+//                isVisible = false
+//            }
+//            .onChange(of: isActive) { newValue in
+//                if newValue && isVisible {
+//                    startBreathingAnimation()
+//                }
+//            }
+    }
+
+    private func startBreathingAnimation() {
+        withAnimation(.easeInOut(duration: Double.random(in: 2.0...4.5)).repeatForever(autoreverses: true)) {
+            isBreathing.toggle()
+        }
+    }
+}
 
 private struct DatabaseFileHomeDropContianer<F: ExcalidrawFileRepresentable>: View {
     var file: F
@@ -709,20 +598,20 @@ struct FileICloudStatusIndicator: View {
         self.file = file
     }
     
-    @State private var iCloudFileStatus: FileStatus? = nil
-    
+    @State private var fileStatus: FileStatus? = nil
+
     var body: some View {
         ZStack {
             if #available(macOS 26.0, iOS 26.0, *) {
-                switch iCloudFileStatus {
+                switch fileStatus?.iCloudStatus {
                     case .notDownloaded:
                         Image(systemSymbol: .icloudAndArrowDown)
-                            .symbolEffect(.drawOn, options: .speed(2), isActive: iCloudFileStatus == .notDownloaded)
+                            .symbolEffect(.drawOn, options: .speed(2), isActive: fileStatus?.iCloudStatus == .notDownloaded)
                     case .downloading(let progress):
                         CircularProgressIndicator(progress: progress ?? 0)
                     case .downloaded:
                         downloadedFallbackView
-                            .symbolEffect(.drawOn, options: .speed(2), isActive: iCloudFileStatus == .downloaded)
+                            .symbolEffect(.drawOn, options: .speed(2), isActive: fileStatus?.iCloudStatus == .downloaded)
                     case .outdated:
                         Image(systemName: "icloud.dashed")
                     case .loading:
@@ -731,14 +620,14 @@ struct FileICloudStatusIndicator: View {
                         EmptyView()
                     case .uploading:
                         Image(systemSymbol: .icloudAndArrowUp)
-                            .symbolEffect(.drawOn, options: .speed(2), isActive: iCloudFileStatus == .uploading)
+                            .symbolEffect(.drawOn, options: .speed(2), isActive: fileStatus?.iCloudStatus == .uploading)
                     case .conflict:
                         Image(systemSymbol: .xmarkIcloud)
-                            .symbolEffect(.drawOn, options: .speed(2), isActive: iCloudFileStatus == .conflict)
+                            .symbolEffect(.drawOn, options: .speed(2), isActive: fileStatus?.iCloudStatus == .conflict)
                     case .error(_):
                         Image(systemSymbol: .exclamationmarkTriangle)
                             .symbolEffect(.drawOn, options: .speed(2), isActive: {
-                                if case .error = iCloudFileStatus {
+                                if case .error = fileStatus?.iCloudStatus {
                                     return true
                                 }
                                 return false
@@ -747,7 +636,7 @@ struct FileICloudStatusIndicator: View {
                         EmptyView()
                 }
             } else {
-                switch iCloudFileStatus {
+                switch fileStatus?.iCloudStatus {
                     case .notDownloaded:
                         Image(systemSymbol: .icloudAndArrowDown)
                     case .downloading(let progress):
@@ -771,9 +660,9 @@ struct FileICloudStatusIndicator: View {
                 }
             }
         }
-        .bindFileStatus(for: file, status: $iCloudFileStatus)
+        .bindFileStatus(for: file, status: $fileStatus)
         .symbolRenderingMode(.multicolor)
-        .animation(.smooth, value: iCloudFileStatus)
+        .animation(.smooth, value: fileStatus?.iCloudStatus)
     }
 }
 
@@ -782,12 +671,12 @@ struct FileICloudStatusIndicator: View {
 struct FileICloudSyncStatusIndicator: View {
     var file: FileState.ActiveFile
     
-    @State private var iCloudFileStatus: FileStatus? = nil
+    @State private var fileStatus: FileStatus? = nil
     var body: some View {
         ZStack {
             if #available(macOS 26.0, iOS 26.0, *) {
                 ZStack {
-                    if iCloudFileStatus == .syncing {
+                    if fileStatus?.iCloudStatus == .syncing {
                         Image(systemSymbol: .arrowTrianglehead2ClockwiseRotate90Icloud)
                             .drawOnAppear(options: .speed(2))
                     } else {
@@ -797,21 +686,21 @@ struct FileICloudSyncStatusIndicator: View {
                     }
                 }
             } else {
-                if iCloudFileStatus == .syncing {
+                if fileStatus?.iCloudStatus == .syncing {
                     if #available(macOS 15.0, iOS 18.0, *) {
                         Image(systemSymbol: .arrowTrianglehead2ClockwiseRotate90Icloud)
                     } else {
                         Image(systemSymbol: .arrowTriangle2Circlepath)
                     }
-                } else if case .downloaded = iCloudFileStatus {
+                } else if case .downloaded = fileStatus?.iCloudStatus {
                     Image(systemSymbol: .checkmarkIcloud)
                         .foregroundStyle(.green)
                 }
             }
         }
-        .bindFileStatus(for: file, status: $iCloudFileStatus)
+        .bindFileStatus(for: file, status: $fileStatus)
         .symbolRenderingMode(.multicolor)
-        .animation(.smooth, value: iCloudFileStatus)
+        .animation(.smooth, value: fileStatus?.iCloudStatus)
     }
 }
 #endif

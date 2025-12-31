@@ -59,6 +59,7 @@ actor iCloudDriveFileManager {
     static let shared = iCloudDriveFileManager()
 
     private let logger = Logger(label: "iCloudDriveFileManager")
+    private let fileCoordinator = FileCoordinator.shared
 
     // MARK: - iCloud Status Monitoring
 
@@ -156,7 +157,7 @@ actor iCloudDriveFileManager {
         let filename = "\(id.uuidString).\(type.fileExtension)"
         let fileURL = directory.appendingPathComponent(filename)
 
-        try content.write(to: fileURL, options: .atomic)
+        try await fileCoordinator.coordinatedWrite(url: fileURL, data: content)
 
         logger.info("Saved \(type) content to iCloud Drive: \(filename)")
 
@@ -170,15 +171,9 @@ actor iCloudDriveFileManager {
         guard let containerURL = iCloudContainerURL else {
             throw iCloudDriveError.containerNotAvailable
         }
-        
+
         let fileURL = containerURL.appendingPathComponent(relativePath)
-        
-        // Check if file needs to be downloaded from iCloud
-        if !FileManager.default.fileExists(atPath: fileURL.path) {
-            try await downloadFileIfNeeded(url: fileURL)
-        }
-        
-        return try Data(contentsOf: fileURL)
+        return try await fileCoordinator.coordinatedRead(url: fileURL)
     }
     
     /// Delete content from iCloud Drive
@@ -187,11 +182,11 @@ actor iCloudDriveFileManager {
         guard let containerURL = iCloudContainerURL else {
             throw iCloudDriveError.containerNotAvailable
         }
-        
+
         let fileURL = containerURL.appendingPathComponent(relativePath)
-        
+
         if FileManager.default.fileExists(atPath: fileURL.path) {
-            try FileManager.default.removeItem(at: fileURL)
+            try await fileCoordinator.deleteFile(url: fileURL)
             logger.info("Deleted content from iCloud Drive: \(relativePath)")
         }
     }
@@ -214,14 +209,14 @@ actor iCloudDriveFileManager {
         }
         
         let directory = try ensureDirectoryExists(for: .mediaItems)
-        let fileExtension = fileExtension(for: mimeType)
+        let fileExtension = FileStorageContentType.fileExtension(for: mimeType)
         let filename = "\(itemID).\(fileExtension)"
         let fileURL = directory.appendingPathComponent(filename)
-        
-        try data.write(to: fileURL, options: .atomic)
-        
+
+        try await fileCoordinator.coordinatedWrite(url: fileURL, data: data)
+
         logger.info("Saved media item to iCloud Drive: \(filename)")
-        
+
         return "\(Directory.mediaItems.path)/\(filename)"
     }
     
@@ -232,21 +227,15 @@ actor iCloudDriveFileManager {
         guard let containerURL = iCloudContainerURL else {
             throw iCloudDriveError.containerNotAvailable
         }
-        
+
         let fileURL = containerURL.appendingPathComponent(relativePath)
-        
-        // Check if file needs to be downloaded from iCloud
-        if !FileManager.default.fileExists(atPath: fileURL.path) {
-            try await downloadFileIfNeeded(url: fileURL)
-        }
-        
-        let data = try Data(contentsOf: fileURL)
+        let data = try await fileCoordinator.coordinatedRead(url: fileURL)
         let base64 = data.base64EncodedString()
-        
+
         // Determine mime type from file extension
         let pathExtension = fileURL.pathExtension
-        let mimeType = mimeType(for: pathExtension)
-        
+        let mimeType = FileStorageContentType.mimeType(for: pathExtension)
+
         return "data:\(mimeType);base64,\(base64)"
     }
     
@@ -256,11 +245,11 @@ actor iCloudDriveFileManager {
         guard let containerURL = iCloudContainerURL else {
             throw iCloudDriveError.containerNotAvailable
         }
-        
+
         let fileURL = containerURL.appendingPathComponent(relativePath)
-        
+
         if FileManager.default.fileExists(atPath: fileURL.path) {
-            try FileManager.default.removeItem(at: fileURL)
+            try await fileCoordinator.deleteFile(url: fileURL)
             logger.info("Deleted media item from iCloud Drive: \(relativePath)")
         }
     }
@@ -276,11 +265,11 @@ actor iCloudDriveFileManager {
         let directory = try ensureDirectoryExists(for: .checkpoints)
         let filename = "\(checkpointID.uuidString).excalidraw"
         let fileURL = directory.appendingPathComponent(filename)
-        
-        try content.write(to: fileURL, options: .atomic)
-        
+
+        try await fileCoordinator.coordinatedWrite(url: fileURL, data: content)
+
         logger.info("Saved checkpoint content to iCloud Drive: \(filename)")
-        
+
         return "\(Directory.checkpoints.path)/\(filename)"
     }
     
@@ -291,15 +280,9 @@ actor iCloudDriveFileManager {
         guard let containerURL = iCloudContainerURL else {
             throw iCloudDriveError.containerNotAvailable
         }
-        
+
         let fileURL = containerURL.appendingPathComponent(relativePath)
-        
-        // Check if file needs to be downloaded from iCloud
-        if !FileManager.default.fileExists(atPath: fileURL.path) {
-            try await downloadFileIfNeeded(url: fileURL)
-        }
-        
-        return try Data(contentsOf: fileURL)
+        return try await fileCoordinator.coordinatedRead(url: fileURL)
     }
     
     /// Delete FileCheckpoint from iCloud Drive
@@ -308,39 +291,17 @@ actor iCloudDriveFileManager {
         guard let containerURL = iCloudContainerURL else {
             throw iCloudDriveError.containerNotAvailable
         }
-        
+
         let fileURL = containerURL.appendingPathComponent(relativePath)
-        
+
         if FileManager.default.fileExists(atPath: fileURL.path) {
-            try FileManager.default.removeItem(at: fileURL)
+            try await fileCoordinator.deleteFile(url: fileURL)
             logger.info("Deleted checkpoint from iCloud Drive: \(relativePath)")
         }
     }
     
     // MARK: - Helper Methods
-    
-    private func downloadFileIfNeeded(url: URL) async throws {
-        // Check if file needs to be downloaded from iCloud
-        let resourceValues = try url.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey])
-        
-        if let downloadingStatus = resourceValues.ubiquitousItemDownloadingStatus {
-            // If file is not downloaded, start downloading
-            if downloadingStatus != .current {
-                try FileManager.default.startDownloadingUbiquitousItem(at: url)
-                
-                // Wait for download with timeout
-                let timeout = Date().addingTimeInterval(30) // 30 seconds timeout
-                
-                while !FileManager.default.fileExists(atPath: url.path) {
-                    if Date() > timeout {
-                        throw iCloudDriveError.downloadTimeout
-                    }
-                    try await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
-                }
-            }
-        }
-    }
-    
+
     private func parseDataURL(_ dataURL: String) -> (mimeType: String, base64Data: String)? {
         // Format: data:image/png;base64,iVBORw0KGgo...
         guard dataURL.hasPrefix("data:") else { return nil }
@@ -355,30 +316,6 @@ actor iCloudDriveFileManager {
         let mimeType = header.split(separator: ";").first.map(String.init) ?? "application/octet-stream"
         
         return (mimeType, base64)
-    }
-    
-    private func fileExtension(for mimeType: String) -> String {
-        switch mimeType {
-            case "image/png": return "png"
-            case "image/jpeg", "image/jpg": return "jpg"
-            case "image/gif": return "gif"
-            case "image/svg+xml": return "svg"
-            case "application/pdf": return "pdf"
-            case "image/webp": return "webp"
-            default: return "dat"
-        }
-    }
-    
-    private func mimeType(for fileExtension: String) -> String {
-        switch fileExtension.lowercased() {
-            case "png": return "image/png"
-            case "jpg", "jpeg": return "image/jpeg"
-            case "gif": return "image/gif"
-            case "svg": return "image/svg+xml"
-            case "pdf": return "application/pdf"
-            case "webp": return "image/webp"
-            default: return "application/octet-stream"
-        }
     }
 
     // MARK: - iCloud Status Detection Module
@@ -477,7 +414,7 @@ actor iCloudDriveFileManager {
         let relativePath = "\(dir.path)/\(filename)"
 
         // Upload to iCloud (overwrite if exists)
-        try localData.write(to: iCloudURL, options: .atomic)
+        try await fileCoordinator.coordinatedWrite(url: iCloudURL, data: localData)
 
         // Set iCloud timestamp to match local
         let date = localUpdatedAt ?? Date()
@@ -513,7 +450,7 @@ actor iCloudDriveFileManager {
         }
 
         let directory = try ensureDirectoryExists(for: .mediaItems)
-        let fileExtension = fileExtension(for: mimeType)
+        let fileExtension = FileStorageContentType.fileExtension(for: mimeType)
         let filename = "\(mediaID).\(fileExtension)"
         let iCloudURL = directory.appendingPathComponent(filename)
         let relativePath = "\(Directory.mediaItems.path)/\(filename)"
@@ -525,7 +462,7 @@ actor iCloudDriveFileManager {
         }
 
         // Upload to iCloud
-        try data.write(to: iCloudURL, options: .atomic)
+        try await fileCoordinator.coordinatedWrite(url: iCloudURL, data: data)
         // Always set iCloud timestamp (use local date or current time)
         let date = localUpdatedAt ?? Date()
         try? FileManager.default.setAttributes([.modificationDate: date], ofItemAtPath: iCloudURL.path)

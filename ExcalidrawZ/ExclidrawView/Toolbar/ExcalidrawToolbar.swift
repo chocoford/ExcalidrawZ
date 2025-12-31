@@ -344,11 +344,11 @@ struct ExcalidrawToolbar: View {
 #if os(iOS)
                         FileStatusProvider(file: fileState.currentActiveFile) { status in
                             Text(
-                                status == .syncing
+                                status?.iCloudStatus == .syncing
                                 ? .localizable(.iCloudStatusSyncing)
                                 : .localizable(.toolbarViewMode)
                             )
-                            .animation(.smooth, value: status == .syncing)
+                            .animation(.smooth, value: status?.iCloudStatus == .syncing)
                         }
 #endif
                     }

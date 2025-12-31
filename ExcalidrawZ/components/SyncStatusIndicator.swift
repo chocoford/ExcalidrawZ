@@ -9,16 +9,16 @@ import SwiftUI
 
 /// Sync status indicator view that displays the current file's iCloud sync status
 struct SyncStatusIndicator: View {
-    @EnvironmentObject private var syncStatus: SyncStatusState
     @EnvironmentObject private var fileState: FileState
-    
+    @State private var fileStatus: FileStatus?
+
     var body: some View {
-        if let fileID = getCurrentFileID() {
-            let status = syncStatus.getStatus(for: fileID)
-            
+        if let activeFile = fileState.currentActiveFile,
+           let syncStatus = fileStatus?.syncStatus,
+           syncStatus != .synced {
             HStack(spacing: 4) {
-                statusIcon(for: status)
-                Text(status.description)
+                statusIcon(for: syncStatus)
+                Text(syncStatus.description)
                     .font(.caption)
             }
             .padding(.horizontal, 10)
@@ -27,21 +27,11 @@ struct SyncStatusIndicator: View {
                 Capsule().fill(.regularMaterial)
             }
             .padding()
+            .bindFileStatus(for: activeFile, status: $fileStatus)
         }
     }
-    
+
     // MARK: - Helper Methods
-    
-    private func getCurrentFileID() -> String? {
-        switch fileState.currentActiveFile {
-            case .file(let file):
-                return file.id?.uuidString
-            case .collaborationFile(let collabFile):
-                return collabFile.id?.uuidString
-            default:
-                return nil
-        }
-    }
     
     @ViewBuilder
     private func statusIcon(for status: FileSyncStatus) -> some View {

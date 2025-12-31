@@ -24,7 +24,7 @@ extension MediaItem {
                 // Now load and convert to data URL
                 return try await FileStorageManager.shared.loadMediaItem(relativePath: filePath)
             } catch {
-                Self.logger.warning("Failed to load media from storage, falling back to CoreData: \(error.localizedDescription)")
+                Self.logger.warning("\(error.localizedDescription), falling back to CoreData.")
             }
         }
 

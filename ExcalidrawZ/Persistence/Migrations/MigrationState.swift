@@ -7,16 +7,27 @@
 
 import SwiftUI
 import SwiftyAlert
+import Combine
+import CoreData
+import Logging
+import Network
 
 enum MigrationPhase: Equatable {
     case idle
+    case waitingForSync
     case checking
     case migrating(name: String)
     case progress(description: String, value: Double)
     case completed
     case error(String)
-    
+
     case closed
+}
+
+struct MigrationFailedItem: Identifiable, Equatable, Codable {
+    let id: String
+    let name: String
+    let error: String
 }
 
 enum MigrationItemStatus: Equatable {
@@ -25,6 +36,7 @@ enum MigrationItemStatus: Equatable {
     case skipped
     case migrating(progress: Double, description: String)
     case completed
+    case completedWithErrors([MigrationFailedItem])
     case failed(error: String, progress: Double)
 }
 
@@ -37,6 +49,7 @@ struct MigrationItem: Identifiable, Equatable {
 
 @MainActor
 final class MigrationState: ObservableObject {
+
     @Published var phase: MigrationPhase = .idle
     @Published var isMigrationInProgress = false
     @Published var migrations: [MigrationItem] = []
@@ -69,24 +82,31 @@ final class MigrationState: ObservableObject {
 }
 
 struct CoreDataMigrationModifier: ViewModifier {
+    @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
+
     @Environment(\.alertToast) private var alertToast
 
     @StateObject private var migrationState = MigrationState()
     @State private var showMigrationSheet = false
+    @State private var continuousCloudKitMonitor: Task<Void, Never>?
 
     let migrationManager = MigrationManager.shared
+    private let logger = Logger(label: "CoreDataMigrationModifier")
 
     #if DEBUG
-    private let isDev = true
+    private let isDev = false
     #else
     private let isDev = false
     #endif
+
+    private let syncTimeout: TimeInterval = 10 // 10 seconds timeout
 
     func body(content: Content) -> some View {
         content
             .environmentObject(migrationState)
             .sheet(isPresented: $showMigrationSheet) {
                 migrationState.phase = .closed
+                continuousCloudKitMonitor?.cancel()
             } content: {
                 MigrationProgressSheet(
                     migrationState: migrationState,
@@ -96,28 +116,170 @@ struct CoreDataMigrationModifier: ViewModifier {
             }
             .onAppear {
                 Task {
-                    await checkMigrations()
+                    await startMigrationCheck()
                 }
             }
     }
 
-    private func checkMigrations() async {
-        do {
-            let needsMigration = try await migrationManager.checkMigrationsNeeded(state: migrationState)
+    private func startMigrationCheck() async {
+        logger.info("Migration check started")
 
-            // Dev: always show sheet
-            // Non-Dev: only show if migration is needed
-            if isDev || needsMigration {
-                if isDev {
+        // Step 1: Fast check if migration is needed (non-blocking)
+        let needsMigration: Bool
+        do {
+            needsMigration = try await migrationManager.checkMigrationsNeeded(state: migrationState)
+            logger.info("Migration needed: \(needsMigration)")
+        } catch {
+            logger.error("Migration check failed: \(error)")
+            alertToast(error)
+            migrationState.phase = .closed
+            return
+        }
+
+        // Dev mode: always show sheet for testing
+        // Production: only show if migration is actually needed
+        if !isDev && !needsMigration {
+            // No migration needed - fast path for users without pending migrations
+            logger.info("No migration needed, phase → .closed")
+            migrationState.phase = .closed
+            return
+        }
+        
+        showMigrationSheet = true
+
+        // Step 2: Start CloudKit monitoring (initial sync + continuous monitoring)
+        if !isICloudDisabled {
+            logger.info("Phase → .waitingForSync")
+            migrationState.phase = .waitingForSync
+            startContinuousCloudKitMonitoring()
+        } else {
+            // No iCloud, go directly to idle
+            logger.info("Phase → .idle (iCloud disabled)")
+            migrationState.phase = .idle
+        }
+    }
+
+    /// Check current network status
+    /// - Returns: true if network is available, false otherwise
+    private func checkNetworkStatus() async -> Bool {
+        let networkMonitor = NWPathMonitor()
+        let queue = DispatchQueue(label: "NetworkMonitor")
+        networkMonitor.start(queue: queue)
+
+        // Give monitor a moment to detect network status
+        try? await Task.sleep(nanoseconds: UInt64(0.5 * 1e+9))
+
+        let hasNetwork = networkMonitor.currentPath.status == .satisfied
+        networkMonitor.cancel()
+
+        return hasNetwork
+    }
+
+    /// Start CloudKit monitoring: handles initial sync wait + continuous monitoring
+    /// This ensures we catch data synced from other devices that might need migration
+    private func startContinuousCloudKitMonitoring() {
+        logger.info("Starting CloudKit monitoring (initial sync + continuous)")
+
+        continuousCloudKitMonitor = Task {
+            // First, check network status
+            let hasNetwork = await checkNetworkStatus()
+
+            if !hasNetwork {
+                logger.warning("⚠️ No network detected")
+                await MainActor.run {
+                    migrationState.phase = .error("No network connection detected. Migration will proceed with local data only.")
+                }
+                // Wait a bit to show the warning
+                try? await Task.sleep(nanoseconds: UInt64(2 * 1e+9))
+                await MainActor.run {
                     migrationState.phase = .idle
                 }
-                showMigrationSheet = true
-            } else {
-                // No migrations needed
-                migrationState.phase = .closed
+                return
             }
-        } catch {
-            alertToast(error)
+
+            var debounceTask: Task<Void, Never>?
+            let debounceInterval: TimeInterval = 5.0 // Wait 5s after last event
+            var isFirstCheck = true // Track if this is the first recheck after initial sync
+
+            // Set up CloudKit sync listener
+            let listener = NotificationCenter.default.publisher(
+                for: NSPersistentCloudKitContainer.eventChangedNotification
+            ).sink { notification in
+                guard let userInfo = notification.userInfo,
+                      let event = userInfo["event"] as? NSPersistentCloudKitContainer.Event else {
+                    return
+                }
+
+                // Only consider successful import events (data coming from iCloud)
+                guard event.type == .import, event.succeeded else {
+                    return
+                }
+
+                self.logger.debug("CloudKit import event received, will recheck migrations after debounce")
+
+                // Cancel previous debounce task
+                debounceTask?.cancel()
+
+                // Start new debounce task
+                debounceTask = Task {
+                    try? await Task.sleep(nanoseconds: UInt64(1e+9 * debounceInterval))
+
+                    guard !Task.isCancelled else { return }
+
+                    // Recheck if migration is needed
+                    do {
+                        let needsMigration = try await self.migrationManager.checkMigrationsNeeded(state: self.migrationState)
+                        self.logger.info("Rechecked migrations after CloudKit sync: needsMigration = \(needsMigration)")
+
+                        // If this is the first check after initial sync, move to idle
+                        if isFirstCheck {
+                            isFirstCheck = false
+                            await MainActor.run {
+                                self.migrationState.phase = .idle
+                            }
+                            self.logger.info("Initial sync completed, phase → .idle")
+                        }
+
+                        if needsMigration {
+                            await MainActor.run {
+                                showMigrationSheet = true
+                                self.migrationState.phase = .idle
+                            }
+                        } else {
+                            await MainActor.run {
+                                self.migrationState.phase = .completed
+                            }
+                        }
+                    } catch {
+                        self.logger.error("Failed to recheck migrations: \(error.localizedDescription)")
+                    }
+                }
+            }
+
+            // Timeout for initial sync (10 seconds)
+            Task {
+                try? await Task.sleep(nanoseconds: UInt64(1e+9 * self.syncTimeout))
+                if isFirstCheck {
+                    isFirstCheck = false
+                    debounceTask?.cancel()
+                    await MainActor.run {
+                        self.migrationState.phase = .idle
+                    }
+                    self.logger.info("Initial sync timeout, phase → .idle")
+                }
+            }
+
+            // Keep listener alive indefinitely for continuous monitoring
+            await withTaskCancellationHandler {
+                // Keep listener reference alive
+                _ = listener
+                // Never timeout, keep monitoring until explicitly cancelled
+                try? await Task.sleep(nanoseconds: .max)
+            } onCancel: { [debounceTask] in
+                debounceTask?.cancel()
+                self.logger.info("CloudKit monitoring stopped")
+            }
         }
     }
 }
+

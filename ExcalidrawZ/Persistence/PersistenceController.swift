@@ -63,9 +63,14 @@ class PersistenceController {
         }
         cloudStoreDescription.type = NSSQLiteStoreType
         cloudStoreDescription.configuration = "Cloud"
-        cloudStoreDescription.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
-            containerIdentifier: "iCloud.com.chocoford.excalidraw"
-        )
+
+        // Only configure CloudKit options when CloudKit is enabled
+        if cloudKitEnabled {
+            cloudStoreDescription.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
+                containerIdentifier: "iCloud.com.chocoford.excalidraw"
+            )
+        }
+
         cloudStoreDescription.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
         cloudStoreDescription.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
         

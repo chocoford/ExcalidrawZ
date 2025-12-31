@@ -32,7 +32,7 @@ private struct FileStatusObserverModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .observeFileStatus(for: activeFile) { status in
-                handleFileStatusChange(status)
+                handleFileStatusChange(status.iCloudStatus)
             }
             .overlay(alignment: .top) {
                 if isSyncing {
@@ -81,7 +81,7 @@ private struct FileStatusObserverModifier: ViewModifier {
     }
     
     /// Handle file status changes for currently active file
-    private func handleFileStatusChange(_ newStatus: FileStatus?) {
+    private func handleFileStatusChange(_ newStatus: ICloudFileStatus?) {
         guard let newStatus = newStatus else { return }
         guard case .localFile(let url) = activeFile else { return }
 

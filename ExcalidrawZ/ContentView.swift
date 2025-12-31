@@ -62,6 +62,7 @@ struct ContentView: View {
             .environmentObject(layoutState)
             .environmentObject(shareFileState)
             .modifier(DragStateModifier())
+            .modifier(StartupSyncModifier())
             .modifier(CoreDataMigrationModifier())
             .swiftyAlert(logs: true)
             .bindWindow($window)
@@ -195,7 +196,6 @@ struct ContentView: View {
         }
     }
 }
-
 
 #if DEBUG
 //struct ContentView_Previews: PreviewProvider {

@@ -176,7 +176,7 @@ actor LocalStorageManager {
         
         do {
             let data = try Data(contentsOf: fileURL)
-            logger.debug("Loaded content from local storage: \(relativePath)")
+            logger.info("Loaded content from local storage: \(relativePath)")
             return data
         } catch {
             logger.error("Failed to load file: \(error.localizedDescription)")
@@ -260,7 +260,7 @@ actor LocalStorageManager {
         }
         
         let directory = try ensureDirectoryExists(for: .mediaItems)
-        let fileExtension = fileExtension(for: mimeType)
+        let fileExtension = FileStorageContentType.fileExtension(for: mimeType)
         let filename = "\(mediaID).\(fileExtension)"
         let fileURL = directory.appendingPathComponent(filename)
         let relativePath = "\(StorageDirectory.mediaItems.path)/\(filename)"
@@ -338,19 +338,7 @@ actor LocalStorageManager {
         
         return (mimeType, base64)
     }
-    
-    private func fileExtension(for mimeType: String) -> String {
-        switch mimeType {
-            case "image/png": return "png"
-            case "image/jpeg", "image/jpg": return "jpg"
-            case "image/gif": return "gif"
-            case "image/svg+xml": return "svg"
-            case "application/pdf": return "pdf"
-            case "image/webp": return "webp"
-            default: return "dat"
-        }
-    }
-    
+
     private func mimeType(for fileExtension: String) -> String {
         switch fileExtension.lowercased() {
             case "png": return "image/png"

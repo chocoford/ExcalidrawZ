@@ -12,8 +12,7 @@ import Logging
 ///
 /// This actor manages:
 /// - Folder monitoring (file system events)
-/// - iCloud status tracking (per-file)
-/// - File status updates (via FileStatusRegistry)
+/// - iCloud status tracking (per-file via FileStatusService)
 /// - Safe file access coordination
 ///
 /// Usage:
@@ -21,30 +20,26 @@ import Logging
 /// // Register a folder for monitoring
 /// try await FileSyncCoordinator.shared.addFolder(at: folderURL, options: .default)
 ///
-/// // Get status box for UI
-/// let statusBox = await FileSyncCoordinator.shared.statusBox(for: fileURL)
-///
-/// // Use in SwiftUI
-/// @ObservedObject var statusBox: FileStatusBox
+/// // Get status from FileStatusService
+/// let statusBox = FileStatusService.shared.getOrCreateBox(
+///     fileID: fileURL.absoluteString,
+///     defaultStatus: .localFileDefault
+/// )
 /// ```
 actor FileSyncCoordinator {
     // MARK: - Singleton
-    
+
     static let shared = FileSyncCoordinator()
-    
+
     // MARK: - Properties
-    
+
     private let logger = Logger(label: "FileSyncCoordinator")
-    
-    /// Registry for all file status boxes
-    @MainActor
-    private let statusRegistry = FileStatusRegistry()
-    
+
     /// Active folder monitors (keyed by folder URL)
     private var folderMonitors: [URL: FolderMonitor] = [:]
 
-    /// File accessor for safe file operations
-    private let fileAccessor = FileAccessor.shared
+    /// File coordinator for safe file operations
+    private let fileCoordinator = FileCoordinator.shared
 
     /// AsyncStream continuation for file change events
     private var eventContinuation: AsyncStream<FSChangeEvent>.Continuation?
@@ -102,55 +97,40 @@ actor FileSyncCoordinator {
             logger.warning("Attempted to remove folder that wasn't being monitored: \(url.lastPathComponent)")
             return
         }
-        
+
         logger.info("Removing folder from monitoring: \(url.lastPathComponent)")
-        
+
         await monitor.stop()
         folderMonitors.removeValue(forKey: url)
-        
-        // Clean up status boxes for this folder
-        await MainActor.run {
-            statusRegistry.removeBoxes(inFolder: url)
-        }
-        
+
         logger.info("Successfully stopped monitoring folder: \(url.lastPathComponent)")
     }
     
     /// Remove all folders from monitoring
     func removeAllFolders() async {
         logger.info("Removing all folders from monitoring")
-        
+
         for (_, monitor) in folderMonitors {
             await monitor.stop()
         }
-        
+
         folderMonitors.removeAll()
-        await MainActor.run {
-            statusRegistry.clear()
-        }
-        
+
         logger.info("All folders removed from monitoring")
     }
     
-    // MARK: - File Status Query
-
-    /// Get the status box for a file (creates one if it doesn't exist)
-    ///
-    /// This method is synchronous and can be called from SwiftUI views.
-    /// - Parameter fileURL: The file URL
-    /// - Returns: FileStatusBox for this file
-    @MainActor
-    func statusBox(for fileURL: URL) -> FileStatusBox {
-        return statusRegistry.box(for: fileURL)
-    }
+    // MARK: - File Status Update
 
     /// Update file status directly (called by ICloudStatusMonitor)
     /// - Parameters:
     ///   - fileURL: The file URL
     ///   - status: The new status
-    func updateFileStatus(for fileURL: URL, status: FileStatus) async {
+    func updateFileStatus(for fileURL: URL, status: ICloudFileStatus) async {
         await MainActor.run {
-            statusRegistry.updateStatus(for: fileURL, status: status)
+            FileStatusService.shared.updateICloudStatus(
+                fileID: fileURL.absoluteString,
+                status: status
+            )
         }
 
         // Emit status change event
@@ -235,32 +215,34 @@ actor FileSyncCoordinator {
     /// Open a file safely, downloading if necessary
     /// - Parameter url: The file URL to open
     /// - Returns: File data
-    /// - Throws: FileAccessError if unable to open file
+    /// - Throws: FileCoordinatorError if unable to open file
     func openFile(_ url: URL) async throws -> Data {
-        return try await fileAccessor.openFile(url)
+        return try await fileCoordinator.coordinatedRead(url: url) { coordinatedURL in
+            try Data(contentsOf: coordinatedURL)
+        }
     }
 
     /// Save data to a file safely
     /// - Parameters:
     ///   - url: The file URL to save to
     ///   - data: The data to write
-    /// - Throws: FileAccessError if unable to save file
+    /// - Throws: FileCoordinatorError if unable to save file
     func saveFile(at url: URL, data: Data) async throws {
-        try await fileAccessor.saveFile(at: url, data: data)
+        try await fileCoordinator.coordinatedWrite(url: url, data: data)
     }
 
     /// Download an iCloud file
     /// - Parameter url: The file URL to download
-    /// - Throws: FileAccessError if unable to download
+    /// - Throws: FileCoordinatorError if unable to download
     func downloadFile(_ url: URL) async throws {
-        try await fileAccessor.downloadFile(url)
+        try await fileCoordinator.downloadFile(url: url)
     }
 
     /// Delete a file safely
     /// - Parameter url: The file URL to delete
-    /// - Throws: FileAccessError if unable to delete
+    /// - Throws: FileCoordinatorError if unable to delete
     func deleteFile(_ url: URL) async throws {
-        try await fileAccessor.deleteFile(url)
+        try await fileCoordinator.deleteFile(url: url)
     }
 
     // MARK: - File Event Handling
@@ -268,7 +250,6 @@ actor FileSyncCoordinator {
     /// Handle file system events
     ///
     /// Note: For iCloud files, ICloudStatusMonitor will handle status updates.
-    /// This method only handles cleanup for deleted/renamed files.
     private func handleFileEvent(_ event: FileEvent) async {
         switch event {
             case .created(let url):
@@ -281,16 +262,10 @@ actor FileSyncCoordinator {
 
             case .deleted(let url):
                 logger.debug("File deleted: \(url.lastPathComponent)")
-                await MainActor.run {
-                    statusRegistry.removeBox(for: url)
-                }
                 eventContinuation?.yield(.deleted(url))
 
             case .renamed(let oldURL, let newURL):
                 logger.debug("File renamed: \(oldURL.lastPathComponent) -> \(newURL.lastPathComponent)")
-                await MainActor.run {
-                    statusRegistry.removeBox(for: oldURL)
-                }
                 eventContinuation?.yield(.renamed(old: oldURL, new: newURL))
         }
     }
@@ -322,7 +297,7 @@ enum FSChangeEvent: Sendable {
     case renamed(old: URL, new: URL)
 
     /// File iCloud status changed (downloading, downloaded, uploading, etc.)
-    case statusChanged(url: URL, status: FileStatus)
+    case statusChanged(url: URL, status: ICloudFileStatus)
 }
 
 // MARK: - Folder Errors

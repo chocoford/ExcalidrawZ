@@ -39,6 +39,15 @@ struct MigrationProgressSheet: View {
         }
     }
 
+    private var hasCompletedWithErrors: Bool {
+        migrationState.migrations.contains { item in
+            if case .completedWithErrors = item.status {
+                return true
+            }
+            return false
+        }
+    }
+
     private var sheetPadding: CGFloat {
         26
     }
@@ -70,42 +79,100 @@ struct MigrationProgressSheet: View {
                 .padding(.vertical, 20)
                 .padding(.horizontal, sheetPadding)
             }
-            
-            // Bottom Buttons
-            if migrationState.phase == .idle && hasPendingMigrations {
-                // Show Archive and Start buttons when migration is needed
+
+            VStack(spacing: 4) {
+                // iCloud Sync Hint - shown during waitingForSync and idle phases
+                if (migrationState.phase == .waitingForSync || migrationState.phase == .idle) {
+                    VStack(spacing: 8) {
+                        HStack(spacing: 8) {
+                            Image(systemSymbol: .infoCircle)
+                            Text(migrationState.phase == .waitingForSync ? "Waiting for iCloud sync to complete..." : "Checking for iCloud updates...")
+                                .font(.headline)
+                        }
+                        Text("If you've already migrated on another device, the app will continue automatically after sync.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.horizontal, sheetPadding)
+                    .padding(.vertical, 12)
+                    .background {
+                        RoundedRectangle(cornerRadius: 16).fill(Color.accentColor.opacity(0.2))
+                        RoundedRectangle(cornerRadius: 16).stroke(Color.accentColor)
+                    }
+                }
                 
-                if #available(macOS 13.0, *) {
-                    let layout = if containerHorizontalSizeClass != .compact {
-                        AnyLayout(HStackLayout(spacing: 12))
+                // Bottom Buttons
+                if (migrationState.phase == .idle || migrationState.phase == .waitingForSync) && hasPendingMigrations {
+                    // Show Archive and Start buttons when migration is needed
+                    ZStack {
+                        if #available(macOS 13.0, *) {
+                            let layout = if containerHorizontalSizeClass != .compact {
+                                AnyLayout(HStackLayout(spacing: 12))
+                            } else {
+                                AnyLayout(VStackLayout(spacing: 12))
+                            }
+                            
+                            layout {
+                                actionsView()
+                            }
+                            .padding(.horizontal, sheetPadding)
+                        } else {
+                            HStack(spacing: 12) {
+                                actionsView()
+                            }
+                            .padding(.horizontal, sheetPadding)
+                        }
+                    }
+                    .disabled(migrationState.phase == .waitingForSync)
+                } else if migrationState.phase == .completed && hasCompletedWithErrors {
+                    // Show two buttons when migration completed with errors
+                    if #available(macOS 13.0, *) {
+                        let layout = if containerHorizontalSizeClass != .compact {
+                            AnyLayout(HStackLayout(spacing: 12))
+                        } else {
+                            AnyLayout(VStackLayout(spacing: 12))
+                        }
+                        
+                        layout {
+                            errorActionsView()
+                        }
+                        .padding(.horizontal, sheetPadding)
                     } else {
-                        AnyLayout(VStackLayout(spacing: 12))
+                        HStack(spacing: 12) {
+                            errorActionsView()
+                        }
+                        .padding(.horizontal, sheetPadding)
                     }
-                    
-                    layout {
-                        actionsView()
-                    }
-                    .padding(.horizontal, sheetPadding)
                 } else {
-                    HStack(spacing: 12) {
-                        actionsView()
+                    // Single button for other states (except waitingForSync)
+                    Button {
+                        handleButtonTap()
+                    } label: {
+                        Text(buttonTitle)
+                            .frame(maxWidth: .infinity)
                     }
+                    .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
+                    .disabled(!isButtonEnabled)
                     .padding(.horizontal, sheetPadding)
                 }
-            } else {
-                // Single button for other states
-                Button {
-                    handleButtonTap()
-                } label: {
-                    Text(buttonTitle)
-                        .frame(maxWidth: .infinity)
-                }
-                .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
-                .disabled(!isButtonEnabled)
-                .padding(.horizontal, sheetPadding)
             }
         }
         .padding(.vertical, sheetPadding)
+        .overlay(alignment: .topTrailing) {
+            if migrationState.phase == .waitingForSync {
+                ZStack {
+                    if #available(macOS 15.0, iOS 18.0, *) {
+                        Image(systemSymbol: .arrowTrianglehead2ClockwiseRotate90)
+                            .symbolEffect(.rotate, isActive: true)
+                    } else {
+                        Image(systemSymbol: .arrowTriangle2Circlepath)
+                    }
+                }
+                .foregroundStyle(.secondary)
+                .padding(20)
+            }
+        }
         .frame(
             width: containerHorizontalSizeClass != .compact ? 500 : nil,
             height: containerHorizontalSizeClass != .compact ? 500 : nil
@@ -172,6 +239,49 @@ struct MigrationProgressSheet: View {
         .disabled(isArchiving)
     }
 
+    @MainActor @ViewBuilder
+    private func errorActionsView() -> some View {
+        var isMigrating: Bool {
+            if case .migrating = migrationState.phase { true } else { false }
+        }
+
+        // Left button: Skip and continue with auto-resolve
+        Button {
+            Task {
+                await runMigrations(autoResolveErrors: true)
+            }
+        } label: {
+            Text("Skip and Continue")
+                .frame(maxWidth: .infinity)
+                .opacity(isMigrating ? 0 : 1)
+                .overlay {
+                    if isMigrating {
+                        ProgressView().controlSize(.small)
+                    }
+                }
+        }
+        .modernButtonStyle(style: .glass, size: .large, shape: .capsule)
+        .disabled(isMigrating)
+
+        // Right button: Retry (recommended)
+        Button {
+            Task {
+                await runMigrations(autoResolveErrors: false)
+            }
+        } label: {
+            Text("Retry")
+                .frame(maxWidth: .infinity)
+                .opacity(isMigrating ? 0 : 1)
+                .overlay {
+                    if isMigrating {
+                        ProgressView().controlSize(.small)
+                    }
+                }
+        }
+        .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
+        .disabled(isMigrating)
+    }
+
     private func isCurrentlyMigrating(_ item: MigrationItem) -> Bool {
         if case .migrating = item.status {
             return true
@@ -183,6 +293,8 @@ struct MigrationProgressSheet: View {
         switch migrationState.phase {
             case .idle:
                 return hasPendingMigrations ? "Migration Required" : "No Migration Needed"
+            case .waitingForSync:
+                return "Waiting for iCloud Sync..."
             case .checking:
                 return "Checking for migrations..."
             case .migrating, .progress:
@@ -202,6 +314,8 @@ struct MigrationProgressSheet: View {
                 return hasPendingMigrations
                     ? "We need to update your data to work with the latest version. You can archive your files first for safety."
                     : "Your data is up to date."
+            case .waitingForSync:
+                return "Checking for updates from iCloud before proceeding..."
             case .checking:
                 return "Checking if any migrations are needed..."
             case .migrating, .progress:
@@ -234,6 +348,8 @@ struct MigrationProgressSheet: View {
         switch migrationState.phase {
             case .idle:
                 return "Close"
+            case .waitingForSync:
+                return "Waiting for syncing..."
             case .checking, .migrating, .progress:
                 return "Migrating..."
             case .completed:
@@ -260,14 +376,16 @@ struct MigrationProgressSheet: View {
                 return true
             case .idle:
                 return !hasPendingMigrations || isDev
+            case .waitingForSync:
+                return false // Cannot dismiss while waiting for CloudKit sync
             default:
                 return false
         }
     }
     
-    private func runMigrations() async {
+    private func runMigrations(autoResolveErrors: Bool = false) async {
         do {
-            try await migrationManager.runPendingMigrations(state: migrationState)
+            try await migrationManager.runPendingMigrations(state: migrationState, autoResolveErrors: autoResolveErrors)
         } catch {
             alertToast(error)
         }
@@ -323,25 +441,45 @@ struct MigrationItemRow: View {
             }
 
             // Expanded Progress View
-            if isExpanded  {
+            if isExpanded {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(item.description)
-                    
+
                     if case .migrating(let progress, let description) = item.status {
                         VStack(alignment: .leading, spacing: 4) {
                             ProgressView(value: progress)
                                 .progressViewStyle(.linear)
-                            
+
                             Text(description)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                        }
+                    } else if case .completedWithErrors(let failedItems) = item.status {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Failed Items (\(failedItems.count)):")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.orange)
+                            VStack(alignment: .leading, spacing: 4) {
+                                ForEach(failedItems) { failedItem in
+                                    HStack {
+                                        Text(failedItem.name)
+                                            .font(.caption)
+                                            .foregroundStyle(.orange)
+                                        Spacer()
+                                        Text(failedItem.error)
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
                         }
                     } else if case .failed(let error, let progress) = item.status {
                         VStack(alignment: .leading, spacing: 4) {
                             ProgressView(value: progress)
                                 .progressViewStyle(.linear)
                                 .foregroundStyle(.red)
-                            
+
                             Text(error)
                                 .font(.caption)
                                 .foregroundStyle(.red)
@@ -366,9 +504,9 @@ struct MigrationItemRow: View {
         .background {
             ZStack {
                 RoundedRectangle(cornerRadius: 24)
-                    .fill(.regularMaterial)
+                    .fill(backgroundStyle)
                 RoundedRectangle(cornerRadius: 24)
-                    .stroke(.secondary.opacity(0.5), lineWidth: 1)
+                    .stroke(borderColor, lineWidth: 1)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 24))
@@ -377,6 +515,8 @@ struct MigrationItemRow: View {
             withAnimation {
                 if case .migrating = newValue {
                     isExpanded =  true
+                } else if case .completedWithErrors = newValue {
+                    isExpanded =  true
                 } else if case .failed = newValue {
                     isExpanded =  true
                 } else {
@@ -384,6 +524,20 @@ struct MigrationItemRow: View {
                 }
             }
         }
+    }
+
+    private var backgroundStyle: AnyShapeStyle {
+        if case .completedWithErrors = item.status {
+            return AnyShapeStyle(Color.yellow.opacity(0.1))
+        }
+        return AnyShapeStyle(Material.ultraThickMaterial)
+    }
+
+    private var borderColor: Color {
+        if case .completedWithErrors = item.status {
+            return Color.yellow
+        }
+        return .secondary.opacity(0.5)
     }
 
     @ViewBuilder
@@ -398,6 +552,9 @@ struct MigrationItemRow: View {
             case .skipped, .completed:
                 Image(systemSymbol: .checkmarkCircle)
                     .foregroundStyle(.green)
+            case .completedWithErrors:
+                Image(systemSymbol: .exclamationmarkTriangleFill)
+                    .foregroundStyle(.yellow)
             case .migrating:
                 ProgressView()
                     .controlSize(.small)

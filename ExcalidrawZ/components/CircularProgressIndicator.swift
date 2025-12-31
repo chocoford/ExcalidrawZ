@@ -48,16 +48,12 @@ struct CircularProgressIndicator: View {
 
 /// File download progress overlay for FileHomeItemView
 struct FileDownloadProgressView: View {
-    @ObservedObject private var syncStatus: SyncStatusState
     let fileID: String
 
-    init(fileID: String) {
-        self.fileID = fileID
-        self.syncStatus = .shared
-    }
-
+    @MainActor
     var body: some View {
-        if let progress = syncStatus.getDownloadProgress(for: fileID),
+        let box = FileStatusService.shared.statusBox(fileID: fileID)
+        if let progress = box.status.syncStatus?.downloadProgress,
            progress < 1.0 {
             CircularProgressIndicator(progress: progress)
                 .transition(.scale.combined(with: .opacity))

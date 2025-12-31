@@ -47,17 +47,20 @@ struct Migration_ExtractMediaItems: MigrationVersion {
 
     /// Extract media items from inner JSON and convert them into MediaItem entities
     func migrate(
+        autoResolveErrors: Bool,
         progressHandler: @escaping (_ description: String, _ progress: Double) async -> Void
-    ) async throws {
+    ) async throws -> [MigrationFailedItem] {
         let start = Date()
         #if os(macOS)
             try await backupFiles(context: context)
         #endif
-        try await context.perform {
+
+        let failedItems = try await context.perform {
             let files = try filesFetch.execute()
             let checkpoints = try checkpointsFetch.execute()
 
             var insertedMediaID = Set<String>()
+            var failedItems: [MigrationFailedItem] = []
 
             // Migrate files (0 - 1/2)
             logger.info("Need migrate \(files.count) files")
@@ -87,8 +90,15 @@ struct Migration_ExtractMediaItems: MigrationVersion {
                     }
                     file.content = try excalidrawFile.contentWithoutFiles()
                 } catch {
-                    logger.info(
-                        "⚠️⚠️⚠️File migration failed. name: \(String(describing: file.name)), content: \(String(describing: try? JSONSerialization.jsonObject(with: file.content ?? Data())))"
+                    let fileName = file.name ?? "Untitled"
+                    let errorMsg = "File migration failed: \(fileName)"
+                    logger.error("\(errorMsg): \(error.localizedDescription)")
+                    failedItems.append(
+                        MigrationFailedItem(
+                            id: file.id?.uuidString ?? UUID().uuidString,
+                            name: fileName,
+                            error: error.localizedDescription
+                        )
                     )
                     continue
                 }
@@ -126,14 +136,31 @@ struct Migration_ExtractMediaItems: MigrationVersion {
                     }
                     checkpoint.content = try excalidrawFile.contentWithoutFiles()
                 } catch {
-                    logger.info(
-                        "⚠️⚠️⚠️Checkpoint migration failed. file name: \(String(describing: checkpoint.file?.name)), content: \(String(describing: try? JSONSerialization.jsonObject(with: checkpoint.file?.content ?? Data())))"
+                    let fileName = checkpoint.file?.name ?? "Untitled"
+                    let errorMsg = "Checkpoint migration failed: \(fileName)"
+                    logger.error("\(errorMsg): \(error.localizedDescription)")
+                    failedItems.append(
+                        MigrationFailedItem(
+                            id: checkpoint.id?.uuidString ?? UUID().uuidString,
+                            name: "Checkpoint: \(fileName)",
+                            error: error.localizedDescription
+                        )
                     )
                     continue
                 }
             }
-            logger.info("🎉🎉🎉 Migration medias done. Time cost: \(-start.timeIntervalSinceNow) s")
+
+            let timeCost = -start.timeIntervalSinceNow
+            if failedItems.isEmpty {
+                logger.info("🎉 Extract media items completed successfully. Time cost: \(timeCost) s")
+            } else {
+                logger.warning("⚠️ Extract media items completed with \(failedItems.count) failures. Time cost: \(timeCost) s")
+            }
+
+            return failedItems
         }
+
+        return failedItems
     }
 }
 

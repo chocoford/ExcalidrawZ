@@ -101,7 +101,7 @@ extension ExcalidrawCore: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        logger.info("didStartProvisionalNavigation - \(Thread.callStackSymbols)")
+        logger.info("didStartProvisionalNavigation...")
         self.parent?.loadingState = .loading
         DispatchQueue.main.async {
             self.isNavigating = true
