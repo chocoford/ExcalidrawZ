@@ -9,71 +9,117 @@ import SwiftUI
 
 
 #if os(iOS)
-/// ViewModifier that handles auto-sync for iCloud files in read-only mode (iOS only)
+/// ViewModifier that handles auto-sync for iCloud-synced files in read-only mode (iOS only)
+/// Supports: LocalFile (iCloud Drive), CoreData File, CollaborationFile
+/// Uses polling (5s interval) to detect changes from other devices
 private struct IOSAutoSyncModifier: ViewModifier {
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var toolState: ToolState
-
-    let activeFile: FileState.ActiveFile?
-    let localFileBinding: Binding<ExcalidrawFile?>
-    let onUpdate: (Data) async -> Void
-
+    
+    var activeFile: FileState.ActiveFile?
+    var localFileBinding: Binding<ExcalidrawFile?>
+    var onUpdate: (Data) async -> Void
+    
     @State private var autoSyncTask: Task<Void, Never>?
-
+    
     func body(content: Content) -> some View {
         content
-            .onChange(of: activeFile) { _ in
-                startAutoSyncIfNeeded()
+            .onChange(of: activeFile) { file in
+                if file == nil {
+                    stopAutoSync()
+                } else {
+                    startAutoSyncIfNeeded(file: file)
+                }
             }
             .onChange(of: toolState.inDragMode) { inDragMode in
                 if inDragMode {
-                    startAutoSyncIfNeeded()
+                    startAutoSyncIfNeeded(file: activeFile)
                 } else {
                     stopAutoSync()
                 }
-            }
-            .task {
-                startAutoSyncIfNeeded()
             }
             .onDisappear {
                 stopAutoSync()
             }
     }
-
+    
     /// Start auto-sync if in read-only mode with iCloud file
-    private func startAutoSyncIfNeeded() {
+    private func startAutoSyncIfNeeded(file activeFile: FileState.ActiveFile?) {
         // Only in read-only mode (drag mode)
         guard toolState.inDragMode else {
             stopAutoSync()
             return
         }
-
-        // Only for iCloud files
-        guard case .localFile(let url) = activeFile,
-              isICloudFile(url) else {
+        
+        // Check if should sync based on file type
+        let shouldSync: Bool
+        switch activeFile {
+            case .localFile(let url):
+                shouldSync = isICloudFile(url)
+            case .file, .collaborationFile:
+                // CoreData files are always in iCloud Drive container
+                shouldSync = true
+            case .temporaryFile, .none:
+                shouldSync = false
+        }
+        
+        guard shouldSync else {
             stopAutoSync()
             return
         }
-
+        
         // Cancel existing task
         stopAutoSync()
-
+        
         // Start new auto-sync task
         autoSyncTask = Task {
             while !Task.isCancelled {
                 // Wait for sync interval
                 try? await Task.sleep(for: .seconds(5))
-
+                
                 guard !Task.isCancelled else { break }
-
+                
                 do {
-                    // Force download latest version
-                    let latestData = try await FileSyncCoordinator.shared.openFile(url)
+                    // Load latest content based on file type
+                    let latestData: Data
+                    
+                    switch activeFile {
+                        case .localFile(let url):
+                            // LocalFile: use FileSyncCoordinator
+                            latestData = try await FileSyncCoordinator.shared.openFile(url)
+                            
+                        case .file(let dbFile):
+                            guard let fileID = dbFile.id else { continue }
+                            // CoreData File: use FileStorageManager
+                            let relativePath = FileStorageContentType.file.generateRelativePath(
+                                fileID: fileID.uuidString
+                            )
+                            latestData = try await FileStorageManager.shared.loadContent(
+                                relativePath: relativePath,
+                                fileID: fileID.uuidString
+                            )
+                            
+                        case .collaborationFile(let collabFile):
+                            guard let fileID = collabFile.id else { continue }
+                            // CollaborationFile: use FileStorageManager
+                            let relativePath = FileStorageContentType.collaborationFile.generateRelativePath(
+                                fileID: fileID.uuidString
+                            )
+                            latestData = try await FileStorageManager.shared.loadContent(
+                                relativePath: relativePath,
+                                fileID: fileID.uuidString
+                            )
+                            
+                        default:
+                            continue
+                    }
+                    
                     let currentData = localFileBinding.wrappedValue?.content
-
+                    
                     // Reload if content changed
                     if latestData != currentData {
-                        Task {
+                        // Update file status to show sync indicator
+                        if case .localFile(let url) = activeFile {
                             await FileSyncCoordinator.shared.updateFileStatus(
                                 for: url,
                                 status: .syncing
@@ -83,8 +129,22 @@ private struct IOSAutoSyncModifier: ViewModifier {
                                 for: url,
                                 status: .downloaded
                             )
+                        } else if let fileID = activeFile?.id {
+                            await MainActor.run {
+                                FileStatusService.shared.updateICloudStatus(
+                                    fileID: fileID,
+                                    status: .syncing
+                                )
+                            }
+                            try? await Task.sleep(nanoseconds: UInt64(1e+9 * 2))
+                            await MainActor.run {
+                                FileStatusService.shared.updateICloudStatus(
+                                    fileID: fileID,
+                                    status: .downloaded
+                                )
+                            }
                         }
-
+                        
                         await onUpdate(latestData)
                     }
                 } catch {
@@ -93,13 +153,13 @@ private struct IOSAutoSyncModifier: ViewModifier {
             }
         }
     }
-
+    
     /// Stop auto-sync
     private func stopAutoSync() {
         autoSyncTask?.cancel()
         autoSyncTask = nil
     }
-
+    
     /// Check if file is in iCloud Drive
     private func isICloudFile(_ url: URL) -> Bool {
         do {
@@ -119,11 +179,13 @@ extension View {
         localFileBinding: Binding<ExcalidrawFile?>,
         onUpdate: @escaping (Data) async -> Void
     ) -> some View {
-        self.modifier(IOSAutoSyncModifier(
-            activeFile: activeFile,
-            localFileBinding: localFileBinding,
-            onUpdate: onUpdate
-        ))
+        self.modifier(
+            IOSAutoSyncModifier(
+                activeFile: activeFile,
+                localFileBinding: localFileBinding,
+                onUpdate: onUpdate
+            )
+        )
     }
 }
 #endif

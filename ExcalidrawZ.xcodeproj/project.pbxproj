@@ -290,6 +290,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				FileStorage/README.md,
+				FileStorage/SyncCoordinator/README.md,
 				Migrations/README.md,
 				"PersistenceController+PreviewExt.swift",
 			);
@@ -299,6 +300,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				FileStorage/README.md,
+				FileStorage/SyncCoordinator/README.md,
 				Migrations/README.md,
 				"PersistenceController+PreviewExt.swift",
 			);

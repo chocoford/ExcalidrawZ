@@ -185,11 +185,13 @@ struct ExcalidrawView: View {
                     applyAllSettings()
                 }
             }
-//            .onChange(of: scenePhase) { scenePhase in
-//                if scenePhase == .active {
-//                    applyColorMode()
-//                }
-//            }
+#if os(macOS)
+            .onChange(of: scenePhase) { scenePhase in
+                if scenePhase == .active {
+                    applyColorMode()
+                }
+            }
+#endif
             .task {
                 await listenToLoadingState()
             }

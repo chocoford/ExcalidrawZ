@@ -291,7 +291,14 @@ actor SyncCoordinator {
 
     // MARK: - Sync Operations
 
-    /// Upload file to iCloud
+    /// Upload file to iCloud (force overwrite)
+    ///
+    /// This method unconditionally uploads local content to iCloud, overwriting any existing file.
+    /// It does NOT perform conflict detection - the caller is responsible for checking
+    /// whether iCloud has a newer version before queueing this operation.
+    ///
+    /// Conflict detection should happen at the decision layer (DiffScan, FileState),
+    /// not in the execution layer (SyncCoordinator).
     private func uploadToCloud(event: SyncEvent) async throws {
         // Load from local storage
         let localData = try await localManager.loadContent(relativePath: event.relativePath)
@@ -312,6 +319,10 @@ actor SyncCoordinator {
     }
 
     /// Download file from iCloud
+    ///
+    /// Downloads file content from iCloud and saves to local storage.
+    /// Note: On iOS, the modificationDate read from iCloud may be cached/stale
+    /// if metadata wasn't refreshed before calling this method.
     private func downloadFromCloud(event: SyncEvent) async throws {
         // Load from iCloud
         let iCloudData = try await iCloudManager.loadContent(relativePath: event.relativePath)
@@ -495,6 +506,21 @@ actor SyncCoordinator {
         guard FileManager.default.fileExists(atPath: iCloudURL.path) else {
             return false
         }
+
+        #if os(iOS)
+        // iOS: Force refresh metadata from iCloud before checking timestamps
+        // On iOS, placeholder files may have cached/stale timestamps that don't reflect
+        // the actual iCloud state. startDownloadingUbiquitousItem forces iOS to refresh
+        // metadata from iCloud, ensuring we get accurate modification times.
+        do {
+            try FileManager.default.startDownloadingUbiquitousItem(at: iCloudURL)
+            // Give it a moment to update metadata
+            try? await Task.sleep(nanoseconds: 100_000_000)  // 100ms
+        } catch {
+            logger.warning("Failed to refresh iCloud metadata for \(relativePath): \(error)")
+            // Continue anyway and check with cached metadata
+        }
+        #endif
 
         let attributes = try FileManager.default.attributesOfItem(atPath: iCloudURL.path)
         guard let iCloudModifiedAt = attributes[.modificationDate] as? Date else {

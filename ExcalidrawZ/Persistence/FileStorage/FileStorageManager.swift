@@ -370,4 +370,19 @@ actor FileStorageManager {
         _ = try await loadContent(relativePath: relativePath, fileID: fileID)
         logger.info("Successfully recovered file: \(fileID)")
     }
+
+    // MARK: - iCloud Update Check (Public API)
+
+    /// Check if iCloud has a newer version without downloading
+    /// - Parameters:
+    ///   - relativePath: The relative path to the file
+    ///   - fileID: The file identifier
+    /// - Returns: True if iCloud has a newer version
+    func checkForICloudUpdate(relativePath: String, fileID: String) async throws -> Bool {
+        guard let syncCoordinator = syncCoordinator else {
+            logger.warning("checkForICloudUpdate called before sync enabled, returning false")
+            return false
+        }
+        return try await syncCoordinator.checkForICloudUpdate(relativePath: relativePath)
+    }
 }

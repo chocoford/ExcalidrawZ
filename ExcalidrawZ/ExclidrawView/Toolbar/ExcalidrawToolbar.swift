@@ -328,8 +328,7 @@ struct ExcalidrawToolbar: View {
                 Color.clear
                     .overlay(alignment: .leading) {
                         if containerHorizontalSizeClass == .compact {
-                            if let activeFile = fileState.currentActiveFile,
-                               case .localFile = activeFile {
+                            if let activeFile = fileState.currentActiveFile {
 #if os(iOS)
                                 FileICloudSyncStatusIndicator(file: activeFile)
                                     .padding(.horizontal, 8)

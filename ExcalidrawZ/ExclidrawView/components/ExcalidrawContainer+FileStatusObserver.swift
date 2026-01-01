@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 private struct FileStatusObserverModifier: ViewModifier {
     @EnvironmentObject private var fileState: FileState
@@ -28,11 +29,12 @@ private struct FileStatusObserverModifier: ViewModifier {
     }
     
     @State private var isSyncing = false
+    @State private var cloudCheckTask: Task<Void, Never>?
     
     func body(content: Content) -> some View {
         content
             .observeFileStatus(for: activeFile) { status in
-                handleFileStatusChange(status.iCloudStatus)
+                handleFileStatusChange(status)
             }
             .overlay(alignment: .top) {
                 if isSyncing {
@@ -78,25 +80,42 @@ private struct FileStatusObserverModifier: ViewModifier {
                     }
                 }
             }
+            .task {
+                // Start periodic iCloud check for CoreData files
+                startCloudCheckIfNeeded()
+            }
+            .onChange(of: activeFile) { _ in
+                // Restart check when file changes
+                cloudCheckTask?.cancel()
+                startCloudCheckIfNeeded()
+            }
     }
     
     /// Handle file status changes for currently active file
-    private func handleFileStatusChange(_ newStatus: ICloudFileStatus?) {
-        guard let newStatus = newStatus else { return }
-        guard case .localFile(let url) = activeFile else { return }
-
+    private func handleFileStatusChange(_ status: FileStatus) {
+        guard let file = activeFile else { return }
+        
+        // Handle iCloudStatus (unified for all file types)
+        handleICloudStatus(status.iCloudStatus, for: file)
+    }
+    
+    /// Unified iCloud status handling for all file types
+    private func handleICloudStatus(_ iCloudStatus: ICloudFileStatus, for file: FileState.ActiveFile) {
         // Handle conflict state - show resolution sheet immediately
-        if newStatus == .conflict {
-            conflictFileURL = url
+        if iCloudStatus == .conflict {
+            if case .localFile(let url) = file {
+                conflictFileURL = url
+            }
+            // CoreData File conflicts are handled differently (not implemented yet)
             return
         }
-
+        
 #if os(macOS)
         // Handle file becoming outdated - trigger reload
         let shouldDownload: Bool
-        if case .downloading = newStatus {
+        if case .downloading = iCloudStatus {
             shouldDownload = true
-        } else if newStatus == .outdated {
+        } else if iCloudStatus == .outdated {
             shouldDownload = true
         } else {
             shouldDownload = false
@@ -105,8 +124,42 @@ private struct FileStatusObserverModifier: ViewModifier {
         if shouldDownload && !isSyncing {
             isSyncing = true
             Task {
-                if let latestData = try? await FileSyncCoordinator.shared.openFile(url) {
-                    onSyncing(latestData) {}
+                switch file {
+                    case .localFile(let url):
+                        // LocalFile: use FileSyncCoordinator
+                        if let latestData = try? await FileSyncCoordinator.shared.openFile(url) {
+                            onSyncing(latestData) {}
+                        }
+                        
+                    case .file(let dbFile):
+                        guard let fileID = dbFile.id else { return }
+                        // CoreData File: use FileStorageManager
+                        let relativePath = FileStorageContentType.file.generateRelativePath(
+                            fileID: fileID.uuidString
+                        )
+                        if let latestData = try? await FileStorageManager.shared.loadContent(
+                            relativePath: relativePath,
+                            fileID: fileID.uuidString
+                        ) {
+                            onSyncing(latestData) {}
+                        }
+                        
+                    case .collaborationFile(let collabFile):
+                        guard let fileID = collabFile.id else { return }
+
+                        // CollaborationFile: use FileStorageManager
+                        let relativePath = FileStorageContentType.collaborationFile.generateRelativePath(
+                            fileID: fileID.uuidString
+                        )
+                        if let latestData = try? await FileStorageManager.shared.loadContent(
+                            relativePath: relativePath,
+                            fileID: fileID.uuidString
+                        ) {
+                            onSyncing(latestData) {}
+                        }
+                        
+                    default:
+                        break
                 }
                 
                 isSyncing = false
@@ -114,7 +167,45 @@ private struct FileStatusObserverModifier: ViewModifier {
         }
 #endif
     }
-
+    
+    /// Start periodic iCloud check for CoreData files
+    private func startCloudCheckIfNeeded() {
+        // Only check for CoreData files
+        guard case .file(let dbFile) = activeFile, let fileID = dbFile.id?.uuidString else {
+            // For CollaborationFile, we could also add checks here
+            return
+        }
+        
+        let relativePath = FileStorageContentType.file.generateRelativePath(fileID: fileID)
+        
+        cloudCheckTask = Task {
+            // Wait a bit before first check (give time for initial load)
+            try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
+            
+            while !Task.isCancelled {
+                guard !Task.isCancelled else { break }
+                
+                // Check if iCloud has newer version
+                if let hasUpdate = try? await FileStorageManager.shared.checkForICloudUpdate(
+                    relativePath: relativePath,
+                    fileID: fileID
+                ) {
+                    if hasUpdate {
+                        // Update FileStatusService to trigger UI refresh
+                        await MainActor.run {
+                            FileStatusService.shared.updateICloudStatus(
+                                fileID: fileID,
+                                status: .outdated
+                            )
+                        }
+                    }
+                }
+                
+                // Wait before next check (30 seconds)
+                try? await Task.sleep(nanoseconds: 30_000_000_000)
+            }
+        }
+    }
 }
 
 extension View {
@@ -135,4 +226,4 @@ extension View {
         )
     }
 }
-    
+

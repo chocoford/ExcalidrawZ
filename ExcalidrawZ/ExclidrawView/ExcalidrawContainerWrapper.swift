@@ -190,16 +190,6 @@ struct ExcalidrawContainerWrapper: View {
             await pullUpdatingFromCloud(latestData: latestData)
         }
 #endif
-        .applyCloudKitSync(
-            activeFile: activeFile,
-            isLoadingFile: isLoadingFile,
-            onReloadNeeded: {
-                loadingTask?.cancel()
-                loadingTask = Task {
-                    await loadExcalidrawFile(from: activeFile)
-                }
-            }
-        )
         .onChange(of: activeFile) { (newFile: FileState.ActiveFile?) in
             loadingTask?.cancel()
             loadingTask = Task {
