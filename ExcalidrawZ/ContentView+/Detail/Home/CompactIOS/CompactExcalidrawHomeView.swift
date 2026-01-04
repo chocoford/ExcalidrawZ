@@ -17,10 +17,11 @@ struct CompactExcalidrawHomeView: View {
     var disableInteration: Bool {
         fileState.currentActiveFile == nil
     }
-    
+
     @StateObject private var toolState = ToolState()
 
     @State private var searchText = ""
+
     
     var body: some View {
         ZStack {
@@ -41,7 +42,7 @@ struct CompactExcalidrawHomeView: View {
             
             TabView {
                 Tab("Recently", systemImage: SFSymbol.clockFill.rawValue) {
-                    CompactHomeView()
+                    CompactRecentlyView()
                 }
                 Tab("Collaboration", systemImage: SFSymbol.person3Fill.rawValue) {
                     CompactCollaborationHomeView()
@@ -56,8 +57,32 @@ struct CompactExcalidrawHomeView: View {
             .searchToolbarBehavior(.automatic)
             .opacity(fileHomeItemTransitionState.canShowItemContainerView ? 1 : 0)
             .allowsHitTesting(fileHomeItemTransitionState.canShowItemContainerView)
+            .modifier(CompactExcalidrawHomeTabBarAccessoryViewModifier())
         }
 
+    }
+}
+
+
+struct CompactExcalidrawHomeTabBarAccessoryViewModifier: ViewModifier {
+    @ObservedObject private var syncState = FileStatusService.shared.syncState
+
+    @State private var isSyncStatePopoverPresented = false
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.1, *) {
+            content
+                .tabViewBottomAccessory(isEnabled: isSyncStatePopoverPresented) {
+                    SyncStatusContentView()
+                }
+                .onChange(of: syncState.hasActiveSyncOperations, initial: true, throttle: 0.2, latest: true) { newVal in
+                    withAnimation(.smooth) {
+                        isSyncStatePopoverPresented = newVal
+                    }
+                }
+        } else {
+            content
+        }
     }
 }
 

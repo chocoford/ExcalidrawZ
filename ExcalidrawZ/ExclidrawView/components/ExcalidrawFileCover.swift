@@ -90,7 +90,7 @@ struct ExcalidrawFileCover: View {
             .onChange(of: fileID) { _ in
                 self.generateCover()
             }
-            .watchImmediately(of: colorScheme) { _ in
+            .watch(value: colorScheme) { _ in
                 guard scenePhase == .active else { return }
                 if let image = cache.getPreviewCache(forID: fileID, colorScheme: colorScheme) {
                     Task.detached {

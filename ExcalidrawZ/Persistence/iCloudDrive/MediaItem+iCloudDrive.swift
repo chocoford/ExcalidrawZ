@@ -12,6 +12,30 @@ import Logging
 extension MediaItem {
     private static let logger = Logger(label: "MediaItem+FileStorage")
 
+    /// Load raw media data from storage (local/iCloud)
+    /// Automatically checks iCloud for newer versions before returning
+    /// Falls back to decoding CoreData dataURL if storage is unavailable
+    func loadData() async throws -> Data {
+        // Try to load from storage first (local/iCloud with bidirectional sync)
+        if let filePath = self.filePath, let mediaID = self.id {
+            do {
+                // This will automatically check iCloud for updates and download if needed
+                return try await FileStorageManager.shared.loadContent(relativePath: filePath, fileID: mediaID)
+            } catch {
+                Self.logger.warning("Failed to load from FileStorage: \(error.localizedDescription), falling back to CoreData.")
+            }
+        }
+
+        // Fallback to CoreData dataURL
+        if let dataURL = self.dataURL,
+           let base64String = dataURL.components(separatedBy: "base64,").last,
+           let data = Data(base64Encoded: base64String) {
+            return data
+        }
+
+        throw MediaItemError.dataNotAvailable
+    }
+
     /// Load media data URL from storage (local/iCloud)
     /// Automatically checks iCloud for newer versions before returning
     /// Falls back to CoreData dataURL if storage is unavailable
@@ -66,11 +90,14 @@ extension MediaItem {
 }
 
 enum MediaItemError: LocalizedError {
+    case dataNotAvailable
     case dataURLNotAvailable
     case missingID
 
     var errorDescription: String? {
         switch self {
+        case .dataNotAvailable:
+            return "Media item data is not available"
         case .dataURLNotAvailable:
             return "Media item data URL is not available"
         case .missingID:

@@ -13,7 +13,7 @@ struct MigrationProgressSheet: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.dismiss) private var dismiss
     @Environment(\.alertToast) private var alertToast
-
+    
     @ObservedObject var migrationState: MigrationState
     
     var migrationManager = MigrationManager.shared
@@ -24,12 +24,14 @@ struct MigrationProgressSheet: View {
         self.isDev = isDev
         self._didArchiveFiles = State(initialValue: isDev)
     }
-
+    
     @State private var isArchiving = false
     @State private var showArchiveExporter = false
     @State private var didArchiveFiles: Bool
-
-
+    @State private var archiveFailedFiles: [FailedFileInfo] = []
+    @State private var showFailedFilesAlert = false
+    
+    
     private var hasPendingMigrations: Bool {
         migrationState.migrations.contains { item in
             if case .pending = item.status {
@@ -38,7 +40,7 @@ struct MigrationProgressSheet: View {
             return false
         }
     }
-
+    
     private var hasCompletedWithErrors: Bool {
         migrationState.migrations.contains { item in
             if case .completedWithErrors = item.status {
@@ -47,7 +49,7 @@ struct MigrationProgressSheet: View {
             return false
         }
     }
-
+    
     private var sheetPadding: CGFloat {
         26
     }
@@ -79,7 +81,7 @@ struct MigrationProgressSheet: View {
                 .padding(.vertical, 20)
                 .padding(.horizontal, sheetPadding)
             }
-
+            
             VStack(spacing: 4) {
                 // iCloud Sync Hint - shown during waitingForSync and idle phases
                 if (migrationState.phase == .waitingForSync || migrationState.phase == .idle) {
@@ -184,6 +186,80 @@ struct MigrationProgressSheet: View {
         ) { result in
             handleArchiveResult(result)
         }
+        .overlay(alignment: .top) {
+            if showFailedFilesAlert && !archiveFailedFiles.isEmpty {
+                failedFilesAlertView
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+    }
+    
+    /// Alert view for failed files (toast-like overlay)
+    @ViewBuilder
+    private var failedFilesAlertView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack(spacing: 8) {
+                Image(systemSymbol: .exclamationmarkTriangle)
+                    .foregroundStyle(.orange)
+                Text("Some files failed to archive (\(archiveFailedFiles.count))")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                Button {
+                    withAnimation {
+                        showFailedFilesAlert = false
+                    }
+                } label: {
+                    Image(systemSymbol: .xmark)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // Failed files list (scrollable if many)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(archiveFailedFiles.prefix(5)) { failedFile in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(failedFile.fileName)
+                                .font(.body)
+                                .fontWeight(.medium)
+                            Text(failedFile.error)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    
+                    if archiveFailedFiles.count > 5 {
+                        Text("and \(archiveFailedFiles.count - 5) more...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 4)
+                    }
+                }
+            }
+            .frame(maxHeight: 200)
+        }
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.regularMaterial)
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.orange, lineWidth: 2)
+        }
+        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+        .padding(.horizontal, sheetPadding)
+        .padding(.top, sheetPadding)
+        .onAppear {
+            // Auto-dismiss after 10 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                withAnimation {
+                    showFailedFilesAlert = false
+                }
+            }
+        }
     }
     
     @MainActor @ViewBuilder
@@ -208,7 +284,7 @@ struct MigrationProgressSheet: View {
         }
         .modernButtonStyle(style: .glass, size: .large, shape: .capsule)
         .disabled(isArchiving)
-
+        
         var isMigrating: Bool {
             if case .migrating = migrationState.phase { true } else { false }
         }
@@ -238,13 +314,13 @@ struct MigrationProgressSheet: View {
         .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
         .disabled(isArchiving)
     }
-
+    
     @MainActor @ViewBuilder
     private func errorActionsView() -> some View {
         var isMigrating: Bool {
             if case .migrating = migrationState.phase { true } else { false }
         }
-
+        
         // Left button: Skip and continue with auto-resolve
         Button {
             Task {
@@ -262,7 +338,7 @@ struct MigrationProgressSheet: View {
         }
         .modernButtonStyle(style: .glass, size: .large, shape: .capsule)
         .disabled(isMigrating)
-
+        
         // Right button: Retry (recommended)
         Button {
             Task {
@@ -281,14 +357,14 @@ struct MigrationProgressSheet: View {
         .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
         .disabled(isMigrating)
     }
-
+    
     private func isCurrentlyMigrating(_ item: MigrationItem) -> Bool {
         if case .migrating = item.status {
             return true
         }
         return false
     }
-
+    
     private var titleText: String {
         switch migrationState.phase {
             case .idle:
@@ -307,13 +383,13 @@ struct MigrationProgressSheet: View {
                 return "Migration Completed"
         }
     }
-
+    
     private var subtitleText: String {
         switch migrationState.phase {
             case .idle:
                 return hasPendingMigrations
-                    ? "We need to update your data to work with the latest version. You can archive your files first for safety."
-                    : "Your data is up to date."
+                ? "We need to update your data to work with the latest version. You can archive your files first for safety."
+                : "Your data is up to date."
             case .waitingForSync:
                 return "Checking for updates from iCloud before proceeding..."
             case .checking:
@@ -328,7 +404,7 @@ struct MigrationProgressSheet: View {
                 return "Your data has been successfully updated."
         }
     }
-
+    
     private func handleButtonTap() {
         switch migrationState.phase {
             case .idle:
@@ -343,7 +419,7 @@ struct MigrationProgressSheet: View {
                 break
         }
     }
-
+    
     private var buttonTitle: String {
         switch migrationState.phase {
             case .idle:
@@ -360,7 +436,7 @@ struct MigrationProgressSheet: View {
                 return "Done"
         }
     }
-
+    
     private var isButtonEnabled: Bool {
         switch migrationState.phase {
             case .idle, .completed, .error:
@@ -369,7 +445,7 @@ struct MigrationProgressSheet: View {
                 return false
         }
     }
-
+    
     private var canDismiss: Bool {
         switch migrationState.phase {
             case .completed:
@@ -390,29 +466,41 @@ struct MigrationProgressSheet: View {
             alertToast(error)
         }
     }
-
+    
     private func archiveFiles() async {
         // Trigger the file exporter
         await MainActor.run {
             showArchiveExporter = true
         }
     }
-
-    private func handleArchiveResult(_ result: Result<URL, Error>) {
+    
+    private func handleArchiveResult(_ result: Result<ArchiveResult, Error>) {
         isArchiving = false
-
+        
         switch result {
-        case .success(let url):
-            didArchiveFiles = true
-            alertToast(
-                .init(displayMode: .hud, type: .complete(.green), title: "Files archived successfully to \(url.lastPathComponent)")
-            )
-
-        case .failure(let error):
-            // User cancelled or error occurred
-            if (error as NSError).code != NSUserCancelledError {
-                alertToast(error)
-            }
+            case .success(let archiveResult):
+                didArchiveFiles = true
+                
+                // Store failed files if any
+                archiveFailedFiles = archiveResult.failedFiles
+                
+                if archiveResult.failedFiles.isEmpty {
+                    // All files archived successfully
+                    alertToast(
+                        .init(displayMode: .hud, type: .complete(.green), title: "Files archived successfully to \(archiveResult.url.lastPathComponent)")
+                    )
+                } else {
+                    // Show failed files alert after a delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        showFailedFilesAlert = true
+                    }
+                }
+                
+            case .failure(let error):
+                // User cancelled or error occurred
+                if (error as NSError).code != NSUserCancelledError {
+                    alertToast(error)
+                }
         }
     }
 }
@@ -429,27 +517,27 @@ struct MigrationItemRow: View {
             HStack(spacing: 12) {
                 // Status Icon
                 statusIcon
-
+                
                 // Migration Name
                 Text(item.name)
                     .font(.headline)
-
+                
                 Spacer()
                 
                 Image(systemSymbol: .chevronRight)
                     .rotationEffect(isExpanded ? .degrees(90) : .zero)
             }
-
+            
             // Expanded Progress View
             if isExpanded {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(item.description)
-
+                    
                     if case .migrating(let progress, let description) = item.status {
                         VStack(alignment: .leading, spacing: 4) {
                             ProgressView(value: progress)
                                 .progressViewStyle(.linear)
-
+                            
                             Text(description)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -479,7 +567,7 @@ struct MigrationItemRow: View {
                             ProgressView(value: progress)
                                 .progressViewStyle(.linear)
                                 .foregroundStyle(.red)
-
+                            
                             Text(error)
                                 .font(.caption)
                                 .foregroundStyle(.red)
@@ -525,21 +613,21 @@ struct MigrationItemRow: View {
             }
         }
     }
-
+    
     private var backgroundStyle: AnyShapeStyle {
         if case .completedWithErrors = item.status {
             return AnyShapeStyle(Color.yellow.opacity(0.1))
         }
         return AnyShapeStyle(Material.ultraThickMaterial)
     }
-
+    
     private var borderColor: Color {
         if case .completedWithErrors = item.status {
             return Color.yellow
         }
         return .secondary.opacity(0.5)
     }
-
+    
     @ViewBuilder
     private var statusIcon: some View {
         switch item.status {

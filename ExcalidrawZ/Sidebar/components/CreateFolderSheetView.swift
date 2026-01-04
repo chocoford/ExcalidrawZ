@@ -8,6 +8,8 @@
 import SwiftUI
 import CoreData
 
+import ChocofordUI
+
 struct CreateFolderModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
@@ -46,7 +48,7 @@ struct CreateFolderModifier: ViewModifier {
                     createFolderSheetView()
                 }
             }
-            .watchImmediately(of: parentFolderID) { newValue in
+            .watch(value: parentFolderID) { newValue in
                 guard let newValue else { return }
                 self.parentFolder = viewContext.object(with: newValue) as? LocalFolder
             }

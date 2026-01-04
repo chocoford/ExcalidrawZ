@@ -38,48 +38,50 @@ struct ExcalidrawCollaborationView: View {
 
     var body: some View {
         ZStack {
-            ExcalidrawView(
-                type: .collaboration,
-                file: $excalidrawFile,
-                loadingState: $loadingState,
-                interactionEnabled: isActive
-            ) { error in
-                alertToast(error)
-            }
-            .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
-            .opacity(isProgressViewPresented ? 0 : 1)
-            .onChange(of: loadingState, debounce: 0.3) { newVal in
-                isProgressViewPresented = newVal == .loading
-                
-                fileState.collaboratingFilesState[file] = newVal
-                
-                if newVal == .loaded {
+            if excalidrawFile != nil {
+                ExcalidrawView(
+                    type: .collaboration,
+                    file: $excalidrawFile,
+                    loadingState: $loadingState,
+                    interactionEnabled: isActive
+                ) { error in
+                    alertToast(error)
+                }
+                .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
+                .opacity(isProgressViewPresented ? 0 : 1)
+                .onChange(of: loadingState, debounce: 0.3) { newVal in
+                    isProgressViewPresented = newVal == .loading
+                    
+                    fileState.collaboratingFilesState[file] = newVal
+                    
+                    if newVal == .loaded {
+                        Task {
+                            do {
+                                try await fileState.excalidrawCollaborationWebCoordinator?
+                                    .setCollaborationInfo(
+                                        collaborationState.userCollaborationInfo
+                                    )
+                            } catch {
+                                alertToast(error)
+                            }
+                        }
+                    }
+                }
+                .onChange(of: collaborationState.userCollaborationInfo, debounce: 1.0) { newInfo in
                     Task {
                         do {
-                            try await fileState.excalidrawCollaborationWebCoordinator?
-                                .setCollaborationInfo(
-                                    collaborationState.userCollaborationInfo
-                                )
+                            try await fileState.excalidrawCollaborationWebCoordinator?.setCollaborationInfo(
+                                newInfo
+                            )
                         } catch {
                             alertToast(error)
                         }
                     }
                 }
-            }
-            .onChange(of: collaborationState.userCollaborationInfo, debounce: 1.0) { newInfo in
-                Task {
-                    do {
-                        try await fileState.excalidrawCollaborationWebCoordinator?.setCollaborationInfo(
-                            newInfo
-                        )
-                    } catch {
-                        alertToast(error)
-                    }
+                .onChange(of: excalidrawFile, throttle: 1.0, latest: true) { newValue in
+                    guard let newValue, loadingState == .loaded else { return }
+                    fileState.updateCurrentCollaborationFile(with: newValue)
                 }
-            }
-            .onChange(of: excalidrawFile, throttle: 1.0, latest: true) { newValue in
-                guard let newValue, loadingState == .loaded else { return }
-                fileState.updateCurrentCollaborationFile(with: newValue)
             }
             
             if case .error(let error) = loadingState {
@@ -121,15 +123,12 @@ struct ExcalidrawCollaborationView: View {
         }
         .opacity(isActive ? 1 : 0)
         .task {
-            do {
-                let content = try await file.loadContent()
-                var excalidrawFile = try ExcalidrawFile(data: content, id: file.id)
-                try await excalidrawFile.syncFiles(context: viewContext)
-                await MainActor.run {
-                    self.excalidrawFile = excalidrawFile
-                }
-            } catch {
-                alertToast(error)
+            var excalidrawFile = ExcalidrawFile()
+            excalidrawFile.id = file.id ?? UUID()
+            excalidrawFile.roomID = file.roomID
+            try? await excalidrawFile.syncFiles(context: viewContext)
+            await MainActor.run {
+                self.excalidrawFile = excalidrawFile
             }
         }
         .onDisappear {

@@ -60,57 +60,61 @@ struct OrphanCleaner {
     /// Get all valid file IDs from CoreData entities
     private func getValidFileIDs() async -> [FileStorageContentType: Set<String>] {
         let context = PersistenceController.shared.newTaskContext()
-        var result: [FileStorageContentType: Set<String>] = [:]
 
-        // Fetch File IDs
-        do {
-            let fileRequest: NSFetchRequest<NSFetchRequestResult> = File.fetchRequest()
-            fileRequest.propertiesToFetch = ["id"]
-            fileRequest.resultType = .dictionaryResultType
-            let fileResults = try context.fetch(fileRequest) as? [[String: Any]] ?? []
-            let fileIDs = fileResults.compactMap { ($0["id"] as? UUID)?.uuidString }
-            result[.file] = Set(fileIDs)
-        } catch {
-            result[.file] = Set()
+        // All CoreData operations must run on the context's queue
+        return await context.perform {
+            var result: [FileStorageContentType: Set<String>] = [:]
+
+            // Fetch File IDs
+            do {
+                let fileRequest: NSFetchRequest<NSFetchRequestResult> = File.fetchRequest()
+                fileRequest.propertiesToFetch = ["id"]
+                fileRequest.resultType = .dictionaryResultType
+                let fileResults = try context.fetch(fileRequest) as? [[String: Any]] ?? []
+                let fileIDs = fileResults.compactMap { ($0["id"] as? UUID)?.uuidString }
+                result[.file] = Set(fileIDs)
+            } catch {
+                result[.file] = Set()
+            }
+
+            // Fetch CollaborationFile IDs
+            do {
+                let collabRequest: NSFetchRequest<NSFetchRequestResult> = CollaborationFile.fetchRequest()
+                collabRequest.propertiesToFetch = ["id"]
+                collabRequest.resultType = .dictionaryResultType
+                let collabResults = try context.fetch(collabRequest) as? [[String: Any]] ?? []
+                let collabIDs = collabResults.compactMap { ($0["id"] as? UUID)?.uuidString }
+                result[.collaborationFile] = Set(collabIDs)
+            } catch {
+                result[.collaborationFile] = Set()
+            }
+
+            // Fetch FileCheckpoint IDs
+            do {
+                let checkpointRequest: NSFetchRequest<NSFetchRequestResult> = FileCheckpoint.fetchRequest()
+                checkpointRequest.propertiesToFetch = ["id"]
+                checkpointRequest.resultType = .dictionaryResultType
+                let checkpointResults = try context.fetch(checkpointRequest) as? [[String: Any]] ?? []
+                let checkpointIDs = checkpointResults.compactMap { ($0["id"] as? UUID)?.uuidString }
+                result[.checkpoint] = Set(checkpointIDs)
+            } catch {
+                result[.checkpoint] = Set()
+            }
+
+            // Fetch MediaItem IDs
+            do {
+                let mediaRequest: NSFetchRequest<NSFetchRequestResult> = MediaItem.fetchRequest()
+                mediaRequest.propertiesToFetch = ["id"]
+                mediaRequest.resultType = .dictionaryResultType
+                let mediaResults = try context.fetch(mediaRequest) as? [[String: Any]] ?? []
+                let mediaIDs = mediaResults.compactMap { $0["id"] as? String }
+                result[.mediaItem(extension: "")] = Set(mediaIDs)
+            } catch {
+                result[.mediaItem(extension: "")] = Set()
+            }
+
+            return result
         }
-
-        // Fetch CollaborationFile IDs
-        do {
-            let collabRequest: NSFetchRequest<NSFetchRequestResult> = CollaborationFile.fetchRequest()
-            collabRequest.propertiesToFetch = ["id"]
-            collabRequest.resultType = .dictionaryResultType
-            let collabResults = try context.fetch(collabRequest) as? [[String: Any]] ?? []
-            let collabIDs = collabResults.compactMap { ($0["id"] as? UUID)?.uuidString }
-            result[.collaborationFile] = Set(collabIDs)
-        } catch {
-            result[.collaborationFile] = Set()
-        }
-
-        // Fetch FileCheckpoint IDs
-        do {
-            let checkpointRequest: NSFetchRequest<NSFetchRequestResult> = FileCheckpoint.fetchRequest()
-            checkpointRequest.propertiesToFetch = ["id"]
-            checkpointRequest.resultType = .dictionaryResultType
-            let checkpointResults = try context.fetch(checkpointRequest) as? [[String: Any]] ?? []
-            let checkpointIDs = checkpointResults.compactMap { ($0["id"] as? UUID)?.uuidString }
-            result[.checkpoint] = Set(checkpointIDs)
-        } catch {
-            result[.checkpoint] = Set()
-        }
-
-        // Fetch MediaItem IDs
-        do {
-            let mediaRequest: NSFetchRequest<NSFetchRequestResult> = MediaItem.fetchRequest()
-            mediaRequest.propertiesToFetch = ["id"]
-            mediaRequest.resultType = .dictionaryResultType
-            let mediaResults = try context.fetch(mediaRequest) as? [[String: Any]] ?? []
-            let mediaIDs = mediaResults.compactMap { $0["id"] as? String }
-            result[.mediaItem(extension: "")] = Set(mediaIDs)
-        } catch {
-            result[.mediaItem(extension: "")] = Set()
-        }
-
-        return result
     }
 
     /// Get valid IDs for a specific content type

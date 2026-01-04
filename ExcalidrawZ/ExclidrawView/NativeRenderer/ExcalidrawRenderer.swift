@@ -36,7 +36,8 @@ struct ExcalidrawRenderer: View {
     
     @MainActor @ViewBuilder
     private func content() -> some View {
-        if frame != .zero {
+        // Guard against invalid frame dimensions
+        if frame != .zero && frame.width > 0 && frame.height > 0 && frame.width.isFinite && frame.height.isFinite {
             Color(excalidrawString: file.appState.viewBackgroundColor ?? "transparent")
                 .overlay {
                     // Render at higher resolution for better clarity
@@ -423,14 +424,30 @@ struct ExcalidrawRenderer: View {
     }
     
     private func calculateFrame() {
-        self.frame = self.elements.reduce(.zero) { partialResult, element in
-            CGRect(
-                x: min(partialResult.minX, element.x),
-                y: min(partialResult.minY, element.y),
-                width: max(partialResult.maxX - partialResult.minX, element.x + element.width),
-                height: max(partialResult.maxY - partialResult.minY, element.y + element.height)
-            )
+        guard !elements.isEmpty else {
+            // No elements - use a default frame to avoid division by zero
+            self.frame = CGRect(x: 0, y: 0, width: 100, height: 100)
+            return
         }
+
+        // Calculate bounding box correctly by tracking min/max coordinates
+        var minX = CGFloat.infinity
+        var minY = CGFloat.infinity
+        var maxX = -CGFloat.infinity
+        var maxY = -CGFloat.infinity
+
+        for element in elements {
+            minX = min(minX, element.x)
+            minY = min(minY, element.y)
+            maxX = max(maxX, element.x + element.width)
+            maxY = max(maxY, element.y + element.height)
+        }
+
+        // Guard against zero or invalid dimensions
+        let width = max(maxX - minX, 1.0)
+        let height = max(maxY - minY, 1.0)
+
+        self.frame = CGRect(x: minX, y: minY, width: width, height: height)
     }
     
     /// From excalidraw - packages/excalidraw/math.ts

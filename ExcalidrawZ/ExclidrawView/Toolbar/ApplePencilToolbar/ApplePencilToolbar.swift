@@ -219,7 +219,7 @@ struct ApplePencilToolbarModifier: ViewModifier {
                 }
             }
             .readSize($viewSize)
-            .watchImmediately(of: toolState.pencilInteractionMode) { mode in
+            .watch(value: toolState.pencilInteractionMode) { mode in
                 guard toolState.inPenMode else { return }
                 Task {
                     do {

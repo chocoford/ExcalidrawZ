@@ -126,19 +126,30 @@ struct FileHomeItemView: View {
 #if os(macOS)
             .simultaneousGesture(TapGesture(count: 2).onEnded {
                 if FileStatusService.shared.statusBox(for: file).status.contentAvailability == .missing {
-                    triggers.onToggleTryToRecover()
+                    if case .collaborationFile = file {
+                        openFile()
+                    } else {
+                        triggers.onToggleTryToRecover()
+                    }
                 } else {
                     openFile()
                 }
             })
 #elseif os(iOS)
-            .simultaneousGesture(TapGesture().onEnded {
-                if FileStatusService.shared.statusBox(for: file).status.contentAvailability == .missing {
-                    triggers.onToggleTryToRecover()
-                } else {
-                    openFile()
-                }
-            }, isEnabled: editMode?.wrappedValue.isEditing != true)
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    if FileStatusService.shared.statusBox(for: file).status.contentAvailability == .missing {
+                        if case .collaborationFile = file {
+                            openFile()
+                        } else {
+                            triggers.onToggleTryToRecover()
+                        }
+                    } else {
+                        openFile()
+                    }
+                },
+                isEnabled: editMode?.wrappedValue.isEditing != true
+            )
 #endif
             .modifier(
                 FileHomeItemSelectModifier(
@@ -262,9 +273,6 @@ private struct FileHomeItemContentView: View {
     
     @State private var width: CGFloat?
     @State private var localUpdatedAt: Date?
-
-    
-
     
     @available(macOS 13.0, *)
     var layout: AnyLayout {
@@ -326,11 +334,6 @@ private struct FileHomeItemContentView: View {
                 .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
                     [fileID+"SOURCE": value]
                 }
-        }
-        .overlay(alignment: .bottomTrailing) {
-            // Download progress indicator
-            FileDownloadProgressView(fileID: fileID)
-                .padding(8)
         }
         .overlay {
             if style == .file {
@@ -394,24 +397,24 @@ private struct FileHomeItemContentView: View {
                     }
                     Spacer(minLength: 0)
                 }
-            }
-        }
-        .overlay(alignment: .bottomTrailing) {
-            ZStack {
-                if style == .card {
-                    switch file {
-                        case .file:
-                            EmptyView()
-                            // ExcalidrawIconView().frame(height: 8)
-                        case .localFile:
-                            FileICloudStatusIndicator(file: file) {
-                                Image(systemSymbol: .externaldrive)
+                .overlay(alignment: .bottomTrailing) {
+                    ZStack {
+                        if style == .card {
+                            switch file {
+                                case .file:
+                                    EmptyView()
+                                    // ExcalidrawIconView().frame(height: 8)
+                                case .localFile:
+                                    FileICloudStatusIndicator(file: file) {
+                                        Image(systemSymbol: .externaldrive)
+                                    }
+                                    .controlSize(.mini)
+                                case .temporaryFile:
+                                    Image(systemSymbol: .clock)
+                                case .collaborationFile:
+                                    Image(systemSymbol: .person3Fill)
                             }
-                            .controlSize(.mini)
-                        case .temporaryFile:
-                            Image(systemSymbol: .clock)
-                        case .collaborationFile:
-                            Image(systemSymbol: .person3Fill)
+                        }
                     }
                 }
             }
@@ -578,184 +581,3 @@ private struct DatabaseFileHomeDropContianer<F: ExcalidrawFileRepresentable>: Vi
     }
 }
 
-
-struct FileICloudStatusIndicator: View {
-    var file: FileState.ActiveFile
-    
-    var downloadedFallbackView: AnyView?
-    
-    init<Content: View>(
-        file: FileState.ActiveFile,
-        @ViewBuilder downloadedFallbackView: () -> Content
-    ) {
-        self.file = file
-        self.downloadedFallbackView = AnyView(downloadedFallbackView())
-    }
-    
-    init(
-        file: FileState.ActiveFile,
-    ) {
-        self.file = file
-    }
-    
-    @State private var fileStatus: FileStatus? = nil
-
-    var body: some View {
-        ZStack {
-            if #available(macOS 26.0, iOS 26.0, *) {
-                switch fileStatus?.iCloudStatus {
-                    case .notDownloaded:
-                        Image(systemSymbol: .icloudAndArrowDown)
-                            .symbolEffect(.drawOn, options: .speed(2), isActive: fileStatus?.iCloudStatus == .notDownloaded)
-                    case .downloading(let progress):
-                        CircularProgressIndicator(progress: progress ?? 0)
-                    case .downloaded:
-                        downloadedFallbackView
-                            .symbolEffect(.drawOn, options: .speed(2), isActive: fileStatus?.iCloudStatus == .downloaded)
-                    case .outdated:
-                        Image(systemName: "icloud.dashed")
-                    case .loading:
-                        ProgressView()
-                    case .local:
-                        EmptyView()
-                    case .uploading:
-                        Image(systemSymbol: .icloudAndArrowUp)
-                            .symbolEffect(.drawOn, options: .speed(2), isActive: fileStatus?.iCloudStatus == .uploading)
-                    case .conflict:
-                        Image(systemSymbol: .xmarkIcloud)
-                            .symbolEffect(.drawOn, options: .speed(2), isActive: fileStatus?.iCloudStatus == .conflict)
-                    case .error(_):
-                        Image(systemSymbol: .exclamationmarkTriangle)
-                            .symbolEffect(.drawOn, options: .speed(2), isActive: {
-                                if case .error = fileStatus?.iCloudStatus {
-                                    return true
-                                }
-                                return false
-                            }())
-                    default:
-                        EmptyView()
-                }
-            } else {
-                switch fileStatus?.iCloudStatus {
-                    case .notDownloaded:
-                        Image(systemSymbol: .icloudAndArrowDown)
-                    case .downloading(let progress):
-                        CircularProgressIndicator(progress: progress ?? 0)
-                    case .downloaded:
-                        downloadedFallbackView
-                    case .outdated:
-                        Image(systemName: "icloud.dashed")
-                    case .loading:
-                        ProgressView()
-                    case .local:
-                        EmptyView()
-                    case .uploading:
-                        Image(systemSymbol: .icloudAndArrowUp)
-                    case .conflict:
-                        Image(systemSymbol: .xmarkIcloud)
-                    case .error(_):
-                        Image(systemSymbol: .exclamationmarkTriangle)
-                    default:
-                        EmptyView()
-                }
-            }
-        }
-        .bindFileStatus(for: file, status: $fileStatus)
-        .symbolRenderingMode(.multicolor)
-        .animation(.smooth, value: fileStatus?.iCloudStatus)
-    }
-}
-
-#if os(iOS)
-/// A View only for showing syncing status
-struct FileICloudSyncStatusIndicator: View {
-    var file: FileState.ActiveFile
-    
-    @State private var fileStatus: FileStatus? = nil
-    var body: some View {
-        ZStack {
-            if #available(macOS 26.0, iOS 26.0, *) {
-                ZStack {
-                    if fileStatus?.iCloudStatus == .syncing {
-                        Image(systemSymbol: .arrowTrianglehead2ClockwiseRotate90Icloud)
-                            .drawOnAppear(options: .speed(2))
-                    } else {
-                        Image(systemSymbol: .checkmarkIcloud)
-                            .drawOnAppear(options: .speed(2))
-                            .foregroundStyle(.green)
-                    }
-                }
-            } else {
-                if fileStatus?.iCloudStatus == .syncing {
-                    if #available(macOS 15.0, iOS 18.0, *) {
-                        Image(systemSymbol: .arrowTrianglehead2ClockwiseRotate90Icloud)
-                    } else {
-                        Image(systemSymbol: .arrowTriangle2Circlepath)
-                    }
-                } else if case .downloaded = fileStatus?.iCloudStatus {
-                    Image(systemSymbol: .checkmarkIcloud)
-                        .foregroundStyle(.green)
-                }
-            }
-        }
-        .bindFileStatus(for: file, status: $fileStatus)
-        .symbolRenderingMode(.multicolor)
-        .animation(.smooth, value: fileStatus?.iCloudStatus)
-    }
-}
-#endif
-
-@available(macOS 26.0, iOS 26.0, *)
-struct DrawOnAppearModifier: ViewModifier {
-    
-     var options: SymbolEffectOptions = .default
-    
-    @State private var isActive = false
-    
-    func body(content: Content) -> some View {
-        content
-            .symbolEffect(.drawOn, options: options, isActive: !isActive)
-            .animation(.smooth, value: isActive)
-            .onAppear {
-                isActive = true
-            }
-    }
-}
-
-extension View {
-    @available(macOS 26.0, iOS 26.0, *)
-    @ViewBuilder
-    func drawOnAppear(options: SymbolEffectOptions = .default) -> some View {
-        modifier(DrawOnAppearModifier(options: options))
-    }
-}
-
-private struct PreviewView: View {
-    @State private var isOn = false
-    
-    var body: some View {
-        if #available(macOS 26.0, iOS 26.0, *) {
-            VStack {
-                ZStack {
-                    if isOn {
-                        Image(systemSymbol: .arrowTrianglehead2ClockwiseRotate90Icloud)
-                            .drawOnAppear(options: .speed(2))
-                    } else {
-                        Image(systemSymbol: .checkmarkIcloud)
-                            .drawOnAppear(options: .speed(2))
-                    }
-                }.border(.red)
-                
-                Button {
-                    isOn.toggle()
-                } label: {
-                    Text("Toggle")
-                }
-            }
-        }
-    }
-}
-
-#Preview {
-    PreviewView()
-}

@@ -44,6 +44,7 @@ Operation → enqueue() → [500ms 防抖] → processQueue() → execute
 - 持久化队列 (app 重启后恢复)
 - 自动重试 (最多 3 次)
 - 防抖合并 (500ms 窗口期)
+- 优先级队列 (用户操作优先于后台任务)
 - UI 状态追踪 (queued → in-progress → completed/failed)
 
 ### 2. DiffScan (全量对比)
@@ -58,20 +59,44 @@ Operation → enqueue() → [500ms 防抖] → processQueue() → execute
 2. 枚举 Local 和 iCloud 实际文件
    - macOS: 通过 ICloudStatusChecker 读取下载状态
    - iOS: 强制刷新 metadata (startDownloadingUbiquitousItem)
-3. 逐个对比:
-   - 双边都有:
-     * macOS: 如果 iCloud 文件 .notDownloaded → 优先下载
-     * 否则: timestamp 新的胜出 (容差 2 秒)
-   - 仅 Local 有 → 上传到 iCloud
-   - 仅 iCloud 有 → 下载到 local
+
+3. 分优先级对比（跳过 active 文件）:
+
+   【优先级 1 - 缺失文件】立即处理：
+   - CoreData 有，本地无，iCloud 有 → 下载
+   - CoreData 有，本地有，iCloud 无 → 上传
+     * 信任 CoreData 作为 Source of Truth
+     * 不等待 iCloud 同步延迟，直接上传
+
+   【优先级 2 - 明显冲突】快速检查：
+   - 双边都有，timestamp 差异 > 2 秒：
+     * macOS:
+       - .notDownloaded → 优先下载
+       - .downloaded/.current → timestamp 新的胜出
+     * iOS: 强制刷新 metadata，再比较，timestamp 新的胜出
+
+   【优先级 3 - 其他文件】低优先级：
+   - timestamp 差异 ≤ 2 秒 → 跳过（容差范围内）
    - 双边都没有 → 标记为 missing
+
 4. 清理孤立文件 (文件系统有但 CoreData 没有)
+5. Active 文件由实时同步机制处理，DiffScan 跳过
 ```
 
 **冲突解决**:
 - Last-write-wins (最后写入胜出)
 - 容差: 2 秒 (文件系统精度差异)
 - macOS 特殊处理: `.notDownloaded` 文件优先下载，避免误覆盖
+
+**核心价值**:
+- **上传离线积压**: 用户离线期间编辑的文件，上线后需要主动上传
+  - 懒加载只在用户查看文件时触发下载
+  - 但上传必须主动进行，不能等用户打开文件
+  - 这是 DiffScan 存在的最关键理由
+- **保证最终一致性**: 作为"安全网"，确保所有文件最终都同步
+  - 处理同步失败的重试（queue 失败后的恢复）
+  - 处理边缘情况（崩溃、网络问题等）
+- **清理孤立文件**: 删除文件系统中存在但 CoreData 中不存在的文件
 
 **优先级定位**:
 - **非实时操作**: DiffScan 是后台全量对比，不要求实时性
@@ -132,82 +157,80 @@ iCloudManager.iCloudStatusPublisher
 - **够用**: 文件是二进制 blob (不是逐行合并)
 - **权衡**: Last-write-wins (并发编辑会丢失)
 
-### 3. iOS 为什么要刷新 metadata?
-- **问题**: iOS iCloud Drive 用占位文件,timestamp 是缓存的
-- **方案**: `startDownloadingUbiquitousItem()` 强制 iOS 从 iCloud 拉取最新 metadata
-- **代价**: 每次检查延迟 100ms
-
-### 4. 为什么容差 2 秒?
+### 3. 为什么容差 2 秒?
 - **文件系统精度**: macOS/iOS 文件系统可能对 timestamp 取整
 - **网络同步**: iCloud 同步可能引入亚秒级时间漂移
 - **安全边界**: 避免误判
 
-### 5. 为什么 SyncFileState 需要 downloadStatus?
-- **macOS 问题**: `.notDownloaded` 文件 metadata 不可用
-  - 如果跳过，DiffScan 会误判为"iCloud 不存在"
-  - 错误地 queue upload，**覆盖云端数据**
-- **解决方案**: 记录下载状态，优先下载未下载的文件
-- **iOS**: `downloadStatus = nil`，改为强制刷新 metadata
+### 4. 优先级机制
+**问题**: DiffScan 可能产生大量后台任务，导致用户当前编辑的文件同步操作排队很久
+
+**方案**: 两级优先级队列
+- **High Priority (默认)**: 用户触发的操作（保存、编辑 activeFile）→ 插队到队列前端
+- **Normal Priority**: DiffScan 批量操作 → 添加到队列尾部
+
+**实现**:
+```swift
+enum SyncPriority: Int {
+    case normal = 0  // 后台 DiffScan
+    case high = 1    // 用户操作
+}
+```
+
+**效果**: 高优先级任务插入到第一个普通优先级任务之前，确保用户操作立即处理
+
+### 5. 冲突检测分层
+**执行层（SyncCoordinator）**:
+- `uploadToCloud()` / `downloadFromCloud()` 保持"强制覆盖"语义
+- 单纯执行同步操作，不做决策
+
+**决策层（DiffScan/FileState/IOSAutoSyncModifier）**:
+- DiffScan: 比较 timestamp，决定上传/下载/跳过
+- FileState: 用户操作时检测冲突
+- IOSAutoSyncModifier: 实时监控 active 文件变化
+
+---
+
+## 平台差异化处理
+
+### Metadata 枚举策略
+**macOS 端**:
+- 通过 `ICloudStatusChecker` 读取每个文件的 `downloadStatus`（.notDownloaded, .downloaded, .current）
+- `SyncFileState` 包含 `downloadStatus` 字段，用于判断文件是否已下载
+- DiffScan 检测到 `.notDownloaded` 文件时，优先下载而不是比较 timestamp
+- 避免基于不准确的本地 metadata 误覆盖云端数据
+
+**iOS 端**:
+- 在 `enumerateICloudFiles()` 时对每个文件调用 `startDownloadingUbiquitousItem()` + 100ms
+- 强制 iOS 从 iCloud 拉取最新 metadata，确保 timestamp 准确
+- `SyncFileState.downloadStatus` 为 nil（ICloudStatusChecker 在 iOS 上不可靠）
+- DiffScan 直接比较 timestamp，因为 metadata 已在枚举时刷新
+
+**关键原因**:
+- **iOS 问题**: 占位文件的 timestamp 是缓存的，不反映 iCloud 实际状态
+- **macOS 问题**: `.notDownloaded` 文件的 metadata 不准确，可能导致误覆盖
+- **解决方案**: iOS 强制刷新，macOS 优先下载
 
 ---
 
 ## 潜在问题与讨论
 
-### ⚠️ 1. 待实现：平台差异化的 Metadata 处理
-- **需要实现**:
-  - `SyncFileState` 添加 `downloadStatus` 字段
-  - `FileEnumerator.enumerateICloudFiles()`:
-    - macOS: 通过 `ICloudStatusChecker` 读取下载状态
-    - iOS: 强制刷新 metadata (`startDownloadingUbiquitousItem`)
-  - `DiffScan` 对比逻辑:
-    - macOS: `.notDownloaded` 文件优先下载
-  - `downloadFromCloud()`:
-    - iOS: 读取 metadata 前先刷新
-- **注意**:
-  - `uploadToCloud()` 保持"强制覆盖"语义，不做冲突检测
-  - 冲突检测在调用者（DiffScan/FileState）层面做
-
-### 2. iOS Metadata 刷新延迟
+### 1. iOS Metadata 刷新延迟
 - **现状**: `startDownloadingUbiquitousItem()` + 100ms sleep
-- **问题**:
-  - 100ms 是否总是够?
-  - 是否会阻塞线程?
-  - 是否应该用 completion handler?
+- **问题**: 100ms 是否总是够? 是否应该用 completion handler?
 
-### 3. 冲突解决
+### 2. 冲突解决
 - **现状**: Last-write-wins (自动)
-- **问题**:
-  - 无用户干预
-  - 并发编辑会丢数据
-  - 是否应该检测冲突并提示用户?
+- **问题**: 无用户干预，并发编辑会丢数据，是否应该检测冲突并提示用户?
 
-### 4. DiffScan 频率
+### 3. DiffScan 频率
 - **现状**: 仅在启动 + iCloud 恢复时
-- **问题**:
-  - 如果用户直接在 iCloud Drive 修改文件?
-  - 是否需要周期性 DiffScan (如每 5 分钟)?
-  - 是否应该监听 iCloud 文件变化 (NSMetadataQuery)?
+- **问题**: 如果用户直接在 iCloud Drive 修改文件? 是否需要周期性 DiffScan 或监听变化?
 
-### 5. 孤立文件清理
-- **现状**: 自动静默删除
-- **问题**:
-  - 是否应该通知用户?
-  - 是否应该移到废纸篓而非直接删除?
-  - 如果 CoreData 错了,孤立文件其实是合法的呢?
-
-### 6. 重试逻辑
-- **现状**: 3 次重试后标记失败
-- **问题**:
-  - 失败操作在 app 重启后丢失
-  - 是否应该持久化失败操作供手动重试?
-  - 是否应该指数退避?
-
-### 7. Timestamp 容差
-- **现状**: 2 秒
-- **问题**:
-  - 2 秒是否太宽松? (可能漏掉快速编辑)
-  - 2 秒是否太紧? (可能误同步)
-  - 是否应该可配置?
+### 4. Active 文件跳过
+- **现状**: 未实现，DiffScan 会处理所有文件
+- **风险**: 可能与实时同步冲突，但影响有限（最终一致）
+- **方案**: 参数传入 / 查询服务 / 弱引用（优先级：低）
 
 ---
 
@@ -223,6 +246,7 @@ struct SyncEvent {
     let operation: SyncOperation    // 操作类型
     let timestamp: Date             // 时间戳
     let retryCount: Int             // 重试次数
+    let priority: SyncPriority      // 优先级 (.high/.normal)
 }
 ```
 
@@ -234,6 +258,15 @@ enum SyncOperation {
     case downloadFromCloud  // iCloud → Local
     case deleteFromCloud    // 删除 iCloud 文件
     case deleteFromLocal    // 删除 Local 文件
+}
+```
+
+### SyncPriority
+同步优先级：
+```swift
+enum SyncPriority: Int {
+    case normal = 0  // 后台操作 (DiffScan)
+    case high = 1    // 用户操作 (保存/编辑)
 }
 ```
 
@@ -333,13 +366,17 @@ struct SyncFileState {
 ## 使用示例
 
 ```swift
-// 排队上传
+// 排队上传（用户操作，高优先级 - 默认）
 syncCoordinator.queueUpload(fileID: "123", relativePath: "file.excalidraw")
 
-// 排队下载
-syncCoordinator.queueDownload(fileID: "123", relativePath: "file.excalidraw")
+// 排队下载（后台任务，普通优先级）
+syncCoordinator.queueDownload(
+    fileID: "123",
+    relativePath: "file.excalidraw",
+    priority: .normal
+)
 
-// 全量对比
+// 全量对比（会生成大量 .normal 优先级任务）
 try await syncCoordinator.performDiffScan()
 
 // 加载时自动同步

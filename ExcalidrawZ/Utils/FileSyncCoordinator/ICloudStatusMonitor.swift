@@ -201,7 +201,7 @@ actor ICloudStatusMonitor {
         let allFiles = getFilesInFolder()
         for fileURL in allFiles {
             if fileMonitoringLevels[fileURL] == nil {
-                fileMonitoringLevels[fileURL] = .background
+                fileMonitoringLevels[fileURL] = .never
             }
         }
         

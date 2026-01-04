@@ -135,7 +135,6 @@ struct ExcalidrawView: View {
     
     init(
         type: ExcalidrawType = .normal,
-        roomID: Binding<String>? = nil,
         file: Binding<ExcalidrawFile?>,
         savingType: UTType = .excalidrawFile,
         loadingState: Binding<LoadingState>,
@@ -143,7 +142,6 @@ struct ExcalidrawView: View {
         onError: @escaping (Error) -> Void
     ) {
         self.type = type
-        self.roomIDBinding = roomID
         self._file = file
         self.savingType = savingType
         self._loadingState = loadingState
@@ -155,15 +153,22 @@ struct ExcalidrawView: View {
     
     var body: some View {
         ExcalidrawViewRepresentable()
+            .modifier(MediaItemSyncModifier())
             .environmentObject(excalidrawCore)
-            .onReceive(NotificationCenter.default.publisher(for: .forceReloadExcalidrawFile)) { _ in
+#if os(macOS)
+            .onWindowEvent(.didBecomeKey) { _ in
+                applyColorMode()
+            }
+#endif
+            .onReceive(
+                NotificationCenter.default.publisher(for: .forceReloadExcalidrawFile)
+            ) { _ in
                 excalidrawCore.loadFile(from: file, force: true)
             }
             .onChange(of: interactionEnabled) { enabled in
                 Task {
                     try? await excalidrawCore.toggleWebPointerEvents(enabled: enabled)
                 }
-                // setupCoordinators()
             }
             .onChange(of: file) { newFile in
                 handleFileChange(newFile)
@@ -185,13 +190,13 @@ struct ExcalidrawView: View {
                     applyAllSettings()
                 }
             }
-#if os(macOS)
-            .onChange(of: scenePhase) { scenePhase in
-                if scenePhase == .active {
-                    applyColorMode()
-                }
-            }
-#endif
+//#if os(macOS)
+//            .onChange(of: scenePhase) { scenePhase in
+//                if scenePhase == .active {
+//                    applyColorMode()
+//                }
+//            }
+//#endif
             .task {
                 await listenToLoadingState()
             }
@@ -214,19 +219,13 @@ struct ExcalidrawView: View {
     
     private func setupCoordinators() {
         toolState.excalidrawWebCoordinator = excalidrawCore
-        if interactionEnabled {
-            
-        }
-        
         switch type {
             case .normal:
                 exportState.excalidrawWebCoordinator = excalidrawCore
                 fileState.excalidrawWebCoordinator = excalidrawCore
             case .collaboration:
-                if interactionEnabled {
-                    exportState.excalidrawCollaborationWebCoordinator = excalidrawCore
-                    fileState.excalidrawCollaborationWebCoordinator = excalidrawCore
-                }
+                exportState.excalidrawCollaborationWebCoordinator = excalidrawCore
+                fileState.excalidrawCollaborationWebCoordinator = excalidrawCore
         }
     }
     

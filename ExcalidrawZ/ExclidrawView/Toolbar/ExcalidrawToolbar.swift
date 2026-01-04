@@ -191,7 +191,7 @@ struct ExcalidrawToolbar: View {
                         .fill(.regularMaterial)
                 }
             }
-            .watchImmediately(of: sizeClass) { newValue in
+            .watch(value: sizeClass) { _, newValue in
                 if newValue == .compact {
                     primaryPickerItems = [.cursor, .rectangle, .diamond, .ellipse, .arrow, .line]
                     secondaryPickerItems = [.freedraw, .text, .image, .eraser, .laser, .hand, .frame, .webEmbed, .magicFrame]
@@ -327,16 +327,14 @@ struct ExcalidrawToolbar: View {
             HStack(spacing: 20) {
                 Color.clear
                     .overlay(alignment: .leading) {
-                        if containerHorizontalSizeClass == .compact {
-                            if let activeFile = fileState.currentActiveFile {
 #if os(iOS)
-                                FileICloudSyncStatusIndicator(file: activeFile)
-                                    .padding(.horizontal, 8)
-#endif
-                            } else if case .collaborationFile = fileState.currentActiveFile {
-                                CollaborationMembersPopoverButton()
-                            }
+                        if let activeFile = fileState.currentActiveFile {
+                            FileICloudSyncStatusIndicator(file: activeFile)
+                                .padding(.horizontal, 8)
+                        } else if case .collaborationFile = fileState.currentActiveFile {
+                            CollaborationMembersPopoverButton()
                         }
+#endif
                     }
                 Color.clear
                     .overlay(alignment: .center) {
@@ -351,6 +349,7 @@ struct ExcalidrawToolbar: View {
                         }
 #endif
                     }
+                    .frame(minWidth: 220) // for iPad
                 Color.clear
                     .overlay(alignment: .trailing) {
                         Button {
@@ -629,7 +628,7 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
                 WithContainerSize { containerSize in
                     // let _ = print(containerSize)
                     Color.clear
-                        .watchImmediately(of: containerSize) { newValue in
+                        .watch(value: containerSize) { _, newValue in
                             let newSizeClass = getSizeClass(containerSize.width)
                             if newSizeClass != sizeClass {
                                 self.sizeClass = newSizeClass

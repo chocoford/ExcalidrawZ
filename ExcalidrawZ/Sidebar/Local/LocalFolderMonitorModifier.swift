@@ -35,7 +35,7 @@ struct LocalFolderMonitorModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .environmentObject(localFolderState)
-            .watchImmediately(of: folders) { newValue in
+            .watch(value: folders) { newValue in
                 handleFoldersObservation(folders: newValue)
             }
             .onAppear {

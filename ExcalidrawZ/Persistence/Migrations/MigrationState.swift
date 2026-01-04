@@ -22,6 +22,17 @@ enum MigrationPhase: Equatable {
     case error(String)
 
     case closed
+    
+    var isMigrating: Bool {
+        switch self {
+            case .migrating:
+                true
+            case .progress:
+                true
+            default:
+                false
+        }
+    }
 }
 
 struct MigrationFailedItem: Identifiable, Equatable, Codable {
@@ -225,6 +236,9 @@ struct CoreDataMigrationModifier: ViewModifier {
                     try? await Task.sleep(nanoseconds: UInt64(1e+9 * debounceInterval))
 
                     guard !Task.isCancelled else { return }
+                    guard !self.migrationState.phase.isMigrating else {
+                        return
+                    }
 
                     // Recheck if migration is needed
                     do {
@@ -241,6 +255,9 @@ struct CoreDataMigrationModifier: ViewModifier {
                         }
 
                         if needsMigration {
+                            if case .error = self.migrationState.phase {
+                                return
+                            }
                             await MainActor.run {
                                 showMigrationSheet = true
                                 self.migrationState.phase = .idle

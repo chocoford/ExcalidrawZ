@@ -135,6 +135,23 @@ struct CollaborationFileMenuItems: View {
     var onDelete: () -> Void
     
     var body: some View {
+        Button {
+            fileState.currentActiveFile = .collaborationFile(file)
+        } label: {
+            if #available(macOS 13.0, *) {
+                Label(
+                    .localizable(.collaborationButtonJoinRoom),
+                    systemSymbol: .doorLeftHandOpen
+                )
+            } else {
+                Label(
+                    .localizable(.collaborationButtonJoinRoom),
+                    systemSymbol: .ipadAndArrowForward
+                )
+            }
+        }
+        
+        
         if let roomID = file.roomID {
             Button {
                 copyRoomShareLink(roomID: roomID, filename: file.name)

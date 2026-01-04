@@ -61,7 +61,7 @@ struct TemporaryFileRowView: View {
 #endif
         }
         .modifier(TemporaryFileContextMenuModifier(file: file))
-        .watchImmediately(of: file) { newValue in
+        .watch(value: file) { newValue in
             updateModifiedDate()
         }
     }

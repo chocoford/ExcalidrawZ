@@ -143,7 +143,7 @@ struct LocalFileRowView: View {
 //                }
             }
         }
-        .watchImmediately(of: file) { newValue in
+        .watch(value: file) { newValue in
             updateModifiedDate()
             updateICloudFileState()
             isWaitingForOpeningFile = false

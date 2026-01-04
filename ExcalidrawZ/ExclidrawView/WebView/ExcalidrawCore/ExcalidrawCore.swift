@@ -9,6 +9,7 @@ import SwiftUI
 import WebKit
 import Logging
 import Combine
+import CoreData
 
 typealias CollaborationInfo = ExcalidrawCore.CollaborationInfo
 
@@ -87,9 +88,12 @@ class ExcalidrawCore: NSObject, ObservableObject {
     
     var previousFileID: UUID? = nil
     private var lastVersion: Int = 0
-    
+
     var hasInjectIndexedDBData = false
-    
+
+    // Track loaded MediaItem IDs for re-injection detection
+    private var loadedMediaItemIDs: Set<String> = []
+
     internal var lastTool: ExcalidrawTool?
     
     @MainActor
@@ -105,7 +109,9 @@ class ExcalidrawCore: NSObject, ObservableObject {
             case .collaboration:
                 Publishers.CombineLatest(
                     Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
-                        .map { $0 || !$1 },
+                        .map { isNavigating, isDocumentLoaded in
+                            isNavigating || !isDocumentLoaded
+                        },
                     $isCollabEnabled
                 )
                 .map { $0 || !$1 }
@@ -484,11 +490,103 @@ extension ExcalidrawCore {
     /// Insert media files to IndexedDB
     @MainActor
     func insertMediaFiles(_ files: [ExcalidrawFile.ResourceFile]) async throws {
-        print("insertMediaFiles: \(files.count)")
+        logger.info("insertMediaFiles: \(files.count)")
         let jsonStringified = try files.jsonStringified()
         try await webView.evaluateJavaScript("window.excalidrawZHelper.insertMedias('\(jsonStringified)'); 0;")
     }
-    
+
+    /// Inject all MediaItems from CoreData to IndexedDB
+    /// This method fetches all MediaItems and injects them into the WebView's IndexedDB
+    /// Most work (fetching, loading files) runs on background threads for better performance
+    /// - Returns: The count of injected MediaItems
+    func injectAllMediaItems() async throws -> Int {
+        logger.info("Starting MediaItem injection...")
+
+        // Check WebView readiness on main thread
+        let isReady = await MainActor.run {
+            !isNavigating && (hasInjectIndexedDBData || isDocumentLoaded)
+        }
+
+        guard isReady else {
+            logger.warning("WebView not ready for MediaItem injection, skipping")
+            return 0
+        }
+
+        let context = PersistenceController.shared.newTaskContext()
+        let allMedias = try await context.perform {
+            let allMediasFetch = NSFetchRequest<MediaItem>(entityName: "MediaItem")
+            return try context.fetch(allMediasFetch)
+        }
+        let allMediaIDs = allMedias.compactMap(\.id)
+        
+        logger.info("Fetched \(allMedias.count) MediaItems from CoreData")
+
+        // Load media items using async method with iCloud Drive support (concurrent)
+        // This can run on background threads for better performance
+        let mediaFiles = await withTaskGroup(of: ExcalidrawFile.ResourceFile?.self) { group in
+            var files: [ExcalidrawFile.ResourceFile] = []
+            
+            for id in allMedias.map({$0.objectID}) {
+                group.addTask {
+                    if let mediaItem = context.object(with: id) as? MediaItem {
+                        return try? await ExcalidrawFile.ResourceFile(mediaItem: mediaItem)
+                    }
+                    return nil
+                }
+            }
+
+            for await resourceFile in group {
+                if let resourceFile = resourceFile {
+                    files.append(resourceFile)
+                }
+            }
+
+            return files
+        }
+
+        // Insert to IndexedDB and update state on main thread
+        await MainActor.run {
+            Task { @MainActor in
+                try? await self.insertMediaFiles(mediaFiles)
+            }
+            // Update loaded IDs
+            self.loadedMediaItemIDs = Set(allMediaIDs)
+            self.hasInjectIndexedDBData = true
+        }
+
+        logger.info("Successfully injected \(mediaFiles.count) MediaItems")
+        return mediaFiles.count
+    }
+
+    /// Check if MediaItems have changed and re-inject if needed
+    /// This is the public method that should be called when MediaItem changes are detected
+    public func refreshMediaItemsIfNeeded() async throws {
+        // Get current MediaItem IDs from CoreData on main thread
+        let (currentIDs, loadedIDs) = try await MainActor.run {
+            let context = PersistenceController.shared.container.viewContext
+            let fetchRequest = NSFetchRequest<MediaItem>(entityName: "MediaItem")
+            fetchRequest.propertiesToFetch = ["id"]
+
+            let currentMedias = try context.fetch(fetchRequest)
+            let currentIDs = Set(currentMedias.compactMap { $0.id })
+
+            return (currentIDs, self.loadedMediaItemIDs)
+        }
+
+        // Check if there are changes
+        let hasChanges = currentIDs != loadedIDs
+
+        if hasChanges {
+            let addedCount = currentIDs.subtracting(loadedIDs).count
+            let removedCount = loadedIDs.subtracting(currentIDs).count
+            logger.info("MediaItem changes detected: +\(addedCount) added, -\(removedCount) removed, re-injecting...")
+
+            _ = try await injectAllMediaItems()
+        } else {
+            logger.debug("No MediaItem changes detected, skipping injection")
+        }
+    }
+
     @MainActor
     func performUndo() async throws {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.undo(); 0;")

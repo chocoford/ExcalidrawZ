@@ -285,18 +285,26 @@ private struct RecentlyFilesSection: View {
                         
                         if recentlyFiles.isEmpty {
                             ForEach(0..<10) { _ in
-                                Rectangle()
-                                    .fill(.secondary)
-                                    .frame(width: 200, height: 200 * 0.45)
+                                RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius)
+                                    .fill(.secondary.opacity(0.5))
+                                    .frame(width: 200, height: 200 * 0.6)
                             }
                         }
                     }
-                    
                 }
                 .padding(10)
             }
             .offset(x: -10)
             .scrollClipDisabledIfAvailable()
+//            .overlay {
+//                RecentlyFilesProvider { recentlyFiles in
+//                    if recentlyFiles.isEmpty {
+//                        Text("No recently files...")
+//                            .font(.footnote)
+//                            .foregroundStyle(.secondary)
+//                    }
+//                }
+//            }
         }
     }
 

@@ -20,16 +20,41 @@ actor SyncQueue {
 
     init() {
         // Load queue from persistent storage
-        loadQueue()
+        Task {
+            await loadQueue()
+        }
     }
 
     // MARK: - Queue Operations
 
-    /// Enqueue a sync event
+    /// Enqueue a sync event with priority-based insertion
+    /// High priority events are inserted at the front, normal priority at the back
     func enqueue(_ event: SyncEvent) {
-        queue.append(event)
+        if event.priority == .high {
+            // High priority: Insert at the beginning (or after other high priority items)
+            // Find the first normal priority item
+            if let firstNormalIndex = queue.firstIndex(where: { $0.priority == .normal }) {
+                queue.insert(event, at: firstNormalIndex)
+            } else {
+                // All items are high priority, append to end
+                queue.append(event)
+            }
+            logger.info("Queued HIGH PRIORITY sync operation: \(event.operation) for \(event.relativePath)")
+        } else {
+            // Normal priority: Append to end
+            queue.append(event)
+            logger.info("Queued sync operation: \(event.operation) for \(event.relativePath)")
+        }
         saveQueue()
-        logger.debug("Queued sync operation: \(event.operation) for \(event.relativePath)")
+    }
+
+    /// Dequeue the first event from the queue
+    /// - Returns: The first event, or nil if queue is empty
+    func dequeueFirst() -> SyncEvent? {
+        guard !queue.isEmpty else { return nil }
+        let event = queue.removeFirst()
+        saveQueue()
+        return event
     }
 
     /// Dequeue a specific event

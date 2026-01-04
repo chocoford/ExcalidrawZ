@@ -84,7 +84,7 @@ struct SegmentedPicker<Selection, Content>: View where Selection : Hashable, Con
                             viewModel.selection = newValue
                         }
                     }
-                    .watchImmediately(of: viewModel.selection) { newValue in
+                    .watch(value: viewModel.selection) { _, newValue in
                         if newValue != selection {
                             selection = newValue
                         }

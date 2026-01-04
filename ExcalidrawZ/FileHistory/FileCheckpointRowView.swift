@@ -23,7 +23,7 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
     
     var body: some View {
         content()
-            .watchImmediately(of: checkpoint) { newValue in
+            .watch(value: checkpoint) { newValue in
                 Task {
                     do {
                         let content = try await PersistenceController.shared.checkpointRepository.loadCheckpointContent(

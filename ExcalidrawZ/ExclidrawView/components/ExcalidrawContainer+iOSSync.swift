@@ -14,6 +14,7 @@ import SwiftUI
 /// Uses polling (5s interval) to detect changes from other devices
 private struct IOSAutoSyncModifier: ViewModifier {
     @Environment(\.alertToast) var alertToast
+    @Environment(\.scenePhase) var scenePhase
     @EnvironmentObject var toolState: ToolState
     
     var activeFile: FileState.ActiveFile?
@@ -36,6 +37,13 @@ private struct IOSAutoSyncModifier: ViewModifier {
                     startAutoSyncIfNeeded(file: activeFile)
                 } else {
                     stopAutoSync()
+                }
+            }
+            .onChange(of: scenePhase) { scenePhase in
+                if scenePhase == .background {
+                    stopAutoSync()
+                } else if scenePhase == .active {
+                    startAutoSyncIfNeeded(file: activeFile)
                 }
             }
             .onDisappear {
@@ -109,7 +117,8 @@ private struct IOSAutoSyncModifier: ViewModifier {
                                 relativePath: relativePath,
                                 fileID: fileID.uuidString
                             )
-                            
+                            // collaboration file no need to load file.
+                            return
                         default:
                             continue
                     }

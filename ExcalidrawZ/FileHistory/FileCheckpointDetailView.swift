@@ -29,7 +29,7 @@ struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
                 if let data = loadedContent,
                    let file = try? ExcalidrawFile(data: data, id: checkpoint.fileID),
                    !file.elements.isEmpty {
-                    ExcalidrawRenderer(file: file)
+                     ExcalidrawRenderer(file: file)
                 } else {
                     if colorScheme == .light {
                         Color.white

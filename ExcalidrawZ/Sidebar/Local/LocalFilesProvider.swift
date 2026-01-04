@@ -65,7 +65,7 @@ struct LocalFilesProvider<Content: View>: View {
     var body: some View {
         content(files, updateFlags)
             .bindWindow($window)
-            .watchImmediately(of: folder.url) { newValue in
+            .watch(value: folder.url) { newValue in
                 DispatchQueue.main.async { getFolderContents() }
             }
 #if os(macOS)
@@ -148,7 +148,6 @@ struct LocalFilesProvider<Content: View>: View {
                         [$0 : Date()]
                     }.merged()
                 }
-                // debugPrint("[DEBUG] getFolderContents...", self.files)
             } catch {
                 alertToast(error)
             }

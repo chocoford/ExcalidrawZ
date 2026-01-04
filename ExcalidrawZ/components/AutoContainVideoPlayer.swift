@@ -112,12 +112,12 @@ struct AutoFitModifier: ViewModifier {
         content
             .readSize(width: $width, height: $height)
             .frame(width: displayWidth, height: displayHeight)
-            .watchImmediately(of: width) { _ in
+            .watch(value: width) { _, _ in
                 if baseAxis == .horizontal {
                     calSize()
                 }
             }
-            .watchImmediately(of: height) { _ in
+            .watch(value: height) { _, _ in
                 if baseAxis == .vertical {
                     calSize()
                 }

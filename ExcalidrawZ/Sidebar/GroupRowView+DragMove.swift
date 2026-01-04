@@ -480,7 +480,7 @@ struct DropToGroupSheetView<T: Sendable>: View {
         }
         .padding(20)
         .frame(width: 360)
-        .watchImmediately(of: isPresented) { val in
+        .watch(value: isPresented) { val in
             print("isPresented: \(val)")
             if val {
                 

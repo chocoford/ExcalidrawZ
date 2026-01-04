@@ -41,6 +41,17 @@ struct ExcalidrawZApp: App {
     private let updaterController: SPUStandardUpdaterController
 #endif
     init() {
+        // Configure logging level
+        LoggingSystem.bootstrap { label in
+            var handler = StreamLogHandler.standardOutput(label: label)
+#if DEBUG
+            handler.logLevel = .debug
+#else
+            handler.logLevel = .info
+#endif
+            return handler
+        }
+
         // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
         // This is where you can also pass an updater delegate if you need one
 #if os(macOS) && !APP_STORE
@@ -84,7 +95,6 @@ struct ExcalidrawZApp: App {
     
     @StateObject private var appPrefernece = AppPreference()
     @StateObject private var store = Store()
-    @StateObject private var fileStatusServices = FileStatusService.shared
 #if os(macOS) && !APP_STORE
     @StateObject private var updateChecker = UpdateChecker()
 #endif
@@ -97,7 +107,6 @@ struct ExcalidrawZApp: App {
             RootView()
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-                .environmentObject(fileStatusServices)
                 .environmentObject(appPrefernece)
                 .environmentObject(store)
                 .onAppear {
@@ -106,12 +115,8 @@ struct ExcalidrawZApp: App {
 #endif
                 }
         }
-        .onChange(of: scenePhase) { newValue in
-            logger.info("On scene phase changed: \(String(describing: newValue))")
-        }
         // prevent window being open by urls.
         .handlesExternalEvents(matching: ["*"])
-
 #if os(macOS) && !APP_STORE
         .commands {
             CommandGroup(after: .appInfo) {

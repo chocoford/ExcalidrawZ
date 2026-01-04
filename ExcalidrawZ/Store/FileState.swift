@@ -333,10 +333,7 @@ final class FileState: ObservableObject {
             return nil
         }() else { throw AppError.stateError(.currentGroupNil) }
         
-        guard let templateURL = Bundle.main.url(forResource: "template", withExtension: "excalidraw") else {
-            throw AppError.fileError(.notFound)
-        }
-        let templateData = try Data(contentsOf: templateURL)
+        let templateData = ExcalidrawFile().content!
         
         // Create file through repository (creates entity and saves to iCloud Drive)
         let fileID = try await PersistenceController.shared.fileRepository.createFile(
@@ -882,7 +879,6 @@ final class FileState: ObservableObject {
     }
     
     func mergeDefaultGroupAndTrashIfNeeded(context: NSManagedObjectContext) async throws {
-        print("mergeDefaultGroupAndTrashIfNeeded...")
         try await context.perform {
             let groups = try context.fetch(NSFetchRequest<Group>(entityName: "Group"))
             

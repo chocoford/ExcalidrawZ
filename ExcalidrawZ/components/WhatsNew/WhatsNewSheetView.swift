@@ -138,7 +138,7 @@ struct WhatsNewView: View {
             }
         }
         .readSize($navigationSize)
-//        .watchImmediately(of: navigationSize) { newValue in
+//        .watch(value: navigationSize) { newValue in
 //            navigationMaxHeight = max(navigationMaxHeight, newValue.height)
 //        }
 #if os(macOS)

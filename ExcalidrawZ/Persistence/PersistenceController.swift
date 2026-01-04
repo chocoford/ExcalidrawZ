@@ -11,7 +11,8 @@ import Logging
 
 class PersistenceController {
     static let shared = {
-        let stack = PersistenceController(cloudKitEnabled: !UserDefaults.standard.bool(forKey: "DisableCloudSync"))
+        let cloudKitEnabled = !UserDefaults.standard.bool(forKey: "DisableCloudSync")
+        let stack = PersistenceController(cloudKitEnabled: cloudKitEnabled)
         stack.prepare()
         return stack
     }()

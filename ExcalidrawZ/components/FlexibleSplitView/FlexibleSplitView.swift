@@ -147,7 +147,7 @@ struct FlexibleSplitView<Item: FlexibleItem, ID: Hashable & Transferable>: View 
         .onChange(of: localArrangement) { newValue in
             self.arrangement?.wrappedValue = newValue
         }
-        .watchImmediately(of: items.count) { newValue in
+        .watch(value: items.count) { newValue in
             self.localArrangement = SplitArrangement.cases(splitCount: newValue).first ?? .single
         }
     }

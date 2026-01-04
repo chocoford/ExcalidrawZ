@@ -48,7 +48,7 @@ struct Paywall: View {
 
     var body: some View {
         content()
-            .watchImmediately(of: store.purchasedPlans) { newValue in
+            .watch(value: store.purchasedPlans) { newValue in
                 if let purchasedPlans = newValue.first {
                     self.selectedPlan = purchasedPlans
                 } else if horizontalSizeClass == .compact {

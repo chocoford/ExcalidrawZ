@@ -169,7 +169,9 @@ struct ExcalidrawHomeView: View {
             }
         }
         .overlay(alignment: .bottomTrailing) {
-            SyncStatusPopover()
+            if fileHomeItemTransitionState.canShowItemContainerView {
+                SyncStatusPopover()
+            }
         }
         .onChange(of: fileState.currentActiveFile) { newValue in
             if newValue == nil {
@@ -178,7 +180,7 @@ struct ExcalidrawHomeView: View {
                 updateLastHomeType()
             }
         }
-        .watchImmediately(of: fileState.currentActiveGroup) { newValue in
+        .watch(value: fileState.currentActiveGroup) { _, newValue in
             switch newValue {
                 case .group(let newValue):
                     if currentGroups.isEmpty {

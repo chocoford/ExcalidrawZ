@@ -8,6 +8,7 @@
 import Foundation
 import Logging
 import Combine
+import CoreData
 
 // MARK: - Errors
 
@@ -119,6 +120,11 @@ actor FileStorageManager {
     // Failure tracking for missing files
     private let failureTracker = FailureTracker()
 
+    // Remote change monitoring
+    private var lastKnownFileCount: Int = 0
+    private var remoteChangeTask: Task<Void, Never>?
+    private var diffScanDebounceTask: Task<Void, Never>?
+
     // MARK: - Type Aliases for external use
 
     typealias StorageDirectory = LocalStorageManager.StorageDirectory
@@ -147,6 +153,76 @@ actor FileStorageManager {
             iCloudManager: iCloudManager
         )
         logger.info("FileStorage sync enabled")
+
+        // Start listening for CoreData remote changes
+        startRemoteChangeListener()
+    }
+
+    /// Start listening for NSPersistentStoreRemoteChange notifications
+    /// Triggers DiffScan only when File entity count changes
+    private func startRemoteChangeListener() {
+        // Get initial file count
+        Task {
+            lastKnownFileCount = await getCurrentFileCount()
+            logger.info("Initial File count: \(lastKnownFileCount)")
+        }
+
+        // Listen for remote changes from CloudKit
+        remoteChangeTask = Task {
+            let notifications = NotificationCenter.default.notifications(
+                named: .NSPersistentStoreRemoteChange,
+                object: PersistenceController.shared.container.persistentStoreCoordinator
+            )
+
+            for await notification in notifications {
+                await handleRemoteChange(notification)
+            }
+        }
+        logger.info("Started listening for CoreData remote changes")
+    }
+
+    /// Handle remote change notification
+    /// Debounced to avoid excessive DiffScans
+    private func handleRemoteChange(_ notification: Notification) async {
+        logger.debug("Received remote change notification")
+
+        // Debounce: cancel previous task
+        diffScanDebounceTask?.cancel()
+
+        diffScanDebounceTask = Task {
+            // Wait for debounce interval (2 seconds)
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+
+            guard !Task.isCancelled else {
+                logger.debug("DiffScan debounce task cancelled")
+                return
+            }
+
+            // Check if File entity count has changed
+            let currentCount = await getCurrentFileCount()
+            if currentCount != lastKnownFileCount {
+                logger.info("File count changed: \(lastKnownFileCount) -> \(currentCount), triggering DiffScan")
+                lastKnownFileCount = currentCount
+
+                // Trigger DiffScan
+                do {
+                    try await syncCoordinator?.performDiffScan()
+                } catch {
+                    logger.error("DiffScan failed after remote change: \(error.localizedDescription)")
+                }
+            } else {
+                logger.debug("Remote change detected but File count unchanged (\(currentCount)), skipping DiffScan")
+            }
+        }
+    }
+
+    /// Get current File entity count from CoreData
+    private func getCurrentFileCount() async -> Int {
+        let context = PersistenceController.shared.newTaskContext()
+        return await context.perform {
+            let request: NSFetchRequest<File> = File.fetchRequest()
+            return (try? context.count(for: request)) ?? 0
+        }
     }
 
     // MARK: - Core Storage Operations (Public API)

@@ -61,7 +61,7 @@ struct LocalFoldersListView: View {
                     }
                 }
                 
-                if folders.isEmpty {
+                if folders.isEmpty, showFiles {
                     LocalFolderEmptyPlaceholderView()
                         .background {
                             ZStack {

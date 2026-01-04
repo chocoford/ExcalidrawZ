@@ -15,7 +15,7 @@ struct MediasSettingsView: View {
     private var medias: FetchedResults<MediaItem>
     
     @State private var selection: MediaItem?
-    @State private var loadedDataURL: String?
+    @State private var loadedData: Data?
     
     var body: some View {
         if containerHorizontalSizeClass == .compact, containerVerticalSizeClass == .regular {
@@ -50,9 +50,9 @@ struct MediasSettingsView: View {
                 .frame(maxWidth: .infinity)
                 .task(id: selection?.objectID) {
                     if let selection = selection {
-                        loadedDataURL = try? await selection.loadDataURL()
+                        loadedData = try? await selection.loadData()
                     } else {
-                        loadedDataURL = nil
+                        loadedData = nil
                     }
                 }
         }
@@ -67,9 +67,9 @@ struct MediasSettingsView: View {
                 .frame(height: 300)
                 .task(id: selection?.objectID) {
                     if let selection = selection {
-                        loadedDataURL = try? await selection.loadDataURL()
+                        loadedData = try? await selection.loadData()
                     } else {
-                        loadedDataURL = nil
+                        loadedData = nil
                     }
                 }
             mediaList()
@@ -128,8 +128,7 @@ struct MediasSettingsView: View {
     private func detailView() -> some View {
         ZStack {
             if let item = selection,
-               let imageDataString = loadedDataURL?.components(separatedBy: "base64,").last,
-               let imageData = Data(base64Encoded: imageDataString) {
+               let imageData = loadedData {
                 VStack {
                     DataImage(data: imageData)
                         .scaledToFit()
@@ -243,12 +242,10 @@ struct MediaItemImageView: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .task {
-                let dataURLString = try? await item.loadDataURL()
-                if let imageDataString = dataURLString?.components(separatedBy: "base64,").last,
-                   let imageData = Data(base64Encoded: imageDataString) {
-                    await MainActor.run {
-                        self.data = imageData
-                    }
+                // Load raw data directly from FileStorage (local/iCloud) or CoreData
+                let imageData = try? await item.loadData()
+                await MainActor.run {
+                    self.data = imageData
                 }
             }
     }
@@ -268,19 +265,23 @@ struct DataImage: View {
     @State private var platformImage: UIImage?
 #endif
     
+    @State private var viewID: UUID = UUID()
+    
     var body: some View {
         ZStack {
             ThumbnailImage(
-                platformImage, size: CGSize(width: 500, height: 500)
+                platformImage,
+                width: 300,
             ) { image in
                 image
                     .resizable()
             } placeholder: {
                 Rectangle()
-                    .fill(.secondary)
+                    .fill(.secondary.opacity(0.4))
             }
+            .id(viewID)
         }
-        .watchImmediately(of: data) { newValue in
+        .watch(value: data) { newValue in
             Task.detached {
                 let image = Image(data: newValue)
 #if canImport(AppKit)
@@ -288,11 +289,10 @@ struct DataImage: View {
 #elseif canImport(UIKit)
                 let platformImage = UIImage(data: newValue)
 #endif
-
-                
                 await MainActor.run {
                     self.platformImage = platformImage
                     self.image = image
+                    viewID = UUID()
                 }
             }
         }

@@ -7,6 +7,46 @@
 
 import Foundation
 import SwiftUI
+import Combine
+
+// MARK: - SyncState
+
+/// ObservableObject that provides reactive UI state for sync operations
+/// This is observed by UI components to display sync progress
+@MainActor
+class SyncState: ObservableObject {
+    /// Files currently syncing
+    @Published var syncingFiles: [FileStatusBox] = []
+
+    /// MediaItems batch download progress
+    @Published var mediaItemsDownloadProgress: (current: Int, total: Int)?
+
+    /// Overall sync progress (for all file types: File, MediaItem, Checkpoint, etc.)
+    @Published var overallProgress: (current: Int, total: Int)?
+
+    /// Overall sync progress message
+    @Published var syncProgressMessage: String?
+
+    /// Whether there are any active sync operations
+    var hasActiveSyncOperations: Bool {
+        return !syncingFiles.isEmpty ||
+               mediaItemsDownloadProgress != nil ||
+               overallProgress != nil ||
+               syncProgressMessage != nil
+    }
+
+    /// Count of files currently syncing
+    var syncingFilesCount: Int {
+        return syncingFiles.count
+    }
+
+    /// Update syncing files from all status boxes
+    func updateSyncingFiles(from boxes: [FileStatusBox]) {
+        syncingFiles = boxes.filter { $0.status.syncStatus?.isSyncing == true }
+    }
+}
+
+// MARK: - FileStatusService
 
 /// Centralized service for managing FileStatusBox instances
 ///
@@ -32,21 +72,23 @@ import SwiftUI
 /// - UI components use FileStatusProvider or observeFileStatus()
 /// - UI can observe global properties (mediaItemsDownloadProgress, syncProgressMessage)
 @MainActor
-class FileStatusService: ObservableObject {
+class FileStatusService {
     static let shared = FileStatusService()
-    
+
     /// Per-file status boxes
     /// UI should observe individual FileStatusBox instances, not this dictionary
     private var statusBoxes: [String: FileStatusBox] = [:]
-    
-    /// MediaItems batch download progress
-    @Published var mediaItemsDownloadProgress: (current: Int, total: Int)?
-    
-    /// Overall sync progress message
-    @Published var syncProgressMessage: String?
-    
+
+    /// Subscriptions to FileStatusBox changes
+    /// When any box's status changes, we update syncState
+    private var subscriptions: [String: AnyCancellable] = [:]
+
+    /// Reactive sync state for UI observation
+    /// UI should observe this ObservableObject for sync progress updates
+    let syncState = SyncState()
+
     private init() {}
-    
+
     /// Get or create status box for file identifier
     /// - Parameters:
     ///   - fileID: The file identifier (UUID string, URL.absoluteString, or objectID.description)
@@ -58,6 +100,14 @@ class FileStatusService: ObservableObject {
         }
         let box = FileStatusBox(fileID: fileID, status: defaultStatus)
         statusBoxes[fileID] = box
+
+        // Subscribe to box changes to update syncState
+        subscriptions[fileID] = box.objectWillChange.sink { [weak self] in
+            guard let self = self else { return }
+            // Update syncState when any box changes
+            self.syncState.updateSyncingFiles(from: Array(self.statusBoxes.values))
+        }
+
         return box
     }
     
@@ -185,6 +235,9 @@ class FileStatusService: ObservableObject {
     /// - Parameter fileID: The file identifier
     func clearStatus(fileID: String) {
         statusBoxes.removeValue(forKey: fileID)
+        subscriptions.removeValue(forKey: fileID)
+        // Update syncState after removing
+        syncState.updateSyncingFiles(from: Array(statusBoxes.values))
     }
     
     // MARK: - Global Sync State Management
@@ -194,45 +247,67 @@ class FileStatusService: ObservableObject {
     ///   - current: Current number of downloaded items
     ///   - total: Total number of items to download
     func updateMediaItemsProgress(current: Int, total: Int) {
-        mediaItemsDownloadProgress = (current, total)
+        syncState.mediaItemsDownloadProgress = (current, total)
         if current >= total {
             // Clear progress after a delay
             Task {
                 try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
                 await MainActor.run {
-                    if let progress = self.mediaItemsDownloadProgress,
+                    if let progress = self.syncState.mediaItemsDownloadProgress,
                        progress.current >= progress.total {
-                        self.mediaItemsDownloadProgress = nil
+                        self.syncState.mediaItemsDownloadProgress = nil
                     }
                 }
             }
         }
     }
-    
+
     /// Clear MediaItems progress
     func clearMediaItemsProgress() {
-        mediaItemsDownloadProgress = nil
+        syncState.mediaItemsDownloadProgress = nil
     }
-    
+
     /// Update overall sync progress message
     /// - Parameter message: Progress message (nil to clear)
     func updateSyncProgressMessage(_ message: String?) {
-        syncProgressMessage = message
+        syncState.syncProgressMessage = message
     }
-    
+
+    /// Update overall sync progress
+    /// - Parameters:
+    ///   - current: Current number of synced files
+    ///   - total: Total number of files to sync
+    func updateOverallProgress(current: Int, total: Int) {
+        syncState.overallProgress = (current, total)
+        if current >= total {
+            // Clear progress after a delay
+            Task {
+                try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+                await MainActor.run {
+                    if let progress = self.syncState.overallProgress,
+                       progress.current >= progress.total {
+                        self.syncState.overallProgress = nil
+                    }
+                }
+            }
+        }
+    }
+
+    /// Clear overall sync progress
+    func clearOverallProgress() {
+        syncState.overallProgress = nil
+    }
+
     // MARK: - Computed Properties
-    
-    /// Whether there are any active sync operations
+
+    /// Whether there are any active sync operations (convenience accessor)
     var hasActiveSyncOperations: Bool {
-        return !statusBoxes.isEmpty &&
-        statusBoxes.values.contains { $0.status.syncStatus?.isSyncing == true } ||
-        mediaItemsDownloadProgress != nil ||
-        syncProgressMessage != nil
+        return syncState.hasActiveSyncOperations
     }
-    
-    /// Count of files currently syncing
+
+    /// Count of files currently syncing (convenience accessor)
     var syncingFilesCount: Int {
-        return statusBoxes.values.filter { $0.status.syncStatus?.isSyncing == true }.count
+        return syncState.syncingFilesCount
     }
     
     /// Get current sync status for a file

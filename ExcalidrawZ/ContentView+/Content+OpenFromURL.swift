@@ -508,7 +508,7 @@ struct OpenURLSheetView: View {
         .onChange(of: isPreviewWebView) { newValue in
             changeViewSize(isPreviewWebView: newValue, window: window)
         }
-        .watchImmediately(of: window) { newValue in
+        .watch(value: window) { newValue in
             changeViewSize(isPreviewWebView: isPreviewWebView, window: newValue)
         }
 #endif

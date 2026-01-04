@@ -77,7 +77,6 @@ private struct FileStatusObserverView: View {
     var body: some View {
         Color.clear
             .onReceive(fileStatusBox.$status) { newValue in
-                print("[DEBUG] Receive fileStatusBox.$status", file.id, newValue)
                 guard oldValue != newValue else { return }
                 onChange(newValue)
                 oldValue = newValue

@@ -1,5 +1,5 @@
 //
-//  CompactHomeView.swift
+//  CompactRecentlyView.swift
 //  ExcalidrawZ
 //
 //  Created by Chocoford on 12/18/25.
@@ -11,7 +11,7 @@ import ChocofordUI
 
 #if os(iOS)
 @available(iOS 26.0, *)
-struct CompactHomeView: View {
+struct CompactRecentlyView: View {
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var layoutState: LayoutState
 
@@ -94,7 +94,7 @@ struct CompactHomeView: View {
 
 #Preview {
     if #available(iOS 26.0, *) {
-        CompactHomeView()
+        CompactRecentlyView()
     } else {
         // Fallback on earlier versions
     }
