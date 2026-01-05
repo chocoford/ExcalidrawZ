@@ -290,17 +290,17 @@ struct Migration_MoveContentToICloudDrive: MigrationVersion {
                         let relativePath = try await FileStorageManager.shared.saveContent(
                             content,
                             fileID: fileID.uuidString,
-                            type: .file,
+                            type: .collaborationFile,
                             updatedAt: updatedAt
                         )
-                        
+
                         // Update entity
                         try await context.perform {
                             guard let file = self.context.object(with: objectID) as? CollaborationFile else { return }
                             file.updateAfterSavingToStorage(filePath: relativePath)
                             try self.context.save()
                         }
-                        
+
                         logger.info("\(i+1)/\(collaborationFiles.count) | Migrated collaboration file: \(fileName ?? "Unnamed") → \(relativePath)")
                     } catch {
                         logger.error("Failed saving collaboration file '\(fileName ?? "Unnamed")': \(error.localizedDescription)")

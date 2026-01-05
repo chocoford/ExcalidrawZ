@@ -105,7 +105,7 @@ struct CoreDataMigrationModifier: ViewModifier {
     private let logger = Logger(label: "CoreDataMigrationModifier")
 
     #if DEBUG
-    private let isDev = false
+    private let isDev = true
     #else
     private let isDev = false
     #endif

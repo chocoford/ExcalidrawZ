@@ -237,7 +237,7 @@ struct ExcalidrawContainerWrapper: View {
                     await MainActor.run {
                         self.excalidrawFile = file
                     }
-                    
+
                 default:
                     await MainActor.run {
                         self.excalidrawFile = nil

@@ -123,12 +123,25 @@ struct ExcalidrawCollaborationView: View {
         }
         .opacity(isActive ? 1 : 0)
         .task {
-            var excalidrawFile = ExcalidrawFile()
-            excalidrawFile.id = file.id ?? UUID()
-            excalidrawFile.roomID = file.roomID
-            try? await excalidrawFile.syncFiles(context: viewContext)
-            await MainActor.run {
-                self.excalidrawFile = excalidrawFile
+            do {
+                // Load content from CollaborationFile
+                let content = try await file.loadContent()
+                var excalidrawFile = try ExcalidrawFile(data: content, id: file.id)
+                excalidrawFile.roomID = file.roomID
+                try await excalidrawFile.syncFiles(context: viewContext)
+                await MainActor.run {
+                    self.excalidrawFile = excalidrawFile
+                }
+            } catch {
+                // Fallback to empty file if loading fails
+                var excalidrawFile = ExcalidrawFile()
+                excalidrawFile.id = file.id ?? UUID()
+                excalidrawFile.roomID = file.roomID
+                try? await excalidrawFile.syncFiles(context: viewContext)
+                await MainActor.run {
+                    self.excalidrawFile = excalidrawFile
+                }
+                alertToast(error)
             }
         }
         .onDisappear {

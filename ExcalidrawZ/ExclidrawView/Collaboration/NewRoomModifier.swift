@@ -152,7 +152,7 @@ struct NewRoomModifier: ViewModifier {
     }
     
     private func createRoom(name: String, file: ExcalidrawFile = ExcalidrawFile()) {
-        let context = PersistenceController.shared.container.newBackgroundContext()
+        let context = PersistenceController.shared.newTaskContext()
         Task.detached {
             do {
                 try await context.perform {
@@ -171,9 +171,6 @@ struct NewRoomModifier: ViewModifier {
                             if let collabFile = viewContext.object(with: fileID) as? CollaborationFile {
                                 fileState.currentActiveGroup = .collaboration
                                 fileState.setActiveFile(.collaborationFile(collabFile))
-                                if !fileState.collaboratingFiles.contains(collabFile) {
-                                    fileState.collaboratingFiles.append(collabFile)
-                                }
                             }
                         }
                     }
