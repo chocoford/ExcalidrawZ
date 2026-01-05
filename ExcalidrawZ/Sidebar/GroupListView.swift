@@ -308,6 +308,7 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
     @State private var isHovered = false
     @State private var isImportLocalFolderDialogPresented = false
     @State private var isImportFilesDialogPresented = false
+    @State private var isCreateGroupDialogPresented = false
 
     
     func body(content: Content) -> some View {
@@ -346,7 +347,11 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
                     case .group:
                         Menu {
                             SwiftUI.Group {
-                                newGroupButton()
+                                Button {
+                                    isCreateGroupDialogPresented.toggle()
+                                } label: {
+                                    Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
+                                }
 
                                 // New: Use fileImporter for cross-platform support
                                 Button {
@@ -365,6 +370,12 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
                         .menuIndicator(.hidden)
                         .fixedSize()
                         .modifier(ImportFilesModifier(isPresented: $isImportFilesDialogPresented))
+                        .modifier(
+                            CreateGroupModifier(
+                                isPresented: $isCreateGroupDialogPresented,
+                                parentGroupID: nil,
+                            )
+                        )
                 }
             }
 #if os(iOS)

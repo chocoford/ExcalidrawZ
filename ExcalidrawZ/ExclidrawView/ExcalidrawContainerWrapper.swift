@@ -157,7 +157,7 @@ struct ExcalidrawContainerWrapper: View {
                     VStack(spacing: 12) {
                         ProgressView()
                             .controlSize(.large)
-                        Text("Loading...")
+                        Text(localizable: .generalLoading)
                             .font(.headline)
                     }
                     .padding(24)

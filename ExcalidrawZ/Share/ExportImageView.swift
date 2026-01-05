@@ -115,16 +115,16 @@ struct ExportImageView: View {
                 fileInfoView
                 actionsView(exportedImageData.url)
             } else if hasError {
-                Text(.localizable(.exportImageLoadingError))
+                Text(localizable: .exportImageLoadingError)
                     .foregroundColor(.red)
             } else {
                 ProgressView()
-                Text(.localizable(.exportImageLoading))
+                Text(localizable: .generalLoading)
                 
                 Button {
                     dismiss()
                 } label: {
-                    Text(.localizable(.exportImageLoadingButtonCancel))
+                    Text(localizable: .exportImageLoadingButtonCancel)
                 }
                 .offset(y: 40)
             }
@@ -160,7 +160,7 @@ struct ExportImageView: View {
                     } else {
                         VStack {
                             ProgressView()
-                            Text(.localizable(.exportImageLoading))
+                            Text(localizable: .generalLoading)
                         }
                         .frame(height: 274)
                         .frame(maxWidth: .infinity)

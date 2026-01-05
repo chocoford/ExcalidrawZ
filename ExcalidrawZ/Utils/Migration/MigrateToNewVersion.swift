@@ -116,7 +116,7 @@ fileprivate struct MigrateToNewVersionSheetView: View {
                         .frame(maxHeight: .infinity, alignment: .top)
                         HStack {
                             Link(destination: URL(string: "https://excalidrawz.chocoford.com")!) {
-                                Text("Download")
+                                Text(localizable: .generalButtonDownload)
                             }
                             .disabled(!didArchive)
                             .if(!didArchive) { content in

@@ -42,7 +42,7 @@ struct ExcalidrawRenderer: View {
                 .overlay {
                     // Render at higher resolution for better clarity
                     GeometryReader { geometry in
-                        let renderScale: CGFloat = 3.0
+                        let renderScale: CGFloat = 1.0
 
                         canvasView()
                             .frame(
@@ -80,7 +80,8 @@ struct ExcalidrawRenderer: View {
                                 break
                             case .rectangle:
                                 context.drawLayer { context in
-                                    context.opacity = excalidrawGenericElement.opacity
+                                    // Fix: opacity should be 0.0-1.0, not 0-100
+                                    context.opacity = excalidrawGenericElement.opacity / 100.0
 
                                     let rotationCenter = transformedRect.origin
                                     context.translateBy(x: rotationCenter.x, y: rotationCenter.y)
@@ -117,7 +118,8 @@ struct ExcalidrawRenderer: View {
                                 }
                             case .diamond:
                                 context.drawLayer { context in
-                                    context.opacity = excalidrawGenericElement.opacity
+                                    // Fix: opacity should be 0.0-1.0, not 0-100
+                                    context.opacity = excalidrawGenericElement.opacity / 100.0
 
                                     let diamondPath = Path { path in
                                         path.move(to: makePointInCanvas(
@@ -160,7 +162,8 @@ struct ExcalidrawRenderer: View {
                                 }
                             case .ellipse:
                                 context.drawLayer { context in
-                                    context.opacity = excalidrawGenericElement.opacity
+                                    // Fix: opacity should be 0.0-1.0, not 0-100
+                                    context.opacity = excalidrawGenericElement.opacity / 100.0
 
                                     if excalidrawGenericElement.backgroundColor != "transparent" {
                                         context.fill(
@@ -185,7 +188,8 @@ struct ExcalidrawRenderer: View {
                         }
                     case .text(let excalidrawTextElement):
                         context.drawLayer { context in
-                            context.opacity = excalidrawTextElement.opacity
+                            // Fix: opacity should be 0.0-1.0, not 0-100
+                            context.opacity = excalidrawTextElement.opacity / 100.0
                             let text = Text(excalidrawTextElement.text)
                                 .font(.system(size: excalidrawTextElement.fontSize * widthScaleEffect * 0.8))
                                 .foregroundColor(Color(excalidrawString: excalidrawTextElement.strokeColor))
@@ -195,7 +199,8 @@ struct ExcalidrawRenderer: View {
                     case .linear(let excalidrawLinearElement):
                         guard excalidrawLinearElement.points.count > 1 else { break }
                         context.drawLayer { context in
-                            context.opacity = excalidrawLinearElement.opacity
+                            // Fix: opacity should be 0.0-1.0, not 0-100
+                            context.opacity = excalidrawLinearElement.opacity / 100.0
 
                             let rotationCenter = makePointInCanvas(
                                 point: CGPoint(x: (excalidrawLinearElement.x + excalidrawLinearElement.points[0].x),
@@ -228,7 +233,8 @@ struct ExcalidrawRenderer: View {
                     case .arrow(let excalidrawArrowElement):
                         guard excalidrawArrowElement.points.count > 1 else { break }
                         context.drawLayer { context in
-                            context.opacity = excalidrawArrowElement.opacity
+                            // Fix: opacity should be 0.0-1.0, not 0-100
+                            context.opacity = excalidrawArrowElement.opacity / 100.0
 
                             let rotationCenter = makePointInCanvas(
                                 point: CGPoint(x: (excalidrawArrowElement.x + excalidrawArrowElement.points[0].x),
@@ -304,7 +310,8 @@ struct ExcalidrawRenderer: View {
                     case .freeDraw(let excalidrawFreeDrawElement):
                         guard excalidrawFreeDrawElement.points.count > 1 else { break }
                         context.drawLayer { context in
-                            context.opacity = excalidrawFreeDrawElement.opacity
+                            // Fix: opacity should be 0.0-1.0, not 0-100
+                            context.opacity = excalidrawFreeDrawElement.opacity / 100.0
 
                             let rotationCenter = makePointInCanvas(
                                 point: CGPoint(x: (excalidrawFreeDrawElement.x + excalidrawFreeDrawElement.points[0].x),
@@ -340,7 +347,8 @@ struct ExcalidrawRenderer: View {
                     case .image(let excalidrawImageElement):
                         if let fileID = excalidrawImageElement.fileId {
                             context.drawLayer { context in
-                                context.opacity = excalidrawImageElement.opacity
+                                // Fix: opacity should be 0.0-1.0, not 0-100
+                                context.opacity = excalidrawImageElement.opacity / 100.0
                                 renderExcalidrawImage(
                                     context: context,
                                     fileID: fileID,
@@ -352,7 +360,8 @@ struct ExcalidrawRenderer: View {
                     case .pdf(let excalidrawPdfElement):
                         // Render PDF as placeholder with page info
                         context.drawLayer { context in
-                            context.opacity = excalidrawPdfElement.opacity
+                            // Fix: opacity should be 0.0-1.0, not 0-100
+                            context.opacity = excalidrawPdfElement.opacity / 100.0
 
                             // Background
                             context.fill(

@@ -62,18 +62,18 @@ struct MissingFileMenuProvider: View {
                 .swiftyAlert()
             }
             .confirmationDialog(
-                "Cannot Recover",
+                .localizable(.missingFileMenuCannotRecoverAlertButtonDelete),
                 isPresented: $showNoRecoveryDialog,
                 titleVisibility: .visible
             ) {
-                Button("Delete File", role: .destructive) {
+                Button(.localizable(.missingFileMenuCannotRecoverAlertButtonDelete), role: .destructive) {
                     if let file = fileToRecover {
                         deleteFiles(files: [file])
                     }
                 }
-                Button("Cancel", role: .cancel) { }
+                Button(.localizable(.generalButtonCancel), role: .cancel) { }
             } message: {
-                Text("This file cannot be recovered from iCloud and has no checkpoint history available.")
+                Text(localizable: .missingFileMenuCannotRecoverAlertMessage)
             }
     }
 
@@ -96,7 +96,7 @@ struct MissingFileMenuProvider: View {
                         AlertToast(
                             displayMode: .hud,
                             type: .complete(.green),
-                            title: "Success"
+                            title: String(localizable: .generalSuccess)
                         )
                     )
                     fileState.resetSelections()
@@ -231,7 +231,7 @@ struct MissingFileMenuItems: View {
         Button {
             onToogleTryToRecover()
         } label: {
-            Label("Try to recover...", systemSymbol: .arrowshapeTurnUpLeft)
+            Label(.localizable(.missingFileMenuButtonRecover), systemSymbol: .arrowshapeTurnUpLeft)
         }
 
         Divider()
@@ -265,11 +265,11 @@ struct CheckpointRecoverySheet: View {
             VStack(spacing: 0) {
                 // Header
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Recover from Checkpoint")
+                    Text(localizable: .missingFileCheckpointRecoverSheetTitle)
                         .font(.title2)
                         .fontWeight(.bold)
 
-                    Text("The file \"\(file.name ?? "Untitled")\" could not be recovered from iCloud. You can restore it from a previous checkpoint version.")
+                    Text(localizable: .missingFileCheckpointRecoverSheetMessage(file.name ?? String(localizable: .generalUnknown)))
                         .font(.body)
                         .foregroundStyle(.secondary)
                 }
@@ -351,7 +351,7 @@ struct CheckpointRecoverySheet: View {
     
     @ViewBuilder
     private func recoverButton() -> some View {
-        AsyncButton("Recover") {
+        AsyncButton(String(localizable: .missingFileCheckpointRecoverSheetButtonRecover)) {
             if let selected = selectedCheckpoint {
                 await recoverFromCheckpoint(file: file, checkpoint: selected)
             }
@@ -379,7 +379,7 @@ struct CheckpointRecoverySheet: View {
                     AlertToast(
                         displayMode: .hud,
                         type: .complete(.green),
-                        title: "Recovered from checkpoint"
+                        title: String(localizable: .missingFileCheckpointRecoverSheetRecoveredToastTitle)
                     )
                 )
                 fileState.resetSelections()
@@ -429,7 +429,7 @@ struct CheckpointRowView: View {
                     Text(updatedAt.formatted(date: .abbreviated, time: .shortened))
                         .font(.headline)
                 } else {
-                    Text("Unknown date")
+                    Text(localizable: .generalUnknown)
                         .font(.headline)
                         .foregroundStyle(.secondary)
                 }

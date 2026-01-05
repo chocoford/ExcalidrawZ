@@ -229,7 +229,12 @@ extension ExcalidrawCore {
               let data = file.content else { return }
         Task.detached {
             do {
+                print("[DEBUG] load file", String(data: data, encoding: .utf8))
                 try await self.webActor.loadFile(id: file.id, data: data, force: force)
+                
+                if await self.parent?.appPreference.useCustomDrawingSettings == true {
+                    try await self.applyUserSettings()
+                }
             } catch {
                 self.publishError(error)
             }

@@ -10,6 +10,7 @@ import StoreKit
 
 import ChocofordUI
 import Shimmer
+import SmoothGradient
 
 struct Paywall: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -207,6 +208,7 @@ struct Paywall: View {
                 )
             }
             .ignoresSafeArea()
+            .scaleEffect(1.1)
         }
         .onAppear {
             isPresented = true

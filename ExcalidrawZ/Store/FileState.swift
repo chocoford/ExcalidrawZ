@@ -197,9 +197,15 @@ final class FileState: ObservableObject {
                     }
                 }
                 self.currentActiveFile = file
-            case .file, .temporaryFile, .collaborationFile:
+            case .file, .temporaryFile:
                 // Database files, temporary files, and collaboration files don't need download check
                 self.currentActiveFile = file
+                
+            case .collaborationFile(let room):
+                self.currentActiveFile = file
+                if !collaboratingFiles.contains(room) {
+                    collaboratingFiles.append(room)
+                }
         }
     }
     

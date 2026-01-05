@@ -337,6 +337,11 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
     private func applePencilToggle() -> some View {
         if containerHorizontalSizeClass == .regular {
             Button {
+                if case .file(let file) = fileState.currentActiveFile, file.inTrash {
+                    layoutState.isResotreAlertIsPresented.toggle()
+                    return
+                }
+                
                 Task {
                     toolState.inPenMode.toggle()
                     do {

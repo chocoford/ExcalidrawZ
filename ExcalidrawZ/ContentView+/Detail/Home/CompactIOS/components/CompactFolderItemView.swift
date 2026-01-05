@@ -80,7 +80,7 @@ struct CompactFolderItemView: View {
                         alignment: layoutState.compactBrowserLayout == .grid ? .center : .leading
                     )
 
-                Text("\(itemsCount) items")
+                Text(localizable: .homeGroupItemsFormatter(itemsCount))
                     .font(layoutState.compactBrowserLayout == .grid ? .caption2 : .footnote)
                     .foregroundStyle(.secondary)
             }

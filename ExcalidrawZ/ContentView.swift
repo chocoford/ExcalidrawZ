@@ -56,6 +56,7 @@ struct ContentView: View {
             .modifier(UserActivityHandlerModifier())
             .modifier(ShareFileModifier())
             .modifier(LocalFolderMonitorModifier())
+            .modifier(PDFViewerModifier())
             .environmentObject(fileState)
             .environmentObject(exportState)
             .environmentObject(layoutState)

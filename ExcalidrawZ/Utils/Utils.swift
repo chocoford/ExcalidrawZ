@@ -415,10 +415,32 @@ func flatFiles(in directory: URL) throws -> [URL] {
         return []
     }
     guard isDirectory else { return [directory] }
-    
+
     let contents = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [])
     let files = try contents.flatMap { try flatFiles(in: $0) }
-    
+
     print(#function, "files: \(files)")
     return files
+}
+
+// MARK: - Base64 Data URL Utilities
+
+/// Decode base64 data from a data URL string
+/// - Parameter dataURL: Data URL string in format "data:<mime-type>;base64,<base64-data>"
+/// - Returns: Decoded Data, or nil if decoding fails
+func decodeBase64FromDataURL(_ dataURL: String) -> Data? {
+    // Split by "base64," to get the base64 part
+    guard let base64String = dataURL.components(separatedBy: "base64,").last else {
+        return nil
+    }
+
+    // Decode base64 string to Data
+    return Data(base64Encoded: base64String, options: [.ignoreUnknownCharacters])
+}
+
+/// Decode base64 data from a raw base64 string
+/// - Parameter base64String: Pure base64 encoded string
+/// - Returns: Decoded Data, or nil if decoding fails
+func decodeBase64(_ base64String: String) -> Data? {
+    return Data(base64Encoded: base64String, options: [.ignoreUnknownCharacters])
 }

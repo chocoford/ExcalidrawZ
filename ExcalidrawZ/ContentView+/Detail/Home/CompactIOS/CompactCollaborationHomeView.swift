@@ -118,7 +118,7 @@ struct CompactCollaborationHomeView: View {
                     collaborationState.isJoinRoomSheetPresented.toggle()
                 }
             } label: {
-                Label(.localizable(.collaborationButtonJoinRoom), systemImage: "arrow.right.circle.fill")
+                Label(.localizable(.collaborationButtonJoinRoom), systemSymbol: .arrowRightCircleFill)
                     .frame(maxWidth: .infinity)
             }
             .disabled(collaborationState.userCollaborationInfo.username.isEmpty)
@@ -131,7 +131,7 @@ struct CompactCollaborationHomeView: View {
     @ViewBuilder
     private func roomsList() -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Your Rooms")
+            Text(localizable: .collaborationRoomsTitle)
                 .font(.headline)
                 .padding(.horizontal)
 

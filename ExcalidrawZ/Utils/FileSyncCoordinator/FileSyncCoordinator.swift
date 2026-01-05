@@ -311,13 +311,13 @@ enum FolderError: LocalizedError {
     var errorDescription: String? {
         switch self {
             case .permissionDenied:
-                return "Permission denied to access folder"
+                return String(localizable: .folderErrorDescriptionPermissionDenied)
             case .folderNotFound:
-                return "Folder not found"
+                return String(localizable: .folderErrorDescriptionNotFound)
             case .invalidFolder:
-                return "Invalid folder"
+                return String(localizable: .folderErrorDescriptionInvalid)
             case .alreadyMonitoring:
-                return "Folder is already being monitored"
+                return String(localizable: .folderErrorDescriptionAlreadyMonitoring)
         }
     }
 }

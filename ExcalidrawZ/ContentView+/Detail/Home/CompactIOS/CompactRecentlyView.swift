@@ -67,7 +67,7 @@ struct CompactRecentlyView: View {
                 }
                 .padding(16)
             }
-            .navigationTitle("Recently")
+            .navigationTitle(.localizable(.compactRecentlyTitle))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if editMode.isEditing == true {

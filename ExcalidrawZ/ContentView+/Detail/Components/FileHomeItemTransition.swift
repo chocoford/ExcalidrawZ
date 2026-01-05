@@ -51,7 +51,6 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                 if let activeFile = file,// ?? fileState.currentActiveFile,
                    let sAnchor: Anchor<CGRect> = value[activeFile.id + "SOURCE"],
                    let dAnchor: Anchor<CGRect> = value["DEST"] {
-                    // let _ = print("FileHomeItemTransitionModifier: \(activeFile.objectID.description)")
                     GeometryReader { geomerty in
                         FileHomeItemHeroLayer(
                             file: activeFile,

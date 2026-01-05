@@ -115,24 +115,24 @@ struct SyncStatusContentView: View {
     private func headlineText() -> some View {
         if let progress = syncState.overallProgress {
             if #available(iOS 17.0, macOS 14.0, *) {
-                Text("Syncing \(progress.current) of \(progress.total) files")
+                Text(localizable: .syncStatusPopoverOverallPorgress(progress.current, progress.total))
                     .contentTransition(.numericText(value: Double(progress.current)))
                     .animation(.smooth, value: progress.current)
             } else {
-                Text("Syncing \(progress.current) of \(progress.total) files")
+                Text(localizable: .syncStatusPopoverOverallPorgress(progress.current, progress.total))
             }
         } else if let progress = syncState.mediaItemsDownloadProgress {
             if #available(iOS 17.0, macOS 14.0, *) {
-                Text("Downloading \(progress.current) of \(progress.total) media files")
+                Text(localizable: .syncStatusPopoverMediaItemDownloadProgress(progress.current, progress.total))
                     .contentTransition(.numericText(value: Double(progress.current)))
                     .animation(.smooth, value: progress.current)
             } else {
-                Text("Downloading \(progress.current) of \(progress.total) media files")
+                Text(localizable: .syncStatusPopoverMediaItemDownloadProgress(progress.current, progress.total))
             }
         } else if let message = syncState.syncProgressMessage {
             Text(message)
         } else {
-            Text("Preparing...")
+            Text(localizable: .syncStatusPopoverPreparing)
         }
     }
     
@@ -140,14 +140,10 @@ struct SyncStatusContentView: View {
     @ViewBuilder
     private func captionText() -> some View {
         if #available(iOS 17.0, macOS 14.0, *) {
-            Text(
-                "\(debouncedSyncingFilesCount) file\(debouncedSyncingFilesCount > 1 ? "s" : "") in queue"
-            )
-            .contentTransition(.numericText(value: Double(debouncedSyncingFilesCount)))
+            Text(localizable: .syncStatusPopoverItemsInQueue(debouncedSyncingFilesCount))
+                .contentTransition(.numericText(value: Double(debouncedSyncingFilesCount)))
         } else {
-            Text(
-                "\(debouncedSyncingFilesCount) file\(debouncedSyncingFilesCount > 1 ? "s" : "") in queue"
-            )
+            Text(localizable: .syncStatusPopoverItemsInQueue(debouncedSyncingFilesCount))
         }
     }
     

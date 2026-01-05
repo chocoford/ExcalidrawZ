@@ -144,7 +144,7 @@ struct MediasSettingsView: View {
                                 }
 #endif
                             } label: {
-                                Text("Copy")
+                                Text(localizable: .generalButtonCopy)
                             }
                         }
 

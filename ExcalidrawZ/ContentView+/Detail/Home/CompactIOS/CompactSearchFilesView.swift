@@ -39,7 +39,7 @@ struct CompactSearchFilesView: View {
                     }
                 }
                 .searchable(text: $searchText)
-                .navigationTitle("Search")
+                .navigationTitle(.localizable(.compactSearchTitle))
                 .toolbar {
 #if os(iOS)
                     ToolbarItem(placement: .topBarLeading) {

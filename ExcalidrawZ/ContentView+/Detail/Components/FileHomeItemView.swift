@@ -207,11 +207,8 @@ struct FileHomeItemView: View {
                 } catch {}
             case .temporaryFile:
                 fileState.currentActiveGroup = .temporary
-            case .collaborationFile(let file):
+            case .collaborationFile:
                 fileState.currentActiveGroup = .collaboration
-                if !fileState.collaboratingFiles.contains(file) {
-                    fileState.collaboratingFiles.append(file)
-                }
         }
     }
 

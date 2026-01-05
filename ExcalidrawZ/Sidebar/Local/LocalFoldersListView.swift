@@ -96,7 +96,7 @@ struct LocalFolderEmptyPlaceholderView: View {
                 .font(.system(size: 30))
                 .foregroundStyle(.secondary)
             
-            Text("Local folders allow you to reference and work with Excalidraw files stored on your disk.")
+            Text(localizable: .sidebarLocalFolderEmptyPlaceholder)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

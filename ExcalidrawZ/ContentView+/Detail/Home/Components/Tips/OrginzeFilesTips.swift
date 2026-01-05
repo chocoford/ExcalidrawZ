@@ -33,10 +33,6 @@ struct OrginzeFilesTipsDetail: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             AutoContainVideoPlayer(
-//                url: Bundle.main.url(
-//                    forResource: "ExcalidrawZ - Organize files",
-//                    withExtension: "mov"
-//                )!
                 url: URL(string: "https://pub-2983ae3d3c894bd08530707492e919db.r2.dev/ExcalidrawZ - Organize files.mov")!,
             )
             .clipShape(RoundedRectangle(cornerRadius: 30))

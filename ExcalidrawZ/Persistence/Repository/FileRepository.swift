@@ -188,6 +188,7 @@ actor FileRepository {
                 throw AppError.fileError(.contentNotAvailable(filename: file.name ?? String(localizable: .generalUnknown)))
             }
             obj["elements"] = fileDataJson["elements"]
+            obj["appState"] = fileDataJson["appState"]
             obj.removeValue(forKey: "files")
             return try JSONSerialization.data(withJSONObject: obj)
         }

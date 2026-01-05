@@ -114,11 +114,11 @@ struct CompactBrowseRootView: View {
                     }
                 }
             } header: {
-                Text("Local Folders")
+                Text(localizable: .localFoldersTitle)
             }
         }
         .listStyle(.sidebar)
-        .navigationTitle("Browse")
+        .navigationTitle(.localizable(.compactBrowserTitle))
         .toolbar(content: toolbarContent)
         .navigationDestination(for: NSManagedObjectID.self) { objectID in
             if #available(iOS 18.0, *) {
@@ -193,7 +193,7 @@ struct CompactBrowseRootView: View {
                 }
                 .labelStyle(.titleAndIcon)
             } label: {
-                Label("More", systemSymbol: .ellipsis)
+                Label(.localizable(.generalButtonMore), systemSymbol: .ellipsis)
                     .labelStyle(.iconOnly)
             }
             .modifier(ImportLocalFolderModifier(isPresented: $isImportLocalFolderDialogPresented))
@@ -466,13 +466,19 @@ struct CompactContentMoreMenu<HomeGroup: ExcalidrawGroup>: View {
                 
                 Section {
                     Picker("", selection: $layoutState.compactBrowserLayout) {
-                        Label("Icon", systemSymbol: .squareGrid2x2).tag(LayoutState.CompactBrowserLayout.grid)
-                        Label("List", systemSymbol: .listDash).tag(LayoutState.CompactBrowserLayout.list)
+                        Label(
+                            .localizable(.compactBrowserLayoutGrid),
+                            systemSymbol: .squareGrid2x2
+                        ).tag(LayoutState.CompactBrowserLayout.grid)
+                        Label(
+                            .localizable(.compactBrowserLayoutList),
+                            systemSymbol: .listDash
+                        ).tag(LayoutState.CompactBrowserLayout.list)
                     }
                     .pickerStyle(.inline)
                 }
             } label: {
-                Label("More", systemSymbol: .ellipsis)
+                Label(.localizable(.generalButtonMore), systemSymbol: .ellipsis)
                     .labelStyle(.iconOnly)
             }
             .modifier(ImportFilesModifier(isPresented: $isImportFilesDialogPresented))

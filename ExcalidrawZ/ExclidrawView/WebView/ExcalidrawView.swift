@@ -165,6 +165,20 @@ struct ExcalidrawView: View {
             ) { _ in
                 excalidrawCore.loadFile(from: file, force: true)
             }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .captureCurrentDrawingSettings)
+            ) { _ in
+                Task {
+                    await captureCurrentDrawingSettings()
+                }
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .applyUserDrawingSettings)
+            ) { _ in
+                Task {
+                    try? await excalidrawCore.applyUserSettings()
+                }
+            }
             .onChange(of: interactionEnabled) { enabled in
                 Task {
                     try? await excalidrawCore.toggleWebPointerEvents(enabled: enabled)
@@ -323,6 +337,24 @@ struct ExcalidrawView: View {
             } catch {
                 onError(error)
             }
+        }
+    }
+
+    /// Capture current drawing settings from Excalidraw and save to preferences
+    @MainActor
+    private func captureCurrentDrawingSettings() async {
+        guard loadingState == .loaded else {
+            logger.warning("Cannot capture settings: Excalidraw not loaded")
+            return
+        }
+
+        do {
+            let settings = try await excalidrawCore.fetchCurrentUserSettings()
+            appPreference.customDrawingSettings = settings
+            logger.info("Successfully captured current drawing settings")
+        } catch {
+            logger.error("Failed to capture drawing settings: \(error)")
+            onError(error)
         }
     }
 }

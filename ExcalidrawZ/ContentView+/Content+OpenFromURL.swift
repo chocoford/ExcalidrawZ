@@ -129,9 +129,6 @@ struct OpenFromURLModifier: ViewModifier {
         }
         
         guard canAddToTemp else { return }
-        
-        logger.debug("on open url: \(url)")
-        
         // handle images
         var imageSendToNewFile: (Data, UTType)? = nil
         
@@ -492,11 +489,11 @@ struct OpenURLSheetView: View {
             }
         }
         .overlay(alignment: .bottomTrailing) {
-            Text("Don't want to see this pop-up?")
+            Text(localizable: .openURLSheetPopUpTipsTitle)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .padding(6)
-                .popoverHelp("You can directly open the link by holding down the ⌘ key.")
+                .popoverHelp(.localizable(.openURLSheetPopUpTipsPopoverHelp))
         }
 #else
         .padding(.top, 20)

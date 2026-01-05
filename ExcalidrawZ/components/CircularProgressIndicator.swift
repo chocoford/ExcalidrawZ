@@ -38,9 +38,9 @@ struct CircularProgressIndicator: View {
                 .rotationEffect(.degrees(-90))
 
             // Download icon
-            Image(systemName: "arrow.down.circle.fill")
-                .font(.system(size: size * 0.4))
-                .foregroundStyle(.blue)
+//            Image(systemSymbol: .arrowDownCircle)
+//                .resizable()
+//                .scaledToFit()
         }
         .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
     }

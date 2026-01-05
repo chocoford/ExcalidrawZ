@@ -97,7 +97,13 @@ struct ExcalidrawContainerView: View {
                     Text(.localizable(.deletedFileRecoverAlertButtonCancel))
                 }
                 
-                Button {
+                Button(role: {
+                    if #available(iOS 26.0, macOS 26.0, *) {
+                        return .confirm
+                    } else {
+                        return .none
+                    }
+                }()) {
                     // Recover file
                     if case .file(let currentFile) = fileState.currentActiveFile {
                         Task {
@@ -114,6 +120,7 @@ struct ExcalidrawContainerView: View {
                 } label: {
                     Text(.localizable(.deletedFileRecoverAlertButtonRecover))
                 }
+                .modernButtonStyle(style: .glassProminent)
             } message: {
                 Text(.localizable(.deletedFileRecoverAlertMessage))
             }

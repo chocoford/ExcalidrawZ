@@ -104,7 +104,7 @@ struct MoveToGroupMenu<Group: ExcalidrawGroup>: View {
                     Button {
                         self.onMove(group.objectID)
                     } label: {
-                        Text("Move to \"\(group.name ?? String(localizable: .generalUnknown))\"")
+                        Text(localizable: .sidebarFileRowContextMenuMoveToGroup(group.name ?? String(localizable: .generalUnknown)))
                     }
                     
                     Divider()

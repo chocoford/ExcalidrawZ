@@ -225,6 +225,7 @@
 		3966046C2D096D7700870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				components/DrawingSettingsPanel/README.md,
 				NativeRenderer/ExcalidrawImageRenderer_File.swift,
 			);
 			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ (AppStore) */;
@@ -232,6 +233,7 @@
 		3966046D2D096D7700870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				components/DrawingSettingsPanel/README.md,
 				NativeRenderer/ExcalidrawImageRenderer_File.swift,
 			);
 			target = 397E4652295838CF003B824B /* ExcalidrawZ */;

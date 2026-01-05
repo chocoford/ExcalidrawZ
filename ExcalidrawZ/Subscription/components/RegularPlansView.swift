@@ -104,10 +104,21 @@ struct PlanCard: View {
         .padding()
         .frame(width: 260, height: 380, alignment: .top)
         .background {
-            let roundedRectangle = RoundedRectangle(cornerRadius: 12)
+            let roundedRectangle = if #available(iOS 26.0, macOS 26.0, *) {
+                RoundedRectangle(cornerRadius: 24)
+            } else {
+                RoundedRectangle(cornerRadius: 12)
+            }
             
             ZStack {
-                roundedRectangle.fill(.ultraThinMaterial)
+                if #available(iOS 26.0, macOS 26.0, *) {
+                    roundedRectangle
+                        .fill(.background)
+                        .glassEffect(.regular, in: roundedRectangle)
+                } else {
+                    roundedRectangle
+                        .fill(.ultraThinMaterial)
+                }
                 if isSelected {
 //                    if #available(macOS 14.0, iOS 17.0, *) {
 //                        roundedRectangle.fill(.accent.secondary)
