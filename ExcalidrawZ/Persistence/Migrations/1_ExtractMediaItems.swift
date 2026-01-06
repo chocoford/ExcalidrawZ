@@ -10,9 +10,8 @@ import Foundation
 import Logging
 
 struct Migration_ExtractMediaItems: MigrationVersion {
-    static var name: String = "Extract Media Items"
-    static var description: String =
-        "Optimizes app performance by separating image and media files from document data, making file operations faster and more efficient."
+    static var name: String = String(localizable: .migrationExtractMediaItemsName)
+    static var description: String = String(localizable: .migrationExtractMediaItemsDescription)
 
     let logger = Logger(label: "Migration_ExtractMediaItems")
     var context: NSManagedObjectContext
@@ -178,7 +177,7 @@ extension ExcalidrawFile {
 
         let file = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
         self = file
-        self.id = persistenceFile.id ?? UUID()
+        self.id = persistenceFile.id?.uuidString ?? UUID().uuidString
         self.content = persistenceFile.content
         self.name = persistenceFile.name
 
@@ -194,7 +193,7 @@ extension ExcalidrawFile {
         }
         let file = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
         self = file
-        self.id = checkpoint.file?.id ?? UUID()
+        self.id = checkpoint.file?.id?.uuidString ?? UUID().uuidString
         self.content = checkpoint.content
         self.name = checkpoint.file?.name
     }

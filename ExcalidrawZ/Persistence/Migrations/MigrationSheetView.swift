@@ -368,19 +368,21 @@ struct MigrationProgressSheet: View {
     private var titleText: String {
         switch migrationState.phase {
             case .idle:
-                return hasPendingMigrations ? "Migration Required" : "No Migration Needed"
+                return hasPendingMigrations
+                ? String(localizable: .migrationPhaseIdleWithPendingTitle)
+                : String(localizable: .migrationPhaseIdleWithoutPendingTitle)
             case .waitingForSync:
-                return "Waiting for iCloud Sync..."
+                return String(localizable: .migrationPhaseWaitingForSyncTitle)
             case .checking:
-                return "Checking for migrations..."
+                return String(localizable: .migrationPhaseCheckingTitle)
             case .migrating, .progress:
-                return "Migrating your data"
+                return String(localizable: .migrationPhaseInProgressTitle)
             case .completed:
-                return "Migration Completed"
+                return String(localizable: .migrationPhaseCompletedTitle)
             case .error:
-                return "Migration Failed"
+                return String(localizable: .migrationPhaseErrorTitle)
             case .closed:
-                return "Migration Completed"
+                return String(localizable: .migrationPhaseClosedTitle)
         }
     }
     
@@ -388,20 +390,20 @@ struct MigrationProgressSheet: View {
         switch migrationState.phase {
             case .idle:
                 return hasPendingMigrations
-                ? "We need to update your data to work with the latest version. You can archive your files first for safety."
-                : "Your data is up to date."
+                ? String(localizable: .migrationPhaseidleWithPendingSubtitle)
+                : String(localizable: .migrationPhaseIdleWithoutPendingSubtitle)
             case .waitingForSync:
-                return "Checking for updates from iCloud before proceeding..."
+                return String(localizable: .migrationPhaseWaitingForSyncSubtitle)
             case .checking:
-                return "Checking if any migrations are needed..."
+                return String(localizable: .migrationPhaseCheckingSubtitle)
             case .migrating, .progress:
-                return "Please wait while we update your data to work better with the latest version of the app"
+                return String(localizable: .migrationPhaseInProgressSubtitle)
             case .completed:
-                return "Your data has been successfully updated."
+                return String(localizable: .migrationPhaseCompletedSubtitle)
             case .error:
-                return "An error occurred during the migration process."
+                return String(localizable: .migrationPhaseErrorSubtitle)
             case .closed:
-                return "Your data has been successfully updated."
+                return String(localizable: .migrationPhaseClosedSubtitle)
         }
     }
     
@@ -423,17 +425,17 @@ struct MigrationProgressSheet: View {
     private var buttonTitle: String {
         switch migrationState.phase {
             case .idle:
-                return "Close"
+                return String(localizable: .generalButtonClose)
             case .waitingForSync:
-                return "Waiting for syncing..."
+                return String(localizable: .migrationPhaseWaitingForSyncButtonTitle)
             case .checking, .migrating, .progress:
-                return "Migrating..."
+                return String(localizable: .migrationPhaseMigratingButtonTitle)
             case .completed:
-                return "Done"
+                return String(localizable: .generalButtonDone)
             case .error:
-                return "Retry"
+                return String(localizable: .generalButtonRetry)
             case .closed:
-                return "Done"
+                return String(localizable: .generalButtonDone)
         }
     }
     
@@ -487,7 +489,11 @@ struct MigrationProgressSheet: View {
                 if archiveResult.failedFiles.isEmpty {
                     // All files archived successfully
                     alertToast(
-                        .init(displayMode: .hud, type: .complete(.green), title: "Files archived successfully to \(archiveResult.url.lastPathComponent)")
+                        .init(
+                            displayMode: .hud,
+                            type: .complete(.green),
+                            title: String(localizable: .migrationAlertToastArchiveSucessTitle(archiveResult.url.lastPathComponent))
+                        )
                     )
                 } else {
                     // Show failed files alert after a delay

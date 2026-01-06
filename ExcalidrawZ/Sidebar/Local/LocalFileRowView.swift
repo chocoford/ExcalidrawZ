@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreData
+import UniformTypeIdentifiers
 
 import ChocofordUI
 
@@ -38,7 +39,11 @@ struct LocalFileRowView: View {
     }
     
     @State private var modifiedDate: Date = .distantPast
-    @State private var iCloudState: ICloudState?
+    @State private var fileStatus: FileStatus?
+    private var iCloudState: ICloudFileStatus? {
+        fileStatus?.iCloudStatus
+    }
+    
     
     @State private var isDeleteConfirmationDialogPresented = false
     
@@ -50,15 +55,7 @@ struct LocalFileRowView: View {
             isMultiSelected: fileState.selectedLocalFiles.contains(file)
         ) {
 #if os(macOS)
-            if let iCloudState, iCloudState.downloadStatus != .current {
-                // request iCloud download first
-                do {
-                    try FileManager.default.startDownloadingUbiquitousItem(at: file)
-                    isWaitingForOpeningFile = true
-                } catch {
-                    alertToast(error)
-                }
-            } else if NSEvent.modifierFlags.contains(.shift) {
+            if NSEvent.modifierFlags.contains(.shift) {
                 // 1. If this is the first shift-click, remember it and select that file.
                 if fileState.selectedLocalFiles.isEmpty {
                     fileState.selectedLocalFiles.insert(file)
@@ -87,22 +84,31 @@ struct LocalFileRowView: View {
             fileState.selectedStartLocalFile = file
 #endif
         } label: {
+            var fileType: UTType {
+                file.pathExtension == "svg"
+                ? .excalidrawSVG
+                : file.pathExtension == "png"
+                ? .excalidrawPNG
+                : .excalidrawFile
+            }
+            
+            
             FileRowLabel(
-                name: file.deletingPathExtension().lastPathComponent,
+                name: fileType == .excalidrawPNG || fileType == .excalidrawSVG
+                ? file.deletingPathExtension().deletingPathExtension().lastPathComponent
+                : file.deletingPathExtension().lastPathComponent,
+                fileType: fileType,
                 updatedAt: modifiedDate
             ) {
                 if let iCloudState {
                     if isWaitingForOpeningFile {
-                        Spacer()
                         ProgressView()
                             .controlSize(.mini)
-                    } else if iCloudState.downloadStatus != .current {
-                        Spacer()
+                    } else if iCloudState != .downloaded {
                         Image(systemSymbol: .icloudAndArrowDown)
                             .foregroundStyle(.secondary)
                             .font(.footnote)
-                    } else if iCloudState.isUploading {
-                        Spacer()
+                    } else if iCloudState == .uploading {
                         if #available(macOS 15.0, iOS 18.0, *) {
                             Image(systemSymbol: .icloudAndArrowUp)
                                 .foregroundStyle(.secondary)
@@ -118,39 +124,21 @@ struct LocalFileRowView: View {
                                 .foregroundStyle(.secondary)
                                 .font(.footnote)
                         }
+//                    } else {
+//                        Text(String(describing: iCloudState))
                     }
                 }
             }
         }
         .modifier(LocalFileRowContextMenuModifier(file: file))
         .modifier(LocalFileDragModifier(file: file))
-        .onReceive(NotificationCenter.default.publisher(for: .fileXattrDidModified)) { output in
-            if let path = output.object as? String, self.file.filePath == path {
-                DispatchQueue.main.async {
-                    updateICloudFileState()
-                }
-//                do {
-//                    let resources = try self.file.resourceValues(forKeys: [
-//                        .ubiquitousItemDownloadingStatusKey,
-//                        .ubiquitousItemIsDownloadingKey
-//                    ])
-//                    if let downloadingStatus = resources.ubiquitousItemDownloadingStatus,
-//                       let isDownloading = resources.ubiquitousItemIsDownloading {
-//
-//                    }
-//                } catch {
-//                    
-//                }
-            }
-        }
+        .bindFileStatus(for: .localFile(file), status: $fileStatus)
         .watch(value: file) { newValue in
             updateModifiedDate()
-            updateICloudFileState()
             isWaitingForOpeningFile = false
         }
         .onChange(of: updateFlag) { _ in
             updateModifiedDate()
-            updateICloudFileState()
         }
         .onChange(of: fileState.currentActiveFile) { newValue in
             if case .localFile(let localFile) = newValue,
@@ -188,44 +176,6 @@ struct LocalFileRowView: View {
             DispatchQueue.main.async {
                 alertToast(error)
             }
-        }
-    }
-    
-    private func updateICloudFileState() {
-        do {
-            let resourceValues = try self.file.resourceValues(forKeys: [
-                .isUbiquitousItemKey,
-                .ubiquitousItemIsDownloadingKey,
-                .ubiquitousItemDownloadingStatusKey,
-                .ubiquitousItemIsUploadedKey,
-                .ubiquitousItemIsUploadingKey,
-            ])
-            
-            if resourceValues.isUbiquitousItem == true {
-                var iCloudState = ICloudState()
-                if let status = resourceValues.ubiquitousItemDownloadingStatus {
-                    iCloudState.downloadStatus = status
-                }
-                if let isDownloading = resourceValues.ubiquitousItemIsDownloading {
-                    iCloudState.isDownloading = isDownloading
-                }
-                if let isUploading = resourceValues.ubiquitousItemIsUploading {
-                    iCloudState.isUploading = isUploading
-                }
-                if let isUploaded = resourceValues.ubiquitousItemIsUploaded {
-                    iCloudState.isUploaded = isUploaded
-                }
-                self.iCloudState = iCloudState
-                
-                if isWaitingForOpeningFile, iCloudState.downloadStatus == .current {
-                    isWaitingForOpeningFile = false
-                    fileState.setActiveFile(.localFile(file))
-                }
-            } else {
-                iCloudState = nil
-            }
-        } catch {
-            alertToast(error)
         }
     }
     

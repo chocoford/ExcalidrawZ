@@ -22,6 +22,9 @@ struct LocalFolderRowView: View {
     // @Binding var isBeingDropped: Bool
 
     var onDelete: () -> Void
+
+    @State private var showFolderNotFoundAlert = false
+    @State private var folderNotFoundMessage = ""
     
     init(
         folder: LocalFolder,
@@ -44,6 +47,16 @@ struct LocalFolderRowView: View {
 
     var body: some View {
         content()
+            .alert("Folder Not Found", isPresented: $showFolderNotFoundAlert) {
+                LocalFolderMenuProvider(folder: folder) { trigger in
+                    Button(.localizable(.sidebarLocalFolderRowContextMenuRemoveObservation), role: .destructive) {
+                        trigger.onToggleRemoveObservation()
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(folderNotFoundMessage)
+            }
     }
 
     @MainActor @ViewBuilder
@@ -59,8 +72,17 @@ struct LocalFolderRowView: View {
             .contentShape(Rectangle())
         } else {
             Button {
-                fileState.currentActiveGroup = .localFolder(folder)
-                fileState.setActiveFile(nil)
+                // Check if folder path exists using shared method
+                switch folder.checkPathExists() {
+                case .success:
+                    // Path exists, set as active
+                    fileState.currentActiveGroup = .localFolder(folder)
+                    fileState.setActiveFile(nil)
+                case .failure(let error):
+                    // Path doesn't exist, show alert
+                    folderNotFoundMessage = error.message
+                    showFolderNotFoundAlert = true
+                }
             } label: {
                 HStack(spacing: 6) {
                     Image(systemSymbol: .folderFill)

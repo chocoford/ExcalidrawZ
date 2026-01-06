@@ -34,12 +34,12 @@ struct FileICloudStatusIndicator: View {
                 switch fileStatus?.iCloudStatus {
                     case .notDownloaded:
                         Image(systemSymbol: .icloudAndArrowDown)
-                            .symbolEffect(.drawOn, options: .speed(2), isActive: fileStatus?.iCloudStatus == .notDownloaded)
+                            .drawOnAppear(options: .speed(2))
                     case .downloading(let progress):
                         CircularProgressIndicator(progress: progress ?? 0)
                     case .downloaded:
                         downloadedFallbackView
-                            .symbolEffect(.drawOn, options: .speed(2), isActive: fileStatus?.iCloudStatus == .downloaded)
+                            .drawOnAppear(options: .speed(2))
                     case .outdated:
                         Image(systemName: "icloud.dashed")
                     case .loading:
@@ -48,10 +48,10 @@ struct FileICloudStatusIndicator: View {
                         EmptyView()
                     case .uploading:
                         Image(systemSymbol: .icloudAndArrowUp)
-                            .symbolEffect(.drawOn, options: .speed(2), isActive: fileStatus?.iCloudStatus == .uploading)
+                            .drawOnAppear(options: .speed(2))
                     case .conflict:
                         Image(systemSymbol: .xmarkIcloud)
-                            .symbolEffect(.drawOn, options: .speed(2), isActive: fileStatus?.iCloudStatus == .conflict)
+                            .drawOnAppear(options: .speed(2))
                     case .error(_):
                         Image(systemSymbol: .exclamationmarkTriangle)
                             .symbolEffect(.drawOn, options: .speed(2), isActive: {

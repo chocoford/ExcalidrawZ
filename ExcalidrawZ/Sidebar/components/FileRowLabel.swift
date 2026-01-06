@@ -6,12 +6,15 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
+
 import SFSafeSymbols
 
 struct FileRowLabel: View {
     @Environment(\.diclosureGroupDepth) private var depth
-
+    
     var name: String
+    var fileType: UTType
     var updatedAt: Date
     var isInTrash: Bool
     
@@ -19,6 +22,7 @@ struct FileRowLabel: View {
     
     init<T: View>(
         name: String,
+        fileType: UTType = .excalidrawFile,
         updatedAt: Date,
         isInTrash: Bool = false,
         @ViewBuilder nameTrailingView: () -> T = {
@@ -26,6 +30,7 @@ struct FileRowLabel: View {
         }
     ) {
         self.name = name
+        self.fileType = fileType
         self.updatedAt = updatedAt
         self.isInTrash = isInTrash
         self.nameTrailingView = AnyView(nameTrailingView())
@@ -33,13 +38,31 @@ struct FileRowLabel: View {
     
     var body: some View {
         HStack(spacing: 10) {
-            ExcalidrawIconView()
-                .frame(height: 14)
-                .opacity(isInTrash ? 0.3 : 1.0)
+            ZStack {
+                switch fileType {
+                    case .excalidrawPNG:
+                        Image(systemSymbol: .photo)
+                            .resizable()
+                            .scaledToFit()
+                            .foregroundStyle(Color.accentColor)
+                    case .excalidrawSVG:
+                        Image(systemSymbol: .photo)
+                            .resizable()
+                            .scaledToFit()
+                            .foregroundStyle(Color.accentColor)
+                    default:
+                        ExcalidrawIconView()
+                            .opacity(isInTrash ? 0.3 : 1.0)
+                }
+            }
+            .frame(height: 14)
+            .frame(width: 18)
             
             Text(name)
             
             Spacer(minLength: 0)
+            
+            nameTrailingView
         }
         .lineLimit(1)
         .truncationMode(.middle)

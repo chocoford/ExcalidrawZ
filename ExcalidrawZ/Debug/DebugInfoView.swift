@@ -84,7 +84,7 @@ struct DebugInfoView: View {
 
             do {
                 let content = try await file.loadContent()
-                excalidrawFile = try ExcalidrawFile(data: content, id: file.id)
+                excalidrawFile = try ExcalidrawFile(data: content, id: file.id?.uuidString)
             } catch {
                 excalidrawFile = nil
             }

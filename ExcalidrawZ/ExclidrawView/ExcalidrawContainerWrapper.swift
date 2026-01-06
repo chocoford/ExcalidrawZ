@@ -56,9 +56,10 @@ struct ExcalidrawContainerWrapper: View {
     
     var localFileBinding: Binding<ExcalidrawFile?> {
         Binding<ExcalidrawFile?> {
-            return excalidrawFile
+            return fileState.currentActiveFile == nil ? ExcalidrawFile() : excalidrawFile
         } set: { val in
             guard let val else { return }
+            guard activeFile?.id == val.id else { return }
             
             // Block updates while loading new file
             guard !isLoadingFile else {
@@ -70,14 +71,12 @@ struct ExcalidrawContainerWrapper: View {
             
             switch activeFile {
                 case .file(let file):
-                    if file.id == val.id {
-                        // Check if there are actual updates
-                        if let currentFile = excalidrawFile, val.elements == currentFile.elements {
-                            logger.info("no updates, ignored.")
-                            return
-                        }
-                        fileState.updateFile(file, with: val)
+                    // Check if there are actual updates
+                    if let currentFile = excalidrawFile, val.elements == currentFile.elements {
+                        logger.info("no updates, ignored.")
+                        return
                     }
+                    fileState.updateFile(file, with: val)
                 case .localFile(let url):
                     guard case .localFolder(let folder) = fileState.currentActiveGroup else { return }
                     Task {
@@ -202,6 +201,10 @@ struct ExcalidrawContainerWrapper: View {
     }
     
     private func loadExcalidrawFile(from activeFile: FileState.ActiveFile?) async {
+        guard let activeFile else {
+            self.excalidrawFile = ExcalidrawFile()
+            return
+        }
         // Set loading state
         await MainActor.run {
             self.isLoadingFile = true
@@ -222,18 +225,19 @@ struct ExcalidrawContainerWrapper: View {
                 case .file(let file):
                     let content = try await file.loadContent()
                     await MainActor.run {
-                        self.excalidrawFile = try? ExcalidrawFile(data: content, id: file.id)
+                        self.excalidrawFile = try? ExcalidrawFile(data: content, id: activeFile.id)
                     }
                     
                 case .localFile(let url):
-                    // Load file after download completes (or immediately if already available)
-                    let file = try ExcalidrawFile(contentsOf: url)
+                    let data = try await FileSyncCoordinator.shared.openFile(url)
+                    let file = try ExcalidrawFile(data: data, id: activeFile.id)
                     await MainActor.run {
                         self.excalidrawFile = file
                     }
 
                 case .temporaryFile(let url):
-                    let file = try ExcalidrawFile(contentsOf: url)
+                    let data = try await FileSyncCoordinator.shared.openFile(url)
+                    let file = try ExcalidrawFile(data: data, id: activeFile.id)
                     await MainActor.run {
                         self.excalidrawFile = file
                     }

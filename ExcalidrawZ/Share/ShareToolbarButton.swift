@@ -120,7 +120,10 @@ struct ShareToolbarButton: View {
             switch fileState.currentActiveFile {
                 case .file(let file):
                     let content = try await file.loadContent()
-                    self.shareFileState.currentSharedFile = try ExcalidrawFile(data: content, id: file.id)
+                    self.shareFileState.currentSharedFile = try ExcalidrawFile(
+                        data: content,
+                        id: file.id?.uuidString
+                    )
                 case .localFile(let url):
                     if case .localFolder(let folder) = fileState.currentActiveGroup {
                         try await folder.withSecurityScopedURL { (_: URL) async throws -> Void in
@@ -132,7 +135,10 @@ struct ShareToolbarButton: View {
                     
                 case .collaborationFile(let collaborationFile):
                     let content = try await collaborationFile.loadContent()
-                    self.shareFileState.currentSharedFile = try ExcalidrawFile(data: content, id: collaborationFile.id)
+                    self.shareFileState.currentSharedFile = try ExcalidrawFile(
+                        data: content,
+                        id: collaborationFile.id?.uuidString
+                    )
                 default:
                     break
             }

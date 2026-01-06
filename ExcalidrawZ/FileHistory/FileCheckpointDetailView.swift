@@ -130,7 +130,7 @@ struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
                         do {
                             try folder.withSecurityScopedURL { scopedURL in
                                 var file = try ExcalidrawFile(data: content)
-                                file.id = ExcalidrawFile.localFileURLIDMapping[fileURL] ?? UUID()
+                                file.id = ExcalidrawFile.localFileURLIDMapping[fileURL] ?? UUID().uuidString
                                 fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
                                 try content.write(to: fileURL)
                             }

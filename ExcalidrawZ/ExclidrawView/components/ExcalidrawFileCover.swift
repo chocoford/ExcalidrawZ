@@ -7,6 +7,7 @@
 
 import SwiftUI
 import ChocofordUI
+import Logging
 
 #if canImport(UIKit)
 typealias PlatformImage = UIImage
@@ -38,6 +39,8 @@ struct ExcalidrawFileCover: View {
     
     @EnvironmentObject private var fileState: FileState
     
+    let logger = Logger(label: "ExcalidrawFileCover")
+    
     // Support two initialization modes
     private enum Source {
         case activeFile(FileState.ActiveFile)
@@ -59,7 +62,7 @@ struct ExcalidrawFileCover: View {
             case .activeFile(let file):
                 return file.id
             case .excalidrawFile(let file):
-                return file.id.uuidString
+                return file.id
         }
     }
     
@@ -165,12 +168,12 @@ struct ExcalidrawFileCover: View {
                 let excalidrawFile: ExcalidrawFile
                 
                 switch source {
-                    case .activeFile(let file):
+                    case .activeFile(let activeFile):
                         // Load from ActiveFile
-                        switch file {
+                        switch activeFile {
                             case .file(let file):
                                 let content = try await file.loadContent()
-                                excalidrawFile = try ExcalidrawFile(data: content, id: file.id)
+                                excalidrawFile = try ExcalidrawFile(data: content, id: activeFile.id)
                             case .localFile(let url):
                                 try await FileCoordinator.shared.downloadFile(url: url)
                                 excalidrawFile = try ExcalidrawFile(contentsOf: url)
@@ -178,7 +181,7 @@ struct ExcalidrawFileCover: View {
                                 excalidrawFile = try ExcalidrawFile(contentsOf: url)
                             case .collaborationFile(let collaborationFile):
                                 let content = try await collaborationFile.loadContent()
-                                excalidrawFile = try ExcalidrawFile(data: content, id: collaborationFile.id)
+                                excalidrawFile = try ExcalidrawFile(data: content, id: collaborationFile.id?.uuidString)
                         }
                         
                     case .excalidrawFile(let file):
@@ -209,7 +212,7 @@ struct ExcalidrawFileCover: View {
                     }
                 }
             } catch {
-                print("Failed to load excalidraw file for preview:", error)
+                self.logger.error("Failed to load excalidraw file for preview: \(error)")
                 self.error = error
             }
         }

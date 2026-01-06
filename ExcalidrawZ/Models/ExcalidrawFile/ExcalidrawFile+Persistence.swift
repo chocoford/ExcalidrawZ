@@ -28,7 +28,7 @@ extension ExcalidrawFile {
         }
         let file = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
         self = file
-        self.id = persistenceFile.id ?? UUID()
+        self.id = persistenceFile.id?.uuidString ?? UUID().uuidString
         self.content = persistenceFile.content
         self.name = persistenceFile.name
         if let persistenceFile = persistenceFile as? CollaborationFile {
@@ -52,7 +52,7 @@ extension ExcalidrawFile {
 
         let file = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
         self = file
-        self.id = persistenceFile.id ?? UUID()
+        self.id = persistenceFile.id?.uuidString ?? UUID().uuidString
         self.content = data
         self.name = persistenceFile.name
         if let persistenceFile = persistenceFile as? CollaborationFile {
@@ -94,7 +94,7 @@ extension ExcalidrawFile {
         }
         let file = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
         self = file
-        self.id = checkpoint.file?.id ?? UUID()
+        self.id = checkpoint.file?.id?.uuidString ?? UUID().uuidString
         self.content = checkpoint.content
         self.name = checkpoint.file?.name
     }
@@ -104,7 +104,7 @@ extension ExcalidrawFile {
         let data = try await checkpoint.loadContent()
         let file = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
         self = file
-        self.id = checkpoint.file?.id ?? UUID()
+        self.id = checkpoint.file?.id?.uuidString ?? UUID().uuidString
         self.content = data
         self.name = checkpoint.file?.name
     }

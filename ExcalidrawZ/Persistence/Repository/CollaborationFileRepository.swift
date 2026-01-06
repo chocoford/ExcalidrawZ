@@ -247,7 +247,7 @@ actor CollaborationFileRepository {
         let content = try await collaborationFile.loadContent()
 
         // Sync files outside of context.perform since it's async
-        var file = try ExcalidrawFile(data: content, id: collaborationFileID)
+        var file = try ExcalidrawFile(data: content, id: collaborationFileID?.uuidString)
         try await file.syncFiles(context: self.context)
 
         let fileURL = try await context.perform {

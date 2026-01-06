@@ -124,7 +124,7 @@ struct NewRoomModifier: ViewModifier {
                             switch selection {
                                 case .file(let file):
                                     let content = try await file.loadContent()
-                                    var excalidrawFile = try ExcalidrawFile(data: content, id: file.id)
+                                    var excalidrawFile = try ExcalidrawFile(data: content, id: file.id?.uuidString)
                                     try await excalidrawFile.syncFiles(context: viewContext)
                                     createRoom(
                                         name: file.name ?? String(localizable: .generalUntitled),

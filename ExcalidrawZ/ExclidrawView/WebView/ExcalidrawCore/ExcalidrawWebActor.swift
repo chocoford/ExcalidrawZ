@@ -17,10 +17,10 @@ actor ExcalidrawWebActor {
         self.excalidrawCoordinator = coordinator
     }
     
-    var loadedFileID: UUID?
+    var loadedFileID: String?
     var webView: ExcalidrawWebView { excalidrawCoordinator.webView }
     
-    func loadFile(id: UUID, data: Data, force: Bool = false) async throws {
+    func loadFile(id: String, data: Data, force: Bool = false) async throws {
         let webView = webView
         guard loadedFileID != id || force else { return }
         self.loadedFileID = id
@@ -33,7 +33,7 @@ actor ExcalidrawWebActor {
         data.copyBytes(to: &buffer, count: data.count)
         let buf = buffer
         await MainActor.run {
-            webView.evaluateJavaScript("window.excalidrawZHelper.loadFileBuffer(\(buf), '\(id.uuidString)'); 0;")
+            webView.evaluateJavaScript("window.excalidrawZHelper.loadFileBuffer(\(buf), '\(id)'); 0;")
         }
     }
 }

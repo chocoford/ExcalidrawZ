@@ -10,9 +10,8 @@ import Foundation
 import Logging
 
 struct Migration_MoveContentToICloudDrive: MigrationVersion {
-    static var name: String = "Move Content To File Storage"
-    static var description: String =
-    "Moves file content from local database to unified file storage system (local + iCloud sync). This improves app performance by storing only file metadata locally while keeping actual file data in the file system."
+    static var name: String = String(localizable: .migrationMoveContentToICloudDriveName)
+    static var description: String = String(localizable: .migrationMoveContentToICloudDriveDescription)
     
     let logger = Logger(label: "Migration_MoveContentToICloudDrive")
     var context: NSManagedObjectContext
@@ -35,7 +34,6 @@ struct Migration_MoveContentToICloudDrive: MigrationVersion {
             // Check if there are any CollaborationFile entities with content but no filePath
             let collaborationFileFetchRequest = CollaborationFile.fetchRequest()
             collaborationFileFetchRequest.predicate = NSPredicate(format: "content != nil AND filePath == nil")
-            
 #if !DEBUG
             fileFetchRequest.fetchLimit = 1
             mediaFetchRequest.fetchLimit = 1

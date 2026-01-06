@@ -94,7 +94,7 @@ struct ExcalidrawZApp: App {
     @Environment(\.scenePhase) var scenePhase
     
     @StateObject private var appPrefernece = AppPreference()
-    @StateObject private var store = Store()
+    @StateObject private var store = Store.shared
 #if os(macOS) && !APP_STORE
     @StateObject private var updateChecker = UpdateChecker()
 #endif

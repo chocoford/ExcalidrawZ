@@ -127,11 +127,36 @@ struct LocalFilesProvider<Content: View>: View {
                 try folder.withSecurityScopedURL { folderURL in
                     let contents = try FileManager.default.contentsOfDirectory(
                         at: folderURL,
-                        includingPropertiesForKeys: [.nameKey, .contentModificationDateKey, .creationDateKey],
+                        includingPropertiesForKeys: [
+                            .nameKey, 
+                            .contentModificationDateKey, 
+                            .creationDateKey,
+                            .ubiquitousItemDownloadingStatusKey,
+                            .isUbiquitousItemKey
+                        ],
                         options: [.skipsSubdirectoryDescendants]
                     )
                     let files = contents
-                        .filter({ $0.pathExtension == "excalidraw" })
+                        .filter({
+                            $0.pathExtension == "excalidraw"
+                            || ($0.pathExtension == "svg" && $0.deletingPathExtension().pathExtension == "excalidraw")
+                            || ($0.pathExtension == "png" && $0.deletingPathExtension().pathExtension == "excalidraw")
+                        })
+                        // Include files even if they are not downloaded (iCloud Drive files)
+                        .filter({ url in
+                            // Check if file exists locally or if it's an iCloud file (even if not downloaded)
+                            if FileManager.default.fileExists(atPath: url.path) {
+                                return true
+                            }
+                            
+                            // For iCloud files that are not downloaded, we still want to include them
+                            let resourceValues = try? url.resourceValues(forKeys: [.isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey])
+                            if let isUbiquitous = resourceValues?.isUbiquitousItem, isUbiquitous {
+                                return true // Include iCloud files regardless of download status
+                            }
+                            
+                            return false
+                        })
                     withAnimation {
                         self.files = files
                         self.sortFiles(field: self.sortField)

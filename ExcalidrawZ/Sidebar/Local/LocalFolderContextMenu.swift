@@ -15,7 +15,7 @@ struct LocalFolderMenuProvider: View {
     struct Triggers {
         var onToggleRename: () -> Void
         var onToogleCreateSubfolder: () -> Void
-//        var onToggleDelete: () -> Void
+        var onToggleRemoveObservation: () -> Void
     }
     
     var folder: LocalFolder
@@ -40,6 +40,8 @@ struct LocalFolderMenuProvider: View {
         } onToogleCreateSubfolder: {
             generateNewSubfolderName()
             isCreateSubfolderSheetPresented.toggle()
+        } onToggleRemoveObservation: {
+            removeObservation()
         }
     }
     
@@ -95,6 +97,42 @@ struct LocalFolderMenuProvider: View {
             alertToast(error)
         }
     }
+    
+    private func removeObservation() {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        let folderID = folder.objectID
+        Task.detached {
+            do {
+                try await context.perform {
+                    guard case let folder as LocalFolder = context.object(with: folderID) else { return }
+                    // also should delete the subfolders...
+                    var allSubfolders: [LocalFolder] = []
+                    var fetchIndex = -1
+                    var parent = folder
+                    while fetchIndex < allSubfolders.count {
+                        if fetchIndex > -1 {
+                            parent = allSubfolders[fetchIndex]
+                        }
+                        let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                        fetchRequest.predicate = NSPredicate(format: "parent = %@", parent)
+                        try allSubfolders.append(contentsOf: context.fetch(fetchRequest))
+                        fetchIndex += 1
+                    }
+                    let batchDeletion = NSBatchDeleteRequest(objectIDs: allSubfolders.map{$0.objectID} + [folder.objectID])
+                    
+                    try context.executeAndMergeChanges(using: batchDeletion)
+                    try context.save()
+                }
+            } catch {
+                await alertToast(error)
+            }
+        }
+        
+        if case .localFolder(let localFoder) = fileState.currentActiveGroup, localFoder == folder {
+            fileState.setActiveFile(nil)
+            fileState.currentActiveGroup = nil
+        }
+    }
 
 }
 
@@ -116,6 +154,8 @@ struct LocalFolderContextMenuModifier: ViewModifier {
                         canExpand: canExpand
                     ) {
                         triggers.onToogleCreateSubfolder()
+                    } onToggleRemoveObservation: {
+                        triggers.onToggleRemoveObservation()
                     }
                     .labelStyle(.titleAndIcon)
                 }
@@ -135,15 +175,18 @@ struct LocalFolderMenuItems: View {
     var canExpand: Bool
     
     var onToggleCreateSubfolder: () -> Void
+    var onToggleRemoveObservation: () -> Void
     
     init(
         folder: LocalFolder,
         canExpand: Bool,
         onToggleCreateSubfolder: @escaping () -> Void,
+        onToggleRemoveObservation: @escaping () -> Void,
     ) {
         self.folder = folder
         self.canExpand = canExpand
         self.onToggleCreateSubfolder = onToggleCreateSubfolder
+        self.onToggleRemoveObservation = onToggleRemoveObservation
     }
     
     @FetchRequest(
@@ -212,7 +255,7 @@ struct LocalFolderMenuItems: View {
         
         if folder.parent == nil {
             Button(role: .destructive) {
-                removeObservation()
+                onToggleRemoveObservation()
             } label: {
                 Label(.localizable(.sidebarLocalFolderRowContextMenuRemoveObservation), systemSymbol: .trash)
             }
@@ -319,40 +362,5 @@ struct LocalFolderMenuItems: View {
             alertToast(error)
         }
     }
-    
-    private func removeObservation() {
-        let context = PersistenceController.shared.container.newBackgroundContext()
-        let folderID = folder.objectID
-        Task.detached {
-            do {
-                try await context.perform {
-                    guard case let folder as LocalFolder = context.object(with: folderID) else { return }
-                    // also should delete the subfolders...
-                    var allSubfolders: [LocalFolder] = []
-                    var fetchIndex = -1
-                    var parent = folder
-                    while fetchIndex < allSubfolders.count {
-                        if fetchIndex > -1 {
-                            parent = allSubfolders[fetchIndex]
-                        }
-                        let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                        fetchRequest.predicate = NSPredicate(format: "parent = %@", parent)
-                        try allSubfolders.append(contentsOf: context.fetch(fetchRequest))
-                        fetchIndex += 1
-                    }
-                    let batchDeletion = NSBatchDeleteRequest(objectIDs: allSubfolders.map{$0.objectID} + [folder.objectID])
-                    
-                    try context.executeAndMergeChanges(using: batchDeletion)
-                    try context.save()
-                }
-            } catch {
-                await alertToast(error)
-            }
-        }
-        
-        if case .localFolder(let localFoder) = fileState.currentActiveGroup, localFoder == folder {
-            fileState.setActiveFile(nil)
-            fileState.currentActiveGroup = nil
-        }
-    }
+
 }

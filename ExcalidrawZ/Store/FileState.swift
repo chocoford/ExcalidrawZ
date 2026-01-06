@@ -87,9 +87,13 @@ final class FileState: ObservableObject {
                 case .file(let file):
                     file.name
                 case .localFile(let url):
-                    url.deletingPathExtension().lastPathComponent
+                    fileType == .excalidrawPNG || fileType == .excalidrawSVG
+                    ? url.deletingPathExtension().deletingPathExtension().lastPathComponent
+                    : url.deletingPathExtension().lastPathComponent
                 case .temporaryFile(let url):
-                    url.deletingPathExtension().lastPathComponent
+                    fileType == .excalidrawPNG || fileType == .excalidrawSVG
+                    ? url.deletingPathExtension().deletingPathExtension().lastPathComponent
+                    : url.deletingPathExtension().lastPathComponent
                 case .collaborationFile(let file):
                     file.name
             }
@@ -105,6 +109,24 @@ final class FileState: ObservableObject {
                     (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? nil
                 case .collaborationFile(let file):
                     file.updatedAt
+            }
+        }
+        
+        var fileType: UTType {
+            switch self {
+                case .localFile(let url):
+                    url.pathExtension == "svg"
+                    ? .excalidrawSVG
+                    : url.pathExtension == "png"
+                    ? .excalidrawPNG
+                    : .excalidrawFile
+                case .temporaryFile(let url):
+                    url.pathExtension == "svg"
+                    ? .excalidrawSVG
+                    : url.pathExtension == "png"
+                    ? .excalidrawPNG
+                    : .excalidrawFile
+                default: .excalidrawFile
             }
         }
     }
@@ -176,9 +198,26 @@ final class FileState: ObservableObject {
             self.currentActiveFile = nil
             return
         }
-        // Check if file needs download
+        self.currentActiveFile = file
+        let context = PersistenceController.shared.container.viewContext
         switch file {
             case .localFile(let url):
+                Task {
+                    do {
+                        let folders = try await context.perform {
+                            let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                            fetchRequest.predicate = NSPredicate(format: "url == %@", url.deletingLastPathComponent() as NSURL)
+                            fetchRequest.fetchLimit = 1
+                            return try context.fetch(fetchRequest)
+                        }
+                        if let folder = folders.first {
+                            currentActiveGroup = .localFolder(folder)
+                        } else {
+                            // Handle case where local folder is not found
+                            currentActiveGroup = nil
+                        }
+                    } catch {}
+                }
                 // Check iCloud status
                 let statusBox = FileStatusService.shared.statusBox(for: file)
                 let status = statusBox.status
@@ -196,15 +235,38 @@ final class FileState: ObservableObject {
                         }
                     }
                 }
-                self.currentActiveFile = file
-            case .file, .temporaryFile:
-                // Database files, temporary files, and collaboration files don't need download check
-                self.currentActiveFile = file
-                
+            case .file(let dbFile):
+                Task {
+                    if dbFile.group == nil {
+                        currentActiveGroup = nil
+                    } else if dbFile.inTrash {
+                        let trashGroup = await context.perform {
+                            let trashGroupFetchRequest = NSFetchRequest<Group>(entityName: "Group")
+                            trashGroupFetchRequest.predicate = NSPredicate(format: "type == 'trash'")
+                            return try? context.fetch(trashGroupFetchRequest).first
+                        }
+                        
+                        currentActiveGroup = .group(trashGroup ?? dbFile.group!)
+                    } else {
+                        currentActiveGroup = .group(dbFile.group!)
+                    }
+                }
+                if let groupID = dbFile.group?.objectID, dbFile.inTrash == false {
+                    expandToGroup(groupID)
+                }
+            case .temporaryFile:
+                currentActiveGroup = .temporary
             case .collaborationFile(let room):
-                self.currentActiveFile = file
-                if !collaboratingFiles.contains(room) {
-                    collaboratingFiles.append(room)
+                let store = Store.shared
+                if let limit = store.collaborationRoomLimits,
+                   collaboratingFiles.count >= limit,
+                   !collaboratingFiles.contains(room) {
+                    store.togglePaywall(reason: .roomLimit)
+                } else {
+                    currentActiveGroup = .collaboration
+                    if !collaboratingFiles.contains(room) {
+                        collaboratingFiles.append(room)
+                    }
                 }
         }
     }
@@ -812,7 +874,7 @@ final class FileState: ObservableObject {
         
         // Create duplicated file through repository (creates entity and saves to iCloud Drive)
         let newFileID = try await PersistenceController.shared.fileRepository.createFile(
-            name: fileName ?? "Untitled",
+            name: fileName ?? String(localizable: .generalUntitled),
             content: content,
             groupObjectID: groupID
         )

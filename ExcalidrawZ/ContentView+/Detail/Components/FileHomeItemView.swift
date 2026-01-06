@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreData
+import UniformTypeIdentifiers
 
 import ChocofordUI
 
@@ -173,43 +174,6 @@ struct FileHomeItemView: View {
     private func openFile() {
         guard isEnabled else { return }
         fileState.setActiveFile(file)
-        
-        switch file {
-            case .file(let file):
-                
-                let getTrashGroup: () -> Group? = {
-                    let trashGroupFetchRequest = NSFetchRequest<Group>(entityName: "Group")
-                    trashGroupFetchRequest.predicate = NSPredicate(format: "type == 'trash'")
-                    return try? viewContext.fetch(trashGroupFetchRequest).first
-                }
-                
-                fileState.currentActiveGroup = file.group == nil
-                ? nil
-                : file.inTrash
-                ? .group(getTrashGroup() ?? file.group!)
-                : .group(file.group!)
-                
-                if let groupID = file.group?.objectID, file.inTrash == false {
-                    fileState.expandToGroup(groupID)
-                }
-            case .localFile(let url):
-                do {
-                    let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                    fetchRequest.predicate = NSPredicate(format: "url == %@", url.deletingLastPathComponent() as NSURL)
-                    fetchRequest.fetchLimit = 1
-                    let folders = try viewContext.fetch(fetchRequest)
-                    if let folder = folders.first {
-                        fileState.currentActiveGroup = .localFolder(folder)
-                    } else {
-                        // Handle case where local folder is not found
-                        fileState.currentActiveGroup = nil
-                    }
-                } catch {}
-            case .temporaryFile:
-                fileState.currentActiveGroup = .temporary
-            case .collaborationFile:
-                fileState.currentActiveGroup = .collaboration
-        }
     }
 
     @ViewBuilder
@@ -256,6 +220,7 @@ private struct FileHomeItemContentView: View {
     var fileID: String { file.id }
     var filename: String { file.name ?? String(localizable: .generalUntitled) }
     var updatedAt: Date? { file.updatedAt }
+    var fileType: UTType { file.fileType }
     
     init(
         style: FileHomeItemStyle,
@@ -358,7 +323,11 @@ private struct FileHomeItemContentView: View {
                         HStack {
                             Text(filename)
                                 .lineLimit(1)
-                                
+                            if fileType == .excalidrawPNG || fileType == .excalidrawSVG {
+                                Image(systemSymbol: .photo)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
                             if style == .file {
                                 FileICloudStatusIndicator(file: file)
                                     .controlSize(.mini)
@@ -374,7 +343,7 @@ private struct FileHomeItemContentView: View {
                         )
                         
                         HStack {
-                            Text(localUpdatedAt?.formatted() ?? "Never modified")
+                            Text(localUpdatedAt?.formatted() ?? String(localizable: .generalFileNeverModified))
                                 .lineLimit(1)
                                 .onChange(of: updatedAt) { newValue in
                                     localUpdatedAt = newValue

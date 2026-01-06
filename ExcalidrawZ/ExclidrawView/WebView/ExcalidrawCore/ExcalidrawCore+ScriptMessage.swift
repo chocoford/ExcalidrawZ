@@ -902,7 +902,6 @@ extension ExcalidrawFile {
         contentObject["elements"] = fileDataJson["elements"]
         contentObject["files"] = fileDataJson["files"]
         contentObject["appState"] = fileDataJson["appState"]
-        print("[DEBUG] Update file", contentObject)
         self.content = try JSONSerialization.data(withJSONObject: contentObject)
         self.elements = data.elements ?? []
         self.files = data.files

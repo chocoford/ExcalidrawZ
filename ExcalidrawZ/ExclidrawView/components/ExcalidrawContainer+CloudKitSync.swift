@@ -68,7 +68,7 @@ private struct CloudKitSyncModifier: ViewModifier {
                     if case .file(let file) = activeFile {
                         do {
                             let content = try await file.loadContent()
-                            fileBeforeImporting = try ExcalidrawFile(data: content, id: file.id)
+                            fileBeforeImporting = try ExcalidrawFile(data: content, id: file.id?.uuidString)
                         } catch {
                             // Failed to load content, ignore
                         }
@@ -81,7 +81,7 @@ private struct CloudKitSyncModifier: ViewModifier {
                     if case .file(let file) = activeFile {
                         do {
                             let content = try await file.loadContent()
-                            let fileAfterImporting = try ExcalidrawFile(data: content, id: file.id)
+                            let fileAfterImporting = try ExcalidrawFile(data: content, id: file.id?.uuidString)
 
                             // Check if content actually changed
                             if fileBeforeImporting?.elements == fileAfterImporting.elements {

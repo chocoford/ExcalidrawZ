@@ -393,6 +393,8 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                             canExpand: false
                         ) {
                             triggers.onToogleCreateSubfolder()
+                        } onToggleRemoveObservation: {
+                            triggers.onToggleRemoveObservation()
                         }
                     } label: {
                         Image(systemSymbol: .ellipsisCircle)

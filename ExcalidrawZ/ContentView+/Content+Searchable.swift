@@ -504,43 +504,18 @@ struct SerachContent: View {
     
     private func onSelect(_ index: Int) {
         if index < searchCollaborationFiles.count {
-            dismiss()
             let file = searchCollaborationFiles[index]
-            if let limit = store.collaborationRoomLimits,
-               fileState.collaboratingFiles.count >= limit,
-               !fileState.collaboratingFiles.contains(file) {
-                store.togglePaywall(reason: .roomLimit)
-            } else {
-                fileState.currentActiveGroup = .collaboration
-                fileState.setActiveFile(.collaborationFile(file))
-            }
+            fileState.setActiveFile(.collaborationFile(file))
+            dismiss()
         } else if index < searchCollaborationFiles.count + searchFiles.count {
             let file = searchFiles[index - searchCollaborationFiles.count]
-            if let group = file.group {
-                fileState.currentActiveGroup = .group(group)
-                fileState.setActiveFile(.file(file))
-                fileState.expandToGroup(group.objectID)
-                dismiss()
-            }
+            fileState.setActiveFile(.file(file))
+            dismiss()
         } else if index < searchCollaborationFiles.count + searchFiles.count + searchLocalFiles.count {
             Task {
                 let file = searchLocalFiles[index - searchCollaborationFiles.count - searchFiles.count]
-                do {
-                    let folder = try await viewContext.perform {
-                        let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                        fetchRequest.predicate = NSPredicate(format: "filePath = %@", file.deletingLastPathComponent().filePath)
-                        return try viewContext.fetch(fetchRequest).first
-                    }
-                    
-                    if let folder {
-                        fileState.currentActiveGroup = .localFolder(folder)
-                        fileState.setActiveFile(.localFile(file))
-                        fileState.expandToGroup(folder.objectID)
-                        dismiss()
-                    }
-                } catch {
-                    alertToast(error)
-                }
+                fileState.setActiveFile(.localFile(file))
+                dismiss()
             }
         }
     }

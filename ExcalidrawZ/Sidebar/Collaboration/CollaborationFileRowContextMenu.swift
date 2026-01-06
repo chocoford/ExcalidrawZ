@@ -171,17 +171,19 @@ struct CollaborationFileMenuItems: View {
             )
         }
         
-        Button {
-            fileState.collaboratingFiles.removeAll(where: {$0 == file})
-            fileState.collaboratingFilesState[file] = nil
-            if fileState.currentActiveFile == .collaborationFile(file) {
-                fileState.setActiveFile(nil)
+        if fileState.collaboratingFiles.contains(file) {
+            Button {
+                fileState.collaboratingFiles.removeAll(where: {$0 == file})
+                fileState.collaboratingFilesState[file] = nil
+                if fileState.currentActiveFile == .collaborationFile(file) {
+                    fileState.setActiveFile(nil)
+                }
+            } label: {
+                Label(
+                    .localizable(.sidebarCollaborationFileRowContextMenuDisconnect),
+                    systemSymbol: .rectanglePortraitAndArrowRight
+                )
             }
-        } label: {
-            Label(
-                .localizable(.sidebarCollaborationFileRowContextMenuDisconnect),
-                systemSymbol: .rectanglePortraitAndArrowRight
-            )
         }
 
         Divider()

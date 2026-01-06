@@ -183,6 +183,32 @@ extension LocalFolder {
         }
     }
 
+    /// Check if folder path exists and is accessible
+    /// - Returns: Result with success or error with localized description
+    func checkPathExists() -> Result<Void, LocalFolderPathError> {
+        guard let url = self.url else {
+            return .failure(LocalFolderPathError(message: "This folder entry is invalid and should be removed."))
+        }
+
+        let fileManager = FileManager.default
+        var isDirectory: ObjCBool = false
+
+        if fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue {
+            return .success(())
+        } else {
+            return .failure(LocalFolderPathError(message: "The folder \"\(url.lastPathComponent)\" could not be found. It may have been moved or deleted.\n\nPath: \(url.path)"))
+        }
+    }
+}
+
+/// Error type for LocalFolder path validation
+struct LocalFolderPathError: LocalizedError {
+    let message: String
+
+    var errorDescription: String? {
+        message
+    }
+
 //    func moveUnder(destination url: URL) throws {
 //        guard let sourceURL = self.url,
 //              let enumerator = FileManager.default.enumerator(

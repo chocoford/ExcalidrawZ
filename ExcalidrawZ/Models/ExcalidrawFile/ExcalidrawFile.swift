@@ -12,9 +12,9 @@ import CoreData
 
 
 struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
-    static var localFileURLIDMapping: [URL : UUID] = [:]
+    static var localFileURLIDMapping: [URL : String] = [:]
     
-    var id = UUID()
+    var id: String = UUID().uuidString
     
     var source: String
     var files: [String: ResourceFile]
@@ -104,7 +104,7 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
     }
     
     init(
-        id: UUID = UUID(),
+        id: String = UUID().uuidString,
         source: String,
         files: [String : ResourceFile],
         version: Int,
@@ -195,7 +195,7 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
                 struct UnrecognizedURLError: Error {}
                 throw UnrecognizedURLError()
         }
-        let id = refresh ? UUID () : (Self.localFileURLIDMapping[url] ?? UUID())
+        let id = refresh ? UUID().uuidString : (Self.localFileURLIDMapping[url] ?? UUID().uuidString)
         Self.localFileURLIDMapping[url] = id
         try self.init(data: data, id: id)
         switch fileType {
@@ -213,7 +213,7 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
         }
     }
     
-    init(data: Data, id: UUID? = nil) throws {
+    init(data: Data, id: String? = nil) throws {
         self = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
         self.content = data
         if let id {
