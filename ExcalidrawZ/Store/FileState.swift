@@ -212,6 +212,7 @@ final class FileState: ObservableObject {
                         }
                         if let folder = folders.first {
                             currentActiveGroup = .localFolder(folder)
+                            expandToGroup(folder.objectID)
                         } else {
                             // Handle case where local folder is not found
                             currentActiveGroup = nil
@@ -236,7 +237,7 @@ final class FileState: ObservableObject {
                     }
                 }
             case .file(let dbFile):
-                Task {
+                Task { @MainActor in
                     if dbFile.group == nil {
                         currentActiveGroup = nil
                     } else if dbFile.inTrash {
@@ -250,10 +251,11 @@ final class FileState: ObservableObject {
                     } else {
                         currentActiveGroup = .group(dbFile.group!)
                     }
+                    if let groupID = dbFile.group?.objectID, dbFile.inTrash == false {
+                        expandToGroup(groupID)
+                    }
                 }
-                if let groupID = dbFile.group?.objectID, dbFile.inTrash == false {
-                    expandToGroup(groupID)
-                }
+                
             case .temporaryFile:
                 currentActiveGroup = .temporary
             case .collaborationFile(let room):

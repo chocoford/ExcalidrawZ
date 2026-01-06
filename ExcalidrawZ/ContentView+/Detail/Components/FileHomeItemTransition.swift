@@ -95,20 +95,20 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                     return true
                 }
                 
-                if !groupCheck(file: newValue) {
-                    withOpenFileDelay {
-                        self.file = newValue
-                        state.canShowExcalidrawCanvas = true
-                        state.canShowItemContainerView = false
-                    }
-                    return
-                }
+//                if !groupCheck(file: newValue) {
+//                    withOpenFileDelay {
+//                        self.file = newValue
+//                        state.canShowExcalidrawCanvas = true
+//                        state.canShowItemContainerView = false
+//                    }
+//                    return
+//                }
                 
-                if !groupCheck(file: oldValue) {
-                    self.file = nil
-                    state.canShowExcalidrawCanvas = false
-                    state.canShowItemContainerView = true
-                }
+//                if !groupCheck(file: oldValue) {
+//                    self.file = nil
+//                    state.canShowExcalidrawCanvas = false
+//                    state.canShowItemContainerView = true
+//                }
                 
                 if oldValue == nil, let newValue { // open
                     self.file = newValue
