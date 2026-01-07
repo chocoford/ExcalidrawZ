@@ -658,12 +658,9 @@ final class FileState: ObservableObject {
         
         try? await self.excalidrawWebCoordinator?.insertMediaFiles(Array(mediaItemsNeedImport))
         await MainActor.run {
+            let context = PersistenceController.shared.container.viewContext
             if let file = context.object(with: fileID) as? File {
                 self.setActiveFile(.file(file))
-                if let group = file.group {
-                    self.currentActiveGroup = .group(group)
-                    self.expandToGroup(group.objectID)
-                }
             }
         }
     }

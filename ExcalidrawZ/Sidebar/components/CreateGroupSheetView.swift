@@ -45,9 +45,11 @@ struct CreateGroupModifier: ViewModifier {
                 } else if #available(iOS 18.0, macOS 13.0, *) {
                     createFolderSheetView()
                         .scrollDisabled(true)
-                        .frame(width: 400, height: 140)
 #if os(iOS)
+                        .frame(width: 400, height: 160)
                         .presentationSizing(.fitted)
+#else
+                        .frame(width: 400, height: 140)
 #endif
                 } else {
                     createFolderSheetView()

@@ -226,7 +226,6 @@ struct JoinRoomSheetView: View {
                     Task {
                         await MainActor.run {
                             if let room = viewContext.object(with: roomID) as? CollaborationFile {
-                                fileState.currentActiveGroup = .collaboration
                                 fileState.setActiveFile(.collaborationFile(room))
                             }
                         }

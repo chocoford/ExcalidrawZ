@@ -461,7 +461,6 @@ struct ImportLocalFolderModifier: ViewModifier {
             .init(localizable: .sidebarLocalFolderTooLargeAlertDescription)
         }
     }
-
     
     private func importLocalFolders(urls: [URL]) {
         let context = PersistenceController.shared.container.newBackgroundContext()

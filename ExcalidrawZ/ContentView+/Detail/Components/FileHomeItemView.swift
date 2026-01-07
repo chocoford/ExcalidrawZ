@@ -81,7 +81,7 @@ struct FileHomeItemView: View {
     
     @ViewBuilder
     private func content() -> some View {
-        MissingFileMenuProvider(files: [file]) { triggers in
+        MissingFileMenuProvider(file: file) { triggers in
          
             FileHomeItemContentView(
                 style: config.style,
@@ -438,7 +438,7 @@ private struct FileHomeItemContextMenuModifier: ViewModifier {
             switch file {
                 case .file:
                     content
-                        .modifier(MissingFileContextMenuModifier(files: [file]))
+                        .modifier(MissingFileContextMenuModifier(file: file))
                 case .localFile:
                     // Localfile never missing
                     content

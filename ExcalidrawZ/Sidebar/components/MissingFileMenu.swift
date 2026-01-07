@@ -17,14 +17,14 @@ struct MissingFileMenuProvider: View {
     @EnvironmentObject var fileState: FileState
     
 
-    var files: Set<FileState.ActiveFile>
+    var file: FileState.ActiveFile?
     var content: (Triggers) -> AnyView
 
     init<Content: View>(
-        files: Set<FileState.ActiveFile>,
+        file: FileState.ActiveFile?,
         content: @escaping (Triggers) -> Content
     ) {
-        self.files = files
+        self.file = file
         self.content = { AnyView(content($0)) }
     }
     
@@ -50,6 +50,23 @@ struct MissingFileMenuProvider: View {
         let id = UUID()
         let file: FileState.ActiveFile
         let checkpoints: [FileCheckpoint]
+    }
+
+    private var files: Set<FileState.ActiveFile> {
+        if let file {
+            switch file {
+                case .file(let file):
+                    if fileState.selectedFiles.contains(file) {
+                        return Set(fileState.selectedFiles.map { .file($0) })
+                    }
+                    return Set([.file(file)])
+                case .collaborationFile:
+                    return Set([file])
+                default:
+                    return Set([file])
+            }
+        }
+        return Set(fileState.selectedFiles.map { .file($0) })
     }
 
     var body: some View {
@@ -168,23 +185,23 @@ struct MissingFileMenuProvider: View {
 }
  
 struct MissingFileMenu: View {
-    var files: Set<FileState.ActiveFile>
+    var file: FileState.ActiveFile?
     var label: AnyView
 
     init<L: View>(
-        files: Set<FileState.ActiveFile>,
+        file: FileState.ActiveFile?,
         @ViewBuilder label: () -> L
     ) {
-        self.files = files
+        self.file = file
         self.label = AnyView(label())
     }
 
     
     var body: some View {
-        MissingFileMenuProvider(files: files) { triggers in
+        MissingFileMenuProvider(file: file) { triggers in
             Menu {
                 MissingFileMenuItems(
-                    files: files
+                    file: file
                 ) {
                     triggers.onToggleTryToRecover()
                 } onToggleDelete: {
@@ -199,18 +216,18 @@ struct MissingFileMenu: View {
 }
 
 struct MissingFileContextMenuModifier: ViewModifier {
-    var files: Set<FileState.ActiveFile>
+    var file: FileState.ActiveFile
 
-    init(files: Set<FileState.ActiveFile>) {
-        self.files = files
+    init(file: FileState.ActiveFile) {
+        self.file = file
     }
 
     func body(content: Content) -> some View {
-        MissingFileMenuProvider(files: files) { triggers in
+        MissingFileMenuProvider(file: file) { triggers in
             content
                 .contextMenu {
                     MissingFileMenuItems(
-                        files: files
+                        file: file
                     ) {
                         triggers.onToggleTryToRecover()
                     } onToggleDelete: {
@@ -223,9 +240,32 @@ struct MissingFileContextMenuModifier: ViewModifier {
 }
 
 struct MissingFileMenuItems: View {
-    var files: Set<FileState.ActiveFile>
+    @EnvironmentObject var fileState: FileState
+
+    var file: FileState.ActiveFile?
     var onToogleTryToRecover: () -> Void
     var onToggleDelete: () -> Void
+
+    private var files: Set<FileState.ActiveFile> {
+        if let file {
+            switch file {
+                case .file(let file):
+                    if fileState.selectedFiles.contains(file) {
+                        return Set(fileState.selectedFiles.map { .file($0) })
+                    }
+                    return Set([.file(file)])
+                case .collaborationFile:
+                    return Set([file])
+                default:
+                    return Set([file])
+            }
+        }
+        return Set(fileState.selectedFiles.map { .file($0) })
+    }
+    
+    private var isSingleFile: Bool {
+        !files.isEmpty && files.count == 1
+    }
 
     var body: some View {
         Button {
@@ -233,6 +273,7 @@ struct MissingFileMenuItems: View {
         } label: {
             Label(.localizable(.missingFileMenuButtonRecover), systemSymbol: .arrowshapeTurnUpLeft)
         }
+        .disabled(!isSingleFile)
 
         Divider()
 

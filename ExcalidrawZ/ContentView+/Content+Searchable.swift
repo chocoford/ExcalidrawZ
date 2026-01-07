@@ -316,7 +316,6 @@ struct SerachContent: View {
                            !fileState.collaboratingFiles.contains(room) {
                             store.togglePaywall(reason: .roomLimit)
                         } else {
-                            fileState.currentActiveGroup = .collaboration
                             fileState.setActiveFile(.collaborationFile(room))
                         }
                     }
@@ -348,12 +347,8 @@ struct SerachContent: View {
 #endif
                     }
                     .onTapGesture(count: tapSelectCount) {
-                        if let group = file.group {
-                            fileState.currentActiveGroup = .group(group)
-                            fileState.setActiveFile(.file(file))
-                            fileState.expandToGroup(group.objectID)
-                            dismiss()
-                        }
+                        fileState.setActiveFile(.file(file))
+                        dismiss()
                     }
                 }
             }
@@ -383,23 +378,8 @@ struct SerachContent: View {
 #endif
                     }
                     .onTapGesture(count: tapSelectCount) {
-                        Task {
-                            do {
-                                let folder = try await viewContext.perform {
-                                    let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                                    fetchRequest.predicate = NSPredicate(format: "filePath = %@", file.deletingLastPathComponent().filePath)
-                                    return try viewContext.fetch(fetchRequest).first
-                                }
-                                if let folder {
-                                    fileState.currentActiveGroup = .localFolder(folder)
-                                    fileState.setActiveFile(.localFile(file))
-                                    fileState.expandToGroup(folder.objectID)
-                                    dismiss()
-                                }
-                            } catch {
-                                alertToast(error)
-                            }
-                        }
+                        fileState.setActiveFile(.localFile(file))
+                        dismiss()
                     }
                 }
             }

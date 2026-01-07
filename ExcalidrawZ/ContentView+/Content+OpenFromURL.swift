@@ -239,7 +239,7 @@ struct OpenFromURLModifier: ViewModifier {
                         } else {
                             let newRoom = CollaborationFile(
                                 name: nameItem.value ?? String(localizable: .generalUntitled),
-                                content: ExcalidrawFile().content,
+                                content: nil,
                                 isOwner: false,
                                 context: context
                             )
@@ -251,7 +251,6 @@ struct OpenFromURLModifier: ViewModifier {
                         let roomID = room.objectID
                         Task {
                             await MainActor.run {
-                                fileState.currentActiveGroup = .collaboration
                                 if case let room as CollaborationFile = viewContext.object(with: roomID) {
                                     fileState.setActiveFile(.collaborationFile(room))
                                 }
@@ -283,10 +282,6 @@ struct OpenFromURLModifier: ViewModifier {
                 context.object(with: objectID)
             }
             if let file = object as? File {
-                if let group = file.group {
-                    fileState.expandToGroup(group.objectID)
-                    fileState.currentActiveGroup = .group(group)
-                }
                 fileState.setActiveFile(.file(file))
             } else if let group = object as? Group {
                 fileState.expandToGroup(group.objectID)

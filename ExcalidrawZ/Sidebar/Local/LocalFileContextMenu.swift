@@ -434,11 +434,7 @@ struct LocalFileRowMenuItems: View {
             
             if let currentActiveFile, let newURL = mapping[currentActiveFile] {
                 DispatchQueue.main.async {
-                    if let folder = viewContext.object(with: targetFolderID) as? LocalFolder {
-                        fileState.currentActiveGroup = .localFolder(folder)
-                    }
                     fileState.setActiveFile(.localFile(newURL))
-                    fileState.expandToGroup(targetFolderID)
                 }
             }
         } catch {

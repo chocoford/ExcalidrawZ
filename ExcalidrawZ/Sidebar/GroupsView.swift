@@ -113,7 +113,7 @@ struct GroupsView: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
         if #available(macOS 13.0, *), folderStructStyle == .disclosureGroup {
-             diclsureGroupView()
+            diclsureGroupView()
         } else {
             treeView()
         }

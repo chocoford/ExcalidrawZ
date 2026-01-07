@@ -382,7 +382,6 @@ struct GroupRowDropModifier: ViewModifier {
                     if fileState.currentActiveGroup == .temporary && fileState.temporaryFiles == [url] ||
                         fileState.currentActiveFile == .temporaryFile(url) {
                         fileState.setActiveFile(.file(file))
-                        fileState.currentActiveGroup = .group(group)
                     }
                 } else {
                     fileState.currentActiveGroup = .group(group)

@@ -180,10 +180,9 @@ struct MigrationProgressSheet: View {
                 .padding(20)
             }
         }
-        .frame(
-            width: containerHorizontalSizeClass != .compact ? 500 : nil,
-            height: containerHorizontalSizeClass != .compact ? 500 : nil
-        )
+#if os(macOS)
+        .frame(width: 500, height: 500)
+#endif
         .interactiveDismissDisabled(!canDismiss)
         .archiveFilesExporter(
             isPresented: $showArchiveExporter,

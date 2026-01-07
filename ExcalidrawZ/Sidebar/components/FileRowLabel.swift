@@ -13,7 +13,7 @@ import SFSafeSymbols
 struct FileRowLabel: View {
     @Environment(\.diclosureGroupDepth) private var depth
     
-    var name: String
+    var name: AnyView
     var fileType: UTType
     var updatedAt: Date
     var isInTrash: Bool
@@ -29,7 +29,23 @@ struct FileRowLabel: View {
             EmptyView()
         }
     ) {
-        self.name = name
+        self.name = AnyView(Text(name))
+        self.fileType = fileType
+        self.updatedAt = updatedAt
+        self.isInTrash = isInTrash
+        self.nameTrailingView = AnyView(nameTrailingView())
+    }
+    
+    init<T: View, N: View>(
+        fileType: UTType = .excalidrawFile,
+        updatedAt: Date,
+        isInTrash: Bool = false,
+        @ViewBuilder name: () -> N,
+        @ViewBuilder nameTrailingView: () -> T = {
+            EmptyView()
+        }
+    ) {
+        self.name = AnyView(name())
         self.fileType = fileType
         self.updatedAt = updatedAt
         self.isInTrash = isInTrash
@@ -58,7 +74,7 @@ struct FileRowLabel: View {
             .frame(height: 14)
             .frame(width: 18)
             
-            Text(name)
+            name
             
             Spacer(minLength: 0)
             

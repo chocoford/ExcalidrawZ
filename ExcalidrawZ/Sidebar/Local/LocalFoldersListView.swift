@@ -15,6 +15,8 @@ import FSEventsWrapper
 
 
 struct LocalFoldersListView: View {
+    @AppStorage("ShowLocalFolderEmptyPlaceholder") private var showLocalFolderEmptyPlaceholder: Bool = true
+    
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
 
@@ -61,7 +63,7 @@ struct LocalFoldersListView: View {
                     }
                 }
                 
-                if folders.isEmpty, showFiles {
+                if showLocalFolderEmptyPlaceholder, folders.isEmpty, showFiles {
                     LocalFolderEmptyPlaceholderView()
                         .background {
                             ZStack {
@@ -72,8 +74,10 @@ struct LocalFoldersListView: View {
                             }
                         }
                         .padding(.vertical, 10)
+                        .transition(.scale(scale: 0, anchor: .topTrailing).combined(with: .opacity))
                 }
             }
+            .animation(.smooth, value: showLocalFolderEmptyPlaceholder)
             .onAppear {
                 for i in 0..<folders.count {
                     do {
@@ -82,6 +86,9 @@ struct LocalFoldersListView: View {
                         alertToast(error)
                     }
                 }
+#if DEBUG
+                showLocalFolderEmptyPlaceholder = true
+#endif
             }
         }
     }
@@ -90,6 +97,8 @@ struct LocalFoldersListView: View {
 
 
 struct LocalFolderEmptyPlaceholderView: View {
+    @AppStorage("ShowLocalFolderEmptyPlaceholder") private var showLocalFolderEmptyPlaceholder: Bool = true
+
     var body: some View {
         VStack(spacing: 12) {
             Image(systemSymbol: .folder)
@@ -110,6 +119,15 @@ struct LocalFolderEmptyPlaceholderView: View {
         }
         .padding(.vertical, 24)
         .frame(maxWidth: .infinity)
-
+        .overlay(alignment: .topLeading) {
+            Button {
+                showLocalFolderEmptyPlaceholder = false
+            } label: {
+                Image(systemSymbol: .xmark)
+                    .foregroundStyle(.secondary)
+            }
+            .modernButtonStyle(style: .borderless)
+            .padding()
+        }
     }
 }

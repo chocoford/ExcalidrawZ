@@ -471,10 +471,8 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
                     if let file = viewContext.object(with: fileID) as? File {
                         if fileState.currentActiveFile == .temporaryFile(url) {
                             fileState.setActiveFile(.file(file))
-                            fileState.currentActiveGroup = .group(group)
                         } else if fileState.currentActiveGroup == .temporary, fileState.temporaryFiles == [url] {
                             fileState.setActiveFile(.file(file))
-                            fileState.currentActiveGroup = .group(group)
                         }
                     }
                     fileState.temporaryFiles.removeAll { $0 == url }

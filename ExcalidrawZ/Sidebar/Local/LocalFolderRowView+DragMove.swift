@@ -420,7 +420,6 @@ struct LocalFolderDropModifier: ViewModifier {
                 if let newURL = mapping[url],
                    fileState.currentActiveFile == .temporaryFile(url) ||
                     fileState.currentActiveGroup == .temporary && fileState.temporaryFiles == [url] {
-                    fileState.currentActiveGroup = .localFolder(folder)
                     fileState.setActiveFile(.localFile(newURL))
                 } else {
                     fileState.currentActiveGroup = .localFolder(folder)

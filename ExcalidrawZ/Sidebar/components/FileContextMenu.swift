@@ -399,12 +399,9 @@ struct FileMenuItems: View {
                 let fileID: NSManagedObjectID? = fileIDs.first { $0 == currentFileID }
                 if let fileID {
                     await MainActor.run {
-                        guard case let group as Group = viewContext.object(with: groupID),
+                        guard viewContext.object(with: groupID) is Group,
                               case let file as File = viewContext.object(with: fileID) else { return }
-                        fileState.currentActiveGroup = .group(group)
                         fileState.setActiveFile(.file(file))
-
-                        fileState.expandToGroup(group.objectID)
                     }
                 }
                 await MainActor.run {

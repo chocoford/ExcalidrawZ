@@ -110,21 +110,13 @@ struct ArchiveRoomSheetView: View {
 
                 await MainActor.run {
                     switch result {
-                        case .file(let groupID, let newFileID):
-                            if let group = viewContext.object(with: groupID) as? Group {
-                                parentFileState.currentActiveGroup = .group(group)
-                                if let file = viewContext.object(with: newFileID) as? File {
-                                    parentFileState.setActiveFile(.file(file))
-                                }
-                                parentFileState.expandToGroup(groupID)
+                        case .file(_, let newFileID):
+                            if let file = viewContext.object(with: newFileID) as? File {
+                                parentFileState.setActiveFile(.file(file))
                             }
 
-                        case .localFile(let folderID, let url):
-                            if let localFolder = viewContext.object(with: folderID) as? LocalFolder {
-                                parentFileState.currentActiveGroup = .localFolder(localFolder)
-                                parentFileState.setActiveFile(.localFile(url))
-                                parentFileState.expandToGroup(folderID)
-                            }
+                        case .localFile(_, let url):
+                            parentFileState.setActiveFile(.localFile(url))
                     }
                     dismiss()
                 }
