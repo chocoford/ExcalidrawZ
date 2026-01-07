@@ -8,6 +8,9 @@
 import Foundation
 import WebKit
 import Logging
+#if canImport(PDFKit)
+import PDFKit
+#endif
 
 protocol AnyExcalidrawZMessage: Codable {
     associatedtype D = Codable
@@ -304,6 +307,13 @@ extension ExcalidrawCore {
             logger.error("Failed to decode base64 PDF data")
             return
         }
+        
+#if canImport(PDFKit)
+        if PDFDocument(data: pdfData) == nil {
+            logger.error("Invalid PDF Data")
+            return
+        }
+#endif
 
         // Create PDF drop info struct
         let dropInfo = PDFDropInfo(
@@ -852,7 +862,8 @@ extension ExcalidrawCore {
 
 // MARK: - PDF Drop Info
 
-struct PDFDropInfo {
+struct PDFDropInfo: Identifiable, Hashable {
+    let id = UUID()
     let pdfData: Data
     let fileName: String
     let sceneX: Double

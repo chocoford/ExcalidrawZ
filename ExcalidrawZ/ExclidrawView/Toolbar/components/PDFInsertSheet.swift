@@ -10,6 +10,7 @@ import SwiftUI
 #if canImport(PDFKit)
 import PDFKit
 #endif
+import ChocofordUI
 
 import SFSafeSymbols
 
@@ -39,15 +40,14 @@ enum PDFInsertMode: String, CaseIterable {
 struct PDFInsertSheet: View {
     @Environment(\.dismiss) private var dismiss
     
-    @Binding var isPresented: Bool
+    var pdfInfo: PDFDropInfo?
     var onInsert: (Data, PDFInsertMode, String, Int?) async throws -> Void
-    
-    @Binding var pdfData: Data?
-    @Binding var fileName: String?
     
     @State private var selectedMode: PDFInsertMode = .viewer
     @State private var isFilePickerPresented = false
-    
+    @State private var fileName: String?
+    @State private var pdfData: Data?
+
     // Tiled mode options
     enum TilesDiection: String {
         case vertical
@@ -84,11 +84,11 @@ struct PDFInsertSheet: View {
                             } label: {
                                 Text(.localizable(.insertPDFSheetButtonChange))
                             }
-                            .modernButtonStyle(style: .glass)
+                            .modernButtonStyle(style: .glass, shape: .modern)
                         }
                         .padding(12)
                         .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
+                        .cornerRadius(999)
                     } else {
                         Button {
                             isFilePickerPresented = true
@@ -262,13 +262,14 @@ struct PDFInsertSheet: View {
 #if os(macOS)
         .frame(width: 800, height: 600)
 #endif
-        .onAppear {
+        .watch(value: pdfInfo, initial: true) { _, pdfInfo in
             // Load preloaded PDF data if available
-            if let pdfData = pdfData {
+            if let pdfData = pdfInfo?.pdfData {
 #if canImport(PDFKit)
-                pdfDocument = PDFDocument(data: pdfData)
+                self.pdfDocument = PDFDocument(data: pdfData)
+                self.fileName = pdfInfo?.fileName
 #endif
-                self.pdfData = nil
+                self.pdfData = pdfData
             } else {
                 self.fileName = nil
             }
@@ -290,12 +291,17 @@ struct PDFInsertSheet: View {
 #if canImport(PDFKit)
         if let pdfDocument {
             ScrollView {
-                VStack(spacing: 0) {
-                    if let firstPage = pdfDocument.page(at: 0) {
-                        PDFPageView(page: firstPage)
-                            .aspectRatio(firstPage.bounds(for: .mediaBox).size.width / firstPage.bounds(for: .mediaBox).size.height, contentMode: .fit)
-                            .frame(maxWidth: 400)
-                            .shadow(radius: 4)
+                VStack(spacing: 20) {
+                    ForEach(0..<pdfDocument.pageCount, id: \.self) { i in
+                        if let page = pdfDocument.page(at: i) {
+                            PDFPageView(page: page)
+                                .aspectRatio(
+                                    page.bounds(for: .mediaBox).size.width / page.bounds(for: .mediaBox).size.height,
+                                    contentMode: .fit
+                                )
+                                .frame(maxWidth: 400)
+                                .shadow(radius: 4)
+                        }
                     }
                 }
                 .padding()
@@ -307,6 +313,7 @@ struct PDFInsertSheet: View {
                     .foregroundColor(.secondary)
                     .padding(.bottom, 8)
             }
+            
         }
 #else
         Text(localizable: .insertPDFSheetNoPreview)
@@ -446,9 +453,6 @@ struct PDFPageView: View {
 
 #Preview {
     PDFInsertSheet(
-        isPresented: .constant(true),
         onInsert: { _, _, _, _ in },
-        pdfData: .constant(nil),
-        fileName: .constant(nil)
     )
 }

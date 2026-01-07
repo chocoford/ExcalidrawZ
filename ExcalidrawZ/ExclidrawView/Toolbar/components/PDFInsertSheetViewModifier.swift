@@ -13,37 +13,49 @@ struct PDFInsertSheetViewModifier: ViewModifier {
 
     @Binding var isPresented: Bool
 
-    @State private var pdfData: Data?
-    @State private var fileName: String?
-    @State private var sceneX: Double?
-    @State private var sceneY: Double?
+    @State private var sheetItem: PDFDropInfo?
 
     func body(content: Content) -> some View {
         content
-            .sheet(isPresented: $isPresented) {
+            .sheet(item: $sheetItem) { item in
                 PDFInsertSheet(
-                    isPresented: $isPresented,
+                    pdfInfo: item,
                     onInsert: { pdfData, mode, direction, itemsPerLine in
                         try await handlePDFInsert(
                             pdfData: pdfData,
                             mode: mode,
                             direction: direction,
                             itemsPerLine: itemsPerLine,
-                            sceneX: sceneX,
-                            sceneY: sceneY
+                            sceneX: item.sceneX,
+                            sceneY: item.sceneY
                         )
-                    },
-                    pdfData: $pdfData,
-                    fileName: $fileName
+                    }
+                )
+            }
+            .sheet(isPresented: $isPresented) {
+                PDFInsertSheet(
+                    onInsert: { pdfData, mode, direction, itemsPerLine in
+                        try await handlePDFInsert(
+                            pdfData: pdfData,
+                            mode: mode,
+                            direction: direction,
+                            itemsPerLine: itemsPerLine,
+                            sceneX: 0,
+                            sceneY: 0
+                        )
+                    }
                 )
             }
             .onReceive(NotificationCenter.default.publisher(for: .showPDFInsertSheet)) { notification in
                 if let dropInfo = notification.object as? PDFDropInfo {
-                    pdfData = dropInfo.pdfData
-                    fileName = dropInfo.fileName
-                    sceneX = dropInfo.sceneX
-                    sceneY = dropInfo.sceneY
-                    isPresented = true
+                    self.sheetItem = dropInfo
+                }
+            }
+            .onChange(of: isPresented) { newValue in
+                if !newValue {
+                    sheetItem = nil
+                } else {
+                    sheetItem
                 }
             }
     }
