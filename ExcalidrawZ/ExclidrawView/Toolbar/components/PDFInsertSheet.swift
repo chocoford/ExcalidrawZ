@@ -16,7 +16,7 @@ import SFSafeSymbols
 enum PDFInsertMode: String, CaseIterable {
     case viewer
     case tiled
-
+    
     var title: LocalizedStringKey {
         switch self {
             case .viewer:
@@ -25,7 +25,7 @@ enum PDFInsertMode: String, CaseIterable {
                 return .localizable(.insertPDFSheetModeTiledTitle)
         }
     }
-
+    
     var description: LocalizedStringKey {
         switch self {
             case .viewer:
@@ -111,7 +111,7 @@ struct PDFInsertSheet: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(localizable: .insertPDFSheetDisplayModeLabel)
                         .font(.headline)
-
+                    
                     ForEach(PDFInsertMode.allCases, id: \.self) { mode in
                         Button {
                             selectedMode = mode
@@ -126,7 +126,7 @@ struct PDFInsertSheet: View {
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
-
+                                
                                 Image(systemSymbol: selectedMode == mode ? .checkmarkCircleFill : .circle)
                                     .foregroundStyle(selectedMode == mode ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(HierarchicalShapeStyle.secondary))
                             }
@@ -153,12 +153,12 @@ struct PDFInsertSheet: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Text(localizable: .insertPDFSheetOptionsLabel)
                             .font(.headline)
-
+                        
                         HStack {
                             Text(localizable: .insertPDFSheetLayoutOptionsLabel)
-
+                            
                             Spacer(minLength: 0)
-
+                            
                             Picker("Direction", selection: $direction) {
                                 Text(localizable: .insertPDFSheetDirectionVertical).tag(TilesDiection.vertical)
                                 Text(localizable: .insertPDFSheetDirectionHorizontal).tag(TilesDiection.horizontal)
@@ -167,7 +167,7 @@ struct PDFInsertSheet: View {
                             .pickerStyle(.segmented)
                             .modernButtonStyle(style: .glass, shape: .capsule)
                         }
-
+                        
                         // Items per line
                         HStack {
                             Text(localizable: direction == .vertical ? .insertPDFSheetItemsPerRow : .insertPDFSheetItemsPerColumn)
@@ -180,9 +180,9 @@ struct PDFInsertSheet: View {
                             }
                             .labelsHidden()
                         }
-
+                        
                         Spacer()
-
+                        
                     }
                 }
                 
@@ -209,12 +209,18 @@ struct PDFInsertSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
                     .padding(.top)
-
+                
                 if pdfData == nil {
                     VStack(spacing: 16) {
-                        Image(systemName: "doc.text.image")
-                            .font(.system(size: 64))
-                            .foregroundColor(.gray)
+                        if #available(macOS 15.0, iOS 18.0, *) {
+                            Image(systemSymbol: .textRectanglePage)
+                                .font(.system(size: 64))
+                                .foregroundColor(.gray)
+                        } else {
+                            Image(systemSymbol: .docTextImage)
+                                .font(.system(size: 64))
+                                .foregroundColor(.gray)
+                        }
                         Text(localizable: .insertPDFSheetSelectPrompt)
                             .foregroundColor(.secondary)
                     }
@@ -234,6 +240,7 @@ struct PDFInsertSheet: View {
                 } label: {
                     Text(.localizable(.generalButtonCancel))
                 }
+                .modernButtonStyle(style: .glass, shape: .modern)
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button {
@@ -241,6 +248,7 @@ struct PDFInsertSheet: View {
                 } label: {
                     Text(.localizable(.insertPDFSheetButtonInsert))
                 }
+                .modernButtonStyle(style: .glassProminent, shape: .modern)
                 .disabled(pdfData == nil || isLoading)
             }
         }
@@ -354,7 +362,7 @@ struct PDFInsertSheet: View {
             .foregroundColor(.secondary)
 #endif
     }
-
+    
     @ViewBuilder
     private func pagePreviewItem(page: PDFPage?, pageNumber: Int) -> some View {
         if let page {
@@ -363,7 +371,7 @@ struct PDFInsertSheet: View {
                     .aspectRatio(page.bounds(for: .mediaBox).size.width / page.bounds(for: .mediaBox).size.height, contentMode: .fit)
                 // .frame(maxWidth: 200)
                     .shadow(radius: 2)
-
+                
                 Text(localizable: .insertPDFSheetPageNumber(pageNumber))
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -387,7 +395,7 @@ struct PDFInsertSheet: View {
             pdfDocument = PDFDocument(data: data)
 #endif
         } catch {
-             errorMessage = String(localizable: .insertPDFSheetErrorLoadFailed(error.localizedDescription))
+            errorMessage = String(localizable: .insertPDFSheetErrorLoadFailed(error.localizedDescription))
         }
     }
     
@@ -406,7 +414,7 @@ struct PDFInsertSheet: View {
                 }
             } catch {
                 await MainActor.run {
-                     errorMessage = String(localizable: .insertPDFSheetErrorLoadFailed(error.localizedDescription))
+                    errorMessage = String(localizable: .insertPDFSheetErrorLoadFailed(error.localizedDescription))
                     isLoading = false
                 }
             }

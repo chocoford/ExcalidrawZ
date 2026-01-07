@@ -85,6 +85,7 @@ struct LocalFoldersProvider<Content: View>: View {
 #endif
     }
 
+    @MainActor
     private func refreshFoldersContent() throws {
         for i in 0..<folders.count {
             try folders[i].refreshChildren(context: viewContext)

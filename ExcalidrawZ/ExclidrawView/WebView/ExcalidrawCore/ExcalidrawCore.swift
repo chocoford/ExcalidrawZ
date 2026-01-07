@@ -346,7 +346,20 @@ extension ExcalidrawCore {
         colorScheme: ColorScheme
     ) async throws -> Data {
         let id = UUID().uuidString
-        let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified()), \(files?.jsonStringified() ?? "undefined"), \(embedScene), \(withBackground), \(colorScheme == .dark)); 0;"
+        let script = try """
+window.excalidrawZHelper.exportElementsToBlob(
+    '\(id)', \(elements.jsonStringified()), 
+    \(files?.jsonStringified() ?? "undefined"), 
+    {
+        exportEmbedScene: \(embedScene),
+        withBackground: \(withBackground), 
+        exportWithDarkMode: \(colorScheme == .dark),
+        mimeType: 'image/png',
+        quality: 100,
+    }
+); 
+0;
+"""
         Task { @MainActor in
             do {
                 try await webView.evaluateJavaScript(script)

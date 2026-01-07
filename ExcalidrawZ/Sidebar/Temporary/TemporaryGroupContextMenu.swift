@@ -65,6 +65,7 @@ struct TemporaryGroupMenuItems: View {
         }
         
         Divider()
+        
         Button {
             fileState.setActiveFile(nil)
             fileState.temporaryFiles.removeAll()

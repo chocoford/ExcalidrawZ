@@ -16,20 +16,31 @@ extension WhatsNewView {
             description: .localizable(.whatsNewRedesignUIDescription),
             icon: Image(systemSymbol: .macwindow)
         )
+#endif
         
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewEnhanceInteractiveExperienceTitle),
-            description: .localizable(.whatsNewEnhanceInteractiveExperienceDescription),
-            icon: Image(systemSymbol: .cursorarrowMotionlines)
+            title: .localizable(.whatsNewMoveContentToICloudDriveTitle),
+            description: .localizable(.whatsNewMoveContentToICloudDriveDescription),
+            icon: Image(systemSymbol: .externaldriveConnectedToLineBelow)
         )
-#endif
+        
         WhatsNewFeatureRow(
-            title: "Update Excalidraw Core",
-            description: "Update the version of excalidraw core to the latest version."
-        ) {
-            ExcalidrawIconView()
-                .frame(height: 30)
-        }
+            title: .localizable(.whatsNewImportPDFTitle),
+            description: .localizable(.whatsNewImportPDFDescription),
+            icon: {
+                if #available(macOS 15.0, iOS 18.0, *) {
+                    Image(systemSymbol: .richtextPage)
+                } else {
+                    Image(systemSymbol: .docRichtext)
+                }
+            }()
+        )
+        
+         WhatsNewFeatureRow(
+            title: .localizable(.whatsNewCustomDrawingSettingsTitle),
+            description: .localizable(.whatsNewCustomDrawingSettingsDescription),
+            icon: Image(systemSymbol: .gearshape2)
+        )
     }
     
     
@@ -58,6 +69,17 @@ extension WhatsNewView {
                         version: Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
                     ) {
                         featuresContent()
+                    }
+                    
+                    // MARK: - v1.6.1
+                    WhatsNewVersionSection(version: "v1.6.1") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewUpdateExcalidrawCoreTitle),
+                            description: .localizable(.whatsNewUpdateExcalidrawCoreDescription)
+                        ) {
+                            ExcalidrawIconView()
+                                .frame(height: 30)
+                        }
                     }
 
 #if os(macOS)

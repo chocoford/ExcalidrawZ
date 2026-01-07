@@ -10,9 +10,13 @@ import SwiftUI
 import CoreData
 
 extension File {
-    convenience init(name: String, context: NSManagedObjectContext) {
+    convenience init(
+        id: UUID = UUID(),
+        name: String,
+        context: NSManagedObjectContext
+    ) {
         self.init(context: context)
-        self.id = UUID()
+        self.id = id
         self.name = name
         self.createdAt = .now
         self.updatedAt = .now

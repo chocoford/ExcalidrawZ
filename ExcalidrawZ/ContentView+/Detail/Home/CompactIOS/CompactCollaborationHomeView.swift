@@ -155,7 +155,7 @@ struct CompactCollaborationHomeView: View {
 
 #Preview {
     CompactCollaborationHomeView()
-        .environmentObject(Store())
+        .environmentObject(Store.shared)
         .environmentObject(FileState())
         .environmentObject(CollaborationState())
 }

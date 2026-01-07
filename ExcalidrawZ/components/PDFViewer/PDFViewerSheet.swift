@@ -8,6 +8,7 @@
 import SwiftUI
 import PDFKit
 
+
 struct PDFViewerSheet: View {
     let pdfData: Data
     let fileId: String
@@ -18,33 +19,50 @@ struct PDFViewerSheet: View {
     @State private var totalPages: Int = 0
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            header()
-
-            Divider()
-
-            // PDF Content
-            if let pdfDocument = pdfDocument {
-                PDFViewRepresentable(document: pdfDocument, currentPage: $currentPage)
-            } else {
-                if #available(iOS 18.0, macOS 15.0, *) {
-                    ContentUnavailableView(
-                        .localizable(.pdfViewerSheetFailTitle),
-                        systemSymbol: .richtextPageFill,
-                        description: Text(localizable: .pdfViewerSheetFailMessage)
-                    )
-                } else if #available(iOS 17.0, macOS 14.0, *) {
-                    ContentUnavailableView(
-                        .localizable(.pdfViewerSheetFailTitle),
-                        systemSymbol: .docRichtextFill,
-                        description: Text(localizable: .pdfViewerSheetFailMessage)
-                    )
+        navigationView {
+            VStack(spacing: 0) {
+                // PDF Content
+                if let pdfDocument = pdfDocument {
+                    PDFViewRepresentable(document: pdfDocument, currentPage: $currentPage)
+                        .ignoresSafeArea()
                 } else {
-                    VStack {
-                        Text(localizable: .pdfViewerSheetFailTitle)
+                    if #available(iOS 18.0, macOS 15.0, *) {
+                        ContentUnavailableView(
+                            .localizable(.pdfViewerSheetFailTitle),
+                            systemSymbol: .richtextPageFill,
+                            description: Text(localizable: .pdfViewerSheetFailMessage)
+                        )
+                    } else if #available(iOS 17.0, macOS 14.0, *) {
+                        ContentUnavailableView(
+                            .localizable(.pdfViewerSheetFailTitle),
+                            systemSymbol: .docRichtextFill,
+                            description: Text(localizable: .pdfViewerSheetFailMessage)
+                        )
+                    } else {
+                        VStack {
+                            Text(localizable: .pdfViewerSheetFailTitle)
+                        }
                     }
                 }
+                
+#if os(macOS)
+                pageControls()
+#endif
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigation) {
+                    ToolbarCloseButton()
+                }
+                
+                ToolbarItem(placement: .principal) {
+                    Text(localizable: .pdfViewerSheetTitle)
+                        .font(.headline)
+                }
+#if os(iOS)
+                ToolbarItemGroup(placement: .bottomBar) {
+                    pageControls()
+                }
+#endif
             }
         }
         .onAppear {
@@ -53,67 +71,55 @@ struct PDFViewerSheet: View {
     }
 
     @ViewBuilder
-    private func header() -> some View {
-        HStack {
-            Text(localizable: .pdfViewerSheetTitle)
-                .font(.headline)
-
-            Spacer()
-
-            if totalPages > 0 {
-                HStack(spacing: 12) {
-                    // Previous page button
-                    Button {
-                        goToPreviousPage()
-                    } label: {
-                        Image(systemSymbol: .chevronLeft)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(currentPage <= 0)
-
-                    // Page indicator
-                    if #available(iOS 17.0, macOS 14.0, *) {
-                        Text(localizable: .pdfViewerSheetPageIndicator(currentPage + 1, totalPages))
-                            .contentTransition(.numericText(value: Double(currentPage + 1)))
-                            .contentTransition(.numericText(value: Double(totalPages)))
-                            .animation(.smooth, value: currentPage)
-                            .animation(.smooth, value: totalPages)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                    } else {
-                        Text(localizable: .pdfViewerSheetPageIndicator(currentPage + 1, totalPages))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    // Next page button
-                    Button {
-                        goToNextPage()
-                    } label: {
-                        Image(systemSymbol: .chevronRight)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(currentPage >= totalPages - 1)
-                }
+    private func navigationView<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        if #available(macOS 13.0, *) {
+            NavigationStack {
+                content()
             }
-
-            Spacer()
-
-            Button {
-                dismiss()
-            } label: {
-#if os(macOS)
-                Image(systemSymbol: .xmarkCircleFill)
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-#else
-                Text(localizable: .generalButtonDone)
-#endif
+        } else {
+            NavigationView {
+                content()
             }
-            .buttonStyle(.plain)
         }
-        .padding()
+    }
+    
+    @ViewBuilder
+    private func pageControls() -> some View {
+        if totalPages > 0 {
+            // Previous page button
+            Button {
+                goToPreviousPage()
+            } label: {
+                Image(systemSymbol: .chevronLeft)
+            }
+            .disabled(currentPage <= 0)
+            
+            // Page indicator
+            if #available(iOS 17.0, macOS 14.0, *) {
+                Text(localizable: .pdfViewerSheetPageIndicator(currentPage + 1, totalPages))
+                    .contentTransition(.numericText(value: Double(currentPage + 1)))
+                    .contentTransition(.numericText(value: Double(totalPages)))
+                    .animation(.smooth, value: currentPage)
+                    .animation(.smooth, value: totalPages)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .frame(minWidth: 140)
+            } else {
+                Text(localizable: .pdfViewerSheetPageIndicator(currentPage + 1, totalPages))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(minWidth: 140)
+            }
+            
+            // Next page button
+            Button {
+                goToNextPage()
+            } label: {
+                Image(systemSymbol: .chevronRight)
+            }
+            .disabled(currentPage >= totalPages - 1)
+        }
     }
 
     private func loadPDF() {

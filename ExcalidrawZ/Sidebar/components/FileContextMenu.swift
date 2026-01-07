@@ -13,14 +13,14 @@ struct FileMenuProvider: View {
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
-    var files: Set<File>
+    var file: File?
     var content: (Triggers) -> AnyView
 
     init<Content: View>(
-        files: Set<File>,
+        file: File?,
         content: @escaping (Triggers) -> Content
     ) {
-        self.files = files
+        self.file = file
         self.content = { AnyView(content($0)) }
     }
     
@@ -38,6 +38,16 @@ struct FileMenuProvider: View {
         } onTogglePermanentlyDelete: {
             isPermanentlyDeleteAlertPresented.toggle()
         }
+    }
+    
+    private var files: Set<File> {
+        if let file {
+            if fileState.selectedFiles.contains(file) {
+                return fileState.selectedFiles
+            }
+            return [file]
+        }
+        return fileState.selectedFiles
     }
     
     var body: some View {
@@ -93,18 +103,18 @@ struct FileMenuProvider: View {
 }
 
 struct FileContextMenuModifier: ViewModifier {
-    var files: Set<File>
+    var file: File
 
-    init(files: Set<File>) {
-        self.files = files
+    init(file: File) {
+        self.file = file
     }
 
     func body(content: Content) -> some View {
-        FileMenuProvider(files: files) { triggers in
+        FileMenuProvider(file: file) { triggers in
             content
                 .contextMenu {
                     FileMenuItems(
-                        files: files
+                        file: file
                     ) {
                         triggers.onToggleRename()
                     } onTogglePermanentlyDelete: {
@@ -117,22 +127,22 @@ struct FileContextMenuModifier: ViewModifier {
 }
 
 struct FileMenu: View {
-    var files: Set<File>
+    var file: File?
     var label: AnyView
 
     init<L: View>(
-        files: Set<File>,
+        file: File?,
         @ViewBuilder label: () -> L
     ) {
-        self.files = files
+        self.file = file
         self.label = AnyView(label())
     }
 
     var body: some View {
-        FileMenuProvider(files: files) { triggers in
+        FileMenuProvider(file: file) { triggers in
             Menu {
                 FileMenuItems(
-                    files: files
+                    file: file
                 ) {
                     triggers.onToggleRename()
                 } onTogglePermanentlyDelete: {
@@ -150,12 +160,24 @@ struct FileMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
-
+#if os(iOS)
+    @Environment(\.editMode) private var editMode
+#endif
     @EnvironmentObject var fileState: FileState
 
-    var files: Set<File>
+    var file: File?
     var onToggleRename: () -> Void
     var onTogglePermanentlyDelete: () -> Void
+
+    private var files: Set<File> {
+        if let file {
+            if fileState.selectedFiles.contains(file) {
+                return fileState.selectedFiles
+            }
+            return [file]
+        }
+        return fileState.selectedFiles
+    }
 
     private var isSingleFile: Bool {
         !files.isEmpty && files.count == 1
@@ -176,13 +198,38 @@ struct FileMenuItems: View {
     
     var body: some View {
         if firstFile?.inTrash != true {
+            // Open - only for single file
+            var isInEditMode: Bool {
+#if os(iOS)
+                editMode?.wrappedValue == .active
+#else
+                false
+#endif
+            }
+            
+            
+            if !isInEditMode,
+               let file = firstFile,
+               fileState.currentActiveFile != .file(file) {
+                Button {
+                    if let file = firstFile {
+                        fileState.setActiveFile(.file(file))
+                    }
+                } label: {
+                    Label(
+                        .localizable(.generalButtonOpen),
+                        systemSymbol: .arrowUpRightSquare
+                    )
+                }
+                .disabled(!isSingleFile)
+            }
             // Rename - only for single file
             Button {
                 onToggleRename()
             } label: {
                 Label(
                     .localizable(.sidebarFileRowContextMenuRename),
-                    systemSymbol: .pencil
+                    systemSymbol: .squareAndPencil
                 )
             }
             .disabled(!isSingleFile)
@@ -226,6 +273,8 @@ struct FileMenuItems: View {
             }
             .disabled(!isSingleFile)
 
+            Divider()
+            
             // Delete - works for single and multiple files
             Button(role: .destructive) {
                 Task {
@@ -241,6 +290,7 @@ struct FileMenuItems: View {
                 } icon: {
                     Image(systemSymbol: .trash)
                 }
+                .foregroundStyle(.red)
             }
             .disabled(files.isEmpty)
             
@@ -272,7 +322,7 @@ struct FileMenuItems: View {
             }
 
             // Permanently delete - works for single and multiple files
-            Button {
+            Button(role: .destructive) {
                 onTogglePermanentlyDelete()
             } label: {
                 Label {
@@ -284,6 +334,7 @@ struct FileMenuItems: View {
                 } icon: {
                     Image(systemSymbol: .trash)
                 }
+                .foregroundStyle(.red)
             }
         }
     }
@@ -412,4 +463,3 @@ struct FileMenuItems: View {
         }
     }
 }
-

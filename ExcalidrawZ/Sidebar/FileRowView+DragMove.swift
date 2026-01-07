@@ -385,9 +385,13 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
         let (url, dropTarget) = payload
         Task {
             do {
+                guard let groupID = file.group?.objectID else {
+                    throw AppError.groupError(.notFound(nil))
+                }
+                
                 let newFileID = try await PersistenceController.shared.fileRepository.createFileFromURL(
                     url,
-                    groupObjectID: file.group?.objectID
+                    groupObjectID: groupID
                 )
 
                 await MainActor.run {

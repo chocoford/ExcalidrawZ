@@ -257,20 +257,38 @@ struct ExportImageView: View {
                     Text(".excalidraw")
                         .lineLimit(1)
                         .frame(height: 20)
+#if os(iOS)
                         .padding(.bottom, 4)
+#endif
                 }
-                HStack(alignment: .bottom, spacing: -8) {
-                    Text(".").padding(.bottom, 4)
+                HStack(
+                    alignment: .bottom,
+                    spacing: {
+                        #if os(macOS)
+                        -2
+                        #else
+                        -8
+                        #endif
+                    }()
+                ) {
+                    Text(".")
+#if os(macOS)
+                        .offset(y: -2)
+#endif
+                        // .padding(.bottom, 4)
 
                     Picker(selection: $imageType) {
                         Text("png").tag(0)
                         Text("svg").tag(1)
-                    } label: {}
-                        .pickerStyle(.menu)
-                    //                    .menuStyle(.button)
-                        .buttonStyle(.borderless)
-                        .menuIndicator(.visible)
-                        .fixedSize()
+                    } label: {
+                    }
+                    .pickerStyle(.menu)
+                    .buttonStyle(.borderless)
+                    .menuIndicator(.visible)
+                    .fixedSize()
+#if os(macOS)
+                    .offset(y: -2)
+#endif
                 }
             }
         }

@@ -274,11 +274,6 @@ struct NewFileButton: View {
                 }
 #endif
                 
-                
-//                if fileState.currentActiveGroup == nil {
-//                    try await fileState.setToDefaultGroup()
-//                }
-                
                 if case .group(let group) = fileState.currentActiveGroup {
                     try await fileState.createNewFile(
                         in: group.objectID,
@@ -291,6 +286,18 @@ struct NewFileButton: View {
                         } catch {
                             alertToast(error)
                         }
+                    }
+                } else {
+                    let defaultGroup = try await viewContext.perform {
+                        try PersistenceController.shared.getDefaultGroup(
+                            context: viewContext
+                        )
+                    }
+                    if let defaultGroup {
+                        try await fileState.createNewFile(
+                            in: defaultGroup.objectID,
+                            context: viewContext,
+                        )
                     }
                 }
                 

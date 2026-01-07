@@ -30,15 +30,12 @@ actor FileRepository {
     func createFile(
         name: String,
         content: Data,
-        groupObjectID: NSManagedObjectID?
+        groupObjectID: NSManagedObjectID
     ) async throws -> NSManagedObjectID {
         // Create file entity with content as fallback
         let fileObjectID = try await context.perform {
             let file = File(name: name, context: self.context)
-            file.content = content // Store in CoreData as fallback
-
-            if let groupObjectID = groupObjectID,
-               let group = self.context.object(with: groupObjectID) as? Group {
+            if let group = self.context.object(with: groupObjectID) as? Group {
                 file.group = group
             }
 
@@ -61,7 +58,7 @@ actor FileRepository {
     /// - Returns: The objectID of the created file
     func createFileFromURL(
         _ url: URL,
-        groupObjectID: NSManagedObjectID?
+        groupObjectID: NSManagedObjectID
     ) async throws -> NSManagedObjectID {
         // Extract filename
         let lastPathComponent = url.lastPathComponent
@@ -74,7 +71,11 @@ actor FileRepository {
         // Load file data
         let data = try Data(contentsOf: url)
 
-        return try await createFile(name: filename, content: data, groupObjectID: groupObjectID)
+        return try await createFile(
+            name: filename,
+            content: data,
+            groupObjectID: groupObjectID
+        )
     }
 
     /// Create a file from ExcalidrawFile data
@@ -84,13 +85,17 @@ actor FileRepository {
     /// - Returns: Tuple of (fileObjectID, mediaObjectIDs and their corresponding resource files)
     func createFileFromExcalidraw(
         _ excalidrawFile: ExcalidrawFile,
-        groupObjectID: NSManagedObjectID?
+        groupObjectID: NSManagedObjectID
     ) async throws -> (fileObjectID: NSManagedObjectID, mediaItems: [(NSManagedObjectID, ExcalidrawFile.ResourceFile)]) {
         let fileContent = try excalidrawFile.contentWithoutFiles()
         let fileName = excalidrawFile.name ?? "Untitled"
 
         // Create file
-        let fileObjectID = try await createFile(name: fileName, content: fileContent, groupObjectID: groupObjectID)
+        let fileObjectID = try await createFile(
+            name: fileName,
+            content: fileContent,
+            groupObjectID: groupObjectID
+        )
 
         // Get existing media items to avoid duplicates
         let allMediaItems = try await context.perform {

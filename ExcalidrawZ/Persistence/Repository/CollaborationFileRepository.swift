@@ -184,27 +184,34 @@ actor CollaborationFileRepository {
         delete: Bool
     ) async throws -> ArchiveTarget {
         // Load content from CollaborationFile
-        let (name, collaborationFile) = try await context.perform {
+        let collaborationFile = try await context.perform {
             guard let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else {
                 throw AppError.fileError(.notFound)
             }
-            return (
-                collaborationFile.name ?? String(localizable: .generalUntitled),
-                collaborationFile
-            )
+            return collaborationFile
         }
 
         let content = try await collaborationFile.loadContent()
-
+        
+        let id = UUID()
+        let name = collaborationFile.name ?? String(localizable: .generalUntitled)
+        
+        let filePath = try await FileStorageManager.shared.saveContent(
+            content,
+            fileID: id.uuidString,
+            type: .file,
+            updatedAt: collaborationFile.updatedAt
+        )
+        
         let fileID = try await context.perform {
             guard let group = self.context.object(with: targetGroupObjectID) as? Group,
                   let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else {
                 throw AppError.fileError(.notFound)
             }
 
-            let newFile = File(name: name, context: self.context)
+            let newFile = File(id: id, name: name, context: self.context)
             newFile.group = group
-            newFile.content = content
+            newFile.filePath = filePath
             newFile.inTrash = false
 
             self.context.insert(newFile)

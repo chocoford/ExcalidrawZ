@@ -298,7 +298,7 @@ struct ExcalidrawContainerToolbarContentModifier: ViewModifier {
             ZStack {
                 switch file {
                     case .file(let file):
-                        FileMenu(files: [file]) {
+                        FileMenu(file: file) {
                             fileMenuLabel()
                         }
                     case .localFile(let url):

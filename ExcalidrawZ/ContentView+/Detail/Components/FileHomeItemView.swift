@@ -89,7 +89,13 @@ struct FileHomeItemView: View {
                 customLabel: customLabel
             )
 #if os(iOS)
-            .opacity(editMode?.wrappedValue.isEditing == true ? 0.7 : 1.0)
+            .overlay {
+                if editMode?.wrappedValue.isEditing == true, config.style == .card {
+                    RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+                        .fill(.gray)
+                        .opacity(0.5)
+                }
+            }
 #endif
             .background {
                 if config.style == .card {
@@ -166,7 +172,6 @@ struct FileHomeItemView: View {
             .modifier(FileHomeItemDragModifier(file: file))
             .opacity(fileHomeItemTransitionState.shouldHideItem == fileID ? 0 : 1)
             .animation(.smooth(duration: 0.2), value: isHovered)
-            
         }
     }
 
@@ -209,6 +214,9 @@ private struct FileHomeItemContentView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.scenePhase) var scenePhase
+#if os(iOS)
+    @Environment(\.editMode) var editMode
+#endif
 
     @EnvironmentObject private var layoutState: LayoutState
     @EnvironmentObject private var fileState: FileState
@@ -305,7 +313,16 @@ private struct FileHomeItemContentView: View {
         }
         .padding(.horizontal, style == .file && layoutState.compactBrowserLayout == .list ? 10 : 0)
         .frame(width: style == .file && layoutState.compactBrowserLayout == .list ? 80 : nil)
-
+#if os(iOS)
+        .overlay {
+            if editMode?.wrappedValue.isEditing == true, style == .file {
+                RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius)
+                    .fill(.gray)
+                    .opacity(0.5)
+            }
+        }
+#endif
+        
         // Label
         ZStack {
             if let customLabel {
@@ -437,7 +454,7 @@ private struct FileHomeItemContextMenuModifier: ViewModifier {
             switch file {
                 case .file(let file):
                     content
-                        .modifier(FileContextMenuModifier(files: [file]))
+                        .modifier(FileContextMenuModifier(file: file))
                 case .localFile(let url):
                     content
                         .modifier(LocalFileRowContextMenuModifier(file: url))
@@ -546,4 +563,3 @@ private struct DatabaseFileHomeDropContianer<F: ExcalidrawFileRepresentable>: Vi
         content(files)
     }
 }
-

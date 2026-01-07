@@ -29,7 +29,7 @@ struct TemporaryFileMenuItems: View {
     
     @EnvironmentObject private var fileState: FileState
     
-    var file: URL
+    var file: URL?
     
     @FetchRequest(
         sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],
@@ -46,7 +46,38 @@ struct TemporaryFileMenuItems: View {
     )
     private var topLevelLocalFolders: FetchedResults<LocalFolder>
     
+    private var files: Set<URL> {
+        if let file {
+            if fileState.selectedTemporaryFiles.contains(file) {
+                return fileState.selectedTemporaryFiles
+            }
+            return [file]
+        }
+        return fileState.selectedTemporaryFiles
+    }
+    
+    private var isSingleFile: Bool {
+        !files.isEmpty && files.count == 1
+    }
+
+    private var firstFile: URL? {
+        files.first
+    }
+    
     var body: some View {
+        // Open - only for single file
+        Button {
+            if let file = firstFile {
+                fileState.setActiveFile(.temporaryFile(file))
+            }
+        } label: {
+            Label(
+                .localizable(.generalButtonOpen),
+                systemSymbol: .arrowUpRightSquare
+            )
+        }
+        .disabled(!isSingleFile)
+        
         Menu {
             let groups: [Group] = topLevelGroups
                 .filter{ $0.groupType != .trash }
@@ -66,11 +97,10 @@ struct TemporaryFileMenuItems: View {
             }
         } label: {
             Label {
-                if !fileState.selectedTemporaryFiles.isEmpty && fileState.selectedTemporaryFiles.contains(file),
-                   #available(macOS 13.0, iOS 16.0, *) {
+                if files.count > 1 {
                     Text(
                         localizable: .sidebarTemporaryGroupRowContextMenuSaveFilesTo(
-                            fileState.selectedTemporaryFiles.count
+                            files.count
                         )
                     )
                 } else {
@@ -95,10 +125,8 @@ struct TemporaryFileMenuItems: View {
         } label: {
             Label(
                 .localizable(
-                    !fileState.selectedTemporaryFiles.isEmpty && fileState.selectedTemporaryFiles.contains(file)
-                    ? .generalMoveFilesTo(
-                        fileState.selectedTemporaryFiles.count
-                    )
+                    files.count > 1
+                    ? .generalMoveFilesTo(files.count)
                     : .generalMoveTo
                 ),
                 systemSymbol: .trayAndArrowUp
@@ -108,30 +136,33 @@ struct TemporaryFileMenuItems: View {
         Divider()
         
         Button {
-            let filesToClose: [URL] = if fileState.selectedTemporaryFiles.contains(file) {
-                Array(fileState.selectedTemporaryFiles)
+            let filesToClose = Array(files)
+            guard !filesToClose.isEmpty else { return }
+
+            let currentActiveFile: URL? = if case .temporaryFile(let file) = fileState.currentActiveFile {
+                file
             } else {
-                [file]
+                nil
             }
-            
-            fileState.setActiveFile(nil)
+            let didCloseCurrent = currentActiveFile.map { filesToClose.contains($0) } ?? false
             
             for file in filesToClose {
-                fileState.temporaryFiles.removeAll(where: {$0 == file})
+                fileState.temporaryFiles.removeAll(where: { $0 == file })
             }
             
-            if fileState.temporaryFiles.isEmpty {
-                fileState.currentActiveGroup = nil
-            } else {
-                let file = fileState.temporaryFiles.first
-                fileState.setActiveFile(file != nil ? .temporaryFile(file!) : nil) 
+            if didCloseCurrent {
+                if fileState.temporaryFiles.isEmpty {
+                    fileState.currentActiveGroup = nil
+                    fileState.setActiveFile(nil)
+                } else if let nextFile = fileState.temporaryFiles.first {
+                    fileState.setActiveFile(.temporaryFile(nextFile))
+                }
             }
         } label: {
             Label {
-                if !fileState.selectedTemporaryFiles.isEmpty && fileState.selectedTemporaryFiles.contains(file),
-                   #available(macOS 13.0, iOS 16.0, *) {
+                if #available(macOS 13.0, iOS 16.0, *), files.count > 1 {
                     Text(localizable: .sidebarTemporaryFileRowContextMenuCloseFiles(
-                        fileState.selectedTemporaryFiles.count
+                        files.count
                     ))
                 } else {
                     Text(localizable: .sidebarTemporaryFileRowContextMenuCloseFile)
@@ -149,11 +180,9 @@ struct TemporaryFileMenuItems: View {
             nil
         }
         let context = PersistenceController.shared.container.newBackgroundContext()
-        let filesToMove: [URL] = if fileState.selectedTemporaryFiles.contains(file) {
-            Array(fileState.selectedTemporaryFiles)
-        } else {
-            [file]
-        }
+        let filesToMove = Array(files)
+        let didMoveCurrent = currentFileURL.map { filesToMove.contains($0) } ?? false
+        guard !filesToMove.isEmpty else { return }
         
         Task.detached {
             do {
@@ -186,7 +215,7 @@ struct TemporaryFileMenuItems: View {
                 }
                 
                 
-                await MainActor.run { [currentTemporaryFileID] in
+                await MainActor.run { [currentTemporaryFileID, didMoveCurrent] in
                     fileState.expandToGroup(groupID)
                     fileState.temporaryFiles.removeAll(where: {filesToMove.contains($0)})
                     
@@ -195,21 +224,25 @@ struct TemporaryFileMenuItems: View {
                     // in temporary group, but no destination group.
                     guard case let group as Group = viewContext.object(with: groupID) else {
                         if fileState.temporaryFiles.isEmpty {
-                            fileState.setActiveFile(nil)
                             fileState.currentActiveGroup = nil
+                            if didMoveCurrent {
+                                fileState.setActiveFile(nil)
+                            }
                         }
                         return
                     }
                     if fileState.temporaryFiles.isEmpty {
                         fileState.currentActiveGroup = .group(group)
                     }
-                    if let currentFileURL,
-                       fileState.currentActiveFile == .temporaryFile(currentFileURL),
-                       let currentTemporaryFileID,
-                       case let file as File = viewContext.object(with: currentTemporaryFileID) {
-                        fileState.setActiveFile(.file(file))
-                    } else {
-                        fileState.setActiveFile(nil)
+                    if didMoveCurrent {
+                        if let currentFileURL,
+                           fileState.currentActiveFile == .temporaryFile(currentFileURL),
+                           let currentTemporaryFileID,
+                           case let file as File = viewContext.object(with: currentTemporaryFileID) {
+                            fileState.setActiveFile(.file(file))
+                        } else {
+                            fileState.setActiveFile(nil)
+                        }
                     }
                 }
             } catch {
@@ -220,11 +253,14 @@ struct TemporaryFileMenuItems: View {
     
     private func moveLocalFile(to targetFolderID: NSManagedObjectID) {
         let context = PersistenceController.shared.container.newBackgroundContext()
-        let filesToMove: [URL] = if fileState.selectedTemporaryFiles.contains(file) {
-            Array(fileState.selectedTemporaryFiles)
+        let filesToMove = Array(files)
+        let currentActiveFile: URL? = if case .temporaryFile(let file) = fileState.currentActiveFile {
+            file
         } else {
-            [file]
+            nil
         }
+        let didMoveCurrent = currentActiveFile.map { filesToMove.contains($0) } ?? false
+        guard !filesToMove.isEmpty else { return }
         Task.detached {
             do {
                 let mapping = try LocalFileUtils.moveLocalFiles(
@@ -242,8 +278,10 @@ struct TemporaryFileMenuItems: View {
                     // in temporary group, but no destination folder.
                     guard let folder = viewContext.object(with: targetFolderID) as? LocalFolder else {
                         if fileState.temporaryFiles.isEmpty {
-                            fileState.setActiveFile(nil)
                             fileState.currentActiveGroup = nil
+                            if didMoveCurrent {
+                                fileState.setActiveFile(nil)
+                            }
                         }
                         return
                     }
@@ -252,14 +290,14 @@ struct TemporaryFileMenuItems: View {
                         fileState.currentActiveGroup = .localFolder(folder)
                     }
 
-                    if case .temporaryFile(let localFile) = fileState.currentActiveFile,
-                       localFile == file,
+                    if didMoveCurrent,
+                       let currentActiveFile,
+                       case .temporaryFile(let localFile) = fileState.currentActiveFile,
+                       localFile == currentActiveFile,
                        let newURL = mapping[localFile] {
                         fileState.setActiveFile(.localFile(newURL))
-                    } else {
-                        if fileState.temporaryFiles.isEmpty {
-                            fileState.setActiveFile(nil)
-                        }
+                    } else if didMoveCurrent, fileState.temporaryFiles.isEmpty {
+                        fileState.setActiveFile(nil)
                     }
                 }
                 

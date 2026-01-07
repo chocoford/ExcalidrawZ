@@ -36,7 +36,10 @@ struct FileICloudStatusIndicator: View {
                         Image(systemSymbol: .icloudAndArrowDown)
                             .drawOnAppear(options: .speed(2))
                     case .downloading(let progress):
-                        CircularProgressIndicator(progress: progress ?? 0)
+                        CircularProgressIndicator(
+                            progress: progress ?? 0,
+                            size: 20
+                        )
                     case .downloaded:
                         downloadedFallbackView
                             .drawOnAppear(options: .speed(2))
@@ -68,7 +71,10 @@ struct FileICloudStatusIndicator: View {
                     case .notDownloaded:
                         Image(systemSymbol: .icloudAndArrowDown)
                     case .downloading(let progress):
-                        CircularProgressIndicator(progress: progress ?? 0)
+                        CircularProgressIndicator(
+                            progress: progress ?? 0,
+                            size: 20
+                        )
                     case .downloaded:
                         downloadedFallbackView
                     case .outdated:

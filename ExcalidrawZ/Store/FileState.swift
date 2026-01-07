@@ -416,10 +416,6 @@ final class FileState: ObservableObject {
             await MainActor.run {
                 if let file = context.object(with: fileID) as? File {
                     self.setActiveFile(.file(file))
-                    if let group = file.group {
-                        self.currentActiveGroup = .group(group)
-                        self.expandToGroup(group.objectID)
-                    }
                 }
             }
         }

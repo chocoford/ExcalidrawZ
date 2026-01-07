@@ -257,7 +257,11 @@ struct CompactBrowserDestinationView: View {
         .toolbar {
             ToolbarItem(placement: .automatic) {
                 if let group = group as? Group {
-                    CompactContentMoreMenu(group: group)
+                    if group.groupType == .trash {
+                        
+                    } else {
+                        CompactContentMoreMenu(group: group)
+                    }
                 } else if let group = group as? LocalFolder {
                     CompactContentMoreMenu(group: group)
                 }
@@ -314,6 +318,8 @@ struct CompactBrowserDestinationView: View {
                                     canExpand: false
                                 ) {
                                     triggers.onToogleCreateSubfolder()
+                                } onToggleRemoveObservation: {
+                                    triggers.onToggleRemoveObservation()
                                 }
                                 .labelStyle(.titleAndIcon)
                             } header: {
@@ -335,15 +341,17 @@ struct CompactBrowserDestinationView: View {
             
             ToolbarItemGroup(placement: .bottomBar) {
                 if #available(iOS 18.0, *), editMode?.wrappedValue.isEditing == true {
-                    FileMenuProvider(files: fileState.selectedFiles) { triggers in
-                        FileMenuItems(
-                            files: fileState.selectedFiles
-                        ) {
-                            triggers.onToggleRename()
-                        } onTogglePermanentlyDelete: {
-                            triggers.onTogglePermanentlyDelete()
-                        }
-                        .labelStyle(.iconOnly)
+                    FileMenuProvider(file: nil) { triggers in
+                        HStack(spacing: 16) {
+                            FileMenuItems(
+                                file: nil
+                            ) {
+                                triggers.onToggleRename()
+                            } onTogglePermanentlyDelete: {
+                                triggers.onTogglePermanentlyDelete()
+                            }
+                            .labelStyle(.iconOnly)
+                        }.padding(.horizontal, 16)
                     }
                     .disabled(!fileState.selectedGroups.isEmpty)
                 }
@@ -355,9 +363,9 @@ struct CompactBrowserDestinationView: View {
     @MainActor @ViewBuilder
     private func editModeToolbarContent() -> some View {
         HStack(spacing: 16) {
-            FileMenuProvider(files: fileState.selectedFiles) { triggers in
+            FileMenuProvider(file: nil) { triggers in
                 FileMenuItems(
-                    files: fileState.selectedFiles
+                    file: nil
                 ) {
                     triggers.onToggleRename()
                 } onTogglePermanentlyDelete: {

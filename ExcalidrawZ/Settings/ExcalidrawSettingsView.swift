@@ -54,7 +54,7 @@ struct ExcalidrawSettingsView: View {
     private func customDrawingSettingsSection() -> some View {
         Section {
             Toggle(isOn: $appPreference.useCustomDrawingSettings) {
-                Text("Use unified drawing settings")
+                Text(localizable: .settingsExcalidrawToggleUnifiedDrawingSettings)
             }
             if appPreference.useCustomDrawingSettings {
                 HStack {
@@ -75,15 +75,15 @@ struct ExcalidrawSettingsView: View {
                                     loadSettings()
                                 }
                             } label: {
-                                Label("Capture Current Settings", systemSymbol: .arrowDownCircle)
+                                Label(.localizable(.settingsExcalidrawButtonCaptureCurrentSettings), systemSymbol: .arrowDownCircle)
                             }
                             .buttonStyle(.bordered)
                             
-                            Button(role: .destructive) {
+                            Button {
                                 editingSettings = UserDrawingSettings()
                                 saveSettings()
                             } label: {
-                                Label("Reset", systemSymbol: .arrowCounterclockwise)
+                                Label(.localizable(.generalButtonReset), systemSymbol: .arrowCounterclockwise)
                             }
                             .buttonStyle(.bordered)
                         }
@@ -100,15 +100,15 @@ struct ExcalidrawSettingsView: View {
                 }
             }
         } header: {
-            Text("Drawing Settings")
+            Text(localizable: .settingsExcalidrawDrawingSettingsTitle)
         } footer: {
             HStack {
                 Spacer()
                 if appPreference.useCustomDrawingSettings {
-                    Text("These settings will be applied when you open or create a new drawing.")
+                    Text(localizable: .settingsExcalidrawUseUnifiedDrawingSettingsMessage)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("When disabled, each file will maintain its own individual drawing settings.")
+                    Text(localizable: .settingsExcalidrawUseIndividualDrawingSettingsMessage)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -135,15 +135,9 @@ struct ExcalidrawSettingsView: View {
                 .disabled(!appPreference.autoInvertImage)
             }
         } header: {
-            Text("Anti-invert Image")
-//            if #available(macOS 14.0, *) {
-//                Text(.localizable(.settingsExcalidraw))
-//            } else {
-//                Text(.localizable(.settingsExcalidraw))
-//                    .frame(maxWidth: .infinity, alignment: .leading)
-//            }
+            Text(localizable: .settingsExcalidrawAntiInvertImageTitle)
         } footer: {
-            Text("Need the precise settings for each individual file? Come to Discord and let me know!")
+            Text(localizable: .settingsExcalidrawAntiInvertImageMessage)
                 .foregroundStyle(.secondary)
         }
     }

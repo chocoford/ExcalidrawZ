@@ -62,7 +62,7 @@ struct MissingFileMenuProvider: View {
                 .swiftyAlert()
             }
             .confirmationDialog(
-                .localizable(.missingFileMenuCannotRecoverAlertButtonDelete),
+                String(localizable: .missingFileMenuCannotRecoverAlertButtonDelete),
                 isPresented: $showNoRecoveryDialog,
                 titleVisibility: .visible
             ) {

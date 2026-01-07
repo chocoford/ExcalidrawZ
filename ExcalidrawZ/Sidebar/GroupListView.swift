@@ -536,7 +536,7 @@ struct ImportLocalFolderButton: View {
         Button {
             isImportLocalFolderDialogPresented.toggle()
         } label: {
-            Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .squareAndArrowDown)
+            Label(.localizable(.sidebarGroupListButtonAddObservation), systemSymbol: .squareAndArrowDown)
         }
         .modifier(ImportLocalFolderModifier(isPresented: $isImportLocalFolderDialogPresented))
     }

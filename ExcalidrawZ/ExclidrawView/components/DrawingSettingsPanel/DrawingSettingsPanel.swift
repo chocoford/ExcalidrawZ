@@ -18,7 +18,7 @@ struct DrawingSettingsPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             // Stroke Color
-            SettingSection(title: "Stroke") {
+            SettingSection(title: String(localizable: .settingsExcalidrawDrawingSettingsStrokeTitle)) {
                 ColorButtonGroup(
                     colors: ColorPalette.strokeQuickPicks,
                     selectedColor: settings.currentItemStrokeColor ?? "#1e1e1e"
@@ -29,7 +29,7 @@ struct DrawingSettingsPanel: View {
             }
             
             // Background Color
-            SettingSection(title: "Background") {
+            SettingSection(title: String(localizable: .settingsExcalidrawDrawingSettingsBackgroundTitle)) {
                 ColorButtonGroup(
                     colors: ColorPalette.backgroundQuickPicks,
                     selectedColor: settings.currentItemBackgroundColor ?? "transparent"
@@ -41,7 +41,7 @@ struct DrawingSettingsPanel: View {
             
             // Fill Style
             if settings.currentItemBackgroundColor != "transparent" {
-                SettingSection(title: "Fill") {
+                SettingSection(title: String(localizable: .settingsExcalidrawDrawingSettingsFillTitle)) {
                     OptionButtonGroup(
                         options: [ExcalidrawFillStyle.hachure, ExcalidrawFillStyle.crossHatch, ExcalidrawFillStyle.solid],
                         selectedValue: settings.currentItemFillStyle ?? .solid
@@ -81,7 +81,7 @@ struct DrawingSettingsPanel: View {
             }
             
             // Stroke Width
-            SettingSection(title: "Stroke width") {
+            SettingSection(title: String(localizable: .settingsExcalidrawDrawingSettingsStrokeWidthTitle)) {
                 StrokeWidthPicker(
                     widths: [1, 2, 4],
                     selectedWidth: settings.currentItemStrokeWidth ?? 2
@@ -92,7 +92,7 @@ struct DrawingSettingsPanel: View {
             }
             
             // Stroke Style
-            SettingSection(title: "Stroke style") {
+            SettingSection(title: String(localizable: .settingsExcalidrawDrawingSettingsStrokeStyleTitle)) {
                 OptionButtonGroup(
                     options: [
                         ExcalidrawStrokeStyle.solid,
@@ -116,7 +116,7 @@ struct DrawingSettingsPanel: View {
             }
             
             // Sloppiness (Roughness)
-            SettingSection(title: "Sloppiness") {
+            SettingSection(title: String(localizable: .settingsExcalidrawDrawingSettingsSloppinessTitle)) {
                 OptionButtonGroup(
                     options: [0.0, 1.0, 2.0],
                     selectedValue: settings.currentItemRoughness ?? 1
@@ -138,7 +138,7 @@ struct DrawingSettingsPanel: View {
             }
             
             // Edges (Roundness)
-            SettingSection(title: "Edges") {
+            SettingSection(title: String(localizable: .settingsExcalidrawDrawingSettingsEdgeTitle)) {
                 OptionButtonGroup(
                     options: [
                         ExcalidrawStrokeSharpness.sharp,
@@ -173,7 +173,7 @@ struct DrawingSettingsPanel: View {
             }
             
             // Opacity
-            SettingSection(title: "Opacity") {
+            SettingSection(title: String(localizable: .settingsExcalidrawDrawingSettingsOpacityTitle)) {
                 OpacitySlider(
                     opacity: Binding(
                         get: { settings.currentItemOpacity ?? 100 },
