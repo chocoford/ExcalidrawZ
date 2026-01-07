@@ -178,35 +178,35 @@ struct WhatsNewView: View {
 #endif
             VStack(spacing: 6) {
                 VStack(alignment: .leading, spacing: 22) {
-                    if #available(macOS 13.0, iOS 16.0, *) {
-                        BeforeAfterSlider(
-                            slideMode: .drag,
-                            showHandlebar: true,
-                            initialPercentage: 0.0,
-                            autoplay: true,
-                            autoplayDuration: 6
-                        ) {
-                            Image("ExcalidrawZ - New")
-                                .resizable()
-                                .scaledToFit()
-                        } secondContent: {
-                            Image("ExcalidrawZ - Old")
-                                .resizable()
-                                .scaledToFit()
-                        } handle: {
-                            Image(systemSymbol: .line3Horizontal)
-                                .foregroundColor(.black)
-                        }
-                        .frame(height: 300)
-                    } else {
+//                    if #available(macOS 13.0, iOS 16.0, *) {
+//                        BeforeAfterSlider(
+//                            slideMode: .drag,
+//                            showHandlebar: true,
+//                            initialPercentage: 0.0,
+//                            autoplay: true,
+//                            autoplayDuration: 6
+//                        ) {
+//                            Image("ExcalidrawZ - New")
+//                                .resizable()
+//                                .scaledToFit()
+//                        } secondContent: {
+//                            Image("ExcalidrawZ - Old")
+//                                .resizable()
+//                                .scaledToFit()
+//                        } handle: {
+//                            Image(systemSymbol: .line3Horizontal)
+//                                .foregroundColor(.black)
+//                        }
+//                        .frame(height: 300)
+//                    } else {
                         Image("What's New Cover")
                             .resizable()
                             .scaledToFit()
                             .clipShape(RoundedRectangle(cornerRadius: 12))
 #if os(macOS)
-                            .padding(.horizontal, 80)
+                            .padding(.horizontal, 40)
 #endif
-                    }
+//                    }
                     
                      featuresContent()
                 }

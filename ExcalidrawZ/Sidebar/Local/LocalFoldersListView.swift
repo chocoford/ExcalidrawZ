@@ -97,6 +97,7 @@ struct LocalFoldersListView: View {
 
 
 struct LocalFolderEmptyPlaceholderView: View {
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @AppStorage("ShowLocalFolderEmptyPlaceholder") private var showLocalFolderEmptyPlaceholder: Bool = true
 
     var body: some View {
@@ -111,23 +112,38 @@ struct LocalFolderEmptyPlaceholderView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
             
-            HStack(spacing: 6) {
+            VStack(spacing: 6) {
                 ImportLocalFolderButton()
                     .font(.footnote)
                     .modernButtonStyle(style: .glassProminent, shape: .modern)
+                
+                if containerHorizontalSizeClass == .compact {
+                    Button {
+                        showLocalFolderEmptyPlaceholder = false
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemSymbol: .xmark)
+                            Text(localizable: .generalButtonClose)
+                        }
+                    }
+                    .font(.footnote)
+                    .modernButtonStyle(style: .glass, shape: .modern)
+                }
             }
         }
         .padding(.vertical, 24)
         .frame(maxWidth: .infinity)
         .overlay(alignment: .topLeading) {
-            Button {
-                showLocalFolderEmptyPlaceholder = false
-            } label: {
-                Image(systemSymbol: .xmark)
-                    .foregroundStyle(.secondary)
+            if containerHorizontalSizeClass != .compact {
+                Button {
+                    showLocalFolderEmptyPlaceholder = false
+                } label: {
+                    Image(systemSymbol: .xmark)
+                        .foregroundStyle(.secondary)
+                }
+                .modernButtonStyle(style: .borderless)
+                .padding()
             }
-            .modernButtonStyle(style: .borderless)
-            .padding()
         }
     }
 }

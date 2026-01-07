@@ -29,28 +29,50 @@ struct ArchiveFilesModifier: ViewModifier {
     @Binding var isPresented: Bool
     let context: NSManagedObjectContext
     let onComplete: (Result<ArchiveResult, Error>) -> Void
+    var onCancellation: () -> Void
     
     @State private var archiveDocument: ArchiveFolderDocument?
     @State private var isExporting = false
     @State private var failedFiles: [FailedFileInfo] = []
     
     func body(content: Content) -> some View {
-        content
-            .fileExporter(
-                isPresented: $isExporting,
-                document: archiveDocument,
-                contentType: .folder,
-                defaultFilename: "ExcalidrawZ exported at \(Date.now.formatted(date: .abbreviated, time: .shortened))"
-            ) { result in
-                handleExportResult(result)
-            }
-            .onChange(of: isPresented) { newValue in
-                if newValue {
-                    Task {
-                        await prepareArchive()
+        if #available(macOS 14.0, iOS 17.0, *) {
+            content
+                .fileExporter(
+                    isPresented: $isExporting,
+                    document: archiveDocument,
+                    contentTypes: [.folder],
+                    defaultFilename: "ExcalidrawZ exported at \(Date.now.formatted(date: .abbreviated, time: .shortened))"
+                ) { result in
+                    handleExportResult(result)
+                } onCancellation: {
+                    onCancellation()
+                }
+                .onChange(of: isPresented) { newValue in
+                    if newValue {
+                        Task {
+                            await prepareArchive()
+                        }
                     }
                 }
-            }
+        } else {
+            content
+                .fileExporter(
+                    isPresented: $isExporting,
+                    document: archiveDocument,
+                    contentType: .folder,
+                    defaultFilename: "ExcalidrawZ exported at \(Date.now.formatted(date: .abbreviated, time: .shortened))"
+                ) { result in
+                    handleExportResult(result)
+                }
+                .onChange(of: isPresented) { newValue in
+                    if newValue {
+                        Task {
+                            await prepareArchive()
+                        }
+                    }
+                }
+        }
     }
     
     private func prepareArchive() async {
@@ -196,13 +218,15 @@ extension View {
     func archiveFilesExporter(
         isPresented: Binding<Bool>,
         context: NSManagedObjectContext,
-        onComplete: @escaping (Result<ArchiveResult, Error>) -> Void
+        onComplete: @escaping (Result<ArchiveResult, Error>) -> Void,
+        onCancellation: @escaping () -> Void
     ) -> some View {
         modifier(
             ArchiveFilesModifier(
                 isPresented: isPresented,
                 context: context,
-                onComplete: onComplete
+                onComplete: onComplete,
+                onCancellation: onCancellation
             )
         )
     }

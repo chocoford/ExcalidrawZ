@@ -497,7 +497,6 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
         .modernButtonStyle(style: .glass, shape: .circle)
         .labelStyle(.iconOnly)
         .frame(minWidth: 12, minHeight: 12)
-        .hoverEffect()
 #elseif os(macOS)
         .fixedSize()
 #endif

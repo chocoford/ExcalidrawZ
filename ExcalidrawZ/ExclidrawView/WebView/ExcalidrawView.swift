@@ -187,8 +187,10 @@ struct ExcalidrawView: View {
             .onChange(of: file) { newFile in
                 handleFileChange(newFile)
             }
-            .onChange(of: colorScheme) { _ in
-                applyColorMode()
+            .onChange(of: colorScheme) { newValue in
+                self.logger.info("color scheme changed: \(newValue)")
+                // will trigger when ios move app to background
+                applyColorMode(colorScheme: newValue)
             }
             .onChange(of: appPreference.excalidrawAppearance) { _ in
                 applyColorMode()
@@ -204,7 +206,7 @@ struct ExcalidrawView: View {
                     applyAllSettings()
                 }
             }
-//#if os(macOS)
+//#if os(iOS)
 //            .onChange(of: scenePhase) { scenePhase in
 //                if scenePhase == .active {
 //                    applyColorMode()
@@ -302,8 +304,9 @@ struct ExcalidrawView: View {
         }
     }
     
-    private func applyColorMode() {
-        guard loadingState == .loaded, scenePhase == .active else { return }
+    private func applyColorMode(colorScheme scheme: ColorScheme? = nil) {
+        let colorScheme = scheme ?? colorScheme
+        guard loadingState == .loaded else { return }
 
         Task {
             do {

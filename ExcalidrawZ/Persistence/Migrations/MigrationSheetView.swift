@@ -189,6 +189,8 @@ struct MigrationProgressSheet: View {
             context: PersistenceController.shared.container.viewContext
         ) { result in
             handleArchiveResult(result)
+        } onCancellation: {
+            isArchiving = false
         }
         .overlay(alignment: .top) {
             if showFailedFilesAlert && !archiveFailedFiles.isEmpty {

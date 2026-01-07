@@ -529,13 +529,22 @@ struct ImportLocalFolderModifier: ViewModifier {
 }
 
 struct ImportLocalFolderButton: View {
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+
     @State private var isImportLocalFolderDialogPresented = false
     
     var body: some View {
         Button {
             isImportLocalFolderDialogPresented.toggle()
         } label: {
-            Label(.localizable(.sidebarGroupListButtonAddObservation), systemSymbol: .squareAndArrowDown)
+            if containerHorizontalSizeClass == .compact {
+                HStack(spacing: 4) {
+                    Image(systemSymbol: .squareAndArrowDown)
+                    Text(localizable: .sidebarGroupListButtonAddObservation)
+                }
+            } else {
+                Label(.localizable(.sidebarGroupListButtonAddObservation), systemSymbol: .squareAndArrowDown)
+            }
         }
         .modifier(ImportLocalFolderModifier(isPresented: $isImportLocalFolderDialogPresented))
     }

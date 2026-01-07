@@ -205,12 +205,20 @@ struct ExcalidrawContainerWrapper: View {
             self.excalidrawFile = ExcalidrawFile()
             return
         }
+        
+        var canSetLoading = true
         // Set loading state
-        await MainActor.run {
-            self.isLoadingFile = true
+        Task {
+            try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.5))
+            await MainActor.run {
+                if canSetLoading {
+                    self.isLoadingFile = true
+                }
+            }
         }
         
         defer {
+            canSetLoading = false
             Task {
                 await MainActor.run {
                     if self.conflictFileURL == nil {
