@@ -115,6 +115,17 @@ struct CoreDataMigrationModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .environmentObject(migrationState)
+//            .overlay {
+//                MigrationProgressSheet(
+//                    migrationState: migrationState,
+//                    isDev: isDev,
+//                ) {
+//                    migrationState.phase = .closed
+//                    continuousCloudKitMonitor?.cancel()
+//                }
+//
+//                .ignoresSafeArea()
+//            }
             .sheet(isPresented: $showMigrationSheet) {
                 migrationState.phase = .closed
                 continuousCloudKitMonitor?.cancel()

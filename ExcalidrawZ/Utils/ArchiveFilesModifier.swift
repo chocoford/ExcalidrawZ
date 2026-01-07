@@ -30,7 +30,7 @@ struct ArchiveFilesModifier: ViewModifier {
     let context: NSManagedObjectContext
     let onComplete: (Result<ArchiveResult, Error>) -> Void
     
-    @State private var archiveURL: URL?
+    @State private var archiveDocument: ArchiveFolderDocument?
     @State private var isExporting = false
     @State private var failedFiles: [FailedFileInfo] = []
     
@@ -38,7 +38,7 @@ struct ArchiveFilesModifier: ViewModifier {
         content
             .fileExporter(
                 isPresented: $isExporting,
-                document: archiveURL.map { ArchiveFolderDocument(url: $0) },
+                document: archiveDocument,
                 contentType: .folder,
                 defaultFilename: "ExcalidrawZ exported at \(Date.now.formatted(date: .abbreviated, time: .shortened))"
             ) { result in
@@ -54,40 +54,28 @@ struct ArchiveFilesModifier: ViewModifier {
     }
     
     private func prepareArchive() async {
-        do {
-            let fileManager = FileManager.default
-            
-            // Create temporary directory for archive
-            // This matches the original implementation: create a folder with timestamp
-            let tempDir = fileManager.temporaryDirectory
-            let folderName = "ExcalidrawZ exported at \(Date.now.formatted(date: .abbreviated, time: .shortened))"
-            let tempArchiveURL = tempDir.appendingPathComponent(folderName, conformingTo: .directory)
-            
-            // Create the directory (like in original archiveAllFiles)
-            try fileManager.createDirectory(at: tempArchiveURL, withIntermediateDirectories: false)
-            
-            // Archive all files to temp directory (using internal implementation with error collection)
-            let failed = await archiveAllCloudFilesWithErrorCollection(to: tempArchiveURL, context: context)
-            
-            // Store failed files and URL, then present file exporter
-            await MainActor.run {
-                self.failedFiles = failed
-                self.archiveURL = tempArchiveURL
-                self.isExporting = true
-                self.isPresented = false
-            }
-        } catch {
-            await MainActor.run {
-                self.isPresented = false
-                onComplete(.failure(error))
-            }
+        let folderName = "ExcalidrawZ exported at \(Date.now.formatted(date: .abbreviated, time: .shortened))"
+        let archiveResult = await archiveAllCloudFilesWithErrorCollection(
+            folderName: folderName,
+            context: context
+        )
+
+        await MainActor.run {
+            self.failedFiles = archiveResult.failedFiles
+            self.archiveDocument = archiveResult.document
+            self.isExporting = true
+            self.isPresented = false
         }
     }
     
     /// Internal implementation of archiveAllCloudFiles that collects failed files instead of throwing
-    private func archiveAllCloudFilesWithErrorCollection(to url: URL, context: NSManagedObjectContext) async -> [FailedFileInfo] {
+    private func archiveAllCloudFilesWithErrorCollection(
+        folderName: String,
+        context: NSManagedObjectContext
+    ) async -> (document: ArchiveFolderDocument, failedFiles: [FailedFileInfo]) {
         var failedFiles: [FailedFileInfo] = []
-        let filemanager = FileManager.default
+        let rootWrapper = FileWrapper(directoryWithFileWrappers: [:])
+        rootWrapper.preferredFilename = folderName
         
         do {
             let allFiles: [PersistenceController.ExcalidrawGroup: [File]] = try PersistenceController.shared.listAllFiles(context: context)
@@ -95,14 +83,12 @@ struct ArchiveFilesModifier: ViewModifier {
             for groupFiles in allFiles {
                 let group = groupFiles.key
                 let files = groupFiles.value
-                var groupURL = url
-                for ancestor in group.ancestors {
-                    groupURL = groupURL.appendingPathComponent(ancestor.name ?? "Untitled", conformingTo: .directory)
-                }
-                groupURL = groupURL.appendingPathComponent(group.group.name ?? "Untitled", conformingTo: .directory)
-                if !filemanager.fileExists(at: groupURL) {
-                    try filemanager.createDirectory(at: groupURL, withIntermediateDirectories: true)
-                }
+                let folderPathComponents = group.ancestors.map { $0.name ?? "Untitled" }
+                    + [group.group.name ?? "Untitled"]
+                let groupWrapper = archiveFolderWrapper(
+                    for: folderPathComponents,
+                    in: rootWrapper
+                )
                 
                 for file in files {
                     do {
@@ -110,29 +96,20 @@ struct ArchiveFilesModifier: ViewModifier {
                         try await excalidrawFile.syncFiles(context: context)
                         var index = 1
                         var filename = excalidrawFile.name ?? String(localizable: .newFileNamePlaceholder)
-                        var fileURL: URL = groupURL.appendingPathComponent(filename, conformingTo: .fileURL).appendingPathExtension("excalidraw")
                         var retryCount = 0
-                        while filemanager.fileExists(at: fileURL), retryCount < 100 {
+                        var fileWrapperName = "\(filename).excalidraw"
+                        while groupWrapper.fileWrappers?[fileWrapperName] != nil, retryCount < 100 {
                             if filename.hasSuffix(" (\(index))") {
                                 filename = filename.replacingOccurrences(of: " (\(index))", with: "")
                                 index += 1
                             }
                             filename = "\(filename) (\(index))"
-                            fileURL = fileURL
-                                .deletingLastPathComponent()
-                                .appendingPathComponent(filename, conformingTo: .excalidrawFile)
+                            fileWrapperName = "\(filename).excalidraw"
                             retryCount += 1
                         }
-                        let filePath: String = fileURL.filePath
-                        if !filemanager.createFile(atPath: filePath, contents: excalidrawFile.content) {
-                            print("export file \(filePath) failed")
-                            failedFiles.append(FailedFileInfo(
-                                fileName: filename,
-                                error: "Failed to create file"
-                            ))
-                        } else {
-                            print("Export file to url<\(filePath)> done")
-                        }
+                        let fileWrapper = FileWrapper(regularFileWithContents: excalidrawFile.content ?? Data())
+                        fileWrapper.preferredFilename = fileWrapperName
+                        groupWrapper.addFileWrapper(fileWrapper)
                     } catch {
                         // Record failed file instead of throwing
                         let fileName = file.name ?? "Untitled"
@@ -152,42 +129,34 @@ struct ArchiveFilesModifier: ViewModifier {
             ))
         }
         
-        return failedFiles
+        return (ArchiveFolderDocument(rootWrapper: rootWrapper), failedFiles)
     }
     
     private func handleExportResult(_ result: Result<URL, Error>) {
         switch result {
             case .success(let url):
-                // Clean up temporary directory after successful export
-                if let archiveURL = archiveURL {
-                    try? FileManager.default.removeItem(at: archiveURL)
-                }
                 // Create ArchiveResult with failed files info
                 let archiveResult = ArchiveResult(url: url, failedFiles: failedFiles)
                 onComplete(.success(archiveResult))
                 
             case .failure(let error):
-                // Clean up temporary directory on failure
-                if let archiveURL = archiveURL {
-                    try? FileManager.default.removeItem(at: archiveURL)
-                }
                 onComplete(.failure(error))
         }
         
         // Reset state
-        archiveURL = nil
+        archiveDocument = nil
         failedFiles = []
     }
 }
 
 /// Document wrapper for folder export
-struct ArchiveFolderDocument: FileDocument {
+struct ArchiveFolderDocument: FileDocument, @unchecked Sendable {
     static var readableContentTypes: [UTType] { [.folder] }
     
-    let url: URL
+    let rootWrapper: FileWrapper
     
-    init(url: URL) {
-        self.url = url
+    init(rootWrapper: FileWrapper) {
+        self.rootWrapper = rootWrapper
     }
     
     init(configuration: ReadConfiguration) throws {
@@ -196,8 +165,26 @@ struct ArchiveFolderDocument: FileDocument {
     }
     
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        return try FileWrapper(url: url, options: .immediate)
+        return rootWrapper
     }
+}
+
+private func archiveFolderWrapper(
+    for pathComponents: [String],
+    in root: FileWrapper
+) -> FileWrapper {
+    var currentWrapper = root
+    for component in pathComponents {
+        if let existing = currentWrapper.fileWrappers?[component] {
+            currentWrapper = existing
+            continue
+        }
+        let newWrapper = FileWrapper(directoryWithFileWrappers: [:])
+        newWrapper.preferredFilename = component
+        currentWrapper.addFileWrapper(newWrapper)
+        currentWrapper = newWrapper
+    }
+    return currentWrapper
 }
 
 extension View {

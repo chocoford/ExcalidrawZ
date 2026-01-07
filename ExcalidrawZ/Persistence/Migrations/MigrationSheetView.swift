@@ -88,20 +88,25 @@ struct MigrationProgressSheet: View {
                     VStack(spacing: 8) {
                         HStack(spacing: 8) {
                             Image(systemSymbol: .infoCircle)
-                            Text(migrationState.phase == .waitingForSync ? "Waiting for iCloud sync to complete..." : "Checking for iCloud updates...")
-                                .font(.headline)
+                            Text(
+                                localizable: migrationState.phase == .waitingForSync
+                                ? .migrationICloudSyncHintWaitingForSyncTitle
+                                : .migrationICloudSyncHintIdleTitle
+                            )
+                            .font(.headline)
                         }
-                        Text("If you've already migrated on another device, the app will continue automatically after sync.")
+                        Text(localizable: .migrationICloudSyncHintMessage)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                     }
-                    .padding(.horizontal, sheetPadding)
-                    .padding(.vertical, 12)
+                    .padding(12)
+                    .frame(maxWidth: .infinity)
                     .background {
                         RoundedRectangle(cornerRadius: 16).fill(Color.accentColor.opacity(0.2))
                         RoundedRectangle(cornerRadius: 16).stroke(Color.accentColor)
                     }
+                    .padding(.horizontal, sheetPadding)
                 }
                 
                 // Bottom Buttons
@@ -202,7 +207,7 @@ struct MigrationProgressSheet: View {
             HStack(spacing: 8) {
                 Image(systemSymbol: .exclamationmarkTriangle)
                     .foregroundStyle(.orange)
-                Text("Some files failed to archive (\(archiveFailedFiles.count))")
+                Text(localizable: .migrationArchiveFailedItemsTitle(archiveFailedFiles.count))
                     .font(.headline)
                     .foregroundStyle(.primary)
                 Spacer()
@@ -233,7 +238,7 @@ struct MigrationProgressSheet: View {
                     }
                     
                     if archiveFailedFiles.count > 5 {
-                        Text("and \(archiveFailedFiles.count - 5) more...")
+                        Text(localizable: .generalAndXXXMore(archiveFailedFiles.count - 5))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.top, 4)
@@ -274,11 +279,11 @@ struct MigrationProgressSheet: View {
                 HStack {
                     ProgressView()
                         .controlSize(.small)
-                    Text("Archiving...")
+                    Text(localizable: .migrationArchivingTitle)
                 }
                 .frame(maxWidth: .infinity)
             } else {
-                Text("Archive Files First")
+                Text(localizable: .migrationTooltipArchiveFirst)
                     .frame(maxWidth: .infinity)
             }
         }
@@ -297,7 +302,7 @@ struct MigrationProgressSheet: View {
                 await runMigrations()
             }
         } label: {
-            Text("Start Migration")
+            Text(localizable: .migrationButtonStartMigration)
                 .frame(maxWidth: .infinity)
                 .opacity(isMigrating ? 0 : 1)
                 .overlay {
@@ -309,7 +314,7 @@ struct MigrationProgressSheet: View {
         .if(!didArchiveFiles) {
             $0
                 .opacity(0.5)
-                .popoverHelp("Please archive files first")
+                .popoverHelp(.localizable(.migrationDownloadTooltip))
         }
         .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
         .disabled(isArchiving)
@@ -327,7 +332,7 @@ struct MigrationProgressSheet: View {
                 await runMigrations(autoResolveErrors: true)
             }
         } label: {
-            Text("Skip and Continue")
+            Text(localizable: .migrationButtonSkipAndContinue)
                 .frame(maxWidth: .infinity)
                 .opacity(isMigrating ? 0 : 1)
                 .overlay {
@@ -345,7 +350,7 @@ struct MigrationProgressSheet: View {
                 await runMigrations(autoResolveErrors: false)
             }
         } label: {
-            Text("Retry")
+            Text(localizable: .generalButtonRetry)
                 .frame(maxWidth: .infinity)
                 .opacity(isMigrating ? 0 : 1)
                 .overlay {
@@ -550,7 +555,7 @@ struct MigrationItemRow: View {
                         }
                     } else if case .completedWithErrors(let failedItems) = item.status {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Failed Items (\(failedItems.count)):")
+                            Text(localizable: .migrationItemFailedItemsTitle(failedItems.count))
                                 .font(.caption)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.orange)
