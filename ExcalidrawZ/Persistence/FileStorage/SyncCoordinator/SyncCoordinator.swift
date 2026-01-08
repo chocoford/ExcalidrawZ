@@ -473,7 +473,7 @@ actor SyncCoordinator {
                 case (let local?, nil):
                     // File exists locally but not in iCloud
                     if status.isAvailable {
-                        logger.info("Local only: \(compositeKey), uploading to cloud")
+                        logger.info("Local only: \(local.relativePath), uploading to cloud")
                         syncOperations.append(SyncEvent(
                             fileID: local.fileID,
                             relativePath: local.relativePath,
@@ -485,7 +485,7 @@ actor SyncCoordinator {
                     
                 case (nil, let cloud?):
                     // File exists in iCloud but not locally
-                    logger.info("Cloud only: \(compositeKey), downloading from cloud")
+                    logger.info("Cloud only: \(cloud.relativePath), downloading from cloud")
                     syncOperations.append(SyncEvent(
                         fileID: cloud.fileID,
                         relativePath: cloud.relativePath,

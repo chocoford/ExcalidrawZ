@@ -1,3 +1,17 @@
+## 1.7.0
+
+#### Features
+
+- Improved File Storage
+- Import PDF support
+- Custom Drawing Settings
+
+#### Optimizations
+
+- Keep viewport when switching between files.
+
+
+
 ## 1.6.1
 
 Update excalidraw core.
