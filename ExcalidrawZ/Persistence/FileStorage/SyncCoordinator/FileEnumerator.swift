@@ -57,11 +57,11 @@ struct FileEnumerator {
             // Get relative path safely (handles /private prefix differences)
             let basePath = storageURL.standardizedFileURL.filePath
             let fullPath = fileURL.standardizedFileURL.filePath
-            guard fullPath.hasPrefix(basePath + "/") else {
+            guard fullPath.hasPrefix(basePath) else {
                 logger.warning("Skipping file outside storage root: \(fullPath) (base: \(basePath))")
                 continue
             }
-            let relativePath = String(fullPath.dropFirst(basePath.count + 1))
+            let relativePath = String(fullPath.dropFirst(basePath.count))
 
             // Determine content type from file extension
             guard let contentType = FileStorageContentType.from(relativePath: relativePath) else {
@@ -132,11 +132,11 @@ struct FileEnumerator {
             // Get relative path safely (handles /private prefix differences)
             let basePath = containerURL.standardizedFileURL.filePath
             let fullPath = fileURL.standardizedFileURL.filePath
-            guard fullPath.hasPrefix(basePath + "/") else {
+            guard fullPath.hasPrefix(basePath) else {
                 logger.warning("Skipping iCloud file outside container: \(fullPath) (base: \(basePath))")
                 continue
             }
-            let relativePath = String(fullPath.dropFirst(basePath.count + 1))
+            let relativePath = String(fullPath.dropFirst(basePath.count))
 
             // Determine content type from file extension
             guard let contentType = FileStorageContentType.from(relativePath: relativePath) else {
