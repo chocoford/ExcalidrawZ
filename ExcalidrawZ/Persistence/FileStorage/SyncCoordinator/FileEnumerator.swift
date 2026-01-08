@@ -37,8 +37,6 @@ struct FileEnumerator {
         )
 
         while let fileURL = enumerator?.nextObject() as? URL {
-            print("[DEBUG] enumerateLocalFiles", fileURL)
-
             // Check if it's a regular file
             let resourceValues = try fileURL.resourceValues(forKeys: [.isRegularFileKey])
             guard resourceValues.isRegularFile == true else { continue }
@@ -56,8 +54,14 @@ struct FileEnumerator {
             let modifiedAt = attributes[.modificationDate] as? Date ?? Date()
             let size = attributes[.size] as? Int64 ?? 0
 
-            // Get relative path
-            let relativePath = String(fileURL.filePath.dropFirst(storageURL.filePath.count + 1))
+            // Get relative path safely (handles /private prefix differences)
+            let basePath = storageURL.standardizedFileURL.filePath
+            let fullPath = fileURL.standardizedFileURL.filePath
+            guard fullPath.hasPrefix(basePath + "/") else {
+                logger.warning("Skipping file outside storage root: \(fullPath) (base: \(basePath))")
+                continue
+            }
+            let relativePath = String(fullPath.dropFirst(basePath.count + 1))
 
             // Determine content type from file extension
             guard let contentType = FileStorageContentType.from(relativePath: relativePath) else {
@@ -125,8 +129,14 @@ struct FileEnumerator {
             let modifiedAt = attributes[.modificationDate] as? Date ?? Date()
             let size = attributes[.size] as? Int64 ?? 0
 
-            // Get relative path
-            let relativePath = String(fileURL.filePath.dropFirst(containerURL.filePath.count + 1))
+            // Get relative path safely (handles /private prefix differences)
+            let basePath = containerURL.standardizedFileURL.filePath
+            let fullPath = fileURL.standardizedFileURL.filePath
+            guard fullPath.hasPrefix(basePath + "/") else {
+                logger.warning("Skipping iCloud file outside container: \(fullPath) (base: \(basePath))")
+                continue
+            }
+            let relativePath = String(fullPath.dropFirst(basePath.count + 1))
 
             // Determine content type from file extension
             guard let contentType = FileStorageContentType.from(relativePath: relativePath) else {
