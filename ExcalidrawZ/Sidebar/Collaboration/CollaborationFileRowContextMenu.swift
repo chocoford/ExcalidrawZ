@@ -136,7 +136,7 @@ struct CollaborationFileMenuItems: View {
     
     var body: some View {
         Button {
-            fileState.currentActiveFile = .collaborationFile(file)
+            fileState.setActiveFile(.collaborationFile(file))
         } label: {
             if #available(macOS 13.0, *) {
                 Label(
