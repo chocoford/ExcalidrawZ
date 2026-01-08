@@ -9,6 +9,7 @@
 #### Optimizations
 
 - Keep viewport when switching between files.
+- Now the canvas viewport will not be reset after synchronous update.
 
 
 
