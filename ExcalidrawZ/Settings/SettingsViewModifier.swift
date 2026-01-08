@@ -34,8 +34,10 @@ struct SettingsViewButton: View {
             if #available(macOS 13.3, iOS 16.4, *) {
                 SettingsView()
                     .presentationContentInteraction(.scrolls)
+                    .swiftyAlert()
             } else {
                 SettingsView()
+                    .swiftyAlert()
             }
         }
     }

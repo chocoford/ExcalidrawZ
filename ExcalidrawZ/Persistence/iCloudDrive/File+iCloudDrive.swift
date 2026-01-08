@@ -16,8 +16,26 @@ extension File {
     /// Automatically checks iCloud for newer versions before returning
     /// Falls back to CoreData content if storage is unavailable
     func loadContent() async throws -> Data {
+        guard let context = self.managedObjectContext else {
+            struct NoContextError: LocalizedError {
+                var errorDescription: String? { "File object has no managed object context" }
+            }
+            throw NoContextError()
+        }
+
+        // Use objectID to safely access object across async boundary
+        let objectID = self.objectID
+
+        // Read all Core Data properties in context.perform for thread safety
+        let (filePath, fileID, content, name): (String?, UUID?, Data?, String?) = await context.perform {
+            guard let file = context.object(with: objectID) as? File else {
+                return (nil, nil, nil, nil)
+            }
+            return (file.filePath, file.id, file.content, file.name)
+        }
+
         // Try to load from storage first (local/iCloud with bidirectional sync)
-        if let filePath = self.filePath, let fileID = self.id {
+        if let filePath = filePath, let fileID = fileID {
             do {
                 return try await FileStorageManager.shared.loadContent(relativePath: filePath, fileID: fileID.uuidString)
             } catch {
@@ -26,11 +44,11 @@ extension File {
         }
 
         // Fallback to CoreData content
-        if let content = self.content {
+        if let content = content {
             return content
         }
 
-        throw AppError.fileError(.contentNotAvailable(filename: self.name ?? String(localizable: .generalUnknown)))
+        throw AppError.fileError(.contentNotAvailable(filename: name ?? String(localizable: .generalUnknown)))
     }
 
     /// Update file path and clear content (call this after successfully saving to storage)

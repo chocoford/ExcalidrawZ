@@ -16,8 +16,26 @@ extension MediaItem {
     /// Automatically checks iCloud for newer versions before returning
     /// Falls back to decoding CoreData dataURL if storage is unavailable
     func loadData() async throws -> Data {
+        guard let context = self.managedObjectContext else {
+            struct NoContextError: LocalizedError {
+                var errorDescription: String? { "MediaItem object has no managed object context" }
+            }
+            throw NoContextError()
+        }
+
+        // Use objectID to safely access object across async boundary
+        let objectID = self.objectID
+
+        // Read all Core Data properties in context.perform for thread safety
+        let (filePath, mediaID, dataURL): (String?, String?, String?) = await context.perform {
+            guard let mediaItem = context.object(with: objectID) as? MediaItem else {
+                return (nil, nil, nil)
+            }
+            return (mediaItem.filePath, mediaItem.id, mediaItem.dataURL)
+        }
+
         // Try to load from storage first (local/iCloud with bidirectional sync)
-        if let filePath = self.filePath, let mediaID = self.id {
+        if let filePath = filePath, let mediaID = mediaID {
             do {
                 // This will automatically check iCloud for updates and download if needed
                 return try await FileStorageManager.shared.loadContent(relativePath: filePath, fileID: mediaID)
@@ -27,7 +45,7 @@ extension MediaItem {
         }
 
         // Fallback to CoreData dataURL
-        if let dataURL = self.dataURL,
+        if let dataURL = dataURL,
            let base64String = dataURL.components(separatedBy: "base64,").last,
            let data = Data(base64Encoded: base64String) {
             return data
@@ -40,8 +58,26 @@ extension MediaItem {
     /// Automatically checks iCloud for newer versions before returning
     /// Falls back to CoreData dataURL if storage is unavailable
     func loadDataURL() async throws -> String {
+        guard let context = self.managedObjectContext else {
+            struct NoContextError: LocalizedError {
+                var errorDescription: String? { "MediaItem object has no managed object context" }
+            }
+            throw NoContextError()
+        }
+
+        // Use objectID to safely access object across async boundary
+        let objectID = self.objectID
+
+        // Read all Core Data properties in context.perform for thread safety
+        let (filePath, mediaID, dataURL): (String?, String?, String?) = await context.perform {
+            guard let mediaItem = context.object(with: objectID) as? MediaItem else {
+                return (nil, nil, nil)
+            }
+            return (mediaItem.filePath, mediaItem.id, mediaItem.dataURL)
+        }
+
         // Try to load from storage first (local/iCloud with bidirectional sync)
-        if let filePath = self.filePath, let mediaID = self.id {
+        if let filePath = filePath, let mediaID = mediaID {
             do {
                 // This will automatically check iCloud for updates and download if needed
                 let _ = try await FileStorageManager.shared.loadContent(relativePath: filePath, fileID: mediaID)
@@ -53,7 +89,7 @@ extension MediaItem {
         }
 
         // Fallback to CoreData dataURL
-        if let dataURL = self.dataURL {
+        if let dataURL = dataURL {
             return dataURL
         }
 

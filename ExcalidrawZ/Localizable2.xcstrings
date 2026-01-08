@@ -29391,10 +29391,112 @@
     "migrationMoveContentToICloudDriveSkipAlertMessage" : {
       "extractionState" : "manual",
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "هل أنت متأكد من تخطي هذه الملفات؟ سيؤدي ذلك إلى إعادة ضبط محتوياتها."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sind Sie sicher, dass Sie diese Dateien überspringen möchten? Dadurch werden deren Inhalte zurückgesetzt."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Are you sure to skip these files? Doing so will reset their contents."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Está seguro de omitir estos archivos? Al hacerlo, se restablecerá su contenido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Êtes-vous sûr de vouloir ignorer ces fichiers ? Cela réinitialisera leur contenu."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "क्या आप सुनिश्चित हैं कि आप इन फ़ाइलों को छोड़ना चाहते हैं? ऐसा करने पर उनकी सामग्री रीसेट हो जाएगी।"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sei sicuro di voler ignorare questi file? Così facendo il loro contenuto verrà azzerato."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これらのファイルをスキップしてもよろしいですか？スキップすると内容がリセットされます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "정말로 이 파일들을 건너뛰시겠습니까? 이렇게 하면 해당 파일들의 내용이 초기화됩니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weet u zeker dat u deze bestanden wilt overslaan? Hierdoor wordt de inhoud ervan gereset."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czy na pewno chcesz pominąć te pliki? Spowoduje to zresetowanie ich zawartości."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tem certeza de que deseja ignorar estes arquivos? Isso redefinirá o conteúdo deles."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы уверены, что хотите пропустить эти файлы? Это действие сбросит их содержимое."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "คุณแน่ใจหรือไม่ว่าต้องการข้ามไฟล์เหล่านี้? การดำเนินการนี้จะรีเซ็ตเนื้อหาในไฟล์เหล่านี้"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu dosyaları atlamak istediğinizden emin misiniz? Bunu yaparsanız içerikleri sıfırlanacaktır."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bạn có chắc chắn muốn bỏ qua các tệp này? Việc làm như vậy sẽ đặt lại nội dung của chúng."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要跳过这些文件吗？这样会重置它们的内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要跳過這些檔案嗎？這樣做會重設它們的內容。"
           }
         }
       }
@@ -43859,6 +43961,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "禁用 iCloud 同步"
+          }
+        }
+      }
+    },
+    "settingsMediaFilesButtonCleanUp" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clean Up"
+          }
+        }
+      }
+    },
+    "settingsMediaFilesButtonHelpCleanUp" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clean Up Orphaned Media"
+          }
+        }
+      }
+    },
+    "settingsMediaFilesCleanUpConfirmationDialogMessage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will remove media items that are no longer referenced by any file or checkpoint. This action cannot be undone."
+          }
+        }
+      }
+    },
+    "settingsMediaFilesCleanUpConfirmationDialogTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clean Up Orphaned Media"
           }
         }
       }

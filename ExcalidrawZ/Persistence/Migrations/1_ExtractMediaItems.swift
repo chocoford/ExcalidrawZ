@@ -54,28 +54,44 @@ struct Migration_ExtractMediaItems: MigrationVersion {
             try await backupFiles(context: context)
         #endif
 
-        let failedItems = try await context.perform {
+        // Fetch files and checkpoints first
+        let (files, checkpoints) = try await context.perform {
             let files = try filesFetch.execute()
             let checkpoints = try checkpointsFetch.execute()
+            return (files, checkpoints)
+        }
 
-            var insertedMediaID = Set<String>()
-            var failedItems: [MigrationFailedItem] = []
+        var insertedMediaID = Set<String>()
+        var failedItems: [MigrationFailedItem] = []
 
-            // Migrate files (0 - 1/2)
-            logger.info("Need migrate \(files.count) files")
-            for (i, file) in files.enumerated() {
-                Task {
-                    await progressHandler(
-                        "Extracting media from file '\(file.name ?? String(localizable: .generalUntitled))'",
-                        Double(i) / Double(files.count) / 2
-                    )
-                }
-                do {
-                    let excalidrawFile = try ExcalidrawFile(__migrationLegacy_from: file)
-                    if excalidrawFile.files.isEmpty { continue }
-                    logger.info(
-                        "migrating \(excalidrawFile.files.count) files of \(excalidrawFile.name ?? "Untitled")"
-                    )
+        // Migrate files (0 - 1/2)
+        logger.info("Need migrate \(files.count) files")
+        for (i, file) in files.enumerated() {
+            // Get objectID for thread-safe access across contexts
+            let fileObjectID = file.objectID
+
+            await progressHandler(
+                "Extracting media from file '\(file.name ?? String(localizable: .generalUntitled))'",
+                Double(i) / Double(files.count) / 2
+            )
+
+            do {
+                // Load content from storage or CoreData
+                let data = try await file.loadContent()
+                let excalidrawFile = try ExcalidrawFile(data: data, id: file.id?.uuidString)
+
+                if excalidrawFile.files.isEmpty { continue }
+                logger.info(
+                    "migrating \(excalidrawFile.files.count) files of \(excalidrawFile.name ?? "Untitled")"
+                )
+
+                // Insert MediaItems and update file content in background context
+                try await context.perform {
+                    // Re-fetch file in this context using objectID
+                    guard let file = context.object(with: fileObjectID) as? File else {
+                        throw NSError(domain: "Migration", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to fetch file in context"])
+                    }
+
                     for (id, media) in excalidrawFile.files {
                         if insertedMediaID.contains(id) { continue }
 
@@ -88,42 +104,50 @@ struct Migration_ExtractMediaItems: MigrationVersion {
                         insertedMediaID.insert(id)
                     }
                     file.content = try excalidrawFile.contentWithoutFiles()
-                } catch {
-                    let fileName = file.name ?? "Untitled"
-                    let errorMsg = "File migration failed: \(fileName)"
-                    logger.error("\(errorMsg): \(error.localizedDescription)")
-                    failedItems.append(
-                        MigrationFailedItem(
-                            id: file.id?.uuidString ?? UUID().uuidString,
-                            name: fileName,
-                            error: error.localizedDescription
-                        )
-                    )
-                    continue
                 }
+            } catch {
+                let fileName = file.name ?? "Untitled"
+                let errorMsg = "File migration failed: \(fileName)"
+                logger.error("\(errorMsg): \(error.localizedDescription)")
+                failedItems.append(
+                    MigrationFailedItem(
+                        id: file.id?.uuidString ?? UUID().uuidString,
+                        name: fileName,
+                        error: error.localizedDescription
+                    )
+                )
+                continue
             }
+        }
 
-            // Migrate checkpoints (1/2 - 1)
-            logger.info("Need migrate \(checkpoints.count) checkpoints")
-            for (i, checkpoint) in checkpoints.enumerated() {
-                Task {
-                    await progressHandler(
-                        "Extracting media from checkpoint '\(checkpoint.file?.name ?? String(localizable: .generalUntitled))'",
-                        0.5 + Double(i) / Double(checkpoints.count) / 2
-                    )
-                }
-                do {
-                    guard let data = checkpoint.content else {
-                        struct NoContentError: LocalizedError {
-                            var errorDescription: String? { "Checkpoint has no content data." }
-                        }
-                        throw NoContentError()
+        // Migrate checkpoints (1/2 - 1)
+        logger.info("Need migrate \(checkpoints.count) checkpoints")
+        for (i, checkpoint) in checkpoints.enumerated() {
+            // Get objectID for thread-safe access across contexts
+            let checkpointObjectID = checkpoint.objectID
+
+            await progressHandler(
+                "Extracting media from checkpoint '\(checkpoint.file?.name ?? String(localizable: .generalUntitled))'",
+                0.5 + Double(i) / Double(checkpoints.count) / 2
+            )
+
+            do {
+                // Load content from storage or CoreData
+                let data = try await checkpoint.loadContent()
+                let excalidrawFile = try ExcalidrawFile(data: data)
+
+                if excalidrawFile.files.isEmpty { continue }
+                logger.info(
+                    "migrating \(excalidrawFile.files.count) files of checkpoint<\(checkpoint.file?.name ?? "Untitled")>"
+                )
+
+                // Insert MediaItems and update checkpoint content in background context
+                try await context.perform {
+                    // Re-fetch checkpoint in this context using objectID
+                    guard let checkpoint = context.object(with: checkpointObjectID) as? FileCheckpoint else {
+                        throw NSError(domain: "Migration", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to fetch checkpoint in context"])
                     }
-                    let excalidrawFile = try ExcalidrawFile(data: data)
-                    if excalidrawFile.files.isEmpty { continue }
-                    logger.info(
-                        "migrating \(excalidrawFile.files.count) files of checkpoint<\(checkpoint.file?.name ?? "Untitled")>"
-                    )
+
                     for (id, media) in excalidrawFile.files {
                         if insertedMediaID.contains(id) { continue }
                         let mediaItem = MediaItem(resource: media, context: context)
@@ -134,29 +158,27 @@ struct Migration_ExtractMediaItems: MigrationVersion {
                         context.insert(mediaItem)
                     }
                     checkpoint.content = try excalidrawFile.contentWithoutFiles()
-                } catch {
-                    let fileName = checkpoint.file?.name ?? "Untitled"
-                    let errorMsg = "Checkpoint migration failed: \(fileName)"
-                    logger.error("\(errorMsg): \(error.localizedDescription)")
-                    failedItems.append(
-                        MigrationFailedItem(
-                            id: checkpoint.id?.uuidString ?? UUID().uuidString,
-                            name: "Checkpoint: \(fileName)",
-                            error: error.localizedDescription
-                        )
-                    )
-                    continue
                 }
+            } catch {
+                let fileName = checkpoint.file?.name ?? "Untitled"
+                let errorMsg = "Checkpoint migration failed: \(fileName)"
+                logger.error("\(errorMsg): \(error.localizedDescription)")
+                failedItems.append(
+                    MigrationFailedItem(
+                        id: checkpoint.id?.uuidString ?? UUID().uuidString,
+                        name: "Checkpoint: \(fileName)",
+                        error: error.localizedDescription
+                    )
+                )
+                continue
             }
+        }
 
-            let timeCost = -start.timeIntervalSinceNow
-            if failedItems.isEmpty {
-                logger.info("🎉 Extract media items completed successfully. Time cost: \(timeCost) s")
-            } else {
-                logger.warning("⚠️ Extract media items completed with \(failedItems.count) failures. Time cost: \(timeCost) s")
-            }
-
-            return failedItems
+        let timeCost = -start.timeIntervalSinceNow
+        if failedItems.isEmpty {
+            logger.info("🎉 Extract media items completed successfully. Time cost: \(timeCost) s")
+        } else {
+            logger.warning("⚠️ Extract media items completed with \(failedItems.count) failures. Time cost: \(timeCost) s")
         }
 
         return failedItems

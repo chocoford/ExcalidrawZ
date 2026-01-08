@@ -29391,12 +29391,6 @@
     "migrationMoveContentToICloudDriveSkipAlertMessage": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Are you sure to skip these files? Doing so will reset their contents."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -29407,6 +29401,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sind Sie sicher, dass Sie diese Dateien überspringen möchten? Dadurch werden deren Inhalte zurückgesetzt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Are you sure to skip these files? Doing so will reset their contents."
           }
         },
         "es": {
@@ -43961,6 +43961,458 @@
           "stringUnit": {
             "state": "translated",
             "value": "禁用 iCloud 同步"
+          }
+        }
+      }
+    },
+    "settingsMediaFilesButtonCleanUp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clean Up"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تنظيف"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereinigen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limpiar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettoyer"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "साफ़ करें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripulisci"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クリーンアップ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정리"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opruimen"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyczyść"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limpar"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистить"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ทำความสะอาด"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temizle"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dọn dẹp"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理"
+          }
+        }
+      }
+    },
+    "settingsMediaFilesButtonHelpCleanUp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clean Up Orphaned Media"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تنظيف الوسائط غير المرتبطة"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwaiste Medien bereinigen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limpiar medios huérfanos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer les médias orphelins"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "संदर्भरहित मीडिया हटाएँ"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripulisci i media orfani"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未参照メディアのクリーンアップ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "참조되지 않는 미디어 정리"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opruimen van verweesde media"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyczyść niepowiązane pliki multimedialne"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limpar mídias órfãs"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистить неиспользуемые медиафайлы"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลบสื่อที่ไม่ได้อ้างอิง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanılmayan Medyayı Temizle"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dọn dẹp các mục phương tiện không còn được tham chiếu"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理未引用的媒体"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理未被參考的媒體"
+          }
+        }
+      }
+    },
+    "settingsMediaFilesCleanUpConfirmationDialogMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This will remove media items that are no longer referenced by any file or checkpoint. This action cannot be undone."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سيؤدي ذلك إلى إزالة عناصر الوسائط التي لم تعد مرتبطة بأي ملف أو نقطة حفظ. لا يمكن التراجع عن هذا الإجراء."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dabei werden verwaiste Medien entfernt, auf die keine Datei oder kein Checkpoint mehr verweist. Diese Aktion kann nicht rückgängig gemacht werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esto eliminará elementos multimedia que ya no están referenciados por ningún archivo o punto de control. Esta acción no se puede deshacer."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cela supprimera les éléments multimédias qui ne sont plus référencés par aucun fichier ni point de contrôle. Cette action est irréversible."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "यह उन मीडिया आइटमों को हटा देगा जिनका अब किसी भी फ़ाइल या चेकपॉइंट द्वारा संदर्भ नहीं लिया जाता है। इस क्रिया को पूर्ववत नहीं किया जा सकता।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo rimuoverà gli elementi multimediali che non sono più collegati a nessun file o checkpoint. Questa operazione non può essere annullata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "これは、どのファイルやチェックポイントからも参照されていないメディア項目を削除します。この操作は元に戻せません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 작업은 파일이나 체크포인트에서 더 이상 참조되지 않는 미디어 항목을 제거합니다. 이 작업은 되돌릴 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiermee worden mediabestanden verwijderd die niet langer door een bestand of controlepunt worden gebruikt. Deze handeling kan niet ongedaan gemaakt worden."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spowoduje to usunięcie elementów multimedialnych, do których nie odwołuje się już żaden plik ani punkt kontrolny. Tej operacji nie można cofnąć."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isso removerá itens de mídia que não sejam mais referenciados por nenhum arquivo ou ponto de verificação. Esta ação não pode ser desfeita."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это удалит медиафайлы, которые больше не используются никакими файлами или контрольными точками. Это действие нельзя отменить."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การดำเนินการนี้จะลบรายการสื่อที่ไม่ได้ถูกอ้างอิงโดยไฟล์หรือจุดตรวจใดๆ อีกต่อไป การกระทำนี้ไม่สามารถยกเลิกได้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu işlem, artık herhangi bir dosya veya kontrol noktası tarafından kullanılmayan medya öğelerini kaldıracaktır. Bu işlem geri alınamaz."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Việc này sẽ xóa các mục phương tiện không còn được tham chiếu bởi bất kỳ tệp hoặc điểm kiểm tra nào. Hành động này không thể hoàn tác."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这将删除不再被任何文件或检查点引用的媒体项。此操作不可撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這將移除不再被任何檔案或檢查點參考的媒體項目。此操作無法復原。"
+          }
+        }
+      }
+    },
+    "settingsMediaFilesCleanUpConfirmationDialogTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clean Up Orphaned Media"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تنظيف الوسائط غير المرتبطة"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwaiste Medien bereinigen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limpiar medios huérfanos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer les médias orphelins"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "संदर्भरहित मीडिया हटाएँ"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripulisci i media orfani"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未参照メディアのクリーンアップ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "참조되지 않는 미디어 정리"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opruimen van verweesde media"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyczyść niepowiązane pliki multimedialne"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limpar mídias órfãs"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удаление неиспользуемых медиафайлов"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลบสื่อที่ไม่ได้อ้างอิง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanılmayan Medyayı Temizle"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dọn dẹp các mục phương tiện không còn được tham chiếu"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理未引用的媒体"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理未被參考的媒體"
           }
         }
       }
