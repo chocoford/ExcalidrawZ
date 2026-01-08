@@ -210,7 +210,7 @@ actor MacOSFileSystemMonitor: FileSystemMonitorProtocol {
             
             // Monitor file system events
             for await event in FSEventAsyncStream(
-                path: folderURL.path,
+                path: folderURL.filePath,
                 flags: FSEventStreamCreateFlags(kFSEventStreamCreateFlagFileEvents)
             ) {
                 await handleFSEvent(event)
@@ -326,7 +326,7 @@ actor IOSFileSystemMonitor: NSObject, FileSystemMonitorProtocol, NSFilePresenter
         Task {
             if await shouldMonitorFile(url: url) {
                 // Check if file still exists
-                if FileManager.default.fileExists(atPath: url.path) {
+                if FileManager.default.fileExists(at: url) {
                     await onEvent(.modified(url))
                 } else {
                     await onEvent(.deleted(url))
@@ -344,7 +344,7 @@ actor IOSFileSystemMonitor: NSObject, FileSystemMonitorProtocol, NSFilePresenter
     private func shouldMonitorFile(url: URL) -> Bool {
         // Check if it's a file (not directory)
         var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+        guard FileManager.default.fileExists(atPath: url.filePath, isDirectory: &isDirectory),
               !isDirectory.boolValue else {
             return false
         }

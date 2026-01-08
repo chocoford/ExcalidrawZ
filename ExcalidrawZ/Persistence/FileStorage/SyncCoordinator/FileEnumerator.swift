@@ -37,6 +37,8 @@ struct FileEnumerator {
         )
 
         while let fileURL = enumerator?.nextObject() as? URL {
+            print("[DEBUG] enumerateLocalFiles", fileURL)
+
             // Check if it's a regular file
             let resourceValues = try fileURL.resourceValues(forKeys: [.isRegularFileKey])
             guard resourceValues.isRegularFile == true else { continue }
@@ -50,12 +52,12 @@ struct FileEnumerator {
             let fileID = String(fileIDSubstring)
 
             // Get metadata
-            let attributes = try fileManager.attributesOfItem(atPath: fileURL.path)
+            let attributes = try fileManager.attributesOfItem(atPath: fileURL.filePath)
             let modifiedAt = attributes[.modificationDate] as? Date ?? Date()
             let size = attributes[.size] as? Int64 ?? 0
 
             // Get relative path
-            let relativePath = String(fileURL.path.dropFirst(storageURL.path.count + 1))
+            let relativePath = String(fileURL.filePath.dropFirst(storageURL.filePath.count + 1))
 
             // Determine content type from file extension
             guard let contentType = FileStorageContentType.from(relativePath: relativePath) else {
@@ -71,7 +73,6 @@ struct FileEnumerator {
                 size: size
             ))
         }
-
         return files
     }
 
@@ -120,12 +121,12 @@ struct FileEnumerator {
             #endif
 
             // Get metadata
-            let attributes = try fileManager.attributesOfItem(atPath: fileURL.path)
+            let attributes = try fileManager.attributesOfItem(atPath: fileURL.filePath)
             let modifiedAt = attributes[.modificationDate] as? Date ?? Date()
             let size = attributes[.size] as? Int64 ?? 0
 
             // Get relative path
-            let relativePath = String(fileURL.path.dropFirst(containerURL.path.count + 1))
+            let relativePath = String(fileURL.filePath.dropFirst(containerURL.filePath.count + 1))
 
             // Determine content type from file extension
             guard let contentType = FileStorageContentType.from(relativePath: relativePath) else {

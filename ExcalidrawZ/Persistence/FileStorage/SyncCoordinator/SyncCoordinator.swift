@@ -339,7 +339,7 @@ actor SyncCoordinator {
         
         // Get iCloud metadata
         let iCloudURL = try await iCloudManager.getFileURL(relativePath: event.relativePath)
-        let attributes = try FileManager.default.attributesOfItem(atPath: iCloudURL.path)
+        let attributes = try FileManager.default.attributesOfItem(atPath: iCloudURL.filePath)
         let iCloudModifiedAt = attributes[.modificationDate] as? Date ?? Date()
         
         // Determine content type from file extension
@@ -537,7 +537,7 @@ actor SyncCoordinator {
             
             // Check if file actually exists in iCloud
             guard let iCloudURL = try? await iCloudManager.getFileURL(relativePath: relativePath),
-                  FileManager.default.fileExists(atPath: iCloudURL.path) else {
+                  FileManager.default.fileExists(at: iCloudURL) else {
                 return false  // File doesn't exist in iCloud either
             }
             
@@ -557,7 +557,7 @@ actor SyncCoordinator {
         
         // Get iCloud modification date
         let iCloudURL = try await iCloudManager.getFileURL(relativePath: relativePath)
-        guard FileManager.default.fileExists(atPath: iCloudURL.path) else {
+        guard FileManager.default.fileExists(at: iCloudURL) else {
             return false
         }
         
@@ -576,7 +576,7 @@ actor SyncCoordinator {
         }
 #endif
         
-        let attributes = try FileManager.default.attributesOfItem(atPath: iCloudURL.path)
+        let attributes = try FileManager.default.attributesOfItem(atPath: iCloudURL.filePath)
         guard let iCloudModifiedAt = attributes[.modificationDate] as? Date else {
             return false
         }

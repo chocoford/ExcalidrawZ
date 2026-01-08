@@ -145,7 +145,7 @@ struct LocalFilesProvider<Content: View>: View {
                         // Include files even if they are not downloaded (iCloud Drive files)
                         .filter({ url in
                             // Check if file exists locally or if it's an iCloud file (even if not downloaded)
-                            if FileManager.default.fileExists(atPath: url.path) {
+                            if FileManager.default.fileExists(at: url) {
                                 return true
                             }
                             

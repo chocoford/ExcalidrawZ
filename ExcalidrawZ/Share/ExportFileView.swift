@@ -220,12 +220,8 @@ struct ExportFileView: View {
                     throw NoContentError()
                 }
 
-                if #available(macOS 13.0, *) {
-                    fileManager.createFile(atPath: url.path(percentEncoded: false), contents: fileData)
-                } else {
-                    fileManager.createFile(atPath: url.standardizedFileURL.path, contents: fileData)
-                }
-
+                fileManager.createFile(atPath: url.filePath, contents: fileData)
+                
                 await MainActor.run {
                     fileURL = url
                 }

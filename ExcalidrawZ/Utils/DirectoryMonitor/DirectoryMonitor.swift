@@ -29,8 +29,7 @@ final class DirectoryObserver {
     var anyChangedPublisher: PassthroughSubject<DirectoryMonitor.Event, Never> = .init()
     
     func addObservationDestination(url: URL, onEvent: @escaping (DirectoryMonitor.Event) -> Void = {_ in}) {
-        let path = url.absoluteURL.path(percentEncoded: false)
-        guard FileManager.default.fileExists(atPath: path) else {
+        guard FileManager.default.fileExists(at: url) else {
             return
         }
 //        do {
@@ -153,7 +152,7 @@ public class DirectoryMonitor {
         FSEventStreamStop(eventStream)
         FSEventStreamInvalidate(eventStream)
         FSEventStreamRelease(eventStream)
-        print("Stopped monitoring directory: \(presentedItemURL.path)")
+        print("Stopped monitoring directory: \(presentedItemURL.filePath)")
     }
 
     // FSEventStream callback with @convention(c)

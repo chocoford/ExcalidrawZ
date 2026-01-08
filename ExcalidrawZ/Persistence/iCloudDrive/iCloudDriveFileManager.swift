@@ -132,7 +132,7 @@ actor iCloudDriveFileManager {
         
         let directoryURL = containerURL.appendingPathComponent(directory.path)
         
-        if !FileManager.default.fileExists(atPath: directoryURL.path) {
+        if !FileManager.default.fileExists(at: directoryURL) {
             try FileManager.default.createDirectory(
                 at: directoryURL,
                 withIntermediateDirectories: true,
@@ -185,7 +185,7 @@ actor iCloudDriveFileManager {
 
         let fileURL = containerURL.appendingPathComponent(relativePath)
 
-        if FileManager.default.fileExists(atPath: fileURL.path) {
+        if FileManager.default.fileExists(at: fileURL) {
             try await fileCoordinator.deleteFile(url: fileURL)
             logger.info("Deleted content from iCloud Drive: \(relativePath)")
         }
@@ -294,7 +294,7 @@ actor iCloudDriveFileManager {
 
         let fileURL = containerURL.appendingPathComponent(relativePath)
 
-        if FileManager.default.fileExists(atPath: fileURL.path) {
+        if FileManager.default.fileExists(at: fileURL) {
             try await fileCoordinator.deleteFile(url: fileURL)
             logger.info("Deleted checkpoint from iCloud Drive: \(relativePath)")
         }
@@ -418,7 +418,7 @@ actor iCloudDriveFileManager {
 
         // Set iCloud timestamp to match local
         let date = localUpdatedAt ?? Date()
-        try? FileManager.default.setAttributes([.modificationDate: date], ofItemAtPath: iCloudURL.path)
+        try? FileManager.default.setAttributes([.modificationDate: date], ofItemAtPath: iCloudURL.filePath)
 
         logger.info("Successfully uploaded to iCloud: \(relativePath)")
         return relativePath
@@ -456,7 +456,7 @@ actor iCloudDriveFileManager {
         let relativePath = "\(Directory.mediaItems.path)/\(filename)"
 
         // Check if file exists in iCloud
-        if FileManager.default.fileExists(atPath: iCloudURL.path) {
+        if FileManager.default.fileExists(atPath: iCloudURL.filePath) {
             logger.info("Media item already exists in iCloud, skipping")
             return relativePath
         }
@@ -465,7 +465,7 @@ actor iCloudDriveFileManager {
         try await fileCoordinator.coordinatedWrite(url: iCloudURL, data: data)
         // Always set iCloud timestamp (use local date or current time)
         let date = localUpdatedAt ?? Date()
-        try? FileManager.default.setAttributes([.modificationDate: date], ofItemAtPath: iCloudURL.path)
+        try? FileManager.default.setAttributes([.modificationDate: date], ofItemAtPath: iCloudURL.filePath)
 
         logger.info("Successfully migrated media item to iCloud: \(relativePath)")
         return relativePath

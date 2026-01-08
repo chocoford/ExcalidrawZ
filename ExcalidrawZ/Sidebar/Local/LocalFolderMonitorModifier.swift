@@ -114,11 +114,11 @@ struct LocalFolderMonitorModifier: ViewModifier {
     @MainActor
     private func handleFileChangeEvent(_ event: FSChangeEvent) {
         let path = switch event {
-            case .created(let url): url.path
-            case .modified(let url): url.path
-            case .deleted(let url): url.path
-            case .renamed(_, let newURL): newURL.path
-            case .statusChanged(let url, _): url.path
+            case .created(let url): url.filePath
+            case .modified(let url): url.filePath
+            case .deleted(let url): url.filePath
+            case .renamed(_, let newURL): newURL.filePath
+            case .statusChanged(let url, _): url.filePath
         }
         
         // Only handle .excalidraw files
@@ -142,7 +142,7 @@ struct LocalFolderMonitorModifier: ViewModifier {
                 
             case .renamed(let oldURL, let newURL):
                 logger.debug("File renamed: \(oldURL.lastPathComponent) -> \(newURL.lastPathComponent)")
-                localFolderState.itemRenamedPublisher.send(newURL.path)
+                localFolderState.itemRenamedPublisher.send(newURL.filePath)
                 
                 // Refresh parent folder
                 refreshParentFolderIfNeeded(for: newURL)
@@ -181,7 +181,7 @@ struct LocalFolderMonitorModifier: ViewModifier {
         for folder in folders {
             guard let folderURL = folder.url else { continue }
             
-            if parentURL.path.hasPrefix(folderURL.path) {
+            if parentURL.filePath.hasPrefix(folderURL.filePath) {
                 do {
                     try folder.refreshChildren(context: viewContext)
                 } catch {

@@ -193,10 +193,10 @@ extension LocalFolder {
         let fileManager = FileManager.default
         var isDirectory: ObjCBool = false
 
-        if fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue {
+        if fileManager.fileExists(atPath: url.filePath, isDirectory: &isDirectory) && isDirectory.boolValue {
             return .success(())
         } else {
-            return .failure(LocalFolderPathError(message: "The folder \"\(url.lastPathComponent)\" could not be found. It may have been moved or deleted.\n\nPath: \(url.path)"))
+            return .failure(LocalFolderPathError(message: "The folder \"\(url.lastPathComponent)\" could not be found. It may have been moved or deleted.\n\nPath: \(url.filePath)"))
         }
     }
 }

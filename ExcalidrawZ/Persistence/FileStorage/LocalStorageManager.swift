@@ -76,7 +76,7 @@ actor LocalStorageManager {
         
         let directoryURL = baseURL.appendingPathComponent(directory.path, isDirectory: true)
         
-        if !FileManager.default.fileExists(atPath: directoryURL.path) {
+        if !FileManager.default.fileExists(at: directoryURL) {
             try FileManager.default.createDirectory(
                 at: directoryURL,
                 withIntermediateDirectories: true,
@@ -117,7 +117,7 @@ actor LocalStorageManager {
         let relativePath = "\(self.directory(for: type).path)/\(filename)"
         
         // Check if file exists and content is identical
-        if FileManager.default.fileExists(atPath: fileURL.path) {
+        if FileManager.default.fileExists(at: fileURL) {
             do {
                 let existingContent = try Data(contentsOf: fileURL)
                 if existingContent == content {
@@ -125,7 +125,7 @@ actor LocalStorageManager {
                     do {
                         try FileManager.default.setAttributes(
                             [.modificationDate: updatedAt ?? Date()],
-                            ofItemAtPath: fileURL.path
+                            ofItemAtPath: fileURL.filePath
                         )
                     } catch {
                         logger.info("Update \(type.fileExtension)'s modified_at failed.")
@@ -146,13 +146,13 @@ actor LocalStorageManager {
             do {
                 try FileManager.default.setAttributes(
                     [.modificationDate: updatedAt ?? Date()],
-                    ofItemAtPath: fileURL.path
+                    ofItemAtPath: fileURL.filePath
                 )
             } catch {
                 logger.info("Update \(type.fileExtension)'s modified_at failed.")
             }
             
-            logger.debug("Saved \(type.fileExtension) to local storage: \(filename)")
+            logger.debug("Saved \(type.fileExtension) to local storage: \(fileURL)")
             return SaveResult(relativePath: relativePath, wasModified: true)
         } catch {
             logger.error("Failed to save file: \(error.localizedDescription)")
@@ -170,7 +170,7 @@ actor LocalStorageManager {
         
         let fileURL = baseURL.appendingPathComponent(relativePath)
         
-        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+        guard FileManager.default.fileExists(at: fileURL) else {
             throw FileStorageError.fileNotFound(relativePath)
         }
         
@@ -193,7 +193,7 @@ actor LocalStorageManager {
         
         let fileURL = baseURL.appendingPathComponent(relativePath)
         
-        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+        guard FileManager.default.fileExists(at: fileURL) else {
             logger.warning("File already deleted or not found: \(relativePath)")
             return
         }
@@ -216,7 +216,7 @@ actor LocalStorageManager {
         }
         
         let fileURL = baseURL.appendingPathComponent(relativePath)
-        return FileManager.default.fileExists(atPath: fileURL.path)
+        return FileManager.default.fileExists(at: fileURL)
     }
     
     /// Get file metadata
@@ -229,11 +229,11 @@ actor LocalStorageManager {
         
         let fileURL = baseURL.appendingPathComponent(relativePath)
         
-        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+        guard FileManager.default.fileExists(at: fileURL) else {
             throw FileStorageError.fileNotFound(relativePath)
         }
         
-        let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+        let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.filePath)
         let size = attributes[.size] as? Int64 ?? 0
         let modifiedAt = attributes[.modificationDate] as? Date ?? Date()
         
@@ -272,7 +272,7 @@ actor LocalStorageManager {
             let date = updatedAt ?? Date()
             try? FileManager.default.setAttributes(
                 [.modificationDate: date],
-                ofItemAtPath: fileURL.path
+                ofItemAtPath: fileURL.filePath
             )
 
             logger.debug("Saved media item to local storage: \(filename)")

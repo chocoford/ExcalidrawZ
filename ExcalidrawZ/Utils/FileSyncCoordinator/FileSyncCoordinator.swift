@@ -64,7 +64,7 @@ actor FileSyncCoordinator {
         }
         
         var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+        guard FileManager.default.fileExists(atPath: url.filePath, isDirectory: &isDirectory),
               isDirectory.boolValue else {
             throw FolderError.folderNotFound
         }
