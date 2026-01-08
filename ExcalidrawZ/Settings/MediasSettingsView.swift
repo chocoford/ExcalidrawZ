@@ -248,7 +248,7 @@ struct MediasSettingsView: View {
                         displayMode: .hud,
                         type: .complete(.green),
                         title: String(localizable: .generalSuccess),
-                        subTitle: "Removed \(result.deletedCount) orphaned media items.",
+                        subTitle: String(localizable: .settingsMediaFilesCleanUpSuccessMessage(result.deletedCount)),
                     )
                 )
             }

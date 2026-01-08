@@ -43968,12 +43968,6 @@
     "settingsMediaFilesButtonCleanUp": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clean Up"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -43984,6 +43978,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bereinigen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clean Up"
           }
         },
         "es": {
@@ -44081,12 +44081,6 @@
     "settingsMediaFilesButtonHelpCleanUp": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clean Up Orphaned Media"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -44097,6 +44091,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Verwaiste Medien bereinigen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clean Up Orphaned Media"
           }
         },
         "es": {
@@ -44194,12 +44194,6 @@
     "settingsMediaFilesCleanUpConfirmationDialogMessage": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This will remove media items that are no longer referenced by any file or checkpoint. This action cannot be undone."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -44210,6 +44204,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dabei werden verwaiste Medien entfernt, auf die keine Datei oder kein Checkpoint mehr verweist. Diese Aktion kann nicht rückgängig gemacht werden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This will remove media items that are no longer referenced by any file or checkpoint. This action cannot be undone."
           }
         },
         "es": {
@@ -44307,12 +44307,6 @@
     "settingsMediaFilesCleanUpConfirmationDialogTitle": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clean Up Orphaned Media"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -44323,6 +44317,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Verwaiste Medien bereinigen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clean Up Orphaned Media"
           }
         },
         "es": {
@@ -44413,6 +44413,119 @@
           "stringUnit": {
             "state": "translated",
             "value": "清理未被參考的媒體"
+          }
+        }
+      }
+    },
+    "settingsMediaFilesCleanUpSuccessMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removed %d orphaned media items."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تمت إزالة %d من عناصر الوسائط المتروكة."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entfernte %d verwaiste Mediendateien."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se eliminaron %d elementos multimedia huérfanos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suppression de %d éléments multimédias orphelins."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d असंबद्ध मीडिया आइटम हटाए गए।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimossi %d elementi multimediali orfani."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "孤立したメディア項目を%d件削除しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "고아 미디어 항목 %d개를 제거했습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er zijn %d ongekoppelde mediabestanden verwijderd."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunięto %d osieroconych plików multimedialnych."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removidos %d itens de mídia órfãos."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалено %d неиспользуемых медиафайлов."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลบไฟล์สื่อที่ไม่มีการอ้างอิงจำนวน %d รายการแล้ว"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanılmayan %d medya öğesi kaldırıldı."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xóa %d mục phương tiện mồ côi."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已删除 %d 个孤立的媒体项。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已移除 %d 個孤立的媒體項目。"
           }
         }
       }
