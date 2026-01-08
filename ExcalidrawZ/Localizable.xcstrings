@@ -13453,12 +13453,6 @@
     "generalAndXXXMore": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "and %d more..."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -13469,6 +13463,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "und %d weitere..."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "and %d more..."
           }
         },
         "es": {
@@ -26340,73 +26340,73 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "المجلدات المحلية"
+            "value": "المجلدات المرتبطة"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lokale Ordner"
+            "value": "Verknüpfte Ordner"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Local Folders"
+            "value": "Linked Folders"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Carpetas locales"
+            "value": "Carpetas vinculadas"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dossiers locaux"
+            "value": "Dossiers liés"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "स्थानीय फ़ोल्डर"
+            "value": "लिंक किए गए फ़ोल्डर"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cartelle locali"
+            "value": "Cartelle collegate"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ローカルフォルダ"
+            "value": "リンク済みフォルダ"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "로컬 폴더"
+            "value": "연결된 폴더"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lokale mappen"
+            "value": "Gekoppelde mappen"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Foldery lokalne"
+            "value": "Powiązane foldery"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pastas locais"
+            "value": "Pastas vinculadas"
           }
         },
         "ru": {
@@ -26418,31 +26418,31 @@
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "โฟลเดอร์ในเครื่อง"
+            "value": "โฟลเดอร์ที่เชื่อมโยง"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Yerel Klasörler"
+            "value": "Bağlı Klasörler"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thư mục cục bộ"
+            "value": "Thư mục liên kết"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "本地文件夹"
+            "value": "已链接的文件夹"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "本機資料夾"
+            "value": "已連結的資料夾"
           }
         }
       }
@@ -27696,12 +27696,6 @@
     "migrationArchiveFailedItemsTitle": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Some files failed to archive (%d)"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -27712,6 +27706,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Einige Dateien konnten nicht archiviert werden (%d)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some files failed to archive (%d)"
           }
         },
         "es": {
@@ -27809,12 +27809,6 @@
     "migrationArchivingTitle": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Archiving…"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -27825,6 +27819,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Archivierung..."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archiving…"
           }
         },
         "es": {
@@ -28148,12 +28148,6 @@
     "migrationButtonSkipAndContinue": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skip and Continue"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -28164,6 +28158,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Überspringen und fortfahren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip and Continue"
           }
         },
         "es": {
@@ -28261,12 +28261,6 @@
     "migrationButtonStartMigration": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Start Migration"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -28277,6 +28271,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Migration starten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Migration"
           }
         },
         "es": {
@@ -28713,12 +28713,6 @@
     "migrationICloudSyncHintIdleTitle": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Checking for iCloud updates..."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -28729,6 +28723,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Auf iCloud-Updates prüfen..."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking for iCloud updates..."
           }
         },
         "es": {
@@ -28826,12 +28826,6 @@
     "migrationICloudSyncHintMessage": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "If you've already migrated on another device, the app will continue automatically after sync."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -28842,6 +28836,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wenn Sie die Migration bereits auf einem anderen Gerät durchgeführt haben, wird die App nach der Synchronisierung automatisch fortfahren."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you've already migrated on another device, the app will continue automatically after sync."
           }
         },
         "es": {
@@ -28939,12 +28939,6 @@
     "migrationICloudSyncHintWaitingForSyncTitle": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Waiting for iCloud sync to complete..."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -28955,6 +28949,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Warten auf Abschluss der iCloud-Synchronisierung..."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for iCloud sync to complete..."
           }
         },
         "es": {
@@ -29052,12 +29052,6 @@
     "migrationItemFailedItemsTitle": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "\"Failed Items (%d):”"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -29068,6 +29062,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "\"Fehlgeschlagene Elemente (%d):\""
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"Failed Items (%d):”"
           }
         },
         "es": {
@@ -29384,6 +29384,119 @@
           "stringUnit": {
             "state": "translated",
             "value": "將內容移至檔案儲存"
+          }
+        }
+      }
+    },
+    "migrationMoveContentToICloudDriveSkipAlertMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Are you sure to skip these files? Doing so will reset their contents."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هل أنت متأكد من تخطي هذه الملفات؟ سيؤدي ذلك إلى إعادة ضبط محتوياتها."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sind Sie sicher, dass Sie diese Dateien überspringen möchten? Dadurch werden deren Inhalte zurückgesetzt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Está seguro de omitir estos archivos? Al hacerlo, se restablecerá su contenido."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Êtes-vous sûr de vouloir ignorer ces fichiers ? Cela réinitialisera leur contenu."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "क्या आप सुनिश्चित हैं कि आप इन फ़ाइलों को छोड़ना चाहते हैं? ऐसा करने पर उनकी सामग्री रीसेट हो जाएगी।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sei sicuro di voler ignorare questi file? Così facendo il loro contenuto verrà azzerato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "これらのファイルをスキップしてもよろしいですか？スキップすると内容がリセットされます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정말로 이 파일들을 건너뛰시겠습니까? 이렇게 하면 해당 파일들의 내용이 초기화됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weet u zeker dat u deze bestanden wilt overslaan? Hierdoor wordt de inhoud ervan gereset."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czy na pewno chcesz pominąć te pliki? Spowoduje to zresetowanie ich zawartości."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tem certeza de que deseja ignorar estes arquivos? Isso redefinirá o conteúdo deles."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы уверены, что хотите пропустить эти файлы? Это действие сбросит их содержимое."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คุณแน่ใจหรือไม่ว่าต้องการข้ามไฟล์เหล่านี้? การดำเนินการนี้จะรีเซ็ตเนื้อหาในไฟล์เหล่านี้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu dosyaları atlamak istediğinizden emin misiniz? Bunu yaparsanız içerikleri sıfırlanacaktır."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn có chắc chắn muốn bỏ qua các tệp này? Việc làm như vậy sẽ đặt lại nội dung của chúng."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要跳过这些文件吗？这样会重置它们的内容。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確定要跳過這些檔案嗎？這樣做會重設它們的內容。"
           }
         }
       }
@@ -32781,12 +32894,6 @@
     "migrationTooltipArchiveFirst": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Archive Files First"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -32797,6 +32904,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zuerst Dateien archivieren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive Files First"
           }
         },
         "es": {
@@ -47248,109 +47361,109 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "استيراد مجلد"
+            "value": "ربط مجلد"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Einen Ordner importieren"
+            "value": "Ordner verknüpfen"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import a Folder"
+            "value": "Link a Folder"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Importar una carpeta"
+            "value": "Vincular carpeta"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Importer un dossier"
+            "value": "Lier un dossier"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "एक फ़ोल्डर आयात करें"
+            "value": "फ़ोल्डर लिंक करें"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Importa una cartella"
+            "value": "Collega una cartella"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "フォルダをインポート"
+            "value": "フォルダをリンク"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "폴더 가져오기"
+            "value": "폴더 연결"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Importeer een map"
+            "value": "Koppel een map"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Importuj folder"
+            "value": "Powiąż folder"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Importar uma Pasta"
+            "value": "Vincular pasta"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Импортировать папку"
+            "value": "Привязать локальную папку"
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "นำเข้าโฟลเดอร์"
+            "value": "เชื่อมโยงโฟลเดอร์"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bir Klasör İçe Aktar"
+            "value": "Klasör Bağla"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nhập một thư mục"
+            "value": "Liên kết một thư mục"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "导入文件夹"
+            "value": "链接文件夹"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "導入資料夾"
+            "value": "連結資料夾"
           }
         }
       }
@@ -50299,109 +50412,109 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تسمح لك المجلدات المحلية بالرجوع إلى ملفات Excalidraw المخزنة على قرصك والعمل عليها."
+            "value": "تتيح لك المجلدات المرتبطة الوصول إلى ملفات Excalidraw المخزنة على قرصك والعمل عليها."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lokale Ordner ermöglichen es dir, auf Excalidraw-Dateien auf deiner Festplatte zuzugreifen und mit ihnen zu arbeiten."
+            "value": "Verknüpfte Ordner ermöglichen es dir, Excalidraw-Dateien, die auf deiner Festplatte gespeichert sind, einzubinden und mit ihnen zu arbeiten."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Local folders allow you to reference and work with Excalidraw files stored on your disk."
+            "value": "Linked folders allow you to reference and work with Excalidraw files stored on your disk."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Las carpetas locales permiten referenciar y trabajar con archivos de Excalidraw almacenados en tu disco."
+            "value": "Las carpetas vinculadas te permiten hacer referencia y trabajar con archivos de Excalidraw almacenados en tu disco."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Les dossiers locaux vous permettent de référencer et de travailler avec des fichiers Excalidraw stockés sur votre disque."
+            "value": "Les dossiers liés vous permettent de référencer et de travailler sur des fichiers Excalidraw stockés sur votre disque."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "स्थानीय फ़ोल्डर आपको डिस्क पर संग्रहीत Excalidraw फ़ाइलों को संदर्भित करने और उनके साथ काम करने की अनुमति देते हैं।"
+            "value": "लिंक किए गए फ़ोल्डर आपको डिस्क पर संग्रहीत Excalidraw फ़ाइलों को संदर्भित करने और उनके साथ काम करने की अनुमति देते हैं।"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Le cartelle locali ti consentono di consultare e modificare file di Excalidraw memorizzati sul disco."
+            "value": "Le cartelle collegate ti permettono di fare riferimento ai file di Excalidraw presenti sul tuo disco e di lavorarci."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ローカルフォルダでは、ディスクに保存されているExcalidrawファイルを参照して作業できます。"
+            "value": "リンク済みフォルダでは、ディスクに保存されているExcalidrawファイルを参照して作業できます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "로컬 폴더를 사용하면 디스크에 저장된 Excalidraw 파일을 참조하고 작업할 수 있습니다."
+            "value": "연결된 폴더를 통해 디스크에 저장된 Excalidraw 파일을 참조하고 작업할 수 있습니다."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lokale mappen maken het mogelijk om te verwijzen naar en te werken met Excalidraw-bestanden die op je schijf zijn opgeslagen."
+            "value": "Gekoppelde mappen maken het mogelijk om te verwijzen naar en te werken met Excalidraw-bestanden die op je schijf zijn opgeslagen."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lokalne foldery umożliwiają odwoływanie się do plików Excalidraw przechowywanych na dysku i pracę z nimi."
+            "value": "Powiązane foldery umożliwiają dostęp do plików Excalidraw przechowywanych na dysku i pracę z nimi."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "As pastas locais permitem que você referencie e trabalhe com arquivos do Excalidraw armazenados no seu disco."
+            "value": "Pastas vinculadas permitem que você acesse e trabalhe com arquivos do Excalidraw armazenados no seu disco."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Локальные папки позволяют получить доступ к файлам Excalidraw, хранящимся на вашем диске, и работать с ними."
+            "value": "Локальные папки позволяют работать с файлами Excalidraw, хранящимися на вашем диске."
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "โฟลเดอร์ในเครื่องช่วยให้คุณอ้างอิงและทำงานกับไฟล์ Excalidraw ที่เก็บไว้บนดิสก์ของคุณได้"
+            "value": "โฟลเดอร์ที่เชื่อมโยงช่วยให้คุณเข้าถึงและทำงานกับไฟล์ Excalidraw ที่เก็บไว้บนดิสก์ของคุณ"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Diskinizde saklanan Excalidraw dosyalarına erişmenizi ve onlarla çalışmanızı sağlar."
+            "value": "Bağlı klasörler, diskinizde saklanan Excalidraw dosyalarına erişmenizi ve onlarla çalışmanızı sağlar."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Các thư mục cục bộ cho phép bạn truy cập và làm việc với các tệp Excalidraw được lưu trên ổ đĩa của bạn."
+            "value": "Các thư mục liên kết cho phép bạn tham chiếu và làm việc với các tệp Excalidraw được lưu trên ổ đĩa của bạn."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "本地文件夹可让你引用并处理存储在磁盘上的 Excalidraw 文件。"
+            "value": "已链接的文件夹允许你访问并处理存储在磁盘上的 Excalidraw 文件。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "本機資料夾可讓您參考並操作儲存在您磁碟上的 Excalidraw 檔案。"
+            "value": "已連結的資料夾可讓您存取並操作儲存在磁碟上的 Excalidraw 檔案。"
           }
         }
       }
@@ -67928,73 +68041,73 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "قم بفتح وحفظ ملفات Excalidraw بسهولة مباشرة من المجلدات المحلية الخاصة بك - تكامل سلس لأسلوب عملك."
+            "value": "افتح واحفظ ملفات Excalidraw بسهولة مباشرةً من المجلدات المرتبطة — تكامل سلس مع سير عملك."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Öffnen und speichern Sie Excalidraw-Dateien ganz einfach direkt aus Ihren lokalen Ordnern – nahtlose Integration in Ihren Workflow."
+            "value": "Öffne und speichere Excalidraw-Dateien ganz einfach direkt aus deinen verknüpften Ordnern – nahtlos in deinen Workflow integriert."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Easily open and save Excalidraw files directly from your local folders—seamless integration for your workflow."
+            "value": "Easily open and save Excalidraw files directly from your linked folders—seamless integration for your workflow."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Abre y guarda archivos de Excalidraw directamente desde tus carpetas locales con facilidad: integración perfecta para tu flujo de trabajo."
+            "value": "Abre y guarda archivos de Excalidraw directamente desde tus carpetas vinculadas: integración perfecta para tu flujo de trabajo."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ouvrez et enregistrez facilement des fichiers Excalidraw directement depuis vos dossiers locaux—intégration transparente pour votre flux de travail."
+            "value": "Ouvrez et enregistrez facilement des fichiers Excalidraw directement depuis vos dossiers liés — intégration transparente à votre flux de travail."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "अपने स्थानीय फ़ोल्डरों से सीधे Excalidraw फ़ाइलें खोलें और सहेजें—आपके कार्य प्रवाह के लिए निर्बाध एकीकरण।"
+            "value": "लिंक किए गए फ़ोल्डरों से Excalidraw फ़ाइलें सीधे और आसानी से खोलें और सहेजें — आपके कार्य प्रवाह के लिए निर्बाध एकीकरण।"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apri e salva facilmente i file di Excalidraw direttamente dalle tue cartelle locali—integrazione senza soluzione di continuità per il tuo flusso di lavoro."
+            "value": "Apri e salva facilmente i file di Excalidraw direttamente dalle tue cartelle collegate — integrazione perfetta nel tuo flusso di lavoro."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ローカルフォルダから直接Excalidrawファイルを簡単に開いたり保存したりできます。ワークフローにシームレスな統合を提供します。"
+            "value": "リンク済みフォルダからExcalidrawファイルを直接簡単に開いたり保存したりでき、ワークフローにシームレスに統合されます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "로컬 폴더에서 Excalidraw 파일을 쉽게 열고 저장하세요—워크플로우를 위한 원활한 통합입니다."
+            "value": "연결된 폴더에서 Excalidraw 파일을 바로 열고 저장하세요 — 작업 흐름에 원활하게 통합됩니다."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open en sla Excalidraw-bestanden eenvoudig rechtstreeks vanaf je lokale mappen op—naadloze integratie voor je workflow."
+            "value": "Open en sla Excalidraw-bestanden eenvoudig rechtstreeks vanuit je gekoppelde mappen op — naadloze integratie in je workflow."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Łatwo otwieraj i zapisuj pliki Excalidraw bezpośrednio z lokalnych folderów—płynna integracja z Twoim przepływem pracy."
+            "value": "Łatwo otwieraj i zapisuj pliki Excalidraw bezpośrednio z powiązanych folderów — płynna integracja z Twoim przepływem pracy."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Abra e salve facilmente arquivos do Excalidraw diretamente de suas pastas locais—integração perfeita para seu fluxo de trabalho."
+            "value": "Abra e salve facilmente arquivos do Excalidraw diretamente das suas pastas vinculadas — integração perfeita ao seu fluxo de trabalho."
           }
         },
         "ru": {
@@ -68006,31 +68119,31 @@
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "เปิดและบันทึกไฟล์ Excalidraw ได้อย่างง่ายดายจากโฟลเดอร์ภายในเครื่องของคุณ—การบูรณาการที่ไร้รอยต่อสำหรับการทำงานของคุณ."
+            "value": "เปิดและบันทึกไฟล์ Excalidraw ได้อย่างง่ายดายโดยตรงจากโฟลเดอร์ที่เชื่อมโยงของคุณ — การผสานอย่างราบรื่นกับกระบวนการทำงานของคุณ"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Excalidraw dosyalarını yerel klasörlerinizden doğrudan açıp kaydedin—iş akışınız için kesintisiz entegrasyon."
+            "value": "Bağlı klasörlerinizden Excalidraw dosyalarını kolayca doğrudan açın ve kaydedin—iş akışınıza sorunsuz entegrasyon."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dễ dàng mở và lưu tệp Excalidraw trực tiếp từ các thư mục cục bộ của bạn—tích hợp liền mạch cho quy trình làm việc của bạn."
+            "value": "Dễ dàng mở và lưu các tệp Excalidraw trực tiếp từ các thư mục liên kết của bạn — tích hợp liền mạch cho quy trình làm việc của bạn."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "轻松从本地文件夹直接打开和保存 Excalidraw 文件—为您的工作流程无缝集成。"
+            "value": "轻松直接从已链接的文件夹打开和保存 Excalidraw 文件，与你的工作流程无缝集成。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "輕鬆直接從本地文件夾打開和保存 Excalidraw 文件—無縫集成您的工作流程。"
+            "value": "輕鬆從已連結的資料夾直接開啟與儲存 Excalidraw 檔案，無縫融入您的工作流程。"
           }
         }
       }

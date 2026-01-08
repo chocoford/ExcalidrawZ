@@ -41,13 +41,13 @@ struct CompactExcalidrawHomeView: View {
             }
             
             TabView {
-                Tab("Recently", systemImage: SFSymbol.clockFill.rawValue) {
+                Tab(.localizable(.compactRecentlyTitle), systemImage: SFSymbol.clockFill.rawValue) {
                     CompactRecentlyView()
                 }
-                Tab("Collaboration", systemImage: SFSymbol.person3Fill.rawValue) {
+                Tab(.localizable(.collaborationHomeTitle), systemImage: SFSymbol.person3Fill.rawValue) {
                     CompactCollaborationHomeView()
                 }
-                Tab("Browse", systemImage: SFSymbol.folderFill.rawValue) {
+                Tab(.localizable(.compactBrowserTitle), systemImage: SFSymbol.folderFill.rawValue) {
                     CompactBrowseRootView()
                 }
                 Tab(role: .search) {

@@ -24,7 +24,15 @@ struct PDFViewerModifier: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: .openPDFViewer)) { notification in
                 if let info = notification.object as? PDFViewerInfo {
-                    viewerInfo = info
+                    if let currentInfo = viewerInfo, currentInfo.fileId == info.fileId {
+                        viewerInfo = PDFViewerInfo(
+                            fileId: currentInfo.fileId,
+                            pdfData: info.pdfData ?? currentInfo.pdfData,
+                            mimeType: info.mimeType
+                        )
+                    } else {
+                        viewerInfo = info
+                    }
                 }
             }
     }

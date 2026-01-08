@@ -10,7 +10,7 @@ import PDFKit
 
 
 struct PDFViewerSheet: View {
-    let pdfData: Data
+    let pdfData: Data?
     let fileId: String
 
     @Environment(\.dismiss) private var dismiss
@@ -22,7 +22,10 @@ struct PDFViewerSheet: View {
         navigationView {
             VStack(spacing: 0) {
                 // PDF Content
-                if let pdfDocument = pdfDocument {
+                if pdfData == nil {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let pdfDocument = pdfDocument {
                     PDFViewRepresentable(document: pdfDocument, currentPage: $currentPage)
                         .ignoresSafeArea()
                 } else {
@@ -67,6 +70,9 @@ struct PDFViewerSheet: View {
         }
         .onAppear {
             loadPDF()
+        }
+        .onChange(of: pdfData) { newValue in
+            loadPDF(data: newValue)
         }
     }
 
@@ -122,8 +128,9 @@ struct PDFViewerSheet: View {
         }
     }
 
-    private func loadPDF() {
-        pdfDocument = PDFDocument(data: pdfData)
+    private func loadPDF(data: Data? = nil) {
+        let pdfData = data ?? pdfData
+        pdfDocument = pdfData.flatMap { PDFDocument(data: $0) }
         totalPages = pdfDocument?.pageCount ?? 0
     }
 

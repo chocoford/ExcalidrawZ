@@ -162,7 +162,7 @@ struct GroupListView: View {
                                 .modifier(
                                     ContentHeaderCreateButtonHoverModifier(
                                         groupType: .localFolder,
-                                        title: .localizable(.sidebarGroupListSectionHeaderLocal)
+                                        title: .localizable(.localFoldersTitle)
                                     )
                                 )
                         }

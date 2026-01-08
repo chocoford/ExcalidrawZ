@@ -51,13 +51,6 @@ struct PDFInsertSheetViewModifier: ViewModifier {
                     self.sheetItem = dropInfo
                 }
             }
-            .onChange(of: isPresented) { newValue in
-                if !newValue {
-                    sheetItem = nil
-                } else {
-                    sheetItem
-                }
-            }
     }
 
     private func handlePDFInsert(

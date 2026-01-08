@@ -321,6 +321,8 @@ struct MigrationProgressSheet: View {
         .disabled(isArchiving)
     }
     
+    @State private var isSkipAlertPresented = false
+    
     @MainActor @ViewBuilder
     private func errorActionsView() -> some View {
         var isMigrating: Bool {
@@ -329,9 +331,7 @@ struct MigrationProgressSheet: View {
         
         // Left button: Skip and continue with auto-resolve
         Button {
-            Task {
-                await runMigrations(autoResolveErrors: true)
-            }
+            isSkipAlertPresented.toggle()
         } label: {
             Text(localizable: .migrationButtonSkipAndContinue)
                 .frame(maxWidth: .infinity)
@@ -344,6 +344,22 @@ struct MigrationProgressSheet: View {
         }
         .modernButtonStyle(style: .glass, size: .large, shape: .capsule)
         .disabled(isMigrating)
+        .alert(
+            String(localizable: .migrationButtonSkipAndContinue),
+            isPresented: $isSkipAlertPresented
+        ) {
+            Button(role: .cancel) {} label: { Text(localizable: .generalButtonCancel) }
+            Button {
+                Task {
+                    await runMigrations(autoResolveErrors: true)
+                }
+            } label: {
+                Text(localizable: .generalButtonConfirm)
+            }
+        } message: {
+            Text(localizable: .migrationMoveContentToICloudDriveSkipAlertMessage)
+        }
+
         
         // Right button: Retry (recommended)
         Button {

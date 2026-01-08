@@ -163,6 +163,7 @@ struct CompactBrowseRootView: View {
         }
     }
     
+    @State private var isCreateGroupDialogPresented = false
     @State private var isImportLocalFolderDialogPresented = false
     
     @MainActor @ToolbarContentBuilder
@@ -174,21 +175,19 @@ struct CompactBrowseRootView: View {
         ToolbarItem(placement: .automatic) {
             Menu {
                 SwiftUI.Group {
-                    NewGroupButton(type: .group, parentID: nil) { type in
-                        ZStack {
-                            switch type {
-                                case .localFolder:
-                                    Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .plusCircleFill)
-                                case .group:
-                                    Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
-                            }
-                        }
+                    Button {
+                        isCreateGroupDialogPresented.toggle()
+                    } label: {
+                        Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
                     }
                     
                     Button {
                         isImportLocalFolderDialogPresented.toggle()
                     } label: {
-                        Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .squareAndArrowDown)
+                        Label(
+                            .localizable(.sidebarGroupListButtonAddObservation),
+                            systemSymbol: .squareAndArrowDown
+                        )
                     }
                 }
                 .labelStyle(.titleAndIcon)
@@ -196,7 +195,15 @@ struct CompactBrowseRootView: View {
                 Label(.localizable(.generalButtonMore), systemSymbol: .ellipsis)
                     .labelStyle(.iconOnly)
             }
-            .modifier(ImportLocalFolderModifier(isPresented: $isImportLocalFolderDialogPresented))
+            .modifier(
+                CreateGroupModifier(
+                    isPresented: $isCreateGroupDialogPresented,
+                    parentGroupID: nil,
+                )
+            )
+            .modifier(
+                ImportLocalFolderModifier(isPresented: $isImportLocalFolderDialogPresented)
+            )
         }
     }
 }

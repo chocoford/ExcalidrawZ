@@ -337,6 +337,7 @@ struct ExcalidrawContainerWrapper: View {
 
     /// Compare only elements and appState fields from two JSON data
     private func compareExcalidrawContent(_ data1: Data, _ data2: Data) -> Bool {
+        let start = Date()
         do {
             guard let dict1 = try JSONSerialization.jsonObject(with: data1) as? [String: Any],
                   let dict2 = try JSONSerialization.jsonObject(with: data2) as? [String: Any] else {
@@ -356,6 +357,7 @@ struct ExcalidrawContainerWrapper: View {
             let appState1JSON = try JSONSerialization.data(withJSONObject: dict1["appState"] ?? [:])
             let appState2JSON = try JSONSerialization.data(withJSONObject: dict2["appState"] ?? [:])
 
+            self.logger.info("compareExcalidrawContent time consume: \((Date().timeIntervalSince(start)).formatted())")
             return elements1JSON == elements2JSON && appState1JSON == appState2JSON
         } catch {
             logger.error("Failed to compare excalidraw content: \(error)")

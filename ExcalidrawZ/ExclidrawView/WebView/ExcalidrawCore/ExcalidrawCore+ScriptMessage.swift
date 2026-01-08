@@ -30,7 +30,7 @@ extension ExcalidrawCore: WKScriptMessageHandler {
             let message = try JSONDecoder().decode(ExcalidrawZMessage.self, from: data)
             
 //            self.logger.info("[WKScriptMessageHandler] Did receive message: \(String(describing: message))")
-            
+            // let start = Date()
             switch message {
                 case .onload:
                     DispatchQueue.main.async {
@@ -136,6 +136,7 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     // self.onWebLog(message: logMessage)
                     break
             }
+            // print("[DEBUG] ExcalidrawCore didReceive message, time cost:", Date().timeIntervalSince(start).formatted())
         } catch {
             self.logger.error("[WKScriptMessageHandler] Decode received message failed. Raw data:\n\(String(describing: message.body))")
             self.publishError(error)
@@ -335,25 +336,45 @@ extension ExcalidrawCore {
     }
 
     func handleOpenPDFNatively(_ data: OpenPDFNativelyMessage.OpenPDFNativelyMessageData) {
-        // Parse base64 data from dataURL using utility function
-        guard let pdfData = decodeBase64FromDataURL(data.dataURL) else {
-            logger.error("Failed to decode base64 PDF data from dataURL")
-            return
-        }
-
-        // Create PDF viewer info struct
-        let pdfInfo = PDFViewerInfo(
+        // Open viewer immediately, then decode PDF in background.
+        let placeholderInfo = PDFViewerInfo(
             fileId: data.fileId,
-            pdfData: pdfData,
+            pdfData: nil,
             mimeType: data.mimeType
         )
-
-        // Post notification to trigger PDF viewer
         DispatchQueue.main.async {
             NotificationCenter.default.post(
                 name: .openPDFViewer,
-                object: pdfInfo
+                object: placeholderInfo
             )
+        }
+
+        Task.detached(priority: .userInitiated) {
+            let start = Date()
+            guard let pdfData = decodeBase64FromDataURL(data.dataURL) else {
+                self.logger.error("Failed to decode base64 PDF data from dataURL")
+                return
+            }
+            self.logger.info("handleOpenPDFNatively decode PDF time: \(Date().timeIntervalSince(start).formatted())")
+
+#if canImport(PDFKit)
+            if PDFDocument(data: pdfData) == nil {
+                self.logger.error("Invalid PDF Data")
+                return
+            }
+#endif
+
+            let pdfInfo = PDFViewerInfo(
+                fileId: data.fileId,
+                pdfData: pdfData,
+                mimeType: data.mimeType
+            )
+            await MainActor.run {
+                NotificationCenter.default.post(
+                    name: .openPDFViewer,
+                    object: pdfInfo
+                )
+            }
         }
 
         logger.info("PDF native viewer requested for file: \(data.fileId)")
@@ -875,10 +896,10 @@ struct PDFDropInfo: Identifiable, Hashable {
 struct PDFViewerInfo: Identifiable {
     let id: String  // Use fileId as the identifier
     let fileId: String
-    let pdfData: Data
+    let pdfData: Data?
     let mimeType: String
 
-    init(fileId: String, pdfData: Data, mimeType: String) {
+    init(fileId: String, pdfData: Data?, mimeType: String) {
         self.id = fileId
         self.fileId = fileId
         self.pdfData = pdfData
@@ -892,6 +913,7 @@ extension Notification.Name {
 
 extension ExcalidrawFile {
     mutating func update(data: ExcalidrawView.Coordinator.ExcalidrawFileData) throws {
+        // let start = Date()
         guard let content = self.content else {
             struct EmptyContentError: LocalizedError {
                 var errorDescription: String? { "Invalid excalidraw file." }
@@ -900,7 +922,6 @@ extension ExcalidrawFile {
         }
 
         var contentObject = try JSONSerialization.jsonObject(with: content) as! [String : Any]
-        // print("[ExcalidrawFile] update with obj: \(contentObject)")
         guard let dataData = data.dataString.data(using: .utf8),
               let fileDataJson = try JSONSerialization.jsonObject(with: dataData) as? [String : Any] else {
             struct InvalidPayloadError: LocalizedError {
@@ -916,6 +937,9 @@ extension ExcalidrawFile {
         self.content = try JSONSerialization.data(withJSONObject: contentObject)
         self.elements = data.elements ?? []
         self.files = data.files
+        
+        // print("[DEBUG] On State Change. Time consume", Date().timeIntervalSince(start).formatted())
+
     }
 }
  
