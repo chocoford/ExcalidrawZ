@@ -104,7 +104,7 @@ struct LocalFileRowView: View {
                     if isWaitingForOpeningFile {
                         ProgressView()
                             .controlSize(.mini)
-                    } else if iCloudState != .downloaded {
+                    } else if iCloudState != .downloaded && iCloudState != .local {
                         Image(systemSymbol: .icloudAndArrowDown)
                             .foregroundStyle(.secondary)
                             .font(.footnote)
@@ -124,8 +124,6 @@ struct LocalFileRowView: View {
                                 .foregroundStyle(.secondary)
                                 .font(.footnote)
                         }
-//                    } else {
-//                        Text(String(describing: iCloudState))
                     }
                 }
             }

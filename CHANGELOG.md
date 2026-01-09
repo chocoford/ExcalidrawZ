@@ -11,8 +11,6 @@
 - Keep viewport when switching between files.
 - Now the canvas viewport will not be reset after synchronous update.
 
-
-
 ## 1.6.1
 
 Update excalidraw core.
