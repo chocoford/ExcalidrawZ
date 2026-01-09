@@ -12,4 +12,11 @@ final class LayoutState: ObservableObject {
     @Published var isInspectorPresented: Bool = false
     
     @Published var isResotreAlertIsPresented: Bool = false
+    
+    enum CompactBrowserLayout: Hashable {
+        case grid
+        case list
+    }
+    
+    @Published var compactBrowserLayout: CompactBrowserLayout = .grid
 }

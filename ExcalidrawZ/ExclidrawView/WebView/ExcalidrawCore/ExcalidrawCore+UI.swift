@@ -10,11 +10,21 @@ import WebKit
 
 extension Notification.Name {
     static let shouldOpenExternalURL = Notification.Name("ShouldOpenExternalURL")
+    static let captureCurrentDrawingSettings = Notification.Name("CaptureCurrentDrawingSettings")
+    static let applyUserDrawingSettings = Notification.Name("ApplyUserDrawingSettings")
 }
 
 extension Notification {
     static func shouldOpenExternalURL(url: URL) -> Notification {
         Notification(name: .shouldOpenExternalURL, object: url)
+    }
+
+    static func captureCurrentDrawingSettings() -> Notification {
+        Notification(name: .captureCurrentDrawingSettings)
+    }
+
+    static func applyUserDrawingSettings() -> Notification {
+        Notification(name: .applyUserDrawingSettings)
     }
 }
 

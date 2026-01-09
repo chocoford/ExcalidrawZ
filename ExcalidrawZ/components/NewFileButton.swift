@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 import ChocofordUI
 
@@ -48,7 +49,7 @@ struct NewFileButton: View {
     
     var body: some View {
 #if os(iOS)
-        if fileState.currentGroup != nil {
+        if fileState.currentActiveGroup != nil {
             Button {
                 isFileImporterPresented.toggle()
             } label: {
@@ -191,7 +192,7 @@ struct NewFileButton: View {
                             
                             if openWithDelay {
                                 DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                                    fileState.currentActiveFile = .localFile(url)
+                                    fileState.setActiveFile(.localFile(url))
                                     isCreatingFile = false
                                 }
                             } else {
@@ -216,8 +217,7 @@ struct NewFileButton: View {
                 let fileID = try await fileState.createNewFile(
                     active: !openWithDelay,
                     in: groupID,
-                    context: viewContext,
-                    animation: .smooth
+                    context: viewContext
                 )
                 try await viewContext.perform {
                     if let file = viewContext.object(with: fileID) as? File {
@@ -229,7 +229,7 @@ struct NewFileButton: View {
                 if openWithDelay {
                     DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                         if let file = viewContext.object(with: fileID) as? File {
-                            fileState.currentActiveFile = .file(file)
+                            fileState.setActiveFile(.file(file))
                         }
                         isCreatingFile = false
                     }
@@ -274,16 +274,10 @@ struct NewFileButton: View {
                 }
 #endif
                 
-                
-//                if fileState.currentActiveGroup == nil {
-//                    try await fileState.setToDefaultGroup()
-//                }
-                
                 if case .group(let group) = fileState.currentActiveGroup {
                     try await fileState.createNewFile(
                         in: group.objectID,
                         context: viewContext,
-                        animation: .smooth
                     )
                 } else if case .localFolder(let folder) = fileState.currentActiveGroup {
                     try await folder.withSecurityScopedURL { scopedURL in
@@ -292,6 +286,18 @@ struct NewFileButton: View {
                         } catch {
                             alertToast(error)
                         }
+                    }
+                } else {
+                    let defaultGroup = try await viewContext.perform {
+                        try PersistenceController.shared.getDefaultGroup(
+                            context: viewContext
+                        )
+                    }
+                    if let defaultGroup {
+                        try await fileState.createNewFile(
+                            in: defaultGroup.objectID,
+                            context: viewContext,
+                        )
                     }
                 }
                 

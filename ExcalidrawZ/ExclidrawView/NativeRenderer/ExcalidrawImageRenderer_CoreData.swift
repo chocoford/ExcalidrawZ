@@ -13,12 +13,8 @@ func renderExcalidrawImage(
     file: ExcalidrawFile,
     rect: CGRect
 ) {
-    var file = file
-    do {
-        try file.syncFiles(context: PersistenceController.shared.container.viewContext)
-    } catch {
-        print(error)
-    }
+    // Note: file should already be synced before passing to renderer
+    // syncFiles() is now async and cannot be called in synchronous drawing context
     if let base64String = file.files[fileID]?.dataURL,
        let commaIndex = base64String.firstIndex(of: ",") {
         if let data = Data(base64Encoded: String(base64String.suffix(from: base64String.index(after: commaIndex)))),

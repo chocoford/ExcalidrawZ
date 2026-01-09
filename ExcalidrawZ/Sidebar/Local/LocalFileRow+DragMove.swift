@@ -19,7 +19,9 @@ struct LocalFileDragModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+#if os(macOS)
             .opacity(sidebarDragState.currentDragItem == .localFile(file) ? 0.3 : 1)
+#endif
             .onDrag {
                 let url = file
                 withAnimation { isDragging = true }

@@ -92,11 +92,17 @@ struct HomeFolderItemView: View {
                             radius: isHovered ? 4 : 0
                         )
                     
+                    let nonSelectedStrokeStyle = if #available(macOS 12.0, iOS 17.0, *) {
+                        AnyShapeStyle(SeparatorShapeStyle())
+                    } else {
+                        AnyShapeStyle(HierarchicalShapeStyle.secondary)
+                    }
+                    
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(
                             isSelected
                             ? AnyShapeStyle(Color.accentColor)
-                            : AnyShapeStyle(SeparatorShapeStyle())
+                            : nonSelectedStrokeStyle
                         )
                 }
             }

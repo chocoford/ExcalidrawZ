@@ -13,7 +13,9 @@ import ChocofordUI
 
 struct ExcalidrawToolbar: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
+    @Environment(\.colorScheme) private var colorScheme
     
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var toolState: ToolState
@@ -26,8 +28,9 @@ struct ExcalidrawToolbar: View {
 #endif
     @State private var windowFrameCancellable: AnyCancellable?
     @State private var isApplePencilDisconnectConfirmationDialogPresented = false
-    
+
     @State private var isMathInputSheetPresented = false
+    @State private var isPDFPickerPresented = false
 
     
     var body: some View {
@@ -39,9 +42,11 @@ struct ExcalidrawToolbar: View {
     @MainActor @ViewBuilder
     private func toolbar() -> some View {
         toolbarContent()
+            .animation(.smooth, value: toolState.activatedTool)
+            .animation(.smooth, value: toolState.inDragMode)
             .onChange(of: toolState.activatedTool, debounce: 0.05) { newValue in
                 if newValue == nil {
-                    toolState.activatedTool = .cursor
+                    toolState.setActivedTool(.cursor)
                 }
                 
                 if let tool = newValue {
@@ -65,18 +70,20 @@ struct ExcalidrawToolbar: View {
 #if os(iOS)
         if horizontalSizeClass == .compact {
             compactContent()
-                .onAppear {
-                    // initial drag at ExcalidrawView line 171
-                    toolState.inDragMode = true
-                }
-        } else if horizontalSizeClass == .regular, !toolState.inPenMode {
+        } else if containerHorizontalSizeClass != .compact, !toolState.inPenMode {
             HStack {
                 compactContent()
             }
             .frame(maxWidth: 400)
-            .padding(6)
+            .padding(.horizontal, 12)
+            .frame(height: 44)
             .background {
-                if #available(macOS 14.0, iOS 17.0, *) {
+                if #available(iOS 26.0, *) {
+                    Capsule()
+                        .fill(.clear)
+                        .glassEffect(.clear, in: Capsule())
+                        .shadow(color: .gray.opacity(0.15), radius: colorScheme == .light ? 8 : 0, y: 4)
+                } else if #available(macOS 14.0, iOS 17.0, *) {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(.regularMaterial)
                         .stroke(.separator, lineWidth: 0.5)
@@ -84,10 +91,6 @@ struct ExcalidrawToolbar: View {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(.regularMaterial)
                 }
-            }
-            .onAppear {
-                // initial drag at ExcalidrawView line 171
-                toolState.inDragMode = true
             }
         } else if toolState.inPenMode {
             HStack(spacing: 10) {
@@ -138,7 +141,7 @@ struct ExcalidrawToolbar: View {
             toolState.toggleToolLock()
         } label: {
             SwiftUI.Group {
-                if #available(macOS 14.0, *) {
+                if #available(macOS 14.0, iOS 17.0, *) {
                     Label(.localizable(.toolbarButtonLockToolLabel), systemSymbol: toolState.isToolLocked ? .lock : .lockOpen)
                         .contentTransition(.symbolEffect(.replace))
                 } else {
@@ -188,7 +191,7 @@ struct ExcalidrawToolbar: View {
                         .fill(.regularMaterial)
                 }
             }
-            .watchImmediately(of: sizeClass) { newValue in
+            .watch(value: sizeClass) { _, newValue in
                 if newValue == .compact {
                     primaryPickerItems = [.cursor, .rectangle, .diamond, .ellipse, .arrow, .line]
                     secondaryPickerItems = [.freedraw, .text, .image, .eraser, .laser, .hand, .frame, .webEmbed, .magicFrame]
@@ -275,9 +278,9 @@ struct ExcalidrawToolbar: View {
         } primaryAction: {
             if let lastActivatedSecondaryTool,
                secondaryPickerItems.contains(lastActivatedSecondaryTool) {
-                toolState.activatedTool = lastActivatedSecondaryTool
+                toolState.setActivedTool(lastActivatedSecondaryTool)
             } else {
-                toolState.activatedTool = secondaryPickerItems.first
+                toolState.setActivedTool(secondaryPickerItems.first)
             }
         }
         .menuIndicator(.visible)
@@ -321,147 +324,189 @@ struct ExcalidrawToolbar: View {
     @MainActor @ViewBuilder
     private func compactContent() -> some View {
         if toolState.inDragMode {
-            Button { /* Do Nothing */ } label: {
-                Text(.localizable(.toolbarEdit))
-            }
-            .opacity(0)
-            Spacer()
-            Text(.localizable(.toolbarViewMode))
-            Spacer()
-            Button {
-                if case .file(let file) = fileState.currentActiveFile, file.inTrash {
-                    layoutState.isResotreAlertIsPresented.toggle()
-                } else {
-                    Task {
-                        do {
-                            try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: "h")
-                        } catch {
-                            alertToast(error)
+            HStack(spacing: 20) {
+                Color.clear
+                    .overlay(alignment: .leading) {
+#if os(iOS)
+                        if let activeFile = fileState.currentActiveFile {
+                            FileICloudSyncStatusIndicator(file: activeFile)
+                                .padding(.horizontal, 8)
+                        } else if case .collaborationFile = fileState.currentActiveFile {
+                            CollaborationMembersPopoverButton()
                         }
+#endif
                     }
-                }
-            } label: {
-                Text(.localizable(.toolbarEdit))
+                Color.clear
+                    .overlay(alignment: .center) {
+#if os(iOS)
+                        FileStatusProvider(file: fileState.currentActiveFile) { status in
+                            Text(
+                                status?.iCloudStatus == .syncing
+                                ? .localizable(.iCloudStatusSyncing)
+                                : .localizable(.toolbarViewMode)
+                            )
+                            .animation(.smooth, value: status?.iCloudStatus == .syncing)
+                        }
+#endif
+                    }
+                    .frame(minWidth: 220) // for iPad
+                Color.clear
+                    .overlay(alignment: .trailing) {
+                        Button {
+                            if case .file(let file) = fileState.currentActiveFile, file.inTrash {
+                                layoutState.isResotreAlertIsPresented.toggle()
+                            } else {
+                                Task {
+                                    do {
+                                        try await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: "h")
+                                    } catch {
+                                        alertToast(error)
+                                    }
+                                }
+                            }
+                        } label: {
+                            Text(.localizable(.toolbarEdit))
+                        }
+                        .tint(Color.accentColor)
+                    }
             }
         } else if let activatedTool = toolState.activatedTool, activatedTool != .cursor {
-            Text(activatedTool.localization)
-            Spacer()
-            Button {
-                if activatedTool == .arrow {
-                    Task {
-                        try? await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: "\u{1B}")
+            if containerHorizontalSizeClass == .compact {
+                Text(activatedTool.localization).frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 6)
+                Button {
+                    if activatedTool == .arrow {
+                        Task {
+                            try? await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: "\u{1B}")
+                        }
+                    }
+                    toolState.setActivedTool(.cursor)
+                } label: {
+                    Label(.localizable(.generalButtonCancel), systemSymbol: .checkmark)
+                }
+                .modernButtonStyle(style: .glassProminent, shape: .circle)
+            } else {
+                HStack(spacing: 20) {
+                    Text(activatedTool.localization).frame(maxWidth: .infinity, alignment: .leading)
+                    Button {
+                        if activatedTool == .arrow {
+                            Task {
+                                try? await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: "\u{1B}")
+                            }
+                        }
+                        toolState.setActivedTool(.cursor)
+                    } label: {
+                        Label(.localizable(.generalButtonCancel), systemSymbol: .xmark)
                     }
                 }
-                toolState.activatedTool = .cursor
-            } label: {
-                Label(.localizable(.generalButtonCancel), systemSymbol: .xmark)
             }
         } else {
-            Button {
-                toolState.activatedTool = .freedraw
-            } label: {
-                Label(.localizable(.toolbarDraw), systemSymbol: .pencilAndOutline)
-            }
-            Spacer()
-            Menu {
+            HStack(spacing: 20) {
                 Button {
-                    toolState.activatedTool = .rectangle
+                    toolState.setActivedTool(.freedraw)
                 } label: {
-                    Label(.localizable(.toolbarRectangle), systemSymbol: .rectangle)
+                    Label(.localizable(.toolbarDraw), systemSymbol: .pencilAndOutline)
                 }
-                Button {
-                    toolState.activatedTool = .diamond
+                Spacer()
+                Menu {
+                    Button {
+                        toolState.setActivedTool(.rectangle)
+                    } label: {
+                        Label(.localizable(.toolbarRectangle), systemSymbol: .rectangle)
+                    }
+                    Button {
+                        toolState.setActivedTool(.diamond)
+                    } label: {
+                        Label(.localizable(.toolbarDiamond), systemSymbol: .diamond)
+                    }
+                    Button {
+                        toolState.setActivedTool(.ellipse)
+                    } label: {
+                        Label(.localizable(.toolbarEllipse), systemSymbol: .circle)
+                    }
+                    Button {
+                        toolState.setActivedTool(.arrow)
+                    } label: {
+                        Label(.localizable(.toolbarArrow), systemSymbol: .lineDiagonalArrow)
+                    }
+                    Button {
+                        toolState.setActivedTool(.line)
+                    } label: {
+                        Label(.localizable(.toolbarLine), systemSymbol: .lineDiagonal)
+                    }
+                    Button {
+                        toolState.setActivedTool(.text)
+                    } label: {
+                        Label(.localizable(.toolbarText), systemSymbol: .characterTextbox)
+                    }
+                    Button {
+                        toolState.setActivedTool(.image)
+                    } label: {
+                        Label(.localizable(.toolbarInsertImage), systemSymbol: .photoOnRectangle)
+                    }
+
+                    Divider()
+
+                    Button {
+                        toolState.setActivedTool(.eraser)
+                    } label: {
+                        if #available(macOS 13.0, *) {
+                            Label(.localizable(.toolbarEraser), systemSymbol: .eraser)
+                        } else {
+                            Label(.localizable(.toolbarEraser), systemSymbol: .pencilSlash)
+                        }
+                    }
+                    Button {
+                        toolState.setActivedTool(.laser)
+                    } label: {
+                        Label(.localizable(.toolbarLaser), systemSymbol: .cursorarrowRays)
+                    }
+                    Button {
+                        toolState.setActivedTool(.frame)
+                    } label: {
+                        Label(.localizable(.toolbarFrame), systemSymbol: .grid)
+                    }
+                    Button {
+                        toolState.setActivedTool(.webEmbed)
+                    } label: {
+                        Label(.localizable(.toolbarWebEmbed), systemSymbol: .chevronLeftForwardslashChevronRight)
+                    }
+                    Button {
+                        toolState.setActivedTool(.magicFrame)
+                    } label: {
+                        Label(.localizable(.toolbarMagicFrame), systemSymbol: .wandAndStarsInverse)
+                    }
                 } label: {
-                    Label(.localizable(.toolbarDiamond), systemSymbol: .diamond)
-                }
-                Button {
-                    toolState.activatedTool = .ellipse
-                } label: {
-                    Label(.localizable(.toolbarEllipse), systemSymbol: .circle)
-                }
-                Button {
-                    toolState.activatedTool = .arrow
-                } label: {
-                    Label(.localizable(.toolbarArrow), systemSymbol: .lineDiagonalArrow)
-                }
-                Button {
-                    toolState.activatedTool = .line
-                } label: {
-                    Label(.localizable(.toolbarLine), systemSymbol: .lineDiagonal)
-                }
-                Button {
-                    toolState.activatedTool = .text
-                } label: {
-                    Label(.localizable(.toolbarText), systemSymbol: .characterTextbox)
-                }
-                Button {
-                    toolState.activatedTool = .image
-                } label: {
-                    Label(.localizable(.toolbarInsertImage), systemSymbol: .photoOnRectangle)
-                }
-                
-                Divider()
-                
-                Button {
-                    toolState.activatedTool = .eraser
-                } label: {
-                    if #available(macOS 13.0, *) {
-                        Label(.localizable(.toolbarEraser), systemSymbol: .eraser)
+                    if toolState.activatedTool == .cursor {
+                        Label(.localizable(.toolbarShapesAndTools), systemSymbol: .squareOnCircle)
                     } else {
-                        Label(.localizable(.toolbarEraser), systemSymbol: .pencilSlash)
+                        activeShape()
+                            .foregroundStyle(Color.accentColor)
                     }
                 }
-                Button {
-                    toolState.activatedTool = .laser
-                } label: {
-                    Label(.localizable(.toolbarLaser), systemSymbol: .cursorarrowRays)
-                }
-                Button {
-                    toolState.activatedTool = .frame
-                } label: {
-                    Label(.localizable(.toolbarFrame), systemSymbol: .grid)
-                }
-                Button {
-                    toolState.activatedTool = .webEmbed
-                } label: {
-                    Label(.localizable(.toolbarWebEmbed), systemSymbol: .chevronLeftForwardslashChevronRight)
-                }
-                Button {
-                    toolState.activatedTool = .magicFrame
-                } label: {
-                    Label(.localizable(.toolbarMagicFrame), systemSymbol: .wandAndStarsInverse)
-                }
-            } label: {
-                if toolState.activatedTool == .cursor {
-                    Label(.localizable(.toolbarShapesAndTools), systemSymbol: .squareOnCircle)
-                } else {
-                    activeShape()
-                        .foregroundStyle(Color.accentColor)
-                }
-            }
 #if os(iOS)
-            .menuOrder(.fixed)
+                .menuOrder(.fixed)
 #endif
-            
-            Spacer()
-            
-            moreTools()
-            
-            Spacer()
-            
-            if toolState.activatedTool == .cursor {
-                Button {
-                    Task {
-                        try? await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: "h")
+                
+                Spacer()
+                
+                moreTools()
+                
+                Spacer()
+                
+                if toolState.activatedTool == .cursor {
+                    Button {
+                        Task {
+                            try? await toolState.excalidrawWebCoordinator?.toggleToolbarAction(key: "h")
+                        }
+                    } label: {
+                        Text(.localizable(.generalButtonDone))
                     }
-                } label: {
-                    Text(.localizable(.generalButtonDone))
-                }
-            } else {
-                Button {
-                    toolState.activatedTool = .cursor
-                } label: {
-                    Text(.localizable(.generalButtonCancel))
+                } else {
+                    Button {
+                        toolState.setActivedTool(.cursor)
+                    } label: {
+                        Text(.localizable(.generalButtonCancel))
+                    }
                 }
             }
         }
@@ -532,6 +577,12 @@ struct ExcalidrawToolbar: View {
             } label: {
                 Text(.localizable(.toolbarLatexMath))
             }
+
+            Button {
+                isPDFPickerPresented.toggle()
+            } label: {
+                Text(localizable: .toolbarInsertPDF)
+            }
         } label: {
             if #available(macOS 15.0, iOS 18.0, *) {
                 Label(.localizable(.toolbarMoreTools), systemImage: "xmark.triangle.circle.square")
@@ -546,6 +597,7 @@ struct ExcalidrawToolbar: View {
         .menuOrder(.fixed)
 #endif
         .modifier(MathInputSheetViewModifier(isPresented: $isMathInputSheetPresented))
+        .modifier(PDFInsertSheetViewModifier(isPresented: $isPDFPickerPresented))
     }
 }
 
@@ -576,7 +628,7 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
                 WithContainerSize { containerSize in
                     // let _ = print(containerSize)
                     Color.clear
-                        .watchImmediately(of: containerSize) { newValue in
+                        .watch(value: containerSize) { _, newValue in
                             let newSizeClass = getSizeClass(containerSize.width)
                             if newSizeClass != sizeClass {
                                 self.sizeClass = newSizeClass

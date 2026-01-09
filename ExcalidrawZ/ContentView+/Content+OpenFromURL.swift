@@ -9,7 +9,7 @@ import SwiftUI
 import CoreData
 import WebKit
 import UniformTypeIdentifiers
-import os.log
+import Logging
 import Combine
 
 import ChocofordUI
@@ -22,7 +22,7 @@ struct OpenFromURLModifier: ViewModifier {
     
     @EnvironmentObject private var fileState: FileState
     
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "OpenFromURLModifier")
+    let logger = Logger(label: "OpenFromURLModifier")
     
     @State private var externalURLToBeOpen: URL?
     @State private var isCommandKeyDown = false
@@ -119,7 +119,7 @@ struct OpenFromURLModifier: ViewModifier {
                     }
                     try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.1))
                     await MainActor.run {
-                        fileState.currentActiveFile = .localFile(url)
+                        fileState.setActiveFile(.localFile(url))
                     }
                 }
             }
@@ -129,15 +129,12 @@ struct OpenFromURLModifier: ViewModifier {
         }
         
         guard canAddToTemp else { return }
-        
-        logger.debug("on open url: \(url)")
-        
         // handle images
         var imageSendToNewFile: (Data, UTType)? = nil
         
         if utType.conforms(to: .image) {
             
-            self.logger.info("Opening image file: \(url, privacy: .public), utType: \(utType.identifier, privacy: .public)")
+            self.logger.info("Opening image file: \(url), utType: \(utType.identifier)")
             do {
                 // Create a new temp file
                 let tempURL = try FileManager.default.url(
@@ -159,7 +156,7 @@ struct OpenFromURLModifier: ViewModifier {
                 }
                 targetURL = tempURL
             } catch {
-                self.logger.error("Failed to create ExcalidrawFile from URL: \(url, privacy: .public), error: \(error, privacy: .public)")
+                self.logger.error("Failed to create ExcalidrawFile from URL: \(url), error: \(error)")
             }
         }
         
@@ -177,7 +174,7 @@ struct OpenFromURLModifier: ViewModifier {
 
         
         fileState.currentActiveGroup = .temporary
-        fileState.currentActiveFile = .temporaryFile(targetURL)
+        fileState.setActiveFile(.temporaryFile(targetURL))
         
         if let imageSendToNewFile {
             Task {
@@ -242,7 +239,7 @@ struct OpenFromURLModifier: ViewModifier {
                         } else {
                             let newRoom = CollaborationFile(
                                 name: nameItem.value ?? String(localizable: .generalUntitled),
-                                content: ExcalidrawFile().content,
+                                content: nil,
                                 isOwner: false,
                                 context: context
                             )
@@ -254,9 +251,8 @@ struct OpenFromURLModifier: ViewModifier {
                         let roomID = room.objectID
                         Task {
                             await MainActor.run {
-                                fileState.currentActiveGroup = .collaboration
                                 if case let room as CollaborationFile = viewContext.object(with: roomID) {
-                                    fileState.currentActiveFile = .collaborationFile(room)
+                                    fileState.setActiveFile(.collaborationFile(room))
                                 }
                             }
                         }
@@ -282,22 +278,17 @@ struct OpenFromURLModifier: ViewModifier {
         let context = viewContext
         
         Task {
-            await context.perform {
-                let object = context.object(with: objectID)
-                
-                if let file = object as? File {
-                    if let group = file.group {
-                        fileState.expandToGroup(group.objectID)
-                        fileState.currentActiveGroup = .group(group)
-                    }
-                    fileState.currentActiveFile = .file(file)
-                } else if let group = object as? Group {
-                    fileState.expandToGroup(group.objectID)
-                    fileState.currentActiveGroup = .group(group)
-                } else if let folder = object as? LocalFolder {
-                    fileState.expandToGroup(folder.objectID)
-                    fileState.currentActiveGroup = .localFolder(folder)
-                }
+            let object = await context.perform {
+                context.object(with: objectID)
+            }
+            if let file = object as? File {
+                fileState.setActiveFile(.file(file))
+            } else if let group = object as? Group {
+                fileState.expandToGroup(group.objectID)
+                fileState.currentActiveGroup = .group(group)
+            } else if let folder = object as? LocalFolder {
+                fileState.expandToGroup(folder.objectID)
+                fileState.currentActiveGroup = .localFolder(folder)
             }
         }
     }
@@ -493,11 +484,11 @@ struct OpenURLSheetView: View {
             }
         }
         .overlay(alignment: .bottomTrailing) {
-            Text("Don't want to see this pop-up?")
+            Text(localizable: .openURLSheetPopUpTipsTitle)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .padding(6)
-                .popoverHelp("You can directly open the link by holding down the ⌘ key.")
+                .popoverHelp(.localizable(.openURLSheetPopUpTipsPopoverHelp))
         }
 #else
         .padding(.top, 20)
@@ -509,7 +500,7 @@ struct OpenURLSheetView: View {
         .onChange(of: isPreviewWebView) { newValue in
             changeViewSize(isPreviewWebView: newValue, window: window)
         }
-        .watchImmediately(of: window) { newValue in
+        .watch(value: window) { newValue in
             changeViewSize(isPreviewWebView: isPreviewWebView, window: newValue)
         }
 #endif

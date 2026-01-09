@@ -21,15 +21,15 @@ extension Group {
 #endif
 
 extension Group {
-    static let trash = {
-        let group = Group(context: PersistenceController.shared.container.viewContext)
-        group.id = UUID()
-        group.groupType = .trash
-        group.name = "Recently Deleted"
-        group.createdAt = .distantPast
-        return group
-    }()
-    
+    /// Get the trash group from database
+    static var trash: Group? {
+        let context = PersistenceController.shared.container.viewContext
+        let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
+        fetchRequest.predicate = NSPredicate(format: "type == %@", GroupType.trash.rawValue)
+        fetchRequest.fetchLimit = 1
+        return try? context.fetch(fetchRequest).first
+    }
+
     convenience init(name: String, context: NSManagedObjectContext) {
         self.init(context: context)
         self.id = UUID()
@@ -63,74 +63,6 @@ extension Group {
         }
     }
     
-    func exportToDisk(folder url: URL) throws {
-        let filemanager = FileManager.default
-        
-        var folderName = self.name ?? String(localizable: .generalUntitled)
-        var i = 1
-        while filemanager.fileExists(
-            atPath: url.appendingPathComponent(folderName).filePath
-        ) {
-            folderName = folderName + " (\(i))"
-            i += 1
-        }
-        
-        try filemanager.createDirectory(at: url.appendingPathComponent(folderName), withIntermediateDirectories: true)
-        
-        for case let file as File in files ?? [] {
-            file.exportToDisk(folder: url)
-        }
-        
-        for case let group as Group in children ?? [] {
-            try group.exportToDisk(folder: url.appendingPathComponent(folderName))
-        }
-    }
-    
-    func delete(
-        context: NSManagedObjectContext,
-        forcePermanently: Bool = false,
-        save: Bool = true
-    ) throws {
-        if groupType == .trash {
-            // empty trash
-            let fetchRequest = NSFetchRequest<File>(entityName: "File")
-            fetchRequest.predicate = NSPredicate(format: "inTrash == YES")
-            for file in try context.fetch(fetchRequest) {
-                try file.delete(context: context, save: false)
-            }
-        } else {
-            // get default group
-            guard let defaultGroup = try PersistenceController.shared.getDefaultGroup(context: context) else {
-                throw AppError.fileError(.notFound)
-            }
-            
-            let fetchRequest = NSFetchRequest<File>(entityName: "File")
-            fetchRequest.predicate = NSPredicate(
-                format: "inTrash == FALSE AND group == %@",
-                self
-            )
-            for file in try context.fetch(fetchRequest) {
-                file.group = defaultGroup
-                try file.delete(
-                    context: context,
-                    forcePermanently: forcePermanently,
-                    save: false
-                )
-            }
-            
-            // delete sub groups
-            let subGroupsFetchRequest = NSFetchRequest<Group>(entityName: "Group")
-            subGroupsFetchRequest.predicate = NSPredicate(format: "parent == %@", self)
-            for subGroup in try context.fetch(subGroupsFetchRequest) {
-                try subGroup.delete(context: context, save: false)
-            }
-            
-            context.delete(self)
-        }
-        if save {
-            try context.save()
-        }
-    }
 }
 
 extension Group.GroupType: Comparable {

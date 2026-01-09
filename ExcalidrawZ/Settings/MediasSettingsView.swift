@@ -6,111 +6,98 @@
 //
 
 import SwiftUI
+import CoreData
+import ChocofordUI
 
 struct MediasSettingsView: View {
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
+    @Environment(\.alertToast) private var alertToast
     @FetchRequest(sortDescriptors: [SortDescriptor(\MediaItem.createdAt, order: .reverse)])
     private var medias: FetchedResults<MediaItem>
-    
+
     @State private var selection: MediaItem?
+    @State private var loadedData: Data?
+    @State private var isCleaningOrphans = false
+    @State private var isCleanupAlertPresented = false
+    @State private var cleanupResult: CleanupResult?
     
     var body: some View {
-        if containerHorizontalSizeClass == .compact, containerVerticalSizeClass == .regular {
-            horizontalCompactContent()
-        } else {
-#if os(iOS)
-            if #available(iOS 18.0, *) {
-                regularContent()
-                    .toolbarVisibility(.visible, for: .navigationBar)
-            } else {
-                regularContent()
-                    .toolbar(.visible, for: .navigationBar)
-            }
-#elseif os(macOS)
-            regularContent()
-#endif
-        }
+        content()
+            
     }
     
+    @ViewBuilder
+    private func content() -> some View {
+#if os(iOS)
+        galleryView()
+#elseif os(macOS)
+        regularContent()
+#endif
+    }
     
     @MainActor @ViewBuilder
     private func regularContent() -> some View {
-        HStack {
+        HStack(spacing: 0) {
             mediaList()
                 .frame(width: 200)
-#if os(iOS)
-                .background {
-                    Rectangle()
-                        .fill(.regularMaterial)
-                        .border(.trailing, color: .separatorColor)
-                }
-#endif // os(iOS)
-            
+
             Divider()
-            
+
             detailView()
                 .padding()
                 .frame(maxWidth: .infinity)
-        }
-    }
-    
-    @MainActor @ViewBuilder
-    private func horizontalCompactContent() -> some View {
-        VStack {
-            detailView()
-                .padding()
-                .frame(maxWidth: .infinity)
-                .frame(height: 300)
-            mediaList()
-#if os(macOS)
-                .visualEffect(material: .sidebar)
-#elseif os(iOS)
-                .background {
-                    if #available(macOS 14.0, iOS 17.0, *) {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.regularMaterial)
-                            .stroke(.separator, lineWidth: 0.5)
+                .task(id: selection?.objectID) {
+                    if let selection = selection {
+                        loadedData = try? await selection.loadData()
                     } else {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.regularMaterial)
+                        loadedData = nil
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .padding(.horizontal)
-#endif
         }
     }
     
     @MainActor @ViewBuilder
     private func mediaList() -> some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(medias, id: \.objectID) { item in
-                    Button {
-                        selection = item
-                    } label: {
-                        Text(item.id ?? String(localizable: .generalUnknown))
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
-                    .buttonStyle(
-                        .excalidrawSidebarRow(
-                            isSelected: selection == item,
-                            isMultiSelected: false
+        VStack(spacing: 0) {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(medias, id: \.objectID) { item in
+                        Button {
+                            selection = item
+                        } label: {
+                            Text(item.id ?? String(localizable: .generalUnknown))
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        }
+                        .buttonStyle(
+                            .excalidrawSidebarRow(
+                                isSelected: selection == item,
+                                isMultiSelected: false
+                            )
                         )
-                    )
+                    }
+                }
+                .padding(10)
+                .frame(minHeight: 400, alignment: .top)
+                .background {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selection = nil
+                        }
                 }
             }
-            .padding(10)
-            .frame(minHeight: 400, alignment: .top)
-            .background {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selection = nil
-                    }
+            
+            Divider()
+            
+            HStack {
+                Spacer()
+                cleanupOrphanMediasButton()
+                    .buttonStyle(.borderless)
             }
+            .padding(12)
         }
     }
     
@@ -118,8 +105,7 @@ struct MediasSettingsView: View {
     private func detailView() -> some View {
         ZStack {
             if let item = selection,
-               let imageDataString = selection?.dataURL?.components(separatedBy: "base64,").last,
-               let imageData = Data(base64Encoded: imageDataString) {
+               let imageData = loadedData {
                 VStack {
                     DataImage(data: imageData)
                         .scaledToFit()
@@ -135,7 +121,7 @@ struct MediasSettingsView: View {
                                 }
 #endif
                             } label: {
-                                Text("Copy")
+                                Text(localizable: .generalButtonCopy)
                             }
                         }
 
@@ -206,12 +192,147 @@ struct MediasSettingsView: View {
     }
     
     @MainActor @ViewBuilder
-    private func content() -> some View {
-        
+    private func galleryView() -> some View {
+        ScrollView {
+            LazyVGrid(columns: [.init(.adaptive(minimum: 120, maximum: 300))]) {
+                ForEach(medias, id: \.objectID) { item in
+                    MediaItemImageView(item: item)
+                        .aspectRatio(1, contentMode: .fill)
+                }
+            }
+        }
+#if os(iOS)
+        .toolbar {
+            cleanupOrphanMediasButton()
+        }
+#endif
+    }
+
+    // MARK: - Cleanup Methods
+
+    @ViewBuilder
+    private func cleanupOrphanMediasButton() -> some View {
+        Button {
+            isCleanupAlertPresented = true
+        } label: {
+            Label(.localizable(.settingsMediaFilesButtonCleanUp), systemSymbol: .trash)
+                .labelStyle(.iconOnly)
+        }
+        .disabled(isCleaningOrphans)
+        .help(.localizable(.settingsMediaFilesButtonHelpCleanUp))
+        .confirmationDialog(
+            String(localizable: .settingsMediaFilesCleanUpConfirmationDialogTitle),
+            isPresented: $isCleanupAlertPresented
+        ) {
+            Button(.localizable(.settingsMediaFilesButtonCleanUp), role: .destructive) {
+                Task {
+                    await cleanupOrphanMedias()
+                }
+            }
+            Button(.localizable(.generalButtonCancel), role: .cancel) {}
+        } message: {
+            Text(localizable: .settingsMediaFilesCleanUpConfirmationDialogMessage)
+        }
+    }
+
+    private func cleanupOrphanMedias() async {
+        isCleaningOrphans = true
+        defer { isCleaningOrphans = false }
+
+        do {
+            let result = try await performCleanupOrphanMedias(context: viewContext)
+            await MainActor.run {
+                self.cleanupResult = result
+                alertToast(
+                    .init(
+                        displayMode: .hud,
+                        type: .complete(.green),
+                        title: String(localizable: .generalSuccess),
+                        subTitle: String(localizable: .settingsMediaFilesCleanUpSuccessMessage(result.deletedCount)),
+                    )
+                )
+            }
+        } catch {
+            await MainActor.run {
+                alertToast(error)
+            }
+        }
+    }
+
+    /// Find and delete MediaItems that are no longer referenced by any File or FileCheckpoint
+    private func performCleanupOrphanMedias(context: NSManagedObjectContext) async throws -> CleanupResult {
+        return try await context.perform {
+            let fetchRequest: NSFetchRequest<MediaItem> = MediaItem.fetchRequest()
+            let allMediaItems = try context.fetch(fetchRequest)
+
+            var deletedCount = 0
+            var recoveredSpace: Int64 = 0
+
+            for mediaItem in allMediaItems {
+                // Check if the referenced file exists
+                if let file = mediaItem.file {
+                    // File reference exists, check if file is deleted
+                    if file.isDeleted {
+                        // File is deleted, this media is orphaned
+                        if let dataURL = mediaItem.dataURL,
+                           let base64String = dataURL.components(separatedBy: "base64,").last,
+                           let data = Data(base64Encoded: base64String) {
+                            recoveredSpace += Int64(data.count)
+                        }
+                        context.delete(mediaItem)
+                        deletedCount += 1
+                    }
+                } else {
+                    // No file reference, this media is orphaned
+                    if let dataURL = mediaItem.dataURL,
+                       let base64String = dataURL.components(separatedBy: "base64,").last,
+                       let data = Data(base64Encoded: base64String) {
+                        recoveredSpace += Int64(data.count)
+                    }
+                    context.delete(mediaItem)
+                    deletedCount += 1
+                }
+            }
+
+            if deletedCount > 0 {
+                try context.save()
+            }
+
+            return CleanupResult(deletedCount: deletedCount, recoveredSpace: recoveredSpace)
+        }
     }
 }
 
+// MARK: - Supporting Types
 
+struct CleanupResult {
+    let deletedCount: Int
+    let recoveredSpace: Int64
+}
+
+struct MediaItemImageView: View {
+    var item: MediaItem
+    
+    @State private var data: Data? = nil
+    
+    var body: some View {
+        Color.clear
+            .overlay {
+                if let data {
+                    DataImage(data: data)
+                        .scaledToFit()
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .task {
+                // Load raw data directly from FileStorage (local/iCloud) or CoreData
+                let imageData = try? await item.loadData()
+                await MainActor.run {
+                    self.data = imageData
+                }
+            }
+    }
+}
 
 struct DataImage: View {
     var data: Data
@@ -221,28 +342,46 @@ struct DataImage: View {
     }
     
     @State private var image: Image?
+#if canImport(AppKit)
+    @State private var platformImage: NSImage?
+#elseif canImport(UIKit)
+    @State private var platformImage: UIImage?
+#endif
+    
+    @State private var viewID: UUID = UUID()
     
     var body: some View {
         ZStack {
-            if let image {
+            ThumbnailImage(
+                platformImage,
+                width: 300,
+            ) { image in
                 image
                     .resizable()
-            } else {
+            } placeholder: {
                 Rectangle()
-                    .fill(.secondary)
-                    .shimmering()
+                    .fill(.secondary.opacity(0.4))
             }
+            .id(viewID)
         }
-        .watchImmediately(of: data) { newValue in
+        .watch(value: data) { newValue in
             Task.detached {
                 let image = Image(data: newValue)
+#if canImport(AppKit)
+                let platformImage = NSImage(data: newValue)
+#elseif canImport(UIKit)
+                let platformImage = UIImage(data: newValue)
+#endif
                 await MainActor.run {
+                    self.platformImage = platformImage
                     self.image = image
+                    viewID = UUID()
                 }
             }
         }
     }
 }
+
 
 #Preview {
     MediasSettingsView()

@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import os.log
+import Logging
 #if os(macOS)
 import ServiceManagement
 #endif
@@ -41,7 +41,17 @@ struct ExcalidrawZApp: App {
     private let updaterController: SPUStandardUpdaterController
 #endif
     init() {
-        print("init")
+        // Configure logging level
+        LoggingSystem.bootstrap { label in
+            var handler = StreamLogHandler.standardOutput(label: label)
+#if DEBUG
+            handler.logLevel = .debug
+#else
+            handler.logLevel = .info
+#endif
+            return handler
+        }
+
         // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
         // This is where you can also pass an updater delegate if you need one
 #if os(macOS) && !APP_STORE
@@ -84,13 +94,13 @@ struct ExcalidrawZApp: App {
     @Environment(\.scenePhase) var scenePhase
     
     @StateObject private var appPrefernece = AppPreference()
-    @StateObject private var store = Store()
+    @StateObject private var store = Store.shared
 #if os(macOS) && !APP_STORE
     @StateObject private var updateChecker = UpdateChecker()
 #endif
-    
+
     let server = ExcalidrawServer()
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawApp")
+    let logger = Logger(label: "ExcalidrawApp")
     
     var body: some Scene {
         WindowGroup {
@@ -105,12 +115,8 @@ struct ExcalidrawZApp: App {
 #endif
                 }
         }
-        .onChange(of: scenePhase) { newValue in
-            logger.info("On scene phase changed: \(String(describing: newValue), privacy: .public)")
-        }
         // prevent window being open by urls.
         .handlesExternalEvents(matching: ["*"])
-
 #if os(macOS) && !APP_STORE
         .commands {
             CommandGroup(after: .appInfo) {
@@ -170,7 +176,9 @@ struct ExcalidrawZApp: App {
                 }
                 Button {
                     // MUST USE THIS INSTEAD OF VIEWCONTEXT
-                    try? archiveAllFiles(context: PersistenceController.shared.container.viewContext)
+                    Task {
+                        try? await archiveAllFiles(context: PersistenceController.shared.container.viewContext)
+                    }
                 } label: {
                     Label(.localizable(.menubarButtonExportAll), systemSymbol: .squareAndArrowUp)
                 }

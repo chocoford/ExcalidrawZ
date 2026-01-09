@@ -11,7 +11,7 @@ import ChocofordUI
 protocol FlexibleItem {
     var title: String { get }
 }
-
+#if canImport(AppKit)
 @available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 struct FlexibleSplitView<Item: FlexibleItem, ID: Hashable & Transferable>: View {
     @Binding var items: [Item]
@@ -147,7 +147,7 @@ struct FlexibleSplitView<Item: FlexibleItem, ID: Hashable & Transferable>: View 
         .onChange(of: localArrangement) { newValue in
             self.arrangement?.wrappedValue = newValue
         }
-        .watchImmediately(of: items.count) { newValue in
+        .watch(value: items.count) { newValue in
             self.localArrangement = SplitArrangement.cases(splitCount: newValue).first ?? .single
         }
     }
@@ -412,3 +412,4 @@ struct MouseMoveTrackingView: NSViewRepresentable {
         }
     }
 }
+#endif

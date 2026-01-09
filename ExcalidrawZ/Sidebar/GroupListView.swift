@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 import ChocofordEssentials
 import ChocofordUI
@@ -51,7 +52,6 @@ struct GroupListView: View {
             predicate: NSPredicate(format: "parent = nil"),
             animation: .smooth
         )
-        
     }
     
     var displayedGroups: [Group] {
@@ -95,7 +95,7 @@ struct GroupListView: View {
                         VStack(spacing: 8) {
                             VStack(spacing: 0) {
                                 Button {
-                                    fileState.currentActiveFile = nil
+                                    fileState.setActiveFile(nil)
                                     fileState.currentActiveGroup = nil
                                 } label: {
                                     HStack {
@@ -113,7 +113,7 @@ struct GroupListView: View {
                                 .id("home")
                                 
                                 Button {
-                                    fileState.currentActiveFile = nil
+                                    fileState.setActiveFile(nil)
                                     fileState.currentActiveGroup = .collaboration
                                 } label: {
                                     HStack {
@@ -162,7 +162,7 @@ struct GroupListView: View {
                                 .modifier(
                                     ContentHeaderCreateButtonHoverModifier(
                                         groupType: .localFolder,
-                                        title: .localizable(.sidebarGroupListSectionHeaderLocal)
+                                        title: .localizable(.localFoldersTitle)
                                     )
                                 )
                         }
@@ -229,7 +229,7 @@ struct GroupListView: View {
             if count == 0,
                case .group(let group) = fileState.currentActiveGroup,
                group.groupType == .trash {
-                fileState.currentActiveFile = nil
+                fileState.setActiveFile(nil)
                 fileState.currentActiveGroup = nil
             }
         }
@@ -238,16 +238,10 @@ struct GroupListView: View {
     @MainActor @ViewBuilder
     private func contentToolbar() -> some View {
         HStack {
-            if #available(macOS 26.0, iOS 26.0, *) {
-                SettingsLink().labelStyle(.iconOnly)
-            } else {
-                SettingsButton(useDefaultLabel: true) {
-                    Label(.localizable(.settingsName), systemSymbol: .gear)
-                        .labelStyle(.iconOnly)
-                }
-            }
-            
+            SettingsViewButton()
+
             Spacer()
+            
             if #available(macOS 13.0, *) {
                 sortMenuButton()
             } else {
@@ -299,11 +293,6 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
     @Environment(\.alert) private var alert
     @Environment(\.alertToast) private var alertToast
 
-    private struct FolderTooLargeError: LocalizedError {
-        var errorDescription: String? {
-            .init(localizable: .sidebarLocalFolderTooLargeAlertDescription)
-        }
-    }
     
     var groupType: NewGroupButton.GroupType
     var title: LocalizedStringKey
@@ -318,6 +307,8 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
     
     @State private var isHovered = false
     @State private var isImportLocalFolderDialogPresented = false
+    @State private var isImportFilesDialogPresented = false
+    @State private var isCreateGroupDialogPresented = false
 
     
     func body(content: Content) -> some View {
@@ -343,23 +334,28 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
                 switch groupType {
                     case .localFolder:
                         Button {
-                            isImportLocalFolderDialogPresented.toggle()
+                             isImportLocalFolderDialogPresented.toggle()
                         } label: {
                             Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .plusCircleFill)
                         }
+#if os(macOS)
+                        .controlSize(.large)
+                        .padding(.trailing, 2)
+#endif
+                        // Two file importers can not be called in same place
+                        .modifier(ImportLocalFolderModifier(isPresented: $isImportLocalFolderDialogPresented))
                     case .group:
                         Menu {
                             SwiftUI.Group {
-                                newGroupButton()
-                                
                                 Button {
-                                    let panel = ExcalidrawOpenPanel.importPanel
-                                    if panel.runModal() == .OK {
-                                        NotificationCenter.default.post(
-                                            name: .shouldHandleImport,
-                                            object: panel.urls
-                                        )
-                                    }
+                                    isCreateGroupDialogPresented.toggle()
+                                } label: {
+                                    Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
+                                }
+
+                                // New: Use fileImporter for cross-platform support
+                                Button {
+                                    isImportFilesDialogPresented.toggle()
                                 } label: {
                                     Label(
                                         .localizable(.menubarButtonImport),
@@ -373,21 +369,25 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
                         }
                         .menuIndicator(.hidden)
                         .fixedSize()
+                        .modifier(ImportFilesModifier(isPresented: $isImportFilesDialogPresented))
+                        .modifier(
+                            CreateGroupModifier(
+                                isPresented: $isCreateGroupDialogPresented,
+                                parentGroupID: nil,
+                            )
+                        )
                 }
             }
-            .opacity(isHovered ? 1 : 0)
+#if os(iOS)
+            .tint(.secondary)
+#endif
+            .opacity(isHovered ? 1 : 0.4)
             .labelStyle(.iconOnly)
             .buttonStyle(.borderless)
         }
         .font(.callout.bold())
         .animation(.smooth, value: isHovered)
-        .fileImporterWithAlert(
-            isPresented: $isImportLocalFolderDialogPresented,
-            allowedContentTypes: [.folder],
-            allowsMultipleSelection: true
-        ) { urls in
-            importLocalFolders(urls: urls)
-        }
+
     }
     
     @MainActor @ViewBuilder
@@ -401,6 +401,64 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
                         Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
                 }
             }
+        }
+    }
+
+}
+
+struct ImportFilesModifier: ViewModifier {
+    @Binding var isImportFilesDialogPresented: Bool
+    
+    init(isPresented: Binding<Bool>) {
+        self._isImportFilesDialogPresented = isPresented
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .fileImporterWithAlert(
+                isPresented: $isImportFilesDialogPresented,
+                allowedContentTypes: [
+                    .init(filenameExtension: "excalidraw") ?? .excalidrawFile,
+                    .excalidrawPNG,
+                    .excalidrawSVG,
+                    .png,
+                    .svg,
+                    .folder  // Also allow directory selection
+                ],
+                allowsMultipleSelection: true
+            ) { urls in
+                NotificationCenter.default.post(
+                    name: .shouldHandleImport,
+                    object: urls
+                )
+            }
+    }
+}
+
+struct ImportLocalFolderModifier: ViewModifier {
+    @Environment(\.alert) private var alert
+    @Environment(\.alertToast) private var alertToast
+    
+    @Binding var isImportLocalFolderDialogPresented: Bool
+    
+    init(isPresented: Binding<Bool>) {
+        self._isImportLocalFolderDialogPresented = isPresented
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .fileImporterWithAlert(
+                isPresented: $isImportLocalFolderDialogPresented,
+                allowedContentTypes: [.folder],
+                allowsMultipleSelection: true
+            ) { urls in
+                importLocalFolders(urls: urls)
+            }
+    }
+    
+    private struct FolderTooLargeError: LocalizedError {
+        var errorDescription: String? {
+            .init(localizable: .sidebarLocalFolderTooLargeAlertDescription)
         }
     }
     
@@ -467,5 +525,27 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
                 await alertToast(error)
             }
         }
+    }
+}
+
+struct ImportLocalFolderButton: View {
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+
+    @State private var isImportLocalFolderDialogPresented = false
+    
+    var body: some View {
+        Button {
+            isImportLocalFolderDialogPresented.toggle()
+        } label: {
+            if containerHorizontalSizeClass == .compact {
+                HStack(spacing: 4) {
+                    Image(systemSymbol: .squareAndArrowDown)
+                    Text(localizable: .sidebarGroupListButtonAddObservation)
+                }
+            } else {
+                Label(.localizable(.sidebarGroupListButtonAddObservation), systemSymbol: .squareAndArrowDown)
+            }
+        }
+        .modifier(ImportLocalFolderModifier(isPresented: $isImportLocalFolderDialogPresented))
     }
 }

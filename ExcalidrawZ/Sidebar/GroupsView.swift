@@ -89,7 +89,7 @@ struct GroupsView: View {
             DispatchQueue.main.async {
                 if val {
                     fileState.currentActiveGroup = .group(group)
-                    fileState.currentActiveFile = nil
+                    fileState.setActiveFile(nil)
                 }
             }
         }
@@ -105,7 +105,7 @@ struct GroupsView: View {
             .onReceive(NotificationCenter.default.publisher(for: .didImportToExcalidrawZ)) { notification in
                 guard let fileID = notification.object as? UUID else { return }
                 if let file = files.first(where: {$0.id == fileID}) {
-                    fileState.currentActiveFile = .file(file)
+                    fileState.setActiveFile(.file(file))
                 }
             }
     }
@@ -113,7 +113,7 @@ struct GroupsView: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
         if #available(macOS 13.0, *), folderStructStyle == .disclosureGroup {
-             diclsureGroupView()
+            diclsureGroupView()
         } else {
             treeView()
         }

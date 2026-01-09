@@ -62,7 +62,7 @@ struct CollaborationFileRow: View {
                       !fileState.collaboratingFiles.contains(file) {
                 store.togglePaywall(reason: .roomLimit)
             } else {
-                fileState.currentActiveFile = .collaborationFile(file)
+                fileState.setActiveFile(.collaborationFile(file))
             }
         } label: {
             VStack(alignment: .leading) {

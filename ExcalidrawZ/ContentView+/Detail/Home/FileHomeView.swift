@@ -120,7 +120,7 @@ struct FileHomeContainer: View {
                     }
                     .mask {
                         if config.isPlaceholderPresented {
-                            if #available(macOS 14.0, iOS 16.0, *) {
+                            if #available(macOS 14.0, iOS 17.0, *) {
                                 Rectangle()
                                     .fill(
                                         SmoothLinearGradient(
@@ -146,7 +146,7 @@ struct FileHomeContainer: View {
                     }
                     .overlay {
                         if config.isPlaceholderPresented {
-                            if #available(macOS 14.0, iOS 16.0, *) {
+                            if #available(macOS 14.0, iOS 17.0, *) {
                                 Text(localizable: .homeNoFilesPlaceholder)
                                     .foregroundStyle(.placeholder)
                             } else {
@@ -156,6 +156,7 @@ struct FileHomeContainer: View {
                         }
                     }
             }
+            .padding(.bottom, 30)
             .background {
                 config.contentBackground
             }
@@ -261,6 +262,10 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     
     @State private var isCreateGroupDialogPresented: Bool = false
     
+#if os(iOS)
+    @State private var editMode: EditMode = .inactive
+#endif
+    
     var body: some View {
         ZStack {
             if #available(macOS 13.0, iOS 15.0, *) {
@@ -302,6 +307,41 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 )
         }
         .readHeight($scrollViewHeight)
+#if os(iOS)
+        .overlay(alignment: .bottom) {
+            if #available(iOS 18.0, *), editMode.isEditing == true {
+                FileMenuProvider(file: nil) { triggers in
+                    HStack(spacing: 20) {
+                        FileMenuItems(
+                            file: nil
+                        ) {
+                            triggers.onToggleRename()
+                        } onTogglePermanentlyDelete: {
+                            triggers.onTogglePermanentlyDelete()
+                        }
+                        .labelStyle(.iconOnly)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .frame(height: 56)
+                    .background {
+                        if #available(iOS 26.0, *) {
+                            Capsule()
+                                .fill(.background)
+                                .glassEffect(in: Capsule())
+                        } else {
+                            Capsule()
+                                .fill(.background)
+                                .shadow(radius: 4)
+                        }
+                    }
+                }
+                .disabled(!fileState.selectedGroups.isEmpty)
+                .transition(.move(edge: .bottom))
+            }
+        }
+        .environment(\.editMode, $editMode)
+#endif
     }
     
     @MainActor @ViewBuilder
@@ -310,7 +350,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
             HStack(spacing: 2) {
                 ForEach(parentGroups) { group in
                     Button {
-                        fileState.currentActiveFile = nil
+                        fileState.setActiveFile(nil)
                         fileState.currentActiveGroup = futureActiveGroup(group)
                     } label: {
                         Text(group.name ?? String(localizable: .generalUntitled))
@@ -337,12 +377,28 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 
                 // Toolbar
                 HStack {
+#if os(iOS)
+                    if editMode == .active {
+                        Button {
+                            withAnimation(.smooth) {
+                                editMode = .inactive
+                            }
+                            fileState.resetSelections()
+                        } label: {
+                            Image(systemSymbol: .checkmark)
+                        }
+                        .modernButtonStyle(style: .glassProminent, shape: .circle)
+                    } else {
+                        actionsMenu()
+                    }
+#else
                     if #available(macOS 14.0, iOS 17.0, *) {
                         actionsMenu()
                             .buttonStyle(.accessoryBar)
                     } else {
                         actionsMenu()
                     }
+#endif
                 }
             }
             .padding(.horizontal, 10)
@@ -360,7 +416,6 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 .padding(.horizontal, 30)
         }
         .padding(.top, parentGroups.isEmpty ? 36 : 15)
-        .padding(.bottom, 30)
     }
     
     @MainActor @ViewBuilder
@@ -369,6 +424,18 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
             if let group = group as? Group {
                 GroupMenuProvider(group: group) { triggers in
                     Menu {
+#if os(iOS)
+                        if editMode == .inactive {
+                            Button {
+                                withAnimation(.smooth) {
+                                    editMode = .active
+                                }
+                            } label: {
+                                Label(.localizable(.librariesButtonSelect), systemSymbol: .checkmarkCircle)
+                            }
+                        }
+#endif
+                        
                         GroupMenuItems(
                             group: group,
                             canExpand: false
@@ -380,25 +447,59 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                             triggers.onToggleDelete()
                         }
                     } label: {
+#if os(iOS)
+                        Label(
+                            .localizable(.generalButtonMore),
+                            systemSymbol: .ellipsis
+                        )
+                        .padding(6)
+#else
                         Image(systemSymbol: .ellipsisCircle)
+#endif
                     }
                 }
             } else if let folder = group as? LocalFolder {
                 LocalFolderMenuProvider(folder: folder) { triggers in
                     Menu {
+#if os(iOS)
+                        if editMode == .inactive {
+                            Button {
+                                editMode = .active
+                            } label: {
+                                Label(.localizable(.librariesButtonSelect), systemSymbol: .checkmarkCircle)
+                            }
+                        }
+#endif
+                        
                         LocalFolderMenuItems(
                             folder: folder,
                             canExpand: false
                         ) {
                             triggers.onToogleCreateSubfolder()
+                        } onToggleRemoveObservation: {
+                            triggers.onToggleRemoveObservation()
                         }
                     } label: {
+#if os(iOS)
+                        Label(
+                            .localizable(.generalButtonMore),
+                            systemSymbol: .ellipsis
+                        )
+                        .padding(6)
+#else
                         Image(systemSymbol: .ellipsisCircle)
+#endif
                     }
                 }
             }
         }
+#if os(iOS)
+        .modernButtonStyle(style: .glass, shape: .circle)
+        .labelStyle(.iconOnly)
+        .frame(minWidth: 12, minHeight: 12)
+#elseif os(macOS)
         .fixedSize()
+#endif
         .menuIndicator(.hidden)
     }
     
@@ -421,7 +522,11 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 
                 Spacer()
             }
-            .controlSize(.large)
+#if os(iOS)
+            .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
+#else
+            .modernButtonStyle(shape: .capsule)
+#endif
         }
     }
     

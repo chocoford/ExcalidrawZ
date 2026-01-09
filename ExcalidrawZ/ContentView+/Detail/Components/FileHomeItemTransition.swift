@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 final class FileHomeItemTransitionState: ObservableObject {
     
@@ -50,7 +51,6 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                 if let activeFile = file,// ?? fileState.currentActiveFile,
                    let sAnchor: Anchor<CGRect> = value[activeFile.id + "SOURCE"],
                    let dAnchor: Anchor<CGRect> = value["DEST"] {
-                    // let _ = print("FileHomeItemTransitionModifier: \(activeFile.objectID.description)")
                     GeometryReader { geomerty in
                         FileHomeItemHeroLayer(
                             file: activeFile,
@@ -95,20 +95,20 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                     return true
                 }
                 
-                if !groupCheck(file: newValue) {
-                    withOpenFileDelay {
-                        self.file = newValue
-                        state.canShowExcalidrawCanvas = true
-                        state.canShowItemContainerView = false
-                    }
-                    return
-                }
+//                if !groupCheck(file: newValue) {
+//                    withOpenFileDelay {
+//                        self.file = newValue
+//                        state.canShowExcalidrawCanvas = true
+//                        state.canShowItemContainerView = false
+//                    }
+//                    return
+//                }
                 
-                if !groupCheck(file: oldValue) {
-                    self.file = nil
-                    state.canShowExcalidrawCanvas = false
-                    state.canShowItemContainerView = true
-                }
+//                if !groupCheck(file: oldValue) {
+//                    self.file = nil
+//                    state.canShowExcalidrawCanvas = false
+//                    state.canShowItemContainerView = true
+//                }
                 
                 if oldValue == nil, let newValue { // open
                     self.file = newValue
@@ -205,7 +205,7 @@ struct FileHomeItemHeroLayer: View {
         colorScheme == .light ? file.id + "_light" : file.id + "_dark"
     }
     
-    var platformImage: NSImage? {
+    var platformImage: PlatformImage? {
         FileItemPreviewCache.shared.object(forKey: cacheKey as NSString)
     }
     

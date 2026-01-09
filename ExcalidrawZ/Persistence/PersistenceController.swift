@@ -7,13 +7,13 @@
 
 import Foundation
 @preconcurrency import CoreData
-import os.log
+import Logging
 
 class PersistenceController {
     static let shared = {
-        let stack = PersistenceController(cloudKitEnabled: !UserDefaults.standard.bool(forKey: "DisableCloudSync"))
+        let cloudKitEnabled = !UserDefaults.standard.bool(forKey: "DisableCloudSync")
+        let stack = PersistenceController(cloudKitEnabled: cloudKitEnabled)
         stack.prepare()
-        stack.migration()
         return stack
     }()
     
@@ -23,7 +23,14 @@ class PersistenceController {
     let cloudSpotlightDelegate: NSCoreDataCoreSpotlightDelegate
     let localSpotlightDelegate: NSCoreDataCoreSpotlightDelegate
     
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "PersistenceController")
+    let logger = Logger(label: "PersistenceController")
+
+    lazy var fileRepository: FileRepository = FileRepository(context: self.newTaskContext())
+    lazy var checkpointRepository = CheckpointRepository(context: self.newTaskContext())
+    lazy var mediaItemRepository = MediaItemRepository(context: self.newTaskContext())
+    lazy var groupRepository = GroupRepository(context: self.newTaskContext())
+    lazy var collaborationFileRepository = CollaborationFileRepository(context: self.newTaskContext())
+    lazy var localFolderRepository = LocalFolderRepository(context: self.newTaskContext())
     
     /// Init function
     /// - Parameters:
@@ -57,9 +64,14 @@ class PersistenceController {
         }
         cloudStoreDescription.type = NSSQLiteStoreType
         cloudStoreDescription.configuration = "Cloud"
-        cloudStoreDescription.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
-            containerIdentifier: "iCloud.com.chocoford.excalidraw"
-        )
+
+        // Only configure CloudKit options when CloudKit is enabled
+        if cloudKitEnabled {
+            cloudStoreDescription.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
+                containerIdentifier: "iCloud.com.chocoford.excalidraw"
+            )
+        }
+
         cloudStoreDescription.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
         cloudStoreDescription.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
         
@@ -117,6 +129,13 @@ class PersistenceController {
         #if DEBUG
 //        log()
         #endif
+    }
+    
+    func newTaskContext() -> NSManagedObjectContext {
+        let ctx = container.newBackgroundContext()
+        ctx.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        ctx.automaticallyMergesChangesFromParent = true
+        return ctx
     }
 }
 
@@ -219,26 +238,13 @@ extension PersistenceController {
         file.content = try Data(contentsOf: templateURL)
         return file
     }
-    
-    @MainActor
-    func duplicateFile(file: File) -> File {
-        let newFile = File(context: container.viewContext)
-        newFile.id = UUID()
-        newFile.createdAt = .now
-        newFile.updatedAt = .now
-        newFile.name = file.name
-        newFile.content = file.content
-        newFile.group = file.group
-        return newFile
-    }
-    
     //MARK: - Checkpoints
-    
-    func getLatestCheckpoint(of file: File, viewContext: NSManagedObjectContext) throws -> FileCheckpoint? {
+    @available(*, deprecated, message: "")
+    func getLatestCheckpoint(of file: File, context: NSManagedObjectContext) throws -> FileCheckpoint? {
         let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
         fetchRequest.predicate = NSPredicate(format: "file == %@", file)
         fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
-        return try viewContext.fetch(fetchRequest).first
+        return try context.fetch(fetchRequest).first
     }
     func getLatestCheckpoint(of file: CollaborationFile, context: NSManagedObjectContext) throws -> FileCheckpoint? {
         let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")

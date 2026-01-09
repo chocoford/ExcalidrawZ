@@ -218,9 +218,6 @@ struct GeneralSettingsView: View {
         }
 #endif
         
-        // Anti-Invert Image
-        AntiInvertImageSettingsSection()
-        
 #if os(macOS) && !APP_STORE
         Section {
             Toggle(.localizable(.settingsUpdatesAutoCheckLabel), isOn: $updateChecker.canCheckForUpdates)
@@ -262,15 +259,17 @@ struct GeneralSettingsView: View {
             AsyncButton {
                 try await PersistenceController.shared.refreshIndices()
             } label: {
-                Text("Refresh Spotlight Indices")
+                Text(localizable: .settingsButtonRefreshSpotlightIndices)
             }
         }
     }
     
     @MainActor @ViewBuilder
-    func settingCellView<T: View, V: View>(_ title: LocalizedStringKey,
-                                           @ViewBuilder trailing: @escaping () -> T,
-                                           @ViewBuilder content: (() -> V) = { EmptyView() }) -> some View {
+    func settingCellView<T: View, V: View>(
+        _ title: LocalizedStringKey,
+        @ViewBuilder trailing: @escaping () -> T,
+        @ViewBuilder content: (() -> V) = { EmptyView() }
+    ) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(title)
@@ -280,41 +279,6 @@ struct GeneralSettingsView: View {
             }
             
             content()
-        }
-    }
-}
-
-struct AntiInvertImageSettingsSection: View {
-    @EnvironmentObject private var appPreference: AppPreference
-    
-    var body: some View {
-        Section {
-            Toggle(.localizable(.settingsExcalidrawPreventImageAutoInvert), isOn: Binding {
-                appPreference.autoInvertImage
-            } set: { val in
-                withAnimation {
-                    appPreference.autoInvertImage = val
-                }
-            })
-            // Divider()
-            if appPreference.autoInvertImage {
-                VStack {
-                    Toggle("PNG", isOn: $appPreference.antiInvertImageSettings.png)
-                    Toggle("SVG", isOn: $appPreference.antiInvertImageSettings.svg)
-                }
-                .padding(.leading, 6)
-                .disabled(!appPreference.autoInvertImage)
-            }
-        } header: {
-            if #available(macOS 14.0, *) {
-                Text(.localizable(.settingsExcalidraw))
-            } else {
-                Text(.localizable(.settingsExcalidraw))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        } footer: {
-            Text("Need the precise settings for each individual file? Come to Discord and let me know!")
-                .foregroundStyle(.secondary)
         }
     }
 }
@@ -332,7 +296,7 @@ struct AntiInvertImageSettingsSection: View {
 #Preview {
     if #available(macOS 13.0, *) {
         Form {
-            AntiInvertImageSettingsSection()
+            
         }
         .formStyle(.grouped)
         .environmentObject(AppPreference())

@@ -17,11 +17,14 @@ struct LocalFoldersView: View {
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var sidebarDragState: ItemDragState
-    
+
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField
     var showFiles: Bool
     var onDeleteSelected: () -> Void
+
+    @State private var showFolderNotFoundAlert = false
+    @State private var folderNotFoundMessage = ""
         
     @FetchRequest
     private var folderChildren: FetchedResults<LocalFolder>
@@ -56,8 +59,17 @@ struct LocalFoldersView: View {
         } set: { val in
             DispatchQueue.main.async {
                 if val {
-                    fileState.currentActiveGroup = .localFolder(folder)
-                    fileState.currentActiveFile = nil
+                    // Check if folder path exists using shared method
+                    switch folder.checkPathExists() {
+                    case .success:
+                        // Path exists, set as active
+                        fileState.currentActiveGroup = .localFolder(folder)
+                        fileState.setActiveFile(nil)
+                    case .failure(let error):
+                        // Path doesn't exist, show alert
+                        folderNotFoundMessage = error.message
+                        showFolderNotFoundAlert = true
+                    }
                 }
             }
         }
@@ -74,6 +86,16 @@ struct LocalFoldersView: View {
             }
         }
         .animation(.smooth, value: folderStructStyle)
+        .alert("Folder Not Found", isPresented: $showFolderNotFoundAlert) {
+            LocalFolderMenuProvider(folder: folder) { trigger in
+                Button(.localizable(.sidebarLocalFolderRowContextMenuRemoveObservation), role: .destructive) {
+                    trigger.onToggleRemoveObservation()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(folderNotFoundMessage)
+        }
     }
     
     var dragItemURL: URL? {

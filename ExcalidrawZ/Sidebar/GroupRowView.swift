@@ -75,7 +75,7 @@ struct GroupRowView: View {
         } else {
             Button {
                 fileState.currentActiveGroup = .group(group)
-                fileState.currentActiveFile = nil
+                fileState.setActiveFile(nil)
             } label: {
                 HStack(spacing: 6) {
                     groupIcon

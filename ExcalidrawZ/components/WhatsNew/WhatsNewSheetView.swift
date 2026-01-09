@@ -13,6 +13,8 @@ struct WhatsNewSheetViewModifier: ViewModifier {
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
     @AppStorage("WhatsNewLastBuild") var lastBuild = 0
     
+    @EnvironmentObject private var migrationState: MigrationState
+    
     @State private var isPresented = false
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -46,13 +48,15 @@ struct WhatsNewSheetViewModifier: ViewModifier {
                 sheetContent()
             }
             .bindWindow($window)
-            .onAppear {
+            .onChange(of: migrationState.phase) { newValue in
+                if newValue == .closed {
 #if DEBUG
-                isPresented = true
-#endif
-                if let buildString = Bundle.main.infoDictionary!["CFBundleVersion"] as? String,
-                   lastBuild < (Int(buildString) ?? 0) {
                     isPresented = true
+#endif
+                    if let buildString = Bundle.main.infoDictionary!["CFBundleVersion"] as? String,
+                       lastBuild < (Int(buildString) ?? 0) {
+                        isPresented = true
+                    }
                 }
             }
     }
@@ -92,7 +96,6 @@ struct WhatsNewView: View {
                         navigationContent()
                     } else {
                         navigationContent()
-                           
                     }
                 }
                 .navigationDestination(for: Route.self) { route in
@@ -135,12 +138,13 @@ struct WhatsNewView: View {
             }
         }
         .readSize($navigationSize)
-//        .watchImmediately(of: navigationSize) { newValue in
+//        .watch(value: navigationSize) { newValue in
 //            navigationMaxHeight = max(navigationMaxHeight, newValue.height)
 //        }
+#if os(macOS)
         .overlay(alignment: .topLeading) {
             ZStack {
-                if #available(macOS 26.0, *) {
+                if #available(macOS 26.0, iOS 26.0, *) {
                     dismissButton()
                         .buttonBorderShape(.circle)
                         .buttonStyle(.glass)
@@ -153,9 +157,14 @@ struct WhatsNewView: View {
             }
             .padding(20)
         }
-#if os(iOS)
+#elseif os(iOS)
         .navigationTitle(Text(.localizable(.whatsNewTitle)))
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                dismissButton()
+            }
+        }
 #endif
     }
     
@@ -169,37 +178,37 @@ struct WhatsNewView: View {
 #endif
             VStack(spacing: 6) {
                 VStack(alignment: .leading, spacing: 22) {
-                    if #available(macOS 13.0, iOS 16.0, *) {
-                        BeforeAfterSlider(
-                            slideMode: .drag,
-                            showHandlebar: true,
-                            initialPercentage: 0.0,
-                            autoplay: true,
-                            autoplayDuration: 6
-                        ) {
-                            Image("ExcalidrawZ - New")
-                                .resizable()
-                                .scaledToFit()
-                        } secondContent: {
-                            Image("ExcalidrawZ - Old")
-                                .resizable()
-                                .scaledToFit()
-                        } handle: {
-                            Image(systemName: "line.horizontal.3")
-                                .foregroundColor(.black)
-                        }
-                        .frame(height: 300)
-                    } else {
+//                    if #available(macOS 13.0, iOS 16.0, *) {
+//                        BeforeAfterSlider(
+//                            slideMode: .drag,
+//                            showHandlebar: true,
+//                            initialPercentage: 0.0,
+//                            autoplay: true,
+//                            autoplayDuration: 6
+//                        ) {
+//                            Image("ExcalidrawZ - New")
+//                                .resizable()
+//                                .scaledToFit()
+//                        } secondContent: {
+//                            Image("ExcalidrawZ - Old")
+//                                .resizable()
+//                                .scaledToFit()
+//                        } handle: {
+//                            Image(systemSymbol: .line3Horizontal)
+//                                .foregroundColor(.black)
+//                        }
+//                        .frame(height: 300)
+//                    } else {
                         Image("What's New Cover")
                             .resizable()
                             .scaledToFit()
                             .clipShape(RoundedRectangle(cornerRadius: 12))
 #if os(macOS)
-                            .padding(.horizontal, 80)
+                            .padding(.horizontal, 40)
 #endif
-                    }
+//                    }
                     
-                    featuresContent()
+                     featuresContent()
                 }
                 .padding(.vertical)
                 .fixedSize(horizontal: false, vertical: true)

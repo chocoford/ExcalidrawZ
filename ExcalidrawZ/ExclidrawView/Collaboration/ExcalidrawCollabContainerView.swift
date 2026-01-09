@@ -49,16 +49,16 @@ struct ExcalidrawCollabContainerView: View {
         ZStack {
             ZStack {
                 ForEach(fileState.collaboratingFiles, id: \.self) { file in
+                    var zIndex: Double {
+                        if case .collaborationFile(let room) = fileState.currentActiveFile {
+                            return file == room ? 1 : 0
+                        } else {
+                            return 0
+                        }
+                    }
+                    
                     ExcalidrawCollaborationView(file: file)
-                        .zIndex(
-                            {
-                                if case .collaborationFile(let room) = fileState.currentActiveFile {
-                                    return file == room ? 1 : 0
-                                } else {
-                                    return 0
-                                }
-                            }()
-                        )
+                        .zIndex(zIndex)
                 }
             }
         }

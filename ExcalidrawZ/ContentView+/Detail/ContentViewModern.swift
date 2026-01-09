@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SFSafeSymbols
 
 @available(macOS 13.0, *)
 struct ContentViewModern: View {
@@ -41,6 +42,20 @@ struct ContentViewModern: View {
     
     @MainActor @ViewBuilder
     private func content() -> some View {
+        if #available(iOS 26.0, *), horizontalSizeClass == .compact {
+#if os(iOS)
+            CompactExcalidrawHomeView()
+                .modifier(FileHomeItemTransitionModifier())
+#endif
+        } else {
+            navigationView()
+        }
+    }
+    
+    
+    @MainActor @ViewBuilder
+    private func navigationView() -> some View {
+        // Known issue: Cause `Unable to simultaneously satisfy constraints.` in iOS
         NavigationSplitView(columnVisibility: $columnVisibility) {
             if #available(macOS 14.0, iOS 17.0, *) {
 #if os(macOS)
@@ -60,9 +75,10 @@ struct ContentViewModern: View {
                     .toolbar(content: sidebarToolbar)
             }
         } detail: {
-            ContentViewDetail(isSettingsPresented: $isSettingsPresented)
+             ContentViewDetail(isSettingsPresented: $isSettingsPresented)
         }
     }
+    
     
     @ToolbarContentBuilder
     private func sidebarToolbar() -> some ToolbarContent {
@@ -82,14 +98,6 @@ struct ContentViewModern: View {
 ////                NewFileButton()
 //            }
         // }
-#elseif os(iOS)
-        ToolbarItemGroup(placement: .topBarLeading) {
-            Button {
-                isSettingsPresented.toggle()
-            } label: {
-                Label(.localizable(.settingsName), systemSymbol: .gear)
-            }
-        }
 #endif
 //        ToolbarItemGroup(placement: .confirmationAction) {
 //            Color.blue.frame(width: 4, height: 4)

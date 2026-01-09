@@ -8,7 +8,7 @@
 import SwiftUI
 import WebKit
 import Combine
-import os.log
+import Logging
 
 import SFSafeSymbols
 
@@ -277,14 +277,15 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
 }
 
 final class ToolState: ObservableObject {
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ToolState")
+    let logger = Logger(label: "ToolState")
     var excalidrawWebCoordinator: ExcalidrawView.Coordinator?
-    // var excalidrawCollaborationWebCoordinator: ExcalidrawView.Coordinator?
 
     @Published var activatedTool: ExcalidrawTool? = .cursor
     @Published var isToolLocked: Bool = false
     @Published var previousActivatedTool: ExcalidrawTool? = nil
-    @Published var inDragMode: Bool = false
+    var inDragMode: Bool {
+        !inPenMode && activatedTool == .hand
+    }
     
     @Published var inPenMode: Bool = false
     
@@ -297,6 +298,12 @@ final class ToolState: ObservableObject {
     }
 
     @AppStorage("PencilInteractionMode") var pencilInteractionMode: PencilInteractionMode = .fingerSelect
+    
+    func setActivedTool(_ tool: ExcalidrawTool?, animation: Animation? = .smooth) {
+        withAnimation(animation) {
+            self.activatedTool = tool
+        }
+    }
     
     func toggleTool(_ tool: ExcalidrawTool) async throws {
         logger.info("Toggle tool: \(String(describing: tool))")

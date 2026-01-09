@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import CoreData
 
 import ChocofordUI
 
@@ -255,20 +256,32 @@ struct GroupRowDropModifier: ViewModifier {
         context: NSManagedObjectContext
     ) async -> Bool {
         do {
-            return try await context.perform {
-                guard let folder = viewContext.object(with: folderID) as? LocalFolder else { return false }
-                
-                let group = try folder.importToGroup(context: viewContext, delete: delete)
-                group.parent = self.group
-                
-                withAnimation(.smooth) {
-                    context.insert(group)
+            let parentGroupID = self.group.objectID
+
+            // Import folder using repository
+            let groupID = try await PersistenceController.shared.localFolderRepository.importToGroup(
+                localFolderObjectID: folderID,
+                delete: delete,
+                parentGroupObjectID: nil
+            )
+
+            // Update parent relationship in context
+            try await context.perform {
+                guard let group = context.object(with: groupID) as? Group,
+                      let parentGroup = context.object(with: parentGroupID) as? Group else {
+                    return
                 }
-                
+
+                group.parent = parentGroup
+
+                withAnimation(.smooth) {
+                    // Group already inserted by importToGroup
+                }
+
                 try context.save()
-                
-                return true
             }
+
+            return true
         } catch {
             alertToast(error)
         }
@@ -292,21 +305,15 @@ struct GroupRowDropModifier: ViewModifier {
     private func performImportFile(url: URL, delete: Bool, context: NSManagedObjectContext) async -> Bool {
         // import file to this group
         do {
-            return try await context.perform {
-                let file = try File(url: url, context: context)
-                file.group = self.group
-                
-                withAnimation(.smooth) {
-                    context.insert(file)
-                }
-                
-                try context.save()
-                
-                if delete {
-                    try FileManager.default.trashItem(at: url, resultingItemURL: nil)
-                }
-                return true
+            _ = try await PersistenceController.shared.fileRepository.createFileFromURL(
+                url,
+                groupObjectID: self.group.objectID
+            )
+
+            if delete {
+                try FileManager.default.trashItem(at: url, resultingItemURL: nil)
             }
+            return true
         } catch {
             alertToast(error)
         }
@@ -332,67 +339,53 @@ struct GroupRowDropModifier: ViewModifier {
         context: NSManagedObjectContext
     ) async -> Bool {
         // import file to this group
-        return await withCheckedContinuation { continuation in
-            Task {
-                do {
-                    try await context.perform {
-                        guard let collaborationFile = context.object(with: roomID) as? CollaborationFile else {
-                            continuation.resume(returning: false)
-                            return
-                        }
-                        try collaborationFile.archiveToLocal(
-                            group: .group(self.group),
-                            delete: delete
-                        ) { error, target in
-                            switch target {
-                                case .file(_, let fileID):
-                                    if fileState.currentActiveFile?.id == roomID.description {
-                                        fileState.currentActiveGroup = .group(self.group)
-                                        if let file = viewContext.object(with: fileID) as? File {
-                                            fileState.currentActiveFile = .file(file)
-                                        } else {
-                                            fileState.currentActiveFile = nil
-                                        }
-                                    }
-                                    continuation.resume(returning: true)
-                                default:
-                                    continuation.resume(returning: false)
-                            }
+        let groupID = self.group.objectID
+
+        do {
+            let result = try await PersistenceController.shared.collaborationFileRepository.archiveToGroup(
+                collaborationFileObjectID: roomID,
+                targetGroupObjectID: groupID,
+                delete: delete
+            )
+
+            if case .file(_, let fileID) = result {
+                await MainActor.run {
+                    if fileState.currentActiveFile?.id == roomID.description {
+                        fileState.currentActiveGroup = .group(self.group)
+                        if let file = viewContext.object(with: fileID) as? File {
+                            fileState.setActiveFile(.file(file))
+                        } else {
+                            fileState.setActiveFile(nil)
                         }
                     }
-                } catch {
-                    continuation.resume(returning: false)
                 }
+                return true
             }
+            return false
+        } catch {
+            return false
         }
     }
     
     private func handleDropTemporaryFile(url: URL) async -> Bool {
         let groupID = group.objectID
         
-        let context = PersistenceController.shared.container.newBackgroundContext()
         do {
-            let fileID = try await context.perform {
-                let file = try File(url: url, context: context)
-                file.group = context.object(with: groupID) as? Group
-                withAnimation {
-                    context.insert(file)
-                }
-                try context.save()
-                return file.objectID
-            }
+            let fileID = try await PersistenceController.shared.fileRepository.createFileFromURL(
+                url,
+                groupObjectID: groupID
+            )
             
             await MainActor.run {
                 guard case let group as Group = viewContext.object(with: groupID) else { return }
                 if let file = viewContext.object(with: fileID) as? File ?? group.files?.allObjects.first as? File {
                     if fileState.currentActiveGroup == .temporary && fileState.temporaryFiles == [url] ||
                         fileState.currentActiveFile == .temporaryFile(url) {
-                        fileState.currentActiveFile = .file(file)
-                        fileState.currentActiveGroup = .group(group)
+                        fileState.setActiveFile(.file(file))
                     }
                 } else {
                     fileState.currentActiveGroup = .group(group)
-                    fileState.currentActiveFile = nil
+                    fileState.setActiveFile(nil)
                 }
                 fileState.temporaryFiles.removeAll(where: {$0 == url})
                 fileState.expandToGroup(group.objectID)
@@ -486,7 +479,7 @@ struct DropToGroupSheetView<T: Sendable>: View {
         }
         .padding(20)
         .frame(width: 360)
-        .watchImmediately(of: isPresented) { val in
+        .watch(value: isPresented) { val in
             print("isPresented: \(val)")
             if val {
                 

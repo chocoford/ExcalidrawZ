@@ -45,39 +45,59 @@ struct ExportFileView: View {
     @State private var fileDocument: ExcalidrawFile?
         
     var body: some View {
-        Center {
-#if canImport(AppKit)
-            if #available(macOS 13.0, *) {
-                Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(height: 80)
-                    .draggable(file)
-                    .padding()
-            } else {
-                Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(height: 80)
-                    .padding()
+        SwiftUI.Group {
+#if os(macOS)
+            Center {
+                if #available(macOS 13.0, *) {
+                    Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 80)
+                        .draggable(file)
+                        .padding()
+                } else {
+                    Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 80)
+                        .padding()
+                }
+                actionsView()
             }
 #else
-            Image(systemSymbol: .docText)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(height: 80)
-                .padding()
+            VStack(spacing: 20) {
+                VStack(spacing: 4) {
+                    Image(systemSymbol: .docText)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 80)
+                        .padding()
+                    Text(fileName + ".excalidraw")
+                }
+                actionsView()
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemSymbol: .xmark)
+                    }
+                }
+            }
 #endif
-            actionsView()
         }
         .modifier(ShareSubViewBackButtonModifier(dismiss: dismiss))
         .padding(horizontalSizeClass == .compact ? 0 : 20)
-        .onAppear {
+        .task {
             saveFileToTemp()
             fileName = file.name ?? String(localizable: .newFileNamePlaceholder)
             do {
-                fileDocument = file
-                try fileDocument?.syncFiles(context: viewContext)
+                var fileDocument = file
+                try await fileDocument.syncFiles(context: viewContext)
+                await MainActor.run {
+                    self.fileDocument = fileDocument
+                }
             } catch {
                 alertToast(error)
             }
@@ -88,7 +108,7 @@ struct ExportFileView: View {
     private func actionsView() -> some View {
         HStack {
             Spacer()
-            Button {
+            AsyncButton {
 #if canImport(AppKit)
                 NSPasteboard.general.clearContents()
 #endif
@@ -102,12 +122,14 @@ struct ExportFileView: View {
 #elseif canImport(UIKit)
                     UIPasteboard.general.setObjects([url])
 #endif
-                    withAnimation {
-                        copied = true
-                    }
-                    Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { _ in
+                    await MainActor.run {
                         withAnimation {
-                            copied = false
+                            copied = true
+                        }
+                        Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { _ in
+                            withAnimation {
+                                copied = false
+                            }
                         }
                     }
                 }
@@ -158,7 +180,7 @@ struct ExportFileView: View {
             
             Spacer()
         }
-        .modernButtonStyle(shape:. modern)
+        .modernButtonStyle(style: .glass, shape: .modern)
         .fileExporter(
             isPresented: $showFileExporter,
             document: fileDocument,
@@ -176,35 +198,38 @@ struct ExportFileView: View {
     
     
     func saveFileToTemp() {
-        do {
-            let fileManager: FileManager = FileManager.default
-            let directory: URL = try getTempDirectory()
-            let fileExtension = "excalidraw"
-            let filename = (file.name ?? String(localizable: .newFileNamePlaceholder)) + ".\(fileExtension)"
-            let url = directory.appendingPathComponent(filename, conformingTo: .fileURL)
-            if fileManager.fileExists(atPath: url.absoluteString) {
-                try fileManager.removeItem(at: url)
-            }
-            
-            var file = file
-            try file.syncFiles(context: viewContext)
-            guard let fileData = file.content else {
-                struct NoContentError: LocalizedError {
-                    var errorDescription: String? {
-                        "The file has no data."
-                    }
+        Task {
+            do {
+                let fileManager: FileManager = FileManager.default
+                let directory: URL = try getTempDirectory()
+                let fileExtension = "excalidraw"
+                let filename = (file.name ?? String(localizable: .newFileNamePlaceholder)) + ".\(fileExtension)"
+                let url = directory.appendingPathComponent(filename, conformingTo: .fileURL)
+                if fileManager.fileExists(atPath: url.absoluteString) {
+                    try fileManager.removeItem(at: url)
                 }
-                throw NoContentError()
-            }
 
-            if #available(macOS 13.0, *) {
-                fileManager.createFile(atPath: url.path(percentEncoded: false), contents: fileData)
-            } else {
-                fileManager.createFile(atPath: url.standardizedFileURL.path, contents: fileData)
+                var excalidrawFile = file
+                try await excalidrawFile.syncFiles(context: viewContext)
+                guard let fileData = excalidrawFile.content else {
+                    struct NoContentError: LocalizedError {
+                        var errorDescription: String? {
+                            "The file has no data."
+                        }
+                    }
+                    throw NoContentError()
+                }
+
+                fileManager.createFile(atPath: url.filePath, contents: fileData)
+                
+                await MainActor.run {
+                    fileURL = url
+                }
+            } catch {
+                await MainActor.run {
+                    alertToast(error)
+                }
             }
-            fileURL = url
-        } catch {
-            alertToast(error)
         }
     }
 }

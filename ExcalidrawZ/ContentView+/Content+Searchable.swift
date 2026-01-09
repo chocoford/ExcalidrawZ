@@ -68,6 +68,88 @@ struct SearchableModifier: ViewModifier {
     }
 }
 
+struct SearchResultsProvider: View {
+    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.alertToast) private var alertToast
+    
+    var searchText: String
+    var content: ([FileState.ActiveFile]) -> AnyView
+    
+    init<Content: View>(
+        searchText: String,
+        @ViewBuilder content: @escaping ([FileState.ActiveFile]) -> Content
+    ) {
+        self.searchText = searchText
+        self.content = { files in
+            AnyView(content(files))
+        }
+    }
+    
+    @State private var searchResults: [FileState.ActiveFile] = []
+        
+    @State private var isSearching = false
+    
+    var body: some View {
+        content(searchResults)
+            .onChange(of: searchText, initial: true, throttle: 0.5, latest: true) { newValue in
+                guard !isSearching else { return }
+                fetchFiles()
+            }
+    }
+    
+    private func fetchFiles() {
+        Task {
+            isSearching = true
+            do {
+                try await viewContext.perform {
+                    let fileFetchRequest = NSFetchRequest<File>(entityName: "File")
+                    if !searchText.isEmpty {
+                        fileFetchRequest.predicate = NSPredicate(format: "name contains %@", searchText)
+                    }
+                    let searchFiles = try viewContext.fetch(fileFetchRequest)
+                    
+                    var searchLocalFiles: [URL] = []
+                    let localFolderFetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                    let localFolders = try viewContext.fetch(localFolderFetchRequest)
+                    for folder in localFolders {
+                        let localFiles = try folder.withSecurityScopedURL { scopedURL in
+                            let contents = try FileManager.default.contentsOfDirectory(at: scopedURL, includingPropertiesForKeys: [])
+                            return contents
+                                .filter({$0.pathExtension == "excalidraw"})
+                                .filter({
+                                    searchText.isEmpty ||
+                                    $0.deletingPathExtension().lastPathComponent.contains(searchText)
+                                })
+                        }
+                        searchLocalFiles.append(contentsOf: localFiles)
+                    }
+                    
+                    let collaborationFilesFetchRequest = NSFetchRequest<CollaborationFile>(entityName: "CollaborationFile")
+                    if !searchText.isEmpty {
+                        collaborationFilesFetchRequest.predicate = NSPredicate(format: "name contains %@", searchText)
+                    }
+                    let searchCollaborationFiles = try viewContext.fetch(collaborationFilesFetchRequest)
+                    
+                    let searchResults: [FileState.ActiveFile] = searchFiles.map {
+                        .file($0)
+                    } + searchLocalFiles.map {
+                        .localFile($0)
+                    } + searchCollaborationFiles.map {
+                        .collaborationFile($0)
+                    }
+                    
+                    withAnimation(.smooth) {
+                        self.searchResults = searchResults
+                    }
+                }
+            } catch {
+                alertToast(error)
+            }
+            isSearching = false
+        }
+    }
+}
+
 struct SerachContent: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
@@ -234,8 +316,7 @@ struct SerachContent: View {
                            !fileState.collaboratingFiles.contains(room) {
                             store.togglePaywall(reason: .roomLimit)
                         } else {
-                            fileState.currentActiveGroup = .collaboration
-                            fileState.currentActiveFile = .collaborationFile(room)
+                            fileState.setActiveFile(.collaborationFile(room))
                         }
                     }
                 }
@@ -266,12 +347,8 @@ struct SerachContent: View {
 #endif
                     }
                     .onTapGesture(count: tapSelectCount) {
-                        if let group = file.group {
-                            fileState.currentActiveGroup = .group(group)
-                            fileState.currentActiveFile = .file(file)
-                            fileState.expandToGroup(group.objectID)
-                            dismiss()
-                        }
+                        fileState.setActiveFile(.file(file))
+                        dismiss()
                     }
                 }
             }
@@ -301,22 +378,8 @@ struct SerachContent: View {
 #endif
                     }
                     .onTapGesture(count: tapSelectCount) {
-                        Task {
-                            do {
-                                try await viewContext.perform {
-                                    let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                                    fetchRequest.predicate = NSPredicate(format: "filePath = %@", file.deletingLastPathComponent().filePath)
-                                    if let folder = try viewContext.fetch(fetchRequest).first {
-                                        fileState.currentActiveGroup = .localFolder(folder)
-                                        fileState.currentActiveFile = .localFile(file)
-                                        fileState.expandToGroup(folder.objectID)
-                                        dismiss()
-                                    }
-                                }
-                            } catch {
-                                alertToast(error)
-                            }
-                        }
+                        fileState.setActiveFile(.localFile(file))
+                        dismiss()
                     }
                 }
             }
@@ -421,41 +484,18 @@ struct SerachContent: View {
     
     private func onSelect(_ index: Int) {
         if index < searchCollaborationFiles.count {
-            dismiss()
             let file = searchCollaborationFiles[index]
-            if let limit = store.collaborationRoomLimits,
-               fileState.collaboratingFiles.count >= limit,
-               !fileState.collaboratingFiles.contains(file) {
-                store.togglePaywall(reason: .roomLimit)
-            } else {
-                fileState.currentActiveGroup = .collaboration
-                fileState.currentActiveFile = .collaborationFile(file)
-            }
+            fileState.setActiveFile(.collaborationFile(file))
+            dismiss()
         } else if index < searchCollaborationFiles.count + searchFiles.count {
             let file = searchFiles[index - searchCollaborationFiles.count]
-            if let group = file.group {
-                fileState.currentActiveGroup = .group(group)
-                fileState.currentActiveFile = .file(file)
-                fileState.expandToGroup(group.objectID)
-                dismiss()
-            }
+            fileState.setActiveFile(.file(file))
+            dismiss()
         } else if index < searchCollaborationFiles.count + searchFiles.count + searchLocalFiles.count {
             Task {
                 let file = searchLocalFiles[index - searchCollaborationFiles.count - searchFiles.count]
-                do {
-                    try await viewContext.perform {
-                        let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                        fetchRequest.predicate = NSPredicate(format: "filePath = %@", file.deletingLastPathComponent().filePath)
-                        if let folder = try viewContext.fetch(fetchRequest).first {
-                            fileState.currentActiveGroup = .localFolder(folder)
-                            fileState.currentActiveFile = .localFile(file)
-                            fileState.expandToGroup(folder.objectID)
-                            dismiss()
-                        }
-                    }
-                } catch {
-                    alertToast(error)
-                }
+                fileState.setActiveFile(.localFile(file))
+                dismiss()
             }
         }
     }

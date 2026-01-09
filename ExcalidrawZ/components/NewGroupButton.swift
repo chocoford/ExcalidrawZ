@@ -6,9 +6,9 @@
 //
 
 import SwiftUI
+import CoreData
+
 import ChocofordUI
-
-
 
 struct NewGroupButton: View {
     @Environment(\.alert) private var alert

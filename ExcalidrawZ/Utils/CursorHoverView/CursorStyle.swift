@@ -6,8 +6,6 @@
 //
 
 import SwiftUI
-#if canImport(AppKit)
-import AppKit
 // MARK: - 基础方向类型（与 PointerStyle 的 directions 语义对齐）
 
 /// 水平方向集合：列/竖向分割线的可调整方向
@@ -91,6 +89,8 @@ import AppKit
     case frameResize(position: FrameResizePos, directions: FrameResizeDir)
 }
     
+#if canImport(AppKit)
+import AppKit
 
 // MARK: - 映射到 SwiftUI.PointerStyle (macOS 15+)
 
@@ -168,15 +168,15 @@ extension CursorStyle {
                 // AppKit 没有放大镜指针，回退为 crosshair 或 arrow
                 return .crosshair
                 
-            case .columnResize(let d):
+            case .columnResize:
                 // 任意水平方向 → 左右
                 return .resizeLeftRight
                 
-            case .rowResize(let d):
+            case .rowResize:
                 // 任意垂直方向 → 上下
                 return .resizeUpDown
                 
-            case .frameResize(let pos, let dirs):
+            case .frameResize(let pos, _):
                 // 边：按水平/垂直方向选左右或上下；角：选对角线
                 switch pos {
                     case .leading, .trailing:

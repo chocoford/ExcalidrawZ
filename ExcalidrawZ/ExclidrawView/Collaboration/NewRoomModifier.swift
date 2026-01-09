@@ -119,26 +119,26 @@ struct NewRoomModifier: ViewModifier {
             }
             .sheet(isPresented: $state.isCreateRoomFromFileSheetPresented) {
                 ExcalidrawFileBrowser { selection in
-                    do {
-                        switch selection {
-                            case .file(let file):
-                                var excalidrawFile = try ExcalidrawFile(
-                                    from: file.objectID,
-                                    context: viewContext
-                                )
-                                try excalidrawFile.syncFiles(context: viewContext)
-                                createRoom(
-                                    name: file.name ?? String(localizable: .generalUntitled),
-                                    file: excalidrawFile
-                                )
-                            case .localFile(let url):
-                                createRoom(
-                                    name: url.deletingPathExtension().lastPathComponent,
-                                    file: try ExcalidrawFile(contentsOf: url)
-                                )
+                    Task {
+                        do {
+                            switch selection {
+                                case .file(let file):
+                                    let content = try await file.loadContent()
+                                    var excalidrawFile = try ExcalidrawFile(data: content, id: file.id?.uuidString)
+                                    try await excalidrawFile.syncFiles(context: viewContext)
+                                    createRoom(
+                                        name: file.name ?? String(localizable: .generalUntitled),
+                                        file: excalidrawFile
+                                    )
+                                case .localFile(let url):
+                                    createRoom(
+                                        name: url.deletingPathExtension().lastPathComponent,
+                                        file: try ExcalidrawFile(contentsOf: url)
+                                    )
+                            }
+                        } catch {
+                            alertToast(error)
                         }
-                    } catch {
-                        alertToast(error)
                     }
                 }
             }
@@ -152,7 +152,7 @@ struct NewRoomModifier: ViewModifier {
     }
     
     private func createRoom(name: String, file: ExcalidrawFile = ExcalidrawFile()) {
-        let context = PersistenceController.shared.container.newBackgroundContext()
+        let context = PersistenceController.shared.newTaskContext()
         Task.detached {
             do {
                 try await context.perform {
@@ -169,11 +169,7 @@ struct NewRoomModifier: ViewModifier {
                     Task {
                         await MainActor.run {
                             if let collabFile = viewContext.object(with: fileID) as? CollaborationFile {
-                                fileState.currentActiveGroup = .collaboration
-                                fileState.currentActiveFile = .collaborationFile(collabFile)
-                                if !fileState.collaboratingFiles.contains(collabFile) {
-                                    fileState.collaboratingFiles.append(collabFile)
-                                }
+                                fileState.setActiveFile(.collaborationFile(collabFile))
                             }
                         }
                     }

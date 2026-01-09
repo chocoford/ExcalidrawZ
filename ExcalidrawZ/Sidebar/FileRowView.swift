@@ -41,7 +41,7 @@ struct FileRowView: View {
     }
     
     @State private var showPermanentlyDeleteAlert: Bool = false
-    
+    @State private var fileStatus: FileStatus?
     @FocusState private var isFocused: Bool
     
     var isSelected: Bool {
@@ -49,50 +49,87 @@ struct FileRowView: View {
     }
     
     var body: some View {
-        FileRowButton(
-            name: (file.name ?? "")/* + " - \(file.rank)"*/,
-            updatedAt: file.updatedAt,
-            isInTrash: file.inTrash == true,
-            isSelected: isSelected,
-            isMultiSelected: fileState.selectedFiles.contains(file)
-        ) {
+        if fileStatus?.contentAvailability == .missing {
+            content()
+                .modifier(MissingFileContextMenuModifier(file: .file(file)))
+        } else {
+            content()
+                .modifier(FileContextMenuModifier(file: file))
+        }
+    }
+    
+    @ViewBuilder
+    private func content() -> some View {
+        MissingFileMenuProvider(file: .file(file)) { triggers in
+            FileRowButton(
+                isSelected: isSelected,
+                isMultiSelected: fileState.selectedFiles.contains(file)
+            ) {
 #if os(macOS)
-            if NSEvent.modifierFlags.contains(.shift) {
-                // 1. If this is the first shift-click, remember it and select that file.
-                // Shift don't change the start file.
-                if fileState.selectedFiles.isEmpty {
-                    fileState.selectedFiles.insert(file)
+                if NSEvent.modifierFlags.contains(.shift) {
+                    // 1. If this is the first shift-click, remember it and select that file.
+                    // Shift don't change the start file.
+                    if fileState.selectedFiles.isEmpty {
+                        fileState.selectedFiles.insert(file)
+                        fileState.selectedStartFile = file
+                    } else {
+                        guard let startFile = fileState.selectedStartFile,
+                              let startIdx = files.firstIndex(of: startFile),
+                              let endIdx = files.firstIndex(of: file) else {
+                            return
+                        }
+                        let range = startIdx <= endIdx
+                        ? startIdx...endIdx
+                        : endIdx...startIdx
+                        let sliceItems = files[range]
+                        let sliceSet = Set(sliceItems)
+                        fileState.selectedFiles = sliceSet
+                    }
+                } else if NSEvent.modifierFlags.contains(.command) {
+                    fileState.selectedFiles.insertOrRemove(file)
+                    fileState.selectedStartFile = file
                 } else {
-                    guard let startFile = fileState.selectedStartFile,
-                          let startIdx = files.firstIndex(of: startFile),
-                          let endIdx = files.firstIndex(of: file) else {
+                    guard FileStatusService.shared.statusBox(for: .file(file)).status.contentAvailability != .missing else {
+                        triggers.onToggleTryToRecover()
                         return
                     }
-                    let range = startIdx <= endIdx
-                    ? startIdx...endIdx
-                    : endIdx...startIdx
-                    let sliceItems = files[range]
-                    let sliceSet = Set(sliceItems)
-                    fileState.selectedFiles = sliceSet
+                    activeFile(file)
+                    fileState.selectedStartFile = file
                 }
-            } else if NSEvent.modifierFlags.contains(.command) {
-                fileState.selectedFiles.insertOrRemove(file)
-                fileState.selectedStartFile = file
-            } else {
+#else
+                guard FileStatusService.shared.statusBox(for: .file(file)).status.contentAvailability != .missing else {
+                    triggers.onToggleTryToRecover()
+                    return
+                }
                 activeFile(file)
                 fileState.selectedStartFile = file
-            }
-#else
-            activeFile(file)
-            fileState.selectedStartFile = file
 #endif
+            } label: {
+                FileRowLabel(
+                    updatedAt: file.updatedAt ?? .distantPast,
+                    isInTrash: file.inTrash == true
+                ) {
+                  Text(file.name ?? ""/* + " - \(file.rank)"*/)
+                    .foregroundStyle(
+                        fileStatus?.contentAvailability == .missing
+                        ? AnyShapeStyle(Color.red)
+                        : AnyShapeStyle(HierarchicalShapeStyle.primary)
+                    )
+                } nameTrailingView: {
+                    if fileStatus?.contentAvailability == .missing {
+                        Image(systemSymbol: .exclamationmarkTriangle)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
         }
         .modifier(FileRowDragDropModifier(file: file, sameGroupFiles: files))
-        .modifier(FileContextMenuModifier(file: file))
+        .bindFileStatus(for: .file(file), status: $fileStatus)
     }
     
     private func activeFile(_ file: File) {
-        fileState.currentActiveFile = .file(file)
+        fileState.setActiveFile(.file(file))
 
         withOpenFileDelay {
             if file.inTrash {

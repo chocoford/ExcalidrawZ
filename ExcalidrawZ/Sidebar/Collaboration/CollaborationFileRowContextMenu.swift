@@ -57,23 +57,22 @@ struct CollaborationFileMenuProvider: View {
     }
     
     private func deleteCollaborationFile(file: CollaborationFile) {
-        let context = PersistenceController.shared.container.newBackgroundContext()
         let fileID = file.objectID
         Task.detached {
             do {
-                try await context.perform {
-                    guard let file = context.object(with: fileID) as? CollaborationFile else { return }
-                    try file.delete(context: context)
-                }
+                try await PersistenceController.shared.collaborationFileRepository.delete(
+                    collaborationFileObjectID: fileID,
+                    save: true
+                )
             } catch {
                 await alertToast(error)
             }
         }
-        
+
         fileState.collaboratingFiles.removeAll(where: {$0 == file})
         fileState.collaboratingFilesState[file] = nil
         if fileState.currentActiveFile == .collaborationFile(file) {
-            fileState.currentActiveFile = nil
+            fileState.setActiveFile(nil)
         }
     }
 }
@@ -136,6 +135,23 @@ struct CollaborationFileMenuItems: View {
     var onDelete: () -> Void
     
     var body: some View {
+        Button {
+            fileState.setActiveFile(.collaborationFile(file))
+        } label: {
+            if #available(macOS 13.0, *) {
+                Label(
+                    .localizable(.collaborationButtonJoinRoom),
+                    systemSymbol: .doorLeftHandOpen
+                )
+            } else {
+                Label(
+                    .localizable(.collaborationButtonJoinRoom),
+                    systemSymbol: .ipadAndArrowForward
+                )
+            }
+        }
+        
+        
         if let roomID = file.roomID {
             Button {
                 copyRoomShareLink(roomID: roomID, filename: file.name)
@@ -155,17 +171,19 @@ struct CollaborationFileMenuItems: View {
             )
         }
         
-        Button {
-            fileState.collaboratingFiles.removeAll(where: {$0 == file})
-            fileState.collaboratingFilesState[file] = nil
-            if fileState.currentActiveFile == .collaborationFile(file) {
-                fileState.currentActiveFile = nil
+        if fileState.collaboratingFiles.contains(file) {
+            Button {
+                fileState.collaboratingFiles.removeAll(where: {$0 == file})
+                fileState.collaboratingFilesState[file] = nil
+                if fileState.currentActiveFile == .collaborationFile(file) {
+                    fileState.setActiveFile(nil)
+                }
+            } label: {
+                Label(
+                    .localizable(.sidebarCollaborationFileRowContextMenuDisconnect),
+                    systemSymbol: .rectanglePortraitAndArrowRight
+                )
             }
-        } label: {
-            Label(
-                .localizable(.sidebarCollaborationFileRowContextMenuDisconnect),
-                systemSymbol: .rectanglePortraitAndArrowRight
-            )
         }
 
         Divider()

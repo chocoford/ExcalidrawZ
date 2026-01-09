@@ -7,7 +7,7 @@
 
 import SwiftUI
 import StoreKit
-import os.log
+import Logging
 
 import ChocofordUI
 fileprivate typealias Transaction = StoreKit.Transaction
@@ -52,7 +52,9 @@ public enum ServiceEntitlement: Int, Comparable {
     }
 }
 
+@MainActor
 class Store: ObservableObject {
+    static let shared = Store()
     
     let plans: [SubscriptionItem] = [.free, .starter, .pro]
     
@@ -73,9 +75,9 @@ class Store: ObservableObject {
         SubscriptionItem.starter.id,
         SubscriptionItem.pro.id,
     ]
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Store")
+    private let logger = Logger(label: "Store")
 
-    init() {
+    private init() {
         subscriptions = []
         memberships = []
         
@@ -108,7 +110,7 @@ class Store: ObservableObject {
             // Iterate through any transactions that don't come from a direct call to `purchase()`.
             for await result in Transaction.updates {
                 do {
-                    let transaction = try self.checkVerified(result)
+                    let transaction = try await self.checkVerified(result)
                     
                     // Deliver products to the user.
                     await self.updateCustomerProductStatus()

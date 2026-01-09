@@ -113,6 +113,7 @@ struct HoverCursorModifier: ViewModifier {
     }
     
 }
+#endif // canImport(AppKit)
 
 
 extension View {
@@ -121,6 +122,7 @@ extension View {
         _ style: CursorStyle,
         forceAppKit: Bool = false
     ) -> some View {
+#if canImport(AppKit)
         if #available(macOS 15.0, *), !forceAppKit {
             // 15+ 优先使用指针样式（系统更稳），否则走 NSViewRepresentable
             self.pointerStyle(style.asPointerStyle())
@@ -129,6 +131,8 @@ extension View {
         } else {
             self
         }
+#else
+        self
+#endif
     }
 }
-#endif // canImport(AppKit)

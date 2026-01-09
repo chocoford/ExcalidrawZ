@@ -27,14 +27,6 @@ struct ContentViewDetail: View {
             .modifier(ExcalidrawContainerToolbarContentModifier())
 #if os(iOS)
             .modifier(ApplePencilToolbarModifier())
-            .sheet(isPresented: $isSettingsPresented) {
-                if #available(macOS 13.0, iOS 16.4, *) {
-                    SettingsView()
-                        .presentationContentInteraction(.scrolls)
-                } else {
-                    SettingsView()
-                }
-            }
 #endif
             .environmentObject(toolState)
     }

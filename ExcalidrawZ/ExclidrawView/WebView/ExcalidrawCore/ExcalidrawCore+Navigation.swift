@@ -32,51 +32,39 @@ extension ExcalidrawCore: WKNavigationDelegate {
     
     
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        logger.error("[ExcalidrawCore] didFail: \(error)")
+        logger.error("didFail: \(error)")
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        logger.info("[ExcalidrawCore] did finish navigation")
+        logger.info("didFinish - URL: \(webView.url?.absoluteString ?? "nil"), hasInjectIndexedDBData: \(self.hasInjectIndexedDBData)")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            if !self.hasInjectIndexedDBData {
-                // Should import medias as soon as possible.
-                // And It is required to reload after injected.
-                self.logger.info("[ExcalidrawCore] Start insert medias to IndexedDB.")
-                Task {
-                    do {
-                        let context = PersistenceController.shared.container.viewContext
-                        let allMediasFetch = NSFetchRequest<MediaItem>(entityName: "MediaItem")
-                        
-                        let allMedias = try context.fetch(allMediasFetch)
-                        try await self.insertMediaFiles(
-                            allMedias.compactMap{
-                                .init(mediaItem: $0)
-                            }
+            self.isNavigating = false
+            Task {
+                do {
+                    // Use the extracted injection method
+                    let injectedCount = try await self.injectAllMediaItems()
+                    self.logger.info("Injected \(injectedCount) MediaItems on initial load")
+                    
+                    try await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
+                    
+                    // Open Collab mode if needed.
+                    if self.parent?.type == .collaboration,
+                       self.parent?.file?.roomID?.isEmpty != false,
+                       let file = self.parent?.file,
+                       let content = file.content {
+                        // load file content
+                        try await self.webActor.loadFile(
+                            id: file.id,
+                            data: content,
+                            force: true
                         )
-                        try await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
-                        self.hasInjectIndexedDBData = true
-                        
-                        // Open Collab mode if needed.
-                        if self.parent?.type == .collaboration,
-                           self.parent?.file?.roomID?.isEmpty != false,
-                           let file = self.parent?.file,
-                           let fileContent = file.content {
-                            // load file content
-                            try await self.webActor.loadFile(
-                                id: file.id,
-                                data: fileContent,
-                                force: true
-                            )
-                            // open collab mode
-                            try await self.openCollabMode()
-                        }
-                        
-                        self.isNavigating = false
-                    } catch {
-                        self.parent?.onError(error)
+                        // open collab mode
+                        try await self.openCollabMode()
                     }
+                    
+                } catch {
+                    self.parent?.onError(error)
                 }
-                // self.isNavigating = false
             }
         }
     }
@@ -89,6 +77,7 @@ extension ExcalidrawCore: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        logger.info("didCommit...")
         self.parent?.loadingState = .loading
         DispatchQueue.main.async {
             self.isNavigating = true
@@ -97,6 +86,7 @@ extension ExcalidrawCore: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        logger.info("didStartProvisionalNavigation...")
         self.parent?.loadingState = .loading
         DispatchQueue.main.async {
             self.isNavigating = true

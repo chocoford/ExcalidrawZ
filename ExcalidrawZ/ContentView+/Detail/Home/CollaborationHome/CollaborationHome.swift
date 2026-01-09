@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 import ChocofordUI
 
@@ -245,7 +246,7 @@ struct CollaborationHomeBackground: View {
 
 #Preview {
     CollaborationHome()
-        .environmentObject(Store())
+        .environmentObject(Store.shared)
         .environmentObject(FileState())
         .environmentObject(CollaborationState())
 }

@@ -18,6 +18,7 @@ struct ExportImageView: View {
 #endif
     @Environment(\.dismiss) var mordenDismiss
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
     @Environment(\.alertToast) var alertToast
     
     @EnvironmentObject var exportState: ExportState
@@ -69,10 +70,14 @@ struct ExportImageView: View {
     }
     
     var body: some View {
-        VStack {
+        SwiftUI.Group {
+#if os(macOS)
             Center {
                 content
             }
+#else
+            iOSContent()
+#endif
         }
         .modifier(ShareSubViewBackButtonModifier(dismiss: dismiss))
         .padding(horizontalSizeClass == .compact ? 0 : 20)
@@ -110,16 +115,16 @@ struct ExportImageView: View {
                 fileInfoView
                 actionsView(exportedImageData.url)
             } else if hasError {
-                Text(.localizable(.exportImageLoadingError))
+                Text(localizable: .exportImageLoadingError)
                     .foregroundColor(.red)
             } else {
                 ProgressView()
-                Text(.localizable(.exportImageLoading))
+                Text(localizable: .generalLoading)
                 
                 Button {
                     dismiss()
                 } label: {
-                    Text(.localizable(.exportImageLoadingButtonCancel))
+                    Text(localizable: .exportImageLoadingButtonCancel)
                 }
                 .offset(y: 40)
             }
@@ -133,6 +138,74 @@ struct ExportImageView: View {
         }
     }
     
+    
+#if os(iOS)
+    @MainActor @ViewBuilder
+    private func iOSContent() -> some View {
+        NavigationStack {
+            Form {
+                Section {
+                    exportImageSettingItems()
+                } header: {
+                    if let image, let exportedImageData {
+                        VStack {
+                            thumbnailView(image, url: exportedImageData.url)
+                                .frame(height: 200)
+                                .padding(.vertical)
+                            imageNameField()
+                        }
+                    } else if hasError {
+                        Text(.localizable(.exportImageLoadingError))
+                            .foregroundColor(.red)
+                    } else {
+                        VStack {
+                            ProgressView()
+                            Text(localizable: .generalLoading)
+                        }
+                        .frame(height: 274)
+                        .frame(maxWidth: .infinity)
+                    }
+                } footer: {
+                    if let exportedImageData {
+                        if containerHorizontalSizeClass == .compact {
+                            VStack {
+                                actionItems(exportedImageData.url)
+                            }
+                            .modernButtonStyle(style: .glass)
+                        } else {
+                            HStack {
+                                Spacer()
+                                HStack {
+                                    actionItems(exportedImageData.url)
+                                }
+                                .modernButtonStyle(style: .glass)
+                            }
+                        }
+                    }
+                }
+            }
+            .scrollDisabled(true)
+            .formStyle(.grouped)
+            .navigationTitle(.localizable(.tipsShareDetailExportImageTitle))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemSymbol: .xmark)
+                    }
+                }
+            }
+        }
+//        .toolbar {
+//            ToolbarItemGroup(placement: .bottomBar) {
+//
+//            }
+//        }
+    }
+#endif
+
     @MainActor @ViewBuilder
     private func thumbnailView(_ image: PlatformImage, url: URL) -> some View {
 #if os(macOS)
@@ -156,57 +229,10 @@ struct ExportImageView: View {
     @MainActor @ViewBuilder
     private var fileInfoView: some View {
         VStack {
-            HStack(alignment: .bottom, spacing: 4) {
-                // File name
-                TextField("", text: $fileName)
-                    .textFieldStyle(.roundedBorder)
-                
-                HStack(alignment: .bottom, spacing: 0) {
-                    if keepEditable {
-                        Text(".excalidraw")
-                            .lineLimit(1)
-                    }
-                    HStack(alignment: .bottom, spacing: -2) {
-                        Text(".")
-                        Picker(selection: $imageType) {
-                            Text("png").tag(0)
-                            Text("svg").tag(1)
-                        } label: {}
-                            .pickerStyle(.menu)
-                        //                    .menuStyle(.button)
-                            .buttonStyle(.borderless)
-                            .menuIndicator(.visible)
-
-                    }
-                }
-            }
-
+            imageNameField()
+            
             HStack {
-                if exportType == .png {
-                    Picker(.localizable(.exportImagePickerColorSchemeLabel), selection: $exportColorScheme) {
-                        Text(.localizable(.generalColorSchemeLight)).tag(ColorScheme.light)
-                        Text(.localizable(.generalColorSchemeDark)).tag(ColorScheme.dark)
-                    }
-                } else {
-                    Spacer()
-                }
-#if os(macOS)
-                Toggle(.localizable(.exportImageToggleWithBackground), isOn: $exportWithBackground)
-                    .toggleStyle(.checkboxStyle)
-#elseif os(iOS)
-                Toggle("", isOn: $exportWithBackground)
-                    .toggleStyle(.switch)
-                Text(.localizable(.exportImageToggleWithBackground))
-#endif
-                
-#if os(macOS)
-                Toggle(.localizable(.exportImageToggleEditable), isOn: $keepEditable)
-                    .toggleStyle(.checkboxStyle)
-#elseif os(iOS)
-                Toggle("", isOn: $keepEditable)
-                    .toggleStyle(.switch)
-                Text(.localizable(.exportImageToggleEditable))
-#endif
+                exportImageSettingItems()
             }
             .controlSize(horizontalSizeClass == .compact ? .mini : .regular)
         }
@@ -215,56 +241,146 @@ struct ExportImageView: View {
         .padding(.horizontal, 48)
     }
     
+    
+    @MainActor @ViewBuilder
+    private func imageNameField() -> some View {
+        HStack(alignment: .center, spacing: 4) {
+            // File name
+            Color.clear.frame(height: 30)
+                .overlay {
+                    TextField("", text: $fileName)
+                        .textFieldStyle(.roundedBorder)
+                }
+            
+            HStack(alignment: .bottom, spacing: 0) {
+                if keepEditable {
+                    Text(".excalidraw")
+                        .lineLimit(1)
+                        .frame(height: 20)
+#if os(iOS)
+                        .padding(.bottom, 4)
+#endif
+                }
+                HStack(
+                    alignment: .bottom,
+                    spacing: {
+                        #if os(macOS)
+                        -2
+                        #else
+                        -8
+                        #endif
+                    }()
+                ) {
+                    Text(".")
+#if os(macOS)
+                        .offset(y: -2)
+#endif
+                        // .padding(.bottom, 4)
+
+                    Picker(selection: $imageType) {
+                        Text("png").tag(0)
+                        Text("svg").tag(1)
+                    } label: {
+                    }
+                    .pickerStyle(.menu)
+                    .buttonStyle(.borderless)
+                    .menuIndicator(.visible)
+                    .fixedSize()
+#if os(macOS)
+                    .offset(y: -2)
+#endif
+                }
+            }
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func exportImageSettingItems() -> some View {
+        Picker(.localizable(.exportImagePickerColorSchemeLabel), selection: $exportColorScheme) {
+            Text(.localizable(.generalColorSchemeLight)).tag(ColorScheme.light)
+            Text(.localizable(.generalColorSchemeDark)).tag(ColorScheme.dark)
+        }
+//#if os(iOS)
+//        .pickerStyle(.segmented)
+//#endif
+        .disabled(exportType != .png)
+
+#if os(macOS)
+        Toggle(.localizable(.exportImageToggleWithBackground), isOn: $exportWithBackground)
+            .toggleStyle(.checkboxStyle)
+#elseif os(iOS)
+        Toggle(.localizable(.exportImageToggleWithBackground), isOn: $exportWithBackground)
+            .toggleStyle(.switch)
+#endif
+        
+#if os(macOS)
+        Toggle(.localizable(.exportImageToggleEditable), isOn: $keepEditable)
+            .toggleStyle(.checkboxStyle)
+#elseif os(iOS)
+        Toggle(.localizable(.exportImageToggleEditable), isOn: $keepEditable)
+            .toggleStyle(.switch)
+#endif
+    }
+    
     @ViewBuilder
     private func actionsView(_ url: URL) -> some View {
         HStack {
-            Button {
+            actionItems(url)
+        }
+        .modernButtonStyle(size: .regular, shape: .modern)
+        
+    }
+    
+    @MainActor @ViewBuilder
+    private func actionItems(_ url: URL) -> some View {
+        Button {
 #if canImport(AppKit)
-                NSPasteboard.general.clearContents()
-                switch self.imageType {
-                    case 0:
-                        if let image = PlatformImage(contentsOf: url) {
-                            NSPasteboard.general.writeObjects([image])
-                        } else {
-                            return
-                        }
-                    case 1:
-                        if let string = String(data: (try? Data(contentsOf: url)) ?? Data(), encoding: .utf8) {
-                            NSPasteboard.general.writeObjects([string as NSString])
-                        } else {
-                            return
-                        }
-                    default:
-                        break
-                }
-#elseif canImport(UIKit)
-                switch self.imageType {
-                    case 0:
-                        if let image = PlatformImage(contentsOf: url) {
-                            UIPasteboard.general.setObjects([image])
-                        } else {
-                            return
-                        }
-                    case 1:
-                        if let string = String(data: (try? Data(contentsOf: url)) ?? Data(), encoding: .utf8) {
-                            UIPasteboard.general.setObjects([string as NSString])
-                        } else {
-                            return
-                        }
-                    default:
-                        break
-                }
-#endif
-                
-                withAnimation {
-                    copied = true
-                }
-                Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { _ in
-                    withAnimation {
-                        copied = false
+            NSPasteboard.general.clearContents()
+            switch self.imageType {
+                case 0:
+                    if let image = PlatformImage(contentsOf: url) {
+                        NSPasteboard.general.writeObjects([image])
+                    } else {
+                        return
                     }
+                case 1:
+                    if let string = String(data: (try? Data(contentsOf: url)) ?? Data(), encoding: .utf8) {
+                        NSPasteboard.general.writeObjects([string as NSString])
+                    } else {
+                        return
+                    }
+                default:
+                    break
+            }
+#elseif canImport(UIKit)
+            switch self.imageType {
+                case 0:
+                    if let image = PlatformImage(contentsOf: url) {
+                        UIPasteboard.general.setObjects([image])
+                    } else {
+                        return
+                    }
+                case 1:
+                    if let string = String(data: (try? Data(contentsOf: url)) ?? Data(), encoding: .utf8) {
+                        UIPasteboard.general.setObjects([string as NSString])
+                    } else {
+                        return
+                    }
+                default:
+                    break
+            }
+#endif
+            
+            withAnimation {
+                copied = true
+            }
+            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { _ in
+                withAnimation {
+                    copied = false
                 }
-            } label: {
+            }
+        } label: {
+            ZStack {
                 if copied {
                     Label(.localizable(.exportActionCopied), systemSymbol: .checkmark)
                         .padding(.horizontal, 6)
@@ -279,38 +395,18 @@ struct ExportImageView: View {
                     }
                 }
             }
-            .disabled(copied)
-            
-            Button {
-                showFileExporter = true
-            } label: {
-                Label(.localizable(.exportActionSave), systemSymbol: .squareAndArrowDown)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 1)
-            }
-            
-            if #available(macOS 13.0, iOS 16.0, *) {
-                ShareLink(item: url) {
-                    Label(.localizable(.exportActionShare), systemSymbol: .squareAndArrowUp)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 1)
-                }
-            } else {
-                Button {
-                    self.showShare = true
-                } label: {
-                    Label(.localizable(.exportActionShare), systemSymbol: .squareAndArrowUp)
-                        .padding(.horizontal, 6)
-                }
-                .background(
-                    SharingsPicker(
-                        isPresented: $showShare,
-                        sharingItems: [url]
-                    )
-                )
-            }
+            .frame(maxWidth: containerHorizontalSizeClass == .compact ? .infinity : nil)
         }
-        .modernButtonStyle(size: .regular, shape: .modern)
+        .disabled(copied)
+        
+        Button {
+            showFileExporter = true
+        } label: {
+            Label(.localizable(.exportActionSave), systemSymbol: .squareAndArrowDown)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 1)
+                .frame(maxWidth: containerHorizontalSizeClass == .compact ? .infinity : nil)
+        }
         .fileExporter(
             isPresented: $showFileExporter,
             document: ImageFile(url),
@@ -323,6 +419,29 @@ struct ExportImageView: View {
                 case .failure(let failure):
                     alertToast(failure)
             }
+        }
+        
+        if #available(macOS 13.0, iOS 16.0, *) {
+            ShareLink(item: url) {
+                Label(.localizable(.exportActionShare), systemSymbol: .squareAndArrowUp)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
+                    .frame(maxWidth: containerHorizontalSizeClass == .compact ? .infinity : nil)
+            }
+        } else {
+            Button {
+                self.showShare = true
+            } label: {
+                Label(.localizable(.exportActionShare), systemSymbol: .squareAndArrowUp)
+                    .padding(.horizontal, 6)
+                    .frame(maxWidth: containerHorizontalSizeClass == .compact ? .infinity : nil)
+            }
+            .background(
+                SharingsPicker(
+                    isPresented: $showShare,
+                    sharingItems: [url]
+                )
+            )
         }
     }
     
@@ -439,8 +558,24 @@ class ExcalidrawFileWrapper: FileWrapper {
 }
 
 #if DEBUG
+private struct ExportImagePreviewView: View {
+    var body: some View {
+        ZStack {
+            Text("Hello Export Image View")
+        }
+        .sheet(isPresented: .constant(true)) {
+            if #available(macOS 13.0, *) {
+                NavigationStack {
+                    ExportImageView(file: .preview)
+                        .environmentObject(ExportState())
+                }
+            }
+        }
+    }
+}
+
+
 #Preview {
-    ExportImageView(file: .preview)
-        .environmentObject(ExportState())
+    ExportImagePreviewView()
 }
 #endif

@@ -145,7 +145,7 @@ struct MultiFontPickerView: View {
         .onChange(of: addedFonts) { newValue in
             addedFontsData = (try? JSONEncoder().encode(newValue)) ?? Data()
         }
-        .watchImmediately(of: addedFontsData) { newValue in
+        .watch(value: addedFontsData) { newValue in
             addedFonts = (try? JSONDecoder().decode(Set<String>.self, from: newValue)) ?? []
         }
         .onAppear {

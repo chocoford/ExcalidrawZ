@@ -7,8 +7,9 @@
 
 import SwiftUI
 import WebKit
-import OSLog
+import Logging
 import Combine
+import CoreData
 
 typealias CollaborationInfo = ExcalidrawCore.CollaborationInfo
 
@@ -50,7 +51,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     typealias PlatformImage = UIImage
 #endif
     
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ExcalidrawCore")
+    let logger = Logger(label: "ExcalidrawCore")
     
     var parent: ExcalidrawView?
     lazy var errorStream: AsyncStream<Error> = {
@@ -64,30 +65,10 @@ class ExcalidrawCore: NSObject, ObservableObject {
     var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in }
     lazy var webActor = ExcalidrawWebActor(coordinator: self)
     
-    init(_ parent: ExcalidrawView?) {
-        self.parent = parent
+    override init() {
         self.publishError = { error in }
         super.init()
         self.configWebView()
-        
-        switch parent?.type {
-            case .normal:
-                Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
-                    .map { isNavigating, isDocumentLoaded in
-                        isNavigating || !isDocumentLoaded
-                    }
-                    .assign(to: &$isLoading)
-            case .collaboration:
-                Publishers.CombineLatest(
-                    Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
-                        .map { $0 || !$1 },
-                    $isCollabEnabled
-                )
-                .map { $0 || !$1 }
-                .assign(to: &$isLoading)
-            default:
-                break
-        }
     }
     
     @Published var isNavigating = true
@@ -107,12 +88,39 @@ class ExcalidrawCore: NSObject, ObservableObject {
     
     var previousFileID: UUID? = nil
     private var lastVersion: Int = 0
-    
+
     var hasInjectIndexedDBData = false
-    
+
+    // Track loaded MediaItem IDs for re-injection detection
+    private var loadedMediaItemIDs: Set<String> = []
+
     internal var lastTool: ExcalidrawTool?
     
+    @MainActor
+    func setup(parent: ExcalidrawView) {
+        self.parent = parent
+        switch parent.type {
+            case .normal:
+                Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
+                    .map { isNavigating, isDocumentLoaded in
+                        isNavigating || !isDocumentLoaded
+                    }
+                    .assign(to: &$isLoading)
+            case .collaboration:
+                Publishers.CombineLatest(
+                    Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
+                        .map { isNavigating, isDocumentLoaded in
+                            isNavigating || !isDocumentLoaded
+                        },
+                    $isCollabEnabled
+                )
+                .map { $0 || !$1 }
+                .assign(to: &$isLoading)
+        }
+    }
+    
     func configWebView() {
+        logger.info("Configure Web View...")
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .nonPersistent()
         
@@ -181,6 +189,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     }
     
     public func refresh() {
+        self.logger.info("refreshing...")
         let request: URLRequest
         switch self.parent?.type {
             case .normal:
@@ -202,7 +211,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
                     self.isCollabEnabled = true
                 }
                 request = URLRequest(url: url)
-                self.logger.info("[ExcalidrawCore] navigate to \(url), roomID: \(String(describing: self.parent?.file?.roomID))")
+                self.logger.info("navigate to \(url), roomID: \(String(describing: self.parent?.file?.roomID))")
                 self.webView.load(request)
             case nil:
                 break
@@ -219,6 +228,10 @@ extension ExcalidrawCore {
         Task.detached {
             do {
                 try await self.webActor.loadFile(id: file.id, data: data, force: force)
+                
+                if await self.parent?.appPreference.useCustomDrawingSettings == true {
+                    try await self.applyUserSettings()
+                }
             } catch {
                 self.publishError(error)
             }
@@ -256,11 +269,13 @@ extension ExcalidrawCore {
     
     /// Make Image be the same as light mode.
     /// autoInvert: Invert the current inverted image in dark mode.
+    @available(*, deprecated, message: "Excalidraw now support natively")
     @MainActor
     func toggleInvertImageSwitch(autoInvert: Bool) async throws {
         if self.webView.isLoading { return }
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleImageInvertSwitch(\(autoInvert)); 0;")
     }
+    @available(*, deprecated, message: "Excalidraw now support natively")
     @MainActor
     func applyAntiInvertImageSettings(payload: AntiInvertImageSettings) async throws {
         if self.webView.isLoading { return }
@@ -333,7 +348,20 @@ extension ExcalidrawCore {
         colorScheme: ColorScheme
     ) async throws -> Data {
         let id = UUID().uuidString
-        let script = try "window.excalidrawZHelper.exportElementsToBlob('\(id)', \(elements.jsonStringified()), \(files?.jsonStringified() ?? "undefined"), \(embedScene), \(withBackground), \(colorScheme == .dark)); 0;"
+        let script = try """
+window.excalidrawZHelper.exportElementsToBlob(
+    '\(id)', \(elements.jsonStringified()), 
+    \(files?.jsonStringified() ?? "undefined"), 
+    {
+        exportEmbedScene: \(embedScene),
+        withBackground: \(withBackground), 
+        exportWithDarkMode: \(colorScheme == .dark),
+        mimeType: 'image/png',
+        quality: 100,
+    }
+); 
+0;
+"""
         Task { @MainActor in
             do {
                 try await webView.evaluateJavaScript(script)
@@ -479,11 +507,103 @@ extension ExcalidrawCore {
     /// Insert media files to IndexedDB
     @MainActor
     func insertMediaFiles(_ files: [ExcalidrawFile.ResourceFile]) async throws {
-        print("insertMediaFiles: \(files.count)")
+        logger.info("insertMediaFiles: \(files.count)")
         let jsonStringified = try files.jsonStringified()
         try await webView.evaluateJavaScript("window.excalidrawZHelper.insertMedias('\(jsonStringified)'); 0;")
     }
-    
+
+    /// Inject all MediaItems from CoreData to IndexedDB
+    /// This method fetches all MediaItems and injects them into the WebView's IndexedDB
+    /// Most work (fetching, loading files) runs on background threads for better performance
+    /// - Returns: The count of injected MediaItems
+    func injectAllMediaItems() async throws -> Int {
+        logger.info("Starting MediaItem injection...")
+
+        // Check WebView readiness on main thread
+        let isReady = await MainActor.run {
+            !isNavigating && (hasInjectIndexedDBData || isDocumentLoaded)
+        }
+
+        guard isReady else {
+            logger.warning("WebView not ready for MediaItem injection, skipping")
+            return 0
+        }
+
+        let context = PersistenceController.shared.newTaskContext()
+        let allMedias = try await context.perform {
+            let allMediasFetch = NSFetchRequest<MediaItem>(entityName: "MediaItem")
+            return try context.fetch(allMediasFetch)
+        }
+        let allMediaIDs = allMedias.compactMap(\.id)
+        
+        logger.info("Fetched \(allMedias.count) MediaItems from CoreData")
+
+        // Load media items using async method with iCloud Drive support (concurrent)
+        // This can run on background threads for better performance
+        let mediaFiles = await withTaskGroup(of: ExcalidrawFile.ResourceFile?.self) { group in
+            var files: [ExcalidrawFile.ResourceFile] = []
+            
+            for id in allMedias.map({$0.objectID}) {
+                group.addTask {
+                    if let mediaItem = context.object(with: id) as? MediaItem {
+                        return try? await ExcalidrawFile.ResourceFile(mediaItem: mediaItem)
+                    }
+                    return nil
+                }
+            }
+
+            for await resourceFile in group {
+                if let resourceFile = resourceFile {
+                    files.append(resourceFile)
+                }
+            }
+
+            return files
+        }
+
+        // Insert to IndexedDB and update state on main thread
+        await MainActor.run {
+            Task { @MainActor in
+                try? await self.insertMediaFiles(mediaFiles)
+            }
+            // Update loaded IDs
+            self.loadedMediaItemIDs = Set(allMediaIDs)
+            self.hasInjectIndexedDBData = true
+        }
+
+        logger.info("Successfully injected \(mediaFiles.count) MediaItems")
+        return mediaFiles.count
+    }
+
+    /// Check if MediaItems have changed and re-inject if needed
+    /// This is the public method that should be called when MediaItem changes are detected
+    public func refreshMediaItemsIfNeeded() async throws {
+        // Get current MediaItem IDs from CoreData on main thread
+        let (currentIDs, loadedIDs) = try await MainActor.run {
+            let context = PersistenceController.shared.container.viewContext
+            let fetchRequest = NSFetchRequest<MediaItem>(entityName: "MediaItem")
+            fetchRequest.propertiesToFetch = ["id"]
+
+            let currentMedias = try context.fetch(fetchRequest)
+            let currentIDs = Set(currentMedias.compactMap { $0.id })
+
+            return (currentIDs, self.loadedMediaItemIDs)
+        }
+
+        // Check if there are changes
+        let hasChanges = currentIDs != loadedIDs
+
+        if hasChanges {
+            let addedCount = currentIDs.subtracting(loadedIDs).count
+            let removedCount = loadedIDs.subtracting(currentIDs).count
+            logger.info("MediaItem changes detected: +\(addedCount) added, -\(removedCount) removed, re-injecting...")
+
+            _ = try await injectAllMediaItems()
+        } else {
+            logger.debug("No MediaItem changes detected, skipping injection")
+        }
+    }
+
     @MainActor
     func performUndo() async throws {
         try await webView.evaluateJavaScript("window.excalidrawZHelper.undo(); 0;")

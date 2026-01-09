@@ -10,16 +10,36 @@ import SwiftUI
 extension WhatsNewView {
     @MainActor @ViewBuilder
     func featuresContent() -> some View {
+#if os(iOS)
         WhatsNewFeatureRow(
             title: .localizable(.whatsNewRedesignUITitle),
             description: .localizable(.whatsNewRedesignUIDescription),
             icon: Image(systemSymbol: .macwindow)
         )
+#endif
         
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewEnhanceInteractiveExperienceTitle),
-            description: .localizable(.whatsNewEnhanceInteractiveExperienceDescription),
-            icon: Image(systemSymbol: .cursorarrowMotionlines)
+            title: .localizable(.whatsNewMoveContentToICloudDriveTitle),
+            description: .localizable(.whatsNewMoveContentToICloudDriveDescription),
+            icon: Image(systemSymbol: .externaldriveConnectedToLineBelow)
+        )
+        
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewImportPDFTitle),
+            description: .localizable(.whatsNewImportPDFDescription),
+            icon: {
+                if #available(macOS 15.0, iOS 18.0, *) {
+                    Image(systemSymbol: .richtextPage)
+                } else {
+                    Image(systemSymbol: .docRichtext)
+                }
+            }()
+        )
+        
+         WhatsNewFeatureRow(
+            title: .localizable(.whatsNewCustomDrawingSettingsTitle),
+            description: .localizable(.whatsNewCustomDrawingSettingsDescription),
+            icon: Image(systemSymbol: .gearshape2)
         )
     }
     
@@ -51,7 +71,32 @@ extension WhatsNewView {
                         featuresContent()
                     }
                     
+                    // MARK: - v1.6.1
+                    WhatsNewVersionSection(version: "v1.6.1") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewUpdateExcalidrawCoreTitle),
+                            description: .localizable(.whatsNewUpdateExcalidrawCoreDescription)
+                        ) {
+                            ExcalidrawIconView()
+                                .frame(height: 30)
+                        }
+                    }
+
 #if os(macOS)
+                    // MARK: - v1.6.0
+                    WhatsNewVersionSection(version: "v1.6.0") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewRedesignUITitle),
+                            description: .localizable(.whatsNewRedesignUIDescription),
+                            icon: Image(systemSymbol: .macwindow)
+                        )
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewEnhanceInteractiveExperienceTitle),
+                            description: .localizable(.whatsNewEnhanceInteractiveExperienceDescription),
+                            icon: Image(systemSymbol: .cursorarrowMotionlines)
+                        )
+                    }
                     // MARK: - v1.5.1
                     WhatsNewVersionSection(version: "v1.5.1") {
                         WhatsNewFeatureRow(

@@ -7,6 +7,10 @@
 
 import Foundation
 import WebKit
+import Logging
+#if canImport(PDFKit)
+import PDFKit
+#endif
 
 protocol AnyExcalidrawZMessage: Codable {
     associatedtype D = Codable
@@ -26,7 +30,7 @@ extension ExcalidrawCore: WKScriptMessageHandler {
             let message = try JSONDecoder().decode(ExcalidrawZMessage.self, from: data)
             
 //            self.logger.info("[WKScriptMessageHandler] Did receive message: \(String(describing: message))")
-            
+            // let start = Date()
             switch message {
                 case .onload:
                     DispatchQueue.main.async {
@@ -49,18 +53,23 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     guard !self.isLoading else { return }
                     if message.data.type == .lasso { return }
                     if message.data.type == .hand {
-                        self.parent?.toolState.inDragMode = true
                         self.lastTool = .hand
-                        self.parent?.toolState.activatedTool = .hand
+                        DispatchQueue.main.async {
+                            self.parent?.toolState.setActivedTool(.hand)
+                        }
                     } else {
                         self.parent?.toolState.previousActivatedTool = self.parent?.toolState.activatedTool
-                        let tool = ExcalidrawTool(from: message.data.type)
-                        self.lastTool = tool
-                        self.parent?.toolState.activatedTool = tool
-                        self.parent?.toolState.inDragMode = false
+                        if let tool = ExcalidrawTool(from: message.data.type) {
+                            self.lastTool = tool
+                            DispatchQueue.main.async {
+                                self.parent?.toolState.setActivedTool(tool)
+                            }
+                        }
                     }
                 case .didToggleToolLock(let message):
-                    self.parent?.toolState.isToolLocked = message.data
+                    DispatchQueue.main.async {
+                        self.parent?.toolState.isToolLocked = message.data
+                    }
                 case .getElementsBlob(let blobData):
                     Task {
                         await self.exportImageManager.responseExport(id: blobData.data.id, blobString: blobData.data.blobData)
@@ -86,20 +95,11 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     }
                 case .didPenDown:
                     self.parent?.toolState.inPenMode = true
-                    self.parent?.toolState.inDragMode = false
                     NotificationCenter.default.post(name: .didPencilConnected, object: nil)
                 case .didSelectElements:
-                    DispatchQueue.main.async {
-                        if self.parent?.toolState.isBottomBarPresented == true {
-                            self.parent?.toolState.isBottomBarPresented = false
-                        }
-                    }
+                    break
                 case .didUnselectAllElements:
-                    DispatchQueue.main.async {
-                        if self.parent?.toolState.isBottomBarPresented == false {
-                            self.parent?.toolState.isBottomBarPresented = true
-                        }
-                    }
+                    break
                     
                 // Collab
                 case .didOpenLiveCollaboration(let message):
@@ -119,10 +119,24 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                             self.parent?.fileState.collaborators[currentCollaborationFile] = collaborators
                         }
                     }
-                    
+
+                case .onDropPDF(let message):
+                    self.handleDropPDF(message.data)
+
+                case .openPDFNatively(let message):
+                    self.handleOpenPDFNatively(message.data)
+
+                case .onUserSettingsChanged/*(let message)*/:
+                    // temp leave alone
+                    break
+                    // self.handleUserSettingsChanged(message.data)
+
                 case .log(let logMessage):
-                    self.onWebLog(message: logMessage)
+                    _ = logMessage
+                    // self.onWebLog(message: logMessage)
+                    break
             }
+            // print("[DEBUG] ExcalidrawCore didReceive message, time cost:", Date().timeIntervalSince(start).formatted())
         } catch {
             self.logger.error("[WKScriptMessageHandler] Decode received message failed. Raw data:\n\(String(describing: message.body))")
             self.publishError(error)
@@ -270,7 +284,7 @@ extension ExcalidrawCore {
         }.joined(separator: " ")
         switch method {
             case "log":
-                self.logger.log("Receive log from web:\n\(message)")
+                self.logger.log(level: .debug, "Receive log from web:\n\(message)")
                 break
             case "warn":
                 self.logger.warning("Receive warning from web:\n\(message)")
@@ -284,10 +298,97 @@ extension ExcalidrawCore {
             case "trace":
                 self.logger.trace("Receive warning from trace:\n\(message)")
             default:
-                self.logger.log("Unhandled log: \(message)")
+                self.logger.debug("Unhandled log: \(message)")
         }
     }
-    
+
+    func handleDropPDF(_ data: OnDropPDFMessage.OnDropPDFMessageData) {
+        // Parse base64 data to PDF data
+        guard let pdfData = decodeBase64(data.base64Data) else {
+            logger.error("Failed to decode base64 PDF data")
+            return
+        }
+        
+#if canImport(PDFKit)
+        if PDFDocument(data: pdfData) == nil {
+            logger.error("Invalid PDF Data")
+            return
+        }
+#endif
+
+        // Create PDF drop info struct
+        let dropInfo = PDFDropInfo(
+            pdfData: pdfData,
+            fileName: data.fileName,
+            sceneX: data.sceneX,
+            sceneY: data.sceneY
+        )
+
+        // Post notification to trigger PDF insert sheet
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .showPDFInsertSheet,
+                object: dropInfo
+            )
+        }
+
+        logger.info("PDF drop event received: \(data.fileName) at (\(data.sceneX), \(data.sceneY))")
+    }
+
+    func handleOpenPDFNatively(_ data: OpenPDFNativelyMessage.OpenPDFNativelyMessageData) {
+        // Open viewer immediately, then decode PDF in background.
+        let placeholderInfo = PDFViewerInfo(
+            fileId: data.fileId,
+            pdfData: nil,
+            mimeType: data.mimeType
+        )
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .openPDFViewer,
+                object: placeholderInfo
+            )
+        }
+
+        Task.detached(priority: .userInitiated) {
+            let start = Date()
+            guard let pdfData = decodeBase64FromDataURL(data.dataURL) else {
+                self.logger.error("Failed to decode base64 PDF data from dataURL")
+                return
+            }
+            self.logger.info("handleOpenPDFNatively decode PDF time: \(Date().timeIntervalSince(start).formatted())")
+
+#if canImport(PDFKit)
+            if PDFDocument(data: pdfData) == nil {
+                self.logger.error("Invalid PDF Data")
+                return
+            }
+#endif
+
+            let pdfInfo = PDFViewerInfo(
+                fileId: data.fileId,
+                pdfData: pdfData,
+                mimeType: data.mimeType
+            )
+            await MainActor.run {
+                NotificationCenter.default.post(
+                    name: .openPDFViewer,
+                    object: pdfInfo
+                )
+            }
+        }
+
+        logger.info("PDF native viewer requested for file: \(data.fileId)")
+    }
+
+    func handleUserSettingsChanged(_ settings: UserDrawingSettings) {
+        // Save settings to AppPreference on main thread
+        DispatchQueue.main.async { [weak self] in
+            self?.parent?.appPreference.customDrawingSettings = settings
+        }
+
+        logger.info("User drawing settings updated and saved")
+    }
+
     func addToLibrary(item: ExcalidrawLibrary.Item) {
         let context = PersistenceController.shared.container.newBackgroundContext()
         let onError = self.publishError
@@ -320,7 +421,7 @@ extension ExcalidrawCore {
 extension ExcalidrawCore {
     enum ExcalidrawZEventType: String, Codable {
         case onload
-        
+
         case onStateChanged
         case saveFileDone
         case blobData
@@ -338,11 +439,18 @@ extension ExcalidrawCore {
         case didPenDown
         case didSelectElements
         case didUnselectAllElements
-        
+
         // Collab
         case didOpenLiveCollaboration
         case onCollaboratorsChanged
-        
+
+        // PDF
+        case onDropPDF
+        case openPDFNatively
+
+        // User Settings
+        case onUserSettingsChanged
+
         case log
     }
     
@@ -365,11 +473,18 @@ extension ExcalidrawCore {
         case didPenDown
         case didSelectElements(DidSelectElementsMessage)
         case didUnselectAllElements
-        
+
         // Collab
         case didOpenLiveCollaboration(DidOpenLiveCollaborationMessage)
         case onCollaboratorsChanged(CollaboratorsChangedMessage)
-        
+
+        // PDF
+        case onDropPDF(OnDropPDFMessage)
+        case openPDFNatively(OpenPDFNativelyMessage)
+
+        // User Settings
+        case onUserSettingsChanged(UserSettingsChangedMessage)
+
         case log(LogMessage)
         
         enum CodingKeys: String, CodingKey {
@@ -423,7 +538,17 @@ extension ExcalidrawCore {
                     self = .didOpenLiveCollaboration(try DidOpenLiveCollaborationMessage(from: decoder))
                 case .onCollaboratorsChanged:
                     self = .onCollaboratorsChanged(try CollaboratorsChangedMessage(from: decoder))
-                    
+
+                // PDF
+                case .onDropPDF:
+                    self = .onDropPDF(try OnDropPDFMessage(from: decoder))
+                case .openPDFNatively:
+                    self = .openPDFNatively(try OpenPDFNativelyMessage(from: decoder))
+
+                // User Settings
+                case .onUserSettingsChanged:
+                    self = .onUserSettingsChanged(try UserSettingsChangedMessage(from: decoder))
+
                 case .log:
                     self = .log(try LogMessage(from: decoder))
             }
@@ -628,7 +753,36 @@ extension ExcalidrawCore {
         var event: String
         var data: [ExcalidrawElement]
     }
-    
+
+    struct OnDropPDFMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: OnDropPDFMessageData
+
+        struct OnDropPDFMessageData: Codable {
+            var fileName: String
+            var fileSize: Double
+            var base64Data: String
+            var sceneX: Double
+            var sceneY: Double
+        }
+    }
+
+    struct OpenPDFNativelyMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: OpenPDFNativelyMessageData
+
+        struct OpenPDFNativelyMessageData: Codable {
+            var fileId: String
+            var dataURL: String
+            var mimeType: String
+        }
+    }
+
+    struct UserSettingsChangedMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: UserDrawingSettings
+    }
+
     struct DidOpenLiveCollaborationMessage: AnyExcalidrawZMessage {
         var event: String
         var data: DidOpenLiveCollaborationMessageData
@@ -727,29 +881,65 @@ extension ExcalidrawCore {
     }
 }
 
+// MARK: - PDF Drop Info
+
+struct PDFDropInfo: Identifiable, Hashable {
+    let id = UUID()
+    let pdfData: Data
+    let fileName: String
+    let sceneX: Double
+    let sceneY: Double
+}
+
+// MARK: - PDF Viewer Info
+
+struct PDFViewerInfo: Identifiable {
+    let id: String  // Use fileId as the identifier
+    let fileId: String
+    let pdfData: Data?
+    let mimeType: String
+
+    init(fileId: String, pdfData: Data?, mimeType: String) {
+        self.id = fileId
+        self.fileId = fileId
+        self.pdfData = pdfData
+        self.mimeType = mimeType
+    }
+}
+
+extension Notification.Name {
+    static let showPDFInsertSheet = Notification.Name("showPDFInsertSheet")
+}
+
 extension ExcalidrawFile {
     mutating func update(data: ExcalidrawView.Coordinator.ExcalidrawFileData) throws {
+        // let start = Date()
         guard let content = self.content else {
             struct EmptyContentError: LocalizedError {
                 var errorDescription: String? { "Invalid excalidraw file." }
             }
             throw EmptyContentError()
         }
-        
+
         var contentObject = try JSONSerialization.jsonObject(with: content) as! [String : Any]
-        // print("[ExcalidrawFile] update with obj: \(contentObject)")
         guard let dataData = data.dataString.data(using: .utf8),
               let fileDataJson = try JSONSerialization.jsonObject(with: dataData) as? [String : Any] else {
             struct InvalidPayloadError: LocalizedError {
-                var errorDescription: String? { "Invalid update payload." }
+                var errorDescription: String? {
+                    "Invalid update payload."
+                }
             }
             throw InvalidPayloadError()
         }
         contentObject["elements"] = fileDataJson["elements"]
         contentObject["files"] = fileDataJson["files"]
-        
+        contentObject["appState"] = fileDataJson["appState"]
         self.content = try JSONSerialization.data(withJSONObject: contentObject)
         self.elements = data.elements ?? []
         self.files = data.files
+        
+        // print("[DEBUG] On State Change. Time consume", Date().timeIntervalSince(start).formatted())
+
     }
 }
+ 

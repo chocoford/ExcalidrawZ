@@ -101,17 +101,6 @@ struct SettingsView: View {
                         Text(route.text)
                     }
                 }
-            } footer: {
-                if containerVerticalSizeClass == .compact {
-                    HStack {
-                        Spacer()
-                        Button(role: .cancel) {
-                            dismiss()
-                        } label: {
-                            Text(.localizable(.generalButtonClose))
-                        }
-                    }
-                }
             }
 //            ForEach(Route.allCases) { route in
 //                Button {
@@ -126,6 +115,17 @@ struct SettingsView: View {
 //                    )
 //                )
 //            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                if containerVerticalSizeClass == .compact {
+                    Button(role: .cancel) {
+                        dismiss()
+                    } label: {
+                        Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
+                    }
+                }
+            }
         }
 #endif
     }
@@ -147,7 +147,8 @@ struct SettingsView: View {
         switch route {
             case .general:
                 GeneralSettingsView()
-                
+            case .excalidraw:
+                ExcalidrawSettingsView()
 //            case .fileHistory:
 //                FileHistorySettingsView()
                 
@@ -176,6 +177,7 @@ struct SettingsView: View {
 extension SettingsView {
     enum Route: CaseIterable, Identifiable {
         case general
+        case excalidraw
 //        case fileHistory
         case medias
         case backups
@@ -192,7 +194,8 @@ extension SettingsView {
             switch self {
                 case .general:
                     return .localizable(.settingsGeneralName)
-                    
+                case .excalidraw:
+                    return "Excalidraw"
 //                case .fileHistory:
 //                    return "File history"
                 case .medias:
@@ -216,25 +219,19 @@ extension SettingsView {
         
         var id: String {
             switch self {
-                case .general:
-                    "general"
+                case .general: "general"
+                case .excalidraw: "excalidraw"
 //                case .fileHistory:
 //                    "fileHistory"
-                case .medias:
-                    "medias"
-                case .backups:
-                    "backups"
+                case .medias: "medias"
+                case .backups: "backups"
 #if os(macOS)
-                case .fonts:
-                    "fonts"
+                case .fonts: "fonts"
 #elseif os(iOS)
-                case .pencil:
-                    "pencil"
-                case .whatsNews:
-                    "whatsNews"
+                case .pencil: "pencil"
+                case .whatsNews: "whatsNews"
 #endif
-                case .about:
-                    "about"
+                case .about: "about"
             }
         }
     }

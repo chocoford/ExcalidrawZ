@@ -67,7 +67,7 @@ struct SelectableDisclosureGroup: View {
                 labelView()
             }
         }
-         .disclosureGroupStyle(.selectable)
+        .disclosureGroupStyle(.selectable)
         .onAppear {
             expandSubGroupsFlag = expandFlag
             if expandFlag == true {

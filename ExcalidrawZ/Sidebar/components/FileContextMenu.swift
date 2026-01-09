@@ -6,17 +6,18 @@
 //
 
 import SwiftUI
+import CoreData
 
 struct FileMenuProvider: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
     @EnvironmentObject var fileState: FileState
     
-    var file: File
+    var file: File?
     var content: (Triggers) -> AnyView
 
     init<Content: View>(
-        file: File,
+        file: File?,
         content: @escaping (Triggers) -> Content
     ) {
         self.file = file
@@ -39,22 +40,33 @@ struct FileMenuProvider: View {
         }
     }
     
+    private var files: Set<File> {
+        if let file {
+            if fileState.selectedFiles.contains(file) {
+                return fileState.selectedFiles
+            }
+            return [file]
+        }
+        return fileState.selectedFiles
+    }
+    
     var body: some View {
         content(triggers)
             .modifier(
                 RenameSheetViewModifier(
                     isPresented: $isRenameSheetPresented,
-                    name: self.file.name ?? ""
+                    name: self.files.first?.name ?? ""
                 ) {
+                    guard let file = self.files.first else { return }
                     fileState.renameFile(
-                        self.file.objectID,
+                        file.objectID,
                         context: viewContext,
                         newName: $0
                     )
                 }
             )
             .confirmationDialog(
-                String(localizable: .sidebarFileRowDeletePermanentlyAlertTitle(file.name ?? "")),
+                String(localizable: .sidebarFileRowDeletePermanentlyAlertTitle(files.first?.name ?? "")),
                 isPresented: $isPermanentlyDeleteAlertPresented
             ) {
                 Button(role: .destructive) {
@@ -66,37 +78,24 @@ struct FileMenuProvider: View {
                 Text(.localizable(.generalCannotUndoMessage))
             }
     }
-    
+
     private func deleteFilePermanently() {
-        let fileIDsToDelete: [NSManagedObjectID] = if fileState.selectedFiles.contains(file) {
-            fileState.selectedFiles.map {
-                $0.objectID
-            }
-        } else {
-            [file.objectID]
-        }
-        
-        let context = PersistenceController.shared.container.newBackgroundContext()
+        let fileIDsToDelete: [NSManagedObjectID] = files.map { $0.objectID }
+
         Task.detached {
             do {
-                try await context.perform {
-                    for fileID in fileIDsToDelete {
-                        guard case let file as File = context.object(with: fileID) else {
-                            return
-                        }
-                        try file.delete(context: context, save: false)
-                        try context.save()
-                    }
+                for fileID in fileIDsToDelete {
+                    try await PersistenceController.shared.fileRepository.delete(
+                        fileObjectID: fileID,
+                        forcePermanently: false,
+                        save: true
+                    )
                 }
                 await MainActor.run {
                     fileState.resetSelections()
                 }
             } catch {
                 await alertToast(error)
-            }
-            
-            await MainActor.run {
-                fileState.resetSelections()
             }
         }
     }
@@ -109,6 +108,7 @@ struct FileContextMenuModifier: ViewModifier {
     init(file: File) {
         self.file = file
     }
+
     func body(content: Content) -> some View {
         FileMenuProvider(file: file) { triggers in
             content
@@ -127,31 +127,32 @@ struct FileContextMenuModifier: ViewModifier {
 }
 
 struct FileMenu: View {
-    var file: File
+    var file: File?
     var label: AnyView
-    
+
     init<L: View>(
-        file: File,
+        file: File?,
         @ViewBuilder label: () -> L
     ) {
         self.file = file
         self.label = AnyView(label())
     }
-    
+
     var body: some View {
         FileMenuProvider(file: file) { triggers in
             Menu {
                 FileMenuItems(
-                    file: file) {
-                        triggers.onToggleRename()
-                    } onTogglePermanentlyDelete: {
-                        triggers.onTogglePermanentlyDelete()
-                    }
+                    file: file
+                ) {
+                    triggers.onToggleRename()
+                } onTogglePermanentlyDelete: {
+                    triggers.onTogglePermanentlyDelete()
+                }
             } label: {
                 label
             }
         }
-        
+
     }
 }
 
@@ -159,12 +160,32 @@ struct FileMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
-
+#if os(iOS)
+    @Environment(\.editMode) private var editMode
+#endif
     @EnvironmentObject var fileState: FileState
 
-    var file: File
+    var file: File?
     var onToggleRename: () -> Void
     var onTogglePermanentlyDelete: () -> Void
+
+    private var files: Set<File> {
+        if let file {
+            if fileState.selectedFiles.contains(file) {
+                return fileState.selectedFiles
+            }
+            return [file]
+        }
+        return fileState.selectedFiles
+    }
+
+    private var isSingleFile: Bool {
+        !files.isEmpty && files.count == 1
+    }
+
+    private var firstFile: File? {
+        files.first
+    }
     
     @FetchRequest(
         sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],
@@ -173,70 +194,110 @@ struct FileMenuItems: View {
     )
     var topLevelGroups: FetchedResults<Group>
 
+    @State private var copySensoryFeedbackFlag = false
+    
     var body: some View {
-        if !file.inTrash {
+        if firstFile?.inTrash != true {
+            // Open - only for single file
+            var isInEditMode: Bool {
+#if os(iOS)
+                editMode?.wrappedValue == .active
+#else
+                false
+#endif
+            }
+            
+            
+            if !isInEditMode,
+               let file = firstFile,
+               fileState.currentActiveFile != .file(file) {
+                Button {
+                    if let file = firstFile {
+                        fileState.setActiveFile(.file(file))
+                    }
+                } label: {
+                    Label(
+                        .localizable(.generalButtonOpen),
+                        systemSymbol: .arrowUpRightSquare
+                    )
+                }
+                .disabled(!isSingleFile)
+            }
+            // Rename - only for single file
             Button {
                 onToggleRename()
             } label: {
                 Label(
-                    .localizable(
-                        .sidebarFileRowContextMenuRename
-                    ),
-                    systemSymbol: .pencil
+                    .localizable(.sidebarFileRowContextMenuRename),
+                    systemSymbol: .squareAndPencil
                 )
             }
-            .disabled(!fileState.selectedFiles.isEmpty)
-            
+            .disabled(!isSingleFile)
+
+            // Duplicate - works for single and multiple files
             Button {
-                duplicateFile()
+                Task {
+                    await duplicateFile()
+                }
             } label: {
                 Label {
-                    if !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file),
-                          #available(macOS 13.0, iOS 16.0, *) {
-                            Text(
-                             localizable: .sidebarFileRowContextMenuDuplicateFiles(fileState.selectedFiles.count)
-                            )
-                      } else {
-                            Text(localizable: .sidebarFileRowContextMenuDuplicate)
-                      }
+                    if #available(macOS 13.0, iOS 16.0, *), files.count > 1 {
+                        Text(localizable: .sidebarFileRowContextMenuDuplicateFiles(files.count))
+                    } else {
+                        Text(localizable: .sidebarFileRowContextMenuDuplicate)
+                    }
                 } icon: {
-                    Image(systemSymbol: .docOnDoc)
+                    Image(systemSymbol: .plusSquareOnSquare)
                 }
             }
-            
+            .disabled(files.isEmpty)
+
+            // Move - works for single and multiple files
             moveFileMenu()
-            
-            Button {
-                copyEntityURLToClipboard(objectID: file.objectID)
+
+            // Copy file link - only for single file
+            SensoryFeedbackButton {
+                if let firstFile {
+                    try copyEntityURLToClipboard(objectID: firstFile.objectID)
+                    copySensoryFeedbackFlag.toggle()
+                    alertToast(
+                        .init(
+                            displayMode: .hud,
+                            type: .complete(.green),
+                            title: String(localizable: .exportActionCopied)
+                        )
+                    )
+                }
             } label: {
                 Label(.localizable(.sidebarFileRowContextMenuCopyFileLink), systemSymbol: .link)
             }
-            .disabled(!fileState.selectedFiles.isEmpty)
+            .disabled(!isSingleFile)
 
+            Divider()
+            
+            // Delete - works for single and multiple files
             Button(role: .destructive) {
-                deleteFile()
+                Task {
+                    await deleteFile()
+                }
             } label: {
                 Label {
-                    if !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file),
-                       #available(macOS 13.0, iOS 16.0, *) {
-                        Text(
-                            localizable: .sidebarFileRowContextMenuDeleteFiles(fileState.selectedFiles.count)
-                        )
+                    if #available(macOS 13.0, iOS 16.0, *), files.count > 1 {
+                        Text(localizable: .sidebarFileRowContextMenuDeleteFiles(files.count))
                     } else {
                         Text(localizable: .sidebarFileRowContextMenuDelete)
                     }
                 } icon: {
                     Image(systemSymbol: .trash)
                 }
+                .foregroundStyle(.red)
             }
-        } else {
+            .disabled(files.isEmpty)
+            
+        } else if let firstFile, firstFile.inTrash {
+            // Recover - works for single and multiple files
             Button {
-                let filesToRecover: [File] = if fileState.selectedFiles.contains(file) {
-                    Array(fileState.selectedFiles)
-                } else {
-                    [file]
-                }
-                let fileIDs = filesToRecover.map{$0.objectID}
+                let fileIDs = files.map { $0.objectID }
                 Task.detached {
                     let context = PersistenceController.shared.container.newBackgroundContext()
                     for fileID in fileIDs {
@@ -249,11 +310,8 @@ struct FileMenuItems: View {
                 }
             } label: {
                 Label {
-                    if !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file),
-                       #available(macOS 13.0, iOS 16.0, *) {
-                        Text(
-                            localizable: .sidebarFileRowContextMenuRecoverFiles(fileState.selectedFiles.count)
-                        )
+                    if #available(macOS 13.0, iOS 16.0, *), files.count > 1 {
+                        Text(localizable: .sidebarFileRowContextMenuRecoverFiles(files.count))
                     } else {
                         Text(localizable: .sidebarFileRowContextMenuRecover)
                     }
@@ -262,23 +320,21 @@ struct FileMenuItems: View {
                         .symbolVariant(.fill)
                 }
             }
-            
-            Button {
+
+            // Permanently delete - works for single and multiple files
+            Button(role: .destructive) {
                 onTogglePermanentlyDelete()
             } label: {
                 Label {
-                    if !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file),
-                       #available(macOS 13.0, iOS 16.0, *) {
-                        Text(
-                            localizable: .sidebarFileRowContextMenuDeleteFilesPermanently(fileState.selectedFiles.count)
-                        )
+                    if #available(macOS 13.0, iOS 16.0, *), files.count > 1 {
+                        Text(localizable: .sidebarFileRowContextMenuDeleteFilesPermanently(files.count))
                     } else {
                         Text(localizable: .sidebarFileRowContextMenuDeletePermanently)
                     }
                 } icon: {
                     Image(systemSymbol: .trash)
                 }
-
+                .foregroundStyle(.red)
             }
         }
     }
@@ -286,7 +342,7 @@ struct FileMenuItems: View {
     
     @MainActor @ViewBuilder
     private func moveFileMenu() -> some View {
-        if let sourceGroup = file.group {
+        if let sourceGroup = firstFile?.group {
             Menu {
                 let groups: [Group] = topLevelGroups
                     .filter{ $0.groupType != .trash }
@@ -306,32 +362,15 @@ struct FileMenuItems: View {
                 }
             } label: {
                 Label {
-                    if #available(macOS 13.0, iOS 16.0, *) {
-                        if !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file) {
-                            Text(localizable: .generalMoveFilesTo(fileState.selectedFiles.count))
-                        } else {
-                            Text(localizable: .generalMoveTo)
-                        }
+                    if #available(macOS 13.0, iOS 16.0, *), files.count > 1 {
+                        Text(localizable: .generalMoveFilesTo(files.count))
                     } else {
                         Text(localizable: .generalMoveTo)
                     }
                 } icon: {
                     Image(systemSymbol: .trayAndArrowUp)
                 }
-
-               
-//                Label(
-//                    .localizable(
-//                        !fileState.selectedFiles.isEmpty && fileState.selectedFiles.contains(file)
-//                        ? .generalMoveFilesTo(fileState.selectedFiles.count)
-//                        : .generalMoveTo
-//                    ),
-//                    systemSymbol: .trayAndArrowUp
-//                )
             }
-            .disabled(
-                !fileState.selectedFiles.isEmpty && !fileState.selectedFiles.contains(file)
-            )
         }
     }
     
@@ -340,118 +379,81 @@ struct FileMenuItems: View {
             currentFile
         } else { nil }
         let context = PersistenceController.shared.container.newBackgroundContext()
-        
-        if fileState.selectedFiles.isEmpty {
-            let fileID = file.objectID
-            let currentFileID = currentFile?.objectID
-            
-            Task.detached {
-                do {
-                    try await context.perform {
-                        guard case let group as Group = context.object(with: groupID),
-                              case let file as File = context.object(with: fileID) else { return }
-                        file.group = group
-                        try context.save()
-                    }
-                    
-                    if fileID == currentFileID {
-                        await MainActor.run {
-                            guard case let group as Group = viewContext.object(with: groupID),
-                                  case let file as File = viewContext.object(with: fileID) else { return }
-                            fileState.currentActiveGroup = .group(group)
-                            fileState.currentActiveFile = .file(file)
-                            
-                            fileState.expandToGroup(group.objectID)
-                        }
-                    }
-                } catch {
-                    await alertToast(error)
-                }
-            }
-        } else {
-            let fileIDs = fileState.selectedFiles.map {
-                $0.objectID
-            }
-            let currentFileID = currentFile?.objectID
+        let fileIDs = files.map { $0.objectID }
+        let currentFileID = currentFile?.objectID
 
-            
-            Task.detached {
-                do {
-                    try await context.perform {
-                        guard case let group as Group = context.object(with: groupID) else {
-                            return
-                        }
-                        for fileID in fileIDs {
-                            if case let file as File = context.object(with: fileID) {
-                                file.group = group
-                            }
-                        }
-                        try context.save()
+        Task.detached {
+            do {
+                try await context.perform {
+                    guard case let group as Group = context.object(with: groupID) else {
+                        return
                     }
-                    
-                    let fileID: NSManagedObjectID? = fileIDs.first { $0 == currentFileID }
-                    if let fileID {
-                        await MainActor.run {
-                            guard case let group as Group = viewContext.object(with: groupID),
-                                  case let file as File = viewContext.object(with: fileID) else { return }
-                            fileState.currentActiveGroup = .group(group)
-                            fileState.currentActiveFile = .file(file)
-                            
-                            fileState.expandToGroup(group.objectID)
+                    for fileID in fileIDs {
+                        if case let file as File = context.object(with: fileID) {
+                            file.group = group
                         }
                     }
-                    await MainActor.run {
-                        fileState.resetSelections()
-                    }
-                } catch {
-                    await alertToast(error)
+                    try context.save()
                 }
+
+                let fileID: NSManagedObjectID? = fileIDs.first { $0 == currentFileID }
+                if let fileID {
+                    await MainActor.run {
+                        guard viewContext.object(with: groupID) is Group,
+                              case let file as File = viewContext.object(with: fileID) else { return }
+                        fileState.setActiveFile(.file(file))
+                    }
+                }
+                await MainActor.run {
+                    fileState.resetSelections()
+                }
+            } catch {
+                await alertToast(error)
             }
         }
     }
     
-    private func duplicateFile() {
+    private func duplicateFile() async {
         do {
-            if fileState.selectedFiles.contains(file) {
-                for selectedFile in fileState.selectedFiles {
-                    _ = try fileState.duplicateFile(
-                        selectedFile,
-                        context: viewContext
-                    )
-                }
-            } else {
-                let newFile = try fileState.duplicateFile(
-                    file,
+            var lastNewFileID: NSManagedObjectID?
+            for selectedFile in files {
+                let newFileID = try await fileState.duplicateFile(
+                    selectedFile,
                     context: viewContext
                 )
-                
-                if containerHorizontalSizeClass != .compact,
-                   fileState.currentActiveFile == .file(file) {
-                    fileState.currentActiveFile = .file(newFile)
-                }
+                lastNewFileID = newFileID
             }
+
+            // If single file and not compact mode, switch to the new file
+            if isSingleFile,
+               containerHorizontalSizeClass != .compact,
+               let firstFile,
+               fileState.currentActiveFile == .file(firstFile),
+               let newFileID = lastNewFileID,
+               let newFile = viewContext.object(with: newFileID) as? File {
+                fileState.setActiveFile(.file(newFile))
+            }
+
             fileState.resetSelections()
         } catch {
             alertToast(error)
         }
     }
     
-    private func deleteFile() {
-        let filesToBeDelete: [File] = if fileState.selectedFiles.contains(file) {
-            Array(fileState.selectedFiles)
-        } else {
-            [file]
-        }
+    private func deleteFile() async {
         do {
-            for selectedFile in filesToBeDelete {
-                try selectedFile.delete(context: viewContext, save: false)
+            for selectedFile in files {
+                try await PersistenceController.shared.fileRepository.delete(
+                    fileObjectID: selectedFile.objectID
+                )
             }
             try viewContext.save()
-            
-            if .file(file) == fileState.currentActiveFile {
-                fileState.currentActiveFile = nil
+
+            // If the current file was deleted, clear it
+            if let firstFile, .file(firstFile) == fileState.currentActiveFile {
+                fileState.setActiveFile(nil)
             }
-            
+
             fileState.resetSelections()
         } catch {
             alertToast(error)

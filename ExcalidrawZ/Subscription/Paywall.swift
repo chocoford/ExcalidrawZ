@@ -10,6 +10,7 @@ import StoreKit
 
 import ChocofordUI
 import Shimmer
+import SmoothGradient
 
 struct Paywall: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -48,7 +49,7 @@ struct Paywall: View {
 
     var body: some View {
         content()
-            .watchImmediately(of: store.purchasedPlans) { newValue in
+            .watch(value: store.purchasedPlans) { newValue in
                 if let purchasedPlans = newValue.first {
                     self.selectedPlan = purchasedPlans
                 } else if horizontalSizeClass == .compact {
@@ -207,6 +208,7 @@ struct Paywall: View {
                 )
             }
             .ignoresSafeArea()
+            .scaleEffect(1.1)
         }
         .onAppear {
             isPresented = true

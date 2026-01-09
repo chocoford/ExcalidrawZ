@@ -8,7 +8,7 @@
 import SwiftUI
 import WebKit
 import Combine
-import os.log
+import Logging
 
 import ChocofordUI
 import UniformTypeIdentifiers
@@ -48,9 +48,7 @@ final class AppPreference: ObservableObject {
     }
     // Layout
     @Published var sidebarMode: SidebarMode = .all
-//    @AppStorage("sidebarLayout")
-    @Published
-    var sidebarLayout: LayoutStyle = {
+    @Published var sidebarLayout: LayoutStyle = {
         if #available(macOS 13.0, *) {
             return .sidebar
         } else {
@@ -58,9 +56,7 @@ final class AppPreference: ObservableObject {
         }
     }()
     
-//    @AppStorage("inspectorLayout")
-    @Published
-    var inspectorLayout: LayoutStyle = {
+    @Published var inspectorLayout: LayoutStyle = {
         if #available(macOS 14.0, *) {
             return .sidebar
         } else {
@@ -140,14 +136,28 @@ final class AppPreference: ObservableObject {
                     self.autoInvertImageSettings = string
                 }
             } catch {
-                
+
             }
+        }
+    }
+
+    // User Drawing Settings
+    @AppStorage("useCustomDrawingSettings") var useCustomDrawingSettings = false
+    @AppStorage("customDrawingSettingsData") private var customDrawingSettingsData: Data = Data()
+
+    var customDrawingSettings: UserDrawingSettings {
+        get {
+            (try? JSONDecoder().decode(UserDrawingSettings.self, from: customDrawingSettingsData))
+                ?? UserDrawingSettings()
+        }
+        set {
+            customDrawingSettingsData = (try? JSONEncoder().encode(newValue)) ?? Data()
         }
     }
 }
 
 
-struct AntiInvertImageSettings: Codable {
+struct AntiInvertImageSettings: Codable, Hashable {
     var png: Bool = true
     var svg: Bool = false
 }

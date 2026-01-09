@@ -168,6 +168,11 @@ struct ExcalidrawHomeView: View {
                 }
             }
         }
+        .overlay(alignment: .bottomTrailing) {
+            if fileHomeItemTransitionState.canShowItemContainerView {
+                SyncStatusPopover()
+            }
+        }
         .onChange(of: fileState.currentActiveFile) { newValue in
             if newValue == nil {
                 initCurrentGroups()
@@ -175,7 +180,7 @@ struct ExcalidrawHomeView: View {
                 updateLastHomeType()
             }
         }
-        .watchImmediately(of: fileState.currentActiveGroup) { newValue in
+        .watch(value: fileState.currentActiveGroup) { _, newValue in
             switch newValue {
                 case .group(let newValue):
                     if currentGroups.isEmpty {
@@ -221,10 +226,7 @@ struct ExcalidrawHomeView: View {
                 default:
                     currentGroups.removeAll()
             }
-            
-            
-            
-            
+
             if fileState.currentActiveFile == nil {
                 updateLastHomeType()
             }

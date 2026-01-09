@@ -10,6 +10,7 @@ import CoreData
 
 protocol ExcalidrawGroup: NSManagedObject, NSFetchRequestResult, Identifiable {
     var name: String? { get }
+    var groupType: Group.GroupType { get }
     var filesCount: Int { get }
     var subgroupsCount: Int { get }
     
@@ -31,6 +32,7 @@ extension LocalFolder: ExcalidrawGroup {
     var name: String? {
         url?.lastPathComponent
     }
+    var groupType: Group.GroupType { .default }
     func getParent() -> Any? {
         parent
     }
@@ -102,7 +104,7 @@ struct MoveToGroupMenu<Group: ExcalidrawGroup>: View {
                     Button {
                         self.onMove(group.objectID)
                     } label: {
-                        Text("Move to \"\(group.name ?? String(localizable: .generalUnknown))\"")
+                        Text(localizable: .sidebarFileRowContextMenuMoveToGroup(group.name ?? String(localizable: .generalUnknown)))
                     }
                     
                     Divider()

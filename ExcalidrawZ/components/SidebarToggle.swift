@@ -9,59 +9,17 @@ import SwiftUI
 
 import ChocofordUI
 
-@available(macOS 13.0, *)
 struct SidebarToggle: View {
-    @EnvironmentObject var appPreference: AppPreference
+    @EnvironmentObject private var layoutState: LayoutState
     
-    @Binding var columnVisibility: NavigationSplitViewVisibility
-    
-    init(columnVisibility: Binding<NavigationSplitViewVisibility>) {
-        self._columnVisibility = columnVisibility
-    }
+    init() {}
     
     var body: some View {
-        Menu {
-            Picker(selection: $appPreference.sidebarMode) {
-                Text(.localizable(.sidebarShowAll)).tag(AppPreference.SidebarMode.all)
-                Text(.localizable(.sidebarShowFilesOnly))
-                    .tag(AppPreference.SidebarMode.filesOnly)
-            } label: {
-                EmptyView()
-            }
-            .pickerStyle(.inline)
+        Button {
+            layoutState.isSidebarPresented.toggle()
         } label: {
-            Label(.localizable(.sidebarToggleName), systemSymbol: .sidebarLeading)
-        } primaryAction: {
-            toggleSidebar()
-        }
-        .buttonStyle(.borderless)
-        .onChange(of: appPreference.sidebarMode) { _ in
-            withAnimation { columnVisibility = .all }
-        }
-        .background {
-            Button {
-                toggleSidebar()
-            } label: { }
-            .keyboardShortcut("0", modifiers: .command)
-            .opacity(0)
-            .allowsTightening(false)
-        }
-    }
-    
-    private func toggleSidebar() {
-        withAnimation {
-            if columnVisibility == .detailOnly {
-                columnVisibility = .all
-            } else {
-                columnVisibility = .detailOnly
-            }
+            Label(.localizable(.sidebarToggleName), systemSymbol: .sidebarLeft)
         }
     }
 }
 
-#Preview {
-    if #available(macOS 13.0, *) {
-        SidebarToggle(columnVisibility: .constant(.all))
-            .environmentObject(AppPreference())
-    }
-}

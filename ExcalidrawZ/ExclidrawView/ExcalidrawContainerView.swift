@@ -24,7 +24,7 @@ struct ExcalidrawContainerView: View {
 
     @Binding var file: ExcalidrawFile?
     var interactionEnabled: Bool
-    
+
     init(
         file: Binding<ExcalidrawFile?>,
         interactionEnabled: Bool = true
@@ -35,14 +35,9 @@ struct ExcalidrawContainerView: View {
 
     @State private var loadingState = ExcalidrawView.LoadingState.loading
     @State private var isProgressViewPresented = true
-    
-    @State private var isDropping: Bool = false
-    @State private var cloudContainerEventChangeListener: AnyCancellable?
 
-    // everytime launch should sync data.
-    @State private var isImporting = false
-    @State private var fileBeforeImporting: ExcalidrawFile?
-    
+    @State private var isDropping: Bool = false
+
     @State private var isSelectFilePlaceholderPresented = false
     
     var body: some View {
@@ -80,64 +75,8 @@ struct ExcalidrawContainerView: View {
             }
         }
         .ignoresSafeArea(.container, edges: .bottom)
-        .overlay(alignment: .top) {
-            if isImporting, loadingState == .loaded, fileState.currentActiveGroup != nil {
-                HStack {
-                    ProgressView().controlSize(.small)
-                    Text(.localizable(.iCloudSyncingDataTitle))
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background {
-                    Capsule().fill(.regularMaterial)
-                }
-                .padding()
-                .transition(.move(edge: .top))
-            }
-        }
-        .animation(.easeOut, value: isImporting)
         .transition(.opacity)
         .animation(.default, value: isProgressViewPresented)
-        .task {
-            self.cloudContainerEventChangeListener?.cancel()
-            self.cloudContainerEventChangeListener = NotificationCenter.default.publisher(
-                for: NSPersistentCloudKitContainer.eventChangedNotification
-            ).sink { notification in
-                if let userInfo = notification.userInfo {
-                    if let event = userInfo["event"] as? NSPersistentCloudKitContainer.Event {
-                        DispatchQueue.main.async {
-                            if event.type == .import, !event.succeeded {
-                                isImporting = true
-                                if case .file(let file) = fileState.currentActiveFile {
-                                    self.fileBeforeImporting = try? ExcalidrawFile(
-                                        from: file.objectID,
-                                        context: viewContext
-                                    )
-                                }
-                            }
-                            if event.type == .import, event.succeeded, isImporting {
-                                isImporting = false
-                                if case .file(let file) = fileState.currentActiveFile,
-                                   let fileAfterImporting = try? ExcalidrawFile(from: file.objectID, context: viewContext) {
-                                     
-                                    if fileBeforeImporting?.elements == fileAfterImporting.elements {
-                                      // do nothing
-                                    } else if Set(fileAfterImporting.elements).isSubset(of: Set(fileBeforeImporting?.elements ?? [])) {
-                                        // if local changes is all beyond cloud, do nothing
-                                    } else {
-                                        // force reload current file.
-                                        fileState.excalidrawWebCoordinator?.loadFile(
-                                            from: file,
-                                            force: true
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
     
     @MainActor @ViewBuilder
@@ -158,7 +97,13 @@ struct ExcalidrawContainerView: View {
                     Text(.localizable(.deletedFileRecoverAlertButtonCancel))
                 }
                 
-                Button {
+                Button(role: {
+                    if #available(iOS 26.0, macOS 26.0, *) {
+                        return .confirm
+                    } else {
+                        return .none
+                    }
+                }()) {
                     // Recover file
                     if case .file(let currentFile) = fileState.currentActiveFile {
                         Task {
@@ -175,6 +120,7 @@ struct ExcalidrawContainerView: View {
                 } label: {
                     Text(.localizable(.deletedFileRecoverAlertButtonRecover))
                 }
+                .modernButtonStyle(style: .glassProminent)
             } message: {
                 Text(.localizable(.deletedFileRecoverAlertMessage))
             }

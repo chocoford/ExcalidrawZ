@@ -46,7 +46,7 @@ struct BackupContentView: View {
                 }
             }
         }
-        .watchImmediately(of: backup) { newValue in
+        .watch(value: backup) { newValue in
             loadSelectedBackup()
         }
     }

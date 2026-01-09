@@ -14,7 +14,7 @@ extension ExcalidrawCore {
             let data = file?.content else { return }
         Task.detached {
             do {
-                try await self.webActor.loadFile(id: fileID, data: data, force: force)
+                try await self.webActor.loadFile(id: fileID.uuidString, data: data, force: force)
             } catch {
                 self.publishError(error)
             }

@@ -12,9 +12,9 @@ import CoreData
 
 
 struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
-    static var localFileURLIDMapping: [URL : UUID] = [:]
+    static var localFileURLIDMapping: [URL : String] = [:]
     
-    var id = UUID()
+    var id: String = UUID().uuidString
     
     var source: String
     var files: [String: ResourceFile]
@@ -48,6 +48,20 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
             case createdAt = "created"
             case dataURL
             case lastRetrievedAt = "lastRetrieved"
+        }
+        
+        init(
+            mimeType: String,
+            id: String,
+            createdAt: Date? = nil,
+            dataURL: String,
+            lastRetrievedAt: Date? = nil
+        ) {
+            self.mimeType = mimeType
+            self.id = id
+            self.createdAt = createdAt
+            self.dataURL = dataURL
+            self.lastRetrievedAt = lastRetrievedAt
         }
         
         init(from decoder: any Decoder) throws {
@@ -90,7 +104,7 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
     }
     
     init(
-        id: UUID = UUID(),
+        id: String = UUID().uuidString,
         source: String,
         files: [String : ResourceFile],
         version: Int,
@@ -144,7 +158,7 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
         try! self.init(contentsOf: Bundle.main.url(forResource: "template", withExtension: "excalidraw")!)
     }
     
-    init(contentsOf url: URL) throws {
+    init(contentsOf url: URL, refresh: Bool = false) throws {
         let fileType: UTType = {
             let lastPathComponent = url.lastPathComponent
             
@@ -181,7 +195,7 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
                 struct UnrecognizedURLError: Error {}
                 throw UnrecognizedURLError()
         }
-        let id = Self.localFileURLIDMapping[url] ?? UUID()
+        let id = refresh ? UUID().uuidString : (Self.localFileURLIDMapping[url] ?? UUID().uuidString)
         Self.localFileURLIDMapping[url] = id
         try self.init(data: data, id: id)
         switch fileType {
@@ -199,7 +213,7 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
         }
     }
     
-    init(data: Data, id: UUID? = nil) throws {
+    init(data: Data, id: String? = nil) throws {
         self = try JSONDecoder().decode(ExcalidrawFile.self, from: data)
         self.content = data
         if let id {

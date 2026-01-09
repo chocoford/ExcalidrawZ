@@ -85,6 +85,8 @@ enum FileError: LocalizedError, Equatable {
     case invalidURL
     case createError
     case alreadyExist
+    case contentNotAvailable(filename: String)
+    case missingID
     
     var errorDescription: String? {
         switch self {
@@ -92,13 +94,16 @@ enum FileError: LocalizedError, Equatable {
                 return "Unexpected error: \(error.error.localizedDescription)"
             case .notFound:
                 return "File not found."
-                
             case .invalidURL:
                 return "Invalid URL."
             case .createError:
                 return "Create file failed."
             case .alreadyExist:
                 return "File already exists."
+            case .contentNotAvailable(let filename):
+                return "File<\(filename)> content is not available"
+            case .missingID:
+                return "File ID is missing"
         }
     }
 }

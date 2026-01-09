@@ -9,5 +9,4 @@ import Foundation
 
 extension PersistenceController {
     func prepare() {}
-    func migration() {}
 }

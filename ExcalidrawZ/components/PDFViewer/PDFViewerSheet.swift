@@ -1,0 +1,237 @@
+//
+//  PDFViewerSheet.swift
+//  ExcalidrawZ
+//
+//  Created by Claude on 2026/01/04.
+//
+
+import SwiftUI
+import PDFKit
+
+
+struct PDFViewerSheet: View {
+    let pdfData: Data?
+    let fileId: String
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var pdfDocument: PDFDocument?
+    @State private var currentPage: Int = 0
+    @State private var totalPages: Int = 0
+
+    var body: some View {
+        navigationView {
+            VStack(spacing: 0) {
+                // PDF Content
+                if pdfData == nil {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let pdfDocument = pdfDocument {
+                    PDFViewRepresentable(document: pdfDocument, currentPage: $currentPage)
+                        .ignoresSafeArea()
+                } else {
+                    if #available(iOS 18.0, macOS 15.0, *) {
+                        ContentUnavailableView(
+                            .localizable(.pdfViewerSheetFailTitle),
+                            systemSymbol: .richtextPageFill,
+                            description: Text(localizable: .pdfViewerSheetFailMessage)
+                        )
+                    } else if #available(iOS 17.0, macOS 14.0, *) {
+                        ContentUnavailableView(
+                            .localizable(.pdfViewerSheetFailTitle),
+                            systemSymbol: .docRichtextFill,
+                            description: Text(localizable: .pdfViewerSheetFailMessage)
+                        )
+                    } else {
+                        VStack {
+                            Text(localizable: .pdfViewerSheetFailTitle)
+                        }
+                    }
+                }
+                
+#if os(macOS)
+                pageControls()
+#endif
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigation) {
+                    ToolbarCloseButton()
+                }
+                
+                ToolbarItem(placement: .principal) {
+                    Text(localizable: .pdfViewerSheetTitle)
+                        .font(.headline)
+                }
+#if os(iOS)
+                ToolbarItemGroup(placement: .bottomBar) {
+                    pageControls()
+                }
+#endif
+            }
+        }
+        .onAppear {
+            loadPDF()
+        }
+        .onChange(of: pdfData) { newValue in
+            loadPDF(data: newValue)
+        }
+    }
+
+    @ViewBuilder
+    private func navigationView<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        if #available(macOS 13.0, *) {
+            NavigationStack {
+                content()
+            }
+        } else {
+            NavigationView {
+                content()
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func pageControls() -> some View {
+        if totalPages > 0 {
+            // Previous page button
+            Button {
+                goToPreviousPage()
+            } label: {
+                Image(systemSymbol: .chevronLeft)
+            }
+            .disabled(currentPage <= 0)
+            
+            // Page indicator
+            if #available(iOS 17.0, macOS 14.0, *) {
+                Text(localizable: .pdfViewerSheetPageIndicator(currentPage + 1, totalPages))
+                    .contentTransition(.numericText(value: Double(currentPage + 1)))
+                    .contentTransition(.numericText(value: Double(totalPages)))
+                    .animation(.smooth, value: currentPage)
+                    .animation(.smooth, value: totalPages)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .frame(minWidth: 140)
+            } else {
+                Text(localizable: .pdfViewerSheetPageIndicator(currentPage + 1, totalPages))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(minWidth: 140)
+            }
+            
+            // Next page button
+            Button {
+                goToNextPage()
+            } label: {
+                Image(systemSymbol: .chevronRight)
+            }
+            .disabled(currentPage >= totalPages - 1)
+        }
+    }
+
+    private func loadPDF(data: Data? = nil) {
+        let pdfData = data ?? pdfData
+        pdfDocument = pdfData.flatMap { PDFDocument(data: $0) }
+        totalPages = pdfDocument?.pageCount ?? 0
+    }
+
+    private func goToPreviousPage() {
+        guard currentPage > 0 else { return }
+        currentPage -= 1
+    }
+
+    private func goToNextPage() {
+        guard currentPage < totalPages - 1 else { return }
+        currentPage += 1
+    }
+}
+
+// MARK: - PDF View Representable
+
+#if os(macOS)
+struct PDFViewRepresentable: NSViewRepresentable {
+    let document: PDFDocument
+    @Binding var currentPage: Int
+
+    func makeNSView(context: Context) -> PDFView {
+        let pdfView = PDFView()
+        pdfView.document = document
+        pdfView.autoScales = true
+        pdfView.displayMode = .singlePage
+        pdfView.displayDirection = .vertical
+
+        // Add page change notification
+        NotificationCenter.default.addObserver(
+            forName: .PDFViewPageChanged,
+            object: pdfView,
+            queue: .main
+        ) { [weak pdfView] _ in
+            guard let pdfView = pdfView,
+                  let currentPDFPage = pdfView.currentPage else { return }
+            let index = document.index(for: currentPDFPage)
+            if index != currentPage {
+                currentPage = index
+            }
+        }
+
+        return pdfView
+    }
+
+    func updateNSView(_ nsView: PDFView, context: Context) {
+        // Update current page when binding changes
+        guard let page = document.page(at: currentPage),
+              nsView.currentPage != page else { return }
+        nsView.go(to: page)
+    }
+}
+#elseif os(iOS)
+struct PDFViewRepresentable: UIViewRepresentable {
+    let document: PDFDocument
+    @Binding var currentPage: Int
+
+    func makeUIView(context: Context) -> PDFView {
+        let pdfView = PDFView()
+        pdfView.document = document
+        pdfView.autoScales = true
+        pdfView.displayMode = .singlePage
+        pdfView.displayDirection = .vertical
+
+        // Add page change notification
+        NotificationCenter.default.addObserver(
+            forName: .PDFViewPageChanged,
+            object: pdfView,
+            queue: .main
+        ) { [weak pdfView] _ in
+            guard let pdfView = pdfView,
+                  let currentPDFPage = pdfView.currentPage else { return }
+            let index = document.index(for: currentPDFPage)
+            if index != currentPage {
+                currentPage = index
+            }
+        }
+
+        return pdfView
+    }
+
+    func updateUIView(_ uiView: PDFView, context: Context) {
+        // Update current page when binding changes
+        guard let page = document.page(at: currentPage),
+              uiView.currentPage != page else { return }
+        uiView.go(to: page)
+    }
+}
+#endif
+
+@available(iOS 17.0, macOS 14.0, *)
+#Preview {
+    // Create a sample PDF for preview
+    let samplePDFData = {
+        let pdfDocument = PDFDocument()
+        return pdfDocument.dataRepresentation() ?? Data()
+    }()
+
+    PDFViewerSheet(
+        pdfData: samplePDFData,
+        fileId: "preview-pdf"
+    )
+}
+    

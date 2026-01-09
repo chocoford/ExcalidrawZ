@@ -51,10 +51,12 @@ struct FileRowDragModifier<DraggableFile: DragMovableFile>: ViewModifier {
     
     func body(content: Content) -> some View {
         content
+#if os(macOS)
             .opacity({
                 sidebarDragState.currentDragItem == .file(file.objectID) ||
                 sidebarDragState.currentDragItem == .collaborationFile(file.objectID)
             }() ? 0.3 : 1)
+#endif
             .contentShape(Rectangle())
             .onDrag {
                 let url = file.objectID.uriRepresentation()
@@ -381,56 +383,67 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
     
     private func performDropLocalFile(payload: (URL, ItemDragState.FileRowDropTarget), delete: Bool) {
         let (url, dropTarget) = payload
-        do {
-            let newFile = try File(url: url, context: viewContext)
-            
-            withAnimation {
-                viewContext.insert(newFile)
-            }
-            
-            self.sortFiles(
-                draggedItemID: newFile.objectID,
-                droppedTargt: dropTarget,
-                files: files.map{$0},
-                context: viewContext
-            )
-            
-            if delete {
-                try FileManager.default.trashItem(at: url, resultingItemURL: nil)
-            }
-            
-            try viewContext.save()
+        Task {
+            do {
+                guard let groupID = file.group?.objectID else {
+                    throw AppError.groupError(.notFound(nil))
+                }
+                
+                let newFileID = try await PersistenceController.shared.fileRepository.createFileFromURL(
+                    url,
+                    groupObjectID: groupID
+                )
 
-        } catch {
-            alertToast(error)
+                await MainActor.run {
+                    withAnimation {
+                        self.sortFiles(
+                            draggedItemID: newFileID,
+                            droppedTargt: dropTarget,
+                            files: files.map{$0},
+                            context: viewContext
+                        )
+                    }
+
+                    if delete {
+                        try? FileManager.default.trashItem(at: url, resultingItemURL: nil)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    alertToast(error)
+                }
+            }
         }
     }
     
     private func perfromDropCollaborationFile(payload: (NSManagedObjectID, ItemDragState.FileRowDropTarget), delete: Bool) {
         let (roomID, dropTarget) = payload
-        guard let collaborationFile = viewContext.object(with: roomID) as? CollaborationFile,
-              let group = file.group else {
+        guard let group = file.group else {
             return
         }
-        do {
-            try collaborationFile.archiveToLocal(
-                group: .group(group),
-                delete: delete,
-            ) { error, target in
-                switch target {
-                    case .file(_, let fileID):
+        let groupID = group.objectID
+
+        Task.detached {
+            do {
+                let result = try await PersistenceController.shared.collaborationFileRepository.archiveToGroup(
+                    collaborationFileObjectID: roomID,
+                    targetGroupObjectID: groupID,
+                    delete: delete
+                )
+
+                if case .file(_, let fileID) = result {
+                    await MainActor.run {
                         sortFiles(
                             draggedItemID: fileID,
                             droppedTargt: dropTarget,
                             files: files.map{$0},
                             context: viewContext
                         )
-                    default:
-                        break
+                    }
                 }
+            } catch {
+                await alertToast(error)
             }
-        } catch {
-            alertToast(error)
         }
     }
     
@@ -439,41 +452,32 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
         guard let group = file.group else { return }
         let groupID = group.objectID
         Task.detached {
-            let context = PersistenceController.shared.container.newBackgroundContext()
-
             do {
-                let fileID = try await context.perform {
-                    let file = try File(url: url, context: context)
-                    let group = context.object(with: groupID) as? Group
-                    file.group = group
-                                        
-                    withAnimation {
-                        context.insert(file)
-                    }
-                    
-                    try context.save()
-                    return file.objectID
-                }
-                
+                let fileID = try await PersistenceController.shared.fileRepository.createFileFromURL(
+                    url,
+                    groupObjectID: groupID
+                )
+
                 await MainActor.run {
-                    sortFiles(
-                        draggedItemID: fileID,
-                        droppedTargt: dropTarget,
-                        files: files.map{$0},
-                        context: viewContext
-                    )
+                    withAnimation {
+                        sortFiles(
+                            draggedItemID: fileID,
+                            droppedTargt: dropTarget,
+                            files: files.map{$0},
+                            context: viewContext
+                        )
+                    }
+
                     if let file = viewContext.object(with: fileID) as? File {
                         if fileState.currentActiveFile == .temporaryFile(url) {
-                            fileState.currentActiveFile = .file(file)
-                            fileState.currentActiveGroup = .group(group)
+                            fileState.setActiveFile(.file(file))
                         } else if fileState.currentActiveGroup == .temporary, fileState.temporaryFiles == [url] {
-                            fileState.currentActiveFile = .file(file)
-                            fileState.currentActiveGroup = .group(group)
+                            fileState.setActiveFile(.file(file))
                         }
                     }
                     fileState.temporaryFiles.removeAll { $0 == url }
                 }
-                
+
             } catch {
                 await alertToast(error)
             }

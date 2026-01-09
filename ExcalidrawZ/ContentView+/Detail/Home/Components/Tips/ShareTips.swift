@@ -36,10 +36,6 @@ struct ShareTipsDetail: View {
                     .font(.title3.bold())
                 
                 AutoContainVideoPlayer(
-//                    url: Bundle.main.url(
-//                        forResource: "ExcalidrawZ - Share image",
-//                        withExtension: "mov"
-//                    )!,
                     url: URL(string: "https://pub-2983ae3d3c894bd08530707492e919db.r2.dev/ExcalidrawZ - Share image.mov")!,
                     baseAxis: .horizontal
                 )
@@ -54,10 +50,6 @@ struct ShareTipsDetail: View {
                     .font(.title3.bold())
                 
                 AutoContainVideoPlayer(
-//                    url: Bundle.main.url(
-//                        forResource: "ExcalidrawZ - Share file",
-//                        withExtension: "mov"
-//                    )!,
                     url: URL(string: "https://pub-2983ae3d3c894bd08530707492e919db.r2.dev/ExcalidrawZ - Share file.mov")!,
                     baseAxis: .horizontal
                 )
@@ -73,10 +65,6 @@ struct ShareTipsDetail: View {
                     .font(.title3.bold())
                 
                 AutoContainVideoPlayer(
-//                    url: Bundle.main.url(
-//                        forResource: "ExcalidrawZ - Share PDF",
-//                        withExtension: "mov"
-//                    )!,
                     url: URL(string: "https://pub-2983ae3d3c894bd08530707492e919db.r2.dev/ExcalidrawZ - Share PDF.mov")!,
                     baseAxis: .horizontal
                 )

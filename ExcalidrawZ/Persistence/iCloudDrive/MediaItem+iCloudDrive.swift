@@ -1,0 +1,143 @@
+//
+//  MediaItem+iCloudDrive.swift
+//  ExcalidrawZ
+//
+//  Created by Claude on 2025/11/20.
+//
+
+import Foundation
+import CoreData
+import Logging
+
+extension MediaItem {
+    private static let logger = Logger(label: "MediaItem+FileStorage")
+
+    /// Load raw media data from storage (local/iCloud)
+    /// Automatically checks iCloud for newer versions before returning
+    /// Falls back to decoding CoreData dataURL if storage is unavailable
+    func loadData() async throws -> Data {
+        guard let context = self.managedObjectContext else {
+            struct NoContextError: LocalizedError {
+                var errorDescription: String? { "MediaItem object has no managed object context" }
+            }
+            throw NoContextError()
+        }
+
+        // Use objectID to safely access object across async boundary
+        let objectID = self.objectID
+
+        // Read all Core Data properties in context.perform for thread safety
+        let (filePath, mediaID, dataURL): (String?, String?, String?) = await context.perform {
+            guard let mediaItem = context.object(with: objectID) as? MediaItem else {
+                return (nil, nil, nil)
+            }
+            return (mediaItem.filePath, mediaItem.id, mediaItem.dataURL)
+        }
+
+        // Try to load from storage first (local/iCloud with bidirectional sync)
+        if let filePath = filePath, let mediaID = mediaID {
+            do {
+                // This will automatically check iCloud for updates and download if needed
+                return try await FileStorageManager.shared.loadContent(relativePath: filePath, fileID: mediaID)
+            } catch {
+                Self.logger.warning("Failed to load from FileStorage: \(error.localizedDescription), falling back to CoreData.")
+            }
+        }
+
+        // Fallback to CoreData dataURL
+        if let dataURL = dataURL,
+           let base64String = dataURL.components(separatedBy: "base64,").last,
+           let data = Data(base64Encoded: base64String) {
+            return data
+        }
+
+        throw MediaItemError.dataNotAvailable
+    }
+
+    /// Load media data URL from storage (local/iCloud)
+    /// Automatically checks iCloud for newer versions before returning
+    /// Falls back to CoreData dataURL if storage is unavailable
+    func loadDataURL() async throws -> String {
+        guard let context = self.managedObjectContext else {
+            struct NoContextError: LocalizedError {
+                var errorDescription: String? { "MediaItem object has no managed object context" }
+            }
+            throw NoContextError()
+        }
+
+        // Use objectID to safely access object across async boundary
+        let objectID = self.objectID
+
+        // Read all Core Data properties in context.perform for thread safety
+        let (filePath, mediaID, dataURL): (String?, String?, String?) = await context.perform {
+            guard let mediaItem = context.object(with: objectID) as? MediaItem else {
+                return (nil, nil, nil)
+            }
+            return (mediaItem.filePath, mediaItem.id, mediaItem.dataURL)
+        }
+
+        // Try to load from storage first (local/iCloud with bidirectional sync)
+        if let filePath = filePath, let mediaID = mediaID {
+            do {
+                // This will automatically check iCloud for updates and download if needed
+                let _ = try await FileStorageManager.shared.loadContent(relativePath: filePath, fileID: mediaID)
+                // Now load and convert to data URL
+                return try await FileStorageManager.shared.loadMediaItem(relativePath: filePath)
+            } catch {
+                Self.logger.warning("\(error.localizedDescription), falling back to CoreData.")
+            }
+        }
+
+        // Fallback to CoreData dataURL
+        if let dataURL = dataURL {
+            return dataURL
+        }
+
+        throw MediaItemError.dataURLNotAvailable
+    }
+
+    /// Update file path and clear dataURL (call this after successfully saving to storage)
+    /// Must be called on the entity's managedObjectContext
+    func updateAfterSavingToStorage(filePath: String) {
+        self.filePath = filePath
+        self.dataURL = nil // Clear CoreData dataURL to save space
+        self.lastRetrievedAt = .now
+    }
+
+    /// Clear all data references
+    /// Must be called on the entity's managedObjectContext
+    func clearDataReferences() {
+        self.dataURL = nil
+        self.filePath = nil
+    }
+
+    /// Get ResourceFile representation, loading data from iCloud Drive if needed
+    func toResourceFile() async throws -> ExcalidrawFile.ResourceFile {
+        let dataURL = try await loadDataURL()
+
+        return ExcalidrawFile.ResourceFile(
+            mimeType: self.mimeType ?? "application/octet-stream",
+            id: self.id ?? "",
+            createdAt: self.createdAt,
+            dataURL: dataURL,
+            lastRetrievedAt: self.lastRetrievedAt
+        )
+    }
+}
+
+enum MediaItemError: LocalizedError {
+    case dataNotAvailable
+    case dataURLNotAvailable
+    case missingID
+
+    var errorDescription: String? {
+        switch self {
+        case .dataNotAvailable:
+            return "Media item data is not available"
+        case .dataURLNotAvailable:
+            return "Media item data URL is not available"
+        case .missingID:
+            return "Media item ID is missing"
+        }
+    }
+}

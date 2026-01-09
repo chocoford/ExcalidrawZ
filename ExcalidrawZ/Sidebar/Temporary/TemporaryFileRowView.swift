@@ -52,16 +52,16 @@ struct TemporaryFileRowView: View {
                 fileState.selectedTemporaryFiles.insertOrRemove(file)
                 fileState.selectedStartTemporaryFile = file
             } else {
-                fileState.currentActiveFile = .temporaryFile(file)
+                fileState.setActiveFile(.temporaryFile(file))
                 fileState.selectedStartTemporaryFile = file
             }
 #else
-            fileState.currentTemporaryFile = file
+            fileState.setActiveFile(.temporaryFile(file))
             fileState.selectedStartTemporaryFile = file
 #endif
         }
         .modifier(TemporaryFileContextMenuModifier(file: file))
-        .watchImmediately(of: file) { newValue in
+        .watch(value: file) { newValue in
             updateModifiedDate()
         }
     }

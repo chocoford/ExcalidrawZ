@@ -1,9 +1,27 @@
+## 1.7.0
+
+#### Features
+
+- Improved File Storage
+- Import PDF support
+- Custom Drawing Settings
+
+#### Optimizations
+
+- Keep viewport when switching between files.
+- Now the canvas viewport will not be reset after synchronous update.
+
+
+
+## 1.6.1
+
+Update excalidraw core.
+
 ## 1.6.0
 
 #### Optimizations
 
 - Completely redesigned UI
-
 - Refined interaction details to improve the user experience
   -  drag-and-drop to move
   -  reorder files and groups,

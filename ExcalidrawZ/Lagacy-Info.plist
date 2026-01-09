@@ -25,13 +25,6 @@
 	<string>https://excalidrawz.web.app/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>GVyyXynnnx8V+9I0OUy/rNRJen+ZFzRd6YhJYuaInbw=</string>
-	<key>UIAppFonts</key>
-	<array>
-		<string>Cascadia</string>
-		<string>Virgil</string>
-		<string>Cangnanshoujiti</string>
-		<string>KaiTi</string>
-	</array>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

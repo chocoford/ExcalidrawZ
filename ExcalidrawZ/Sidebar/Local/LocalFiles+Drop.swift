@@ -120,7 +120,7 @@ import SwiftUI
 //            
 //            if fileState.currentActiveFile == .localFile(url), let newURL = mapping[url] {
 //                fileState.currentActiveGroup = .localFolder(folder)
-//                fileState.currentActiveFile = .localFile(newURL)
+//                fileState.setActiveFile(.localFile(newURL))
 //                fileState.expandToGroup(folder.objectID)
 //            }
 //        } catch {

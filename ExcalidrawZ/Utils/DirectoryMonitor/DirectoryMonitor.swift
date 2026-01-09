@@ -7,7 +7,7 @@
 
 import SwiftUI
 import Combine
-import os.log
+import Logging
 import CoreServices
 
 import ChocofordEssentials
@@ -29,8 +29,7 @@ final class DirectoryObserver {
     var anyChangedPublisher: PassthroughSubject<DirectoryMonitor.Event, Never> = .init()
     
     func addObservationDestination(url: URL, onEvent: @escaping (DirectoryMonitor.Event) -> Void = {_ in}) {
-        let path = url.absoluteURL.path(percentEncoded: false)
-        guard FileManager.default.fileExists(atPath: path) else {
+        guard FileManager.default.fileExists(at: url) else {
             return
         }
 //        do {
@@ -78,10 +77,7 @@ final class DirectoryObserverObject: ObservableObject {
 }
 
 public class DirectoryMonitor {
-    private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
-        category: "DirectoryMonitor"
-    )
+    private let logger = Logger(label: "DirectoryMonitor")
     
     private var eventStream: FSEventStreamRef?
     let presentedItemURL: URL
@@ -156,7 +152,7 @@ public class DirectoryMonitor {
         FSEventStreamStop(eventStream)
         FSEventStreamInvalidate(eventStream)
         FSEventStreamRelease(eventStream)
-        print("Stopped monitoring directory: \(presentedItemURL.path)")
+        print("Stopped monitoring directory: \(presentedItemURL.filePath)")
     }
 
     // FSEventStream callback with @convention(c)
@@ -214,10 +210,7 @@ private let eventCallback: @convention(c) (
 
 #elseif os(iOS)
 public class DirectoryMonitor: NSObject, NSFilePresenter {
-    private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
-        category: "DirectoryMonitor"
-    )
+    private let logger = Logger(label: "DirectoryMonitor")
     
     public lazy var presentedItemOperationQueue = OperationQueue.main
     public var presentedItemURL: URL?

@@ -20,7 +20,7 @@ extension ExcalidrawFile: Transferable {
         if fileManager.fileExists(atPath: url.absoluteString) {
             try fileManager.removeItem(at: url)
         }
-        fileManager.createFile(atPath: url.path(), contents: self.content)
+        fileManager.createFile(atPath: url.filePath, contents: self.content)
         return url
     }
     

@@ -7,7 +7,7 @@
 
 import SwiftUI
 import CoreSpotlight
-import os.log
+import Logging
 
 extension Notification.Name {
     static let onContinueUserSearchableItemAction = Notification.Name("OnContinueUserSearchableItemAction")
@@ -20,7 +20,7 @@ struct UserActivityHandlerModifier: ViewModifier {
     
     @EnvironmentObject private var fileState: FileState
     
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "UserActivityHandlerModifier")
+    let logger = Logger(label: "UserActivityHandlerModifier")
     
     func body(content: Content) -> some View {
         content
@@ -51,11 +51,7 @@ struct UserActivityHandlerModifier: ViewModifier {
             let object = viewContext.object(with: objectID)
             
             if case let file as File = object {
-                if let group = file.group {
-                    fileState.currentActiveGroup = .group(group)
-                    fileState.currentActiveFile = .file(file)
-                    fileState.expandToGroup(group.objectID)
-                }
+                fileState.setActiveFile(.file(file))
             }
         }
             

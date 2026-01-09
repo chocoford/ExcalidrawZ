@@ -34,7 +34,9 @@ struct ModernButtonStyleModifier: ViewModifier {
     
     enum BorderShape {
         case capsule, roundedRectangle(CGFloat?), circle
-        case modern, modernCircle
+        /// Capsule in iOS 26, RoundedRectangle before iOS 26
+        case modern
+        case modernCircle
     }
     
     enum Style {

@@ -9,11 +9,12 @@ import SwiftUI
 import CoreData
 import CloudKit
 import Combine
-import os.log
+import Logging
 
 import ChocofordUI
 import ChocofordEssentials
 import SwiftyAlert
+import SFSafeSymbols
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) var viewContext
@@ -23,7 +24,7 @@ struct ContentView: View {
     
     @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
     
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ContentView")
+    let logger = Logger(label: "ContentView")
     
     @State private var hideContent: Bool = false
     
@@ -38,7 +39,6 @@ struct ContentView: View {
     @State private var window: UIWindow?
 #endif
     
-    @State private var isFirstImporting: Bool?
     @State private var cloudContainerEventChangeListener: AnyCancellable?
     
     @State private var isFirstAppear = true
@@ -55,11 +55,15 @@ struct ContentView: View {
             .modifier(OpenFromURLModifier())
             .modifier(UserActivityHandlerModifier())
             .modifier(ShareFileModifier())
+            .modifier(LocalFolderMonitorModifier())
+            .modifier(PDFViewerModifier())
             .environmentObject(fileState)
             .environmentObject(exportState)
             .environmentObject(layoutState)
             .environmentObject(shareFileState)
             .modifier(DragStateModifier())
+            .modifier(StartupSyncModifier())
+            .modifier(CoreDataMigrationModifier())
             .swiftyAlert(logs: true)
             .bindWindow($window)
             .containerSizeClassInjection()
@@ -82,25 +86,20 @@ struct ContentView: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
         ZStack {
-            if isFirstImporting == nil {
-                Color.clear
-            } else if isFirstImporting == true {
-                if #available(macOS 13.0, *) {
-                    ICloudSyncingView(isFirstImporting: isFirstImporting)
-                } else {
-                    ICloudSyncingView(isFirstImporting: isFirstImporting)
-                        .frame(width: 1150, height: 580)
-                }
-            } else {
+            if horizontalSizeClass == .regular {
                 contentView()
                     .modifier(LibraryTrailingSidebarModifier())
+            } else {
+                // Compact uses TabView, can not use library here.
+                contentView()
             }
         }
     }
     
     @MainActor @ViewBuilder
     private func contentView() -> some View {
-        if #available(macOS 13.0, *), appPreference.sidebarLayout == .sidebar {
+        if #available(macOS 13.0, *),
+            appPreference.sidebarLayout == .sidebar {
             ContentViewModern()
         } else {
             ContentViewLagacy()
@@ -127,7 +126,7 @@ struct ContentView: View {
             fileState.temporaryFiles = Array(Set(fileState.temporaryFiles))
             if fileState.currentActiveFile == nil || fileState.currentActiveGroup != .temporary {
                 fileState.currentActiveGroup = .temporary
-                fileState.currentActiveFile = .localFile(fileState.temporaryFiles.first!)
+                fileState.setActiveFile(.localFile(fileState.temporaryFiles.first!))
             }
         }
     }
@@ -143,52 +142,16 @@ struct ContentView: View {
     
     // Check if it is first launch by checking the files count.
     private func prepare() async {
-        do {
-            guard !isICloudDisabled else {
-                isFirstImporting = false
-                try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: viewContext)
-                return
-            }
-            
-            let isEmpty = try viewContext.fetch(NSFetchRequest<File>(entityName: "File")).isEmpty
-            isFirstImporting = isEmpty
-            if isFirstImporting == true, try await CKContainer.default().accountStatus() != .available {
-                isFirstImporting = false
-                return
-            } else if !isEmpty {
-                try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: viewContext)
-            }
-        } catch {
-            alertToast(error)
-        }
-        
         self.cloudContainerEventChangeListener?.cancel()
         self.cloudContainerEventChangeListener = NotificationCenter.default.publisher(
             for: NSPersistentCloudKitContainer.eventChangedNotification
         ).sink { notification in
-            if let userInfo = notification.userInfo {
-                if let event = userInfo["event"] as? NSPersistentCloudKitContainer.Event {
-                    // On macOS, event.type will be `setup` only when first launched.
-                    // On iOS, event.type will be `setup` every time it has been launched.
-                    print("NSPersistentCloudKitContainer.eventChangedNotification: \(event.type), succeeded: \(event.succeeded)")
-                    if event.type == .import, event.succeeded, isFirstImporting == true {
-                        isFirstImporting = false
-                        Task { @MainActor in
-                            do {
-                                try? await Task.sleep(nanoseconds: UInt64(2 * 1e+9))
-                                try await fileState.mergeDefaultGroupAndTrashIfNeeded(context: viewContext)
-                            } catch {
-                                alertToast(error)
-                            }
-                        }
-                        self.cloudContainerEventChangeListener?.cancel()
-                    }
-                }
+            Task {
+                try? await fileState.mergeDefaultGroupAndTrashIfNeeded(context: viewContext)
             }
         }
     }
 }
-
 
 #if DEBUG
 //struct ContentView_Previews: PreviewProvider {

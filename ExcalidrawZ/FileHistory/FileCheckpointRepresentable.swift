@@ -9,15 +9,15 @@ import Foundation
 import CoreData
 
 protocol FileCheckpointRepresentable: Equatable, Identifiable, NSManagedObject {
-    var fileID: UUID? { get }
+    var fileID: String? { get }
     var updatedAt: Date? { get }
     var filename: String? { get }
     var content: Data? { get }
 }
 
 extension FileCheckpoint: FileCheckpointRepresentable {
-    var fileID: UUID? {
-        file?.id
+    var fileID: String? {
+        file?.id?.uuidString
     }
 }
 
@@ -25,6 +25,6 @@ extension LocalFileCheckpoint: FileCheckpointRepresentable {
     var filename: String? {
         url?.deletingPathExtension().lastPathComponent
     }
-    var fileID: UUID? { nil }
+    var fileID: String? { nil }
 }
  

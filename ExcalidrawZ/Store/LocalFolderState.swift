@@ -15,6 +15,8 @@ final class LocalFolderState: ObservableObject {
     var itemRenamedPublisher = PassthroughSubject<String, Never>()
     var itemCreatedPublisher = PassthroughSubject<String, Never>()
     var itemUpdatedPublisher = PassthroughSubject<String, Never>()
+
+    // MARK: - File Status Management
     
     public func moveLocalFolder(
         _ folderID: NSManagedObjectID,
