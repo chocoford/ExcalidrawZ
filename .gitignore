@@ -106,3 +106,4 @@ Config/Secrets.plist
 PRIVATE_TIPS.md
 CLAUDE.md
 ExcalidrawZUIPlayground
+ExcalidrawZ/**/*.md
