@@ -269,11 +269,13 @@ extension ExcalidrawCore {
     
     /// Make Image be the same as light mode.
     /// autoInvert: Invert the current inverted image in dark mode.
+    @available(*, deprecated, message: "Excalidraw now support natively")
     @MainActor
     func toggleInvertImageSwitch(autoInvert: Bool) async throws {
         if self.webView.isLoading { return }
         try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleImageInvertSwitch(\(autoInvert)); 0;")
     }
+    @available(*, deprecated, message: "Excalidraw now support natively")
     @MainActor
     func applyAntiInvertImageSettings(payload: AntiInvertImageSettings) async throws {
         if self.webView.isLoading { return }

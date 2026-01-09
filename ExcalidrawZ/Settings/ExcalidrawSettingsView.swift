@@ -47,7 +47,7 @@ struct ExcalidrawSettingsView: View {
     @ViewBuilder
     private func content() -> some View {
         customDrawingSettingsSection()
-        antiInvertImageSection()
+        // antiInvertImageSection()
     }
     
     @ViewBuilder

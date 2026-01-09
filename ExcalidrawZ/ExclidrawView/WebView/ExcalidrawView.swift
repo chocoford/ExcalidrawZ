@@ -195,12 +195,6 @@ struct ExcalidrawView: View {
             .onChange(of: appPreference.excalidrawAppearance) { _ in
                 applyColorMode()
             }
-            .onChange(of: appPreference.autoInvertImage) { _ in
-                applyImageInversion()
-            }
-            .onChange(of: appPreference.antiInvertImageSettings) { _ in
-                applyImageInversion()
-            }
             .onChange(of: loadingState) { state in
                 if state == .loaded {
                     applyAllSettings()
@@ -289,7 +283,6 @@ struct ExcalidrawView: View {
     private func applyAllSettings() {
         applyFonts()
         applyColorMode()
-        applyImageInversion()
     }
     
     private func applyFonts() {
@@ -318,25 +311,6 @@ struct ExcalidrawView: View {
                 }
                 self.logger.info("apply color mode: \(isDark ? "dark" : "light")")
                 try await excalidrawCore.changeColorMode(dark: isDark)
-            } catch {
-                onError(error)
-            }
-        }
-    }
-    
-    private func applyImageInversion() {
-        guard loadingState == .loaded, scenePhase == .active else { return }
-
-        Task {
-            do {
-                let shouldInvert = appPreference.autoInvertImage &&
-                (appPreference.excalidrawAppearance == .dark ||
-                 (colorScheme == .dark && appPreference.excalidrawAppearance == .auto))
-
-                try await excalidrawCore.applyAntiInvertImageSettings(
-                    payload: appPreference.antiInvertImageSettings
-                )
-                try await excalidrawCore.toggleInvertImageSwitch(autoInvert: shouldInvert)
             } catch {
                 onError(error)
             }
