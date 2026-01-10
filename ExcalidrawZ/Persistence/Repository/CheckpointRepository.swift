@@ -13,12 +13,6 @@ import Logging
 actor CheckpointRepository {
     private let logger = Logger(label: "CheckpointRepository")
 
-    let context: NSManagedObjectContext
-
-    init(context: NSManagedObjectContext) {
-        self.context = context
-    }
-
     // MARK: - Create Checkpoint
 
     /// Create a new checkpoint for a file
@@ -32,23 +26,25 @@ actor CheckpointRepository {
         content: Data,
         filename: String?
     ) async throws -> NSManagedObjectID {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Create checkpoint entity with content as fallback
         let checkpointObjectID = try await context.perform {
-            guard let file = self.context.object(with: fileObjectID) as? File else {
+            guard let file = context.object(with: fileObjectID) as? File else {
                 throw AppError.fileError(.notFound)
             }
 
-            let checkpoint = FileCheckpoint(context: self.context)
+            let checkpoint = FileCheckpoint(context: context)
             checkpoint.id = UUID()
             checkpoint.content = content
             checkpoint.filename = filename
             checkpoint.updatedAt = .now
             file.addToCheckpoints(checkpoint)
 
-            try self.context.save()
+            try context.save()
 
             // Clean up old checkpoints if needed
-            if let checkpoints = try? PersistenceController.shared.fetchFileCheckpoints(of: file, viewContext: self.context),
+            if let checkpoints = try? PersistenceController.shared.fetchFileCheckpoints(of: file, viewContext: context),
                checkpoints.count > 50 {
                 file.removeFromCheckpoints(checkpoints.last!)
             }
@@ -74,8 +70,10 @@ actor CheckpointRepository {
         content: Data,
         filename: String?
     ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         let checkpointObjectID: NSManagedObjectID? = try await context.perform {
-            guard let file = self.context.object(with: fileObjectID) as? File else {
+            guard let file = context.object(with: fileObjectID) as? File else {
                 return nil
             }
 
@@ -83,7 +81,7 @@ actor CheckpointRepository {
             let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
             fetchRequest.predicate = NSPredicate(format: "file == %@", file)
             fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
-            guard let checkpoint = try self.context.fetch(fetchRequest).first else {
+            guard let checkpoint = try context.fetch(fetchRequest).first else {
                 return nil
             }
 
@@ -92,7 +90,7 @@ actor CheckpointRepository {
             checkpoint.filename = filename
             checkpoint.updatedAt = .now
 
-            try self.context.save()
+            try context.save()
 
             return checkpoint.objectID
         }
@@ -111,6 +109,8 @@ actor CheckpointRepository {
     func loadCheckpointContent(
         checkpointObjectID: NSManagedObjectID
     ) async throws -> Data {
+        let context = PersistenceController.shared.newTaskContext()
+
         guard let checkpoint = context.object(with: checkpointObjectID) as? FileCheckpoint else {
             throw AppError.fileError(.notFound)
         }
@@ -125,17 +125,19 @@ actor CheckpointRepository {
     func deleteCheckpoint(
         checkpointObjectID: NSManagedObjectID
     ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Extract checkpoint info before deletion
         let (filePath, checkpointID): (String?, UUID?) = try await context.perform {
-            guard let checkpoint = self.context.object(with: checkpointObjectID) as? FileCheckpoint else {
+            guard let checkpoint = context.object(with: checkpointObjectID) as? FileCheckpoint else {
                 return (nil, nil)
             }
             let path = checkpoint.filePath
             let id = checkpoint.id
 
             // Delete database record first
-            self.context.delete(checkpoint)
-            try self.context.save()
+            context.delete(checkpoint)
+            try context.save()
 
             return (path, id)
         }
@@ -156,9 +158,11 @@ actor CheckpointRepository {
     /// Save checkpoint content to storage (local + auto iCloud sync)
     /// - Parameter checkpointObjectID: The checkpoint objectID
     func saveCheckpointToStorage(checkpointObjectID: NSManagedObjectID) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Get checkpoint content, ID, and metadata from CoreData
         let (content, checkpointID, updatedAt) = try await context.perform {
-            guard let checkpoint = self.context.object(with: checkpointObjectID) as? FileCheckpoint,
+            guard let checkpoint = context.object(with: checkpointObjectID) as? FileCheckpoint,
                   let content = checkpoint.content,
                   let checkpointID = checkpoint.id else {
                 throw FileCheckpointError.contentNotAvailable
@@ -176,9 +180,9 @@ actor CheckpointRepository {
 
         // Update after successful save
         try await context.perform {
-            guard let checkpoint = self.context.object(with: checkpointObjectID) as? FileCheckpoint else { return }
+            guard let checkpoint = context.object(with: checkpointObjectID) as? FileCheckpoint else { return }
             checkpoint.updateAfterSavingToStorage(filePath: relativePath)
-            try self.context.save()
+            try context.save()
         }
         logger.info("Saved checkpoint to storage: \(relativePath)")
     }
@@ -196,12 +200,14 @@ actor CheckpointRepository {
         // Load checkpoint content
         let content = try await loadCheckpointContent(checkpointObjectID: checkpointObjectID)
 
+        let context = PersistenceController.shared.newTaskContext()
+
         // Update file with checkpoint content in CoreData
         // Note: Caller is responsible for saving the file to storage if needed
         // by calling FileRepository.saveFileContentToStorage(fileObjectID:)
         try await context.perform {
-            guard let file = self.context.object(with: fileObjectID) as? File,
-                  let checkpoint = self.context.object(with: checkpointObjectID) as? FileCheckpoint else {
+            guard let file = context.object(with: fileObjectID) as? File,
+                  let checkpoint = context.object(with: checkpointObjectID) as? FileCheckpoint else {
                 throw AppError.fileError(.notFound)
             }
 
@@ -209,7 +215,7 @@ actor CheckpointRepository {
             file.name = checkpoint.filename
             file.updatedAt = .now
 
-            try self.context.save()
+            try context.save()
         }
     }
 }

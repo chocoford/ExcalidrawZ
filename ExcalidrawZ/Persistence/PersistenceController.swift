@@ -25,12 +25,17 @@ class PersistenceController {
     
     let logger = Logger(label: "PersistenceController")
 
-    lazy var fileRepository: FileRepository = FileRepository(context: self.newTaskContext())
-    lazy var checkpointRepository = CheckpointRepository(context: self.newTaskContext())
-    lazy var mediaItemRepository = MediaItemRepository(context: self.newTaskContext())
-    lazy var groupRepository = GroupRepository(context: self.newTaskContext())
-    lazy var collaborationFileRepository = CollaborationFileRepository(context: self.newTaskContext())
-    lazy var localFolderRepository = LocalFolderRepository(context: self.newTaskContext())
+    // Repository context refactoring COMPLETE
+    // All repositories now use short-lived contexts created per-operation (Apple best practice)
+    // Benefits:
+    // 1. Automatic memory cleanup - contexts deallocate after operations
+    // 2. Eliminates cross-repository save bugs
+    lazy var fileRepository = FileRepository()
+    lazy var checkpointRepository = CheckpointRepository()
+    lazy var mediaItemRepository = MediaItemRepository()
+    lazy var groupRepository = GroupRepository()
+    lazy var collaborationFileRepository = CollaborationFileRepository()
+    lazy var localFolderRepository = LocalFolderRepository()
     
     /// Init function
     /// - Parameters:

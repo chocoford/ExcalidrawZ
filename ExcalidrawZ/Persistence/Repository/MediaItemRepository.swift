@@ -13,12 +13,6 @@ import Logging
 actor MediaItemRepository {
     private let logger = Logger(label: "MediaItemRepository")
 
-    let context: NSManagedObjectContext
-
-    init(context: NSManagedObjectContext) {
-        self.context = context
-    }
-
     // MARK: - Create MediaItem
 
     /// Create a new media item with data URL and save to iCloud Drive
@@ -30,16 +24,18 @@ actor MediaItemRepository {
         resource: ExcalidrawFile.ResourceFile,
         fileObjectID: NSManagedObjectID
     ) async throws -> NSManagedObjectID {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Create media item entity with dataURL as fallback
         let mediaItemObjectID = try await context.perform {
-            guard let file = self.context.object(with: fileObjectID) as? File else {
+            guard let file = context.object(with: fileObjectID) as? File else {
                 throw AppError.fileError(.notFound)
             }
 
-            let mediaItem = MediaItem(resource: resource, context: self.context)
+            let mediaItem = MediaItem(resource: resource, context: context)
             mediaItem.file = file
-            self.context.insert(mediaItem)
-            try self.context.save()
+            context.insert(mediaItem)
+            try context.save()
 
             return mediaItem.objectID
         }
@@ -59,11 +55,13 @@ actor MediaItemRepository {
         resources: [ExcalidrawFile.ResourceFile],
         fileObjectID: NSManagedObjectID
     ) async throws -> [NSManagedObjectID] {
+        let context = PersistenceController.shared.newTaskContext()
+
         var mediaItemObjectIDs: [NSManagedObjectID] = []
 
         // Get existing media items to avoid duplicates
         let allMediaItems = try await context.perform {
-            try self.context.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
+            try context.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
         }
 
         // Filter resources that need to be imported
@@ -89,16 +87,18 @@ actor MediaItemRepository {
         resource: ExcalidrawFile.ResourceFile,
         collaborationFileObjectID: NSManagedObjectID
     ) async throws -> NSManagedObjectID {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Create media item entity with dataURL as fallback
         let mediaItemObjectID = try await context.perform {
-            guard let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else {
+            guard let collaborationFile = context.object(with: collaborationFileObjectID) as? CollaborationFile else {
                 throw AppError.fileError(.notFound)
             }
 
-            let mediaItem = MediaItem(resource: resource, context: self.context)
+            let mediaItem = MediaItem(resource: resource, context: context)
             mediaItem.collaborationFile = collaborationFile
-            self.context.insert(mediaItem)
-            try self.context.save()
+            context.insert(mediaItem)
+            try context.save()
 
             return mediaItem.objectID
         }
@@ -118,11 +118,13 @@ actor MediaItemRepository {
         resources: [ExcalidrawFile.ResourceFile],
         collaborationFileObjectID: NSManagedObjectID
     ) async throws -> [NSManagedObjectID] {
+        let context = PersistenceController.shared.newTaskContext()
+
         var mediaItemObjectIDs: [NSManagedObjectID] = []
 
         // Get existing media items to avoid duplicates
         let allMediaItems = try await context.perform {
-            try self.context.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
+            try context.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
         }
 
         // Filter resources that need to be imported
@@ -152,9 +154,11 @@ actor MediaItemRepository {
         excalidrawFile: ExcalidrawFile,
         fileObjectID: NSManagedObjectID
     ) async throws -> [NSManagedObjectID] {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Get new medias that don't exist yet
         let newMedias = try await context.perform {
-            guard let file = self.context.object(with: fileObjectID) as? File else {
+            guard let file = context.object(with: fileObjectID) as? File else {
                 throw AppError.fileError(.notFound)
             }
 
@@ -187,9 +191,11 @@ actor MediaItemRepository {
         excalidrawFile: ExcalidrawFile,
         collaborationFileObjectID: NSManagedObjectID
     ) async throws -> [NSManagedObjectID] {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Get new medias that don't exist yet
         let newMedias = try await context.perform {
-            guard let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else {
+            guard let collaborationFile = context.object(with: collaborationFileObjectID) as? CollaborationFile else {
                 throw AppError.fileError(.notFound)
             }
 
@@ -220,6 +226,8 @@ actor MediaItemRepository {
     func loadMediaDataURL(
         mediaItemObjectID: NSManagedObjectID
     ) async throws -> String {
+        let context = PersistenceController.shared.newTaskContext()
+
         guard let mediaItem = context.object(with: mediaItemObjectID) as? MediaItem else {
             throw MediaItemError.missingID
         }
@@ -233,6 +241,8 @@ actor MediaItemRepository {
     func toResourceFile(
         mediaItemObjectID: NSManagedObjectID
     ) async throws -> ExcalidrawFile.ResourceFile {
+        let context = PersistenceController.shared.newTaskContext()
+
         guard let mediaItem = context.object(with: mediaItemObjectID) as? MediaItem else {
             throw MediaItemError.missingID
         }
@@ -251,9 +261,11 @@ actor MediaItemRepository {
         mediaItemObjectID: NSManagedObjectID,
         resource: ExcalidrawFile.ResourceFile
     ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Verify ID matches
         let idMatches = await context.perform {
-            guard let mediaItem = self.context.object(with: mediaItemObjectID) as? MediaItem else {
+            guard let mediaItem = context.object(with: mediaItemObjectID) as? MediaItem else {
                 return false
             }
             return mediaItem.id == resource.id
@@ -266,7 +278,7 @@ actor MediaItemRepository {
 
         // Update metadata in CoreData
         try await context.perform {
-            guard let mediaItem = self.context.object(with: mediaItemObjectID) as? MediaItem else {
+            guard let mediaItem = context.object(with: mediaItemObjectID) as? MediaItem else {
                 return
             }
 
@@ -274,7 +286,7 @@ actor MediaItemRepository {
             mediaItem.mimeType = resource.mimeType
             mediaItem.lastRetrievedAt = resource.lastRetrievedAt
 
-            try self.context.save()
+            try context.save()
         }
 
         // Save data URL to storage
@@ -303,9 +315,11 @@ actor MediaItemRepository {
         mediaItemObjectID: NSManagedObjectID,
         dataURL: String
     ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Get media item ID and metadata from CoreData
         let mediaItemID = try await context.perform {
-            guard let mediaItem = self.context.object(with: mediaItemObjectID) as? MediaItem,
+            guard let mediaItem = context.object(with: mediaItemObjectID) as? MediaItem,
                   let mediaItemID = mediaItem.id else {
                 throw MediaItemError.missingID
             }
@@ -324,9 +338,9 @@ actor MediaItemRepository {
 
         // Update after successful save
         try await context.perform {
-            guard let mediaItem = self.context.object(with: mediaItemObjectID) as? MediaItem else { return }
+            guard let mediaItem = context.object(with: mediaItemObjectID) as? MediaItem else { return }
             mediaItem.updateAfterSavingToStorage(filePath: relativePath)
-            try self.context.save()
+            try context.save()
         }
         logger.info("Saved media item to storage: \(relativePath)")
     }
@@ -338,17 +352,19 @@ actor MediaItemRepository {
     func deleteMediaItem(
         mediaItemObjectID: NSManagedObjectID
     ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Extract media item info before deletion
         let (filePath, mediaID): (String?, String?) = try await context.perform {
-            guard let mediaItem = self.context.object(with: mediaItemObjectID) as? MediaItem else {
+            guard let mediaItem = context.object(with: mediaItemObjectID) as? MediaItem else {
                 return (nil, nil)
             }
             let path = mediaItem.filePath
             let id = mediaItem.id
 
             // Delete database record first
-            self.context.delete(mediaItem)
-            try self.context.save()
+            context.delete(mediaItem)
+            try context.save()
 
             return (path, id)
         }
@@ -372,15 +388,17 @@ actor MediaItemRepository {
     func getMediaItems(
         forFile fileObjectID: NSManagedObjectID
     ) async throws -> [NSManagedObjectID] {
-        try await context.perform {
-            guard let file = self.context.object(with: fileObjectID) as? File else {
+        let context = PersistenceController.shared.newTaskContext()
+
+        return try await context.perform {
+            guard let file = context.object(with: fileObjectID) as? File else {
                 return []
             }
 
             let fetchRequest = NSFetchRequest<MediaItem>(entityName: "MediaItem")
             fetchRequest.predicate = NSPredicate(format: "file == %@", file)
 
-            let mediaItems = try self.context.fetch(fetchRequest)
+            let mediaItems = try context.fetch(fetchRequest)
             return mediaItems.map { $0.objectID }
         }
     }

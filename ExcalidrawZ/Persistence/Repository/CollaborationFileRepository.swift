@@ -13,12 +13,6 @@ import Logging
 actor CollaborationFileRepository {
     private let logger = Logger(label: "CollaborationFileRepository")
 
-    let context: NSManagedObjectContext
-
-    init(context: NSManagedObjectContext) {
-        self.context = context
-    }
-
     // MARK: - Update CollaborationFile Content
 
     /// Update collaboration file content with new data from server
@@ -31,12 +25,14 @@ actor CollaborationFileRepository {
         content: Data,
         newCheckpoint: Bool
     ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Update CoreData immediately (as fallback)
         try await context.perform {
-            guard let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else { return }
+            guard let collaborationFile = context.object(with: collaborationFileObjectID) as? CollaborationFile else { return }
             collaborationFile.content = content
             collaborationFile.updatedAt = .now
-            try self.context.save()
+            try context.save()
         }
 
         // Save to storage (this will clear content and set filePath)
@@ -58,9 +54,11 @@ actor CollaborationFileRepository {
     /// Save collaboration file content to storage (local + auto iCloud sync)
     /// - Parameter collaborationFileObjectID: The collaboration file objectID
     func saveCollaborationFileContentToStorage(collaborationFileObjectID: NSManagedObjectID) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Load file content, ID, and metadata
         let (content, fileID, updatedAt) = try await context.perform {
-            guard let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else {
+            guard let collaborationFile = context.object(with: collaborationFileObjectID) as? CollaborationFile else {
                 throw AppError.fileError(.notFound)
             }
             guard let content = collaborationFile.content,
@@ -80,9 +78,9 @@ actor CollaborationFileRepository {
 
         // Update after successful save
         try await context.perform {
-            guard let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else { return }
+            guard let collaborationFile = context.object(with: collaborationFileObjectID) as? CollaborationFile else { return }
             collaborationFile.updateAfterSavingToStorage(filePath: relativePath)
-            try self.context.save()
+            try context.save()
         }
         logger.info("Saved collaboration file to storage: \(relativePath)")
     }
@@ -97,28 +95,30 @@ actor CollaborationFileRepository {
         collaborationFileObjectID: NSManagedObjectID,
         content: Data
     ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         let checkpointObjectID = try await context.perform {
-            guard let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else {
+            guard let collaborationFile = context.object(with: collaborationFileObjectID) as? CollaborationFile else {
                 throw AppError.fileError(.notFound)
             }
 
-            let checkpoint = FileCheckpoint(context: self.context)
+            let checkpoint = FileCheckpoint(context: context)
             checkpoint.id = UUID()
             checkpoint.content = content
             checkpoint.filename = collaborationFile.name
             checkpoint.updatedAt = .now
             collaborationFile.addToCheckpoints(checkpoint)
 
-            try self.context.save()
+            try context.save()
 
             // Clean up old checkpoints if needed
             let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
             fetchRequest.predicate = NSPredicate(format: "collaborationFile = %@", collaborationFile)
             fetchRequest.sortDescriptors = [NSSortDescriptor(key: "updatedAt", ascending: false)]
-            if let checkpoints = try? self.context.fetch(fetchRequest),
+            if let checkpoints = try? context.fetch(fetchRequest),
                checkpoints.count > 50 {
                 let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: checkpoints.suffix(checkpoints.count - 50).map{$0.objectID})
-                try self.context.executeAndMergeChanges(using: batchDeleteRequest)
+                try context.executeAndMergeChanges(using: batchDeleteRequest)
             }
 
             return checkpoint.objectID
@@ -136,8 +136,10 @@ actor CollaborationFileRepository {
         collaborationFileObjectID: NSManagedObjectID,
         content: Data
     ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         let checkpointObjectID: NSManagedObjectID? = try await context.perform {
-            guard let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else {
+            guard let collaborationFile = context.object(with: collaborationFileObjectID) as? CollaborationFile else {
                 return nil
             }
 
@@ -145,7 +147,7 @@ actor CollaborationFileRepository {
             let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
             fetchRequest.predicate = NSPredicate(format: "collaborationFile = %@", collaborationFile)
             fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
-            guard let checkpoint = try self.context.fetch(fetchRequest).first else {
+            guard let checkpoint = try context.fetch(fetchRequest).first else {
                 return nil
             }
 
@@ -154,7 +156,7 @@ actor CollaborationFileRepository {
             checkpoint.filename = collaborationFile.name
             checkpoint.updatedAt = .now
 
-            try self.context.save()
+            try context.save()
 
             return checkpoint.objectID
         }
@@ -183,9 +185,11 @@ actor CollaborationFileRepository {
         targetGroupObjectID: NSManagedObjectID,
         delete: Bool
     ) async throws -> ArchiveTarget {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Load content from CollaborationFile
         let collaborationFile = try await context.perform {
-            guard let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else {
+            guard let collaborationFile = context.object(with: collaborationFileObjectID) as? CollaborationFile else {
                 throw AppError.fileError(.notFound)
             }
             return collaborationFile
@@ -204,23 +208,23 @@ actor CollaborationFileRepository {
         )
         
         let fileID = try await context.perform {
-            guard let group = self.context.object(with: targetGroupObjectID) as? Group,
-                  let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else {
+            guard let group = context.object(with: targetGroupObjectID) as? Group,
+                  let collaborationFile = context.object(with: collaborationFileObjectID) as? CollaborationFile else {
                 throw AppError.fileError(.notFound)
             }
 
-            let newFile = File(id: id, name: name, context: self.context)
+            let newFile = File(id: id, name: name, context: context)
             newFile.group = group
             newFile.filePath = filePath
             newFile.inTrash = false
 
-            self.context.insert(newFile)
+            context.insert(newFile)
 
             if delete {
-                self.context.delete(collaborationFile)
+                context.delete(collaborationFile)
             }
 
-            try self.context.save()
+            try context.save()
 
             return newFile.objectID
         }
@@ -239,9 +243,11 @@ actor CollaborationFileRepository {
         targetLocalFolderObjectID: NSManagedObjectID,
         delete: Bool
     ) async throws -> ArchiveTarget {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Load content from CollaborationFile
         let (name, collaborationFileID, collaborationFile) = try await context.perform {
-            guard let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else {
+            guard let collaborationFile = context.object(with: collaborationFileObjectID) as? CollaborationFile else {
                 throw AppError.fileError(.notFound)
             }
             return (
@@ -255,11 +261,11 @@ actor CollaborationFileRepository {
 
         // Sync files outside of context.perform since it's async
         var file = try ExcalidrawFile(data: content, id: collaborationFileID?.uuidString)
-        try await file.syncFiles(context: self.context)
+        try await file.syncFiles(context: context)
 
         let fileURL = try await context.perform {
-            guard let localFolder = self.context.object(with: targetLocalFolderObjectID) as? LocalFolder,
-                  let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else {
+            guard let localFolder = context.object(with: targetLocalFolderObjectID) as? LocalFolder,
+                  let collaborationFile = context.object(with: collaborationFileObjectID) as? CollaborationFile else {
                 throw AppError.fileError(.notFound)
             }
 
@@ -273,10 +279,10 @@ actor CollaborationFileRepository {
             }
 
             if delete {
-                self.context.delete(collaborationFile)
+                context.delete(collaborationFile)
             }
 
-            try self.context.save()
+            try context.save()
 
             return fileURL
         }
@@ -294,16 +300,18 @@ actor CollaborationFileRepository {
         collaborationFileObjectID: NSManagedObjectID,
         save: Bool = true
     ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Extract file info before deletion
         let (filePath, fileID, checkpointPaths): (String?, UUID?, [(String, UUID)]) = try await context.perform {
-            guard let collaborationFile = self.context.object(with: collaborationFileObjectID) as? CollaborationFile else {
+            guard let collaborationFile = context.object(with: collaborationFileObjectID) as? CollaborationFile else {
                 return (nil, nil, [])
             }
 
             // Collect checkpoint info before deletion
             let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
             checkpointsFetchRequest.predicate = NSPredicate(format: "collaborationFile = %@", collaborationFile)
-            let checkpoints = try self.context.fetch(checkpointsFetchRequest)
+            let checkpoints = try context.fetch(checkpointsFetchRequest)
 
             let checkpointInfo = checkpoints.compactMap { checkpoint -> (String, UUID)? in
                 guard let path = checkpoint.filePath, let id = checkpoint.id else { return nil }
@@ -313,17 +321,17 @@ actor CollaborationFileRepository {
             // Delete checkpoints from database
             if !checkpoints.isEmpty {
                 let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: checkpoints.map{$0.objectID})
-                try self.context.executeAndMergeChanges(using: batchDeleteRequest)
+                try context.executeAndMergeChanges(using: batchDeleteRequest)
             }
 
             let path = collaborationFile.filePath
             let id = collaborationFile.id
 
             // Delete collaboration file from database
-            self.context.delete(collaborationFile)
+            context.delete(collaborationFile)
 
             if save {
-                try self.context.save()
+                try context.save()
             }
 
             return (path, id, checkpointInfo)

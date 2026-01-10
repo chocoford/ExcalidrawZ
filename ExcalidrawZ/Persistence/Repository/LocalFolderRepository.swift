@@ -13,12 +13,6 @@ import Logging
 actor LocalFolderRepository {
     private let logger = Logger(label: "LocalFolderRepository")
 
-    let context: NSManagedObjectContext
-
-    init(context: NSManagedObjectContext) {
-        self.context = context
-    }
-
     // MARK: - Import LocalFolder to Group
 
     /// Import a local folder as a Group
@@ -32,9 +26,11 @@ actor LocalFolderRepository {
         delete: Bool,
         parentGroupObjectID: NSManagedObjectID? = nil
     ) async throws -> NSManagedObjectID {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Get folder URL and children
         let (folderURL, folderName, childrenObjectIDs) = try await context.perform {
-            guard let folder = self.context.object(with: localFolderObjectID) as? LocalFolder,
+            guard let folder = context.object(with: localFolderObjectID) as? LocalFolder,
                   let folderURL = folder.url else {
                 throw AppError.fileError(.notFound)
             }
@@ -50,12 +46,12 @@ actor LocalFolderRepository {
         // Create root group
         let targetGroupID: NSManagedObjectID? = try await context.perform {
             let rootGroup = parentGroupObjectID == nil
-                ? Group(name: folderName, context: self.context)
+                ? Group(name: folderName, context: context)
                 : nil
 
             if let rootGroup {
-                self.context.insert(rootGroup)
-                try self.context.save()
+                context.insert(rootGroup)
+                try context.save()
                 return rootGroup.objectID
             } else {
                 return parentGroupObjectID
@@ -97,12 +93,12 @@ actor LocalFolderRepository {
 
             // Add child group to parent
             try await context.perform {
-                guard let targetGroup = self.context.object(with: targetGroupID) as? Group,
-                      let childGroup = self.context.object(with: childGroupID) as? Group else {
+                guard let targetGroup = context.object(with: targetGroupID) as? Group,
+                      let childGroup = context.object(with: childGroupID) as? Group else {
                     return
                 }
                 targetGroup.addToChildren(childGroup)
-                try self.context.save()
+                try context.save()
             }
         }
 

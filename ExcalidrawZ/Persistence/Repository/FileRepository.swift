@@ -13,12 +13,6 @@ import Logging
 actor FileRepository {
     private let logger = Logger(label: "FileRepository")
 
-    let context: NSManagedObjectContext
-
-    init(context: NSManagedObjectContext) {
-        self.context = context
-    }
-
     // MARK: - Create File
 
     /// Create a new file with content and save to iCloud Drive
@@ -32,15 +26,17 @@ actor FileRepository {
         content: Data,
         groupObjectID: NSManagedObjectID
     ) async throws -> NSManagedObjectID {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Create file entity with content as fallback
         let fileObjectID = try await context.perform {
-            let file = File(name: name, context: self.context)
-            if let group = self.context.object(with: groupObjectID) as? Group {
+            let file = File(name: name, context: context)
+            if let group = context.object(with: groupObjectID) as? Group {
                 file.group = group
             }
 
-            self.context.insert(file)
-            try self.context.save()
+            context.insert(file)
+            try context.save()
 
             return file.objectID
         }
@@ -87,6 +83,8 @@ actor FileRepository {
         _ excalidrawFile: ExcalidrawFile,
         groupObjectID: NSManagedObjectID
     ) async throws -> (fileObjectID: NSManagedObjectID, mediaItems: [(NSManagedObjectID, ExcalidrawFile.ResourceFile)]) {
+        let context = PersistenceController.shared.newTaskContext()
+
         let fileContent = try excalidrawFile.contentWithoutFiles()
         let fileName = excalidrawFile.name ?? "Untitled"
 
@@ -99,7 +97,7 @@ actor FileRepository {
 
         // Get existing media items to avoid duplicates
         let allMediaItems = try await context.perform {
-            try self.context.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
+            try context.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
         }
 
         // Filter media items that need to be imported
@@ -111,14 +109,14 @@ actor FileRepository {
         var mediaItemPairs: [(NSManagedObjectID, ExcalidrawFile.ResourceFile)] = []
         for resource in mediaItemsNeedImport {
             let mediaObjectID = try await context.perform {
-                guard let file = self.context.object(with: fileObjectID) as? File else {
+                guard let file = context.object(with: fileObjectID) as? File else {
                     throw AppError.fileError(.notFound)
                 }
 
-                let mediaItem = MediaItem(resource: resource, context: self.context)
+                let mediaItem = MediaItem(resource: resource, context: context)
                 mediaItem.file = file
-                self.context.insert(mediaItem)
-                try self.context.save()
+                context.insert(mediaItem)
+                try context.save()
 
                 return mediaItem.objectID
             }
@@ -131,7 +129,7 @@ actor FileRepository {
             do {
                 // Try to save to iCloud Drive
                 let mediaItemID = try await context.perform {
-                    guard let mediaItem = self.context.object(with: mediaObjectID) as? MediaItem,
+                    guard let mediaItem = context.object(with: mediaObjectID) as? MediaItem,
                           let mediaItemID = mediaItem.id else {
                         throw MediaItemError.missingID
                     }
@@ -146,9 +144,9 @@ actor FileRepository {
 
                 // Update after successful save
                 try await context.perform {
-                    guard let mediaItem = self.context.object(with: mediaObjectID) as? MediaItem else { return }
+                    guard let mediaItem = context.object(with: mediaObjectID) as? MediaItem else { return }
                     mediaItem.updateAfterSavingToStorage(filePath: relativePath)
-                    try self.context.save()
+                    try context.save()
                 }
                 logger.info("Saved media item to storage: \(relativePath)")
             } catch {
@@ -172,9 +170,11 @@ actor FileRepository {
         fileData: Data,
         newCheckpoint: Bool
     ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Step 1: Load file entity to get access to loadContent()
         let file = try await context.perform {
-            guard let file = self.context.object(with: fileObjectID) as? File else {
+            guard let file = context.object(with: fileObjectID) as? File else {
                 throw AppError.fileError(.notFound)
             }
             return file
@@ -185,7 +185,7 @@ actor FileRepository {
 
         // Step 3: Prepare updated content
         let contentData = try await context.perform {
-            guard let file = self.context.object(with: fileObjectID) as? File else {
+            guard let file = context.object(with: fileObjectID) as? File else {
                 throw AppError.fileError(.notFound)
             }
             var obj = try JSONSerialization.jsonObject(with: data) as! [String : Any]
@@ -200,10 +200,10 @@ actor FileRepository {
 
         // Step 4: Update CoreData immediately (as fallback)
         try await context.perform {
-            guard let file = self.context.object(with: fileObjectID) as? File else { return }
+            guard let file = context.object(with: fileObjectID) as? File else { return }
             file.content = contentData
             file.updatedAt = .now
-            try self.context.save()
+            try context.save()
         }
 
         // Step 5: Save file to storage
@@ -223,9 +223,11 @@ actor FileRepository {
     ///   - fileObjectID: The file objectID
     ///   - content: The content data to save
     func saveFileContentToStorage(fileObjectID: NSManagedObjectID, content: Data) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Step 1: Get file ID and metadata
         let (fileID, updatedAt) = try await context.perform {
-            guard let file = self.context.object(with: fileObjectID) as? File else {
+            guard let file = context.object(with: fileObjectID) as? File else {
                 throw AppError.fileError(.notFound)
             }
             guard let fileID = file.id else {
@@ -244,9 +246,9 @@ actor FileRepository {
 
         // Step 3: Update after successful save
         try await context.perform {
-            guard let file = self.context.object(with: fileObjectID) as? File else { return }
+            guard let file = context.object(with: fileObjectID) as? File else { return }
             file.updateAfterSavingToStorage(filePath: relativePath)
-            try self.context.save()
+            try context.save()
         }
         logger.info("Saved file to storage: \(relativePath)")
     }
@@ -256,22 +258,24 @@ actor FileRepository {
         fileObjectID: NSManagedObjectID,
         content: Data
     ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         let checkpointObjectID = try await context.perform {
-            guard let file = self.context.object(with: fileObjectID) as? File else {
+            guard let file = context.object(with: fileObjectID) as? File else {
                 throw AppError.fileError(.notFound)
             }
 
-            let checkpoint = FileCheckpoint(context: self.context)
+            let checkpoint = FileCheckpoint(context: context)
             checkpoint.id = UUID()
             checkpoint.content = content
             checkpoint.filename = file.name
             checkpoint.updatedAt = .now
             file.addToCheckpoints(checkpoint)
 
-            try self.context.save()
+            try context.save()
 
             // Clean up old checkpoints if needed
-            if let checkpoints = try? PersistenceController.shared.fetchFileCheckpoints(of: file, viewContext: self.context),
+            if let checkpoints = try? PersistenceController.shared.fetchFileCheckpoints(of: file, viewContext: context),
                checkpoints.count > 50 {
                 file.removeFromCheckpoints(checkpoints.last!)
             }
@@ -288,8 +292,10 @@ actor FileRepository {
         fileObjectID: NSManagedObjectID,
         content: Data
     ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         let checkpointObjectID: NSManagedObjectID? = try await context.perform {
-            guard let file = self.context.object(with: fileObjectID) as? File else {
+            guard let file = context.object(with: fileObjectID) as? File else {
                 return nil
             }
 
@@ -297,7 +303,7 @@ actor FileRepository {
             let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
             fetchRequest.predicate = NSPredicate(format: "file == %@", file)
             fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
-            guard let checkpoint = try self.context.fetch(fetchRequest).first else {
+            guard let checkpoint = try context.fetch(fetchRequest).first else {
                 return nil
             }
 
@@ -306,7 +312,7 @@ actor FileRepository {
             checkpoint.filename = file.name
             checkpoint.updatedAt = .now
 
-            try self.context.save()
+            try context.save()
 
             return checkpoint.objectID
         }
@@ -324,13 +330,15 @@ actor FileRepository {
     ///   - fileObjectID: The NSManagedObjectID of the file
     ///   - folderURL: The destination folder URL
     func exportToDisk(fileObjectID: NSManagedObjectID, folder folderURL: URL) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         let fileManager = FileManager.default
 
         // Step 1: Get file entity and generate unique filename
         let (file, fileName) = try await context.perform {
             let fileManager = FileManager.default
 
-            guard let file = self.context.object(with: fileObjectID) as? File else {
+            guard let file = context.object(with: fileObjectID) as? File else {
                 throw AppError.fileError(.notFound)
             }
 
@@ -367,9 +375,11 @@ actor FileRepository {
         forcePermanently: Bool = false,
         save: Bool = true
     ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Extract file info before deletion (for permanent deletion only)
         let (filePath, fileID, checkpointPaths): (String?, UUID?, [(String, UUID)]) = try await context.perform {
-            guard let file = self.context.object(with: fileObjectID) as? File else {
+            guard let file = context.object(with: fileObjectID) as? File else {
                 return (nil, nil, [])
             }
 
@@ -377,7 +387,7 @@ actor FileRepository {
                 // Permanent deletion: collect file info and checkpoint info
                 let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
                 checkpointsFetchRequest.predicate = NSPredicate(format: "file = %@", file)
-                let fileCheckpoints = try self.context.fetch(checkpointsFetchRequest)
+                let fileCheckpoints = try context.fetch(checkpointsFetchRequest)
 
                 // Collect checkpoint paths for deletion
                 let checkpointInfo = fileCheckpoints.compactMap { checkpoint -> (String, UUID)? in
@@ -388,17 +398,17 @@ actor FileRepository {
                 // Delete checkpoints from database
                 if !fileCheckpoints.isEmpty {
                     let batchDeleteRequest = NSBatchDeleteRequest(objectIDs: fileCheckpoints.map { $0.objectID })
-                    try self.context.executeAndMergeChanges(using: batchDeleteRequest)
+                    try context.executeAndMergeChanges(using: batchDeleteRequest)
                 }
 
                 let path = file.filePath
                 let id = file.id
 
                 // Delete file from database
-                self.context.delete(file)
+                context.delete(file)
 
                 if save {
-                    try self.context.save()
+                    try context.save()
                 }
 
                 return (path, id, checkpointInfo)
@@ -408,7 +418,7 @@ actor FileRepository {
                 file.deletedAt = .now
 
                 if save {
-                    try self.context.save()
+                    try context.save()
                 }
 
                 return (nil, nil, [])

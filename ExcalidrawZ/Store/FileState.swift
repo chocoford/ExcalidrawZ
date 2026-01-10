@@ -673,7 +673,7 @@ final class FileState: ObservableObject {
     /// * multiple folders: Create groups by folders
     /// * folders & files: Create groups by folders & Group remains files to `Ungrouped`
     func importFiles(_ urls: [URL]) async throws {
-        let context = PersistenceController.shared.container.viewContext
+        let context = PersistenceController.shared.newTaskContext()
         
         let currentGroup: Group? = if case .group(let currentGroup) = self.currentActiveGroup {
             currentGroup
@@ -701,7 +701,6 @@ final class FileState: ObservableObject {
         } else if urls.count > 1 {
             // select multiple files or folders
             // folders will be created as group, files will be imported to `default` group.
-            let context = PersistenceController.shared.newTaskContext()
             // Prepare file data outside context.perform
             var fileDataPairs: [(URL, Data)] = []
             for fileURL in urls.filter({!FileManager.default.isDirectory($0)}) {
@@ -789,7 +788,9 @@ final class FileState: ObservableObject {
         )
         
         // Import medias
-        let allMediaItems = try context.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
+        let allMediaItems = try await context.perform {
+            try context.fetch(NSFetchRequest<MediaItem>(entityName: "MediaItem"))
+        }
         var insertedMediaID = Set<String>()
         
         // files
@@ -834,8 +835,10 @@ final class FileState: ObservableObject {
                 context: context
             )
         }
-        
-        try context.save()
+
+        try await context.perform {
+            try context.save()
+        }
     }
     
     func renameFile(_ fileID: NSManagedObjectID, context: NSManagedObjectContext, newName: String) {

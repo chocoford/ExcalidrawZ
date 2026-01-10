@@ -12,13 +12,7 @@ import Logging
 /// Actor responsible for Group entity operations
 actor GroupRepository {
     private let logger = Logger(label: "GroupRepository")
-
-    let context: NSManagedObjectContext
-
-    init(context: NSManagedObjectContext) {
-        self.context = context
-    }
-
+    
     // MARK: - Export Group
 
     /// Export group and all its contents to disk
@@ -26,11 +20,13 @@ actor GroupRepository {
     ///   - groupObjectID: The NSManagedObjectID of the group
     ///   - folderURL: The destination folder URL
     func exportToDisk(groupObjectID: NSManagedObjectID, folder folderURL: URL) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         let fileManager = FileManager.default
 
         // Get group info
         let (groupName, fileObjectIDs, childGroupObjectIDs) = try await context.perform {
-            guard let group = self.context.object(with: groupObjectID) as? Group else {
+            guard let group = context.object(with: groupObjectID) as? Group else {
                 throw AppError.fileError(.notFound)
             }
 
@@ -83,8 +79,10 @@ actor GroupRepository {
         forcePermanently: Bool = false,
         save: Bool = true
     ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
         let (groupType, fileObjectIDs, subGroupObjectIDs) = try await context.perform {
-            guard let group = self.context.object(with: groupObjectID) as? Group else {
+            guard let group = context.object(with: groupObjectID) as? Group else {
                 throw AppError.fileError(.notFound)
             }
 
@@ -96,16 +94,16 @@ actor GroupRepository {
                 // Empty trash: get all trashed files
                 let fetchRequest = NSFetchRequest<File>(entityName: "File")
                 fetchRequest.predicate = NSPredicate(format: "inTrash == YES")
-                fileIDs = try self.context.fetch(fetchRequest).map { $0.objectID }
+                fileIDs = try context.fetch(fetchRequest).map { $0.objectID }
             } else {
                 // Get files in this group and subgroups
                 let fetchRequest = NSFetchRequest<File>(entityName: "File")
                 fetchRequest.predicate = NSPredicate(format: "inTrash == FALSE AND group == %@", group)
-                fileIDs = try self.context.fetch(fetchRequest).map { $0.objectID }
+                fileIDs = try context.fetch(fetchRequest).map { $0.objectID }
 
                 let subGroupsFetchRequest = NSFetchRequest<Group>(entityName: "Group")
                 subGroupsFetchRequest.predicate = NSPredicate(format: "parent == %@", group)
-                subGroupIDs = try self.context.fetch(subGroupsFetchRequest).map { $0.objectID }
+                subGroupIDs = try context.fetch(subGroupsFetchRequest).map { $0.objectID }
             }
 
             return (type, fileIDs, subGroupIDs)
@@ -117,7 +115,7 @@ actor GroupRepository {
                 try await PersistenceController.shared.fileRepository.delete(
                     fileObjectID: fileObjectID,
                     forcePermanently: true,
-                    save: false
+                    save: true
                 )
             }
         } else {
@@ -129,12 +127,12 @@ actor GroupRepository {
             // Move files to default group and delete them
             for fileObjectID in fileObjectIDs {
                 try await context.perform {
-                    guard let file = self.context.object(with: fileObjectID) as? File,
-                          let defaultGroup = self.context.object(with: defaultGroupObjectID) as? Group else {
+                    guard let file = context.object(with: fileObjectID) as? File,
+                          let defaultGroup = context.object(with: defaultGroupObjectID) as? Group else {
                         return
                     }
                     file.group = defaultGroup
-                    try self.context.save()
+                    try context.save()
                 }
 
                 try await PersistenceController.shared.fileRepository.delete(
@@ -151,15 +149,15 @@ actor GroupRepository {
 
             // Delete the group itself
             try await context.perform {
-                guard let group = self.context.object(with: groupObjectID) as? Group else { return }
-                self.context.delete(group)
-                try self.context.save()
+                guard let group = context.object(with: groupObjectID) as? Group else { return }
+                context.delete(group)
+                try context.save()
             }
         }
 
         if save {
             try await context.perform {
-                try self.context.save()
+                try context.save()
             }
         }
     }
@@ -169,6 +167,8 @@ actor GroupRepository {
     /// Create a trash group if it doesn't exist
     /// - Returns: The objectID of the trash group (existing or newly created)
     func createTrashGroupIfNeeded() async throws -> NSManagedObjectID {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Check if trash group already exists
         if let existingTrashObjectID = try await getTrashGroupObjectID() {
             return existingTrashObjectID
@@ -176,14 +176,14 @@ actor GroupRepository {
 
         // Create new trash group
         let trashObjectID = try await context.perform {
-            let group = Group(context: self.context)
+            let group = Group(context: context)
             group.id = UUID()
             group.groupType = .trash
             group.name = "Recently Deleted"
             group.createdAt = .now
 
-            self.context.insert(group)
-            try self.context.save()
+            context.insert(group)
+            try context.save()
 
             return group.objectID
         }
@@ -195,6 +195,8 @@ actor GroupRepository {
     /// Create a default group if it doesn't exist
     /// - Returns: The objectID of the default group (existing or newly created)
     func createDefaultGroupIfNeeded() async throws -> NSManagedObjectID {
+        let context = PersistenceController.shared.newTaskContext()
+
         // Check if default group already exists
         if let existingDefaultObjectID = try await getDefaultGroupObjectID() {
             return existingDefaultObjectID
@@ -202,14 +204,14 @@ actor GroupRepository {
 
         // Create new default group
         let defaultObjectID = try await context.perform {
-            let group = Group(context: self.context)
+            let group = Group(context: context)
             group.id = UUID()
             group.groupType = .default
             group.name = "default"
             group.createdAt = .now
 
-            self.context.insert(group)
-            try self.context.save()
+            context.insert(group)
+            try context.save()
 
             return group.objectID
         }
@@ -222,21 +224,25 @@ actor GroupRepository {
 
     /// Get the trash group object ID
     private func getTrashGroupObjectID() async throws -> NSManagedObjectID? {
-        try await context.perform {
+        let context = PersistenceController.shared.newTaskContext()
+
+        return try await context.perform {
             let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
             fetchRequest.predicate = NSPredicate(format: "type == %@", Group.GroupType.trash.rawValue)
             fetchRequest.fetchLimit = 1
-            return try self.context.fetch(fetchRequest).first?.objectID
+            return try context.fetch(fetchRequest).first?.objectID
         }
     }
 
     /// Get the default group object ID
     private func getDefaultGroupObjectID() async throws -> NSManagedObjectID? {
-        try await context.perform {
+        let context = PersistenceController.shared.newTaskContext()
+
+        return try await context.perform {
             let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
             fetchRequest.predicate = NSPredicate(format: "type == %@", Group.GroupType.default.rawValue)
             fetchRequest.fetchLimit = 1
-            return try self.context.fetch(fetchRequest).first?.objectID
+            return try context.fetch(fetchRequest).first?.objectID
         }
     }
 }
