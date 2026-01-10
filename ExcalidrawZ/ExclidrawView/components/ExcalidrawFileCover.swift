@@ -201,10 +201,16 @@ struct ExcalidrawFileCover: View {
                     colorScheme: colorScheme
                 ) {
                     Task.detached {
+                        guard let cgThumb = image.downsampledCGImage(maxPixelSize: 720) else { return }
+#if canImport(UIKit)
+                        let thumbnail = UIImage(cgImage: cgThumb)
+#elseif canImport(AppKit)
+                        let thumbnail = NSImage(cgImage: cgThumb, size: .zero)
+#endif
                         await MainActor.run {
-                            cache.setObject(image, forKey: cacheKey as NSString)
+                            cache.setObject(thumbnail, forKey: cacheKey as NSString)
                         }
-                        let image = Image(platformImage: image)
+                        let image = Image(platformImage: thumbnail)
                         await MainActor.run {
                             self.coverImage = image
                             self.error = nil
@@ -218,3 +224,72 @@ struct ExcalidrawFileCover: View {
         }
     }
 }
+
+
+#if canImport(AppKit)
+extension NSImage {
+    func downsampledCGImage(maxPixelSize: CGFloat) -> CGImage? {
+        var rect = CGRect(origin: .zero, size: size)
+        guard let cgImage = self.cgImage(forProposedRect: &rect, context: nil, hints: nil) else {
+            return nil
+        }
+
+        let width = CGFloat(cgImage.width)
+        let height = CGFloat(cgImage.height)
+        let scale = maxPixelSize / max(width, height)
+        let targetSize = CGSize(width: max(1, width * scale), height: max(1, height * scale))
+
+        guard let ctx = CGContext(
+            data: nil,
+            width: Int(targetSize.width),
+            height: Int(targetSize.height),
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+
+        ctx.interpolationQuality = .low
+        ctx.draw(cgImage, in: CGRect(origin: .zero, size: targetSize))
+        return ctx.makeImage()
+    }
+}
+#endif
+
+#if canImport(UIKit)
+extension UIImage {
+    func downsampledCGImage(maxPixelSize: CGFloat) -> CGImage? {
+        let cgImage: CGImage
+        if let image = self.cgImage {
+            cgImage = image
+        } else if let ciImage = self.ciImage {
+            let context = CIContext(options: nil)
+            guard let image = context.createCGImage(ciImage, from: ciImage.extent) else {
+                return nil
+            }
+            cgImage = image
+        } else {
+            return nil
+        }
+
+        let width = CGFloat(cgImage.width)
+        let height = CGFloat(cgImage.height)
+        let scale = maxPixelSize / max(width, height)
+        let targetSize = CGSize(width: max(1, width * scale), height: max(1, height * scale))
+
+        guard let ctx = CGContext(
+            data: nil,
+            width: Int(targetSize.width),
+            height: Int(targetSize.height),
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+
+        ctx.interpolationQuality = .low
+        ctx.draw(cgImage, in: CGRect(origin: .zero, size: targetSize))
+        return ctx.makeImage()
+    }
+}
+#endif
