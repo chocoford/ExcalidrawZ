@@ -30,9 +30,13 @@ struct PromptInputView: View {
     
     @State private var inputText: String = ""
     @State private var isLoading = false
-    @State private var selectedModel: SupportedModel = .gpt4oMini
 
     @FocusState private var isInputFocused: Bool
+
+    /// Server-side agent identifier; the backend resolves system prompt + agent
+    /// config from this. Tools list still ships from the client because tool
+    /// implementations are local.
+    private let agentID = "excalidraw-canvas"
     
     var conversation: Conversation? {
         guard let conversationID else { return nil }
@@ -146,29 +150,30 @@ struct PromptInputView: View {
                     canvasTarget: canvasTarget,
                     selectedElementIDs: selectedElementIDs
                 )
-                
-                // If this is a new conversation, create it with ReAct agent config
+
+                // System prompt + default model live on the backend now; we just
+                // identify which agent we want and let the server hydrate the rest.
+                // TODO: cache this across conversations once the response type is
+                // stable — for now one extra request per conversation is fine.
+                let agentConfig = try await LLMClient.shared.getDomainAgentConfig(agentID: agentID)
+
                 if self.conversation == nil {
                     self.conversationID = newConversationID
-                    // - Do not use a colon before tool calls. Your tool calls may not be shown directly in the output, so text like "Let me read the file:" followed by a read tool call should just be "Let me read the file." with a period.
                     try await llmState.createConversation(
                         id: newConversationID,
                         type: .custom("File"),
-                        model: selectedModel,
+                        model: agentConfig.defaultModel,
                         agentConfig: .react(
                             tools: ["web_search", "web_fetch", "read_file", "calculator", "datetime", "adjust_elements", "final_answer"],
-                            systemPrompt: """
-                                
-                                """
+                            agentID: agentID
                         ),
                         messages: [.content(.init(role: .user, content: prompt))],
                         context: context
                     )
                 } else {
-                    // Otherwise just send the message
                     try await llmState.sendMessage(
                         to: self.conversationID!,
-                        model: selectedModel,
+                        model: agentConfig.defaultModel,
                         message: .content(.init(role: .user, content: prompt)),
                         context: context
                     )

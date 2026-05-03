@@ -653,15 +653,17 @@ struct DebugPanelView: View {
                     syncCoordinatorRegistry()
                 }
                 let coordinator = try requireCoordinator()
-                let result = try await coordinator.webView.evaluateJavaScript(
+                let result = try await coordinator.webView.callAsyncJavaScript(
                     """
-                    JSON.stringify({
+                    return JSON.stringify({
                       camera: excalidrawZHelper.getCamera(),
                       width: excalidrawZHelper._api?.getAppState()?.width,
                       height: excalidrawZHelper._api?.getAppState()?.height,
                       hasGetCommonBounds: !!excalidrawZHelper._getCommonBounds
-                    })
-                    """
+                    });
+                    """,
+                    arguments: [:],
+                    contentWorld: .page
                 )
                 let text = (result as? String) ?? String(describing: result)
                 await MainActor.run {

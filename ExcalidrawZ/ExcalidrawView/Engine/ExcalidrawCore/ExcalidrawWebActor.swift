@@ -8,6 +8,15 @@
 import Foundation
 import Logging
 
+// Helper: pull an Int from JS dict, tolerant of being decoded as Double.
+private func jsInt(_ dict: [String: Any], _ key: String) -> Int {
+    (dict[key] as? Int) ?? Int((dict[key] as? Double) ?? 0)
+}
+
+private func jsDouble(_ dict: [String: Any], _ key: String) -> Double {
+    (dict[key] as? Double) ?? Double((dict[key] as? Int) ?? 0)
+}
+
 /// Mirrors the JS-side return value from `loadFileBuffer`/`loadFileString`:
 /// `{ fileId?: string, elementCount: number, durationMs: number }`.
 /// `fileId` is only populated by `loadFileBuffer`.
@@ -19,10 +28,43 @@ struct LoadFileResult {
     init?(fromJS raw: Any?) {
         guard let dict = raw as? [String: Any] else { return nil }
         self.fileId = dict["fileId"] as? String
-        self.elementCount = (dict["elementCount"] as? Int)
-            ?? Int((dict["elementCount"] as? Double) ?? 0)
-        self.durationMs = (dict["durationMs"] as? Double)
-            ?? Double((dict["durationMs"] as? Int) ?? 0)
+        self.elementCount = jsInt(dict, "elementCount")
+        self.durationMs = jsDouble(dict, "durationMs")
+    }
+}
+
+/// JS `saveFile()` returns `{ dataString, elementCount }`.
+struct SaveFileResult {
+    var dataString: String
+    var elementCount: Int
+
+    init?(fromJS raw: Any?) {
+        guard let dict = raw as? [String: Any],
+              let dataString = dict["dataString"] as? String else { return nil }
+        self.dataString = dataString
+        self.elementCount = jsInt(dict, "elementCount")
+    }
+}
+
+/// JS `loadLibraryItem(json)` returns `{ itemCount }`.
+struct LoadLibraryItemResult {
+    var itemCount: Int
+
+    init?(fromJS raw: Any?) {
+        guard let dict = raw as? [String: Any] else { return nil }
+        self.itemCount = jsInt(dict, "itemCount")
+    }
+}
+
+/// JS `loadImageBuffer` / `loadImage` return `{ elementCount, durationMs }`.
+struct LoadImageResult {
+    var elementCount: Int
+    var durationMs: Double
+
+    init?(fromJS raw: Any?) {
+        guard let dict = raw as? [String: Any] else { return nil }
+        self.elementCount = jsInt(dict, "elementCount")
+        self.durationMs = jsDouble(dict, "durationMs")
     }
 }
 

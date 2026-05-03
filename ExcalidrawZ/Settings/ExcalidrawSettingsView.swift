@@ -45,7 +45,6 @@ struct ExcalidrawSettingsView: View {
     @ViewBuilder
     private func content() -> some View {
         customDrawingSettingsSection()
-        // antiInvertImageSection()
     }
     
     @ViewBuilder
@@ -102,32 +101,6 @@ struct ExcalidrawSettingsView: View {
         }
     }
 
-    @ViewBuilder
-    private func antiInvertImageSection() -> some View {
-        Section {
-            Toggle(.localizable(.settingsExcalidrawPreventImageAutoInvert), isOn: Binding {
-                appPreference.autoInvertImage
-            } set: { val in
-                withAnimation {
-                    appPreference.autoInvertImage = val
-                }
-            })
-            // Divider()
-            if appPreference.autoInvertImage {
-                VStack {
-                    Toggle("PNG", isOn: $appPreference.antiInvertImageSettings.png)
-                    Toggle("SVG", isOn: $appPreference.antiInvertImageSettings.svg)
-                }
-                .padding(.leading, 6)
-                .disabled(!appPreference.autoInvertImage)
-            }
-        } header: {
-            Text(localizable: .settingsExcalidrawAntiInvertImageTitle)
-        } footer: {
-            Text(localizable: .settingsExcalidrawAntiInvertImageMessage)
-                .foregroundStyle(.secondary)
-        }
-    }
 }
 
 #Preview {

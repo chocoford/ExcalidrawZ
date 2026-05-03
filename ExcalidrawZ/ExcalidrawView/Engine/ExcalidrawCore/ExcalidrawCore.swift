@@ -499,51 +499,55 @@ extension ExcalidrawCore {
     ///
     /// This function will get the local storage of `excalidraw.com`.
     /// Then it will set the data got from local storage to `currentFile`.
+    /// Returns `{ dataString, elementCount }` from the JS side.
     @MainActor
-    func saveCurrentFile() async throws {
-        let _ = try await self.webView.evaluateJavaScript("window.excalidrawZHelper.saveFile(); 0;")
+    @discardableResult
+    func saveCurrentFile() async throws -> SaveFileResult? {
+        let raw = try await self.webView.callAsyncJavaScript(
+            "return await window.excalidrawZHelper.saveFile();",
+            arguments: [:],
+            contentWorld: .page
+        )
+        return SaveFileResult(fromJS: raw)
     }
     
     /// `true` if is dark mode.
     @MainActor
     func getIsDark() async throws -> Bool {
         if self.webView.isLoading { return false }
-        let res = try await self.webView.evaluateJavaScript("window.excalidrawZHelper.getIsDark()")
+        let res = try await self.webView.callAsyncJavaScript(
+            "return window.excalidrawZHelper.getIsDark();",
+            arguments: [:],
+            contentWorld: .page
+        )
         if let isDark = res as? Bool {
             return isDark
         } else {
             return false
         }
     }
-    
+
     @MainActor
     func changeColorMode(dark: Bool) async throws {
         if self.webView.isLoading { return }
         let isDark = try await getIsDark()
         guard isDark != dark else { return }
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleColorTheme(\"\(dark ? "dark" : "light")\"); 0;")
-    }
-    
-    /// Make Image be the same as light mode.
-    /// autoInvert: Invert the current inverted image in dark mode.
-    @available(*, deprecated, message: "Excalidraw now support natively")
-    @MainActor
-    func toggleInvertImageSwitch(autoInvert: Bool) async throws {
-        if self.webView.isLoading { return }
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleImageInvertSwitch(\(autoInvert)); 0;")
-    }
-    @available(*, deprecated, message: "Excalidraw now support natively")
-    @MainActor
-    func applyAntiInvertImageSettings(payload: AntiInvertImageSettings) async throws {
-        if self.webView.isLoading { return }
-        let payload = try payload.jsonStringified()
-        // print("[applyAntiInvertImageSettings] payload: ", payload)
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleAntiInvertImageSettings(\(payload)); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.toggleColorTheme(\"\(dark ? "dark" : "light")\");",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
     
     @MainActor
-    func loadLibraryItem(item: ExcalidrawLibrary) async throws {
-        try await self.webView.evaluateJavaScript("window.excalidrawZHelper.loadLibraryItem(\(item.jsonStringified())); 0;")
+    @discardableResult
+    func loadLibraryItem(item: ExcalidrawLibrary) async throws -> LoadLibraryItemResult? {
+        let raw = try await self.webView.callAsyncJavaScript(
+            "return await window.excalidrawZHelper.loadLibraryItem(\(item.jsonStringified()));",
+            arguments: [:],
+            contentWorld: .page
+        )
+        return LoadLibraryItemResult(fromJS: raw)
     }
 
     @MainActor
@@ -551,7 +555,11 @@ extension ExcalidrawCore {
         guard !self.webView.isLoading else {
             return cameraState
         }
-        let result = try await webView.evaluateJavaScript("JSON.stringify(window.excalidrawZHelper.getCamera())")
+        let result = try await webView.callAsyncJavaScript(
+            "return JSON.stringify(window.excalidrawZHelper.getCamera());",
+            arguments: [:],
+            contentWorld: .page
+        )
         let camera = try decodeJavaScriptResult(result, as: CameraState.self)
         cameraState = camera
         return camera
@@ -561,27 +569,43 @@ extension ExcalidrawCore {
     func setCamera(_ camera: CameraPatch) async throws {
         guard !self.webView.isLoading else { return }
         let payload = try encodeJSON(camera)
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.setCamera(\(payload)); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.setCamera(\(payload));",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
 
     @MainActor
     func scrollToCenter() async throws {
         guard !self.webView.isLoading else { return }
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.scrollToCenter(); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.scrollToCenter();",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
 
     @MainActor
     func scrollToElement(id: String, options: ScrollToElementOptions = .init()) async throws {
         guard !self.webView.isLoading else { return }
         let optionsJSON = try encodeJSON(options)
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.scrollToElement('\(id)', \(optionsJSON)); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.scrollToElement('\(id)', \(optionsJSON));",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
 
     @MainActor
     func zoomToFit(options: ZoomToFitOptions = .init()) async throws {
         guard !self.webView.isLoading else { return }
         let optionsJSON = try encodeJSON(options)
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.zoomToFit(\(optionsJSON)); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.zoomToFit(\(optionsJSON));",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
 
     @MainActor
@@ -589,13 +613,21 @@ extension ExcalidrawCore {
         guard !self.webView.isLoading else { return }
         let idsJSON = try encodeJSON(ids)
         let optionsJSON = try encodeJSON(options)
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.zoomToFitElements(\(idsJSON), \(optionsJSON)); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.zoomToFitElements(\(idsJSON), \(optionsJSON));",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
 
     @MainActor
     func zoomTo(_ scale: Double) async throws {
         guard !self.webView.isLoading else { return }
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.zoomTo(\(scale)); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.zoomTo(\(scale));",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
 
     @MainActor
@@ -604,8 +636,10 @@ extension ExcalidrawCore {
             throw InvalidJavaScriptResult()
         }
         let optionsJSON = try encodeJSON(options)
-        let result = try await webView.evaluateJavaScript(
-            "JSON.stringify(window.excalidrawZHelper.beginAICameraSession(\(optionsJSON)))"
+        let result = try await webView.callAsyncJavaScript(
+            "return JSON.stringify(window.excalidrawZHelper.beginAICameraSession(\(optionsJSON)));",
+            arguments: [:],
+            contentWorld: .page
         )
         let response = try decodeJavaScriptResult(result, as: AICameraBeginResponse.self)
         aiCameraSession = .init(
@@ -628,8 +662,10 @@ extension ExcalidrawCore {
         let sessionIdJSON = try encodeJSON(sessionId)
         let targetJSON = try encodeJSON(target)
         let optionsJSON = try encodeJSON(options)
-        let result = try await webView.evaluateJavaScript(
-            "JSON.stringify(window.excalidrawZHelper.updateAICameraTarget(\(sessionIdJSON), \(targetJSON), \(optionsJSON)))"
+        let result = try await webView.callAsyncJavaScript(
+            "return JSON.stringify(window.excalidrawZHelper.updateAICameraTarget(\(sessionIdJSON), \(targetJSON), \(optionsJSON)));",
+            arguments: [:],
+            contentWorld: .page
         )
         return try decodeJavaScriptResult(result, as: AICameraUpdateResponse.self)
     }
@@ -642,8 +678,10 @@ extension ExcalidrawCore {
         guard !self.webView.isLoading else { return }
         let sessionIdJSON = try encodeJSON(sessionId)
         let optionsJSON = try encodeJSON(options)
-        try await webView.evaluateJavaScript(
-            "window.excalidrawZHelper.endAICameraSession(\(sessionIdJSON), \(optionsJSON)); 0;"
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.endAICameraSession(\(sessionIdJSON), \(optionsJSON));",
+            arguments: [:],
+            contentWorld: .page
         )
     }
 
@@ -651,8 +689,10 @@ extension ExcalidrawCore {
     func cancelAICameraSession(sessionId: String) async throws {
         guard !self.webView.isLoading else { return }
         let sessionIdJSON = try encodeJSON(sessionId)
-        try await webView.evaluateJavaScript(
-            "window.excalidrawZHelper.cancelAICameraSession(\(sessionIdJSON)); 0;"
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.cancelAICameraSession(\(sessionIdJSON));",
+            arguments: [:],
+            contentWorld: .page
         )
     }
 
@@ -664,8 +704,10 @@ extension ExcalidrawCore {
         guard !self.webView.isLoading else { return }
         let sessionIdJSON = try encodeJSON(sessionId)
         let optionsJSON = try encodeJSON(options)
-        try await webView.evaluateJavaScript(
-            "window.excalidrawZHelper.interruptAICameraSession(\(sessionIdJSON), \(optionsJSON)); 0;"
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.interruptAICameraSession(\(sessionIdJSON), \(optionsJSON));",
+            arguments: [:],
+            contentWorld: .page
         )
     }
 
@@ -674,14 +716,18 @@ extension ExcalidrawCore {
         guard !self.webView.isLoading else {
             return aiCameraSession.sessionId == nil ? nil : aiCameraSession
         }
-        let script: String
+        let body: String
         if let sessionId {
             let sessionIdJSON = try encodeJSON(sessionId)
-            script = "JSON.stringify(window.excalidrawZHelper.getAICameraSession(\(sessionIdJSON)))"
+            body = "return JSON.stringify(window.excalidrawZHelper.getAICameraSession(\(sessionIdJSON)));"
         } else {
-            script = "JSON.stringify(window.excalidrawZHelper.getAICameraSession())"
+            body = "return JSON.stringify(window.excalidrawZHelper.getAICameraSession());"
         }
-        let result = try await webView.evaluateJavaScript(script)
+        let result = try await webView.callAsyncJavaScript(
+            body,
+            arguments: [:],
+            contentWorld: .page
+        )
         guard !(result is NSNull) else { return nil }
         if let string = result as? String, string == "null" {
             return nil
@@ -716,8 +762,10 @@ extension ExcalidrawCore {
         guard !self.webView.isLoading else { return }
         let elementsJSON = try encodeJSON(elements)
         let optionsJSON = try encodeJSON(options)
-        try await webView.evaluateJavaScript(
-            "window.excalidrawZHelper.replaceAllElements(\(elementsJSON), \(optionsJSON)); 0;"
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.replaceAllElements(\(elementsJSON), \(optionsJSON));",
+            arguments: [:],
+            contentWorld: .page
         )
     }
 
@@ -725,8 +773,10 @@ extension ExcalidrawCore {
     func addElements(_ elements: [ExcalidrawElement]) async throws {
         guard !self.webView.isLoading, !elements.isEmpty else { return }
         let elementsJSON = try encodeJSON(elements)
-        try await webView.evaluateJavaScript(
-            "window.excalidrawZHelper.addElements(\(elementsJSON)); 0;"
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.addElements(\(elementsJSON));",
+            arguments: [:],
+            contentWorld: .page
         )
     }
 
@@ -734,8 +784,10 @@ extension ExcalidrawCore {
     func updateElements(_ operations: [UpdateElementOperation]) async throws {
         guard !self.webView.isLoading, !operations.isEmpty else { return }
         let operationsJSON = try encodeJSON(operations)
-        try await webView.evaluateJavaScript(
-            "window.excalidrawZHelper.updateElements(\(operationsJSON)); 0;"
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.updateElements(\(operationsJSON));",
+            arguments: [:],
+            contentWorld: .page
         )
     }
 
@@ -743,14 +795,20 @@ extension ExcalidrawCore {
     func removeElements(ids: [String]) async throws {
         guard !self.webView.isLoading, !ids.isEmpty else { return }
         let idsJSON = try encodeJSON(ids)
-        try await webView.evaluateJavaScript(
-            "window.excalidrawZHelper.removeElements(\(idsJSON)); 0;"
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.removeElements(\(idsJSON));",
+            arguments: [:],
+            contentWorld: .page
         )
     }
-    
+
     @MainActor
     func exportPNG() async throws {
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.exportImage(); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.exportImage();",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
     
     func exportPNGData() async throws -> Data? {
@@ -764,28 +822,42 @@ extension ExcalidrawCore {
     @MainActor
     func toggleToolbarAction(key: Int) async throws {
         print(#function, key)
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction(\(key)); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.toggleToolbarAction(\(key));",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
-    
+
     @MainActor
     func toggleToolbarAction(key: Character) async throws {
         guard !self.isLoading else { return }
         print(#function, key)
+        let toolbarKey: String
         if key == "\u{1B}" {
-            try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Escape'); 0;")
+            toolbarKey = "Escape"
         } else if key == " " {
-            try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Space'); 0;")
+            toolbarKey = "Space"
         } else {
-            try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(key.uppercased())'); 0;")
+            toolbarKey = key.uppercased()
         }
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.toggleToolbarAction('\(toolbarKey)');",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
-    
+
     @MainActor
     func toggleDeleteAction() async throws {
         guard !self.isLoading else { return }
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('Backspace'); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.toggleToolbarAction('Backspace');",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
-    
+
     enum ExtraTool: String {
         case webEmbed = "webEmbed"
         case text2Diagram = "text2diagram"
@@ -797,7 +869,11 @@ extension ExcalidrawCore {
     func toggleToolbarAction(tool: ExtraTool) async throws {
         guard !self.isLoading else { return }
         print(#function, tool)
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleToolbarAction('\(tool.rawValue)'); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.toggleToolbarAction('\(tool.rawValue)');",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
     
     func exportElementsToPNGData(
@@ -812,7 +888,7 @@ extension ExcalidrawCore {
         let filesJSON = try files?.jsonStringified() ?? "undefined"
         let script = """
         return await window.excalidrawZHelper.exportElementsToBlob(
-            null, \(elementsJSON), \(filesJSON), {
+            \(elementsJSON), \(filesJSON), {
                 exportEmbedScene: \(embedScene),
                 withBackground: \(withBackground),
                 exportWithDarkMode: \(colorScheme == .dark),
@@ -870,7 +946,7 @@ extension ExcalidrawCore {
         let filesJSON = try files?.jsonStringified() ?? "undefined"
         let script = """
         return await window.excalidrawZHelper.exportElementsToSvg(
-            null, \(elementsJSON), \(filesJSON),
+            \(elementsJSON), \(filesJSON),
             \(embedScene), \(withBackground), \(colorScheme == .dark)
         );
         """
@@ -950,7 +1026,7 @@ extension ExcalidrawCore {
     /// Get Excalidraw Indexed DB Data
     func getExcalidrawStore() async throws -> [ExcalidrawFile.ResourceFile] {
         let raw = try await webView.callAsyncJavaScript(
-            "return await window.excalidrawZHelper.getAllMedias(null);",
+            "return await window.excalidrawZHelper.getAllMedias();",
             arguments: [:],
             contentWorld: .page
         )
@@ -969,7 +1045,11 @@ extension ExcalidrawCore {
     func insertMediaFiles(_ files: [ExcalidrawFile.ResourceFile]) async throws {
         logger.info("insertMediaFiles: \(files.count)")
         let jsonStringified = try files.jsonStringified()
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.insertMedias('\(jsonStringified)'); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.insertMedias('\(jsonStringified)');",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
 
     /// Inject all MediaItems from CoreData to IndexedDB
@@ -1066,36 +1146,64 @@ extension ExcalidrawCore {
 
     @MainActor
     func performUndo() async throws {
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.undo(); 0;")
-    }
-    @MainActor
-    func performRedo() async throws {
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.redo(); 0;")
-    }
-    @MainActor
-    func connectPencil(enabled: Bool) async throws {
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.connectPencil(\(enabled)); 0;")
-    }
-    @MainActor
-    func togglePenMode(enabled: Bool) async throws {
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.togglePenMode(\(enabled)); 0;")
-    }
-    @MainActor
-    public func toggleActionsMenu(isPresented: Bool) async throws {
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.toggleActionsMenu(\(isPresented)); 0;")
-    }
-    @MainActor
-    public func togglePencilInterationMode(mode: ToolState.PencilInteractionMode) async throws {
-        try await webView.evaluateJavaScript(
-            "window.excalidrawZHelper.togglePencilInterationMode(\(mode.rawValue)); 0;"
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.undo();",
+            arguments: [:],
+            contentWorld: .page
         )
     }
     @MainActor
-    public func loadImageToExcalidrawCanvas(imageData: Data, type: String) async throws {
+    func performRedo() async throws {
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.redo();",
+            arguments: [:],
+            contentWorld: .page
+        )
+    }
+    @MainActor
+    func connectPencil(enabled: Bool) async throws {
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.connectPencil(\(enabled));",
+            arguments: [:],
+            contentWorld: .page
+        )
+    }
+    @MainActor
+    func togglePenMode(enabled: Bool) async throws {
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.togglePenMode(\(enabled));",
+            arguments: [:],
+            contentWorld: .page
+        )
+    }
+    @MainActor
+    public func toggleActionsMenu(isPresented: Bool) async throws {
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.toggleActionsMenu(\(isPresented));",
+            arguments: [:],
+            contentWorld: .page
+        )
+    }
+    @MainActor
+    public func togglePencilInterationMode(mode: ToolState.PencilInteractionMode) async throws {
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.togglePencilInterationMode(\(mode.rawValue));",
+            arguments: [:],
+            contentWorld: .page
+        )
+    }
+    @MainActor
+    @discardableResult
+    public func loadImageToExcalidrawCanvas(imageData: Data, type: String) async throws -> LoadImageResult? {
         var buffer = [UInt8].init(repeating: 0, count: imageData.count)
         imageData.copyBytes(to: &buffer, count: imageData.count)
         let buf = buffer
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.loadImageBuffer(\(buf), '\(type)'); 0;")
+        let raw = try await webView.callAsyncJavaScript(
+            "return await window.excalidrawZHelper.loadImageBuffer(\(buf), type);",
+            arguments: ["type": type],
+            contentWorld: .page
+        )
+        return LoadImageResult(fromJS: raw)
     }
     
     // Font
@@ -1104,8 +1212,16 @@ extension ExcalidrawCore {
         guard !self.webView.isLoading else { return }
         let payload = try encodeJSON(fontFamilies)
         for attempt in 0..<5 {
-            let result = try await webView.evaluateJavaScript(
-                "if (window.excalidrawZHelper?.setAvailableFonts) { window.excalidrawZHelper.setAvailableFonts(\(payload)); true; } else { false; }"
+            let result = try await webView.callAsyncJavaScript(
+                """
+                if (window.excalidrawZHelper?.setAvailableFonts) {
+                    window.excalidrawZHelper.setAvailableFonts(\(payload));
+                    return true;
+                }
+                return false;
+                """,
+                arguments: [:],
+                contentWorld: .page
             )
             if let applied = result as? Bool, applied {
                 return
@@ -1121,48 +1237,69 @@ extension ExcalidrawCore {
     // Collab
     @MainActor
     public func openCollabMode() async throws {
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.openCollabMode(); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.openCollabMode();",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
-    
+
     struct CollaborationInfo: Codable, Hashable {
         var username: String
     }
-    
+
     @MainActor
     public func getCollaborationInfo() async throws -> CollaborationInfo {
-        guard let res = try await webView.evaluateJavaScript("window.excalidrawZHelper.getExcalidrawCollabInfo();") else {
+        let res = try await webView.callAsyncJavaScript(
+            "return window.excalidrawZHelper.getExcalidrawCollabInfo();",
+            arguments: [:],
+            contentWorld: .page
+        )
+        guard let res, JSONSerialization.isValidJSONObject(res) else {
             return CollaborationInfo(username: "")
         }
-        if JSONSerialization.isValidJSONObject(res) {
-            let data = try JSONSerialization.data(withJSONObject: res)
-            return try JSONDecoder().decode(CollaborationInfo.self, from: data)
-        } else {
-            return CollaborationInfo(username: "")
-        }
+        let data = try JSONSerialization.data(withJSONObject: res)
+        return try JSONDecoder().decode(CollaborationInfo.self, from: data)
     }
-    
-    
+
+
     @MainActor
     public func setCollaborationInfo(_ info: CollaborationInfo) async throws {
-        try await webView.evaluateJavaScript(
-            "window.excalidrawZHelper.setExcalidrawCollabInfo(\(info.jsonStringified())); 0;"
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.setExcalidrawCollabInfo(\(info.jsonStringified()));",
+            arguments: [:],
+            contentWorld: .page
         )
     }
-    
+
     @MainActor
     public func followCollborator(_ collaborator: Collaborator) async throws {
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.followCollaborator(\(collaborator.jsonStringified())); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.followCollaborator(\(collaborator.jsonStringified()));",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
-    
-    
-    
+
+
+
     @MainActor
     func reload() {
-         webView.evaluateJavaScript("location.reload(); 0;")
+        Task {
+            _ = try? await webView.callAsyncJavaScript(
+                "location.reload();",
+                arguments: [:],
+                contentWorld: .page
+            )
+        }
     }
-    
+
     @MainActor
     func toggleWebPointerEvents(enabled: Bool) async throws {
-        try await webView.evaluateJavaScript("document.body.style = '\(enabled ? "" : "pointer-events: none;")'; 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "document.body.style = '\(enabled ? "" : "pointer-events: none;")';",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
 }

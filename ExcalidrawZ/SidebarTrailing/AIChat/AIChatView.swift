@@ -158,10 +158,11 @@ struct AIChatView: View {
         guard let conversationID else { return }
         Task {
             do {
+                let agentConfig = try await LLMClient.shared.getDomainAgentConfig(agentID: "excalidraw-canvas")
                 try await llmState.regenerateMessage(
                     in: conversationID,
                     fromMessageID: messageID,
-                    model: .gpt4oMini,
+                    model: agentConfig.defaultModel,
                     stream: true
                 )
             } catch {

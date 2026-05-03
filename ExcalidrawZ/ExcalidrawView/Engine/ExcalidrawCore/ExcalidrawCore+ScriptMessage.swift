@@ -35,8 +35,6 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                         self.isDocumentLoaded = true
                     }
                     logger.info("onload")
-                case .saveFileDone(let message):
-                    onSaveFileDone(message.data)
                 case .stateChanged(let message):
                     onStateChanged(message.data)
                 case .blobData(let message):
@@ -171,10 +169,6 @@ extension ExcalidrawCore: WKScriptMessageHandler {
 }
 
 extension ExcalidrawCore {
-    func onSaveFileDone(_ data: String) {
-        print("onSaveFileDone")
-    }
-    
     func onStateChanged(_ data: StateChangedMessageData) {
         guard !(self.isLoading) else { return }
         let type = self.parent?.type
@@ -449,7 +443,6 @@ extension ExcalidrawCore {
         case onload
 
         case onStateChanged
-        case saveFileDone
         case blobData
         case copy
         case onFocus
@@ -490,7 +483,6 @@ extension ExcalidrawCore {
     enum ExcalidrawZMessage: Codable {
         case onload
         case stateChanged(StateChangedMessage)
-        case saveFileDone(SaveFileDoneMessage)
         case blobData(BlobDataMessage)
         case onCopy(CopyMessage)
         case onFocus
@@ -540,8 +532,6 @@ extension ExcalidrawCore {
                     self = .onload
                 case .onStateChanged:
                     self = .stateChanged(try StateChangedMessage(from: decoder))
-                case .saveFileDone:
-                    self = .saveFileDone(try SaveFileDoneMessage(from: decoder))
                 case .blobData:
                     self = .blobData(try BlobDataMessage(from: decoder))
                 case .copy:
@@ -697,11 +687,6 @@ extension ExcalidrawCore {
         var dataString: String
         var elements: [ExcalidrawElement]?
         var files: [String : ExcalidrawFile.ResourceFile]
-    }
-
-    struct SaveFileDoneMessage: AnyExcalidrawZMessage {
-        var event: String
-        var data: String //SaveFileDoneMessageData
     }
 
     struct BlobDataMessage: AnyExcalidrawZMessage {
