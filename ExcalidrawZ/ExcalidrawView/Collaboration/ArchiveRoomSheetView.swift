@@ -49,11 +49,7 @@ struct ArchiveRoomSheetView: View {
                     
                     ZStack {
                         roundedRectangle.fill(.regularMaterial)
-                        if #available(iOS 17.0, macOS 13.0, *) {
-                            roundedRectangle.stroke(.separator)
-                        } else {
-                            roundedRectangle.stroke(.secondary)
-                        }
+                        roundedRectangle.stroke(.separator)
                     }
                 }
             HStack {

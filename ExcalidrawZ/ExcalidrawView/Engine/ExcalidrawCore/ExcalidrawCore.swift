@@ -12,6 +12,14 @@ import Combine
 import CoreData
 
 typealias CollaborationInfo = ExcalidrawCore.CollaborationInfo
+@MainActor
+protocol AICameraSessionEventSink: AnyObject {
+    func aiCameraSessionDidStart(_ info: ExcalidrawCore.AICameraSessionInfo)
+    func aiCameraSessionDidUpdate(_ info: ExcalidrawCore.AICameraSessionInfo)
+    func aiCameraSessionDidInterrupt(_ info: ExcalidrawCore.AICameraSessionInfo)
+    func aiCameraSessionDidSettle(_ info: ExcalidrawCore.AICameraSessionInfo)
+    func aiCameraSessionDidEnd(_ info: ExcalidrawCore.AICameraSessionInfo)
+}
 
 class ExcalidrawCore: NSObject, ObservableObject {
 #if canImport(AppKit)
@@ -44,6 +52,8 @@ class ExcalidrawCore: NSObject, ObservableObject {
     @Published var isDocumentLoaded = false
     @Published var isCollabEnabled = false
     @Published private(set) var isLoading: Bool = false
+    @Published private(set) var cameraState = CameraState()
+    @Published private(set) var selectedElementIDs: [String] = []
     
     var downloadCache: [String : Data] = [:]
     var downloads: [URLRequest : URL] = [:]
@@ -51,6 +61,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     
     @Published var canUndo = false
     @Published var canRedo = false
+    @Published private(set) var aiCameraSession = AICameraSessionInfo()
     
     var previousFileID: UUID? = nil
     private var lastVersion: Int = 0
@@ -61,6 +72,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     private var loadedMediaItemIDs: Set<String> = []
 
     internal var lastTool: ExcalidrawTool?
+    weak var aiCameraEventSink: (any AICameraSessionEventSink)?
     
     @MainActor
     func setup(parent: ExcalidrawCanvasView) {
@@ -187,6 +199,284 @@ class ExcalidrawCore: NSObject, ObservableObject {
 
 /// Keep stateless
 extension ExcalidrawCore {
+    struct JSONEncodingFailed: Error {}
+    struct InvalidJavaScriptResult: Error {}
+
+    struct CameraState: Codable, Hashable {
+        var scrollX: Double = 0
+        var scrollY: Double = 0
+        var zoom: Double = 1
+    }
+
+    struct CameraPatch: Codable, Hashable {
+        var scrollX: Double?
+        var scrollY: Double?
+        var zoom: Double?
+    }
+
+    struct CameraAnimationOptions: Codable, Hashable {
+        var animate: Bool = true
+        var duration: Int = 300
+    }
+
+    enum ScrollToElementMode: String, Codable, Hashable {
+        case center
+        case fitContent
+        case fitViewport
+    }
+
+    struct ScrollToElementOptions: Codable, Hashable {
+        var mode: ScrollToElementMode = .fitContent
+        var animate: Bool = true
+        var duration: Int = 300
+        var viewportZoomFactor: Double?
+        var minZoom: Double?
+        var maxZoom: Double?
+    }
+
+    struct ZoomToFitOptions: Codable, Hashable {
+        var animate: Bool = true
+        var duration: Int = 300
+        var viewportZoomFactor: Double = 0.9
+    }
+
+    enum AICameraZoomBehavior: String, Codable, Hashable {
+        case preserve
+        case gentle
+        case fitWhenNeeded
+    }
+
+    enum AICameraSessionState: String, Codable, Hashable {
+        case active
+        case settling
+        case interrupted
+        case ended
+    }
+
+    enum AICameraEndMode: String, Codable, Hashable {
+        case settle
+        case immediate
+    }
+
+    struct AICameraViewportPadding: Codable, Hashable {
+        var top: Double
+        var right: Double
+        var bottom: Double
+        var left: Double
+
+        init(top: Double, right: Double, bottom: Double, left: Double) {
+            self.top = top
+            self.right = right
+            self.bottom = bottom
+            self.left = left
+        }
+
+        init(all: Double) {
+            self.init(top: all, right: all, bottom: all, left: all)
+        }
+    }
+
+    enum AICameraPaddingValue: Codable, Hashable {
+        case uniform(Double)
+        case edges(AICameraViewportPadding)
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            if let value = try? container.decode(Double.self) {
+                self = .uniform(value)
+            } else {
+                self = .edges(try container.decode(AICameraViewportPadding.self))
+            }
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            switch self {
+                case .uniform(let value):
+                    try container.encode(value)
+                case .edges(let value):
+                    try container.encode(value)
+            }
+        }
+    }
+
+    struct AICameraSessionOptions: Codable, Hashable {
+        var zoomBehavior: AICameraZoomBehavior = .fitWhenNeeded
+        var followRate: Double?
+        var viewportPadding: AICameraPaddingValue?
+        var minZoom: Double?
+        var maxZoom: Double?
+        var safeAreaRatio: Double?
+        var revision: Int?
+    }
+
+    struct AICameraTargetBox: Codable, Hashable {
+        var type: String = "box"
+        var minX: Double
+        var minY: Double
+        var maxX: Double
+        var maxY: Double
+    }
+
+    struct AICameraTargetElements: Codable, Hashable {
+        var type: String = "elements"
+        var ids: [String]
+    }
+
+    enum AICameraTarget: Codable, Hashable {
+        case box(AICameraTargetBox)
+        case elements(AICameraTargetElements)
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            if let value = try? container.decode(AICameraTargetBox.self) {
+                self = .box(value)
+            } else {
+                self = .elements(try container.decode(AICameraTargetElements.self))
+            }
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            switch self {
+                case .box(let value):
+                    try container.encode(value)
+                case .elements(let value):
+                    try container.encode(value)
+            }
+        }
+    }
+
+    struct AICameraBeginResponse: Codable, Hashable {
+        var sessionId: String
+        var state: AICameraSessionState
+        var startedAt: JSONValue?
+    }
+
+    struct AICameraUpdateResponse: Codable, Hashable {
+        var accepted: Bool
+        var state: AICameraSessionState?
+        var reason: String?
+    }
+
+    struct AICameraSessionInfo: Codable, Hashable {
+        var sessionId: String?
+        var state: AICameraSessionState?
+        var startedAt: JSONValue?
+        var mode: String?
+        var reason: String?
+        var eventType: String?
+        var revision: Int?
+        var stateBeforeInterrupt: AICameraSessionState?
+        var camera: CameraState?
+    }
+
+    struct AICameraEndOptions: Codable, Hashable {
+        var mode: AICameraEndMode = .settle
+    }
+
+    struct AICameraInterruptOptions: Codable, Hashable {
+        var reason: String = "host_override"
+    }
+
+    enum CaptureUpdate: String, Codable, Hashable {
+        case immediately = "IMMEDIATELY"
+        case eventually = "EVENTUALLY"
+        case never = "NEVER"
+    }
+
+    struct ReplaceAllElementsOptions: Codable, Hashable {
+        var captureUpdate: CaptureUpdate = .immediately
+    }
+
+    struct UpdateElementOperation: Codable, Hashable {
+        var id: String
+        var updates: [String: JSONValue]
+    }
+
+    enum JSONValue: Codable, Hashable {
+        case string(String)
+        case number(Double)
+        case bool(Bool)
+        case object([String: JSONValue])
+        case array([JSONValue])
+        case null
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            if container.decodeNil() {
+                self = .null
+            } else if let value = try? container.decode(Bool.self) {
+                self = .bool(value)
+            } else if let value = try? container.decode(Double.self) {
+                self = .number(value)
+            } else if let value = try? container.decode(String.self) {
+                self = .string(value)
+            } else if let value = try? container.decode([String: JSONValue].self) {
+                self = .object(value)
+            } else if let value = try? container.decode([JSONValue].self) {
+                self = .array(value)
+            } else {
+                throw InvalidJavaScriptResult()
+            }
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            switch self {
+                case .string(let value):
+                    try container.encode(value)
+                case .number(let value):
+                    try container.encode(value)
+                case .bool(let value):
+                    try container.encode(value)
+                case .object(let value):
+                    try container.encode(value)
+                case .array(let value):
+                    try container.encode(value)
+                case .null:
+                    try container.encodeNil()
+            }
+        }
+    }
+
+    private func encodeJSON<T: Encodable>(_ value: T) throws -> String {
+        let data = try JSONEncoder().encode(value)
+        guard let jsonString = String(data: data, encoding: .utf8) else {
+            throw JSONEncodingFailed()
+        }
+        return jsonString
+    }
+
+    private func decodeJavaScriptResult<T: Decodable>(_ result: Any?, as type: T.Type) throws -> T {
+        if let string = result as? String,
+           let data = string.data(using: .utf8) {
+            return try JSONDecoder().decode(type, from: data)
+        }
+        if let result,
+           JSONSerialization.isValidJSONObject(result) {
+            let data = try JSONSerialization.data(withJSONObject: result)
+            return try JSONDecoder().decode(type, from: data)
+        }
+        throw InvalidJavaScriptResult()
+    }
+
+    func updateCameraState(_ camera: CameraState) {
+        cameraState = camera
+    }
+
+    func updateSelectedElementIDs(_ ids: [String]) {
+        selectedElementIDs = ids
+    }
+
+    func clearSelectedElementIDs() {
+        selectedElementIDs = []
+    }
+
+    func updateAICameraSession(_ session: AICameraSessionInfo) {
+        aiCameraSession = session
+    }
+
     /// Loads a file into the web view and returns once Excalidraw has actually applied
     /// the new scene (the JS helper is async). Callers can chain follow-up work like
     /// re-syncing canvas preferences without resorting to a delay.
@@ -254,6 +544,208 @@ extension ExcalidrawCore {
     @MainActor
     func loadLibraryItem(item: ExcalidrawLibrary) async throws {
         try await self.webView.evaluateJavaScript("window.excalidrawZHelper.loadLibraryItem(\(item.jsonStringified())); 0;")
+    }
+
+    @MainActor
+    func getCamera() async throws -> CameraState {
+        guard !self.webView.isLoading else {
+            return cameraState
+        }
+        let result = try await webView.evaluateJavaScript("JSON.stringify(window.excalidrawZHelper.getCamera())")
+        let camera = try decodeJavaScriptResult(result, as: CameraState.self)
+        cameraState = camera
+        return camera
+    }
+
+    @MainActor
+    func setCamera(_ camera: CameraPatch) async throws {
+        guard !self.webView.isLoading else { return }
+        let payload = try encodeJSON(camera)
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.setCamera(\(payload)); 0;")
+    }
+
+    @MainActor
+    func scrollToCenter() async throws {
+        guard !self.webView.isLoading else { return }
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.scrollToCenter(); 0;")
+    }
+
+    @MainActor
+    func scrollToElement(id: String, options: ScrollToElementOptions = .init()) async throws {
+        guard !self.webView.isLoading else { return }
+        let optionsJSON = try encodeJSON(options)
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.scrollToElement('\(id)', \(optionsJSON)); 0;")
+    }
+
+    @MainActor
+    func zoomToFit(options: ZoomToFitOptions = .init()) async throws {
+        guard !self.webView.isLoading else { return }
+        let optionsJSON = try encodeJSON(options)
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.zoomToFit(\(optionsJSON)); 0;")
+    }
+
+    @MainActor
+    func zoomToFitElements(ids: [String], options: ZoomToFitOptions = .init()) async throws {
+        guard !self.webView.isLoading else { return }
+        let idsJSON = try encodeJSON(ids)
+        let optionsJSON = try encodeJSON(options)
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.zoomToFitElements(\(idsJSON), \(optionsJSON)); 0;")
+    }
+
+    @MainActor
+    func zoomTo(_ scale: Double) async throws {
+        guard !self.webView.isLoading else { return }
+        try await webView.evaluateJavaScript("window.excalidrawZHelper.zoomTo(\(scale)); 0;")
+    }
+
+    @MainActor
+    func beginAICameraSession(options: AICameraSessionOptions = .init()) async throws -> AICameraBeginResponse {
+        guard !self.webView.isLoading else {
+            throw InvalidJavaScriptResult()
+        }
+        let optionsJSON = try encodeJSON(options)
+        let result = try await webView.evaluateJavaScript(
+            "JSON.stringify(window.excalidrawZHelper.beginAICameraSession(\(optionsJSON)))"
+        )
+        let response = try decodeJavaScriptResult(result, as: AICameraBeginResponse.self)
+        aiCameraSession = .init(
+            sessionId: response.sessionId,
+            state: response.state,
+            startedAt: response.startedAt
+        )
+        return response
+    }
+
+    @MainActor
+    func updateAICameraTarget(
+        sessionId: String,
+        target: AICameraTarget,
+        options: AICameraSessionOptions = .init()
+    ) async throws -> AICameraUpdateResponse {
+        guard !self.webView.isLoading else {
+            return .init(accepted: false, state: nil, reason: "webview_loading")
+        }
+        let sessionIdJSON = try encodeJSON(sessionId)
+        let targetJSON = try encodeJSON(target)
+        let optionsJSON = try encodeJSON(options)
+        let result = try await webView.evaluateJavaScript(
+            "JSON.stringify(window.excalidrawZHelper.updateAICameraTarget(\(sessionIdJSON), \(targetJSON), \(optionsJSON)))"
+        )
+        return try decodeJavaScriptResult(result, as: AICameraUpdateResponse.self)
+    }
+
+    @MainActor
+    func endAICameraSession(
+        sessionId: String,
+        options: AICameraEndOptions = .init()
+    ) async throws {
+        guard !self.webView.isLoading else { return }
+        let sessionIdJSON = try encodeJSON(sessionId)
+        let optionsJSON = try encodeJSON(options)
+        try await webView.evaluateJavaScript(
+            "window.excalidrawZHelper.endAICameraSession(\(sessionIdJSON), \(optionsJSON)); 0;"
+        )
+    }
+
+    @MainActor
+    func cancelAICameraSession(sessionId: String) async throws {
+        guard !self.webView.isLoading else { return }
+        let sessionIdJSON = try encodeJSON(sessionId)
+        try await webView.evaluateJavaScript(
+            "window.excalidrawZHelper.cancelAICameraSession(\(sessionIdJSON)); 0;"
+        )
+    }
+
+    @MainActor
+    func interruptAICameraSession(
+        sessionId: String,
+        options: AICameraInterruptOptions = .init()
+    ) async throws {
+        guard !self.webView.isLoading else { return }
+        let sessionIdJSON = try encodeJSON(sessionId)
+        let optionsJSON = try encodeJSON(options)
+        try await webView.evaluateJavaScript(
+            "window.excalidrawZHelper.interruptAICameraSession(\(sessionIdJSON), \(optionsJSON)); 0;"
+        )
+    }
+
+    @MainActor
+    func getAICameraSession(sessionId: String? = nil) async throws -> AICameraSessionInfo? {
+        guard !self.webView.isLoading else {
+            return aiCameraSession.sessionId == nil ? nil : aiCameraSession
+        }
+        let script: String
+        if let sessionId {
+            let sessionIdJSON = try encodeJSON(sessionId)
+            script = "JSON.stringify(window.excalidrawZHelper.getAICameraSession(\(sessionIdJSON)))"
+        } else {
+            script = "JSON.stringify(window.excalidrawZHelper.getAICameraSession())"
+        }
+        let result = try await webView.evaluateJavaScript(script)
+        guard !(result is NSNull) else { return nil }
+        if let string = result as? String, string == "null" {
+            return nil
+        }
+        let session = try decodeJavaScriptResult(result, as: AICameraSessionInfo.self)
+        aiCameraSession = session
+        return session
+    }
+
+    @MainActor
+    func revealElement(id: String, options: ScrollToElementOptions = .init()) async throws {
+        var mergedOptions = options
+        mergedOptions.mode = .fitContent
+        try await scrollToElement(id: id, options: mergedOptions)
+    }
+
+    @MainActor
+    func focusElement(id: String, options: ScrollToElementOptions = .init()) async throws {
+        var mergedOptions = options
+        mergedOptions.mode = .fitViewport
+        if mergedOptions.viewportZoomFactor == nil {
+            mergedOptions.viewportZoomFactor = 0.6
+        }
+        try await scrollToElement(id: id, options: mergedOptions)
+    }
+
+    @MainActor
+    func replaceAllElements(
+        _ elements: [ExcalidrawElement],
+        options: ReplaceAllElementsOptions = .init()
+    ) async throws {
+        guard !self.webView.isLoading else { return }
+        let elementsJSON = try encodeJSON(elements)
+        let optionsJSON = try encodeJSON(options)
+        try await webView.evaluateJavaScript(
+            "window.excalidrawZHelper.replaceAllElements(\(elementsJSON), \(optionsJSON)); 0;"
+        )
+    }
+
+    @MainActor
+    func addElements(_ elements: [ExcalidrawElement]) async throws {
+        guard !self.webView.isLoading, !elements.isEmpty else { return }
+        let elementsJSON = try encodeJSON(elements)
+        try await webView.evaluateJavaScript(
+            "window.excalidrawZHelper.addElements(\(elementsJSON)); 0;"
+        )
+    }
+
+    @MainActor
+    func updateElements(_ operations: [UpdateElementOperation]) async throws {
+        guard !self.webView.isLoading, !operations.isEmpty else { return }
+        let operationsJSON = try encodeJSON(operations)
+        try await webView.evaluateJavaScript(
+            "window.excalidrawZHelper.updateElements(\(operationsJSON)); 0;"
+        )
+    }
+
+    @MainActor
+    func removeElements(ids: [String]) async throws {
+        guard !self.webView.isLoading, !ids.isEmpty else { return }
+        let idsJSON = try encodeJSON(ids)
+        try await webView.evaluateJavaScript(
+            "window.excalidrawZHelper.removeElements(\(idsJSON)); 0;"
+        )
     }
     
     @MainActor
@@ -609,13 +1101,20 @@ extension ExcalidrawCore {
     // Font
     @MainActor
     public func setAvailableFonts(fontFamilies: [String]) async throws {
-        // NSFontManager.shared.availableFontFamilies.sorted()
-        // Optional chaining (`?.`) on both the helper and the method: if the JS
-        // helper hasn't finished bootstrapping yet (we sometimes call this in the
-        // narrow window between the `onload` message and the helper definition),
-        // the call silently no-ops instead of throwing. The next sync pass will
-        // re-apply fonts when the helper is ready.
-        try await webView.evaluateJavaScript("window.excalidrawZHelper?.setAvailableFonts?.(\(fontFamilies)); 0;")
+        guard !self.webView.isLoading else { return }
+        let payload = try encodeJSON(fontFamilies)
+        for attempt in 0..<5 {
+            let result = try await webView.evaluateJavaScript(
+                "if (window.excalidrawZHelper?.setAvailableFonts) { window.excalidrawZHelper.setAvailableFonts(\(payload)); true; } else { false; }"
+            )
+            if let applied = result as? Bool, applied {
+                return
+            }
+            if attempt < 4 {
+                try await Task.sleep(nanoseconds: 200_000_000)
+            }
+        }
+        throw InvalidJavaScriptResult()
     }
     
     
@@ -667,4 +1166,3 @@ extension ExcalidrawCore {
         try await webView.evaluateJavaScript("document.body.style = '\(enabled ? "" : "pointer-events: none;")'; 0;")
     }
 }
-

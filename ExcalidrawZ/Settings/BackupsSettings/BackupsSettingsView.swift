@@ -134,7 +134,6 @@ struct BackupsSettingsView: View {
         }
     }
     
-    
     @MainActor @ViewBuilder
     private func placeholderView() -> some View {
         VStack {
@@ -149,11 +148,7 @@ struct BackupsSettingsView: View {
                 let roundedRectangle = RoundedRectangle(cornerRadius: 8)
                 ZStack {
                     roundedRectangle.fill(.regularMaterial)
-                    if #available(macOS 13.0, iOS 17.0, *) {
-                        roundedRectangle.stroke(.separator)
-                    } else {
-                        roundedRectangle.stroke(.secondary)
-                    }
+                    roundedRectangle.stroke(.separator)
                 }
             }
         }
@@ -215,7 +210,6 @@ struct BackupsSettingsView: View {
             alertToast(error)
         }
     }
-    
     
     private func deleteBackup() {
         guard let item = backupToBeDeleted, let index = backups.firstIndex(of: item) else {

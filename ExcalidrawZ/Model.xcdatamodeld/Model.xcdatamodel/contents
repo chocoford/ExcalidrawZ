@@ -1,5 +1,26 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24299" systemVersion="25B78" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24512" systemVersion="25C56" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="AIConversation" representedClassName="AIConversation" syncable="YES" codeGenerationType="class">
+        <attribute name="conversationID" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="lastChatAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="title" optional="YES" attributeType="String"/>
+        <attribute name="type" optional="YES" attributeType="String"/>
+        <relationship name="file" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="File" inverseName="conversations" inverseEntity="File"/>
+        <relationship name="messages" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="AIConversationMessage" inverseName="conversation" inverseEntity="AIConversationMessage"/>
+    </entity>
+    <entity name="AIConversationMessage" representedClassName="AIConversationMessage" syncable="YES" codeGenerationType="class">
+        <attribute name="content" optional="YES" attributeType="String"/>
+        <attribute name="messageID" optional="YES" attributeType="String"/>
+        <attribute name="messageType" optional="YES" attributeType="String"/>
+        <attribute name="role" optional="YES" attributeType="String"/>
+        <attribute name="stepNumber" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="stepType" optional="YES" attributeType="String"/>
+        <attribute name="timeStamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="usageConsumed" optional="YES" attributeType="Double" usesScalarValueType="YES"/>
+        <attribute name="usageRemains" optional="YES" attributeType="Double" usesScalarValueType="YES"/>
+        <relationship name="conversation" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="AIConversation" inverseName="messages" inverseEntity="AIConversation"/>
+    </entity>
     <entity name="CollaborationFile" representedClassName="CollaborationFile" syncable="YES" codeGenerationType="class">
         <attribute name="content" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
@@ -27,6 +48,7 @@
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="visitedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="checkpoints" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="FileCheckpoint" inverseName="file" inverseEntity="FileCheckpoint"/>
+        <relationship name="conversations" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="AIConversation" inverseName="file" inverseEntity="AIConversation"/>
         <relationship name="group" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Group" inverseName="files" inverseEntity="Group"/>
         <relationship name="medias" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="MediaItem" inverseName="file" inverseEntity="MediaItem"/>
     </entity>
@@ -102,6 +124,8 @@
         <memberEntity name="LibraryItem"/>
         <memberEntity name="MediaItem"/>
         <memberEntity name="CollaborationFile"/>
+        <memberEntity name="AIConversation"/>
+        <memberEntity name="AIConversationMessage"/>
     </configuration>
     <configuration name="Local">
         <memberEntity name="LocalFileCheckpoint"/>

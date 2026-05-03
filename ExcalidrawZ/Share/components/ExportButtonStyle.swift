@@ -43,13 +43,8 @@ struct ExportButtonStyle: PrimitiveButtonStyle {
                                     ) : AnyShapeStyle(Color.clear)
                                 )
                             
-                            if #available(macOS 13.0, iOS 17.0, *) {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(.separator, lineWidth: 0.5)
-                            } else {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(.gray, lineWidth: 0.5)
-                            }
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.separator, lineWidth: 0.5)
                         }
                         
                        

@@ -399,13 +399,8 @@ struct OpenURLSheetView: View {
                 .animation(.default, value: isPreviewWebViewLoading)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay {
-                    if #available(macOS 13.0, iOS 17.0, *) {
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(.separator)
-                    } else {
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(.secondary)
-                    }
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(.separator)
                 }
                 .background {
                     RoundedRectangle(cornerRadius: 12)

@@ -379,13 +379,8 @@ struct LibraryItemContentBackgroundModifier: ViewModifier {
                 6
             }
             
-            if #available(iOS 17.0, macOS 13.0, *) {
-                RoundedRectangle(cornerRadius: radius)
-                    .stroke(.separator, lineWidth: 1)
-            } else {
-                RoundedRectangle(cornerRadius: radius)
-                    .stroke(.secondary, lineWidth: 1)
-            }
+            RoundedRectangle(cornerRadius: radius)
+                .stroke(.separator, lineWidth: 1)
             
             RoundedRectangle(cornerRadius: radius)
                 .fill(

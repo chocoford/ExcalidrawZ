@@ -95,14 +95,8 @@ struct HomeTipItemView: View {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.regularMaterial)
                     .shadow(color: .gray.opacity(0.2), radius: isHovered ? 4 : 0)
-                if #available(macOS 13.0, iOS 17.0, *) {
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(.separator, lineWidth: 0.5)
-                } else {
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(.secondary, lineWidth: 0.5)
-                }
-                
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(.separator, lineWidth: 0.5)
                 image
                     .scaledToFit()
                     .padding(20)

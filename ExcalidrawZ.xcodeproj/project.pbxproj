@@ -87,6 +87,10 @@
 		39E4A9C02D410437002BF98C /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3963A03A2C6C7EAA00472AE7 /* ChocofordUI */; };
 		39ED18542D3FDE1C00E437A0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */; };
 		39ED18552D3FDE1C00E437A0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */; };
+		39F8B6EE2F137973006D5A90 /* LLMKit in Frameworks */ = {isa = PBXBuildFile; productRef = 39F8B6ED2F137973006D5A90 /* LLMKit */; };
+		39F8B6FA2F13797D006D5A90 /* LLMKit in Frameworks */ = {isa = PBXBuildFile; productRef = 39F8B6F92F13797D006D5A90 /* LLMKit */; };
+		39F8C2192F1579F7006D5A90 /* LLMCore in Frameworks */ = {isa = PBXBuildFile; productRef = 39F8C2182F1579F7006D5A90 /* LLMCore */; };
+		39F8C6822F157A95006D5A90 /* LLMCore in Frameworks */ = {isa = PBXBuildFile; productRef = 39F8C6812F157A95006D5A90 /* LLMCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -332,6 +336,22 @@
 			);
 			target = 3987A5062CB54B200054D7D5 /* QuickLookPreviewExtension */;
 		};
+		39CC1FC22F22789A00EAD6BB /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AIChat/README.md,
+				AIChat/Tools/AdjustElementsTool/README.md,
+			);
+			target = 3963A0362C6C7EAA00472AE7 /* ExcalidrawZ (AppStore) */;
+		};
+		39CC1FC32F22789A00EAD6BB /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AIChat/README.md,
+				AIChat/Tools/AdjustElementsTool/README.md,
+			);
+			target = 397E4652295838CF003B824B /* ExcalidrawZ */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -345,7 +365,6 @@
 		396603C42D096D4900870AC9 /* Store */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Store; sourceTree = "<group>"; };
 		396603D92D096D5700870AC9 /* Settings */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Settings; sourceTree = "<group>"; };
 		396603ED2D096D6500870AC9 /* Share */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Share; sourceTree = "<group>"; };
-		396603F72D096D6800870AC9 /* FileHistory */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = FileHistory; sourceTree = "<group>"; };
 		396604052D096D7100870AC9 /* components */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = components; sourceTree = "<group>"; };
 		396604202D096D7400870AC9 /* Sidebar */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Sidebar; sourceTree = "<group>"; };
 		3966044D2D096D7700870AC9 /* ExcalidrawView */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3966046C2D096D7700870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 3966046D2D096D7700870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 3966046E2D096D7700870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ExcalidrawView; sourceTree = "<group>"; };
@@ -355,6 +374,7 @@
 		3987A5092CB54B200054D7D5 /* QuickLookPreviewExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3987A51A2CB54B200054D7D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = QuickLookPreviewExtension; sourceTree = "<group>"; };
 		39A28CF92D92D8EA00B079B1 /* ContentView+ */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "ContentView+"; sourceTree = "<group>"; };
 		39B69BC52D8BD74C003369E8 /* Subscription */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (39B2EBF52D9AFD9900B6CB47 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39B2EC032D9AFFDB00B6CB47 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Subscription; sourceTree = "<group>"; };
+		39E70D9C2F125D38003BDFDF /* SidebarTrailing */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (39CC1FC22F22789A00EAD6BB /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 39CC1FC32F22789A00EAD6BB /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SidebarTrailing; sourceTree = "<group>"; };
 		39ED18482D3FCECB00E437A0 /* Videos */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (399993652E66DA9E000FF1EC /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 399993662E66DAA0000FF1EC /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Videos; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -366,12 +386,14 @@
 				39704EDF2E7990BC00B98F7A /* Vortex in Frameworks */,
 				3998125E2E73EBF400B7AAC9 /* ChocofordUI in Frameworks */,
 				3973D6092E7D1A7B005FD6A5 /* AVKit.framework in Frameworks */,
+				39F8B6EE2F137973006D5A90 /* LLMKit in Frameworks */,
 				3998125D2E73EBF400B7AAC9 /* ChocofordEssentials in Frameworks */,
 				3999925C2E654D3D000FF1EC /* MarkdownUI in Frameworks */,
 				39E4A9C02D410437002BF98C /* ChocofordUI in Frameworks */,
 				39E4A9BF2D410437002BF98C /* ChocofordEssentials in Frameworks */,
 				3965F3792D76B5090065A8C8 /* MathJaxSwift in Frameworks */,
 				398F14552CF738ED0061CCF9 /* SwiftyAlert in Frameworks */,
+				39F8C2192F1579F7006D5A90 /* LLMCore in Frameworks */,
 				3910878A2DFFCC200057F493 /* Logging in Frameworks */,
 				39BE12F12CB7DD97006781D5 /* Zlib in Frameworks */,
 				3963A0742C6C7EAA00472AE7 /* FlyingFox in Frameworks */,
@@ -388,6 +410,8 @@
 				399812662E73EBF400B7AAC9 /* ChocofordUI in Frameworks */,
 				399812652E73EBF400B7AAC9 /* ChocofordEssentials in Frameworks */,
 				399812642E73EBF400B7AAC9 /* ChocofordUI in Frameworks */,
+				39F8B6FA2F13797D006D5A90 /* LLMKit in Frameworks */,
+				39F8C6822F157A95006D5A90 /* LLMCore in Frameworks */,
 				399812632E73EBF400B7AAC9 /* ChocofordEssentials in Frameworks */,
 				399812622E73EBF400B7AAC9 /* ChocofordUI in Frameworks */,
 				399812612E73EBF400B7AAC9 /* ChocofordEssentials in Frameworks */,
@@ -486,9 +510,9 @@
 				397E4658295838CF003B824B /* ContentView.swift */,
 				39A28CF92D92D8EA00B079B1 /* ContentView+ */,
 				396604052D096D7100870AC9 /* components */,
+				39E70D9C2F125D38003BDFDF /* SidebarTrailing */,
 				396604202D096D7400870AC9 /* Sidebar */,
 				3966044D2D096D7700870AC9 /* ExcalidrawView */,
-				396603F72D096D6800870AC9 /* FileHistory */,
 				396603ED2D096D6500870AC9 /* Share */,
 				39B69BC52D8BD74C003369E8 /* Subscription */,
 				396603D92D096D5700870AC9 /* Settings */,
@@ -564,13 +588,13 @@
 				396603C42D096D4900870AC9 /* Store */,
 				396603D92D096D5700870AC9 /* Settings */,
 				396603ED2D096D6500870AC9 /* Share */,
-				396603F72D096D6800870AC9 /* FileHistory */,
 				396604052D096D7100870AC9 /* components */,
 				396604202D096D7400870AC9 /* Sidebar */,
 				3966044D2D096D7700870AC9 /* ExcalidrawView */,
 				396604702D096D8100870AC9 /* Preview Content */,
 				39A28CF92D92D8EA00B079B1 /* ContentView+ */,
 				39B69BC52D8BD74C003369E8 /* Subscription */,
+				39E70D9C2F125D38003BDFDF /* SidebarTrailing */,
 				39ED18482D3FCECB00E437A0 /* Videos */,
 			);
 			name = "ExcalidrawZ (AppStore)";
@@ -588,6 +612,8 @@
 				398B158B2E4379A5003D1F4B /* SmoothGradient */,
 				3999925B2E654D3D000FF1EC /* MarkdownUI */,
 				39704EDE2E7990BC00B98F7A /* Vortex */,
+				39F8B6ED2F137973006D5A90 /* LLMKit */,
+				39F8C2182F1579F7006D5A90 /* LLMCore */,
 			);
 			productName = ExcaliDrawZ;
 			productReference = 3963A0822C6C7EAA00472AE7 /* ExcalidrawZ.app */;
@@ -617,13 +643,13 @@
 				396603C42D096D4900870AC9 /* Store */,
 				396603D92D096D5700870AC9 /* Settings */,
 				396603ED2D096D6500870AC9 /* Share */,
-				396603F72D096D6800870AC9 /* FileHistory */,
 				396604052D096D7100870AC9 /* components */,
 				396604202D096D7400870AC9 /* Sidebar */,
 				3966044D2D096D7700870AC9 /* ExcalidrawView */,
 				396604702D096D8100870AC9 /* Preview Content */,
 				39A28CF92D92D8EA00B079B1 /* ContentView+ */,
 				39B69BC52D8BD74C003369E8 /* Subscription */,
+				39E70D9C2F125D38003BDFDF /* SidebarTrailing */,
 				39ED18482D3FCECB00E437A0 /* Videos */,
 			);
 			name = ExcalidrawZ;
@@ -648,6 +674,8 @@
 				398B15842E437999003D1F4B /* SmoothGradient */,
 				399992672E654D5F000FF1EC /* MarkdownUI */,
 				39704ED92E7990AD00B98F7A /* Vortex */,
+				39F8B6F92F13797D006D5A90 /* LLMKit */,
+				39F8C6812F157A95006D5A90 /* LLMCore */,
 			);
 			productName = ExcaliDrawZ;
 			productReference = 397E4653295838CF003B824B /* ExcalidrawZ.app */;
@@ -772,6 +800,8 @@
 				398B15832E437999003D1F4B /* XCRemoteSwiftPackageReference "SmoothGradient" */,
 				3999925A2E654D3D000FF1EC /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 				39704ED82E7990AD00B98F7A /* XCRemoteSwiftPackageReference "Vortex" */,
+				39F8B6EC2F137973006D5A90 /* XCLocalSwiftPackageReference "../ChocoLLM/LLMKit" */,
+				39F8C2172F1579F6006D5A90 /* XCLocalSwiftPackageReference "../ChocoLLM/LLMCore" */,
 			);
 			productRefGroup = 397E4654295838CF003B824B /* Products */;
 			projectDirPath = "";
@@ -1202,11 +1232,11 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.7.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
@@ -1404,6 +1434,7 @@
 				CURRENT_PROJECT_VERSION = 60;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
+				DEVELOPMENT_TEAM = 3XKM749Y3L;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
@@ -1435,11 +1466,11 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.7.4;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.chocoford.excalidraw-Debug";
 				PRODUCT_NAME = ExcalidrawZ;
@@ -1493,11 +1524,11 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.7.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chocoford.excalidraw;
 				PRODUCT_NAME = ExcalidrawZ;
@@ -1762,6 +1793,17 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		39F8B6EC2F137973006D5A90 /* XCLocalSwiftPackageReference "../ChocoLLM/LLMKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../ChocoLLM/LLMKit;
+		};
+		39F8C2172F1579F6006D5A90 /* XCLocalSwiftPackageReference "../ChocoLLM/LLMCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../ChocoLLM/LLMCore;
+		};
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */ = {
@@ -2068,6 +2110,24 @@
 		39E9C5A62C8CB2E600BC1C07 /* ChocofordUI */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ChocofordUI;
+		};
+		39F8B6ED2F137973006D5A90 /* LLMKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LLMKit;
+		};
+		39F8B6F92F13797D006D5A90 /* LLMKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 39F8B6EC2F137973006D5A90 /* XCLocalSwiftPackageReference "../ChocoLLM/LLMKit" */;
+			productName = LLMKit;
+		};
+		39F8C2182F1579F7006D5A90 /* LLMCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LLMCore;
+		};
+		39F8C6812F157A95006D5A90 /* LLMCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 39F8C2172F1579F6006D5A90 /* XCLocalSwiftPackageReference "../ChocoLLM/LLMCore" */;
+			productName = LLMCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 

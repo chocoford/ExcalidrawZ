@@ -16,6 +16,8 @@ import ChocofordUI
 #if os(macOS) && !APP_STORE
 import Sparkle
 #endif
+import LLMCore
+import LLMKit
 
 extension Notification.Name {
     static let shouldHandleImport = Notification.Name("ShouldHandleImport")
@@ -25,6 +27,22 @@ extension Notification.Name {
     static let toggleSidebar = Notification.Name("ToggleSidebar")
     static let toggleInspector = Notification.Name("ToggleInspector")
     static let toggleShare = Notification.Name("ToggleShare")
+}
+
+extension LLMClient {
+#if DEBUG
+    static let shared = LLMClient(
+        authProvider: .xcode(bundleID: "com.chocoford.ExcalidrawZ-Debug"),
+        uploadProvider: .default,
+        uploadPolicy: .automatic
+    )
+#else
+    static let shared = LLMClient(
+        authProvider: .appStore(bundleID: "com.chocoford.Excalidraw", ascAppID: 6754812067),
+        uploadProvider: .default,
+        uploadPolicy: .automatic
+    )
+#endif
 }
 
 @main
@@ -87,6 +105,35 @@ struct ExcalidrawZApp: App {
                 }
             }
         }
+        
+        // Configure LLMKit
+        // let llmPersistenceProvider = LLMPersistenceProvider()
+
+        // Setup tool registry with basic tools
+        let toolRegistry = ToolRegistry()
+        Task {
+            await toolRegistry.register([
+                WebSearchTool(client: .shared),
+                WebFetchTool(),
+                CalculatorTool(),
+                DateTimeTool(),
+                ReadFileTool(),
+                NavigateCanvasTool(),
+                AdjustElementsTool(),
+                FinalAnswerTool()
+            ])
+        }
+
+        self._llmState = StateObject(wrappedValue: LLMStateObject(
+            llmClient: .shared,
+            toolRegistry: toolRegistry,
+            persistenceProvider: nil // llmPersistenceProvider 测通了再说
+        ))
+
+        Task {
+             await LLMClient.shared.restore(groupID: "914DA4EE")
+        }
+        
     }
     // Can not run agent in a sandboxed app.
     // let service = SMAppService.agent(plistName: "com.chocoford.excalidraw.ExcalidrawServer.agent.plist")
@@ -98,9 +145,11 @@ struct ExcalidrawZApp: App {
 #if os(macOS) && !APP_STORE
     @StateObject private var updateChecker = UpdateChecker()
 #endif
+    @StateObject private var llmState: LLMStateObject
     
     @State private var isArchiveFilesExporterPresented = false
-    
+
+
     let server = ExcalidrawServer()
     let logger = Logger(label: "ExcalidrawApp")
     
@@ -115,6 +164,7 @@ struct ExcalidrawZApp: App {
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
                 .environmentObject(appPrefernece)
                 .environmentObject(store)
+                .llmProvider(state: llmState, client: .shared)
                 .onAppear {
 #if os(macOS) && !APP_STORE
                     updateChecker.assignUpdater(updater: updaterController.updater)
@@ -238,6 +288,7 @@ struct ExcalidrawZApp: App {
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
                 .environmentObject(appPrefernece)
                 .environmentObject(store)
+                .environmentObject(llmState)
 #if !APP_STORE
                 .environmentObject(updateChecker)
 #endif

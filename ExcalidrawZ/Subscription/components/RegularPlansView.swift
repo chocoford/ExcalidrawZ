@@ -125,18 +125,9 @@ struct PlanCard: View {
 //                    } else {
 //                        roundedRectangle.fill(.accent.opacity(0.4))
 //                    }
-                    if #available(macOS 13.0, iOS 17.0, *) {
-                        roundedRectangle.stroke(.accent)
-                    } else {
-                        roundedRectangle.stroke(.accent)
-                    }
+                    roundedRectangle.stroke(.accent)
                 } else {
-                    
-                    if #available(macOS 13.0, iOS 17.0, *) {
-                        roundedRectangle.stroke(.separator)
-                    } else {
-                        roundedRectangle.stroke(.secondary)
-                    }
+                    roundedRectangle.stroke(.separator)
                 }
             }
             .shadow(color: .accent, radius: isSelected ? 4 : 0)

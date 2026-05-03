@@ -251,7 +251,14 @@ struct ExcalidrawCanvasView: View {
             if newFile?.roomID?.isEmpty == false {
                 // has roomID
             }
-        } else if let newFile {
+            return
+        }
+
+        guard let newFile else { return }
+
+        // Only reload the scene when switching to a different file.
+        if excalidrawCore.previousFileID?.uuidString != newFile.id {
+            excalidrawCore.previousFileID = UUID(uuidString: newFile.id)
             // Switching files within the same WebView session doesn't toggle the
             // WebView-level `isLoading`, so the sync hooked to that signal won't
             // fire. Now that `loadFile` properly awaits Excalidraw's scene

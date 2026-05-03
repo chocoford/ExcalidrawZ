@@ -9,10 +9,14 @@ import SwiftUI
 
 final class LayoutState: ObservableObject {
     enum InspectorTab: Hashable {
+        case aiChat
         case library
         case history
         case preference
         case search
+#if DEBUG
+        case debug
+#endif
     }
 
     @Published var isSidebarPresented: Bool = true

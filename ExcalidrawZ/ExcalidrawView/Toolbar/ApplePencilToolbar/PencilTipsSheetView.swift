@@ -47,12 +47,9 @@ struct PencilTipsSheetView: View {
                     if toolState.pencilInteractionMode == .fingerSelect {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color.accentColor.opacity(0.2))
-                    } else if #available(iOS 17.0, macOS 13.0, *) {
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(.separator)
                     } else {
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(.secondary)
+                            .stroke(.separator)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -92,12 +89,9 @@ struct PencilTipsSheetView: View {
                     if toolState.pencilInteractionMode == .fingerMove {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color.accentColor.opacity(0.2))
-                    } else if #available(iOS 17.0, macOS 13.0, *) {
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(.separator)
                     } else {
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(.secondary)
+                            .stroke(.separator)
                     }
                 }
                 .contentShape(Rectangle())

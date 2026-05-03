@@ -52,6 +52,19 @@ struct ExcalidrawTrailingControls: View {
                 )
                 .disabled(historyDisabled)
 
+                InspectorTabButton(
+                    tab: .aiChat,
+                    icon: .sparklesSquareFilledOnSquare,
+                    title: "AI Chat"
+                )
+
+#if DEBUG
+                InspectorTabButton(
+                    tab: .debug,
+                    icon: .ladybug,
+                    title: "Debug"
+                )
+#endif
             }
             .padding(.top, 16)
             .padding(.trailing, 8)

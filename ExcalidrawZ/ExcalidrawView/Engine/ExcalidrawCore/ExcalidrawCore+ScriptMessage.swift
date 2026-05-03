@@ -82,10 +82,45 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                 case .didPenDown:
                     self.parent?.toolState.inPenMode = true
                     NotificationCenter.default.post(name: .didPencilConnected, object: nil)
-                case .didSelectElements:
-                    break
+                case .didSelectElements(let message):
+                    DispatchQueue.main.async {
+                        self.updateSelectedElementIDs(message.data.map(\.id))
+                    }
                 case .didUnselectAllElements:
+                    DispatchQueue.main.async {
+                        self.clearSelectedElementIDs()
+                    }
+                case .onElementsChanged:
                     break
+                case .onCameraChanged(let message):
+                    DispatchQueue.main.async {
+                        self.updateCameraState(message.data)
+                    }
+                case .onAICameraSessionStarted(let message):
+                    DispatchQueue.main.async {
+                        self.updateAICameraSession(message.data)
+                        self.aiCameraEventSink?.aiCameraSessionDidStart(message.data)
+                    }
+                case .onAICameraSessionUpdated(let message):
+                    DispatchQueue.main.async {
+                        self.updateAICameraSession(message.data)
+                        self.aiCameraEventSink?.aiCameraSessionDidUpdate(message.data)
+                    }
+                case .onAICameraSessionInterrupted(let message):
+                    DispatchQueue.main.async {
+                        self.updateAICameraSession(message.data)
+                        self.aiCameraEventSink?.aiCameraSessionDidInterrupt(message.data)
+                    }
+                case .onAICameraSessionSettled(let message):
+                    DispatchQueue.main.async {
+                        self.updateAICameraSession(message.data)
+                        self.aiCameraEventSink?.aiCameraSessionDidSettle(message.data)
+                    }
+                case .onAICameraSessionEnded(let message):
+                    DispatchQueue.main.async {
+                        self.updateAICameraSession(message.data)
+                        self.aiCameraEventSink?.aiCameraSessionDidEnd(message.data)
+                    }
                     
                 // Collab
                 case .didOpenLiveCollaboration(let message):
@@ -427,6 +462,13 @@ extension ExcalidrawCore {
         case didPenDown
         case didSelectElements
         case didUnselectAllElements
+        case onElementsChanged
+        case onCameraChanged
+        case onAICameraSessionStarted
+        case onAICameraSessionUpdated
+        case onAICameraSessionInterrupted
+        case onAICameraSessionSettled
+        case onAICameraSessionEnded
 
         // Collab
         case didOpenLiveCollaboration
@@ -461,6 +503,13 @@ extension ExcalidrawCore {
         case didPenDown
         case didSelectElements(DidSelectElementsMessage)
         case didUnselectAllElements
+        case onElementsChanged(ElementsChangedMessage)
+        case onCameraChanged(CameraChangedMessage)
+        case onAICameraSessionStarted(AICameraSessionMessage)
+        case onAICameraSessionUpdated(AICameraSessionMessage)
+        case onAICameraSessionInterrupted(AICameraSessionMessage)
+        case onAICameraSessionSettled(AICameraSessionMessage)
+        case onAICameraSessionEnded(AICameraSessionMessage)
 
         // Collab
         case didOpenLiveCollaboration(DidOpenLiveCollaborationMessage)
@@ -517,6 +566,20 @@ extension ExcalidrawCore {
                     self = .didSelectElements(try DidSelectElementsMessage(from: decoder))
                 case .didUnselectAllElements:
                     self = .didUnselectAllElements
+                case .onElementsChanged:
+                    self = .onElementsChanged(try ElementsChangedMessage(from: decoder))
+                case .onCameraChanged:
+                    self = .onCameraChanged(try CameraChangedMessage(from: decoder))
+                case .onAICameraSessionStarted:
+                    self = .onAICameraSessionStarted(try AICameraSessionMessage(from: decoder))
+                case .onAICameraSessionUpdated:
+                    self = .onAICameraSessionUpdated(try AICameraSessionMessage(from: decoder))
+                case .onAICameraSessionInterrupted:
+                    self = .onAICameraSessionInterrupted(try AICameraSessionMessage(from: decoder))
+                case .onAICameraSessionSettled:
+                    self = .onAICameraSessionSettled(try AICameraSessionMessage(from: decoder))
+                case .onAICameraSessionEnded:
+                    self = .onAICameraSessionEnded(try AICameraSessionMessage(from: decoder))
                     
                 // Collab
                 case .didOpenLiveCollaboration:
@@ -552,6 +615,14 @@ extension ExcalidrawCore {
     struct StateChangedMessage: AnyExcalidrawZMessage {
         var event: String
         var data: StateChangedMessageData
+    }
+    struct CameraChangedMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: CameraState
+    }
+    struct AICameraSessionMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: AICameraSessionInfo
     }
     struct StateChangedMessageData: Codable {
         var state: ExcalidrawState?
@@ -710,6 +781,15 @@ extension ExcalidrawCore {
     struct DidSelectElementsMessage: AnyExcalidrawZMessage {
         var event: String
         var data: [ExcalidrawElement]
+    }
+
+    struct ElementsChangedMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: ElementsChangedMessageData
+    }
+
+    struct ElementsChangedMessageData: Codable {
+        var count: Int
     }
 
     struct OnDropPDFMessage: AnyExcalidrawZMessage {

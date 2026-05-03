@@ -1,0 +1,208 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AdjustElementsToolInput",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "default": "1"
+    },
+    "dryRun": {
+      "type": "boolean",
+      "default": false
+    },
+    "ops": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/operation"
+      }
+    }
+  },
+  "required": [
+    "ops"
+  ],
+  "definitions": {
+    "operation": {
+      "oneOf": [
+        { "$ref": "#/definitions/addOp" },
+        { "$ref": "#/definitions/updateOp" },
+        { "$ref": "#/definitions/moveOp" },
+        { "$ref": "#/definitions/resizeOp" },
+        { "$ref": "#/definitions/deleteOp" }
+      ]
+    },
+    "addOp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": { "const": "add" },
+        "element": { "$ref": "#/definitions/elementSkeleton" },
+        "place": { "$ref": "#/definitions/placeHint" }
+      },
+      "required": [
+        "op",
+        "element"
+      ]
+    },
+    "updateOp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": { "const": "update" },
+        "id": { "type": "string" },
+        "patch": { "$ref": "#/definitions/elementPatch" }
+      },
+      "required": [
+        "op",
+        "id",
+        "patch"
+      ]
+    },
+    "moveOp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": { "const": "move" },
+        "id": { "type": "string" },
+        "dx": { "type": "number" },
+        "dy": { "type": "number" }
+      },
+      "required": [
+        "op",
+        "id",
+        "dx",
+        "dy"
+      ]
+    },
+    "resizeOp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": { "const": "resize" },
+        "id": { "type": "string" },
+        "width": { "type": "number", "minimum": 0 },
+        "height": { "type": "number", "minimum": 0 },
+        "dw": { "type": "number" },
+        "dh": { "type": "number" },
+        "anchor": {
+          "type": "string",
+          "enum": [
+            "center",
+            "topLeft",
+            "topRight",
+            "bottomLeft",
+            "bottomRight"
+          ]
+        }
+      },
+      "required": [
+        "op",
+        "id"
+      ],
+      "anyOf": [
+        { "required": [ "width" ] },
+        { "required": [ "height" ] },
+        { "required": [ "dw" ] },
+        { "required": [ "dh" ] }
+      ]
+    },
+    "deleteOp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": { "const": "delete" },
+        "id": { "type": "string" }
+      },
+      "required": [
+        "op",
+        "id"
+      ]
+    },
+    "elementSkeleton": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": [
+            "rectangle",
+            "ellipse",
+            "text"
+          ]
+        },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number", "minimum": 0 },
+        "height": { "type": "number", "minimum": 0 },
+        "text": { "type": "string" },
+        "label": { "type": "string" },
+        "stylePreset": {
+          "type": "string",
+          "enum": [
+            "default",
+            "accent",
+            "note"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "placeHint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "relativeToId": { "type": "string" },
+        "position": {
+          "type": "string",
+          "enum": [
+            "right",
+            "left",
+            "above",
+            "below",
+            "center",
+            "inside"
+          ]
+        },
+        "gap": { "type": "number", "minimum": 0 }
+      },
+      "required": [
+        "relativeToId",
+        "position"
+      ]
+    },
+    "elementPatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "text": { "type": "string" },
+        "label": { "type": "string" },
+        "bounds": { "$ref": "#/definitions/boundsPatch" },
+        "stylePreset": {
+          "type": "string",
+          "enum": [
+            "default",
+            "accent",
+            "note"
+          ]
+        }
+      }
+    },
+    "boundsPatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number", "minimum": 0 },
+        "height": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}
