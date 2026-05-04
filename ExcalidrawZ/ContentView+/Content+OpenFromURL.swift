@@ -179,7 +179,7 @@ struct OpenFromURLModifier: ViewModifier {
                     self.webViewIsLoadingCancellable = fileState.excalidrawWebCoordinator?.$isLoading.sink { isLoading in
                         Task {
                             try? await Task.sleep(nanoseconds: UInt64(1e+9 * 2.3))
-                            try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
+                            _ = try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
                                 imageData: imageSendToNewFile.0,
                                 type: imageSendToNewFile.1 == .png ? "png" : "svg+xml"
                             )
@@ -188,7 +188,7 @@ struct OpenFromURLModifier: ViewModifier {
                     }
                 } else {
                     try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
-                    try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
+                    _ = try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
                         imageData: imageSendToNewFile.0,
                         type: imageSendToNewFile.1 == .png ? "png" : "svg+xml"
                     )

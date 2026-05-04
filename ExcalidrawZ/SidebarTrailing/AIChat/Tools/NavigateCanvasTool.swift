@@ -74,8 +74,8 @@ struct NavigateCanvasTool: Tool {
         "Navigate the Excalidraw canvas viewport by reading or changing camera position and zoom."
     }
 
-    var parameters: ToolParameters {
-        ToolParameters(
+    var inputSchema: ToolInputSchema {
+        .parameters(ToolParameters(
             properties: [
                 "action": ParameterProperty(
                     type: "string",
@@ -103,10 +103,10 @@ struct NavigateCanvasTool: Tool {
                 )
             ],
             required: ["action"]
-        )
+        ))
     }
 
-    func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> String {
+    func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         guard let data = input.data(using: .utf8) else {
             throw ToolError.invalidInput("Invalid input format. Expected JSON string.")
         }
@@ -136,7 +136,7 @@ struct NavigateCanvasTool: Tool {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         let encoded = try encoder.encode(output)
-        return String(data: encoded, encoding: .utf8) ?? ""
+        return .text(String(data: encoded, encoding: .utf8) ?? "")
     }
 }
 

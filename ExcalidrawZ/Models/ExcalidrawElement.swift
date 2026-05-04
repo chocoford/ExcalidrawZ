@@ -206,5 +206,30 @@ extension ExcalidrawElement {
                 excalidrawIframeLikeElement.height
         }
     }
+
+    var isDeleted: Bool {
+        switch self {
+            case .generic(let excalidrawGenericElement):
+                excalidrawGenericElement.isDeleted
+            case .text(let excalidrawTextElement):
+                excalidrawTextElement.isDeleted
+            case .linear(let excalidrawLinearElement):
+                excalidrawLinearElement.isDeleted
+            case .arrow(let excalidrawArrowElement):
+                excalidrawArrowElement.isDeleted
+            case .freeDraw(let excalidrawFreeDrawElement):
+                excalidrawFreeDrawElement.isDeleted
+            case .draw(let excalidrawDrawElement):
+                excalidrawDrawElement.isDeleted
+            case .image(let excalidrawImageElement):
+                excalidrawImageElement.isDeleted
+            case .pdf(let excalidrawPdfElement):
+                excalidrawPdfElement.isDeleted
+            case .frameLike(let excalidrawFrameElement):
+                excalidrawFrameElement.isDeleted
+            case .iframeLike(let excalidrawIframeLikeElement):
+                excalidrawIframeLikeElement.isDeleted
+        }
+    }
 }
 

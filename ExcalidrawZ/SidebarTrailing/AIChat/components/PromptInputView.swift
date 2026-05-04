@@ -86,6 +86,9 @@ struct PromptInputView: View {
                     text: $inputText,
                     placeholder: Text("Type a message...")
                 )
+                .keyDownHandler(.custom(key: .enter, with: .shift, action: {
+                    inputText += "\n"
+                }))
                 .focused($isInputFocused)
             } else {
                 TextEditor(text: $inputText)
@@ -162,9 +165,9 @@ struct PromptInputView: View {
                     try await llmState.createConversation(
                         id: newConversationID,
                         type: .custom("File"),
-                        model: agentConfig.defaultModel,
+                        model: .claudeSonnet4_6,
                         agentConfig: .react(
-                            tools: ["web_search", "web_fetch", "read_file", "calculator", "datetime", "adjust_elements", "final_answer"],
+                            tools: ["web_search", "web_fetch", "read_file", "read_canvas_image", "calculator", "datetime", "adjust_elements", "final_answer"],
                             agentID: agentID
                         ),
                         messages: [.content(.init(role: .user, content: prompt))],
@@ -173,7 +176,7 @@ struct PromptInputView: View {
                 } else {
                     try await llmState.sendMessage(
                         to: self.conversationID!,
-                        model: agentConfig.defaultModel,
+                        model: .claudeSonnet4_6,
                         message: .content(.init(role: .user, content: prompt)),
                         context: context
                     )

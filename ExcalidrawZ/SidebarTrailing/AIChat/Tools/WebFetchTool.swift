@@ -15,8 +15,8 @@ struct WebFetchTool: Tool {
         "Fetch and retrieve content from a specific URL. Use this when you have an exact URL to access."
     }
 
-    var parameters: ToolParameters {
-        ToolParameters(
+    var inputSchema: ToolInputSchema {
+        .parameters(ToolParameters(
             properties: [
                 "url": ParameterProperty(
                     type: "string",
@@ -24,10 +24,10 @@ struct WebFetchTool: Tool {
                 )
             ],
             required: ["url"]
-        )
+        ))
     }
 
-    func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> String {
+    func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         guard let inputData = input.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: inputData) as? [String: Any],
               let urlString = json["url"] as? String,
@@ -63,10 +63,10 @@ struct WebFetchTool: Tool {
             // Limit content length
             let maxLength = 2000
             if stripped.count > maxLength {
-                return String(stripped.prefix(maxLength)) + "..."
+                return .text(String(stripped.prefix(maxLength)) + "...")
             }
 
-            return stripped
+            return .text(stripped)
         } catch let error as ToolError {
             throw error
         } catch {

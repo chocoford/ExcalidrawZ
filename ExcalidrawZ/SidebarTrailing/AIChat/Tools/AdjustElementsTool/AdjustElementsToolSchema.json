@@ -130,13 +130,46 @@
           "enum": [
             "rectangle",
             "ellipse",
-            "text"
-          ]
+            "diamond",
+            "text",
+            "line",
+            "arrow"
+          ],
+          "description": "Element family. rectangle/ellipse/diamond use width/height. text uses text/label and font sizing. line/arrow use endX+endY OR (arrow only) fromId+toId for binding."
         },
         "x": { "type": "number" },
         "y": { "type": "number" },
         "width": { "type": "number", "minimum": 0 },
         "height": { "type": "number", "minimum": 0 },
+        "endX": {
+          "type": "number",
+          "description": "line/arrow only — absolute x coordinate of the end point. Ignored when fromId+toId are present."
+        },
+        "endY": {
+          "type": "number",
+          "description": "line/arrow only — absolute y coordinate of the end point."
+        },
+        "fromId": {
+          "type": "string",
+          "description": "arrow only — bind start to this element (centered, edge-orbit)."
+        },
+        "toId": {
+          "type": "string",
+          "description": "arrow only — bind end to this element (centered, edge-orbit)."
+        },
+        "arrowhead": {
+          "type": "string",
+          "enum": ["arrow", "triangle", "triangle_outline", "diamond", "diamond_outline", "dot", "circle", "circle_outline", "bar"],
+          "description": "arrow only — end arrowhead style. Default: arrow."
+        },
+        "elbowed": {
+          "type": "boolean",
+          "description": "arrow only — use right-angle (elbow) routing. Default: false."
+        },
+        "containerId": {
+          "type": "string",
+          "description": "text only — bind this text inside an existing rectangle/ellipse/diamond as its label. Position is auto-centered inside the container."
+        },
         "text": { "type": "string" },
         "label": { "type": "string" },
         "stylePreset": {
@@ -190,6 +223,10 @@
             "accent",
             "note"
           ]
+        },
+        "containerId": {
+          "type": ["string", "null"],
+          "description": "text only — bind to / unbind from a container shape. null detaches."
         }
       }
     },

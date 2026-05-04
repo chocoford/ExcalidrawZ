@@ -17,30 +17,30 @@ struct AdjustElementsTool: Tool {
     var name: String { "adjust_elements" }
 
     var description: String {
-        "Apply a batch of safe Excalidraw edits using a small DSL. Prefer text, rectangle, and ellipse with text, x/y, width/height, relative placement, and stylePreset."
+        """
+        Apply a batch of safe Excalidraw edits using a small DSL.
+
+        Supported element types: text, rectangle, ellipse, diamond, line, arrow.
+
+        Common usage:
+        • Shapes (rectangle/ellipse/diamond): x/y + width/height, optional stylePreset.
+        • Text: text/label content; pass `containerId` to embed it as a label inside an existing shape (auto-centered).
+        • Lines: `endX`/`endY` for endpoint, or width/height as deltas.
+        • Arrows: `fromId` and/or `toId` to bind endpoints to existing shapes (centered, edge-orbit). Otherwise use `endX`/`endY`. Optional `arrowhead`, `elbowed`.
+
+        Ops: `add` / `update` (patch text/bounds/style/containerId) / `move` (dx/dy) / `resize` (width/height absolute or dw/dh delta) / `delete`.
+        """
     }
 
-    var parameters: ToolParameters {
-        ToolParameters(
-            properties: [
-                "version": ParameterProperty(
-                    type: "string",
-                    description: "Schema version (default: 1)."
-                ),
-                "dryRun": ParameterProperty(
-                    type: "boolean",
-                    description: "If true, validate and hydrate only without applying changes."
-                ),
-                "ops": ParameterProperty(
-                    type: "array",
-                    description: "Operations to apply (see schema.json)."
-                )
-            ],
-            required: ["ops"]
-        )
+    /// Schema lives in a JSON file shipped with the bundle. The shape uses
+    /// `oneOf` over op variants and other JSON Schema features that don't map
+    /// cleanly onto the flat `ToolParameters` builder, so we keep it as JSON
+    /// and let `.bundleResource` load it at resolve time.
+    var inputSchema: ToolInputSchema {
+        .bundleResource(name: "AdjustElementsToolSchema")
     }
 
-    func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> String {
+    func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         guard let data = input.data(using: .utf8) else {
             throw ToolError.invalidInput("Invalid input format. Expected JSON string.")
         }
@@ -88,7 +88,7 @@ struct AdjustElementsTool: Tool {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         let encoded = try encoder.encode(output)
-        return String(data: encoded, encoding: .utf8) ?? ""
+        return .text(String(data: encoded, encoding: .utf8) ?? "")
     }
 }
 
@@ -266,8 +266,13 @@ private struct ElementSkeleton: Decodable {
     let height: Double?
     let text: String?
     let label: String?
+    let endX: Double?
+    let endY: Double?
     let fromId: String?
     let toId: String?
+    let arrowhead: String?
+    let elbowed: Bool?
+    let containerId: String?
     let stylePreset: String?
     let style: StylePatch?
 }
@@ -286,6 +291,8 @@ private struct ElementPatch: Decodable {
     let style: StylePatch?
     let locked: Bool?
     let link: String?
+    /// `nil` = no change. `.null` = unbind. `.value(id)` = bind text to that container.
+    let containerId: Nullable<String>?
 }
 
 private struct BoundsPatch: Decodable {
@@ -315,6 +322,26 @@ private struct AdjustmentResult {
     let deletedElementIds: [String]
 }
 
+/// Result of hydrating an `add` op: the new element plus any boundElements
+/// entries that need to be appended to existing parent elements (text→container,
+/// arrow→source/target shapes).
+private struct AddOpResult {
+    struct ParentBinding {
+        let parentID: String
+        let entry: ExcalidrawBoundElement
+    }
+    let element: ExcalidrawElement
+    let parentBindings: [ParentBinding]
+}
+
+/// Result of patching an element: the full updated elements array plus the IDs
+/// of any other elements that got mutated as a side effect (eg the previous
+/// container losing its `boundElements` entry when text rebinds).
+private struct PatchResult {
+    let elements: [ExcalidrawElement]
+    let touchedParentIDs: [String]
+}
+
 private struct AdjustElementsMiddleware {
     private let file: ExcalidrawFile
 
@@ -335,14 +362,29 @@ private struct AdjustElementsMiddleware {
         for op in payload.ops {
             switch op {
                 case .add(let addOp):
-                    let element = try hydrateAddOp(addOp, existingElements: elements)
-                    elements.append(element)
-                    createdElementIds.append(element.id)
+                    let result = try hydrateAddOp(addOp, existingElements: elements)
+                    elements.append(result.element)
+                    createdElementIds.append(result.element.id)
+                    // Apply parent boundElements mutations (text→container, arrow→endpoints).
+                    for binding in result.parentBindings {
+                        let parentIdx = try indexOfElement(binding.parentID, in: elements)
+                        elements[parentIdx] = appendBoundElement(elements[parentIdx], entry: binding.entry)
+                        if !updatedElementIds.contains(binding.parentID) {
+                            updatedElementIds.append(binding.parentID)
+                        }
+                    }
 
                 case .update(let updateOp):
-                    let index = try indexOfElement(updateOp.id, in: elements)
-                    elements[index] = try patchElement(elements[index], patch: updateOp.patch)
+                    let result = try patchElement(
+                        elements,
+                        targetIndex: try indexOfElement(updateOp.id, in: elements),
+                        patch: updateOp.patch
+                    )
+                    elements = result.elements
                     updatedElementIds.append(updateOp.id)
+                    for parentID in result.touchedParentIDs where !updatedElementIds.contains(parentID) {
+                        updatedElementIds.append(parentID)
+                    }
 
                 case .move(let moveOp):
                     let index = try indexOfElement(moveOp.id, in: elements)
@@ -387,102 +429,361 @@ private extension AdjustElementsMiddleware {
         return index
     }
 
-    func hydrateAddOp(_ op: AddOp, existingElements: [ExcalidrawElement]) throws -> ExcalidrawElement {
+    func hydrateAddOp(_ op: AddOp, existingElements: [ExcalidrawElement]) throws -> AddOpResult {
         let type = try parseSupportedType(op.element.type)
         let style = hydratedStylePreset(op.element.stylePreset).merged(with: op.element.style)
-        let origin = resolveOrigin(for: op.element, place: op.place, existingElements: existingElements)
         let id = op.element.id ?? UUID().uuidString
 
         switch type {
             case .text:
-                let text = (op.element.text ?? op.element.label ?? "Text").trimmingCharacters(in: .whitespacesAndNewlines)
-                let fontSize = style.fontSize ?? 20
-                let width = op.element.width ?? defaultTextWidth(text: text, fontSize: fontSize)
-                let height = op.element.height ?? defaultTextHeight(text: text, fontSize: fontSize)
-                return .text(
-                    ExcalidrawTextElement(
-                        type: .text,
-                        id: id,
-                        x: origin.x,
-                        y: origin.y,
-                        strokeColor: style.strokeColor ?? "#1e1e1e",
-                        backgroundColor: style.backgroundColor ?? "transparent",
-                        fillStyle: .solid,
-                        strokeWidth: style.strokeWidth ?? 1,
-                        strokeStyle: .solid,
-                        roundness: nil,
-                        roughness: style.roughness ?? 1,
-                        opacity: style.opacity ?? 100,
-                        width: width,
-                        height: height,
-                        angle: 0,
-                        seed: randomSeed(),
-                        version: 1,
-                        versionNonce: randomNonce(),
-                        index: nil,
-                        isDeleted: false,
-                        groupIds: [],
-                        frameId: nil,
-                        boundElements: [],
-                        updated: nowMillis(),
-                        link: nil,
-                        locked: false,
-                        customData: nil,
-                        fontSize: fontSize,
-                        fontFamily: .int(Int(style.fontFamily ?? 1)),
-                        text: text,
-                        textAlign: parseTextAlign(style.textAlign) ?? .left,
-                        verticalAlign: parseVerticalAlign(style.verticalAlign) ?? .top,
-                        containerId: nil,
-                        originalText: text,
-                        autoResize: true,
-                        lineHeight: 1.25
-                    )
-                )
-
-            case .rectangle, .ellipse:
-                let width = op.element.width ?? 160
-                let height = op.element.height ?? 100
-                return .generic(
-                    ExcalidrawGenericElement(
-                        type: type,
-                        id: id,
-                        x: origin.x,
-                        y: origin.y,
-                        strokeColor: style.strokeColor ?? "#1e1e1e",
-                        backgroundColor: style.backgroundColor ?? "transparent",
-                        fillStyle: .solid,
-                        strokeWidth: style.strokeWidth ?? 2,
-                        strokeStyle: .solid,
-                        roundness: type == .rectangle ? ExcalidrawRoundness(type: .adaptiveRadius, value: nil) : nil,
-                        roughness: style.roughness ?? 1,
-                        opacity: style.opacity ?? 100,
-                        width: width,
-                        height: height,
-                        angle: 0,
-                        seed: randomSeed(),
-                        version: 1,
-                        versionNonce: randomNonce(),
-                        index: nil,
-                        isDeleted: false,
-                        groupIds: [],
-                        frameId: nil,
-                        boundElements: [],
-                        updated: nowMillis(),
-                        link: nil,
-                        locked: false,
-                        customData: nil,
-                        strokeSharpness: nil
-                    )
-                )
-
+                return try hydrateTextAdd(op: op, id: id, style: style, existingElements: existingElements)
+            case .rectangle, .ellipse, .diamond:
+                return hydrateGenericAdd(op: op, type: type, id: id, style: style, existingElements: existingElements)
+            case .line:
+                return try hydrateLineAdd(op: op, id: id, style: style, existingElements: existingElements)
+            case .arrow:
+                return try hydrateArrowAdd(op: op, id: id, style: style, existingElements: existingElements)
             default:
                 throw AdjustmentError(message: "Unsupported add type: \(type.rawValue)")
         }
     }
 
-    func patchElement(_ element: ExcalidrawElement, patch: ElementPatch) throws -> ExcalidrawElement {
+    func hydrateTextAdd(
+        op: AddOp,
+        id: String,
+        style: StylePatch,
+        existingElements: [ExcalidrawElement]
+    ) throws -> AddOpResult {
+        let text = (op.element.text ?? op.element.label ?? "Text").trimmingCharacters(in: .whitespacesAndNewlines)
+        let fontSize = style.fontSize ?? 20
+        let width = op.element.width ?? defaultTextWidth(text: text, fontSize: fontSize)
+        let height = op.element.height ?? defaultTextHeight(text: text, fontSize: fontSize)
+
+        var origin: (x: Double, y: Double)
+        var containerId: String? = nil
+        var parentBindings: [AddOpResult.ParentBinding] = []
+
+        if let cid = op.element.containerId {
+            // Bind text to a container shape — center it inside.
+            guard let container = existingElements.first(where: { $0.id == cid }) else {
+                throw AdjustmentError(message: "Container \(cid) not found.")
+            }
+            guard case .generic = container else {
+                throw AdjustmentError(message: "Container \(cid) must be rectangle/ellipse/diamond.")
+            }
+            origin = (
+                container.x + (container.width - width) / 2,
+                container.y + (container.height - height) / 2
+            )
+            containerId = cid
+            parentBindings.append(.init(parentID: cid, entry: ExcalidrawBoundElement(id: id, type: .text)))
+        } else {
+            origin = resolveOrigin(for: op.element, place: op.place, existingElements: existingElements)
+        }
+
+        let element = ExcalidrawTextElement(
+            type: .text,
+            id: id,
+            x: origin.x,
+            y: origin.y,
+            strokeColor: style.strokeColor ?? "#1e1e1e",
+            backgroundColor: style.backgroundColor ?? "transparent",
+            fillStyle: .solid,
+            strokeWidth: style.strokeWidth ?? 1,
+            strokeStyle: .solid,
+            roundness: nil,
+            roughness: style.roughness ?? 1,
+            opacity: style.opacity ?? 100,
+            width: width,
+            height: height,
+            angle: 0,
+            seed: randomSeed(),
+            version: 1,
+            versionNonce: randomNonce(),
+            index: nil,
+            isDeleted: false,
+            groupIds: [],
+            frameId: nil,
+            boundElements: [],
+            updated: nowMillis(),
+            link: nil,
+            locked: false,
+            customData: nil,
+            fontSize: fontSize,
+            fontFamily: .int(Int(style.fontFamily ?? 1)),
+            text: text,
+            textAlign: parseTextAlign(style.textAlign) ?? (containerId != nil ? .center : .left),
+            verticalAlign: parseVerticalAlign(style.verticalAlign) ?? (containerId != nil ? .middle : .top),
+            containerId: containerId,
+            originalText: text,
+            autoResize: true,
+            lineHeight: 1.25
+        )
+        return AddOpResult(element: .text(element), parentBindings: parentBindings)
+    }
+
+    func hydrateGenericAdd(
+        op: AddOp,
+        type: ExcalidrawElementType,
+        id: String,
+        style: StylePatch,
+        existingElements: [ExcalidrawElement]
+    ) -> AddOpResult {
+        let width = op.element.width ?? 160
+        let height = op.element.height ?? 100
+        let origin = resolveOrigin(for: op.element, place: op.place, existingElements: existingElements)
+
+        let element = ExcalidrawGenericElement(
+            type: type,
+            id: id,
+            x: origin.x,
+            y: origin.y,
+            strokeColor: style.strokeColor ?? "#1e1e1e",
+            backgroundColor: style.backgroundColor ?? "transparent",
+            fillStyle: .solid,
+            strokeWidth: style.strokeWidth ?? 2,
+            strokeStyle: .solid,
+            roundness: type == .rectangle ? ExcalidrawRoundness(type: .adaptiveRadius, value: nil) : nil,
+            roughness: style.roughness ?? 1,
+            opacity: style.opacity ?? 100,
+            width: width,
+            height: height,
+            angle: 0,
+            seed: randomSeed(),
+            version: 1,
+            versionNonce: randomNonce(),
+            index: nil,
+            isDeleted: false,
+            groupIds: [],
+            frameId: nil,
+            boundElements: [],
+            updated: nowMillis(),
+            link: nil,
+            locked: false,
+            customData: nil,
+            strokeSharpness: nil
+        )
+        return AddOpResult(element: .generic(element), parentBindings: [])
+    }
+
+    func hydrateLineAdd(
+        op: AddOp,
+        id: String,
+        style: StylePatch,
+        existingElements: [ExcalidrawElement]
+    ) throws -> AddOpResult {
+        let endpoints = resolveLinearEndpoints(op: op, existingElements: existingElements)
+        let element = ExcalidrawLinearElement(
+            id: id,
+            x: endpoints.startX,
+            y: endpoints.startY,
+            strokeColor: style.strokeColor ?? "#1e1e1e",
+            backgroundColor: style.backgroundColor ?? "transparent",
+            fillStyle: .solid,
+            strokeWidth: style.strokeWidth ?? 2,
+            strokeStyle: .solid,
+            roundness: nil,
+            roughness: style.roughness ?? 1,
+            opacity: style.opacity ?? 100,
+            width: abs(endpoints.dx),
+            height: abs(endpoints.dy),
+            angle: 0,
+            seed: randomSeed(),
+            version: 1,
+            versionNonce: randomNonce(),
+            index: nil,
+            isDeleted: false,
+            groupIds: [],
+            frameId: nil,
+            boundElements: [],
+            updated: nowMillis(),
+            link: nil,
+            locked: false,
+            customData: nil,
+            type: .line,
+            points: [.zero, CGPoint(x: endpoints.dx, y: endpoints.dy)],
+            lastCommittedPoint: nil,
+            startBinding: nil,
+            endBinding: nil,
+            startArrowhead: nil,
+            endArrowhead: nil
+        )
+        return AddOpResult(element: .linear(element), parentBindings: [])
+    }
+
+    func hydrateArrowAdd(
+        op: AddOp,
+        id: String,
+        style: StylePatch,
+        existingElements: [ExcalidrawElement]
+    ) throws -> AddOpResult {
+        var startX: Double, startY: Double
+        var endX: Double, endY: Double
+        var startBinding: PointBinding? = nil
+        var endBinding: PointBinding? = nil
+        var parentBindings: [AddOpResult.ParentBinding] = []
+
+        if let fromId = op.element.fromId {
+            guard let source = existingElements.first(where: { $0.id == fromId }) else {
+                throw AdjustmentError(message: "fromId \(fromId) not found.")
+            }
+            startX = source.x + source.width / 2
+            startY = source.y + source.height / 2
+            startBinding = .fixed(FixedPointBinding(elementID: fromId, fixedPoint: [0.5, 0.5], mode: .orbit))
+            parentBindings.append(.init(parentID: fromId, entry: ExcalidrawBoundElement(id: id, type: .arrow)))
+        } else if let x = op.element.x, let y = op.element.y {
+            startX = x; startY = y
+        } else {
+            let origin = resolveOrigin(for: op.element, place: op.place, existingElements: existingElements)
+            startX = origin.x; startY = origin.y
+        }
+
+        if let toId = op.element.toId {
+            guard let target = existingElements.first(where: { $0.id == toId }) else {
+                throw AdjustmentError(message: "toId \(toId) not found.")
+            }
+            endX = target.x + target.width / 2
+            endY = target.y + target.height / 2
+            endBinding = .fixed(FixedPointBinding(elementID: toId, fixedPoint: [0.5, 0.5], mode: .orbit))
+            parentBindings.append(.init(parentID: toId, entry: ExcalidrawBoundElement(id: id, type: .arrow)))
+        } else if let ex = op.element.endX, let ey = op.element.endY {
+            endX = ex; endY = ey
+        } else {
+            // Default short rightward arrow.
+            endX = startX + (op.element.width ?? 100)
+            endY = startY + (op.element.height ?? 0)
+        }
+
+        let dx = endX - startX
+        let dy = endY - startY
+        let arrowhead = parseArrowhead(op.element.arrowhead) ?? .arrow
+        let elbowed = op.element.elbowed ?? false
+
+        let element = ExcalidrawArrowElement(
+            id: id,
+            x: startX,
+            y: startY,
+            strokeColor: style.strokeColor ?? "#1e1e1e",
+            backgroundColor: style.backgroundColor ?? "transparent",
+            fillStyle: .solid,
+            strokeWidth: style.strokeWidth ?? 2,
+            strokeStyle: .solid,
+            roundness: elbowed ? nil : ExcalidrawRoundness(type: .adaptiveRadius, value: nil),
+            roughness: style.roughness ?? 1,
+            opacity: style.opacity ?? 100,
+            width: abs(dx),
+            height: abs(dy),
+            angle: 0,
+            seed: randomSeed(),
+            version: 1,
+            versionNonce: randomNonce(),
+            index: nil,
+            isDeleted: false,
+            groupIds: [],
+            frameId: nil,
+            boundElements: [],
+            updated: nowMillis(),
+            link: nil,
+            locked: false,
+            customData: nil,
+            type: .arrow,
+            points: [.zero, CGPoint(x: dx, y: dy)],
+            lastCommittedPoint: nil,
+            startBinding: startBinding,
+            endBinding: endBinding,
+            startArrowhead: nil,
+            endArrowhead: arrowhead,
+            elbowed: elbowed,
+            fixedSegments: nil,
+            startIsSpecial: nil,
+            endIsSpecial: nil
+        )
+        return AddOpResult(element: .arrow(element), parentBindings: parentBindings)
+    }
+
+    func resolveLinearEndpoints(
+        op: AddOp,
+        existingElements: [ExcalidrawElement]
+    ) -> (startX: Double, startY: Double, dx: Double, dy: Double) {
+        let startX: Double
+        let startY: Double
+        if let x = op.element.x, let y = op.element.y {
+            startX = x; startY = y
+        } else {
+            let origin = resolveOrigin(for: op.element, place: op.place, existingElements: existingElements)
+            startX = origin.x; startY = origin.y
+        }
+        let endX = op.element.endX ?? (startX + (op.element.width ?? 100))
+        let endY = op.element.endY ?? (startY + (op.element.height ?? 0))
+        return (startX, startY, endX - startX, endY - startY)
+    }
+
+    func parseArrowhead(_ raw: String?) -> Arrowhead? {
+        guard let raw else { return nil }
+        return Arrowhead(rawValue: raw)
+    }
+
+    /// Append `entry` to `element.boundElements` (skipping duplicates by id+type).
+    func appendBoundElement(_ element: ExcalidrawElement, entry: ExcalidrawBoundElement) -> ExcalidrawElement {
+        switch element {
+            case .generic(var item):
+                var bound = item.boundElements ?? []
+                if !bound.contains(where: { $0.id == entry.id && $0.type == entry.type }) {
+                    bound.append(entry)
+                    item.boundElements = bound
+                    bump(&item.version, &item.versionNonce, &item.updated)
+                }
+                return .generic(item)
+            case .text(var item):
+                var bound = item.boundElements ?? []
+                if !bound.contains(where: { $0.id == entry.id && $0.type == entry.type }) {
+                    bound.append(entry)
+                    item.boundElements = bound
+                    bump(&item.version, &item.versionNonce, &item.updated)
+                }
+                return .text(item)
+            default:
+                // Linear/arrow can't host bound elements in v1.
+                return element
+        }
+    }
+
+    /// Remove any boundElements entry with the given id from `element`.
+    func removeBoundElement(_ element: ExcalidrawElement, id: String) -> ExcalidrawElement {
+        switch element {
+            case .generic(var item):
+                guard var bound = item.boundElements,
+                      bound.contains(where: { $0.id == id }) else {
+                    return element
+                }
+                bound.removeAll { $0.id == id }
+                item.boundElements = bound
+                bump(&item.version, &item.versionNonce, &item.updated)
+                return .generic(item)
+            case .text(var item):
+                guard var bound = item.boundElements,
+                      bound.contains(where: { $0.id == id }) else {
+                    return element
+                }
+                bound.removeAll { $0.id == id }
+                item.boundElements = bound
+                bump(&item.version, &item.versionNonce, &item.updated)
+                return .text(item)
+            default:
+                return element
+        }
+    }
+
+    func patchElement(
+        _ elements: [ExcalidrawElement],
+        targetIndex: Int,
+        patch: ElementPatch
+    ) throws -> PatchResult {
         let stylePatch = hydratedStylePreset(patch.stylePreset).merged(with: patch.style)
+        var newElements = elements
+        var touchedParents: [String] = []
+        let element = elements[targetIndex]
+
         switch element {
             case .text(var item):
                 if let text = patch.text ?? patch.label {
@@ -522,12 +823,48 @@ private extension AdjustElementsMiddleware {
                 if let link = patch.link {
                     item.link = link
                 }
+
+                // containerId mutation: bind / unbind text → container shape.
+                if let containerPatch = patch.containerId {
+                    let oldContainerID = item.containerId
+                    let newContainerID = containerPatch.value
+                    if oldContainerID != newContainerID {
+                        // Detach from old container.
+                        if let oldID = oldContainerID,
+                           let oldIdx = newElements.firstIndex(where: { $0.id == oldID }) {
+                            newElements[oldIdx] = removeBoundElement(newElements[oldIdx], id: item.id)
+                            touchedParents.append(oldID)
+                        }
+                        // Attach to new container (if any) and recenter inside it.
+                        if let newID = newContainerID {
+                            guard let newIdx = newElements.firstIndex(where: { $0.id == newID }) else {
+                                throw AdjustmentError(message: "Container \(newID) not found.")
+                            }
+                            guard case .generic = newElements[newIdx] else {
+                                throw AdjustmentError(message: "Container \(newID) must be rectangle/ellipse/diamond.")
+                            }
+                            let container = newElements[newIdx]
+                            item.x = container.x + (container.width - item.width) / 2
+                            item.y = container.y + (container.height - item.height) / 2
+                            newElements[newIdx] = appendBoundElement(
+                                newElements[newIdx],
+                                entry: ExcalidrawBoundElement(id: item.id, type: .text)
+                            )
+                            touchedParents.append(newID)
+                        }
+                        item.containerId = newContainerID
+                    }
+                }
+
                 bump(&item.version, &item.versionNonce, &item.updated)
-                return .text(item)
+                newElements[targetIndex] = .text(item)
 
             case .generic(var item):
                 if patch.text != nil || patch.label != nil {
-                    throw AdjustmentError(message: "Text patch is only supported for text elements in v1.")
+                    throw AdjustmentError(message: "Text patch is only supported for text elements.")
+                }
+                if patch.containerId != nil {
+                    throw AdjustmentError(message: "containerId only applies to text elements.")
                 }
                 applyBoundsPatch(&item.x, &item.y, &item.width, &item.height, patch.bounds)
                 applyCommonStylePatch(
@@ -545,11 +882,57 @@ private extension AdjustElementsMiddleware {
                     item.link = link
                 }
                 bump(&item.version, &item.versionNonce, &item.updated)
-                return .generic(item)
+                newElements[targetIndex] = .generic(item)
+
+            case .linear(var item):
+                if patch.text != nil || patch.label != nil || patch.containerId != nil {
+                    throw AdjustmentError(message: "Lines accept only bounds/style patches.")
+                }
+                applyBoundsPatch(&item.x, &item.y, &item.width, &item.height, patch.bounds)
+                applyCommonStylePatch(
+                    strokeColor: &item.strokeColor,
+                    backgroundColor: &item.backgroundColor,
+                    strokeWidth: &item.strokeWidth,
+                    roughness: &item.roughness,
+                    opacity: &item.opacity,
+                    style: stylePatch
+                )
+                if let locked = patch.locked {
+                    item.locked = locked
+                }
+                if let link = patch.link {
+                    item.link = link
+                }
+                bump(&item.version, &item.versionNonce, &item.updated)
+                newElements[targetIndex] = .linear(item)
+
+            case .arrow(var item):
+                if patch.text != nil || patch.label != nil || patch.containerId != nil {
+                    throw AdjustmentError(message: "Arrows accept only bounds/style patches.")
+                }
+                applyBoundsPatch(&item.x, &item.y, &item.width, &item.height, patch.bounds)
+                applyCommonStylePatch(
+                    strokeColor: &item.strokeColor,
+                    backgroundColor: &item.backgroundColor,
+                    strokeWidth: &item.strokeWidth,
+                    roughness: &item.roughness,
+                    opacity: &item.opacity,
+                    style: stylePatch
+                )
+                if let locked = patch.locked {
+                    item.locked = locked
+                }
+                if let link = patch.link {
+                    item.link = link
+                }
+                bump(&item.version, &item.versionNonce, &item.updated)
+                newElements[targetIndex] = .arrow(item)
 
             default:
-                throw AdjustmentError(message: "Only text, rectangle, and ellipse are supported in v1.")
+                throw AdjustmentError(message: "Patch only supports text, rectangle, ellipse, diamond, line, and arrow.")
         }
+
+        return PatchResult(elements: newElements, touchedParentIDs: touchedParents)
     }
 
     func moveElement(_ element: ExcalidrawElement, dx: Double, dy: Double) throws -> ExcalidrawElement {
@@ -564,8 +947,18 @@ private extension AdjustElementsMiddleware {
                 item.y += dy
                 bump(&item.version, &item.versionNonce, &item.updated)
                 return .generic(item)
+            case .linear(var item):
+                item.x += dx
+                item.y += dy
+                bump(&item.version, &item.versionNonce, &item.updated)
+                return .linear(item)
+            case .arrow(var item):
+                item.x += dx
+                item.y += dy
+                bump(&item.version, &item.versionNonce, &item.updated)
+                return .arrow(item)
             default:
-                throw AdjustmentError(message: "Only text, rectangle, and ellipse are supported in v1.")
+                throw AdjustmentError(message: "Move only supports text, rectangle, ellipse, diamond, line, and arrow.")
         }
     }
 
@@ -581,9 +974,34 @@ private extension AdjustElementsMiddleware {
                 item.height = resolvedDimension(current: item.height, absolute: op.height, delta: op.dh)
                 bump(&item.version, &item.versionNonce, &item.updated)
                 return .generic(item)
+            case .linear(var item):
+                let newW = resolvedDimension(current: item.width, absolute: op.width, delta: op.dw)
+                let newH = resolvedDimension(current: item.height, absolute: op.height, delta: op.dh)
+                item.points = scaledPoints(item.points, oldW: item.width, oldH: item.height, newW: newW, newH: newH)
+                item.width = newW
+                item.height = newH
+                bump(&item.version, &item.versionNonce, &item.updated)
+                return .linear(item)
+            case .arrow(var item):
+                let newW = resolvedDimension(current: item.width, absolute: op.width, delta: op.dw)
+                let newH = resolvedDimension(current: item.height, absolute: op.height, delta: op.dh)
+                item.points = scaledPoints(item.points, oldW: item.width, oldH: item.height, newW: newW, newH: newH)
+                item.width = newW
+                item.height = newH
+                bump(&item.version, &item.versionNonce, &item.updated)
+                return .arrow(item)
             default:
-                throw AdjustmentError(message: "Only text, rectangle, and ellipse are supported in v1.")
+                throw AdjustmentError(message: "Resize only supports text, rectangle, ellipse, diamond, line, and arrow.")
         }
+    }
+
+    /// Scale linear points so the bounding box matches `newW × newH`. If a
+    /// dimension was 0 (e.g. straight horizontal line has height = 0), leave
+    /// that axis alone — there's nothing to scale.
+    func scaledPoints(_ points: [Point], oldW: Double, oldH: Double, newW: Double, newH: Double) -> [Point] {
+        let sx = oldW > 0 ? newW / oldW : 1
+        let sy = oldH > 0 ? newH / oldH : 1
+        return points.map { CGPoint(x: $0.x * sx, y: $0.y * sy) }
     }
 
     func markDeleted(_ element: ExcalidrawElement) -> ExcalidrawElement {
@@ -596,6 +1014,14 @@ private extension AdjustElementsMiddleware {
                 item.isDeleted = true
                 bump(&item.version, &item.versionNonce, &item.updated)
                 return .generic(item)
+            case .linear(var item):
+                item.isDeleted = true
+                bump(&item.version, &item.versionNonce, &item.updated)
+                return .linear(item)
+            case .arrow(var item):
+                item.isDeleted = true
+                bump(&item.version, &item.versionNonce, &item.updated)
+                return .arrow(item)
             default:
                 return element
         }
@@ -606,10 +1032,10 @@ private extension AdjustElementsMiddleware {
             throw AdjustmentError(message: "Unsupported element type: \(rawValue)")
         }
         switch type {
-            case .text, .rectangle, .ellipse:
+            case .text, .rectangle, .ellipse, .diamond, .line, .arrow:
                 return type
             default:
-                throw AdjustmentError(message: "Only text, rectangle, and ellipse are supported in v1.")
+                throw AdjustmentError(message: "Supported types: text, rectangle, ellipse, diamond, line, arrow.")
         }
     }
 
@@ -799,6 +1225,86 @@ private extension StylePatch {
             textAlign: override.textAlign ?? textAlign,
             verticalAlign: override.verticalAlign ?? verticalAlign
         )
+    }
+}
+
+private extension ExcalidrawArrowElement {
+    init(
+        id: String,
+        x: Double,
+        y: Double,
+        strokeColor: String,
+        backgroundColor: String,
+        fillStyle: ExcalidrawFillStyle,
+        strokeWidth: Double,
+        strokeStyle: ExcalidrawStrokeStyle,
+        roundness: ExcalidrawRoundness?,
+        roughness: Double,
+        opacity: Double,
+        width: Double,
+        height: Double,
+        angle: Double,
+        seed: Int,
+        version: Int,
+        versionNonce: Int,
+        index: String?,
+        isDeleted: Bool,
+        groupIds: [String],
+        frameId: String?,
+        boundElements: [ExcalidrawBoundElement]?,
+        updated: Double?,
+        link: String?,
+        locked: Bool?,
+        customData: [String: AnyCodable]?,
+        type: ExcalidrawElementType,
+        points: [Point],
+        lastCommittedPoint: Point?,
+        startBinding: PointBinding?,
+        endBinding: PointBinding?,
+        startArrowhead: Arrowhead?,
+        endArrowhead: Arrowhead?,
+        elbowed: Bool,
+        fixedSegments: [FixedSegment]?,
+        startIsSpecial: Bool?,
+        endIsSpecial: Bool?
+    ) {
+        self.id = id
+        self.x = x
+        self.y = y
+        self.strokeColor = strokeColor
+        self.backgroundColor = backgroundColor
+        self.fillStyle = fillStyle
+        self.strokeWidth = strokeWidth
+        self.strokeStyle = strokeStyle
+        self.roundness = roundness
+        self.roughness = roughness
+        self.opacity = opacity
+        self.width = width
+        self.height = height
+        self.angle = angle
+        self.seed = seed
+        self.version = version
+        self.versionNonce = versionNonce
+        self.index = index
+        self.isDeleted = isDeleted
+        self.groupIds = groupIds
+        self.frameId = frameId
+        self.boundElements = boundElements
+        self.updated = updated
+        self.link = link
+        self.locked = locked
+        self.customData = customData
+        self.type = type
+        self.points = points
+        self.lastCommittedPoint = lastCommittedPoint
+        self.startBinding = startBinding
+        self.endBinding = endBinding
+        self.startArrowhead = startArrowhead
+        self.endArrowhead = endArrowhead
+        self.elbowed = elbowed
+        self.fixedSegments = fixedSegments
+        self.startIsSpecial = startIsSpecial
+        self.endIsSpecial = endIsSpecial
     }
 }
 

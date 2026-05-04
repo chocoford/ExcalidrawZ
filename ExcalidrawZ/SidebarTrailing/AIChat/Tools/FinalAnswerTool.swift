@@ -16,8 +16,8 @@ struct FinalAnswerTool: Tool {
         "Return the final response to the user."
     }
 
-    var parameters: ToolParameters {
-        ToolParameters(
+    var inputSchema: ToolInputSchema {
+        .parameters(ToolParameters(
             properties: [
                 "answer": ParameterProperty(
                     type: "string",
@@ -25,10 +25,10 @@ struct FinalAnswerTool: Tool {
                 )
             ],
             required: ["answer"]
-        )
+        ))
     }
 
-    func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> String {
+    func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         guard let data = input.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw ToolError.invalidInput("Invalid input format. Expected: {\"answer\": \"...\"}")
@@ -39,6 +39,6 @@ struct FinalAnswerTool: Tool {
             throw ToolError.invalidInput("Missing answer text")
         }
 
-        return answer
+        return .text(answer)
     }
 }

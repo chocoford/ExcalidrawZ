@@ -22,21 +22,21 @@ struct ReadFileTool: Tool {
         "Read the current Excalidraw file."
     }
     
-    var parameters: ToolParameters {
-        ToolParameters(properties: [:], required: [])
+    var inputSchema: ToolInputSchema {
+        .parameters(ToolParameters(properties: [:], required: []))
     }
     
-    func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> String {
+    func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         let _ = input
         guard let context else { throw ToolError.executionFailed("Missing ReadFileContext") }
         let readFileContext = try context.resolve(ReadFileContext.self)
         guard let data = readFileContext.currentFileData else {
             throw ToolError.executionFailed("Missing current file data")
         }
-        
+
         let decoder = JSONDecoder()
         let (elements, files, version, type, source) = try decodeExcalidrawPayload(data, decoder: decoder)
-        
+
         let simplified = simplify(
             elements: elements,
             files: files,
@@ -49,11 +49,11 @@ struct ReadFileTool: Tool {
             maxElements: 200,
             maxPoints: 50
         )
-        
+
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         let output = try encoder.encode(simplified)
-        return String(data: output, encoding: .utf8) ?? ""
+        return .text(String(data: output, encoding: .utf8) ?? "")
     }
 }
 

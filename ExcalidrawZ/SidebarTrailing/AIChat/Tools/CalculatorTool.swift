@@ -16,8 +16,8 @@ struct CalculatorTool: Tool {
         "Perform basic mathematical calculations. Supports +, -, *, /, ^, sqrt, sin, cos, tan, log, ln, and parentheses."
     }
 
-    var parameters: ToolParameters {
-        ToolParameters(
+    var inputSchema: ToolInputSchema {
+        .parameters(ToolParameters(
             properties: [
                 "expression": ParameterProperty(
                     type: "string",
@@ -25,10 +25,10 @@ struct CalculatorTool: Tool {
                 )
             ],
             required: ["expression"]
-        )
+        ))
     }
 
-    func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> String {
+    func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         // Parse input JSON
         guard let data = input.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -38,7 +38,7 @@ struct CalculatorTool: Tool {
 
         do {
             let result = try evaluate(expression)
-            return "Result: \(result)"
+            return .text("Result: \(result)")
         } catch {
             throw ToolError.executionFailed("Failed to evaluate expression: \(error.localizedDescription)")
         }

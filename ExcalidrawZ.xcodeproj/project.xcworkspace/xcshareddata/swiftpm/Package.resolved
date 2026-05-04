@@ -1,5 +1,5 @@
 {
-  "originHash" : "3294207dc4a41abd6baa5d8b8ed0184f0be3ed00358e337d6f5bc51e71431b84",
+  "originHash" : "239f5a38116b816568d3a2f12d47b70d98081f32533f4f0367e934aa82974d87",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -17,15 +17,6 @@
       "state" : {
         "revision" : "862808b2070cd908cb04f9aafe7de83d35f81b05",
         "version" : "0.6.7"
-      }
-    },
-    {
-      "identity" : "chocofordkit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/chocoford/ChocofordKit.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "d0b7e6b90eac918cbcecd29b9d2c01d499411afc"
       }
     },
     {
@@ -51,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/onevcat/Kingfisher.git",
       "state" : {
-        "revision" : "d30a5fad881137e2267f96a8e3fc35c58999bb94",
-        "version" : "8.6.2"
+        "revision" : "c152c1915f60c51e4afa0752656993ee5b3c63db",
+        "version" : "8.8.1"
       }
     },
     {
@@ -61,7 +52,7 @@
       "location" : "https://github.com/colinc86/MathJaxSwift.git",
       "state" : {
         "branch" : "main",
-        "revision" : "e23d6eab941da699ac4a60fb0e60f3ba5c937459"
+        "revision" : "00e9c3df6b1c82031c7fe3785028f3d21c0d73ba"
       }
     },
     {
@@ -79,7 +70,7 @@
       "location" : "https://github.com/MacPaw/OpenAI.git",
       "state" : {
         "branch" : "main",
-        "revision" : "4ed3ea99ff9dfd2a760509ddb31020f4b153ef93"
+        "revision" : "397a601acc6592f0005155a46dc1c5068e92a76d"
       }
     },
     {
@@ -114,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle.git",
       "state" : {
-        "revision" : "5581748cef2bae787496fe6d61139aebe0a451f6",
-        "version" : "2.8.1"
+        "revision" : "066e75a8b3e99962685d6a90cdd5293ebffd9261",
+        "version" : "2.9.1"
       }
     },
     {
@@ -150,8 +141,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-log.git",
       "state" : {
-        "revision" : "2778fd4e5a12a8aaa30a3ee8285f4ce54c5f3181",
-        "version" : "1.9.1"
+        "revision" : "5073617dac96330a486245e4c0179cb0a6fd2256",
+        "version" : "1.12.0"
       }
     },
     {
@@ -168,8 +159,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-openapi-runtime",
       "state" : {
-        "revision" : "7cdf33371bf89b23b9cf4fd3ce8d3c825c28fbe8",
-        "version" : "1.9.0"
+        "revision" : "f039fa6d6338aab5164f3d1be16281524c9a8f89",
+        "version" : "1.11.0"
       }
     },
     {

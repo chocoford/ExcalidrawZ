@@ -622,7 +622,8 @@ struct DebugPanelView: View {
 
                 var lastStepResult = ""
                 for (index, payload) in payloads.enumerated() {
-                    lastStepResult = try await tool.execute(payload, context: context)
+                    let result = try await tool.execute(payload, context: context)
+                    lastStepResult = Self.describeToolResult(result)
                     if index < payloads.count - 1 {
                         try await Task.sleep(nanoseconds: 850_000_000)
                     }
@@ -697,9 +698,10 @@ struct DebugPanelView: View {
                     canvasTarget: cameraTarget
                 )
                 let result = try await tool.execute(payload, context: context)
+                let resultText = Self.describeToolResult(result)
 
                 await MainActor.run {
-                    lastResult = "[Adjust Tool]\n\(result)"
+                    lastResult = "[Adjust Tool]\n\(resultText)"
                     isRunning = false
                 }
             } catch {
@@ -731,6 +733,22 @@ struct DebugPanelView: View {
         jsonObject["dryRun"] = dryRun
         let patchedData = try JSONSerialization.data(withJSONObject: jsonObject, options: [.prettyPrinted, .sortedKeys])
         return String(data: patchedData, encoding: .utf8) ?? payload
+    }
+
+    /// Flatten a `ToolResult` to plain text for the debug panel display.
+    /// Image parts get a placeholder marker — this panel is text-only.
+    static func describeToolResult(_ result: ToolResult) -> String {
+        switch result {
+            case .text(let text):
+                return text
+            case .parts(let parts):
+                return parts.map { part -> String in
+                    switch part {
+                        case .text(let text): return text
+                        case .image: return "<image>"
+                    }
+                }.joined(separator: "\n")
+        }
     }
 }
 

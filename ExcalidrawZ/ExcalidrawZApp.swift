@@ -118,6 +118,7 @@ struct ExcalidrawZApp: App {
                 CalculatorTool(),
                 DateTimeTool(),
                 ReadFileTool(),
+                ReadCanvasImageTool(),
                 NavigateCanvasTool(),
                 AdjustElementsTool(),
                 FinalAnswerTool()

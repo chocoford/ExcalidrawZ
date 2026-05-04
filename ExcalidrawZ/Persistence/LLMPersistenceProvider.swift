@@ -116,16 +116,16 @@ struct LLMPersistenceProvider: PersistenceProvider {
                 return .content(content)
                 
             case "agentStep":
-                let stepType = AgentStep.StepType(rawValue: coreDataMessage.stepType ?? "thought") ?? .thought
-                let step = AgentStep(
-                    id: UUID(uuidString: coreDataMessage.messageID ?? "") ?? UUID(),
-                    stepNumber: Int(coreDataMessage.stepNumber),
-                    type: stepType,
+                // Legacy rows from prompt-based ReAct era. Native tool-use no longer
+                // has a separate step type — surface as a plain assistant content message.
+                let content = ChatMessageContent(
+                    id: coreDataMessage.messageID ?? UUID().uuidString,
+                    role: .assistant,
                     content: coreDataMessage.content ?? "",
-                    timestamp: coreDataMessage.timeStamp ?? Date()
+                    files: []
                 )
-                return .agentStep(step)
-                
+                return .content(content)
+
             case "error":
                 return .error(
                     UUID(uuidString: coreDataMessage.messageID ?? "") ?? UUID(),
@@ -209,23 +209,6 @@ struct LLMPersistenceProvider: PersistenceProvider {
                     )
                 }
                 
-            case .agentStep(let step):
-                let messageObjectID = try await repository.createMessage(
-                    messageID: step.id.uuidString,
-                    messageType: "agentStep",
-                    content: step.content,
-                    role: "assistant",
-                    conversationObjectID: conversationObjectID
-                )
-                
-                // Update agent step details
-                try await repository.updateAgentStepMessage(
-                    messageObjectID: messageObjectID,
-                    stepNumber: step.stepNumber,
-                    stepType: step.type.rawValue,
-                    content: step.content
-                )
-                
             case .error(let id, let errorMessage):
                 _ = try await repository.createMessage(
                     messageID: id.uuidString,
@@ -256,20 +239,6 @@ struct LLMPersistenceProvider: PersistenceProvider {
                     content: content.content,
                     usageConsumed: content.usage?.consumed,
                     usageRemains: content.usage?.remains
-                )
-                
-            case .agentStep(let step):
-                // Find message objectID
-                guard let messageObjectID = try await repository.findMessageObjectID(messageID: step.id.uuidString) else {
-                    return
-                }
-                
-                // Update agent step
-                try await repository.updateAgentStepMessage(
-                    messageObjectID: messageObjectID,
-                    stepNumber: step.stepNumber,
-                    stepType: step.type.rawValue,
-                    content: step.content
                 )
                 
             case .error(let id, let errorMessage):

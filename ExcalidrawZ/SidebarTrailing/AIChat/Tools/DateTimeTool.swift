@@ -16,8 +16,8 @@ struct DateTimeTool: Tool {
         "Get current date and time information in various formats. Can also calculate time differences and convert timezones."
     }
 
-    var parameters: ToolParameters {
-        ToolParameters(
+    var inputSchema: ToolInputSchema {
+        .parameters(ToolParameters(
             properties: [
                 "action": ParameterProperty(
                     type: "string",
@@ -34,10 +34,10 @@ struct DateTimeTool: Tool {
                 )
             ],
             required: ["action"]
-        )
+        ))
     }
 
-    func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> String {
+    func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         // Parse input JSON
         guard let data = input.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -49,20 +49,20 @@ struct DateTimeTool: Tool {
 
         switch action {
         case "current":
-            return formatCurrentDateTime(now)
+            return .text(formatCurrentDateTime(now))
 
         case "timezone":
             guard let timezoneId = json["timezone"] as? String,
                   let timezone = TimeZone(identifier: timezoneId) else {
                 throw ToolError.invalidInput("Invalid or missing timezone identifier")
             }
-            return formatDateTimeInTimezone(now, timezone: timezone)
+            return .text(formatDateTimeInTimezone(now, timezone: timezone))
 
         case "format":
             guard let formatString = json["format"] as? String else {
                 throw ToolError.invalidInput("Missing format string")
             }
-            return formatDateTime(now, format: formatString)
+            return .text(formatDateTime(now, format: formatString))
 
         default:
             throw ToolError.invalidInput("Invalid action. Use 'current', 'timezone', or 'format'")
