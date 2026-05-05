@@ -9,6 +9,7 @@ import SwiftUI
 import Combine
 import CoreData
 
+import ChocofordUI
 import Logging
 
 struct ExcalidrawEditor: View {
@@ -19,6 +20,10 @@ struct ExcalidrawEditor: View {
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var localFolderState: LocalFolderState
     @EnvironmentObject var toolState: ToolState
+    /// Drives the AI chat island overlay — its presentation toggle is global,
+    /// but the *anchor* (bottom-center) is editor-local, hence the overlay
+    /// lives here rather than at the NavigationSplitView level.
+    @EnvironmentObject var layoutState: LayoutState
 
     let logger = Logger(label: "ExcalidrawEditor")
     
@@ -132,6 +137,11 @@ struct ExcalidrawEditor: View {
     
     @State private var canvasLoadingState: ExcalidrawCanvasView.LoadingState = .loading
 
+    /// Live size of the editor's content frame. Fed into `AIChatIslandView`
+    /// so it can clamp its drag offset back inside the editor when the user
+    /// flings it past an edge.
+    @State private var editorContentSize: CGSize = .zero
+
     var body: some View {
         ZStack(alignment: .topTrailing) {
             ZStack {
@@ -181,6 +191,18 @@ struct ExcalidrawEditor: View {
                 .opacity(isLoadingFile ? 0 : 1)
                 .allowsHitTesting(!isLoadingFile)
         }
+        .readSize($editorContentSize)
+        // AI chat island floats above the editor only — sidebar / inspector /
+        // home content are *not* in this view's frame, so bottom-center here
+        // means bottom-center of the actual canvas the user is looking at.
+        .overlay(alignment: .bottom) {
+            if layoutState.isAIChatIslandMode {
+                AIChatIslandView(canvasSize: editorContentSize)
+                    .padding(.bottom, 24)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .animation(.smooth(duration: 0.3), value: layoutState.isAIChatIslandMode)
         .allowsHitTesting(interactionEnabled)
         .observeExcalidrawFileStatus(
             for: activeFile,

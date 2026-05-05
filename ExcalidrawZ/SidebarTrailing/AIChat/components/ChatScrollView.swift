@@ -13,38 +13,45 @@ struct ScrollToBottomRequest: Equatable {
 }
 
 /// SwiftUI-native chat scroll view backed by `ScrollView` + `LazyVStack`.
-/// Replaces the previous `List`-backed implementation — no row diffing surprises,
-/// no list-only chrome, and we can control layout directly.
+///
+/// "Pinned to bottom" is observed directly: a 1pt anchor at the bottom of the
+/// lazy stack drives `isPinnedToBottom` via `.onAppear` / `.onDisappear` —
+/// LazyVStack mounts the anchor when it's near the visible region and unmounts
+/// it once it scrolls out of the prerender buffer. No content/viewport/offset
+/// height tracking, no distance-to-bottom heuristics. This sidesteps a class
+/// of bugs caused by SwiftUI's `.background` GeometryReader on `ScrollView`
+/// reporting flaky sizes (NSScrollView's clipView vs documentView swap during
+/// scroll on macOS).
+///
+/// During streaming we drive a low-frequency `proxy.scrollTo(anchor)` loop
+/// gated on `isStreaming && isPinnedToBottom`, so the viewport keeps glued to
+/// the bottom while content grows. A short tail extends the loop past the
+/// stream's end to cover `SmoothStreamingText`'s reveal animation.
 struct ChatScrollView<Content: View>: View {
     @Binding var isPinnedToBottom: Bool
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
-    /// When true, every content height growth force-scrolls to the bottom regardless
-    /// of pin state. Used while the assistant is streaming — the user explicitly
-    /// asked for "always follow bottom during answer".
-    private let followBottom: Bool
+    /// Streaming flag from the caller. While true (and the user hasn't scrolled
+    /// off the bottom), the container runs an internal scroll-follow loop.
+    private let isStreaming: Bool
     private let content: Content
-    private let bottomThreshold: CGFloat
 
     init(
         isPinnedToBottom: Binding<Bool>,
         scrollToBottomRequest: Binding<ScrollToBottomRequest>,
-        followBottom: Bool = false,
-        bottomThreshold: CGFloat = 24,
+        isStreaming: Bool = false,
         @ViewBuilder content: () -> Content
     ) {
         _isPinnedToBottom = isPinnedToBottom
         _scrollToBottomRequest = scrollToBottomRequest
-        self.followBottom = followBottom
+        self.isStreaming = isStreaming
         self.content = content()
-        self.bottomThreshold = bottomThreshold
     }
 
     var body: some View {
         ChatScrollContainer(
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
-            followBottom: followBottom,
-            bottomThreshold: bottomThreshold
+            isStreaming: isStreaming
         ) {
             content
         }
@@ -55,6 +62,7 @@ struct ChatScrollView<Content: View>: View {
 /// `listRowInsets`; now it's plain padding so every row controls its own gutters.
 struct ChatScrollRow<Content: View>: View {
     private let content: Content
+
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -73,105 +81,105 @@ struct ChatScrollRow<Content: View>: View {
 private struct ChatScrollContainer<Content: View>: View {
     @Binding var isPinnedToBottom: Bool
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
-    private let followBottom: Bool
+    private let isStreaming: Bool
     private let content: Content
-    private let bottomThreshold: CGFloat
 
-    private let coordinateSpaceName = "chat-scroll-view"
     private let bottomAnchorID = "chat-scroll-bottom-anchor"
 
-    @State private var contentHeight: CGFloat = 0
-    @State private var viewportHeight: CGFloat = 0
-    @State private var scrollOffset: CGFloat = 0
+    /// Extends the follow-loop a bit after `isStreaming` flips false, so the
+    /// `SmoothStreamingText` reveal animation tail (~0.5 s) doesn't leave the
+    /// viewport stuck above the freshly-grown content.
+    @State private var followTail: Bool = false
+
+    /// Asymmetric debounce for the anchor's mount-state → `isPinnedToBottom`:
+    /// `onAppear` schedules a flip-to-true after a stable window; `onDisappear`
+    /// cancels that schedule and flips false immediately. When the anchor sits
+    /// right at LazyVStack's prerender edge it ping-pongs mount/unmount as
+    /// content reflows, so naive event-to-binding wiring would have
+    /// `isPinnedToBottom` chattering. Asymmetric handling biases ambiguity
+    /// toward "unpinned" — which is what we want, since the user *isn't* at the
+    /// bottom in that ambiguous middle zone.
+    @State private var pinSettleTask: Task<Void, Never>?
 
     init(
         isPinnedToBottom: Binding<Bool>,
         scrollToBottomRequest: Binding<ScrollToBottomRequest>,
-        followBottom: Bool,
-        bottomThreshold: CGFloat,
+        isStreaming: Bool,
         @ViewBuilder content: () -> Content
     ) {
         _isPinnedToBottom = isPinnedToBottom
         _scrollToBottomRequest = scrollToBottomRequest
-        self.followBottom = followBottom
-        self.bottomThreshold = bottomThreshold
+        self.isStreaming = isStreaming
         self.content = content()
     }
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                // Offset reader sits at the top of the lazy stack so its
-                // `.minY` in the named coordinate space directly tracks how far
-                // we've scrolled down from the start of content.
-                offsetReader
-
                 LazyVStack(spacing: 0) {
                     content
 
+                    Color.clear.frame(height: 20)
+
                     Color.clear
-                        .frame(height: 1)
+                        .frame(height: 20)
                         .id(bottomAnchorID)
+                        .onAppear { handleAnchorAppear() }
+                        .onDisappear { handleAnchorDisappear() }
                 }
-                .background(contentHeightReader)
-            }
-            .coordinateSpace(name: coordinateSpaceName)
-            .background(viewportHeightReader)
-            .onPreferenceChange(ChatScrollContentHeightKey.self) { newValue in
-                contentHeight = newValue
-                // Don't call `updatePinnedState()` here. When content grows, the
-                // *new* contentHeight pairs with the *old* scrollOffset → the
-                // computed distance temporarily exceeds the threshold and pin
-                // would flip false, suppressing the very scroll we want.
-                // We let the next offset preference (after the scroll lands)
-                // re-evaluate pin instead.
-                if followBottom || isPinnedToBottom {
-                    scrollToBottom(proxy, animated: false)
-                }
-            }
-            .onPreferenceChange(ChatScrollViewportHeightKey.self) { newValue in
-                viewportHeight = newValue
-                updatePinnedState()
-            }
-            .onPreferenceChange(ChatScrollOffsetKey.self) { newValue in
-                scrollOffset = max(0, newValue)
-                updatePinnedState()
+                .padding(.horizontal, 10)
             }
             .onChange(of: scrollToBottomRequest.token) { _ in
                 scrollToBottom(proxy, animated: scrollToBottomRequest.animated)
             }
-            .onAppear {
-                updatePinnedState()
+            .onChange(of: isStreaming) { nowStreaming in
+                guard !nowStreaming else { return }
+                followTail = true
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(700))
+                    followTail = false
+                }
+            }
+            // ID gates on whether we *want to* follow at all (streaming or in
+            // tail), not on `isPinnedToBottom`. Otherwise every anchor
+            // mount/unmount on the prerender boundary would tear down the
+            // task and start a new one — restart-storm hammering scrollTo
+            // while layout is still in flight is the other half of the
+            // crash. The pin check moves *inside* the loop so a flickering
+            // pin just skips iterations cleanly.
+            .task(id: isStreaming || followTail) {
+                guard isStreaming || followTail else { return }
+                while !Task.isCancelled {
+                    if isPinnedToBottom {
+                        proxy.scrollTo(bottomAnchorID, anchor: .bottom)
+                    }
+                    try? await Task.sleep(for: .milliseconds(80))
+                }
             }
         }
     }
 
-    private var offsetReader: some View {
-        GeometryReader { proxy in
-            let minY = proxy.frame(in: .named(coordinateSpaceName)).minY
-            Color.clear.preference(key: ChatScrollOffsetKey.self, value: -minY)
-        }
-        .frame(height: 0)
-    }
-
-    private var contentHeightReader: some View {
-        GeometryReader { proxy in
-            Color.clear.preference(key: ChatScrollContentHeightKey.self, value: proxy.size.height)
+    private func handleAnchorAppear() {
+        pinSettleTask?.cancel()
+        pinSettleTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(200))
+            guard !Task.isCancelled else { return }
+            if !isPinnedToBottom {
+                isPinnedToBottom = true
+            }
         }
     }
 
-    private var viewportHeightReader: some View {
-        GeometryReader { proxy in
-            Color.clear.preference(key: ChatScrollViewportHeightKey.self, value: proxy.size.height)
-        }
-    }
-
-    private func updatePinnedState() {
-        let maxOffset = max(0, contentHeight - viewportHeight)
-        let distanceToBottom = maxOffset - scrollOffset
-        let pinned = distanceToBottom <= bottomThreshold
-        if pinned != isPinnedToBottom {
-            isPinnedToBottom = pinned
+    private func handleAnchorDisappear() {
+        pinSettleTask?.cancel()
+        pinSettleTask = nil
+        // Defer the write off the LazyVStack layout pass; same rationale as
+        // the original Task-wrapped writes — direct mutation here triggers
+        // "modifying state during view update".
+        Task { @MainActor in
+            if isPinnedToBottom {
+                isPinnedToBottom = false
+            }
         }
     }
 
@@ -186,28 +194,5 @@ private struct ChatScrollContainer<Content: View>: View {
         } else {
             action()
         }
-    }
-}
-
-// MARK: - Preference keys
-
-private struct ChatScrollContentHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
-}
-
-private struct ChatScrollViewportHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
-}
-
-private struct ChatScrollOffsetKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }

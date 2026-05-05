@@ -23,11 +23,23 @@ final class LayoutState: ObservableObject {
 
     /// Whether the inspector is visible. Independent from `activeInspectorTab` so that
     /// closing the inspector preserves which tab the user last looked at.
-    @Published var isInspectorPresented: Bool = false
+    ///
+    /// `didSet` enforces mutual exclusion with the AI chat island: opening the
+    /// inspector on the aiChat tab while the island is up would mean two
+    /// presentations of the same conversation — close the island instead.
+    @Published var isInspectorPresented: Bool = false {
+        didSet {
+            collapseIslandIfShowingAIChatInspector()
+        }
+    }
 
     /// The tab whose content is shown when the inspector is open.
     /// Persists across open/close cycles.
-    @Published var activeInspectorTab: InspectorTab = .library
+    @Published var activeInspectorTab: InspectorTab = .library {
+        didSet {
+            collapseIslandIfShowingAIChatInspector()
+        }
+    }
 
     @Published var isResotreAlertIsPresented: Bool = false
 
@@ -37,6 +49,35 @@ final class LayoutState: ObservableObject {
     }
 
     @Published var compactBrowserLayout: CompactBrowserLayout = .grid
+
+    // MARK: - AI Chat island
+
+    /// When true, the AI chat is presented as a floating, draggable island
+    /// over the editor instead of as a sidebar inspector. Mutually exclusive
+    /// with `isInspectorPresented + activeInspectorTab == .aiChat` (toggling
+    /// island on closes the inspector if it was on aiChat; toggling off
+    /// reopens it on aiChat).
+    @Published var isAIChatIslandMode: Bool = false
+
+    /// Persistent drag offset of the island (relative to its default top-right
+    /// anchor). Lives here — not in the island view's @State — so the position
+    /// survives unmount/remount when the island is shown/hidden.
+    @Published var aiChatIslandOffset: CGSize = .zero
+
+    /// Open the island; close the inspector if it was showing aiChat.
+    func enterAIChatIsland() {
+        if isInspectorPresented && activeInspectorTab == .aiChat {
+            isInspectorPresented = false
+        }
+        isAIChatIslandMode = true
+    }
+
+    /// Close the island; reopen the inspector on the aiChat tab.
+    func exitAIChatIsland() {
+        isAIChatIslandMode = false
+        activeInspectorTab = .aiChat
+        isInspectorPresented = true
+    }
 
     /// Triggered by clicking a specific tab button.
     /// - Same tab while open: close (keep the tab selected so reopening returns to it).
@@ -58,5 +99,17 @@ final class LayoutState: ObservableObject {
     /// Generic open/close toggle (e.g., from a global menu shortcut). Keeps the current `activeInspectorTab`.
     func toggleInspector() {
         isInspectorPresented.toggle()
+    }
+
+    /// Mutual-exclusion guard: any path that ends up with the inspector
+    /// presenting the AI chat tab forces the island closed. Both the reverse
+    /// direction (open island → close aiChat inspector) is handled in
+    /// `enterAIChatIsland`, so the two presentations can never overlap
+    /// regardless of which one was triggered first.
+    private func collapseIslandIfShowingAIChatInspector() {
+        guard isAIChatIslandMode else { return }
+        if isInspectorPresented, activeInspectorTab == .aiChat {
+            isAIChatIslandMode = false
+        }
     }
 }

@@ -28,10 +28,10 @@ struct ExcalidrawToolbar: View {
 #endif
     @State private var windowFrameCancellable: AnyCancellable?
     @State private var isApplePencilDisconnectConfirmationDialogPresented = false
-
+    
     @State private var isMathInputSheetPresented = false
     @State private var isPDFPickerPresented = false
-
+    
     
     var body: some View {
         if fileState.currentActiveFile != nil {
@@ -51,7 +51,7 @@ struct ExcalidrawToolbar: View {
                 
                 if let tool = newValue {
                     let webCoordinator = toolState.excalidrawWebCoordinator
-
+                    
                     if tool != webCoordinator?.lastTool {
                         Task {
                             do {
@@ -126,7 +126,7 @@ struct ExcalidrawToolbar: View {
         }
         
         if #available(macOS 26.0, iOS 26.0, *),
-            !secondaryPickerItems.isEmpty,
+           !secondaryPickerItems.isEmpty,
            let tool = toolState.activatedTool {
             secondaryPickerItemsMenu(tool: tool)
         }
@@ -226,8 +226,8 @@ struct ExcalidrawToolbar: View {
             if #available(macOS 26.0, iOS 26.0, *) {
                 
             } else if !secondaryPickerItems.isEmpty,
-               sizeClass != .expanded,
-               let tool = toolState.activatedTool {
+                      sizeClass != .expanded,
+                      let tool = toolState.activatedTool {
                 secondaryPickerItemsMenu(tool: tool, size: size)
                     .buttonStyle(.borderless)
                     .padding(size / 3)
@@ -462,9 +462,9 @@ struct ExcalidrawToolbar: View {
                     } label: {
                         Label(.localizable(.toolbarInsertImage), systemSymbol: .photoOnRectangle)
                     }
-
+                    
                     Divider()
-
+                    
                     Button {
                         toolState.setActivedTool(.eraser)
                     } label: {
@@ -551,7 +551,7 @@ struct ExcalidrawToolbar: View {
     private func densePickerItems(tool: ExcalidrawTool) -> some View {
         Text(tool.localization)
     }
-
+    
     @MainActor @ViewBuilder
     private func activeShape() -> some View {
         switch toolState.activatedTool {
@@ -596,7 +596,7 @@ struct ExcalidrawToolbar: View {
             } label: {
                 Text(.localizable(.toolbarLatexMath))
             }
-
+            
             Button {
                 isPDFPickerPresented.toggle()
             } label: {
@@ -680,11 +680,11 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
             if layoutState.isInspectorPresented,
                layoutState.isSidebarPresented {
                 switch width {
-                    case ..<1510:
-                        return .dense
                     case ..<1650:
+                        return .dense
+                    case ..<1770:
                         return .compact
-                    case ..<1870:
+                    case ..<1920:
                         return .regular
                     default:
                         return .expanded
@@ -730,13 +730,13 @@ struct SegmentedToolPickerItemView: View {
     var tool: ExcalidrawTool
     var size: CGFloat
     var withFooter: Bool
-
+    
     init(tool: ExcalidrawTool, size: CGFloat, withFooter: Bool) {
         self.tool = tool
         self.size = size
         self.withFooter = withFooter
     }
-
+    
     /// Padding behavior for the icon container — Path/SVG-style icons use less internal padding.
     private var labelType: ExcalidrawToolbarItemModifer.LabelType {
         switch tool {
@@ -748,7 +748,7 @@ struct SegmentedToolPickerItemView: View {
                 return .image
         }
     }
-
+    
     /// Keyboard shortcut hint shown as a footer label.
     private var shortcutLabel: String? {
         switch tool {
@@ -767,7 +767,7 @@ struct SegmentedToolPickerItemView: View {
             case .hand, .webEmbed, .magicFrame, .lasso: return nil
         }
     }
-
+    
     var body: some View {
         tool.icon()
             .modifier(

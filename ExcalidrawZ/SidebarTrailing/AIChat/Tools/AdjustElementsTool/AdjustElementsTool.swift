@@ -510,7 +510,7 @@ private extension AdjustElementsMiddleware {
             locked: false,
             customData: nil,
             fontSize: fontSize,
-            fontFamily: .int(Int(style.fontFamily ?? 1)),
+            fontFamily: .int(Int(style.fontFamily ?? 5)),
             text: text,
             textAlign: parseTextAlign(style.textAlign) ?? (containerId != nil ? .center : .left),
             verticalAlign: parseVerticalAlign(style.verticalAlign) ?? (containerId != nil ? .middle : .top),
@@ -1082,7 +1082,7 @@ private extension AdjustElementsMiddleware {
                     roughness: 1,
                     opacity: 100,
                     fontSize: 20,
-                    fontFamily: 1,
+                    fontFamily: 5,
                     textAlign: "left",
                     verticalAlign: "top"
                 )
@@ -1094,7 +1094,7 @@ private extension AdjustElementsMiddleware {
                     roughness: 1,
                     opacity: 100,
                     fontSize: 20,
-                    fontFamily: 1,
+                    fontFamily: 5,
                     textAlign: "left",
                     verticalAlign: "top"
                 )
@@ -1106,22 +1106,62 @@ private extension AdjustElementsMiddleware {
                     roughness: 1,
                     opacity: 100,
                     fontSize: 20,
-                    fontFamily: 1,
+                    fontFamily: 5,
                     textAlign: "left",
                     verticalAlign: "top"
                 )
         }
     }
 
+    /// Per-glyph advance ratios tuned for **Excalifont** (the Excalidraw default
+    /// hand-drawn font, fontFamily=5). Excalifont's glyphs run wider than
+    /// Helvetica/Virgil at the same point size, so the prior 0.6 ratio was
+    /// underestimating Latin width and clipping the trailing characters.
+    /// CJK is full-width (≈ 1.0). Anything else (digits, punctuation, latin)
+    /// we treat as Latin.
+    private static let excalifontLatinAdvance: Double = 0.7
+    private static let excalifontCJKAdvance: Double = 1.0
+    /// Horizontal padding (≈ glyph cap) so the rightmost glyph doesn't kiss the
+    /// edge and trip Excalidraw's wrap heuristic.
+    private static let excalifontHorizontalPad: Double = 12
+
+    /// Approximate the rendered width of a single line in Excalifont, treating
+    /// CJK ranges as full-width and everything else as Latin. Pre-`measureText`
+    /// estimate — accurate enough that the auto-sized text box doesn't clip
+    /// at typical sizes; Excalidraw will refine on the JS side once the element
+    /// is committed.
+    private func excalifontLineWidth(_ line: Substring, fontSize: Double) -> Double {
+        var width: Double = 0
+        for scalar in line.unicodeScalars {
+            let v = scalar.value
+            let isCJK =
+                (0x4E00...0x9FFF).contains(v) ||      // CJK Unified Ideographs
+                (0x3400...0x4DBF).contains(v) ||      // CJK Extension A
+                (0x3040...0x30FF).contains(v) ||      // Hiragana / Katakana
+                (0xAC00...0xD7AF).contains(v) ||      // Hangul Syllables
+                (0xFF00...0xFFEF).contains(v)         // Halfwidth/Fullwidth Forms
+            width += fontSize * (isCJK ? Self.excalifontCJKAdvance : Self.excalifontLatinAdvance)
+        }
+        return width
+    }
+
     func defaultTextWidth(text: String, fontSize: Double) -> Double {
-        let lines = max(1, text.split(separator: "\n", omittingEmptySubsequences: false).count)
-        let longestLine = Double(text.split(separator: "\n", omittingEmptySubsequences: false).map(\.count).max() ?? 1)
-        return max(60, min(640, longestLine * fontSize * 0.6 + 24 + Double(lines - 1) * 8))
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+        let longestLineWidth = lines
+            .map { excalifontLineWidth($0, fontSize: fontSize) }
+            .max() ?? 0
+        // No upper cap — let the box grow with the text. Earlier `min(..., 640)`
+        // forced soft-wrap for any longer line, but `defaultTextHeight` only
+        // counted explicit \n line breaks, so the wrapped second line clipped.
+        return max(60, longestLineWidth + Self.excalifontHorizontalPad)
     }
 
     func defaultTextHeight(text: String, fontSize: Double) -> Double {
         let lineCount = max(1, text.split(separator: "\n", omittingEmptySubsequences: false).count)
-        return max(fontSize * 1.25, Double(lineCount) * fontSize * 1.25 + 8)
+        // Excalidraw uses lineHeight ≈ 1.25 × fontSize for hand-drawn fonts.
+        // +4pt safety margin: Excalifont has tall ascenders/descenders, and a
+        // tight box will clip the bottom of letters like g/p/y.
+        return Double(lineCount) * fontSize * 1.25 + 4
     }
 
     func parseTextAlign(_ rawValue: String?) -> TextAlign? {

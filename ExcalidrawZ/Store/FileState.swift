@@ -301,6 +301,19 @@ final class FileState: ObservableObject {
         return false
     }
     
+    // MARK: - AI Chat
+
+    /// The currently active AI chat conversation id.
+    ///
+    /// Stored on `FileState` because conversations are conceptually scoped to
+    /// the file the user is working on — each file will eventually own a set
+    /// of persisted conversations (Core Data), with this property pointing at
+    /// the one currently visible. For now we only track a single in-memory id;
+    /// the AIChatView/AIChatIslandView read and write through here so the
+    /// inspector and the floating island stay in sync across presentation
+    /// toggles.
+    @Published var aiChatConversationID: String? = nil
+
     /// Files that is currently under collaboration.
     @Published var collaboratingFiles: [CollaborationFile] = []
     @Published var collaboratingFilesState: [CollaborationFile : ExcalidrawCanvasView.LoadingState] = [:]

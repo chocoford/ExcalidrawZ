@@ -6,39 +6,33 @@
 //
 
 import SwiftUI
+
+import ChocofordUI
 import MarkdownUI
 
 /// Markdown view tuned for LLM streaming output.
 ///
-/// **Why mask-reveal instead of fading text content?**
+/// `MarkdownUI` rebuilds its internal view tree on every content change, so
+/// wrapping the assignment in `withAnimation(...)` doesn't tween the text — the
+/// new layout snaps in. Instead we let Markdown re-layout immediately at its
+/// natural height, then constrain a custom `RevealHeightModifier` to a smaller
+/// `revealHeight` that catches up via animation.
 ///
-/// `MarkdownUI` rebuilds its internal view tree on every content change. Wrapping
-/// the assignment in `withAnimation(...)` doesn't actually tween the text — the
-/// new layout snaps in. So all the "linear / easeInOut / contentTransition" tricks
-/// that work on plain `Text` are decorative noise on `Markdown`. The user perceives
-/// a hard cut every flush, no matter the duration.
+/// `fixedSize(vertical: true)` is load-bearing: it makes Markdown ignore the
+/// parent's vertical proposal and lay out at its ideal height, so the background
+/// `GeometryReader` can read the *natural* content height and feed it into
+/// `revealHeight`.
 ///
-/// Instead we let the markdown re-layout *immediately* on each flush, but trim what
-/// the user actually *sees* with a `mask`. The mask is an animatable
-/// `Rectangle().frame(height: revealHeight)` whose height linearly catches up to
-/// the new measured content height. SwiftUI animates `Rectangle` size reliably,
-/// so the visible edge slides downward smoothly while the underlying markdown is
-/// already in its final state.
+/// On top of the frame+clip we apply a `mask` with a short gradient strip at
+/// the bottom — purely visual, makes the reveal edge "ink in" instead of
+/// looking like a guillotine cut.
 ///
-/// **Why a fade strip at the bottom?**
-///
-/// Sharp horizontal mask edges look mechanical. A short gradient strip at the
-/// reveal edge gives an "ink bleeding in" feel — new lines aren't slammed in,
-/// they materialize through a soft border.
-///
-/// **Pacing**
-///
-/// Per user feedback "I don't care about latency, only smoothness":
-///   - Flusher batches text every ~1 s.
-///   - Reveal animates each batch over ~0.9 s linear.
-///   - Reveal duration is *just* under the flush interval — by the time one batch
-///     finishes revealing, the next batch lands. Motion is continuous, gaps are
-///     ≤ 100 ms.
+/// **Anti-tease** is internalized: when streaming and the target hasn't
+/// reached a minimum length yet, the view collapses to zero height.
+/// Otherwise the user would see a single character pop in and stall
+/// for ~700 ms while the next batch buffers — feels like the model froze. The
+/// parent shows a loading row to cover this period; gate it on
+/// `SmoothStreamingText.isMeaningfulLiveSnippet(_:)` to stay in lockstep.
 struct SmoothStreamingText: View {
     let target: String
     /// When true, mask the bottom edge so newly revealed text bleeds in.
@@ -46,83 +40,129 @@ struct SmoothStreamingText: View {
     var isStreaming: Bool = false
 
     @StateObject private var flusher = StreamFlusher()
-    @State private var revealHeight: CGFloat = .infinity
+    @State private var revealHeight: CGFloat = 0
     @State private var didMount: Bool = false
 
-    /// Reveal duration is *deliberately longer* than the flusher's batch interval
-    /// (1.0 s). When the next batch lands at t=1.0 s, the previous reveal is still
-    /// at ~83% — `withAnimation` interrupts and starts a fresh linear from the
-    /// current animated value to the new measured height. Motion is continuous.
-    /// If reveal == batch, animation finishes ~100 ms before the next one starts
-    /// and you see the visible edge briefly stop, which reads as a stutter.
-    private static let revealAnimation: Animation = .linear(duration: 1.2)
-    private static let maskTransitionAnimation: Animation = .linear(duration: 0.4)
-    private static let fadeStripHeight: CGFloat = 28
+    /// True iff the streaming snippet has accumulated enough to be worth
+    /// showing. Used both internally (to collapse the view while streaming a
+    /// tease) and externally (parent decides whether to show a loading row in
+    /// this view's place).
+    ///
+    /// Length-only on purpose: an early `OK!` or `你好！` would pass any
+    /// terminator-style heuristic but ships nothing of substance — the user
+    /// just sees those 2-3 chars stall while the real content is still
+    /// generating. Wait for the model to actually have something to say.
+    static func isMeaningfulLiveSnippet(_ text: String) -> Bool {
+        text.count >= 30
+    }
+
+    /// While streaming a too-short snippet, we collapse to zero height instead
+    /// of rendering the partial text. Parent's loading row covers the gap.
+    private var collapsed: Bool {
+        isStreaming && !Self.isMeaningfulLiveSnippet(target)
+    }
 
     var body: some View {
-        Markdown(flusher.displayText)
+        // DEBUG: count body re-evals + log current target. If body re-evals on
+        // every stream tick, target should change in the log; if it remounts
+        // on every tick, you'll see ObjectIdentifier of `flusher` change.
+        let _ = print(
+            "[DEBUG] body flusher=\(ObjectIdentifier(flusher)) target.count=\(target.count) target.suffix=\(String(target.suffix(20)))"
+        )
+        return Markdown(flusher.displayText)
+            .textSelection(.enabled)
+            .fixedSize(horizontal: false, vertical: true)
             .background {
                 GeometryReader { proxy in
                     Color.clear
-                        .preference(
-                            key: SmoothStreamHeightKey.self,
-                            value: proxy.size.height
-                        )
+                        .watch(value: proxy.size.height) { _, newValue in
+                            handleHeightChange(newValue)
+                        }
                 }
             }
-            .onPreferenceChange(SmoothStreamHeightKey.self) { newHeight in
-                handleHeightChange(newHeight)
+            .modifier(RevealHeightModifier(
+                height: collapsed ? 0 : revealHeight,
+                isActive: true
+            ))
+            .animation(.linear(duration: 0.5), value: revealHeight)
+            .mask(maskShape)
+            .onAppear {
+                print("[DEBUG] onAppear target.count=\(target.count)")
+                flusher.bootstrap(target)
             }
-            .mask { maskShape }
-            .animation(Self.maskTransitionAnimation, value: isStreaming)
-            .onAppear { flusher.bootstrap(target) }
-            .onChange(of: target) { flusher.ingest($0) }
-            .onDisappear { flusher.cancel() }
+            .onChange(of: target) { newValue in
+                print("[DEBUG] onChange target.count=\(newValue.count)")
+                flusher.ingest(newValue)
+            }
+            .onDisappear {
+                print("[DEBUG] onDisappear")
+                flusher.cancel()
+            }
     }
 
+    /// Stable mask structure: always a VStack with rectangle + bottom gradient.
+    /// We just collapse the gradient height to 0 when fade isn't wanted, so the
+    /// view tree never restructures (which would unmount/remount the content
+    /// and produce a show/hide/show flicker on first appear).
     @ViewBuilder
     private var maskShape: some View {
-        if isStreaming {
-            VStack(spacing: 0) {
-                Rectangle()
-                    .frame(height: max(0, revealHeight - Self.fadeStripHeight))
-                LinearGradient(
-                    colors: [.black, .clear],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: Self.fadeStripHeight)
-                Color.clear
-            }
-        } else {
-            Color.black
+        VStack(spacing: 0) {
+            Rectangle()
+            LinearGradient(
+                colors: [.black, .clear],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: (isStreaming && didMount) ? 24 : 0)
+            .animation(.smooth, value: isStreaming && didMount)
         }
     }
 
     private func handleHeightChange(_ newHeight: CGFloat) {
+        guard newHeight > 0 else { return }
         if !didMount {
-            // First render: snap to current size, no animation. Historical messages
-            // (and the very first frame of a live message) shouldn't pop in.
-            revealHeight = newHeight
-            didMount = true
+            // First measurement: snap, no animation.
+            var tx = Transaction()
+            tx.disablesAnimations = true
+            withTransaction(tx) {
+                revealHeight = newHeight
+                didMount = true
+            }
             return
         }
-        if isStreaming {
-            withAnimation(Self.revealAnimation) {
-                revealHeight = newHeight
-            }
-        } else {
-            // Static render — content updated outside of streaming (e.g. round
-            // committed). Snap to final size.
-            revealHeight = newHeight
-        }
+        guard newHeight > revealHeight else { return }
+        revealHeight = newHeight
     }
 }
 
-private struct SmoothStreamHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
+// MARK: - Animatable height-revealer
+
+/// Frame-clip pair driven by a custom `animatableData`. SwiftUI is forced to
+/// interpolate `animatableData` during a transaction, calling `body(content:)`
+/// at every animation frame with the intermediate height — more reliable than
+/// `.frame(height:).animation(_:value:)` which silently drops tweens in some
+/// preference-callback flows.
+///
+/// **Stable view structure**: `body(content:)` always returns the same shape
+/// (`content.frame(maxHeight:).clipped()`); when not active we just feed
+/// `.infinity` so the frame imposes no real constraint. This avoids the
+/// unmount/remount flicker we'd get from an `if isActive` branch flip.
+private struct RevealHeightModifier: ViewModifier, Animatable {
+    var height: CGFloat
+    var isActive: Bool
+
+    var animatableData: CGFloat {
+        get { height }
+        set { height = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .frame(
+                maxHeight: isActive ? max(0, height) : .infinity,
+                alignment: .top
+            )
+            .clipped()
     }
 }
 
@@ -135,20 +175,20 @@ private final class StreamFlusher: ObservableObject {
     private var latestTarget: String = ""
     private var flushTask: Task<Void, Never>?
 
-    /// Batch interval. Generous on purpose — user explicitly preferred smoothness
-    /// over latency. Each flush is followed by a ~0.9 s reveal animation, so this
-    /// effectively gives "1 paragraph per second" pacing.
-    private let flushDelayNanos: UInt64 = 1_000_000_000
+    /// Batch interval. Caps Markdown re-render frequency. Each flush is followed
+    /// by a ~0.5 s reveal animation; total visible-latency per batch is ~1.2 s.
+    private let flushDelayNanos: UInt64 = 500_000_000
 
     func bootstrap(_ target: String) {
         guard displayText.isEmpty, latestTarget.isEmpty else { return }
+        print("[DEBUG] bootstrap", target)
         displayText = target
         latestTarget = target
     }
 
     func ingest(_ target: String) {
         latestTarget = target
-
+        print("[DEBUG] ingest", target)
         // Divergence (conversation switch / regenerate): snap, no animation.
         if !target.hasPrefix(displayText) {
             flushTask?.cancel()
@@ -170,8 +210,6 @@ private final class StreamFlusher: ObservableObject {
             guard let self else { return }
             self.flushTask = nil
             guard !Task.isCancelled else { return }
-            // No `withAnimation` — `Markdown` doesn't tween content anyway, and
-            // the visible reveal motion is owned by the mask animation downstream.
             if self.displayText != self.latestTarget {
                 self.displayText = self.latestTarget
             }

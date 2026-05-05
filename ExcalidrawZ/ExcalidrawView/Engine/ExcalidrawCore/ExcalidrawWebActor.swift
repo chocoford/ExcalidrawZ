@@ -84,7 +84,6 @@ actor ExcalidrawWebActor {
     func loadFile(id: String, data: Data, force: Bool = false) async throws -> LoadFileResult? {
         let webView = webView
         guard loadedFileID != id || force else { return nil }
-        self.loadedFileID = id
 
         self.logger.info(
             "Load file<\(String(describing: id)), \(data.count.formatted(.byteCount(style: .file)))>, force: \(force), Thread: \(Thread().description)"
@@ -102,6 +101,7 @@ actor ExcalidrawWebActor {
             arguments: ["id": id],
             contentWorld: .page
         )
+        self.loadedFileID = id
         return LoadFileResult(fromJS: raw)
     }
 }

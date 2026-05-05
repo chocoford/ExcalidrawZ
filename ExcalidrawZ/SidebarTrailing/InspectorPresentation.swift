@@ -53,12 +53,15 @@ struct InspectorPresentationModifier: ViewModifier {
                 content
                     .inspector(isPresented: $layoutState.isInspectorPresented) {
                         inspectorContent()
-                            .inspectorColumnWidth(min: 240, ideal: 250, max: 300)
+                            .inspectorColumnWidth(min: 280, ideal: 350, max: 400)
                     }
             } else {
                 floatingInspector(content: content)
             }
         }
+        // Island overlay lives on `ExcalidrawEditor` (not here) — the editor
+        // is the actual frame the user perceives as "the canvas", and bottom-
+        // center should be the canvas's bottom-center, not the whole window's.
         .modifier(ExcalidrawLibraryImporter(items: $librariesToImport))
     }
 

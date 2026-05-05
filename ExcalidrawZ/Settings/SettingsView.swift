@@ -15,15 +15,31 @@ struct SettingsView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
     @Environment(\.dismiss) private var dismiss
-    
+
+    /// App-level deep-link bus — see `SettingsRouter` for the rationale on
+    /// why this isn't `LayoutState`.
+    @ObservedObject private var router = SettingsRouter.shared
+
     @State private var selection: Route?
 
     var body: some View {
         content()
             .task {
-                if selection == nil, containerHorizontalSizeClass != .compact {
+                // Honor a pending deep-link first; fall back to default tab.
+                if let route = router.pendingRoute {
+                    selection = route
+                    router.pendingRoute = nil
+                } else if selection == nil, containerHorizontalSizeClass != .compact {
                     selection = .general
                 }
+            }
+            // The Settings window is reused across openings on macOS, so a
+            // second deep-link request after the window already exists won't
+            // re-fire `.task` — observe the published value to handle that.
+            .onChange(of: router.pendingRoute) { newValue in
+                guard let newValue else { return }
+                selection = newValue
+                router.pendingRoute = nil
             }
     }
     
@@ -151,23 +167,25 @@ struct SettingsView: View {
                 ExcalidrawSettingsView()
 //            case .fileHistory:
 //                FileHistorySettingsView()
-                
+
             case .medias:
                 MediasSettingsView()
-                
+
             case .backups:
                 BackupsSettingsView()
+            case .ai:
+                AISettingsView()
 #if os(macOS)
             case .fonts:
                 FontsSettingsView()
 #elseif os(iOS)
             case .pencil:
                 PencilSettingsView()
-                
+
             case .whatsNews:
                 WhatsNewView(showContinue: false)
 #endif
-                
+
             case .about:
                 AboutView()
         }
@@ -181,15 +199,16 @@ extension SettingsView {
 //        case fileHistory
         case medias
         case backups
+        case ai
 #if os(macOS)
         case fonts
 #elseif os(iOS)
         case pencil
         case whatsNews
 #endif
-        
+
         case about
-        
+
         var text: LocalizedStringKey {
             switch self {
                 case .general:
@@ -200,9 +219,12 @@ extension SettingsView {
 //                    return "File history"
                 case .medias:
                     return .localizable(.settingsMediasName)
-                    
+
                 case .backups:
                     return .localizable(.settingsBackupsName)
+                case .ai:
+                    // TODO: localize once a key is added.
+                    return "AI"
 #if os(macOS)
                 case .fonts:
                     return .localizable(.settingsFontsName)
@@ -216,7 +238,7 @@ extension SettingsView {
                     return .localizable(.settingsAboutName)
             }
         }
-        
+
         var id: String {
             switch self {
                 case .general: "general"
@@ -225,6 +247,7 @@ extension SettingsView {
 //                    "fileHistory"
                 case .medias: "medias"
                 case .backups: "backups"
+                case .ai: "ai"
 #if os(macOS)
                 case .fonts: "fonts"
 #elseif os(iOS)

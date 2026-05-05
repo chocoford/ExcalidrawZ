@@ -106,18 +106,25 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
 extension Store {
     enum ReachPaywallReason {
         case roomLimit
-        
+        /// AI chat hit `LLMError.insufficientCredits`. Drives the paywall
+        /// open from the chat error funnel so the user can top up without
+        /// leaving the canvas.
+        case aiInsufficientCredits
+
         var description: String {
             switch self {
                 case .roomLimit:
                     String(localizable: .paywallReachReasonRoomLimit)
+                case .aiInsufficientCredits:
+                    // TODO: add a localized key for this reason.
+                    "Your AI credits have run out. Upgrade to keep chatting."
             }
         }
     }
-    
+
     func togglePaywall(reason: ReachPaywallReason) {
         self.reachPaywallReason = reason
         self.isPaywallPresented.toggle()
     }
-    
+
 }

@@ -54,7 +54,7 @@ struct ExcalidrawTrailingControls: View {
 
                 InspectorTabButton(
                     tab: .aiChat,
-                    icon: .sparklesSquareFilledOnSquare,
+                    icon: .sparkles,
                     title: "AI Chat"
                 )
 
@@ -88,11 +88,13 @@ private struct InspectorTabButton: View {
             layoutState.toggleInspector(tab)
         } label: {
             Label(title, systemSymbol: icon)
+                .font(.system(size: 16))
+                .frame(width: 24, height: 24)
         }
         .labelStyle(.iconOnly)
         .modernButtonStyle(
             style: isActive ? .glassProminent : .glass,
-            size: .extraLarge,
+            size: .large,
             shape: .circle
         )
         .help(title)
