@@ -15,8 +15,9 @@ struct AIChatView: View {
     @EnvironmentObject var layoutState: LayoutState
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var llmState: LLMStateObject
+    @EnvironmentObject private var aiChatState: AIChatState
     @Environment(\.alertToast) private var alertToast
-
+    
     /// Conversation id lives on `FileState` (chats are scoped to the current
     /// file). We bridge it to a `Binding` for `PromptInputView`'s API and so
     /// the inspector and the island both write back to the same place.
@@ -26,24 +27,24 @@ struct AIChatView: View {
             set: { fileState.aiChatConversationID = $0 }
         )
     }
-
+    
     @State private var inputText: String = ""
     @FocusState private var isInputFocused: Bool
-
+    
     @State private var lastBottomID: String?
     @State private var isPinnedToBottom: Bool = true
     @State private var scrollToBottomRequest = ScrollToBottomRequest()
-
+    
     var conversation: Conversation? {
         llmState.conversations.value?.first { $0.id == fileState.aiChatConversationID }
     }
-
+    
     private var streamingState: LLMStreamingStateObject? {
         guard let id = fileState.aiChatConversationID else { return nil }
         return llmState.streamingStore.streamIfExists(for: id)
-            as? LLMStreamingStateObject
+        as? LLMStreamingStateObject
     }
-
+    
     var body: some View {
         VStack(spacing: 0) {
             if let conversation, !conversation.messages.isEmpty {
@@ -51,9 +52,23 @@ struct AIChatView: View {
             } else {
                 emptyPlaceholder()
             }
+            
+            VStack(spacing: 6) {
+                PendingQueueView(
+                    messages: aiChatState.pendingQueue,
+                    onRemove: { id in
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            aiChatState.pendingQueue.removeAll { $0.id == id }
+                        }
+                    }
+                )
 
-            PromptInputView(conversationID: conversationID)
-                .padding(.horizontal, 10)
+                PromptInputView(
+                    conversationID: conversationID,
+                    pendingQueue: $aiChatState.pendingQueue
+                )
+            }
+            .padding(.horizontal, 10)
         }
         .padding(.bottom, 10)
         .toolbar(content: toolbar)
@@ -61,7 +76,7 @@ struct AIChatView: View {
             await llmState.refreshConversations()
         }
     }
-
+    
     @ViewBuilder
     private func emptyPlaceholder() -> some View {
         VStack(spacing: 20) {
@@ -71,7 +86,7 @@ struct AIChatView: View {
                 .scaledToFit()
                 .frame(height: 40)
                 .foregroundStyle(.secondary)
-
+            
             VStack(spacing: 10) {
                 Text("AI Chat Assistant")
                     .foregroundStyle(.secondary)
@@ -86,7 +101,7 @@ struct AIChatView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-
+    
     @ViewBuilder
     private func messageList(messages: [ChatMessage]) -> some View {
         let bottomID = streamingState?.id ?? messages.last?.id
@@ -94,7 +109,7 @@ struct AIChatView: View {
             guard let stream = streamingState else { return false }
             return shouldShowStreamingMessage(stream, messages: messages)
         }()
-        ChatScrollView(
+        NativeChatScrollView(
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
             isStreaming: isStreamingActive
@@ -121,17 +136,17 @@ struct AIChatView: View {
             requestScrollToBottomIfNeeded(bottomID)
         }
     }
-
+    
     @ViewBuilder
     private func messageListRows(messages: [ChatMessage]) -> some View {
         let layout = makeRowLayout(messages: messages)
-
+        
         StaticGroupsView(
             groups: layout.staticGroups,
             onRegenerate: regenerateMessage
         )
         .equatable()
-
+        
         // Mount the live slot whenever there's *anything* to host — either an
         // active stream (whose inflight message is synthesized inside
         // `LiveAssistantRoundView`) or a committed trailing round (pinned
@@ -160,7 +175,7 @@ struct AIChatView: View {
             }
         }
     }
-
+    
     /// Partition committed messages into static groups + the most-recent
     /// assistant round (which lives in the "live slot").
     ///
@@ -173,14 +188,14 @@ struct AIChatView: View {
     /// stream-end transition.
     private func makeRowLayout(messages: [ChatMessage]) -> RowLayout {
         let allGroups = groupMessages(messages)
-
+        
         let activeStream: LLMStreamingStateObject? = {
             guard let s = streamingState,
                   shouldShowStreamingMessage(s, messages: messages)
             else { return nil }
             return s
         }()
-
+        
         // Trailing round → live slot; everything before → static.
         if let last = allGroups.last, case .assistantRound(_, let msgs) = last {
             return RowLayout(
@@ -189,7 +204,7 @@ struct AIChatView: View {
                 liveCommittedRound: msgs
             )
         }
-
+        
         // No trailing assistant round (e.g. only a user message so far). The
         // active stream — if any — will land here once its first chunk gets
         // committed. For now there's nothing to pin.
@@ -199,7 +214,7 @@ struct AIChatView: View {
             liveCommittedRound: []
         )
     }
-
+    
     @MainActor @ToolbarContentBuilder
     private func toolbar() -> some ToolbarContent {
         if #available(macOS 26.0, *) {
@@ -211,21 +226,21 @@ struct AIChatView: View {
                 }
                 .help("Float chat as a draggable island over the editor")
             }
-
+            
             // This work...
             ToolbarItemGroup(placement: .principal) {
                 Spacer()
             }
-
+            
             // Not working...
             ToolbarSpacer(.fixed)
         }
-
+        
         InspectorHeaderToolbar(
             title: "AI Chat",
             isInspectorPresented: layoutState.isInspectorPresented
         )
-
+        
         ToolbarItemGroup(placement: .automatic) {
             Menu {
                 if #available(macOS 14.0, iOS 17.0, *) {
@@ -246,7 +261,7 @@ struct AIChatView: View {
             .menuIndicator(.hidden)
         }
     }
-
+    
     private func regenerateMessage(messageID: String) {
         guard let id = fileState.aiChatConversationID else { return }
         Task {
@@ -265,7 +280,7 @@ struct AIChatView: View {
             }
         }
     }
-
+    
     private func shouldShowStreamingMessage(
         _ stream: LLMStreamingStateObject,
         messages: [ChatMessage]
@@ -274,7 +289,7 @@ struct AIChatView: View {
         guard let lastID = messages.last?.id else { return !stream.content.isEmpty }
         return lastID != stream.id
     }
-
+    
     private func requestScrollToBottomIfNeeded(_ newBottomID: String?) {
         guard let newBottomID else { return }
         guard newBottomID != lastBottomID else { return }
@@ -282,7 +297,7 @@ struct AIChatView: View {
         guard isPinnedToBottom else { return }
         requestScrollToBottom(animated: false)
     }
-
+    
     private func requestScrollToBottom(animated: Bool) {
         scrollToBottomRequest = ScrollToBottomRequest(
             token: scrollToBottomRequest.token + 1,
@@ -300,7 +315,7 @@ struct AIChatView: View {
 private struct OpenSettingsMenuItem: View {
     let deepLinkTo: SettingsView.Route
     @Environment(\.openSettings) private var openSettings
-
+    
     var body: some View {
         Button {
             // Write the route *before* `openSettings()` so that whichever
@@ -315,13 +330,13 @@ private struct OpenSettingsMenuItem: View {
 }
 
 #if DEBUG
-    #Preview {
-        AIChatView()
-            .frame(width: 250, height: 600)
-            .llmProvider(
-                client: .shared,
-                persistenceProvider: nil,
-                lagacy: true
-            )
-    }
+#Preview {
+    AIChatView()
+        .frame(width: 250, height: 600)
+        .llmProvider(
+            client: .shared,
+            persistenceProvider: nil,
+            lagacy: true
+        )
+}
 #endif

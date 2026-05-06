@@ -25,6 +25,7 @@ import LLMCore
 struct AISettingsView: View {
     @EnvironmentObject private var llmState: LLMStateObject
     @EnvironmentObject private var store: Store
+    @ObservedObject private var prefs = AIChatPreferences.shared
 
     @State private var transactions: [CreditsTransaction] = []
     @State private var totalTransactionCount: Int = 0
@@ -32,7 +33,13 @@ struct AISettingsView: View {
     @State private var isLoadingTransactions: Bool = false
     @State private var transactionLoadError: Error?
 
+    /// Model list for the Default Model picker, sourced from the agent's
+    /// `allowedModels`. Loaded lazily on first appearance so opening
+    /// Settings doesn't pay a network cost up-front.
+    @State private var availableModels: [SupportedModel] = []
+
     private let pageSize: Int = 20
+    private let agentID = "excalidraw-canvas"
 
     var body: some View {
         if #available(macOS 14.0, iOS 17.0, *) {
@@ -44,19 +51,70 @@ struct AISettingsView: View {
                         .textCase(nil)            // override Form's uppercase
                         .padding(.vertical, 4)
                 }
+
+                Section("Defaults") {
+                    defaultModelPicker
+                }
             }
             .formStyle(.grouped)
             .task { await loadInitialTransactions() }
+            .task { await loadAvailableModelsIfNeeded() }
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     creditsHeader
                     Divider()
                     activityBody
+                    Divider()
+                    defaultModelPicker
                 }
                 .padding()
             }
             .task { await loadInitialTransactions() }
+            .task { await loadAvailableModelsIfNeeded() }
+        }
+    }
+
+    // MARK: - Default model picker
+
+    /// Picker for `prefs.defaultModel`. Bound through rawValue so the
+    /// underlying `SupportedModel` enum doesn't need explicit Hashable
+    /// conformance for the Picker tag matching. List is the agent's
+    /// allowed models with the user's current pick spliced in if it
+    /// somehow isn't there (e.g., backend dropped a model from the
+    /// allowed list after the user already picked it).
+    @ViewBuilder
+    private var defaultModelPicker: some View {
+        let current = prefs.defaultModel
+        let mergedModels: [SupportedModel] = {
+            if availableModels.isEmpty { return [current] }
+            if availableModels.contains(where: { $0.rawValue == current.rawValue }) {
+                return availableModels
+            }
+            return [current] + availableModels
+        }()
+
+        Picker("Default model", selection: Binding(
+            get: { prefs.defaultModel.rawValue },
+            set: { prefs.defaultModel = SupportedModel(rawValue: $0) }
+        )) {
+            ForEach(mergedModels, id: \.rawValue) { model in
+                Text(model.displayName).tag(model.rawValue)
+            }
+        }
+        .help("Used for new conversations and as the picker default. Each conversation can override this from its own model picker.")
+    }
+
+    private func loadAvailableModelsIfNeeded() async {
+        guard availableModels.isEmpty else { return }
+        do {
+            let config = try await LLMClient.shared.getDomainAgentConfig(agentID: agentID)
+            await MainActor.run {
+                self.availableModels = config.allowedModels
+            }
+        } catch {
+            // Silently keep the picker showing just the current selection.
+            // The user can still change it later when network recovers.
         }
     }
 

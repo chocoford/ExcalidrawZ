@@ -147,7 +147,8 @@ struct ExcalidrawZApp: App {
     @StateObject private var updateChecker = UpdateChecker()
 #endif
     @StateObject private var llmState: LLMStateObject
-    
+    @StateObject private var aiChatState = AIChatState()
+
     @State private var isArchiveFilesExporterPresented = false
 
 
@@ -165,6 +166,7 @@ struct ExcalidrawZApp: App {
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
                 .environmentObject(appPrefernece)
                 .environmentObject(store)
+                .environmentObject(aiChatState)
                 .llmProvider(state: llmState, client: .shared)
                 .onAppear {
 #if os(macOS) && !APP_STORE

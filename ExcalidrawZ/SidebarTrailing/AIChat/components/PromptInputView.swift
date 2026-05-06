@@ -17,30 +17,174 @@ struct ExcalidrawChatInvocationContext: ChatInvocationContext {
     var selectedElementIDs: [String]?
 }
 
-struct PromptInputView: View {
+/// Visual knobs for `PromptInputView`. Lets callers tune the prompt block to
+/// the chrome it's embedded in — the inspector panel wants prominent shadow,
+/// border and the low-credits banner; the floating island shares the same
+/// chassis but trims the chrome.
+///
+/// `Background` is a concrete `View` type rather than `AnyView` so the input
+/// box's `.background { … }` propagates layout proposals normally — type
+/// erasure was creating a class of subtle frame-clipping issues. The platform
+/// default is materialized as a typed sentinel view (`PlatformDefaultPromptBackground`)
+/// so presets that want it don't need a closure.
+struct PromptInputStyle<Background: View> {
+    /// Whether the "Only N credits left" hint above the input is visible.
+    /// Hosts with limited vertical space usually turn this off.
+    var showsLowCreditsBanner: Bool
+
+    /// Corner radius for the input field and its border/banner.
+    var cornerRadius: CGFloat
+
+    /// Drop-shadow under the input field. `nil` disables the shadow entirely.
+    var shadow: ShadowSpec?
+
+    /// Hairline border around the input field. `nil` disables the border.
+    var border: BorderSpec?
+
+    /// View painted behind the input field. The view receives the input's
+    /// frame; include whatever shape/clip you want it to take. Typically a
+    /// `RoundedRectangle(cornerRadius: cornerRadius)` so the corners match
+    /// `border`.
+    var background: Background
+
+    /// Caller supplies a custom backdrop via `@ViewBuilder`.
+    init(
+        showsLowCreditsBanner: Bool = true,
+        cornerRadius: CGFloat = 20,
+        shadow: ShadowSpec? = ShadowSpec(opacity: 0.2, radius: 4),
+        border: BorderSpec? = BorderSpec(lineWidth: 0.5),
+        @ViewBuilder background: () -> Background
+    ) {
+        self.showsLowCreditsBanner = showsLowCreditsBanner
+        self.cornerRadius = cornerRadius
+        self.shadow = shadow
+        self.border = border
+        self.background = background()
+    }
+
+    struct ShadowSpec {
+        var color: Color = .black
+        var opacity: Double = 0.2
+        var radius: CGFloat = 4
+
+        init(color: Color = .black, opacity: Double = 0.2, radius: CGFloat = 4) {
+            self.color = color
+            self.opacity = opacity
+            self.radius = radius
+        }
+    }
+
+    struct BorderSpec {
+        var lineWidth: CGFloat = 0.5
+    }
+}
+
+// MARK: - Platform-default convenience
+
+extension PromptInputStyle where Background == PlatformDefaultPromptBackground {
+    /// Closure-less init: backdrop falls back to `PlatformDefaultPromptBackground`,
+    /// which paints glass on macOS 26+ / iOS 26+ and regularMaterial below.
+    /// Most call sites should use this — only reach for the `@ViewBuilder`
+    /// init when you actually need a non-default backdrop.
+    init(
+        showsLowCreditsBanner: Bool = true,
+        cornerRadius: CGFloat = 20,
+        shadow: ShadowSpec? = ShadowSpec(opacity: 0.2, radius: 4),
+        border: BorderSpec? = BorderSpec(lineWidth: 0.5)
+    ) {
+        self.init(
+            showsLowCreditsBanner: showsLowCreditsBanner,
+            cornerRadius: cornerRadius,
+            shadow: shadow,
+            border: border,
+            background: {
+                PlatformDefaultPromptBackground(cornerRadius: cornerRadius)
+            }
+        )
+    }
+
+    /// Default — used by `AIChatView` inside the inspector. Full chrome,
+    /// shows the credits hint, platform-default background.
+    static var inspector: PromptInputStyle<PlatformDefaultPromptBackground> {
+        PromptInputStyle()
+    }
+
+    /// Tuned for `AIChatIslandView`. Same backdrop as the inspector (so the
+    /// glass rim on macOS 26+ gives the text its visual padding), just with
+    /// the credits banner / shadow trimmed because the island provides its
+    /// own outer chrome.
+    static var island: PromptInputStyle<PlatformDefaultPromptBackground> {
+         PromptInputStyle(
+             showsLowCreditsBanner: false,
+             cornerRadius: 24,
+             shadow: .init(color: .clear, radius: 0),
+             border: BorderSpec(lineWidth: 0)
+         )
+    }
+}
+
+/// Glass on macOS 26+ / iOS 26+, `regularMaterial` below. Materialized as a
+/// concrete `View` so `PromptInputStyle` can stay generic without falling
+/// back to `AnyView` — the input field's `.background` then propagates
+/// layout proposals cleanly.
+struct PlatformDefaultPromptBackground: View {
+    let cornerRadius: CGFloat
+
+    var body: some View {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(Color.textBackgroundColor)
+                .glassEffect(in: RoundedRectangle(cornerRadius: cornerRadius))
+        } else {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(.regularMaterial)
+        }
+    }
+}
+
+struct PromptInputView<Background: View>: View {
     @EnvironmentObject private var llmState: LLMStateObject
     @EnvironmentObject private var fileState: FileState
     @Environment(\.alertToast) private var alertToast
 
     @Binding var conversationID: String?
-    
-    init(conversationID: Binding<String?>) {
+    /// Pending-send queue, owned by the host so they can render the
+    /// `PendingQueueView` wherever (and however) they want — inspector
+    /// vs island place it differently. PromptInputView appends here when
+    /// the user sends mid-stream, drains here when an in-flight reply
+    /// finishes, and clears here on stop.
+    @Binding var pendingQueue: [PendingQueueMessage]
+    private let style: PromptInputStyle<Background>
+
+    init(
+        conversationID: Binding<String?>,
+        pendingQueue: Binding<[PendingQueueMessage]>,
+        style: PromptInputStyle<Background>
+    ) {
         self._conversationID = conversationID
+        self._pendingQueue = pendingQueue
+        self.style = style
     }
 
-    
     @State private var inputText: String = ""
     @State private var agentConfig: DomainAgentConfigResponse?
-    @State private var selectedModel: SupportedModel?
+
+    /// User's model pick made *before* a conversation has been created
+    /// (i.e., a fresh chat). Promoted to a per-conversation override in
+    /// `AIChatPreferences` the moment `startSend` mints a conversation id.
+    /// Once the conversation exists, the picker writes straight to prefs.
+    @State private var pendingModelSelection: SupportedModel?
+
+    /// Global default + per-conversation overrides, persisted across
+    /// launches. Drives `activeModel` and reflected back from picker
+    /// taps / Settings changes.
+    @ObservedObject private var prefs = AIChatPreferences.shared
 
     /// In-flight send task. While non-nil, the assistant is generating a reply.
     /// Cancelling this task propagates Swift cooperative cancellation through
     /// `llmState.sendMessage`'s stream consumer, which terminates the request.
     @State private var currentTask: Task<Void, Never>?
 
-    /// Messages typed while an earlier reply was still streaming. Drained
-    /// (FIFO) once the current stream finishes.
-    @State private var pendingQueue: [String] = []
 
     @FocusState private var isInputFocused: Bool
 
@@ -49,10 +193,20 @@ struct PromptInputView: View {
     /// implementations are local.
     private let agentID = "excalidraw-canvas"
 
-    /// Resolved model used for the next request. Falls back to the agent's
-    /// default, then a hard-coded floor if the config hasn't loaded yet.
+    /// Resolved model used for the next request, in priority order:
+    ///   1. Per-conversation override stored in `AIChatPreferences`
+    ///   2. Pending pick made before a conversation exists
+    ///   3. User's global default (Settings → AI)
+    /// Picker writes directly into either (1) or (2); (3) is mutated
+    /// from Settings only.
     private var activeModel: SupportedModel {
-        selectedModel ?? agentConfig?.defaultModel ?? .claudeSonnet4_6
+        if let stored = prefs.model(for: conversationID) {
+            return stored
+        }
+        if let pending = pendingModelSelection {
+            return pending
+        }
+        return prefs.defaultModel
     }
     
     var conversation: Conversation? {
@@ -92,6 +246,56 @@ struct PromptInputView: View {
     }
 
     @ViewBuilder
+    private func content() -> some View {
+        VStack(spacing: 6) {
+            // Banner peeks out from behind `inputBox`'s opaque background.
+            // `LowCreditsBannerView` self-gates on the credits threshold —
+            // when the user has plenty of credits it collapses to nothing
+            // and the negative VStack spacing has nothing to overlap.
+            //
+            // Hosts that don't want the banner here can set
+            // `style.showsLowCreditsBanner = false` and (optionally) drop
+            // a `LowCreditsBannerView()` somewhere else of their choosing.
+            if style.showsLowCreditsBanner {
+                VStack(spacing: -18) {
+                    LowCreditsBannerView(peekBottom: 18)
+                        .padding(.horizontal, 10)
+                        .font(.caption)
+
+                    inputBox
+                }
+            } else {
+                inputBox
+            }
+
+            HStack {
+                Menu {
+                    
+                } label: {
+                    Button {
+                        
+                    } label: {
+                        Label("", systemSymbol: .paperclip)
+                    }
+                } primaryAction: {
+                    
+                }
+                .labelStyle(.iconOnly)
+                .menuIndicator(.hidden)
+                .modernButtonStyle(style: .plain, shape: .circle)
+                
+                modelPicker
+
+                Spacer()
+
+                primaryActionButton()
+            }
+            .controlSize(.large)
+        }
+    }
+
+    
+    @ViewBuilder
     private var modelPicker: some View {
         // Agent config hasn't loaded → show a quiet placeholder. Loading is fast
         // (one HTTP round-trip on first appearance) so a permanent skeleton would
@@ -100,7 +304,7 @@ struct PromptInputView: View {
         Menu {
             ForEach(models, id: \.rawValue) { model in
                 Button {
-                    selectedModel = model
+                    pickModel(model)
                 } label: {
                     if model == activeModel {
                         Label(model.displayName, systemSymbol: .checkmark)
@@ -127,6 +331,18 @@ struct PromptInputView: View {
         .disabled(models.isEmpty)
     }
 
+    /// Route a model pick to the right place: existing conversations get a
+    /// stored override (so reopening that thread restores the pick); fresh
+    /// chats just stage it in `pendingModelSelection` and get committed
+    /// when `startSend` mints the conversation id.
+    private func pickModel(_ model: SupportedModel) {
+        if let id = conversationID {
+            prefs.setModel(model, for: id)
+        } else {
+            pendingModelSelection = model
+        }
+    }
+
     private func loadAgentConfigIfNeeded() async {
         guard agentConfig == nil else { return }
         do {
@@ -139,67 +355,37 @@ struct PromptInputView: View {
         }
     }
     
+
+    /// Input box layered to honor the active `PromptInputStyle`: background,
+    /// corner-rounded border, optional shadow. `style.background` is a
+    /// concrete `View` (no `AnyView`, no `Optional`), so the modifier chain
+    /// is a single straight pass — SwiftUI's layout proposals reach the
+    /// backdrop intact.
+    ///
+    /// `.shadow` is applied via a real `if let` rather than the previous
+    /// `.shadow(color: .clear, radius: 0)` fallback: SwiftUI still spins up
+    /// a shadow effect layer even when all parameters are zero-equivalent,
+    /// which left a faint compositing artifact in island mode.
     @ViewBuilder
-    private func content() -> some View {
-        VStack(spacing: 6) {
-            // Negative spacing tucks the banner's bottom behind the input
-            // box; SwiftUI's default sibling z-order draws later children on
-            // top, so the input field's opaque background covers the banner's
-            // bottom rounded edge → the "peeking out from behind" look.
-            VStack(spacing: -18) {
-                lowCreditsBanner()
-                    .padding(.horizontal, 10)
-                    .animation(
-                        .easeInOut(duration: 0.25),
-                        value: shouldShowLowCreditsBanner
-                    )
-
-                ZStack {
-                    if #available(macOS 26.0, iOS 26.0, *) {
-                        inputField()
-                            .background {
-                                RoundedRectangle(cornerRadius: 20)
-                                    .fill(Color.textBackgroundColor)
-                                    .glassEffect(in: RoundedRectangle(cornerRadius: 20))
-                            }
-                    } else {
-                        inputField()
-                            .background {
-                                RoundedRectangle(cornerRadius: 20)
-                                    .fill(.regularMaterial)
-                            }
-                    }
+    private var inputBox: some View {
+        let radius = style.cornerRadius
+        let core = inputField()
+            .overlay {
+                if let border = style.border {
+                    RoundedRectangle(cornerRadius: radius)
+                        .stroke(.separator, lineWidth: border.lineWidth)
                 }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(.separator, lineWidth: 0.5)
-                }
-                .shadow(color: .black.opacity(0.2), radius: 4)
             }
-            
-            HStack {
-                Menu {
-                    
-                } label: {
-                    Button {
-                        
-                    } label: {
-                        Label("", systemSymbol: .paperclip)
-                    }
-                } primaryAction: {
-                    
-                }
-                .labelStyle(.iconOnly)
-                .menuIndicator(.hidden)
-                .modernButtonStyle(style: .plain, shape: .circle)
-                
-                modelPicker
-
-                Spacer()
-
-                primaryActionButton()
-            }
-            .controlSize(.large)
+        
+        if let shadow = style.shadow {
+            core
+                .compositingGroup()
+                .shadow(
+                    color: shadow.color.opacity(shadow.opacity),
+                    radius: shadow.radius
+                )
+        } else {
+            core
         }
     }
 
@@ -231,65 +417,22 @@ struct PromptInputView: View {
         } label: {
             if #available(macOS 14.0, *) {
                 Image(systemSymbol: primaryActionIsStop ? .stopFill : .arrowUp)
+                    .frame(width: 16, height: 16)
                     .contentTransition(.symbolEffect(.replace))
             } else {
                 Image(systemSymbol: primaryActionIsStop ? .stopFill : .arrowUp)
+                    .frame(width: 16, height: 16)
             }
         }
         .modernButtonStyle(style: .glass, shape: .circle)
         // Stop is always enabled while generating. Send needs text.
         .disabled(!primaryActionIsStop && !hasInputText)
     }
-    
-    /// Threshold for showing the low-credits hint above the input box.
-    /// Tuned conservatively — at 100 credits a few exchanges still fit, so
-    /// the user has time to act on the warning before hitting `.insufficientCredits`.
-    private static let lowCreditsThreshold: Double = 100
-
-    private var shouldShowLowCreditsBanner: Bool {
-        guard let balance = llmState.creditsInfo?.balance else { return false }
-        return balance < Self.lowCreditsThreshold
-    }
-
-    @ViewBuilder
-    private func lowCreditsBanner() -> some View {
-        if shouldShowLowCreditsBanner,
-           let balance = llmState.creditsInfo?.balance {
-            Button {
-                Store.shared.togglePaywall(reason: .aiInsufficientCredits)
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemSymbol: .exclamationmarkTriangleFill)
-                        .foregroundStyle(.orange)
-                    Text("Only \(Int(balance)) credits left — tap to top up")
-                        .foregroundStyle(.secondary)
-                    Spacer(minLength: 0)
-                    
-                    Image(systemSymbol: .arrowRight)
-                }
-                .font(.caption)
-                .padding(.horizontal, 14)
-                .padding(.top, 6)
-                // Extra bottom padding extends the background under the input
-                // box; combined with the parent VStack's negative spacing this
-                // produces the "peeking out from behind the input" effect.
-                .padding(.bottom, 24)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.orange.opacity(0.15))
-                }
-                .contentShape(RoundedRectangle(cornerRadius: 14))
-            }
-            .buttonStyle(.plain)
-            .transition(.opacity.combined(with: .move(edge: .bottom)))
-        }
-    }
 
     @ViewBuilder
     private func inputField() -> some View {
         if #available(macOS 15.0, iOS 18.0, *) {
-            AutoGrowTextEditor(
+            TextArea(
                 text: $inputText,
                 placeholder: Text("Ask AI to draw...")
             )
@@ -303,6 +446,7 @@ struct PromptInputView: View {
                     return event             // shift+enter 透传，系统自动插入 \n 并移动光标
                 }
             )
+            .background { style.background }
             .focused($isInputFocused)
         } else {
             TextEditor(text: $inputText)
@@ -315,10 +459,22 @@ struct PromptInputView: View {
         let trimmedText = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedText.isEmpty else { return }
 
+        // Client-side credits gate: if we already know the balance is empty,
+        // skip the round-trip and open the paywall immediately. We only block
+        // when the value is loaded — `creditsInfo == nil` means "not fetched
+        // yet" and we let the request go through (server will reject and the
+        // catch-side dispatcher still routes to the paywall).
+        if let balance = llmState.creditsInfo?.balance, balance <= 0 {
+            Store.shared.togglePaywall(reason: .aiInsufficientCredits)
+            return
+        }
+
         // Mid-stream: queue and clear the input so the user can keep typing
         // the next one. The drain runs when `currentTask` finishes.
         if isGenerating {
-            pendingQueue.append(trimmedText)
+            withAnimation(.easeInOut(duration: 0.2)) {
+                pendingQueue.append(PendingQueueMessage(text: trimmedText))
+            }
             inputText = ""
             return
         }
@@ -373,6 +529,17 @@ struct PromptInputView: View {
 
                 if self.conversation == nil {
                     self.conversationID = newConversationID
+                    // Promote the staged pick (if any) to a per-conversation
+                    // override now that we have an id. Without this, the
+                    // user's pre-send model choice would be lost on reopen
+                    // — `pendingModelSelection` is @State, conversation
+                    // overrides survive the view's lifetime.
+                    if let pending = await MainActor.run(body: { pendingModelSelection }) {
+                        await MainActor.run {
+                            prefs.setModel(pending, for: newConversationID)
+                            pendingModelSelection = nil
+                        }
+                    }
                     try await llmState.createConversation(
                         id: newConversationID,
                         type: .custom("File"),
@@ -398,7 +565,7 @@ struct PromptInputView: View {
                 // lives in one place. CancellationError is swallowed inside
                 // the helper.
                 await MainActor.run {
-                    alertToast(error)
+                    alertToast.presentAIChatError(error)
                 }
             }
 
@@ -420,14 +587,36 @@ struct PromptInputView: View {
             llmState.cancelGeneration(conversationID: id)
         }
         currentTask?.cancel()
-        pendingQueue.removeAll()
+        withAnimation(.easeInOut(duration: 0.2)) {
+            pendingQueue.removeAll()
+        }
     }
 
     /// Pop the next queued message and start a fresh send. Called from the
     /// completion path of `startSend` so messages flow strictly serially.
     private func drainQueueIfNeeded() {
         guard !pendingQueue.isEmpty else { return }
-        let next = pendingQueue.removeFirst()
-        startSend(prompt: next)
+        let next: PendingQueueMessage = withAnimation(.easeInOut(duration: 0.2)) {
+            pendingQueue.removeFirst()
+        }
+        startSend(prompt: next.text)
+    }
+}
+
+// MARK: - Default-style convenience
+
+extension PromptInputView where Background == PlatformDefaultPromptBackground {
+    /// Style-less convenience init — picks `.inspector` so existing call
+    /// sites keep working without forcing the caller to think about
+    /// `Background` at all.
+    init(
+        conversationID: Binding<String?>,
+        pendingQueue: Binding<[PendingQueueMessage]>
+    ) {
+        self.init(
+            conversationID: conversationID,
+            pendingQueue: pendingQueue,
+            style: .inspector
+        )
     }
 }

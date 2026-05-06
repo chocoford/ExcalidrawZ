@@ -74,25 +74,18 @@ struct AssistantRoundView: View {
                 messageRow(msg)
             }
 
-            // Cover the gap when there's substance in flight but it's collapsed
-            // by anti-tease (assistant text below threshold, no tool calls /
-            // results yet either). Crucially we *don't* fire on the cold-start
-            // window (no chunks at all yet) — `LLMStable.swift` puts a
-            // `ChatMessage.loading()` into `conversation.messages` for that,
-            // which `StaticGroupsView` renders. Without this guard we'd show
-            // two "Thinking…" rows simultaneously until the first chunk lands
-            // and LLMKit removes the loading message.
             if isActive && hasAnyMessageWithSubstance && !hasAnyVisibleContent {
                 LoadingMessageRow()
                     .transition(.opacity)
             }
 
-            if actionsVisible,
-               let target = actionTarget,
+            if let target = lastAssistantMessage,
                case .content(let c) = target,
                let text = displayText(of: c).nonEmpty {
                 actionRow(text: text, sourceID: c.id)
-                    .transition(.opacity)
+                    .opacity(actionsVisible ? 1 : 0)
+                    .allowsHitTesting(actionsVisible)
+                    .animation(.easeInOut(duration: 0.3), value: actionsVisible)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -123,9 +116,9 @@ struct AssistantRoundView: View {
         }
         try? await Task.sleep(for: Self.actionRevealDelay)
         guard !Task.isCancelled else { return }
-        withAnimation(.easeIn(duration: 0.5).delay(1)) {
-            actionsVisible = true
-        }
+        // Plain assignment — fade-in is driven by `.animation(_:value:)` on
+        // the row's opacity, no nested `withAnimation` + `.delay` needed.
+        actionsVisible = true
     }
 
     // MARK: - Per-message rendering
@@ -149,7 +142,7 @@ struct AssistantRoundView: View {
         let text = displayText(of: c)
         let nonFinalCalls = (c.toolCalls ?? []).filter { $0.name != "final_answer" }
         VStack(alignment: .leading, spacing: 6) {
-            if !text.isEmpty {
+            if !text.isEmpty || isStreaming {
                 // SmoothStreamingText itself handles the anti-tease collapse
                 // when isStreaming + text-too-short — we don't gate it here.
                 SmoothStreamingText(target: text, isStreaming: isStreaming)
@@ -230,12 +223,12 @@ struct AssistantRoundView: View {
                 let text = displayText(of: c)
                 let nonFinalCalls = (c.toolCalls ?? []).filter { $0.name != "final_answer" }
                 if !nonFinalCalls.isEmpty { return true }
-                if text.isEmpty { return false }
-                let isStreamingThis = msg.id == inflightID && isActive
-                if isStreamingThis && !SmoothStreamingText.isMeaningfulLiveSnippet(text) {
-                    return false
-                }
-                return true
+                // Any text counts as visible — even a streaming snippet
+                // that's still being throttled (`displayText` lags behind
+                // `target` by up to 500 ms) shouldn't fall back to the
+                // loading row, because text is on its way and the row's
+                // mount/unmount churn is what we're trying to avoid.
+                return !text.isEmpty
             default:
                 return false
         }

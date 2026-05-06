@@ -1,5 +1,5 @@
 {
-  "originHash" : "239f5a38116b816568d3a2f12d47b70d98081f32533f4f0367e934aa82974d87",
+  "originHash" : "bfc755d285009f08e84e8d787bb30dfb93e4a1f18350c7397dace4bbc2230ed5",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/onevcat/Kingfisher.git",
       "state" : {
-        "revision" : "c152c1915f60c51e4afa0752656993ee5b3c63db",
-        "version" : "8.8.1"
+        "revision" : "cf8be20d07654570554c8a8a4952bc8a5766a8b0",
+        "version" : "8.9.0"
       }
     },
     {
