@@ -105,6 +105,14 @@ struct AIChatIslandView: View {
             as? LLMStreamingStateObject
     }
 
+    /// Mirror of `ApprovalPromptView`'s gate so the island's
+    /// `.animation(value:)` knows to animate the layout shift when
+    /// the card flips visibility.
+    private var shouldShowApprovalCard: Bool {
+        guard let req = llmState.pendingApprovalRequest else { return false }
+        return aiChatState.revealedToolCallIDs.contains(req.toolCallID)
+    }
+
     private var conversation: Conversation? {
         llmState.conversations.value?
             .first { $0.id == fileState.aiChatConversationID }
@@ -286,7 +294,12 @@ struct AIChatIslandView: View {
     private func islandBody() -> some View {
         VStack(alignment: .leading, spacing: 10) {
             header
-            
+
+            // Self-gating: shows up only when LLMKit has a
+            // `pendingApprovalRequest`. Animation on the parent VStack so
+            // its insertion smoothly grows the island instead of popping.
+            ApprovalPromptView()
+
             PromptInputView(
                 conversationID: conversationIDBinding,
                 pendingQueue: $aiChatState.pendingQueue,
@@ -294,6 +307,14 @@ struct AIChatIslandView: View {
             )
         }
         .padding(16)
+        // Drive on the gate result (`pendingApprovalRequest != nil`
+        // AND the matching tool-call card revealed) — same reasoning
+        // as `AIChatView`. A bare `pendingApprovalRequest?.id` value
+        // would miss the gate-flipping-true layout change.
+        .animation(
+            .easeInOut(duration: 0.25),
+            value: shouldShowApprovalCard
+        )
         .frame(width: islandWidth)
         .background {
             islandBackground(

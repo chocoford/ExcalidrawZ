@@ -109,20 +109,33 @@ struct ExcalidrawZApp: App {
         // Configure LLMKit
         // let llmPersistenceProvider = LLMPersistenceProvider()
 
-        // Setup tool registry with basic tools
+        // Setup tool registry with basic tools. The list is pulled out
+        // so we can mirror it into `ToolDisplayNameCache` synchronously
+        // — UI code (ToolCallCard, etc.) can't `await` into the actor
+        // to look up a tool's `displayName`, so the cache snapshot is
+        // populated up-front on the same array.
         let toolRegistry = ToolRegistry()
+        let tools: [Tool] = [
+            WebSearchTool(client: .shared),
+            WebFetchTool(),
+            CalculatorTool(),
+            DateTimeTool(),
+            ReadFileTool(),
+            ReadCanvasImageTool(),
+            NavigateCanvasTool(),
+            AdjustElementsTool(),
+            ListAllFilesTool(),
+            QueryFileHistoryTool(),
+            RestoreFileHistoryTool(),
+            ListLibrariesTool(),
+            ListLibraryItemsTool(),
+            QueryLibraryItemTool(),
+            AddLibraryItemToCanvasTool(),
+            FinalAnswerTool()
+        ]
+        ToolDisplayNameCache.register(tools)
         Task {
-            await toolRegistry.register([
-                WebSearchTool(client: .shared),
-                WebFetchTool(),
-                CalculatorTool(),
-                DateTimeTool(),
-                ReadFileTool(),
-                ReadCanvasImageTool(),
-                NavigateCanvasTool(),
-                AdjustElementsTool(),
-                FinalAnswerTool()
-            ])
+            await toolRegistry.register(tools)
         }
 
         self._llmState = StateObject(wrappedValue: LLMStateObject(

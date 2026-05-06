@@ -62,21 +62,33 @@ struct FileCheckpointListView<Checkpoint: FileCheckpointRepresentable>: View {
     init(file: File) where Checkpoint == FileCheckpoint {
         self._fileCheckpoints = FetchRequest(
             sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)],
-            predicate: NSPredicate(format: "file == %@", file)
+            predicate: NSPredicate(
+                format: "file == %@ AND (source == nil OR source != %@)",
+                file,
+                FileCheckpointSource.aiPre.rawValue
+            )
         )
     }
-    
+
     init(file: CollaborationFile) where Checkpoint == FileCheckpoint {
         self._fileCheckpoints = FetchRequest(
             sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)],
-            predicate: NSPredicate(format: "collaborationFile == %@", file)
+            predicate: NSPredicate(
+                format: "collaborationFile == %@ AND (source == nil OR source != %@)",
+                file,
+                FileCheckpointSource.aiPre.rawValue
+            )
         )
     }
-    
+
     init(localFile: URL) where Checkpoint == LocalFileCheckpoint {
         self._fileCheckpoints = FetchRequest(
             sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)],
-            predicate: NSPredicate(format: "url == %@", localFile as NSURL)
+            predicate: NSPredicate(
+                format: "url == %@ AND (source == nil OR source != %@)",
+                localFile as NSURL,
+                FileCheckpointSource.aiPre.rawValue
+            )
         )
     }
     

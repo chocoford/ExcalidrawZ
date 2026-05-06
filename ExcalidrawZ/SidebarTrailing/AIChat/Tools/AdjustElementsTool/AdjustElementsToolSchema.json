@@ -178,8 +178,10 @@
             "default",
             "accent",
             "note"
-          ]
-        }
+          ],
+          "description": "Pre-baked color/stroke combo. `default` = black on transparent. `accent` = blue on light blue. `note` = brown on cream. Use for quick consistent looks; for arbitrary colors use `style` (which overrides preset values)."
+        },
+        "style": { "$ref": "#/definitions/stylePatch" }
       },
       "required": [
         "type"
@@ -222,8 +224,10 @@
             "default",
             "accent",
             "note"
-          ]
+          ],
+          "description": "Pre-baked color/stroke combo applied as a baseline. `style` overrides individual fields."
         },
+        "style": { "$ref": "#/definitions/stylePatch" },
         "containerId": {
           "type": ["string", "null"],
           "description": "text only — bind to / unbind from a container shape. null detaches."
@@ -239,6 +243,55 @@
         "y": { "type": "number" },
         "width": { "type": "number", "minimum": 0 },
         "height": { "type": "number", "minimum": 0 }
+      }
+    },
+    "stylePatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "description": "Per-field style overrides. Layered on top of `stylePreset` if both are supplied — fields here win. Omit fields you don't want to touch (on update ops, omitted fields keep their existing value).",
+      "properties": {
+        "strokeColor": {
+          "type": "string",
+          "description": "Stroke / outline / text color. Hex (`#1e1e1e`) or `transparent`. Excalidraw default palette stroke values: `#1e1e1e` (black), `#e03131` (red), `#2f9e44` (green), `#1971c2` (blue), `#f08c00` (orange), `#9c36b5` (purple). Other hex values render fine — the palette is just a suggestion."
+        },
+        "backgroundColor": {
+          "type": "string",
+          "description": "Fill color for shape interiors. Hex or `transparent`. Default palette fills: `transparent`, `#ffc9c9` (light red), `#b2f2bb` (light green), `#a5d8ff` (light blue), `#ffec99` (light yellow), `#eebefa` (light purple). Text elements ignore this."
+        },
+        "strokeWidth": {
+          "type": "number",
+          "description": "Line thickness in px. Excalidraw thin=1, regular=2, bold=4. Other values are accepted but the toolbar shows only those three."
+        },
+        "roughness": {
+          "type": "number",
+          "enum": [0, 1, 2],
+          "description": "Hand-drawn jitter level. 0 = architect (clean), 1 = artist (default), 2 = cartoonist (loose)."
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Element opacity in 0–100 (NOT 0–1). 100 = fully opaque."
+        },
+        "fontSize": {
+          "type": "number",
+          "description": "text only — font size in px. Excalidraw toolbar values: 16 (S), 20 (M, default), 28 (L), 36 (XL)."
+        },
+        "fontFamily": {
+          "type": "number",
+          "description": "text only — font family id. 1 = Virgil (hand-drawn), 2 = Helvetica, 3 = Cascadia (mono), 5 = Excalifont (default)."
+        },
+        "textAlign": {
+          "type": "string",
+          "enum": ["left", "center", "right"],
+          "description": "text only — horizontal alignment within the text frame."
+        },
+        "verticalAlign": {
+          "type": "string",
+          "enum": ["top", "middle", "bottom"],
+          "description": "text only — vertical alignment when the text is bound to a container shape."
+        }
       }
     }
   }

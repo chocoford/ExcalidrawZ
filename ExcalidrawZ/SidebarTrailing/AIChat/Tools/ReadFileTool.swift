@@ -17,7 +17,9 @@ struct ReadFileTool: Tool {
     }
 
     var name: String { "read_file" }
-    
+
+    var displayName: String { "Read Canvas File" }
+
     var description: String {
         "Read the current Excalidraw file."
     }

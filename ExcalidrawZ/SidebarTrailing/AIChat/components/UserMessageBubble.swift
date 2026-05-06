@@ -7,11 +7,20 @@
 
 import SwiftUI
 import LLMCore
+import SFSafeSymbols
 
 /// Right-aligned chat bubble for a `user` role message, plus any attached
 /// images and the per-message usage chip.
 struct UserMessageBubble: View {
     let content: ChatMessageContent
+    /// Optional revert handler — called with the user message's id. The
+    /// host walks back to the matching `.aiPre` checkpoint, restores the
+    /// file, prefills the input box with this message's text, and
+    /// (eventually) truncates the conversation. When `nil`, the revert
+    /// button is hidden (e.g. the message has no anchored pre-checkpoint
+    /// or the host doesn't support revert).
+    var onRevert: ((String) -> Void)?
+
     @State private var isPresented = false
 
     var body: some View {
@@ -23,6 +32,12 @@ struct UserMessageBubble: View {
                     Spacer()
                     VStack(alignment: .trailing, spacing: 4) {
                         bubbleContents
+                        // Inline action bar — right-aligned to match the
+                        // bubble. Only renders when there's something
+                        // useful in it.
+                        if onRevert != nil {
+                            actionBar
+                        }
                     }
                 }
                 .opacity(isPresented ? 1 : 0)
@@ -33,6 +48,24 @@ struct UserMessageBubble: View {
                 withAnimation(.easeOut) {
                     isPresented = true
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var actionBar: some View {
+        HStack(spacing: 4) {
+            if let onRevert {
+                Button {
+                    onRevert(content.id)
+                } label: {
+                    Label("Revert", systemSymbol: .arrowUturnBackward)
+                        .labelStyle(.iconOnly)
+                        .font(.caption)
+                }
+                .buttonStyle(.text(size: .small, square: true))
+                .foregroundStyle(.secondary)
+                .help("Revert canvas to before this message and reload its text into the input box.")
             }
         }
     }

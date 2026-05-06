@@ -31,6 +31,11 @@ import AppKit
 #endif
 
 struct AssistantRoundView: View {
+    /// App-level chat state — used to publish tool-call reveals out so
+    /// `ApprovalPromptView` knows when the corresponding card is on
+    /// screen and can stop holding back its prompt.
+    @EnvironmentObject private var aiChatState: AIChatState
+
     let messages: [ChatMessage]
     /// Which message inside this round is currently streaming, if any.
     /// The matching message renders with `isStreaming=true`; others render
@@ -64,10 +69,21 @@ struct AssistantRoundView: View {
     /// immediately rather than after a needless 600 ms wait.
     @State private var actionsTimingBootstrapped: Bool = false
 
+    /// Sequential reveal of content / tool calls / tool results within
+    /// the round. Live rounds (`isActive`) walk the queue with dwell +
+    /// readiness gates; committed history snaps everything on first
+    /// mount. See `RoundRevealOrchestrator` for the state machine.
+    @StateObject private var revealer = RoundRevealOrchestrator()
+    /// First-mount sentinel — decides snap vs paced. After bootstrap,
+    /// subsequent body re-evals always go through `update(_:)` even if
+    /// `isActive` flips false (queue continues to drain naturally).
+    @State private var revealerBootstrapped: Bool = false
+
     var body: some View {
         let actionTarget = actionRowTarget
         let isLiveTrailing = isActive && lastAssistantMessage?.id == inflightID
         let structureSig = makeStructureSignature(actionTargetID: actionTarget?.id)
+        let revealElements = computeRevealElements()
 
         VStack(alignment: .leading, spacing: 10) {
             ForEach(messages) { msg in
@@ -81,8 +97,17 @@ struct AssistantRoundView: View {
 
             if let target = lastAssistantMessage,
                case .content(let c) = target,
-               let text = displayText(of: c).nonEmpty {
-                actionRow(text: text, sourceID: c.id)
+               displayText(of: c).nonEmpty != nil {
+                // Copy aggregates across the whole round (every assistant
+                // message's text joined by blank lines), not just the
+                // trailing message — so a multi-step turn copies all the
+                // reasoning + final answer in order. Regenerate is still
+                // anchored to the trailing message because LLMKit's
+                // `regenerate(fromMessageID:)` walks back from there.
+                actionRow(
+                    copyText: aggregatedAssistantText,
+                    sourceID: c.id
+                )
                     .opacity(actionsVisible ? 1 : 0)
                     .allowsHitTesting(actionsVisible)
                     .animation(.easeInOut(duration: 0.3), value: actionsVisible)
@@ -90,9 +115,106 @@ struct AssistantRoundView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .animation(.easeInOut(duration: 0.35), value: structureSig)
+        // Per-element reveal animation — drives the fade-ins of
+        // `SmoothStreamingText` / `ToolCallCard` / `ToolResultCard` as
+        // the orchestrator advances `revealedIDs`. Separate from
+        // `structureSig` so a tool-call appearing within an existing
+        // assistant message doesn't trigger the round-level slide.
+        .animation(.easeOut(duration: 0.25), value: revealer.revealedIDs)
         .task(id: isLiveTrailing) {
             await scheduleActionsVisibility(isLiveTrailing: isLiveTrailing)
         }
+        .onAppear {
+            // First mount: pace if active (live round), snap otherwise
+            // (committed history). After this, only `onChange` updates
+            // run — `isActive` flipping false mid-stream just means the
+            // queue keeps draining naturally, no re-bootstrap.
+            if !revealerBootstrapped {
+                revealerBootstrapped = true
+                if isActive {
+                    revealer.update(revealElements)
+                } else {
+                    revealer.revealAllImmediately(revealElements)
+                }
+            }
+        }
+        .onChange(of: revealElements) { newElements in
+            guard revealerBootstrapped else { return }
+            revealer.update(newElements)
+        }
+        // Push tool-call reveals out to `aiChatState` so the approval
+        // prompt knows when its target card is actually visible.
+        // Element-id format is `"toolcall:<msgID>:<callID>"`; we want
+        // just the trailing call id since LLMKit's
+        // `ToolApprovalRequest.toolCallID` is the bare call id.
+        .onChange(of: revealer.revealedIDs) { newIDs in
+            for id in newIDs {
+                if id.hasPrefix("toolcall:") {
+                    let parts = id.split(separator: ":")
+                    if let callID = parts.last, parts.count >= 3 {
+                        aiChatState.markToolCallRevealed(String(callID))
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Reveal elements
+
+    /// Flatten the round into the orchestrator's element list.
+    /// Order matters — it's the visual order of reveal.
+    private func computeRevealElements() -> [RoundRevealOrchestrator.Element] {
+        var result: [RoundRevealOrchestrator.Element] = []
+        for msg in messages {
+            guard case .content(let c) = msg else { continue }
+            switch c.role {
+                case .assistant:
+                    let text = displayText(of: c)
+                    let nonFinalCalls = (c.toolCalls ?? []).filter { $0.name != "final_answer" }
+                    let isInflight = (msg.id == inflightID && isActive)
+                    let hasToolCalls = !nonFinalCalls.isEmpty
+
+                    if !text.isEmpty || isInflight {
+                        // Content is "ready" (next element can advance) when:
+                        // - it's a committed message (not in-flight), OR
+                        // - tool calls have arrived in this same message
+                        //   (model sealed the content and switched to tool
+                        //   use), OR
+                        // - this message is no longer the inflight one.
+                        // The remaining case — in-flight, no tool calls
+                        // yet — is precisely "content still streaming",
+                        // which holds the gate closed.
+                        let isReady = !isInflight || hasToolCalls
+                        result.append(.init(
+                            id: "content:\(c.id)",
+                            kind: .content,
+                            isReady: isReady
+                        ))
+                    }
+                    for call in nonFinalCalls {
+                        result.append(.init(
+                            id: "toolcall:\(c.id):\(call.id)",
+                            kind: .toolCall,
+                            isReady: true
+                        ))
+                    }
+                case .tool:
+                    result.append(.init(
+                        id: "toolresult:\(c.id)",
+                        kind: .toolResult,
+                        isReady: true
+                    ))
+                default:
+                    break
+            }
+        }
+        return result
+    }
+
+    /// Convenience — checks the orchestrator's revealed set. Centralized
+    /// so the various `messageRow` branches use the same key shape.
+    private func isElementVisible(_ id: String) -> Bool {
+        revealer.revealedIDs.contains(id)
     }
 
     /// Drives the `actionsVisible` state in response to streaming transitions.
@@ -128,7 +250,10 @@ struct AssistantRoundView: View {
         if case .content(let c) = msg {
             switch c.role {
                 case .tool:
-                    ToolResultCard(content: c)
+                    if isElementVisible("toolresult:\(c.id)") {
+                        ToolResultCard(content: c)
+                            .transition(.opacity)
+                    }
                 case .assistant:
                     assistantMessage(c, isStreaming: msg.id == inflightID && isActive)
                 default:
@@ -142,18 +267,49 @@ struct AssistantRoundView: View {
         let text = displayText(of: c)
         let nonFinalCalls = (c.toolCalls ?? []).filter { $0.name != "final_answer" }
         VStack(alignment: .leading, spacing: 6) {
-            if !text.isEmpty || isStreaming {
-                // SmoothStreamingText itself handles the anti-tease collapse
-                // when isStreaming + text-too-short — we don't gate it here.
+            // Content IS orchestrator-gated, same as tool calls / results
+            // — the whole round's reveal needs to be linear, otherwise
+            // a follow-up message's content would pop in while the
+            // previous message's tool calls are still mid-pacing. The
+            // earlier "content invisible during streaming" symptom that
+            // motivated removing this gate is now handled inside
+            // `RoundRevealOrchestrator.update(_:)`, which synchronously
+            // inserts the current-index element into `revealedIDs`
+            // before returning — so the body's *next* render already
+            // sees the gate open, no Task-scheduling gap.
+            if (!text.isEmpty || isStreaming),
+               isElementVisible("content:\(c.id)") {
                 SmoothStreamingText(target: text, isStreaming: isStreaming)
+                    .transition(.opacity)
             }
             ForEach(nonFinalCalls, id: \.id) { call in
-                ToolCallCard(call: call, isActive: isStreaming)
+                if isElementVisible("toolcall:\(c.id):\(call.id)") {
+                    ToolCallCard(call: call, isActive: isStreaming)
+                        .transition(.opacity)
+                }
             }
         }
     }
 
     // MARK: - Helpers
+
+    /// Concatenated text of every assistant message in the round, joined
+    /// by blank lines. Used by the action row's Copy button — a single
+    /// LLM turn often produces several `.assistant` messages (intermediate
+    /// reasoning + tool calls + final answer); copying just the last one
+    /// loses the lead-up. Tool result rows (`.tool` role) are intentionally
+    /// excluded — they're raw JSON observations, not user-facing text.
+    private var aggregatedAssistantText: String {
+        messages
+            .compactMap { msg -> String? in
+                guard case .content(let c) = msg, c.role == .assistant else {
+                    return nil
+                }
+                let text = displayText(of: c)
+                return text.isEmpty ? nil : text
+            }
+            .joined(separator: "\n\n")
+    }
 
     /// What text to display for an assistant message — `final_answer` tool-call
     /// args (parsed) take precedence over plain `content`, falling back to
@@ -246,9 +402,9 @@ struct AssistantRoundView: View {
     // MARK: - Action row
 
     @MainActor @ViewBuilder
-    private func actionRow(text: String, sourceID: String) -> some View {
+    private func actionRow(copyText: String, sourceID: String) -> some View {
         HStack(spacing: 0) {
-            CopyButton(text: text)
+            CopyButton(text: copyText)
 
             if let onRegenerate {
                 Button {

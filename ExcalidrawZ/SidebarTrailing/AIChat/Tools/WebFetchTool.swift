@@ -11,6 +11,8 @@ import LLMCore
 struct WebFetchTool: Tool {
     var name: String { "web_fetch" }
 
+    var displayName: String { "Fetch URL" }
+
     var description: String {
         "Fetch and retrieve content from a specific URL. Use this when you have an exact URL to access."
     }

@@ -22,7 +22,11 @@ struct ToolCallCard: View {
     var body: some View {
         ToolEventCard(
             icon: .hammerFill,
-            title: call.name,
+            // Resolve the snake_case `name` (LLM protocol payload) to the
+            // tool's UI-friendly `displayName` via the sync cache. Falls
+            // back to the raw name for tools the cache doesn't know
+            // about (third-party / unregistered).
+            title: ToolDisplayNameCache.displayName(for: call.name),
             accent: .purple,
             isShimmering: isActive
         ) { isExpanded in

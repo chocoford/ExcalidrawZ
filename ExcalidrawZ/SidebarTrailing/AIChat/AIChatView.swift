@@ -6,6 +6,7 @@
 //
 
 import ChocofordUI
+import CoreData
 import LLMCore
 import LLMKit
 import SFSafeSymbols
@@ -34,6 +35,9 @@ struct AIChatView: View {
     @State private var lastBottomID: String?
     @State private var isPinnedToBottom: Bool = true
     @State private var scrollToBottomRequest = ScrollToBottomRequest()
+    /// Confirmation dialog for the "Clear chat" toolbar action — destructive,
+    /// so we route through a confirmationDialog rather than firing on tap.
+    @State private var isConfirmingClear: Bool = false
     
     var conversation: Conversation? {
         llmState.conversations.value?.first { $0.id == fileState.aiChatConversationID }
@@ -43,6 +47,15 @@ struct AIChatView: View {
         guard let id = fileState.aiChatConversationID else { return nil }
         return llmState.streamingStore.streamIfExists(for: id)
         as? LLMStreamingStateObject
+    }
+
+    /// Mirrors `ApprovalPromptView`'s internal gate. Used as the
+    /// `.animation(value:)` driver on the bottom VStack so the card's
+    /// appearance/disappearance smoothly slides the input box without
+    /// SwiftUI seeing an "unmotivated" layout change.
+    private var shouldShowApprovalCard: Bool {
+        guard let req = llmState.pendingApprovalRequest else { return false }
+        return aiChatState.revealedToolCallIDs.contains(req.toolCallID)
     }
     
     var body: some View {
@@ -54,6 +67,7 @@ struct AIChatView: View {
             }
             
             VStack(spacing: 6) {
+
                 PendingQueueView(
                     messages: aiChatState.pendingQueue,
                     onRemove: { id in
@@ -63,17 +77,61 @@ struct AIChatView: View {
                     }
                 )
 
+                ApprovalPromptView()
+
                 PromptInputView(
                     conversationID: conversationID,
                     pendingQueue: $aiChatState.pendingQueue
                 )
             }
             .padding(.horizontal, 10)
+            // Animate the approval card's appearance/disappearance so
+            // the input box doesn't jump when the card flips visibility.
+            // Drive the animation off the *gate result* (request present
+            // AND its tool-call already revealed), not just the request
+            // id — otherwise SwiftUI would treat the gate-driven flip
+            // as an unanimated layout change.
+            .animation(
+                .easeInOut(duration: 0.25),
+                value: shouldShowApprovalCard
+            )
         }
         .padding(.bottom, 10)
         .toolbar(content: toolbar)
         .task {
             await llmState.refreshConversations()
+        }
+        .confirmationDialog(
+            "Clear chat?",
+            isPresented: $isConfirmingClear,
+            titleVisibility: .visible
+        ) {
+            Button("Clear chat", role: .destructive) {
+                clearCurrentConversation()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("All messages in this conversation will be removed. The drawing file is unaffected.")
+        }
+    }
+
+    /// Wipes the current conversation's message history via LLMKit's
+    /// `clearConversation` API. The drawing file and its file-history
+    /// (including AI-tagged checkpoints) stay intact — this only clears
+    /// the chat, not the canvas state.
+    private func clearCurrentConversation() {
+        guard let id = fileState.aiChatConversationID else { return }
+        // Cancel any in-flight stream so its trailing message commit
+        // doesn't land in a just-cleared conversation.
+        llmState.cancelGeneration(conversationID: id)
+        Task {
+            do {
+                 try await llmState.clearConversation(id)
+            } catch {
+                await MainActor.run {
+                    alertToast.presentAIChatError(error)
+                }
+            }
         }
     }
     
@@ -143,7 +201,8 @@ struct AIChatView: View {
         
         StaticGroupsView(
             groups: layout.staticGroups,
-            onRegenerate: regenerateMessage
+            onRegenerate: regenerateMessage,
+            onRevertUserMessage: revertToUserMessage
         )
         .equatable()
         
@@ -255,6 +314,17 @@ struct AIChatView: View {
                         Label("Settings…", systemSymbol: .gearshape)
                     }
                 }
+
+                Divider()
+
+                Button(role: .destructive) {
+                    isConfirmingClear = true
+                } label: {
+                    Label("Clear chat", systemSymbol: .trash)
+                }
+                // Disable when there's no conversation to clear, so the
+                // user doesn't get a confirmationDialog for a no-op.
+                .disabled(fileState.aiChatConversationID == nil)
             } label: {
                 Label("More", systemSymbol: .ellipsis)
             }
@@ -262,6 +332,140 @@ struct AIChatView: View {
         }
     }
     
+    /// "Revert" action attached to each user message in the static history.
+    /// Four steps, in order:
+    ///
+    /// 1. Cancel any in-flight stream so the restore doesn't race the
+    ///    AI's autosave-tool-call dance.
+    /// 2. Restore the file from the `.aiPre` checkpoint anchored to
+    ///    this message id (same pipeline as `FileCheckpointDetailView`'s
+    ///    manual restore).
+    /// 3. Truncate the conversation at (and including) this user
+    ///    message — wipes the old user message + AI reply + any
+    ///    subsequent rounds, so the chat reads as if this turn never
+    ///    happened.
+    /// 4. Push the message's original text back into the input box so
+    ///    the user can edit and re-send.
+    private func revertToUserMessage(_ userMessageID: String) {
+        guard let convo = conversation else { return }
+        let conversationID = convo.id
+
+        // Pull message text + sanity-check that it's actually a user msg.
+        let text: String? = convo.messages.first {
+            if case .content(let c) = $0,
+               c.id == userMessageID,
+               c.role == .user { return true }
+            return false
+        }.flatMap { msg -> String? in
+            if case .content(let c) = msg { return c.content }
+            return nil
+        }
+        guard let messageText = text else { return }
+
+        // Cancel any in-flight stream first — reverting while the AI is
+        // mid-reply would race the file restore against autosaves from
+        // the still-running tool calls.
+        llmState.cancelGeneration(conversationID: conversationID)
+
+        Task { @MainActor in
+            await performFileRestore(forUserMessageID: userMessageID)
+
+            // Truncate the conversation: remove this user message + the
+            // assistant's old reply + anything after. `inclusive: true`
+            // because we're going to re-send a (possibly edited) version
+            // of this same user message; leaving the original would
+            // duplicate it.
+            do {
+                try await llmState.truncateConversation(
+                    in: conversationID,
+                    fromMessageID: userMessageID,
+                    inclusive: true
+                )
+            } catch {
+                alertToast.presentAIChatError(error)
+                // Don't bail: file is already restored, draft prefill
+                // still useful even if truncation failed.
+            }
+
+            // Push the original user text into the input box. Token-based
+            // request handles the "revert twice with same text" case.
+            aiChatState.requestDraft(messageText)
+        }
+    }
+
+    /// Find the `.aiPre` checkpoint with `messageID == userMessageID` for
+    /// the currently active file, and restore. Silently no-ops if no
+    /// matching checkpoint exists (shouldn't happen for messages whose
+    /// turn was opened with `beginAIChatSession`, but be defensive).
+    private func performFileRestore(forUserMessageID userMessageID: String) async {
+        guard case .file(let file) = fileState.currentActiveFile else {
+            // Local files: revert path not implemented yet (see
+            // `RestoreFileHistoryTool`'s scope note). Surface a toast
+            // rather than failing silently.
+            await MainActor.run {
+                alertToast(.init(
+                    displayMode: .hud,
+                    type: .regular,
+                    title: "Revert is currently only supported for library files."
+                ))
+            }
+            return
+        }
+
+        let fileObjectID = file.objectID
+        let context = PersistenceController.shared.newTaskContext()
+
+        let checkpointObjectID: NSManagedObjectID? = await context.perform {
+            let fetch = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+            fetch.predicate = NSPredicate(
+                format: "file == %@ AND messageID == %@ AND source == %@",
+                file,
+                userMessageID,
+                FileCheckpointSource.aiPre.rawValue
+            )
+            fetch.fetchLimit = 1
+            return (try? context.fetch(fetch).first)?.objectID
+        }
+
+        guard let checkpointObjectID else {
+            await MainActor.run {
+                alertToast(.init(
+                    displayMode: .hud,
+                    type: .regular,
+                    title: "No revert point found for this message."
+                ))
+            }
+            return
+        }
+
+        do {
+            let cpRepo = PersistenceController.shared.checkpointRepository
+            let fileRepo = PersistenceController.shared.fileRepository
+
+            try await cpRepo.restoreCheckpoint(
+                checkpointObjectID: checkpointObjectID,
+                to: fileObjectID
+            )
+            let content = try await cpRepo.loadCheckpointContent(
+                checkpointObjectID: checkpointObjectID
+            )
+            try await fileRepo.saveFileContentToStorage(
+                fileObjectID: fileObjectID,
+                content: content
+            )
+
+            // Reload the canvas so the user sees the revert immediately.
+            await MainActor.run {
+                Task { await fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true) }
+                fileState.didUpdateFile = false
+            }
+        } catch {
+            await MainActor.run {
+                alertToast.presentAIChatError(error)
+            }
+        }
+    }
+
     private func regenerateMessage(messageID: String) {
         guard let id = fileState.aiChatConversationID else { return }
         Task {

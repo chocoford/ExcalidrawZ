@@ -145,6 +145,7 @@ struct PlatformDefaultPromptBackground: View {
 struct PromptInputView<Background: View>: View {
     @EnvironmentObject private var llmState: LLMStateObject
     @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var aiChatState: AIChatState
     @Environment(\.alertToast) private var alertToast
 
     @Binding var conversationID: String?
@@ -243,25 +244,26 @@ struct PromptInputView<Background: View>: View {
         .task {
             await loadAgentConfigIfNeeded()
         }
+        // Consume one-shot draft prefill requests from the host (e.g.,
+        // the per-user-message Revert action). Token-based so a second
+        // revert with identical text still triggers the .onChange.
+        .onChange(of: aiChatState.draftRequest?.token) { _ in
+            guard let req = aiChatState.draftRequest else { return }
+            inputText = req.text
+            isInputFocused = true
+        }
     }
 
     @ViewBuilder
     private func content() -> some View {
         VStack(spacing: 6) {
-            // Banner peeks out from behind `inputBox`'s opaque background.
-            // `LowCreditsBannerView` self-gates on the credits threshold —
-            // when the user has plenty of credits it collapses to nothing
-            // and the negative VStack spacing has nothing to overlap.
-            //
-            // Hosts that don't want the banner here can set
-            // `style.showsLowCreditsBanner = false` and (optionally) drop
-            // a `LowCreditsBannerView()` somewhere else of their choosing.
             if style.showsLowCreditsBanner {
-                VStack(spacing: -18) {
+                VStack(spacing: 0) {
                     LowCreditsBannerView(peekBottom: 18)
                         .padding(.horizontal, 10)
                         .font(.caption)
-
+                        .offset(y: 18)
+                    
                     inputBox
                 }
             } else {
@@ -489,7 +491,21 @@ struct PromptInputView<Background: View>: View {
     private func startSend(prompt: String) {
         let newConversationID = UUID().uuidString
 
+        // Build the user message ahead of time so we can capture its id
+        // for the AI chat session begin hook (anchors the `.aiPre`
+        // checkpoint to this exact message — UI later renders a
+        // "revert to here" affordance on the message row).
+        let userMessage = ChatMessageContent(role: .user, content: prompt)
+        let userMessageID = userMessage.id
+
         currentTask = Task {
+            // Tracked so the trailing block can decide whether to write
+            // `.aiPost` (success) or just clear suppression (failure /
+            // cancel).
+            var sessionOpened = false
+            var streamSucceeded = false
+            let conversationIDForSession: String = self.conversationID ?? newConversationID
+
             do {
                 await MainActor.run {
                     ExcalidrawCoordinatorRegistry.shared.update(
@@ -527,6 +543,16 @@ struct PromptInputView<Background: View>: View {
                 await loadAgentConfigIfNeeded()
                 let model = await MainActor.run { activeModel }
 
+                // Open the AI chat session: snapshots the current active
+                // file as `.aiPre` (anchored to this user message) and
+                // flips suppression on so all canvas mutations during
+                // the round don't write to user history.
+                try await fileState.beginAIChatSession(
+                    conversationID: conversationIDForSession,
+                    userMessageID: userMessageID
+                )
+                sessionOpened = true
+
                 if self.conversation == nil {
                     self.conversationID = newConversationID
                     // Promote the staged pick (if any) to a per-conversation
@@ -545,20 +571,42 @@ struct PromptInputView<Background: View>: View {
                         type: .custom("File"),
                         model: model,
                         agentConfig: .withTools(
-                            ["web_search", "web_fetch", "read_file", "read_canvas_image", "calculator", "datetime", "adjust_elements", "final_answer"],
+                            [
+                                "web_search",
+                                "web_fetch",
+                                "read_file",
+                                "read_canvas_image",
+                                "calculator",
+                                "datetime",
+                                "adjust_elements",
+                                "list_all_files",
+                                "query_file_history",
+                                "restore_file_history",
+                                "list_libraries",
+                                "list_library_items",
+                                "query_library_item",
+                                "add_library_item_to_canvas",
+                                "final_answer"
+                            ],
                             agentID: agentID
                         ),
-                        messages: [.content(.init(role: .user, content: prompt))],
+                        messages: [.content(userMessage)],
                         context: context
                     )
                 } else {
                     try await llmState.sendMessage(
                         to: self.conversationID!,
                         model: model,
-                        message: .content(.init(role: .user, content: prompt)),
+                        message: .content(userMessage),
                         context: context
                     )
                 }
+
+                // Stream completed without throwing. The `.aiPost`
+                // snapshot will anchor to whatever the trailing assistant
+                // message id ends up being — read after-the-fact rather
+                // than guessing.
+                streamSucceeded = true
             } catch {
                 // Single-funnel through `presentAIChatError` so intent-based
                 // dispatch (credits / auth / rate-limit / forbidden / generic)
@@ -567,6 +615,31 @@ struct PromptInputView<Background: View>: View {
                 await MainActor.run {
                     alertToast.presentAIChatError(error)
                 }
+            }
+
+            // Close the session unconditionally — on success writes
+            // `.aiPost` snapshot anchored to the trailing assistant
+            // message; on failure / cancel just clears the suppression
+            // flag (no post snapshot).
+            if sessionOpened {
+                let assistantMessageID: String? = await MainActor.run {
+                    guard streamSucceeded else { return nil }
+                    let convo = llmState.conversations.value?
+                        .first(where: { $0.id == conversationIDForSession })
+                    return convo?.messages.last(where: {
+                        if case .content(let c) = $0, c.role == .assistant {
+                            return true
+                        }
+                        return false
+                    })?.id
+                }
+                // `description` is intentionally nil for now — wired up
+                // later (likely from `final_answer` tool args).
+                await fileState.endAIChatSession(
+                    success: streamSucceeded,
+                    assistantMessageID: assistantMessageID,
+                    description: nil
+                )
             }
 
             await MainActor.run {

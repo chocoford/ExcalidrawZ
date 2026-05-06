@@ -16,6 +16,8 @@ struct AdjustElementsTool: Tool {
 
     var name: String { "adjust_elements" }
 
+    var displayName: String { "Adjust Canvas" }
+
     var description: String {
         """
         Apply a batch of safe Excalidraw edits using a small DSL.
@@ -23,12 +25,16 @@ struct AdjustElementsTool: Tool {
         Supported element types: text, rectangle, ellipse, diamond, line, arrow.
 
         Common usage:
-        • Shapes (rectangle/ellipse/diamond): x/y + width/height, optional stylePreset.
+        • Shapes (rectangle/ellipse/diamond): x/y + width/height, optional stylePreset and/or style.
         • Text: text/label content; pass `containerId` to embed it as a label inside an existing shape (auto-centered).
         • Lines: `endX`/`endY` for endpoint, or width/height as deltas.
         • Arrows: `fromId` and/or `toId` to bind endpoints to existing shapes (centered, edge-orbit). Otherwise use `endX`/`endY`. Optional `arrowhead`, `elbowed`.
 
-        Ops: `add` / `update` (patch text/bounds/style/containerId) / `move` (dx/dy) / `resize` (width/height absolute or dw/dh delta) / `delete`.
+        Styling:
+        • `stylePreset` (`default` / `accent` / `note`) for quick consistent looks.
+        • `style` for per-field overrides — `strokeColor`, `backgroundColor` (hex or `transparent`), `strokeWidth`, `roughness` (0/1/2), `opacity` (0–100), `fontSize`, `fontFamily`, `textAlign`, `verticalAlign`. Layered on top of `stylePreset` when both supplied. Use `style` whenever the user asks for specific colors or sizes.
+
+        Ops: `add` / `update` (patch text/bounds/stylePreset/style/containerId) / `move` (dx/dy) / `resize` (width/height absolute or dw/dh delta) / `delete`.
         """
     }
 

@@ -15,6 +15,22 @@ import SwiftUI
 struct StaticGroupsView: View, Equatable {
     let groups: [MessageGroup]
     let onRegenerate: ((String) -> Void)?
+    /// Per-user-message revert callback. `nil` hides the revert button
+    /// entirely. Equatable is intentionally key'd only on `groups` ids
+    /// (closure identity is unstable) — passing a different `onRevert`
+    /// instance with the same group sequence won't trigger re-render,
+    /// which is the desired perf knob.
+    let onRevertUserMessage: ((String) -> Void)?
+
+    init(
+        groups: [MessageGroup],
+        onRegenerate: ((String) -> Void)? = nil,
+        onRevertUserMessage: ((String) -> Void)? = nil
+    ) {
+        self.groups = groups
+        self.onRegenerate = onRegenerate
+        self.onRevertUserMessage = onRevertUserMessage
+    }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         guard lhs.groups.count == rhs.groups.count else { return false }
@@ -33,7 +49,7 @@ struct StaticGroupsView: View, Equatable {
     private func renderGroup(_ group: MessageGroup, at index: Int) -> some View {
         switch group {
             case .user(let c):
-                UserMessageBubble(content: c)
+                UserMessageBubble(content: c, onRevert: onRevertUserMessage)
             case .loading:
                 LoadingMessageRow()
             case .error(_, let msg):

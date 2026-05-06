@@ -314,6 +314,40 @@ final class FileState: ObservableObject {
     /// toggles.
     @Published var aiChatConversationID: String? = nil
 
+    /// Active AI chat session, if any. While this is non-nil:
+    ///
+    /// 1. `updateFile` / `updateLocalFile` switch to checkpoint policy
+    ///    `.suppress` — content saves, no history rows created. The user
+    ///    explicitly asked for "一刀切" — no per-edit history during AI
+    ///    runs (whether the edit was user-driven or AI-tool-driven).
+    /// 2. `beginAIChatSession` records an `.aiPre` snapshot before the
+    ///    user message hits the LLM, anchored to the user message id.
+    ///    `endAIChatSession(success: true, ...)` records the matching
+    ///    `.aiPost` snapshot anchored to the assistant final-answer id.
+    ///
+    /// One session per (FileState, conversationID) — each user message
+    /// inside the same conversation re-enters begin/end with a fresh
+    /// (pre, post) pair anchored to that message round.
+    @Published var aiChatSession: AIChatSessionState?
+
+    struct AIChatSessionState: Equatable {
+        /// Conversation id this session belongs to. Surfaced for sanity
+        /// checks (the conversation could in theory change mid-session
+        /// if the user navigates between files).
+        let conversationID: String
+        /// User chat message id that triggered the session — same id is
+        /// stamped on the `.aiPre` checkpoint row, so UI can locate
+        /// "the snapshot anchored to this message".
+        let userMessageID: String
+        /// `ActiveFile` snapshot at session begin. Optional because the
+        /// user can fire off an AI message with no file open (e.g. asking
+        /// the AI to *create* a new file). When `nil`, no `.aiPre` row
+        /// gets written — there's nothing to snapshot. We still open the
+        /// session so the suppression flag prevents stray history while
+        /// the AI runs.
+        let anchorFile: ActiveFile?
+    }
+
     /// Files that is currently under collaboration.
     @Published var collaboratingFiles: [CollaborationFile] = []
     @Published var collaboratingFilesState: [CollaborationFile : ExcalidrawCanvasView.LoadingState] = [:]
@@ -460,11 +494,20 @@ final class FileState: ObservableObject {
                     fileObjectID: id
                 )
                 
-                // Step 2: Update file elements through repository
+                // Step 2: Update file elements through repository.
+                // Checkpoint policy: suppress entirely while an AI chat
+                // session is active (so AI-driven mutations don't pollute
+                // user history); otherwise fall back to historical
+                // user-edit semantics.
+                let checkpointPolicy: CheckpointWriteOptions = await MainActor.run {
+                    self.aiChatSession != nil
+                        ? .suppress
+                        : .userEdit(newCheckpoint: !didUpdateFile)
+                }
                 try await PersistenceController.shared.fileRepository.updateElements(
                     fileObjectID: id,
                     fileData: content,
-                    newCheckpoint: !didUpdateFile
+                    checkpoint: checkpointPolicy
                 )
                 self.logger.info("updateFile done...")
                 await MainActor.run {
@@ -517,30 +560,54 @@ final class FileState: ObservableObject {
         // Use FileCoordinator for safe atomic write
         guard let data = excalidrawFile.content else { return }
         try await FileCoordinator.shared.coordinatedWrite(url: url, data: data)
+
+        // Skip checkpoint writes entirely while an AI chat session is
+        // active — file content still saves, history doesn't. Mirrors the
+        // database-file path's `.suppress` policy.
+        let suppressCheckpoint = await MainActor.run { self.aiChatSession != nil }
+        if suppressCheckpoint {
+            await MainActor.run { self.didUpdateFile = true }
+            return
+        }
+
         try await context.perform {
+            // Match user-source rows or legacy (nil source) — AI-tagged
+            // rows are immutable snapshots.
             let fetchRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
-            fetchRequest.predicate = NSPredicate(format: "url = %@", url as NSURL)
+            fetchRequest.predicate = NSPredicate(
+                format: "url = %@ AND (source == nil OR source == %@)",
+                url as NSURL,
+                FileCheckpointSource.user.rawValue
+            )
             fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \LocalFileCheckpoint.updatedAt, ascending: false)]
             let localFileCheckpoints = try context.fetch(fetchRequest)
-            
+
             if didUpdateFile, let firstCheckpoint = localFileCheckpoints.first {
                 firstCheckpoint.updatedAt = Date()
                 firstCheckpoint.content = excalidrawFile.content
+                // Backfill on legacy rows so future predicates needn't OR-nil.
+                if firstCheckpoint.source == nil {
+                    firstCheckpoint.source = FileCheckpointSource.user.rawValue
+                }
             } else {
                 let localFileCheckpoint = LocalFileCheckpoint(context: context)
+                localFileCheckpoint.id = UUID()
                 localFileCheckpoint.url = url
                 localFileCheckpoint.updatedAt = Date()
                 localFileCheckpoint.content = excalidrawFile.content
-                
+                localFileCheckpoint.source = FileCheckpointSource.user.rawValue
+
                 context.insert(localFileCheckpoint)
-                
+
+                // Cap retention at 50 *user* rows — AI rows live outside
+                // this budget so a long AI conversation doesn't push out
+                // a user's normal edit history.
                 if localFileCheckpoints.count > 50, let last = localFileCheckpoints.last {
                     context.delete(last)
                 }
             }
-            
         }
-        
+
         await MainActor.run {
             self.didUpdateFile = true
         }

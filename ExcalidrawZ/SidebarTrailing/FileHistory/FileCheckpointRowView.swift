@@ -7,6 +7,7 @@
 
 import SwiftUI
 import ChocofordUI
+import SFSafeSymbols
 
 struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
@@ -65,12 +66,29 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
     @MainActor @ViewBuilder
     private func label() -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack {
+            HStack(spacing: 6) {
                 Text((checkpoint.filename ?? ""))
                     .font(.headline)
+                    .lineLimit(1)
                 Spacer()
+                // AI-source badge (user-source rows show no badge — they're
+                // the default and a "User" pill on every row would just be
+                // visual noise).
+                sourceBadge
             }
-        
+
+            // Git-style description, only when present. AI fills this on
+            // `.aiPost` rows; user rows are nil unless the user explicitly
+            // edits one (TBD UI). Allow up to 2 lines so the AI's summary
+            // doesn't get clipped to a single line.
+            if let description = checkpoint.historyDescription, !description.isEmpty {
+                Text(description)
+                    .font(.callout)
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+            }
+
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 0) {
                     if let file {
@@ -81,21 +99,68 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
                         }
                     }
                     Text(" · ")
-                    
+
                     Text("\(fileSize.formatted(.byteCount(style: .file)))")
-                    
+
                 }
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-                
+                .lineLimit(1)
+
                 Text(checkpoint.updatedAt?.formatted() ?? "")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
         }
-        .lineLimit(1)
         .padding(.horizontal, 4)
         .padding(.vertical, 8)
+    }
+
+    /// Capsule badge for AI-authored checkpoints. We collapse `.aiPre` /
+    /// `.aiPost` into one user-facing "AI" label — the pre/post split is
+    /// internal infrastructure for revert (only `.aiPost` actually
+    /// reaches this UI; `.aiPre` rows are filtered out by
+    /// `FileCheckpointListView`).
+    @ViewBuilder
+    private var sourceBadge: some View {
+        if checkpoint.isAIGenerated {
+            BadgeLabel(
+                text: "AI",
+                icon: .sparkles,
+                tint: .accentColor
+            )
+        }
+    }
+}
+
+
+/// Small capsule used by `FileCheckpointRowView` to surface AI vs user
+/// source. Pulled into its own view so the row's body stays flat and so
+/// the styling stays consistent if more sources get added later.
+private struct BadgeLabel: View {
+    let text: String
+    let icon: SFSymbol
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemSymbol: icon)
+                .font(.caption2)
+            Text(text)
+                .font(.caption2.weight(.medium))
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .foregroundStyle(tint)
+        .background(
+            Capsule()
+                .fill(tint.opacity(0.12))
+        )
+        .overlay(
+            Capsule()
+                .stroke(tint.opacity(0.3), lineWidth: 0.5)
+        )
     }
 }
 

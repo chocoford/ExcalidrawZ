@@ -20,6 +20,8 @@ struct ReadCanvasImageTool: Tool {
 
     var name: String { "read_canvas_image" }
 
+    var displayName: String { "Read Canvas Image" }
+
     var description: String {
         """
         Take a PNG snapshot of the current Excalidraw canvas and return it as

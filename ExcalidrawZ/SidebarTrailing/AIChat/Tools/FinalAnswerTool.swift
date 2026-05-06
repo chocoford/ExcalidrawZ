@@ -12,6 +12,8 @@ import LLMCore
 struct FinalAnswerTool: Tool {
     var name: String { "final_answer" }
 
+    var displayName: String { "Final Answer" }
+
     var description: String {
         "Return the final response to the user."
     }

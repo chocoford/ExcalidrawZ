@@ -56,7 +56,10 @@
         <attribute name="content" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="filename" optional="YES" attributeType="String"/>
         <attribute name="filePath" optional="YES" attributeType="String"/>
+        <attribute name="historyDescription" optional="YES" attributeType="String"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="messageID" optional="YES" attributeType="String"/>
+        <attribute name="source" optional="YES" attributeType="String"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="collaborationFile" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CollaborationFile" inverseName="checkpoints" inverseEntity="CollaborationFile"/>
         <relationship name="file" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="File" inverseName="checkpoints" inverseEntity="File"/>
@@ -94,6 +97,10 @@
     </entity>
     <entity name="LocalFileCheckpoint" representedClassName="LocalFileCheckpoint" syncable="YES" codeGenerationType="class">
         <attribute name="content" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="historyDescription" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="messageID" optional="YES" attributeType="String"/>
+        <attribute name="source" optional="YES" attributeType="String"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="url" optional="YES" attributeType="URI"/>
     </entity>

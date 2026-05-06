@@ -40,14 +40,20 @@ struct SmoothStreamingText: View {
             .mask(maskShape)
             .onAppear {
                 print("[DEBUG] onAppear target.count=\(target.count)")
-                flusher.bootstrap(target, isStreaming: isStreaming)
+                flusher.bootstrap(target)
             }
             .onChange(of: target) { newValue in
                 print("[DEBUG] onChange target.count=\(newValue.count)")
                 flusher.ingest(newValue)
             }
             .onChange(of: isStreaming, debounce: 1) { newValue in
+                print("[DEBUG] isStreaming changed", isStreaming)
                 localIsStreaming = newValue
+            }
+            .onAppear {
+                if !isStreaming {
+                    localIsStreaming = false
+                }
             }
             .onDisappear {
                 print("[DEBUG] onDisappear")
@@ -64,15 +70,22 @@ struct SmoothStreamingText: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(height: (isStreaming && didMount) ? 24 : 0, alignment: .bottom)
-            .animation(.smooth, value: isStreaming && didMount)
+            .frame(height: isStreaming ? 24 : 0, alignment: .bottom)
+            .animation(.smooth, value: isStreaming)
         }
     }
     
     private func handleHeightChange(_ newHeight: CGFloat) {
         guard newHeight > 0 else { return }
+        // Hold off on reveal until content is tall enough that the
+        // 24pt bottom-fade mask doesn't dominate the visible area.
+        // Below 48pt (= 2× mask height) the first line itself sits
+        // mostly inside the fade — the user sees a half-rendered
+        // teaser ghost. Wait until there's a buffer of clear text
+        // above the gradient before flipping `didMount`.
+        guard newHeight >= 48 else { return }
         if !didMount {
-            // First measurement: snap, no animation.
+            // First valid measurement: snap, no animation.
             var tx = Transaction()
             tx.disablesAnimations = true
             withTransaction(tx) {
@@ -125,29 +138,10 @@ private final class StreamFlusher: ObservableObject {
     private var latestTarget: String = ""
     private var flushTask: Task<Void, Never>?
     
-    /// Batch interval. Caps Markdown re-render frequency. Each flush is followed
-    /// by a ~0.5 s reveal animation; total visible-latency per batch is ~1.2 s.
     private let flushDelayNanos: UInt64 = 500_000_000
     
-    /// Initial mount entry point. Branches on `isStreaming` because the two
-    /// cases want opposite behaviour:
-    ///
-    /// - **Committed** (not streaming): snap. The message is settled history,
-    ///   we want it visible immediately, no fake reveal animation.
-    /// - **Streaming**: route through `ingest` instead — even if the view
-    ///   remounts mid-stream and arrives with `target` already non-empty
-    ///   (which we've seen happen due to upstream layout/identity churn),
-    ///   we still go through the throttle + reveal pipeline rather than
-    ///   snapping past the animation. For a fresh stream mount with empty
-    ///   target this is effectively a no-op (`target == displayText`),
-    ///   then `onChange` drives ingest as content lands.
-    func bootstrap(_ target: String, isStreaming: Bool) {
+    func bootstrap(_ target: String) {
         guard displayText.isEmpty, latestTarget.isEmpty else { return }
-        print("[DEBUG] bootstrap", target, "isStreaming=\(isStreaming)")
-        if isStreaming {
-            ingest(target)
-            return
-        }
         displayText = target
         latestTarget = target
     }

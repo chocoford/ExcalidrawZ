@@ -12,6 +12,8 @@ import LLMCore
 struct CalculatorTool: Tool {
     var name: String { "calculator" }
 
+    var displayName: String { "Calculator" }
+
     var description: String {
         "Perform basic mathematical calculations. Supports +, -, *, /, ^, sqrt, sin, cos, tan, log, ln, and parentheses."
     }
