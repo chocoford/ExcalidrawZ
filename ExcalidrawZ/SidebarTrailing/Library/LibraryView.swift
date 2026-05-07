@@ -156,54 +156,56 @@ struct LibraryView: View {
     @available(macOS 13.0, *)
     @MainActor @ToolbarContentBuilder
     private func toolbar() -> some ToolbarContent {
-        if #available(macOS 26.0, *) {
-            ToolbarItemGroup(placement: .destructiveAction) {
-                if !libraries.isEmpty {
-                    Button {
-                        inSelectionMode.toggle()
-                        if !inSelectionMode { selectedItems.removeAll() }
-                    } label: {
-                        Label(
-                            .localizable(inSelectionMode ? .librariesButtonSelectCancel : .librariesButtonSelect),
-                            systemSymbol: inSelectionMode ? .xmark : .checklist
-                        )
+        if layoutState.isInspectorPresented {
+            if #available(macOS 26.0, *) {
+                ToolbarItemGroup(placement: .destructiveAction) {
+                    if !libraries.isEmpty {
+                        Button {
+                            inSelectionMode.toggle()
+                            if !inSelectionMode { selectedItems.removeAll() }
+                        } label: {
+                            Label(
+                                .localizable(inSelectionMode ? .librariesButtonSelectCancel : .librariesButtonSelect),
+                                systemSymbol: inSelectionMode ? .xmark : .checklist
+                            )
+                        }
                     }
+                    
                 }
                 
-            }
-            
-            // This work...
-            ToolbarItemGroup(placement: .principal) {
-                Spacer()
-            }
-            
-            // Not working...
-            ToolbarSpacer(.fixed)
-        }
-        
-        InspectorHeaderToolbar(
-            title: String(localizable: .librariesTitle),
-            isInspectorPresented: layoutState.isInspectorPresented
-        )
-        
-        if #available(macOS 26.0, *) {
-            ToolbarItemGroup(placement: .automatic) {
-                if inSelectionMode {
-                    Button(role: .destructive) {
-                        isRemoveSelectionsConfirmationPresented.toggle()
-                    } label: {
-                        Label(.localizable(.librariesButtonRemoveSelections), systemSymbol: .trash)
-                    }
-                    .disabled(selectedItems.isEmpty)
+                // This work...
+                ToolbarItemGroup(placement: .principal) {
+                    Spacer()
                 }
                 
-                Menu {
-                    bottomBarMenuItems()
-                        .labelStyle(.titleAndIcon)
-                } label: {
-                    Label(.localizable(.librariesButtonLibraryOptions), systemSymbol: .ellipsis)
+                // Not working...
+                ToolbarSpacer(.fixed)
+            }
+            
+            InspectorHeaderToolbar(
+                title: String(localizable: .librariesTitle),
+                isInspectorPresented: layoutState.isInspectorPresented
+            )
+            
+            if #available(macOS 26.0, *) {
+                ToolbarItemGroup(placement: .automatic) {
+                    if inSelectionMode {
+                        Button(role: .destructive) {
+                            isRemoveSelectionsConfirmationPresented.toggle()
+                        } label: {
+                            Label(.localizable(.librariesButtonRemoveSelections), systemSymbol: .trash)
+                        }
+                        .disabled(selectedItems.isEmpty)
+                    }
+                    
+                    Menu {
+                        bottomBarMenuItems()
+                            .labelStyle(.titleAndIcon)
+                    } label: {
+                        Label(.localizable(.librariesButtonLibraryOptions), systemSymbol: .ellipsis)
+                    }
+                    .menuIndicator(.hidden)
                 }
-                .menuIndicator(.hidden)
             }
         }
     }

@@ -81,10 +81,10 @@ struct ContextUsageRing: View {
     
 
     private var helpText: String {
-        let usedK = Double(usedTokens) / 1000.0
-        let maxK = Double(maxTokens) / 1000.0
+//        let usedK = Double(usedTokens) / 1000.0
+//        let maxK = Double(maxTokens) / 1000.0
         let pct = Int((fraction * 100).rounded())
-        return String(format: "Context: %.1fk / %.0fk tokens (%d%%)", usedK, maxK, pct)
+        return String(format: "%d%% of context remaining until auto-compact.\nClick to compact now", pct)
     }
 
     // MARK: - Heuristic token counter

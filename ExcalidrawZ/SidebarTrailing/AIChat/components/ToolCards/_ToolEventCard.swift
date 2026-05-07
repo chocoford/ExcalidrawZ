@@ -47,15 +47,34 @@ struct ToolEventCard<Content: View, Trailing: View>: View {
     @ViewBuilder var content: (_ isExpanded: Bool) -> Content
 
     @State private var isExpanded: Bool = false
+    /// Natural height of `content(isExpanded)` as measured by the
+    /// background `GeometryReader`. Drives the Animatable height
+    /// modifier — same trick `CompactSummaryRow` uses to make
+    /// SwiftUI's animation system propagate size changes through to
+    /// `NSHostingView`'s `intrinsicContentSize`. Without this, a
+    /// structural toggle (`if isExpanded { Text(...) }`) leaves
+    /// AppKit autolayout with stale size info and the scroll view's
+    /// `contentSize` lags — content overflows the viewport with no
+    /// way to scroll to it.
+    @State private var contentHeight: CGFloat = 0
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 0) {
             header
-            content(isExpanded)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .textSelection(.enabled)
-                .padding(.leading, 22)
+            ZStack(alignment: .top) {
+                content(isExpanded)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                    .padding(.leading, 22)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.top, isExpanded ? 4 : 0)
+            .readHeight($contentHeight)
+            .modifier(ToolEventBodyHeightModifier(height: contentHeight))
+            .animation(.smooth, value: contentHeight)
+            .clipped()
+            
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -69,7 +88,9 @@ struct ToolEventCard<Content: View, Trailing: View>: View {
     @ViewBuilder
     private var header: some View {
         Button {
-            isExpanded.toggle()
+            withAnimation(.easeInOut(duration: 0.18)) {
+                isExpanded.toggle()
+            }
         } label: {
             HStack(spacing: 6) {
                 Image(systemSymbol: .chevronRight)
@@ -89,6 +110,25 @@ struct ToolEventCard<Content: View, Trailing: View>: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct ToolEventBodyHeightModifier: Animatable, ViewModifier {
+    var animatableData: CGFloat
+
+    init(height: CGFloat) {
+        self.animatableData = height
+    }
+
+    func body(content: Content) -> some View {
+        content.frame(height: animatableData, alignment: .top)
+    }
+}
+
+private struct ToolEventBodyHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 

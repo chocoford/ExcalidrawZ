@@ -254,6 +254,18 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
         // scrollers float over the content and don't perturb width.
         scrollView.scrollerStyle = .overlay
 
+        // Don't clip the document view to the scroll view's bounds —
+        // we want chat rows to bleed past the top edge into the
+        // inspector/toolbar chrome (translucent material draws over
+        // them), matching SwiftUI's native `ScrollView` look. The
+        // scroll geometry itself is unaffected: NSClipView still
+        // tracks bounds for hit-testing and offset math, only
+        // the visual clip is dropped.
+        scrollView.wantsLayer = true
+        scrollView.layer?.masksToBounds = false
+        scrollView.contentView.wantsLayer = true
+        scrollView.contentView.layer?.masksToBounds = false
+
         // The `documentView` is a flipped container; the SwiftUI host
         // sits inside it. We can't subclass `NSHostingView` to flip
         // it directly because `isFlipped` is non-open, so we wrap.
@@ -440,6 +452,10 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
         scrollView.alwaysBounceVertical = true
         scrollView.contentInsetAdjustmentBehavior = .never
         scrollView.backgroundColor = .clear
+        // Same as the macOS side: let chat rows bleed past the
+        // top edge into surrounding chrome instead of getting a
+        // hard clip line. The scroll math is unchanged.
+        scrollView.clipsToBounds = false
         scrollView.contentSizeChangeHandler = { [weak coordinator = context.coordinator] oldSize, newSize in
             coordinator?.contentSizeDidChange(oldSize: oldSize, newSize: newSize)
         }

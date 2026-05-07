@@ -173,11 +173,11 @@ struct InspectorPresentationModifier: ViewModifier {
 /// Renders the title that appears at the top of the inspector chrome in sidebar mode.
 /// The placement gymnastics are needed to push the toggle to the right and center the title across macOS versions.
 struct InspectorHeaderToolbar: ToolbarContent {
+    
     let title: String
     let isInspectorPresented: Bool
-
+    
     var body: some ToolbarContent {
-
         /// This is the key to make sidebar toggle at the right side.
         /// The `status` is work well in macOS 15.0+. But not well in macOS 14.0
         ToolbarItemGroup(placement:  .status) {

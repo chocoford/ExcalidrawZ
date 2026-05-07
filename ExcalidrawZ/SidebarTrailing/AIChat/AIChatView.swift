@@ -31,13 +31,33 @@ struct AIChatView: View {
     
     @State private var inputText: String = ""
     @FocusState private var isInputFocused: Bool
-    
+
     @State private var lastBottomID: String?
     @State private var isPinnedToBottom: Bool = true
     @State private var scrollToBottomRequest = ScrollToBottomRequest()
     /// Confirmation dialog for the "Clear chat" toolbar action — destructive,
     /// so we route through a confirmationDialog rather than firing on tap.
     @State private var isConfirmingClear: Bool = false
+
+    /// Tapped Get Started on the first-run welcome cover. We only fall back
+    /// on the `conversations` count for "first-time visitor" detection;
+    /// once dismissed in this view we never want to flash the cover again
+    /// even if the user clears all chats from the More menu.
+    @State private var hasDismissedWelcome: Bool = false
+
+    /// Show the welcome cover when no conversations exist anywhere yet AND
+    /// the user hasn't already dismissed it. We treat `nil` (cache not
+    /// loaded) as "don't show yet" — flashing the welcome before LLMKit
+    /// finishes its first refresh would feel jumpy.
+    private var shouldShowWelcome: Bool {
+#if DEBUG
+        true
+#else
+        guard !hasDismissedWelcome else { return false }
+        guard let convos = llmState.conversations.value else { return false }
+        return convos.isEmpty
+#endif
+    }
     
     var conversation: Conversation? {
         llmState.conversations.value?.first { $0.id == fileState.aiChatConversationID }
@@ -67,6 +87,36 @@ struct AIChatView: View {
     }
     
     var body: some View {
+        ZStack {
+            if shouldShowWelcome {
+                AIChatWelcomeView {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        hasDismissedWelcome = true
+                    }
+                }
+                .transition(.opacity)
+            } else {
+//                chatBody
+//                    .transition(.opacity)
+            }
+        }
+        .toolbar(content: toolbar)
+        .confirmationDialog(
+            "Clear chat?",
+            isPresented: $isConfirmingClear,
+            titleVisibility: .visible
+        ) {
+            Button("Clear chat", role: .destructive) {
+                clearCurrentConversation()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("All messages in this conversation will be removed. The drawing file is unaffected.")
+        }
+    }
+
+    @ViewBuilder
+    private var chatBody: some View {
         VStack(spacing: 0) {
             if let conversation, !conversation.messages.isEmpty {
                 messageList(messages: conversation.messages)
@@ -90,12 +140,15 @@ struct AIChatView: View {
                         .transition(.opacity)
                 }
 
-                ApprovalPromptView()
-
-                PromptInputView(
-                    conversationID: conversationID,
-                    pendingQueue: $aiChatState.pendingQueue
-                )
+                ZStack(alignment: .top) {
+                    PromptInputView(
+                        conversationID: conversationID,
+                        pendingQueue: $aiChatState.pendingQueue
+                    )
+                    .disabled(llmState.pendingApprovalRequest != nil)
+                    
+                    ApprovalPromptView()
+                }
             }
             .padding(.horizontal, 10)
             // Animate the approval card's appearance/disappearance so
@@ -125,19 +178,6 @@ struct AIChatView: View {
             guard showing else { return }
             isPinnedToBottom = true
             requestScrollToBottom(animated: true)
-        }
-        .toolbar(content: toolbar)
-        .confirmationDialog(
-            "Clear chat?",
-            isPresented: $isConfirmingClear,
-            titleVisibility: .visible
-        ) {
-            Button("Clear chat", role: .destructive) {
-                clearCurrentConversation()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("All messages in this conversation will be removed. The drawing file is unaffected.")
         }
     }
 
@@ -251,11 +291,6 @@ struct AIChatView: View {
                     committedMessages: layout.liveCommittedRound,
                     stream: layout.liveStream,
                     onRegenerate: regenerateMessage,
-                    // `ChatScrollView`'s `followBottom` is on while streaming —
-                    // it auto-scrolls on every contentHeight change. We don't
-                    // need a per-chunk scroll request here too; that just
-                    // queues up redundant scrolls before layout has settled.
-                    onStreamUpdate: nil
                 )
             }
         }
@@ -272,15 +307,27 @@ struct AIChatView: View {
     /// the per-message `SmoothStreamingText` state inside) across the
     /// stream-end transition.
     private func makeRowLayout(messages: [ChatMessage]) -> RowLayout {
-        let allGroups = groupMessages(messages)
-        
+        var allGroups = groupMessages(messages)
+
         let activeStream: LLMStreamingStateObject? = {
             guard let s = streamingState,
                   shouldShowStreamingMessage(s, messages: messages)
             else { return nil }
             return s
         }()
-        
+
+        // When a stream is active, `LiveAssistantRoundView`'s
+        // `AssistantRoundView` shows its own "Thinking…" loading row.
+        // Drop standalone `.loading` MessageGroups that LLMKit emits
+        // as round-start placeholders — otherwise both would render
+        // and we'd see two loading rows.
+        if activeStream != nil {
+            allGroups.removeAll { group in
+                if case .loading = group { return true }
+                return false
+            }
+        }
+
         // Trailing round → live slot; everything before → static.
         if let last = allGroups.last, case .assistantRound(_, let msgs) = last {
             return RowLayout(
@@ -289,7 +336,7 @@ struct AIChatView: View {
                 liveCommittedRound: msgs
             )
         }
-        
+
         // No trailing assistant round (e.g. only a user message so far). The
         // active stream — if any — will land here once its first chunk gets
         // committed. For now there's nothing to pin.
@@ -302,59 +349,61 @@ struct AIChatView: View {
     
     @MainActor @ToolbarContentBuilder
     private func toolbar() -> some ToolbarContent {
-        if #available(macOS 26.0, *) {
-            ToolbarItemGroup(placement: .destructiveAction) {
-                Button {
-                    layoutState.enterAIChatIsland()
-                } label: {
-                    Label("Float as island", systemSymbol: .menubarDockRectangle)
-                }
-                .help("Float chat as a draggable island over the editor")
-            }
-            
-            // This work...
-            ToolbarItemGroup(placement: .principal) {
-                Spacer()
-            }
-            
-            // Not working...
-            ToolbarSpacer(.fixed)
-        }
-        
-        InspectorHeaderToolbar(
-            title: "AI Chat",
-            isInspectorPresented: layoutState.isInspectorPresented
-        )
-        
-        ToolbarItemGroup(placement: .automatic) {
-            Menu {
-                if #available(macOS 14.0, iOS 17.0, *) {
-                    OpenSettingsMenuItem(deepLinkTo: .ai)
-                } else {
-                    // Pre-`openSettings` env fallback — NSApp.sendAction
-                    // path. Older macOS doesn't carry the macOS 26+ runtime
-                    // "Please use SettingsLink" warning.
+        if layoutState.isInspectorPresented {
+            if #available(macOS 26.0, *) {
+                ToolbarItemGroup(placement: .destructiveAction) {
                     Button {
-                        SettingsRouter.shared.requestOpen(.ai)
+                        layoutState.enterAIChatIsland()
                     } label: {
-                        Label("Settings…", systemSymbol: .gearshape)
+                        Label("Float as island", systemSymbol: .menubarDockRectangle)
                     }
+                    .help("Float chat as a draggable island over the editor")
                 }
-
-                Divider()
-
-                Button(role: .destructive) {
-                    isConfirmingClear = true
-                } label: {
-                    Label("Clear chat", systemSymbol: .trash)
+                
+                // This work...
+                ToolbarItemGroup(placement: .principal) {
+                    Spacer()
                 }
-                // Disable when there's no conversation to clear, so the
-                // user doesn't get a confirmationDialog for a no-op.
-                .disabled(fileState.aiChatConversationID == nil)
-            } label: {
-                Label("More", systemSymbol: .ellipsis)
+                
+                // Not working...
+                ToolbarSpacer(.fixed)
             }
-            .menuIndicator(.hidden)
+            
+            InspectorHeaderToolbar(
+                title: "AI Chat",
+                isInspectorPresented: layoutState.isInspectorPresented
+            )
+            
+            ToolbarItemGroup(placement: .automatic) {
+                Menu {
+                    if #available(macOS 14.0, iOS 17.0, *) {
+                        OpenSettingsMenuItem(deepLinkTo: .ai)
+                    } else {
+                        // Pre-`openSettings` env fallback — NSApp.sendAction
+                        // path. Older macOS doesn't carry the macOS 26+ runtime
+                        // "Please use SettingsLink" warning.
+                        Button {
+                            SettingsRouter.shared.requestOpen(.ai)
+                        } label: {
+                            Label("Settings…", systemSymbol: .gearshape)
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    Button(role: .destructive) {
+                        isConfirmingClear = true
+                    } label: {
+                        Label("Clear chat", systemSymbol: .trash)
+                    }
+                    // Disable when there's no conversation to clear, so the
+                    // user doesn't get a confirmationDialog for a no-op.
+                    .disabled(fileState.aiChatConversationID == nil)
+                } label: {
+                    Label("More", systemSymbol: .ellipsis)
+                }
+                .menuIndicator(.hidden)
+            }
         }
     }
     

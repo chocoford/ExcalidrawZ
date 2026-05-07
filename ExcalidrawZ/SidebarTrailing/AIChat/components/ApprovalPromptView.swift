@@ -24,20 +24,6 @@ struct ApprovalPromptView: View {
     @EnvironmentObject private var aiChatState: AIChatState
 
     var body: some View {
-        // Two-step gate:
-        // 1. There must be a pending approval request from LLMKit.
-        // 2. The orchestrator (`AssistantRoundView`'s
-        //    `RoundRevealOrchestrator`) must have already revealed the
-        //    matching tool-call card, tracked via
-        //    `aiChatState.revealedToolCallIDs`. Without this, an
-        //    approval prompt can pop up while the orchestrator is
-        //    still pacing through prior elements — the user sees
-        //    "approve X?" but X's card hasn't appeared yet.
-        //
-        // Tool execution is paused on a continuation in LLMKit
-        // regardless of when *we* show the UI; we just delay the
-        // visual prompt. `respondToApproval(_:)` resumes execution
-        // whenever the user actually answers.
         if let request = llmState.pendingApprovalRequest,
            aiChatState.revealedToolCallIDs.contains(request.toolCallID) {
             ApprovalCard(request: request) { decision in
@@ -57,7 +43,11 @@ private struct ApprovalCard: View {
     /// Details panel collapsed by default — the reason line is usually
     /// enough; raw arguments are for power users / debugging.
     @State private var isExpanded: Bool = false
-
+    
+    @State private var denyReason = ""
+    @FocusState private var isFocused: Bool
+    
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
@@ -68,7 +58,6 @@ private struct ApprovalCard: View {
         }
         .padding(16)
         .background(background)
-
     }
 
     // MARK: Subviews
@@ -125,6 +114,9 @@ private struct ApprovalCard: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .modernButtonStyle(style: .glass, size: .regular, shape: .modern)
+            .overlay {
+                Capsule().stroke(.separator, lineWidth: 0.5)
+            }
 
             Button {
                 onDecide(.approveAlways)
@@ -133,7 +125,9 @@ private struct ApprovalCard: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .modernButtonStyle(style: .glassProminent, size: .regular, shape: .modern)
-            
+            .overlay {
+                Capsule().stroke(.separator, lineWidth: 0.5)
+            }
             
             Button(role: .destructive) {
                 onDecide(.deny(reason: nil))
@@ -142,7 +136,35 @@ private struct ApprovalCard: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .modernButtonStyle(style: .glass, size: .regular, shape: .modern)
-
+            .overlay {
+                Capsule().stroke(.separator, lineWidth: 0.5)
+            }
+            .keyboardShortcut(.escape)
+            
+            TextField("Tell the AI why (optional, then ⏎)", text: $denyReason)
+                .focused($isFocused)
+                .textFieldStyle(.plain)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background {
+                    Capsule().fill(Color.controlBackgroundColor)
+                    Capsule().stroke(.separator, lineWidth: 0.5)
+                }
+                .onSubmit {
+                    submitDenyReason()
+                }
+                .onAppear {
+                    Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: UInt64(1e+9))
+                        isFocused = true
+                    }
+                }
+            
+            HStack {
+                Text("Esc to cancel").font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
         }
     }
 
@@ -175,6 +197,17 @@ private struct ApprovalCard: View {
     }
 
     // MARK: Helpers
+
+    /// User pressed Enter in the deny-reason field. We deny with the
+    /// trimmed reason if the user typed something, otherwise with `nil`
+    /// — same as clicking the bare "Deny" button. LLMKit feeds the
+    /// reason into the synthesised tool result observation
+    /// (`"User denied execution of '<tool>'. Reason: <reason>"`), so
+    /// the model sees it on its next turn and can adjust strategy.
+    private func submitDenyReason() {
+        let trimmed = denyReason.trimmingCharacters(in: .whitespacesAndNewlines)
+        onDecide(.deny(reason: trimmed.isEmpty ? nil : trimmed))
+    }
 
     /// Best-effort pretty-printer: parses the raw arguments string as JSON
     /// and re-encodes with sorted keys + indentation. Falls back to the

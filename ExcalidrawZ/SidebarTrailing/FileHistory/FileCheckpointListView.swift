@@ -37,10 +37,12 @@ struct FileHistoryInspectorContent: View {
         if appPreference.inspectorLayout == .sidebar {
             contentView()
                 .toolbar {
-                    InspectorHeaderToolbar(
-                        title: String(localizable: .checkpoints),
-                        isInspectorPresented: layoutState.isInspectorPresented
-                    )
+                    if layoutState.isInspectorPresented {
+                        InspectorHeaderToolbar(
+                            title: String(localizable: .checkpoints),
+                            isInspectorPresented: layoutState.isInspectorPresented
+                        )
+                    }
                 }
         } else {
             contentView()
