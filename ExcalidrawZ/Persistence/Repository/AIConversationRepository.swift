@@ -88,7 +88,14 @@ actor AIConversationRepository {
     ///   - messageID: Unique message identifier
     ///   - messageType: Message type ("content", "agentStep", "error")
     ///   - content: Message content
-    ///   - role: Message role ("user", "assistant", "system")
+    ///   - role: Message role ("user", "assistant", "system", "tool", "developer")
+    ///   - toolCallsData: JSON-encoded `[ToolCall]` carried by an assistant
+    ///     message. Required for native tool-use roundtrip — without it,
+    ///     a restored conversation can't reconstruct the model's pending
+    ///     tool calls and the next provider request will be malformed.
+    ///   - toolCallId: For `role == .tool` messages, the id of the matching
+    ///     assistant `toolCall`. Required by OpenAI/Anthropic to associate
+    ///     tool results with the call that produced them.
     ///   - conversationObjectID: Parent conversation objectID
     /// - Returns: The objectID of the created message
     func createMessage(
@@ -96,6 +103,8 @@ actor AIConversationRepository {
         messageType: String,
         content: String,
         role: String,
+        toolCallsData: Data? = nil,
+        toolCallId: String? = nil,
         conversationObjectID: NSManagedObjectID
     ) async throws -> NSManagedObjectID {
         let context = PersistenceController.shared.newTaskContext()
@@ -110,6 +119,8 @@ actor AIConversationRepository {
             message.messageType = messageType
             message.content = content
             message.role = role
+            message.toolCallsData = toolCallsData
+            message.toolCallId = toolCallId
             message.timeStamp = Date()
             message.conversation = conversation
 
@@ -146,17 +157,32 @@ actor AIConversationRepository {
         }
     }
 
-    /// Update message content and usage
+    /// Update message content and usage. Each parameter follows
+    /// "skip if nil; write if `.some`" semantics so callers can patch a
+    /// subset without clobbering unrelated fields. The exception is
+    /// `clearToolCalls` / `clearToolCallId`, which let a caller actively
+    /// erase a previously-set value (an assistant message can drop its
+    /// pending tool calls if the model retracts them).
     /// - Parameters:
     ///   - messageObjectID: The message objectID
-    ///   - content: New content (optional)
+    ///   - content: New content (optional — pass `nil` to leave unchanged)
     ///   - usageConsumed: Token usage consumed (optional)
     ///   - usageRemains: Token usage remains (optional)
+    ///   - toolCallsData: JSON-encoded `[ToolCall]` (optional — leaves
+    ///     unchanged if `nil`; pass `clearToolCalls: true` to wipe)
+    ///   - clearToolCalls: If true, sets `toolCallsData` to nil regardless
+    ///     of `toolCallsData` parameter.
+    ///   - toolCallId: New tool-call id (optional)
+    ///   - clearToolCallId: If true, sets `toolCallId` to nil.
     func updateMessage(
         messageObjectID: NSManagedObjectID,
         content: String? = nil,
         usageConsumed: Double? = nil,
-        usageRemains: Double? = nil
+        usageRemains: Double? = nil,
+        toolCallsData: Data? = nil,
+        clearToolCalls: Bool = false,
+        toolCallId: String? = nil,
+        clearToolCallId: Bool = false
     ) async throws {
         let context = PersistenceController.shared.newTaskContext()
 
@@ -175,6 +201,18 @@ actor AIConversationRepository {
 
             if let remains = usageRemains {
                 message.usageRemains = remains
+            }
+
+            if clearToolCalls {
+                message.toolCallsData = nil
+            } else if let toolCallsData = toolCallsData {
+                message.toolCallsData = toolCallsData
+            }
+
+            if clearToolCallId {
+                message.toolCallId = nil
+            } else if let toolCallId = toolCallId {
+                message.toolCallId = toolCallId
             }
 
             message.timeStamp = Date()

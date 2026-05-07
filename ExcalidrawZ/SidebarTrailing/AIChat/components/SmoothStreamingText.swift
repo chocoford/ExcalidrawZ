@@ -77,13 +77,17 @@ struct SmoothStreamingText: View {
     
     private func handleHeightChange(_ newHeight: CGFloat) {
         guard newHeight > 0 else { return }
-        // Hold off on reveal until content is tall enough that the
-        // 24pt bottom-fade mask doesn't dominate the visible area.
-        // Below 48pt (= 2× mask height) the first line itself sits
-        // mostly inside the fade — the user sees a half-rendered
-        // teaser ghost. Wait until there's a buffer of clear text
-        // above the gradient before flipping `didMount`.
-        guard newHeight >= 48 else { return }
+        // 48pt visibility guard exists to hide the partial-first-line
+        // ghost while a streaming message is still building up its
+        // first line of text (the 24pt fade mask would otherwise
+        // dominate the visible area). For non-streaming content —
+        // user messages, committed/historical assistant messages —
+        // height is already at its final value and there's no ghost
+        // to hide, so the guard would just trap a short message at
+        // `revealHeight = 0` and render it invisible. Skip it.
+        if isStreaming {
+            guard newHeight >= 48 else { return }
+        }
         if !didMount {
             // First valid measurement: snap, no animation.
             var tx = Transaction()

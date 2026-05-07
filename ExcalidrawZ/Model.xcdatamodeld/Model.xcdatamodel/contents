@@ -17,6 +17,8 @@
         <attribute name="stepNumber" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="stepType" optional="YES" attributeType="String"/>
         <attribute name="timeStamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="toolCallId" optional="YES" attributeType="String"/>
+        <attribute name="toolCallsData" optional="YES" attributeType="Binary"/>
         <attribute name="usageConsumed" optional="YES" attributeType="Double" usesScalarValueType="YES"/>
         <attribute name="usageRemains" optional="YES" attributeType="Double" usesScalarValueType="YES"/>
         <relationship name="conversation" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="AIConversation" inverseName="messages" inverseEntity="AIConversation"/>

@@ -107,7 +107,7 @@ struct ExcalidrawZApp: App {
         }
         
         // Configure LLMKit
-        // let llmPersistenceProvider = LLMPersistenceProvider()
+        let llmPersistenceProvider = LLMPersistenceProvider()
 
         // Setup tool registry with basic tools. The list is pulled out
         // so we can mirror it into `ToolDisplayNameCache` synchronously
@@ -141,7 +141,7 @@ struct ExcalidrawZApp: App {
         self._llmState = StateObject(wrappedValue: LLMStateObject(
             llmClient: .shared,
             toolRegistry: toolRegistry,
-            persistenceProvider: nil // llmPersistenceProvider 测通了再说
+            persistenceProvider: llmPersistenceProvider
         ))
 
         Task {

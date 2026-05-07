@@ -191,8 +191,10 @@ struct PromptInputView<Background: View>: View {
 
     /// Server-side agent identifier; the backend resolves system prompt + agent
     /// config from this. Tools list still ships from the client because tool
-    /// implementations are local.
-    private let agentID = "excalidraw-canvas"
+    /// implementations are local. Pulled from `ExcalidrawAgentConfig` so this
+    /// view, the persistence layer's restore path, and any future agent
+    /// callers can't drift apart.
+    private var agentID: String { ExcalidrawAgentConfig.agentID }
 
     /// Resolved model used for the next request, in priority order:
     ///   1. Per-conversation override stored in `AIChatPreferences`
@@ -568,28 +570,12 @@ struct PromptInputView<Background: View>: View {
                     }
                     try await llmState.createConversation(
                         id: newConversationID,
-                        type: .custom("File"),
+                        type: .regular,
                         model: model,
-                        agentConfig: .withTools(
-                            [
-                                "web_search",
-                                "web_fetch",
-                                "read_file",
-                                "read_canvas_image",
-                                "calculator",
-                                "datetime",
-                                "adjust_elements",
-                                "list_all_files",
-                                "query_file_history",
-                                "restore_file_history",
-                                "list_libraries",
-                                "list_library_items",
-                                "query_library_item",
-                                "add_library_item_to_canvas",
-                                "final_answer"
-                            ],
-                            agentID: agentID
-                        ),
+                        // Tool roster + agentID centralized in
+                        // `ExcalidrawAgentConfig` so the persistence
+                        // restore path uses the exact same wiring.
+                        agentConfig: ExcalidrawAgentConfig.defaultConfig(),
                         messages: [.content(userMessage)],
                         context: context
                     )
