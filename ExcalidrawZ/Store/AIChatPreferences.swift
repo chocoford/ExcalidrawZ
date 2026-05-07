@@ -38,14 +38,19 @@ final class AIChatPreferences: ObservableObject {
 
     private let defaultModelKey = "AIChat.defaultModel"
     private let overridesKey = "AIChat.conversationModelOverrides"
-    private let fallbackModel: SupportedModel = .claudeSonnet4_6
+    /// "Medium" tier. The user-facing default for new conversations
+    /// and the fallback when no per-conversation override is stored.
+    /// Picked Haiku rather than Sonnet so first-time users don't burn
+    /// credits at the higher tier without knowing — they can opt up
+    /// from Settings → AI or per-conversation in the picker.
+    private let fallbackModel: SupportedModel = .claudeHaiku4_5
 
     private init() {
         let defaults = UserDefaults.standard
         if let raw = defaults.string(forKey: defaultModelKey) {
             self.defaultModel = SupportedModel(rawValue: raw)
         } else {
-            self.defaultModel = .claudeSonnet4_6
+            self.defaultModel = .claudeHaiku4_5
         }
 
         let dict = defaults.dictionary(forKey: overridesKey) as? [String: String] ?? [:]

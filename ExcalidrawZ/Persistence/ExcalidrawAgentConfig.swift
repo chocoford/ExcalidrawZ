@@ -60,4 +60,21 @@ enum ExcalidrawAgentConfig {
     static func defaultConfig() -> AgentConfig {
         .withTools(toolNames, agentID: agentID)
     }
+
+    /// Tools whose execution mutates the canvas. Used by the AI chat
+    /// session bookkeeping to decide whether to keep the pre/post
+    /// checkpoint pair around the round — no canvas mutation means no
+    /// reason to spend a history row, so the `.aiPre` written at the
+    /// start of the round gets cleaned up and no `.aiPost` is taken.
+    ///
+    /// `restore_file_history` is included even though it's "restoring,
+    /// not editing" — from the canvas's perspective the elements
+    /// change, the user might want to revert that revert, etc.
+    /// Keeping a pair around it stays consistent with every other
+    /// canvas mutation.
+    static let canvasModifyingToolNames: Set<String> = [
+        "adjust_elements",
+        "add_library_item_to_canvas",
+        "restore_file_history",
+    ]
 }

@@ -332,6 +332,26 @@ actor FileStorageManager {
     func getFileMetadata(relativePath: String) async throws -> FileMetadata {
         return try await localManager.getFileMetadata(relativePath: relativePath)
     }
+
+    /// Resolve a relative path to its absolute file URL in local storage.
+    /// Useful for callers (e.g. AI chat attachment repository) that want to
+    /// hand a `URL` to UI layers (`AsyncImage`, `Image(contentsOf:)`)
+    /// without first reading the file's bytes through `loadContent`. The
+    /// URL is returned regardless of whether the file currently exists —
+    /// iCloud sync may populate it later, and SwiftUI image views will
+    /// automatically retry once the file lands.
+    func getFileURL(relativePath: String) async throws -> URL {
+        return try await localManager.getFileURL(relativePath: relativePath)
+    }
+
+    /// The absolute root of the managed local-storage tree. Exposed for
+    /// callers that need to enumerate files outside the per-relative-path
+    /// API (e.g. the AI chat attachment GC sweep, which walks an entire
+    /// subdirectory looking for orphans). Returns nil if Application
+    /// Support couldn't be located.
+    func getStorageURL() async -> URL? {
+        return await localManager.getStorageURL()
+    }
     
     // MARK: - Media Item Operations (Public API)
     

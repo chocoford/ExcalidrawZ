@@ -66,37 +66,75 @@ extension FileState {
         }
     }
 
-    /// Closes the session. On success, writes the matching `.aiPost`
-    /// snapshot anchored to the assistant final-answer message id.
-    /// On failure / cancel, just drops the session (no post snapshot —
-    /// nothing meaningful changed, or changes are partial and the user
-    /// can revert via the `.aiPre` row).
+    /// Closes the session. Three branches:
+    ///
+    /// 1. **success && canvasModified** — write `.aiPost` snapshot
+    ///    anchored to the assistant final-answer message id. The
+    ///    `.aiPre` written at session start stays as the matching
+    ///    "before" snapshot of the round.
+    ///
+    /// 2. **success && !canvasModified** — the AI's reply didn't run
+    ///    any canvas-mutating tools, so the round produced nothing
+    ///    visually different from the pre-state. The `.aiPre` we
+    ///    eagerly recorded would just be a duplicate of the user's
+    ///    last on-disk state with no `.aiPost` to pair with it. Drop
+    ///    the `.aiPre` row to keep history clean.
+    ///
+    /// 3. **!success** — failure / cancel. The canvas may be in a
+    ///    half-modified state (a tool ran partway). Keep the `.aiPre`
+    ///    so the user can revert via it; don't write `.aiPost`.
+    ///
+    /// `canvasModified` is computed by the caller (typically by
+    /// scanning the round's tool calls against
+    /// `ExcalidrawAgentConfig.canvasModifyingToolNames`). We don't
+    /// reach into LLMKit here because FileState shouldn't depend on
+    /// the agent config / chat state directly.
     @MainActor
     func endAIChatSession(
         success: Bool,
+        canvasModified: Bool,
         assistantMessageID: String?,
         description: String?
     ) async {
         defer { self.aiChatSession = nil }
 
-        guard success,
-              let assistantMessageID,
-              let session = self.aiChatSession else { return }
+        guard let session = self.aiChatSession else { return }
+
+        // Failure path: nothing to do; `.aiPre` stays as the revert
+        // anchor.
+        guard success else { return }
 
         // Anchor file resolution: prefer the file the session opened on,
         // but fall back to current active file if the session opened
         // without one (AI may have just created a new file).
-        guard let target = session.anchorFile ?? currentActiveFile else { return }
+        let target = session.anchorFile ?? currentActiveFile
 
-        do {
-            try await snapshot(
-                file: target,
-                source: .aiPost,
-                messageID: assistantMessageID,
-                description: description
-            )
-        } catch {
-            logger.error("Failed to record .aiPost checkpoint: \(error)")
+        if canvasModified {
+            guard let target, let assistantMessageID else { return }
+            do {
+                try await snapshot(
+                    file: target,
+                    source: .aiPost,
+                    messageID: assistantMessageID,
+                    description: description
+                )
+            } catch {
+                logger.error("Failed to record .aiPost checkpoint: \(error)")
+            }
+        } else {
+            // Read-only round — clean up the `.aiPre` row so it
+            // doesn't show up in history with no matching `.aiPost`.
+            // Best-effort: log on failure but don't throw, the
+            // session is already winding down.
+            guard let target else { return }
+            do {
+                try await deleteAiPreCheckpoint(
+                    file: target,
+                    messageID: session.userMessageID
+                )
+            } catch {
+                logger.error("Failed to clean up unused .aiPre checkpoint: \(error)")
+            }
         }
     }
 
@@ -137,6 +175,77 @@ extension FileState {
                 // suppression flag still kicks in for the duration of the
                 // session, which is the safe default.
                 return
+        }
+    }
+
+    /// Find and delete the `.aiPre` checkpoint anchored to this
+    /// `userMessageID` for the given file. Used when the round
+    /// finishes without any canvas-mutating tool calls — the eagerly-
+    /// recorded `.aiPre` has nothing to pair with and would just clutter
+    /// the file's history list. No-op if no matching row exists.
+    private func deleteAiPreCheckpoint(
+        file: ActiveFile,
+        messageID: String
+    ) async throws {
+        switch file {
+            case .file(let f):
+                try await deleteAiPreFileCheckpoint(
+                    fileObjectID: f.objectID,
+                    messageID: messageID
+                )
+
+            case .localFile(let url):
+                try await deleteAiPreLocalCheckpoint(
+                    url: url,
+                    messageID: messageID
+                )
+
+            case .temporaryFile, .collaborationFile:
+                // We never write `.aiPre` for these in `snapshot(...)`,
+                // so there's nothing to delete.
+                return
+        }
+    }
+
+    private func deleteAiPreFileCheckpoint(
+        fileObjectID: NSManagedObjectID,
+        messageID: String
+    ) async throws {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        let checkpointObjectID: NSManagedObjectID? = try await context.perform {
+            let request: NSFetchRequest<FileCheckpoint> = FileCheckpoint.fetchRequest()
+            request.predicate = NSPredicate(
+                format: "file == %@ AND source == %@ AND messageID == %@",
+                fileObjectID,
+                FileCheckpointSource.aiPre.rawValue,
+                messageID
+            )
+            request.fetchLimit = 1
+            return try context.fetch(request).first?.objectID
+        }
+        guard let checkpointObjectID else { return }
+        try await PersistenceController.shared.checkpointRepository
+            .deleteCheckpoint(checkpointObjectID: checkpointObjectID)
+    }
+
+    private func deleteAiPreLocalCheckpoint(
+        url: URL,
+        messageID: String
+    ) async throws {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        try await context.perform {
+            let request: NSFetchRequest<LocalFileCheckpoint> = LocalFileCheckpoint.fetchRequest()
+            request.predicate = NSPredicate(
+                format: "url == %@ AND source == %@ AND messageID == %@",
+                url as CVarArg,
+                FileCheckpointSource.aiPre.rawValue,
+                messageID
+            )
+            request.fetchLimit = 1
+            if let row = try context.fetch(request).first {
+                context.delete(row)
+                try context.save()
+            }
         }
     }
 

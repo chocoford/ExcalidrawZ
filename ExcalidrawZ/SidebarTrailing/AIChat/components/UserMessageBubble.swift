@@ -72,32 +72,6 @@ struct UserMessageBubble: View {
 
     @MainActor @ViewBuilder
     private var bubbleContents: some View {
-        if let text = content.content, !text.isEmpty {
-            if #available(macOS 14.0, *) {
-                SmoothStreamingText(target: text)
-                    .padding(10)
-                    .background(Color.accentColor.gradient.secondary)
-                    .cornerRadius(20)
-            } else {
-                SmoothStreamingText(target: text)
-                    .padding(10)
-                    .background(Color.secondary.gradient)
-                    .cornerRadius(20)
-            }
-        }
-
-//        if let usage = content.usage {
-//            HStack(spacing: 4) {
-//                Image(systemName: "bolt.circle")
-//                Text(usage.consumed.formatted())
-//            }
-//            .font(.footnote)
-//            .padding(.horizontal, 4)
-//            .padding(.vertical, 2)
-//            .background {
-//                Capsule().fill(.regularMaterial)
-//            }
-//        }
 
         let imageFiles = (content.files ?? []).filter { file in
             switch file {
@@ -110,6 +84,21 @@ struct UserMessageBubble: View {
                 ForEach(imageFiles, id: \.self) { file in
                     MessageImageView(file: file)
                 }
+            }
+            .frame(height: 160)
+        }
+        
+        if let text = content.content, !text.isEmpty {
+            if #available(macOS 14.0, *) {
+                SmoothStreamingText(target: text)
+                    .padding(10)
+                    .background(Color.accentColor.gradient.secondary)
+                    .cornerRadius(20)
+            } else {
+                SmoothStreamingText(target: text)
+                    .padding(10)
+                    .background(Color.secondary.gradient)
+                    .cornerRadius(20)
             }
         }
     }

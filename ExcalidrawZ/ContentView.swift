@@ -15,11 +15,20 @@ import ChocofordUI
 import ChocofordEssentials
 import SwiftyAlert
 import SFSafeSymbols
+import LLMKit
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject var appPreference: AppPreference
+    /// Pulled from the app-level environment (see `ExcalidrawZApp`).
+    /// Both are needed here because we trigger conversation
+    /// pre-selection on every active-file change (see the
+    /// `.task(id:)` below) — the inspector / island panels then just
+    /// read the already-pinned `aiChatConversationID` instead of
+    /// each having to refresh on appear.
+    @EnvironmentObject private var llmState: LLMStateObject
+    @EnvironmentObject private var aiChatState: AIChatState
     
     @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
     
@@ -83,6 +92,23 @@ struct ContentView: View {
                 if newValue == nil, layoutState.isInspectorPresented {
                     layoutState.isInspectorPresented = false
                 }
+            }
+            // Pre-load the chat conversation tied to the active file
+            // *as soon as the file changes*, not lazily when the user
+            // opens the chat panel. The id-based `.task` fires on
+            // first appear and on every subsequent change — empty
+            // ActiveFile keeps the previous selection nil, so the
+            // panel still opens with a clean slate when no file is
+            // loaded. Multi-conversation per file isn't surfaced in
+            // the UI yet (single-thread feel), but the persistence
+            // layer is already file-scoped, so this is just picking
+            // the latest from that file's bin.
+            .task(id: fileState.currentActiveFile?.id) {
+                print("[AIChatDiag] ContentView.task(id:) fired with id=\(fileState.currentActiveFile?.id ?? "nil")")
+                await aiChatState.loadConversationForActiveFile(
+                    in: llmState,
+                    fileState: fileState
+                )
             }
             .withContainerSize()
             .task { await prepare() }

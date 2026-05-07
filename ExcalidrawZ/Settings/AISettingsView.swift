@@ -99,7 +99,7 @@ struct AISettingsView: View {
             set: { prefs.defaultModel = SupportedModel(rawValue: $0) }
         )) {
             ForEach(mergedModels, id: \.rawValue) { model in
-                Text(model.displayName).tag(model.rawValue)
+                Text(model.excalidrawTierName).tag(model.rawValue)
             }
         }
         .help("Used for new conversations and as the picker default. Each conversation can override this from its own model picker.")

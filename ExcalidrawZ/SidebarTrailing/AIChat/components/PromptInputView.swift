@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 import ChocofordUI
 import LLMKit
@@ -168,6 +169,18 @@ struct PromptInputView<Background: View>: View {
     }
 
     @State private var inputText: String = ""
+    /// Side-state mirror for image attachments pasted into the input.
+    /// `inputText` only carries the `[image:<UUID>]` placeholders that
+    /// `PastedImageToken.plainText` produces — the actual image bytes
+    /// live here keyed by token id, and we reconcile the two on send.
+    /// See [PromptInputView+ImagePaste.swift](PromptInputView+ImagePaste.swift)
+    /// for the full data flow.
+    @State private var pastedImages: [PendingPastedImage] = []
+    /// Drives the system image-picker sheet from the attachment menu.
+    /// Selected files flow through the same `pastedImages` side-state
+    /// as paste, so once they're added the rest of the pipeline (send,
+    /// thumbnail strip, persist) is unchanged.
+    @State private var isImagePickerPresented: Bool = false
     @State private var agentConfig: DomainAgentConfigResponse?
 
     /// User's model pick made *before* a conversation has been created
@@ -273,21 +286,8 @@ struct PromptInputView<Background: View>: View {
             }
 
             HStack {
-                Menu {
-                    
-                } label: {
-                    Button {
-                        
-                    } label: {
-                        Label("", systemSymbol: .paperclip)
-                    }
-                } primaryAction: {
-                    
-                }
-                .labelStyle(.iconOnly)
-                .menuIndicator(.hidden)
-                .modernButtonStyle(style: .plain, shape: .circle)
-                
+                attachmentMenu
+
                 modelPicker
 
                 Spacer()
@@ -295,6 +295,54 @@ struct PromptInputView<Background: View>: View {
                 primaryActionButton()
             }
             .controlSize(.large)
+        }
+    }
+
+    /// Bottom-left attachment menu. Currently has only "Image" — clicking
+    /// it opens the system file picker constrained to `UTType.image`,
+    /// and selected files flow through the same `pastedImages`
+    /// pipeline as a Cmd+V paste. Future entries (file uploads,
+    /// canvas snapshots, etc.) drop in here as additional `Button`s.
+    /// We deliberately don't use the `primaryAction:` closure form —
+    /// the icon doesn't have a single "default" action; tapping it
+    /// just opens the menu.
+    @ViewBuilder
+    private var attachmentMenu: some View {
+        Menu {
+            Button {
+                isImagePickerPresented = true
+            } label: {
+                Label("Image", systemSymbol: .photo)
+            }
+        } label: {
+            Image(systemSymbol: .paperclip)
+        }
+        .labelStyle(.iconOnly)
+        .menuIndicator(.hidden)
+        .modernButtonStyle(style: .plain, shape: .circle)
+        .fileImporter(
+            isPresented: $isImagePickerPresented,
+            allowedContentTypes: [.image],
+            allowsMultipleSelection: true
+        ) { result in
+            handleImagePickerResult(result)
+        }
+    }
+
+    /// Resolve the picked URLs into `PlatformImage`s and append to
+    /// `pastedImages`. Each URL needs `startAccessingSecurityScopedResource`
+    /// because `fileImporter` returns user-domain paths the app
+    /// doesn't have ambient access to. Failures are swallowed
+    /// per-file: a bad image shouldn't block the rest.
+    private func handleImagePickerResult(_ result: Result<[URL], Error>) {
+        guard case .success(let urls) = result else { return }
+        for url in urls {
+            let didStart = url.startAccessingSecurityScopedResource()
+            defer {
+                if didStart { url.stopAccessingSecurityScopedResource() }
+            }
+            guard let image = imageFromFileURL(url) else { continue }
+            pastedImages.append(PendingPastedImage(id: UUID(), image: image))
         }
     }
 
@@ -311,15 +359,15 @@ struct PromptInputView<Background: View>: View {
                     pickModel(model)
                 } label: {
                     if model == activeModel {
-                        Label(model.displayName, systemSymbol: .checkmark)
+                        Label(model.excalidrawTierName, systemSymbol: .checkmark)
                     } else {
-                        Text(model.displayName)
+                        Text(model.excalidrawTierName)
                     }
                 }
             }
         } label: {
             HStack(spacing: 4) {
-                Text(activeModel.displayName)
+                Text(activeModel.excalidrawTierName)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Image(systemSymbol: .chevronDown)
@@ -400,7 +448,11 @@ struct PromptInputView<Background: View>: View {
     }
 
     private var hasInputText: Bool {
-        !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        // "Has input" now also counts pasted images even if the user
+        // typed no prose. A message with just a screenshot and no
+        // accompanying text is a legitimate send.
+        let hasText = !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return hasText || !pastedImages.isEmpty
     }
 
     /// Shows stop only when generating *and* the input is empty. If the user
@@ -436,32 +488,93 @@ struct PromptInputView<Background: View>: View {
     @ViewBuilder
     private func inputField() -> some View {
         if #available(macOS 15.0, iOS 18.0, *) {
-            TextArea(
-                text: $inputText,
-                placeholder: Text("Ask AI to draw...")
-            )
-            .keyDownHandler(
-                TextFieldKeyDownEventHandler(triggers: [(36, nil)]) { event in
-                    guard let event else { return nil }
-                    if event.keyCode == 36, !event.modifierFlags.contains(.shift) {
-                        sendMessage()
-                        return nil           // 消费 plain enter
+            // Composite: thumbnail strip sits *inside* the rounded
+            // chrome above the TextArea so they read as one unit
+            // ("attachments + prompt about to be sent"). Background
+            // applies to the whole stack — the strip and the text
+            // share the same backdrop, no seams.
+            VStack(spacing: 0) {
+                AttachmentThumbnailStrip(pastedImages: $pastedImages)
+
+                TextArea(
+                    text: $inputText,
+                    placeholder: Text("Ask AI to draw...")
+                )
+                .keyDownHandler(
+                    TextFieldKeyDownEventHandler(triggers: [(36, nil)]) { event in
+                        guard let event else { return nil }
+                        if event.keyCode == 36, !event.modifierFlags.contains(.shift) {
+                            sendMessage()
+                            return nil           // 消费 plain enter
+                        }
+                        return event             // shift+enter 透传，系统自动插入 \n 并移动光标
                     }
-                    return event             // shift+enter 透传，系统自动插入 \n 并移动光标
+                )
+                .onPaste { item in
+                    handlePastedItem(item)
                 }
-            )
+                .focused($isInputFocused)
+            }
             .background { style.background }
-            .focused($isInputFocused)
         } else {
             TextEditor(text: $inputText)
                 .frame(height: 160)
                 .focused($isInputFocused)
         }
     }
+
+    /// Convert a TextArea paste event into the right `TextAreaInsertion`.
+    /// Image-bearing items get captured into `pastedImages` (which the
+    /// thumbnail strip above the input renders); we return
+    /// `.action {}` so TextArea inserts nothing into the prompt text
+    /// — the prompt stays clean for the model, and the image lives
+    /// out-of-band as an attachment.
+    ///
+    /// Non-image pastes (plain text, web URLs, unknown UTIs, non-image
+    /// files) return `nil`, falling through to TextArea's default
+    /// handling.
+    private func handlePastedItem(_ item: TextAreaPasteItem) -> TextAreaInsertion? {
+        let image: PlatformImage?
+        switch item {
+            case .image(let img):
+                image = img
+            case .fileURL(let url):
+                // Best-effort image load. Non-image fileURLs (PDFs,
+                // arbitrary docs) currently return nil — we have
+                // nothing useful to do with them yet. When generic
+                // file uploads land, this is where to grow.
+                image = imageFromFileURL(url)
+            default:
+                image = nil
+        }
+
+        guard let image else { return nil }
+
+        // Append synchronously so a same-runloop send picks it up.
+        pastedImages.append(PendingPastedImage(id: UUID(), image: image))
+        // No-op action to swallow the paste — TextArea inserts nothing.
+        return .action {}
+    }
+
+    /// Try to turn a file URL into a `PlatformImage`. macOS reads
+    /// almost any image format via NSImage; on iOS we go through Data
+    /// + UIImage. Returns nil for non-image data (or unreadable
+    /// files), so callers can fall through to default paste handling.
+    private func imageFromFileURL(_ url: URL) -> PlatformImage? {
+#if canImport(AppKit)
+        return NSImage(contentsOf: url)
+#elseif canImport(UIKit)
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return UIImage(data: data)
+#else
+        return nil
+#endif
+    }
     
     private func sendMessage() {
         let trimmedText = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedText.isEmpty else { return }
+        let files = PastedImageHelpers.buildFiles(from: pastedImages)
+        guard !trimmedText.isEmpty || !files.isEmpty else { return }
 
         // Client-side credits gate: if we already know the balance is empty,
         // skip the round-trip and open the paywall immediately. We only block
@@ -477,27 +590,35 @@ struct PromptInputView<Background: View>: View {
         // the next one. The drain runs when `currentTask` finishes.
         if isGenerating {
             withAnimation(.easeInOut(duration: 0.2)) {
-                pendingQueue.append(PendingQueueMessage(text: trimmedText))
+                pendingQueue.append(
+                    PendingQueueMessage(text: trimmedText, files: files)
+                )
             }
             inputText = ""
+            pastedImages = []
             return
         }
 
         inputText = ""
-        startSend(prompt: trimmedText)
+        pastedImages = []
+        startSend(prompt: trimmedText, files: files)
     }
 
     /// Kicks off the actual network/stream pipeline for `prompt`. Stores the
     /// Task in `currentTask` so the stop button can cancel it; on completion
     /// (success or failure) it clears the slot and drains the queue.
-    private func startSend(prompt: String) {
+    private func startSend(prompt: String, files: [ChatMessageContent.File] = []) {
         let newConversationID = UUID().uuidString
 
         // Build the user message ahead of time so we can capture its id
         // for the AI chat session begin hook (anchors the `.aiPre`
         // checkpoint to this exact message — UI later renders a
         // "revert to here" affordance on the message row).
-        let userMessage = ChatMessageContent(role: .user, content: prompt)
+        let userMessage = ChatMessageContent(
+            role: .user,
+            content: prompt,
+            files: files
+        )
         let userMessageID = userMessage.id
 
         currentTask = Task {
@@ -579,6 +700,31 @@ struct PromptInputView<Background: View>: View {
                         messages: [.content(userMessage)],
                         context: context
                     )
+
+                    // Bind the new conversation to the active File so
+                    // `fetchConversationSnapshots(forFileID:)` can find
+                    // it on the next file-load. Only `.file` carries a
+                    // CoreData NSManagedObjectID we can persist
+                    // against the schema's `AIConversation.file`
+                    // relationship — local / temporary / collaboration
+                    // files don't, and would leave the conversation
+                    // with no file scoping (which is fine for v1).
+                    let activeFileForBinding = await MainActor.run { fileState.currentActiveFile }
+                    print("[AIChatDiag] post-create binding check, activeFile=\(String(describing: activeFileForBinding))")
+                    if case .file(let file) = activeFileForBinding {
+                        let fileObjectID = await MainActor.run { file.objectID }
+                        do {
+                            try await PersistenceController.shared.aiConversationRepository
+                                .bindConversationToFile(
+                                    conversationID: newConversationID,
+                                    fileObjectID: fileObjectID
+                                )
+                        } catch {
+                            print("[AIChatDiag] post-create bind threw \(error.localizedDescription)")
+                        }
+                    } else {
+                        print("[AIChatDiag] post-create: not a .file case, skipping bind")
+                    }
                 } else {
                     try await llmState.sendMessage(
                         to: self.conversationID!,
@@ -603,26 +749,41 @@ struct PromptInputView<Background: View>: View {
                 }
             }
 
-            // Close the session unconditionally — on success writes
-            // `.aiPost` snapshot anchored to the trailing assistant
-            // message; on failure / cancel just clears the suppression
-            // flag (no post snapshot).
+            // Close the session unconditionally. Behaviour split:
+            //   - success + canvasModified: write `.aiPost` snapshot
+            //     anchored to the trailing assistant message
+            //   - success + !canvasModified: delete the eager `.aiPre`
+            //     (the round was read-only, no history value)
+            //   - !success: keep `.aiPre` for revert, no `.aiPost`
+            //
+            // `canvasModified` is decided by inspecting the round's
+            // assistant tool calls — only canvas-mutating ones (per
+            // `ExcalidrawAgentConfig.canvasModifyingToolNames`) count.
+            // Pure-chat rounds, search/read-only tool rounds, and
+            // navigation-only rounds all leave the canvas untouched
+            // and shouldn't burn a history entry.
             if sessionOpened {
-                let assistantMessageID: String? = await MainActor.run {
-                    guard streamSucceeded else { return nil }
+                let (assistantMessageID, canvasModified): (String?, Bool) = await MainActor.run {
+                    guard streamSucceeded else { return (nil, false) }
                     let convo = llmState.conversations.value?
                         .first(where: { $0.id == conversationIDForSession })
-                    return convo?.messages.last(where: {
+                    let lastAssistantID = convo?.messages.last(where: {
                         if case .content(let c) = $0, c.role == .assistant {
                             return true
                         }
                         return false
                     })?.id
+                    let modified = roundUsedCanvasModifyingTool(
+                        in: convo,
+                        sinceUserMessageID: userMessageID
+                    )
+                    return (lastAssistantID, modified)
                 }
                 // `description` is intentionally nil for now — wired up
                 // later (likely from `final_answer` tool args).
                 await fileState.endAIChatSession(
                     success: streamSucceeded,
+                    canvasModified: canvasModified,
                     assistantMessageID: assistantMessageID,
                     description: nil
                 )
@@ -632,6 +793,41 @@ struct PromptInputView<Background: View>: View {
                 currentTask = nil
                 drainQueueIfNeeded()
             }
+        }
+    }
+
+    /// True if any assistant message at or after `userMessageID`
+    /// carries a tool call whose name is in
+    /// `ExcalidrawAgentConfig.canvasModifyingToolNames`. Drives the
+    /// "skip the .aiPost / clean up the .aiPre" decision in
+    /// `endAIChatSession` — pure-chat rounds, search-only rounds,
+    /// navigation-only rounds, etc. all return false and the round's
+    /// pre-snapshot is dropped.
+    ///
+    /// We scan from the user message anchor (rather than e.g. the
+    /// trailing assistant message backwards) so a round that produced
+    /// multiple assistant turns — intermediate tool-using turn(s) +
+    /// final summary — is checked end-to-end. Falls back to "the
+    /// whole conversation" if the user message can't be located in
+    /// the snapshot, which is conservative but safe (false positive
+    /// just leaves a history pair we'd otherwise drop).
+    @MainActor
+    private func roundUsedCanvasModifyingTool(
+        in conversation: Conversation?,
+        sinceUserMessageID userMessageID: String
+    ) -> Bool {
+        guard let conversation else { return false }
+        let messages = conversation.messages
+        let startIndex: Int = {
+            if let idx = messages.firstIndex(where: { $0.id == userMessageID }) {
+                return idx
+            }
+            return messages.startIndex
+        }()
+        let modifying = ExcalidrawAgentConfig.canvasModifyingToolNames
+        return messages[startIndex...].contains { msg in
+            guard case .content(let c) = msg, c.role == .assistant else { return false }
+            return c.toolCalls?.contains(where: { modifying.contains($0.name) }) == true
         }
     }
 
@@ -658,7 +854,7 @@ struct PromptInputView<Background: View>: View {
         let next: PendingQueueMessage = withAnimation(.easeInOut(duration: 0.2)) {
             pendingQueue.removeFirst()
         }
-        startSend(prompt: next.text)
+        startSend(prompt: next.text, files: next.files)
     }
 }
 

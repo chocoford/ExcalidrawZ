@@ -22,6 +22,8 @@
 //
 
 import Foundation
+import LLMCore
+import LLMKit
 
 @MainActor
 final class AIChatState: ObservableObject {
@@ -77,5 +79,116 @@ final class AIChatState: ObservableObject {
     /// of `"toolcall:<msgID>:<callID>"` element ids.
     func markToolCallRevealed(_ callID: String) {
         revealedToolCallIDs.insert(callID)
+    }
+}
+
+// MARK: - Conversation content helpers
+
+extension LLMKit.Conversation {
+    /// True if this conversation carries at least one user or
+    /// assistant message — i.e. someone actually chatted in it.
+    /// LLMKit auto-injects a `.system` message into every fresh
+    /// conversation, so a non-empty `messages` array isn't enough
+    /// to know there was real activity. Used by the inspector and
+    /// island views to skip "empty shells" when auto-resuming the
+    /// most recent conversation on open.
+    var hasUserOrAssistantMessage: Bool {
+        messages.contains { msg in
+            guard case .content(let content) = msg else { return false }
+            return content.role == .user || content.role == .assistant
+        }
+    }
+}
+
+extension AIConversationSnapshot {
+    /// Snapshot-side mirror of `Conversation.hasUserOrAssistantMessage`,
+    /// used during file-load pre-selection. Skips the `.system`
+    /// auto-injection so a freshly-minted conversation that never
+    /// got a real user message doesn't look like resumable history.
+    var hasUserOrAssistantMessage: Bool {
+        messages.contains { msg in
+            (msg.messageType ?? "content") == "content"
+                && (msg.role == "user" || msg.role == "assistant")
+        }
+    }
+}
+
+// MARK: - File-scoped conversation loader
+
+extension AIChatState {
+    /// Refresh the global conversation cache and pre-select the most
+    /// recent conversation tied to the current active file. Called on
+    /// every file change (typically driven by a `.task(id:)` on
+    /// `ContentView`), so by the time the user opens the chat panel
+    /// the right conversation is already pinned.
+    ///
+    /// "Pre-select" writes to `fileState.aiChatConversationID`. If
+    /// the active file has no persisted history, the id is set to
+    /// nil and the next send creates a fresh conversation bound to
+    /// the file via `bindConversationToFile`.
+    ///
+    /// Only `.file(File)` participates in file-scoped resume; local /
+    /// temporary / collaboration files start with no preselected
+    /// conversation. We could revisit this — `.collaborationFile`
+    /// has its own NSManagedObjectID and the schema could grow a
+    /// second relationship — but it's not worth doing until the
+    /// product wants per-room chat history.
+    func loadConversationForActiveFile(
+        in llmState: LLMStateObject,
+        fileState: FileState
+    ) async {
+        let activeFile = fileState.currentActiveFile
+        print("[AIChatDiag] loadConversationForActiveFile fired. activeFile=\(describe(activeFile))")
+
+        // Always refresh first: the global cache also drives
+        // AIChatView's rendering of the conversation we're about to
+        // pin, so we want both pieces to land in the same render
+        // pass. The snapshot path is fast (single Core Data fetch).
+        await llmState.refreshConversations()
+        print("[AIChatDiag] after refresh, conversations.value count=\(llmState.conversations.value?.count ?? -1)")
+
+        let chosen = await pickLatestConversationID(forActiveFile: activeFile)
+        print("[AIChatDiag] pickLatestConversationID -> \(chosen ?? "nil")")
+        await MainActor.run {
+            fileState.aiChatConversationID = chosen
+        }
+    }
+
+    /// Returns the id of the most-recent file-bound conversation that
+    /// has real activity (user or assistant message). Nil when:
+    /// - the active file isn't a `.file` case (no CoreData binding),
+    /// - no conversations exist for that file, or
+    /// - all of them are empty shells (system-only).
+    private func pickLatestConversationID(
+        forActiveFile activeFile: FileState.ActiveFile?
+    ) async -> String? {
+        guard case .file(let file) = activeFile, let fileID = file.id else {
+            print("[AIChatDiag] pick: activeFile is not .file or has nil id, skipping")
+            return nil
+        }
+        print("[AIChatDiag] pick: querying snapshots for fileID=\(fileID.uuidString)")
+        let repo = PersistenceController.shared.aiConversationRepository
+        let snapshots: [AIConversationSnapshot]
+        do {
+            snapshots = try await repo.fetchConversationSnapshots(forFileID: fileID)
+        } catch {
+            print("[AIChatDiag] pick: fetchConversationSnapshots threw \(error.localizedDescription)")
+            return nil
+        }
+        print("[AIChatDiag] pick: got \(snapshots.count) snapshots for this file. \(snapshots.map { "[\(($0.conversationID ?? "?").prefix(8)) msgs=\($0.messages.count) ua=\($0.hasUserOrAssistantMessage)]" }.joined(separator: " "))")
+        let candidates = snapshots.filter { $0.hasUserOrAssistantMessage }
+        print("[AIChatDiag] pick: \(candidates.count) candidates after filter")
+        let latest = candidates.max(by: { ($0.lastChatAt ?? .distantPast) < ($1.lastChatAt ?? .distantPast) })
+        return latest?.conversationID
+    }
+
+    private func describe(_ activeFile: FileState.ActiveFile?) -> String {
+        guard let activeFile else { return "nil" }
+        switch activeFile {
+            case .file(let f): return ".file(name=\(f.name ?? "?") id=\(f.id?.uuidString ?? "nil"))"
+            case .localFile(let url): return ".localFile(\(url.lastPathComponent))"
+            case .temporaryFile(let url): return ".temporaryFile(\(url.lastPathComponent))"
+            case .collaborationFile(let f): return ".collaborationFile(\(f.name ?? "?"))"
+        }
     }
 }

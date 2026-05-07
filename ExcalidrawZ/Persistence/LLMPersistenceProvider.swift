@@ -34,10 +34,12 @@
 //  - `ChatMessageContent.toolCallId` — stored as `toolCallId` column.
 //    Tool-result messages need this to resolve back to their parent
 //    tool call.
-//  - `ChatMessageContent.files` — **not stored** today. The chat input
-//    doesn't yet emit attached files, so there's nothing to lose;
-//    when image upload lands we'll add a `filesData` column with
-//    external-storage Binary (base64 attachments can be MB-scale).
+//  - `ChatMessageContent.files` — stored as a JSON `[PersistedFile]`
+//    index in the `filesData` column. The actual bytes live under
+//    `AIChatAttachments/<conversationID>/<UUID>.<ext>` in the managed
+//    file storage tree (iCloud-Drive-synced) and are written /
+//    resolved through `AIChatAttachmentRepository`. Provider never
+//    touches disk directly.
 //
 
 import SwiftUI
@@ -54,19 +56,29 @@ struct LLMPersistenceProvider: PersistenceProvider {
         PersistenceController.shared.aiConversationRepository
     }
 
+    private var attachmentRepository: AIChatAttachmentRepository {
+        PersistenceController.shared.aiChatAttachmentRepository
+    }
+
     // MARK: - Restore
 
     func restoreConversations() async throws -> [LLMKit.Conversation] {
-        let conversations = try await repository.fetchAllConversations()
+        // Use the snapshot path: the repo extracts all primitives +
+        // sorted messages inside its `context.perform` block, so we
+        // never touch a `NSManagedObject` from off-queue. Touching
+        // the `messages` relationship after the perform block exits
+        // returned an empty set, which used to make every restored
+        // conversation look like it had no history.
+        let snapshots = try await repository.fetchAllConversationSnapshots()
 
-        // TaskGroup fan-out — each row's conversion is independent
-        // (read-only) and runs against a fresh `newTaskContext` inside
-        // the repo, so parallelism is safe. Order doesn't matter; the
-        // caller (LLMKit) sorts by `lastChatAt` itself.
+        // TaskGroup fan-out — each snapshot's conversion is
+        // independent and may do async work (attachment resolution),
+        // so parallelism is fine. Order doesn't matter; the caller
+        // (LLMKit) sorts by `lastChatAt` itself.
         let llmConversations = await withTaskGroup(of: LLMKit.Conversation?.self) { group in
-            for conversation in conversations {
+            for snapshot in snapshots {
                 group.addTask {
-                    await convertToLLMKitConversation(conversation)
+                    await convertToLLMKitConversation(snapshot)
                 }
             }
 
@@ -93,49 +105,63 @@ struct LLMPersistenceProvider: PersistenceProvider {
                 try await updateConversationAction(conversationID: conversationID, action: action)
 
             case .delete(let conversationID):
+                // Order matters: harvest attachment references *before*
+                // the cascade delete drops the message rows, otherwise
+                // `fetchFilesDataBlobs` returns nothing and the on-disk
+                // attachments are orphaned forever (until the next GC
+                // sweep, which is best-effort).
+                let blobs = (try? await repository.fetchFilesDataBlobs(forConversationID: conversationID)) ?? []
+                let referenced = blobs.flatMap(decodePersistedFiles(from:))
+                await attachmentRepository.deleteAll(referencedFiles: referenced)
+
                 try await repository.deleteConversation(conversationID: conversationID)
         }
     }
 
     // MARK: - Conversion: Core Data → LLMKit
 
-    private func convertToLLMKitConversation(_ row: AIConversation) async -> LLMKit.Conversation? {
-        // Sorted by timeStamp so the message ordering survives restore.
-        // Core Data's `messages` relationship is an unordered NSSet.
-        let messageSet = row.messages as? Set<AIConversationMessage> ?? []
-        let sortedMessages = messageSet.sorted { ($0.timeStamp ?? Date()) < ($1.timeStamp ?? Date()) }
-        let chatMessages = sortedMessages.compactMap { convertToLLMKitMessage($0) }
+    private func convertToLLMKitConversation(_ snapshot: AIConversationSnapshot) async -> LLMKit.Conversation? {
+        var chatMessages: [ChatMessage] = []
+        for messageSnapshot in snapshot.messages {
+            guard let msg = await convertToLLMKitMessage(messageSnapshot) else { continue }
+            chatMessages.append(msg)
+        }
 
         return LLMKit.Conversation(
-            id: row.conversationID ?? UUID().uuidString,
-            type: decodeConversationType(row.type),
+            id: snapshot.conversationID ?? UUID().uuidString,
+            type: decodeConversationType(snapshot.type),
             // agentConfig intentionally not persisted — rebuild from the
             // app's single source of truth. See file header for why.
             agentConfig: ExcalidrawAgentConfig.defaultConfig(),
-            title: row.title ?? "Untitled",
+            title: snapshot.title ?? "Untitled",
             messages: chatMessages,
-            createdAt: row.createdAt ?? Date(),
-            lastChatAt: row.lastChatAt ?? Date()
+            createdAt: snapshot.createdAt ?? Date(),
+            lastChatAt: snapshot.lastChatAt ?? Date()
         )
     }
 
-    private func convertToLLMKitMessage(_ row: AIConversationMessage) -> ChatMessage? {
-        let messageType = row.messageType ?? "content"
-        let messageID = row.messageID ?? UUID().uuidString
+    private func convertToLLMKitMessage(_ snapshot: AIConversationMessageSnapshot) async -> ChatMessage? {
+        let messageType = snapshot.messageType ?? "content"
+        let messageID = snapshot.messageID ?? UUID().uuidString
+        let contentText = snapshot.content ?? ""
 
         switch messageType {
             case "content":
-                let role = decodeRole(row.role)
-                let usage = CreditsResult(consumed: row.usageConsumed, remains: row.usageRemains)
-                let toolCalls = decodeToolCalls(row.toolCallsData)
+                let role = decodeRole(snapshot.role)
+                let usage = CreditsResult(
+                    consumed: snapshot.usageConsumed,
+                    remains: snapshot.usageRemains
+                )
+                let toolCalls = decodeToolCalls(snapshot.toolCallsData)
+                let files = await resolveFiles(from: snapshot.filesData)
                 let content = ChatMessageContent(
                     id: messageID,
                     role: role,
-                    content: row.content ?? "",
-                    files: [],
+                    content: contentText,
+                    files: files,
                     usage: usage,
                     toolCalls: toolCalls,
-                    toolCallId: row.toolCallId
+                    toolCallId: snapshot.toolCallId
                 )
                 return .content(content)
 
@@ -148,7 +174,7 @@ struct LLMPersistenceProvider: PersistenceProvider {
                 let content = ChatMessageContent(
                     id: messageID,
                     role: .assistant,
-                    content: row.content ?? "",
+                    content: contentText,
                     files: []
                 )
                 return .content(content)
@@ -156,7 +182,7 @@ struct LLMPersistenceProvider: PersistenceProvider {
             case "error":
                 return .error(
                     UUID(uuidString: messageID) ?? UUID(),
-                    row.content ?? "Unknown error"
+                    contentText.isEmpty ? "Unknown error" : contentText
                 )
 
             default:
@@ -183,6 +209,7 @@ struct LLMPersistenceProvider: PersistenceProvider {
         for message in conversation.messages {
             try await createMessageFromChatMessage(
                 message,
+                conversationID: conversation.id,
                 conversationObjectID: conversationObjectID
             )
         }
@@ -204,12 +231,13 @@ struct LLMPersistenceProvider: PersistenceProvider {
                 for message in messages {
                     try await createMessageFromChatMessage(
                         message,
+                        conversationID: conversationID,
                         conversationObjectID: conversationObjectID
                     )
                 }
 
             case .update(let message):
-                try await updateMessageFromChatMessage(message)
+                try await updateMessageFromChatMessage(message, conversationID: conversationID)
 
             case .delete(let messageIDs):
                 try await repository.deleteMessages(messageIDs: messageIDs)
@@ -218,10 +246,15 @@ struct LLMPersistenceProvider: PersistenceProvider {
 
     private func createMessageFromChatMessage(
         _ chatMessage: ChatMessage,
+        conversationID: String,
         conversationObjectID: NSManagedObjectID
     ) async throws {
         switch chatMessage {
             case .content(let message):
+                let filesData = await persistFiles(
+                    message.files,
+                    conversationID: conversationID
+                )
                 let messageObjectID = try await repository.createMessage(
                     messageID: message.id,
                     messageType: "content",
@@ -229,6 +262,7 @@ struct LLMPersistenceProvider: PersistenceProvider {
                     role: message.role.rawValue,
                     toolCallsData: encodeToolCalls(message.toolCalls),
                     toolCallId: message.toolCallId,
+                    filesData: filesData,
                     conversationObjectID: conversationObjectID
                 )
 
@@ -255,7 +289,10 @@ struct LLMPersistenceProvider: PersistenceProvider {
         }
     }
 
-    private func updateMessageFromChatMessage(_ chatMessage: ChatMessage) async throws {
+    private func updateMessageFromChatMessage(
+        _ chatMessage: ChatMessage,
+        conversationID: String
+    ) async throws {
         switch chatMessage {
             case .content(let content):
                 guard let messageObjectID = try await repository.findMessageObjectID(messageID: content.id) else {
@@ -270,12 +307,14 @@ struct LLMPersistenceProvider: PersistenceProvider {
                 // them here, only the .insert path would carry them
                 // and a re-emitted update could effectively drop them.
                 //
-                // `clearToolCalls` is keyed on the *encoded* result
-                // being nil rather than on `content.toolCalls == nil`,
-                // so that an explicit empty array (`[]`, which the
-                // model can transiently emit) wipes any previously
-                // persisted calls rather than leaving stale data.
+                // `clearToolCalls` / `clearFiles` are keyed on the
+                // *encoded* result being nil rather than on the input
+                // being nil, so that an explicit empty array (`[]`,
+                // which the model can transiently emit) wipes any
+                // previously persisted data rather than leaving it
+                // stale.
                 let encodedToolCalls = encodeToolCalls(content.toolCalls)
+                let encodedFiles = await persistFiles(content.files, conversationID: conversationID)
                 try await repository.updateMessage(
                     messageObjectID: messageObjectID,
                     content: content.content,
@@ -284,7 +323,9 @@ struct LLMPersistenceProvider: PersistenceProvider {
                     toolCallsData: encodedToolCalls,
                     clearToolCalls: encodedToolCalls == nil,
                     toolCallId: content.toolCallId,
-                    clearToolCallId: content.toolCallId == nil
+                    clearToolCallId: content.toolCallId == nil,
+                    filesData: encodedFiles,
+                    clearFiles: encodedFiles == nil
                 )
 
             case .error(let id, let errorMessage):
@@ -326,7 +367,7 @@ struct LLMPersistenceProvider: PersistenceProvider {
     private func decodeConversationType(_ raw: String?) -> LLMKit.Conversation.ConversationTpye {
         guard let raw else { return .custom("Chat") }
         switch raw {
-            case "normal":    return .normal
+            case "normal":    return .regular
             case "temporary": return .temporary
             default:          return .custom(raw)
         }
@@ -340,5 +381,67 @@ struct LLMPersistenceProvider: PersistenceProvider {
     private func decodeToolCalls(_ data: Data?) -> [ToolCall]? {
         guard let data, !data.isEmpty else { return nil }
         return try? JSONDecoder().decode([ToolCall].self, from: data)
+    }
+
+    // MARK: - Files (attachments)
+
+    /// Persist every `ChatMessageContent.File` for a message and
+    /// return the JSON blob ready to drop into `filesData`. Each file
+    /// goes through `AIChatAttachmentRepository.persist`, which writes
+    /// bytes (for base64 / local-URL forms) and produces a
+    /// `PersistedFile` record we can later resolve back. Failures are
+    /// logged inside the repo and dropped — we keep the message even
+    /// if one attachment can't be saved.
+    private func persistFiles(
+        _ files: [ChatMessageContent.File]?,
+        conversationID: String
+    ) async -> Data? {
+        guard let files, !files.isEmpty else { return nil }
+        var persisted: [PersistedFile] = []
+        persisted.reserveCapacity(files.count)
+        for file in files {
+            do {
+                let record = try await attachmentRepository.persist(
+                    file,
+                    conversationID: conversationID
+                )
+                persisted.append(record)
+            } catch {
+                // Best-effort: skip the failing attachment, keep the
+                // others. The message itself shouldn't be blocked by a
+                // single bad image.
+                continue
+            }
+        }
+        guard !persisted.isEmpty else { return nil }
+        return try? JSONEncoder().encode(persisted)
+    }
+
+    /// Reverse: decode a `filesData` blob and resolve each record back
+    /// to a usable `ChatMessageContent.File`. Records that can't be
+    /// rebuilt (malformed JSON, missing local file with no fallback)
+    /// are silently dropped — UI sees the surviving subset.
+    private func resolveFiles(from data: Data?) async -> [ChatMessageContent.File] {
+        let records = decodePersistedFiles(from: data)
+        guard !records.isEmpty else { return [] }
+        var out: [ChatMessageContent.File] = []
+        out.reserveCapacity(records.count)
+        for record in records {
+            if let file = await attachmentRepository.resolve(record) {
+                out.append(file)
+            }
+        }
+        return out
+    }
+
+    /// Shared decode helper: used both during restore and during the
+    /// pre-delete sweep that needs to know which files belong to a
+    /// conversation about to be removed. Returns `[]` for nil/empty/
+    /// malformed input — callers don't get to distinguish "no files"
+    /// from "couldn't decode", which matches our drop-on-error policy
+    /// for all file roundtrip paths.
+    fileprivate func decodePersistedFiles(from data: Data?) -> [PersistedFile] {
+        guard let data, !data.isEmpty else { return [] }
+        return (try? JSONDecoder().decode([PersistedFile].self, from: data)) ?? []
     }
 }

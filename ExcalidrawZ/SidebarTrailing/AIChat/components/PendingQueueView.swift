@@ -18,19 +18,34 @@
 
 import SwiftUI
 import SFSafeSymbols
+import LLMCore
 
 /// A single waiting message. UUID id keeps `ForEach` row identity stable
 /// across removals — duplicate text in the queue would collide on
 /// hash-by-value identity and produce flicker / wrong-row deletions.
+///
+/// `files` carries any attachments that were on the input when the
+/// queue was appended (image paste, etc.). They piggy-back through the
+/// drain path the same way text does so a queued message looks the
+/// same whether it was sent immediately or after the in-flight reply
+/// finished.
 struct PendingQueueMessage: Identifiable, Equatable {
     let id: UUID
     let text: String
+    let files: [LLMCoreFile]
 
-    init(id: UUID = UUID(), text: String) {
+    init(id: UUID = UUID(), text: String, files: [LLMCoreFile] = []) {
         self.id = id
         self.text = text
+        self.files = files
     }
 }
+
+/// Module-local type alias — keeps `PendingQueueView.swift` from
+/// having to `import LLMCore` at the top just for one occurrence.
+/// `ChatMessageContent.File` is `Equatable` (it's a `ContentModel`),
+/// so the `Equatable` synthesis on `PendingQueueMessage` works.
+typealias LLMCoreFile = LLMCore.ChatMessageContent.File
 
 struct PendingQueueView: View {
     let messages: [PendingQueueMessage]

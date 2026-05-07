@@ -28,12 +28,13 @@ actor LocalStorageManager {
         case collaborationFiles = "CollaborationFiles"
         case mediaItems = "MediaItems"
         case checkpoints = "Checkpoints"
-        
+        case aiChatAttachments = "AIChatAttachments"
+
         var path: String { rawValue }
     }
-    
+
     // MARK: - Helper Extensions
-    
+
     /// Extension to map FileStorageContentType to StorageDirectory
     private func directory(for type: FileStorageContentType) -> StorageDirectory {
         switch type {
@@ -41,6 +42,7 @@ actor LocalStorageManager {
             case .collaborationFile: return .collaborationFiles
             case .checkpoint: return .checkpoints
             case .mediaItem: return .mediaItems
+            case .aiChatAttachment: return .aiChatAttachments
         }
     }
     
@@ -103,18 +105,37 @@ actor LocalStorageManager {
         updatedAt: Date? = nil
     ) throws -> SaveResult {
         let directory = try ensureDirectoryExists(for: directory(for: type))
-        
+
         let filename: String
         switch type {
             case .mediaItem(let ext):
                 // Use the provided extension for media items
                 filename = "\(fileID).\(ext)"
+            case .aiChatAttachment(let ext):
+                // AI chat attachments embed the conversation id as a leading
+                // path component inside fileID (e.g. "<convID>/<uuid>"), so
+                // every conversation gets its own subfolder. Pre-existing
+                // intermediate-directory creation below makes that work.
+                filename = "\(fileID).\(ext)"
             default:
                 filename = "\(fileID).\(type.fileExtension)"
         }
-        
+
         let fileURL = directory.appendingPathComponent(filename)
         let relativePath = "\(self.directory(for: type).path)/\(filename)"
+
+        // Some content types (currently `.aiChatAttachment`) put a slash
+        // inside `fileID` to namespace by parent (conversation id, etc.).
+        // The flat-directory cases never embed slashes so this is a no-op
+        // for them. Cheaper than gating on the type at every call site.
+        let parentDir = fileURL.deletingLastPathComponent()
+        if parentDir != directory {
+            try FileManager.default.createDirectory(
+                at: parentDir,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+        }
         
         // Check if file exists and content is identical
         if FileManager.default.fileExists(at: fileURL) {

@@ -98,9 +98,6 @@ struct AIChatView: View {
         }
         .padding(.bottom, 10)
         .toolbar(content: toolbar)
-        .task {
-            await llmState.refreshConversations()
-        }
         .confirmationDialog(
             "Clear chat?",
             isPresented: $isConfirmingClear,

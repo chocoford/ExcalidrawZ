@@ -37,6 +37,7 @@ class PersistenceController {
     lazy var collaborationFileRepository = CollaborationFileRepository()
     lazy var localFolderRepository = LocalFolderRepository()
     lazy var aiConversationRepository = AIConversationRepository()
+    lazy var aiChatAttachmentRepository = AIChatAttachmentRepository()
     
     /// Init function
     /// - Parameters:

@@ -147,7 +147,43 @@ struct ExcalidrawZApp: App {
         Task {
              await LLMClient.shared.restore(groupID: "914DA4EE")
         }
-        
+
+        // AI chat attachment GC. Kicked off in the background after a
+        // long delay so it doesn't fight with cold-start work, and so
+        // any in-flight CloudKit hydrate of the messages table can land
+        // first — otherwise we'd see freshly-synced rows as orphaned
+        // (their attachments arrive with the row but the GC runs before
+        // the row is locally visible) and delete legitimate files.
+        Task.detached(priority: .background) {
+            try? await Task.sleep(for: .seconds(15))
+            await Self.runAttachmentGC()
+        }
+
+    }
+
+    /// Walk every persisted message's `filesData` JSON, harvest the
+    /// fileIDs that are still referenced, and ask the attachment repo
+    /// to delete on-disk files that aren't in that set. Runs at most
+    /// once per launch — anything written / deleted after this point
+    /// is handled by the live insert / delete paths and doesn't need
+    /// GC. Best-effort: failures inside log and swallow.
+    private static func runAttachmentGC() async {
+        do {
+            let blobs = try await PersistenceController.shared.aiConversationRepository.fetchAllFilesDataBlobs()
+            let referenced = blobs.flatMap { blob -> [PersistedFile] in
+                (try? JSONDecoder().decode([PersistedFile].self, from: blob)) ?? []
+            }
+            let referencedIDs = Set(referenced.compactMap { record -> String? in
+                guard record.kind == .local else { return nil }
+                return record.fileID
+            })
+            await PersistenceController.shared.aiChatAttachmentRepository.garbageCollect(
+                referencedFileIDs: referencedIDs
+            )
+        } catch {
+            // Swallowed: GC is best-effort and a transient fetch failure
+            // shouldn't be surfaced to the user.
+        }
     }
     // Can not run agent in a sandboxed app.
     // let service = SMAppService.agent(plistName: "com.chocoford.excalidraw.ExcalidrawServer.agent.plist")
