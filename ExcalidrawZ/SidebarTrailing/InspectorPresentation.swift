@@ -66,25 +66,32 @@ struct InspectorPresentationModifier: ViewModifier {
     }
 
     /// Picks the view shown inside the inspector based on the active tab.
+    ///
+    /// Intentionally *not* gated on `isInspectorPresented`. The native
+    /// `.inspector(isPresented:)` modifier already handles the visual
+    /// hide; gating here too would also tear down the active tab's
+    /// view tree on every collapse, so reopening to the same tab pays
+    /// the construction cost again. Letting the switch be the only
+    /// condition means closing → reopening to the same tab is free,
+    /// while switching to a different tab still rebuilds (which is
+    /// what we want — different tabs have entirely different state).
     @MainActor @ViewBuilder
     private func inspectorContent() -> some View {
-        if layoutState.isInspectorPresented {
-            switch layoutState.activeInspectorTab {
-                case .aiChat:
-                    AIChatView()
-                case .library:
-                    LibraryView(librariesToImport: $librariesToImport)
-                case .history:
-                    FileHistoryInspectorContent()
-                case .preference:
-                    CanvasSettingsInspectorContent()
-                case .search:
-                    SearchInspectorContent()
+        switch layoutState.activeInspectorTab {
+            case .aiChat:
+                AIChatView()
+            case .library:
+                LibraryView(librariesToImport: $librariesToImport)
+            case .history:
+                FileHistoryInspectorContent()
+            case .preference:
+                CanvasSettingsInspectorContent()
+            case .search:
+                SearchInspectorContent()
 #if DEBUG
-                case .debug:
-                    DebugPanelView()
+            case .debug:
+                DebugPanelView()
 #endif
-            }
         }
     }
 

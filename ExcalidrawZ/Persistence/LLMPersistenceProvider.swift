@@ -40,6 +40,12 @@
 //    file storage tree (iCloud-Drive-synced) and are written /
 //    resolved through `AIChatAttachmentRepository`. Provider never
 //    touches disk directly.
+//  - `ChatMessageContent.isCompactedOut / .isCompactSummary` — stored
+//    as boolean columns. LLMKit's `compactConversation` flips
+//    `isCompactedOut` on older rows and inserts a fresh
+//    `isCompactSummary` row; both must round-trip so a re-launched
+//    chat picks up where the user left off (older messages stay
+//    dimmed, the summary card stays as the LLM's actual context).
 //
 
 import SwiftUI
@@ -161,7 +167,9 @@ struct LLMPersistenceProvider: PersistenceProvider {
                     files: files,
                     usage: usage,
                     toolCalls: toolCalls,
-                    toolCallId: snapshot.toolCallId
+                    toolCallId: snapshot.toolCallId,
+                    isCompactedOut: snapshot.isCompactedOut,
+                    isCompactSummary: snapshot.isCompactSummary
                 )
                 return .content(content)
 
@@ -263,6 +271,8 @@ struct LLMPersistenceProvider: PersistenceProvider {
                     toolCallsData: encodeToolCalls(message.toolCalls),
                     toolCallId: message.toolCallId,
                     filesData: filesData,
+                    isCompactedOut: message.isCompactedOut,
+                    isCompactSummary: message.isCompactSummary,
                     conversationObjectID: conversationObjectID
                 )
 
@@ -325,7 +335,13 @@ struct LLMPersistenceProvider: PersistenceProvider {
                     toolCallId: content.toolCallId,
                     clearToolCallId: content.toolCallId == nil,
                     filesData: encodedFiles,
-                    clearFiles: encodedFiles == nil
+                    clearFiles: encodedFiles == nil,
+                    // Always write the latest compact flags. LLMKit's
+                    // `compactConversation` flips `isCompactedOut` on
+                    // older rows and emits `.update` events; without
+                    // this the flag would never reach the store.
+                    isCompactedOut: content.isCompactedOut,
+                    isCompactSummary: content.isCompactSummary
                 )
 
             case .error(let id, let errorMessage):

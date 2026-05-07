@@ -113,6 +113,12 @@ struct AIChatIslandView: View {
         return aiChatState.revealedToolCallIDs.contains(req.toolCallID)
     }
 
+    /// Same indicator gate as `AIChatView` — visible while LLMKit's
+    /// compact call is in flight on this surface's conversation.
+    private var isCompactingThisConversation: Bool {
+        aiChatState.isCompacting(conversationID: fileState.aiChatConversationID)
+    }
+
     private var conversation: Conversation? {
         llmState.conversations.value?
             .first { $0.id == fileState.aiChatConversationID }
@@ -295,6 +301,11 @@ struct AIChatIslandView: View {
         VStack(alignment: .leading, spacing: 10) {
             header
 
+            if isCompactingThisConversation {
+                CompactingIndicatorView()
+                    .transition(.opacity)
+            }
+
             // Self-gating: shows up only when LLMKit has a
             // `pendingApprovalRequest`. Animation on the parent VStack so
             // its insertion smoothly grows the island instead of popping.
@@ -314,6 +325,10 @@ struct AIChatIslandView: View {
         .animation(
             .easeInOut(duration: 0.25),
             value: shouldShowApprovalCard
+        )
+        .animation(
+            .easeInOut(duration: 0.2),
+            value: isCompactingThisConversation
         )
         .frame(width: islandWidth)
         .background {

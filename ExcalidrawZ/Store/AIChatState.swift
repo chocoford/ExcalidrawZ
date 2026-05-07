@@ -80,6 +80,32 @@ final class AIChatState: ObservableObject {
     func markToolCallRevealed(_ callID: String) {
         revealedToolCallIDs.insert(callID)
     }
+
+    /// Conversations whose context is currently being compacted by
+    /// LLMKit. Driven by `PromptInputView.compactCurrentContext()` —
+    /// the prompt input flips a conversation id in here while the
+    /// network call runs, and `AIChatView` reads it to render a
+    /// transient "compacting…" indicator. A `Set` (rather than a
+    /// single id) keeps state correct if the inspector and the
+    /// floating island disagree on which conversation is foreground:
+    /// each instance only watches its own conversation id.
+    @Published var compactingConversationIDs: Set<String> = []
+
+    func markCompacting(conversationID: String) {
+        compactingConversationIDs.insert(conversationID)
+    }
+
+    func unmarkCompacting(conversationID: String) {
+        compactingConversationIDs.remove(conversationID)
+    }
+
+    /// Convenience: is a specific conversation currently compacting?
+    /// Used by the prompt input's per-instance gating and the
+    /// chat view's indicator.
+    func isCompacting(conversationID: String?) -> Bool {
+        guard let conversationID else { return false }
+        return compactingConversationIDs.contains(conversationID)
+    }
 }
 
 // MARK: - Conversation content helpers

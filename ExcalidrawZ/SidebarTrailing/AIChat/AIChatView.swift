@@ -57,6 +57,14 @@ struct AIChatView: View {
         guard let req = llmState.pendingApprovalRequest else { return false }
         return aiChatState.revealedToolCallIDs.contains(req.toolCallID)
     }
+
+    /// True while LLMKit's `compactConversation` is running on the
+    /// conversation we're rendering. Drives the transient "compacting…"
+    /// banner in the bottom stack so the user knows the next send is
+    /// being held until the summary lands.
+    private var isCompactingThisConversation: Bool {
+        aiChatState.isCompacting(conversationID: fileState.aiChatConversationID)
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -77,6 +85,11 @@ struct AIChatView: View {
                     }
                 )
 
+                if isCompactingThisConversation {
+                    CompactingIndicatorView()
+                        .transition(.opacity)
+                }
+
                 ApprovalPromptView()
 
                 PromptInputView(
@@ -95,8 +108,24 @@ struct AIChatView: View {
                 .easeInOut(duration: 0.25),
                 value: shouldShowApprovalCard
             )
+            .animation(
+                .easeInOut(duration: 0.2),
+                value: isCompactingThisConversation
+            )
         }
         .padding(.bottom, 10)
+        // The approval card eats vertical space from the chat scroll
+        // view. Without an explicit nudge the messages slide up but the
+        // viewport's last-row anchor stays where it was — the user ends
+        // up looking at the middle of the conversation while the prompt
+        // they need to answer is offscreen. Re-pin to bottom whenever
+        // the card appears so the trailing message + the approval card
+        // are both in view together.
+        .onChange(of: shouldShowApprovalCard) { showing in
+            guard showing else { return }
+            isPinnedToBottom = true
+            requestScrollToBottom(animated: true)
+        }
         .toolbar(content: toolbar)
         .confirmationDialog(
             "Clear chat?",

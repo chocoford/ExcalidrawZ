@@ -64,6 +64,8 @@ struct StaticGroupsView: View, Equatable {
                 )
             case .assistantRound(_, let messages):
                 AssistantRoundView(messages: messages, onRegenerate: onRegenerate)
+            case .compactSummary(let c):
+                CompactSummaryRow(content: c)
         }
     }
 

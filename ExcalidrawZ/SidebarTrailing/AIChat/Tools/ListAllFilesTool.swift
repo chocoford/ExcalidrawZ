@@ -45,6 +45,11 @@ struct ListAllFilesTool: Tool {
         ))
     }
 
+    /// Enumerating the user's whole file library is a privacy boundary —
+    /// the AI shouldn't be able to silently survey what drawings exist.
+    /// Always require explicit approval before listing.
+    var alwaysRequiresApproval: Bool { true }
+
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         let params = parseInput(input)
         let limit = min(max(params.limit, 1), 200)

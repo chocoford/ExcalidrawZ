@@ -245,6 +245,14 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
         scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        // Force overlay scroller style regardless of the user's
+        // "Show scroll bars" pref. Legacy scrollers steal ~15 pt of
+        // width when they appear, which can knock content like a
+        // wrapping Markdown body across a line boundary — that
+        // changes the content's intrinsic height, which changes
+        // whether scrollers are needed at all, which loops. Overlay
+        // scrollers float over the content and don't perturb width.
+        scrollView.scrollerStyle = .overlay
 
         // The `documentView` is a flipped container; the SwiftUI host
         // sits inside it. We can't subclass `NSHostingView` to flip

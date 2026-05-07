@@ -12,6 +12,8 @@
     <entity name="AIConversationMessage" representedClassName="AIConversationMessage" syncable="YES" codeGenerationType="class">
         <attribute name="content" optional="YES" attributeType="String"/>
         <attribute name="filesData" optional="YES" attributeType="Binary"/>
+        <attribute name="isCompactedOut" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="isCompactSummary" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="messageID" optional="YES" attributeType="String"/>
         <attribute name="messageType" optional="YES" attributeType="String"/>
         <attribute name="role" optional="YES" attributeType="String"/>

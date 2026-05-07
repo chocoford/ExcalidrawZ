@@ -28,21 +28,26 @@ import SwiftUI
 import SFSafeSymbols
 import Shimmer
 
-struct ToolEventCard<Content: View>: View {
+struct ToolEventCard<Content: View, Trailing: View>: View {
     let icon: SFSymbol
     let title: String
     let accent: Color
     /// Pulsing shimmer on the title — used while a tool call is in flight
     /// so the user reads it as "busy" rather than "settled".
     var isShimmering: Bool = false
+    /// Right-aligned accessory in the header row, drawn after the
+    /// `Spacer`. Used by `ToolCallCard` to show a "Denied" badge when
+    /// the user rejected a tool's approval prompt; defaults to
+    /// `EmptyView` so existing call sites keep working unchanged.
+    @ViewBuilder var trailing: () -> Trailing
     /// Body builder. Receives the current expansion state so it can mix
     /// always-visible elements (images, summary) with collapse-on-fold
     /// elements (raw arguments, long text). Apply `.padding(.leading, 22)`
     /// inside the builder for the standard "indent under icon" alignment.
     @ViewBuilder var content: (_ isExpanded: Bool) -> Content
-    
+
     @State private var isExpanded: Bool = false
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             header
@@ -78,10 +83,34 @@ struct ToolEventCard<Content: View>: View {
                     .fontWeight(.semibold)
                     .shimmering(active: isShimmering)
                 Spacer()
+                trailing()
             }
             .foregroundStyle(accent)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Trailing-less convenience
+
+extension ToolEventCard where Trailing == EmptyView {
+    /// Convenience init for cards that don't need a trailing accessory —
+    /// matches the original signature so existing call sites
+    /// (`ToolResultCard`, the simpler `ToolCallCard` form) compile
+    /// unchanged.
+    init(
+        icon: SFSymbol,
+        title: String,
+        accent: Color,
+        isShimmering: Bool = false,
+        @ViewBuilder content: @escaping (_ isExpanded: Bool) -> Content
+    ) {
+        self.icon = icon
+        self.title = title
+        self.accent = accent
+        self.isShimmering = isShimmering
+        self.trailing = { EmptyView() }
+        self.content = content
     }
 }

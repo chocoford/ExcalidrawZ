@@ -38,6 +38,11 @@ struct ListLibrariesTool: Tool {
         ))
     }
 
+    /// Library shelves are user-curated content; surveying what's
+    /// available is a privacy-relevant readout. Always require approval
+    /// before exposing it to the model.
+    var alwaysRequiresApproval: Bool { true }
+
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         let limit = parseLimit(input)
 

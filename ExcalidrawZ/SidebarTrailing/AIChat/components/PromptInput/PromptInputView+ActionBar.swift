@@ -1,0 +1,196 @@
+//
+//  PromptInputView+ActionBar.swift
+//  ExcalidrawZ
+//
+//  Bottom controls of the prompt input: attachment menu (paperclip),
+//  context-usage ring, model picker, and the primary send/stop button.
+//  Extracted from `PromptInputView` so the main file stays focused on
+//  composition + state and isn't dominated by control glue.
+//
+//  Everything here is an `extension` of `PromptInputView` and uses its
+//  private state directly (`pastedImages`, `isImagePickerPresented`,
+//  `agentConfig`, `pendingModelSelection`, etc.) — no parameters
+//  threaded through, just the same scope split across files.
+//
+
+import SwiftUI
+import ChocofordUI
+import LLMKit
+import LLMCore
+import SFSafeSymbols
+
+extension PromptInputView {
+    /// Left half of the action row: attachment menu, context-usage ring,
+    /// model picker. Wrapped in an HStack so the whole group can take a
+    /// shared `buttonStyle` from the caller (`.accessoryBar` on macOS 14+,
+    /// `.plain` below).
+    @ViewBuilder
+    func actionBarLeading() -> some View {
+        HStack(spacing: 0) {
+            attachmentMenu
+
+            ContextUsageRing(
+                conversation: conversation,
+                model: activeModel,
+                onTap: conversationID != nil && !isCompactingContext
+                    ? { compactCurrentContext() }
+                    : nil
+            )
+
+            modelPicker
+        }
+    }
+
+    /// Bottom-left attachment menu. Currently has only "Image" — clicking
+    /// it opens the system file picker constrained to `UTType.image`,
+    /// and selected files flow through the same `pastedImages`
+    /// pipeline as a Cmd+V paste. Future entries (file uploads,
+    /// canvas snapshots, etc.) drop in here as additional `Button`s.
+    /// We deliberately don't use the `primaryAction:` closure form —
+    /// the icon doesn't have a single "default" action; tapping it
+    /// just opens the menu.
+    @ViewBuilder
+    var attachmentMenu: some View {
+        if #available(macOS 14.0, *) {
+            Menu {
+                Button {
+                    isImagePickerPresented = true
+                } label: {
+                    Label("Image", systemSymbol: .photo)
+                }
+            } label: {
+                Image(systemSymbol: .paperclip)
+                    .resizable()
+                    .frame(height: 12)
+            }
+            .labelStyle(.iconOnly)
+            .menuIndicator(.hidden)
+            .fileImporter(
+                isPresented: $isImagePickerPresented,
+                allowedContentTypes: [.image],
+                allowsMultipleSelection: true
+            ) { result in
+                handleImagePickerResult(result)
+            }
+        } else {
+            // Fallback on earlier versions
+        }
+    }
+
+    /// Resolve the picked URLs into `PlatformImage`s and append to
+    /// `pastedImages`. Each URL needs `startAccessingSecurityScopedResource`
+    /// because `fileImporter` returns user-domain paths the app
+    /// doesn't have ambient access to. Failures are swallowed
+    /// per-file: a bad image shouldn't block the rest.
+    func handleImagePickerResult(_ result: Result<[URL], Error>) {
+        guard case .success(let urls) = result else { return }
+        for url in urls {
+            let didStart = url.startAccessingSecurityScopedResource()
+            defer {
+                if didStart { url.stopAccessingSecurityScopedResource() }
+            }
+            guard let image = imageFromFileURL(url) else { continue }
+            pastedImages.append(PendingPastedImage(id: UUID(), image: image))
+        }
+    }
+
+    @ViewBuilder
+    var modelPicker: some View {
+        // Agent config hasn't loaded → show a quiet placeholder. Loading is fast
+        // (one HTTP round-trip on first appearance) so a permanent skeleton would
+        // be visual noise; we just render the active model name disabled.
+        let models = agentConfig?.allowedModels ?? []
+        Menu {
+            ForEach(models, id: \.rawValue) { model in
+                Button {
+                    pickModel(model)
+                } label: {
+                    if model == activeModel {
+                        Label(model.excalidrawTierName, systemSymbol: .checkmark)
+                    } else {
+                        Text(model.excalidrawTierName)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(activeModel.excalidrawTierName)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .contentShape(Rectangle())
+        }
+        .menuIndicator(.visible)
+        .disabled(models.isEmpty)
+    }
+
+    /// Route a model pick to the right place: existing conversations get a
+    /// stored override (so reopening that thread restores the pick); fresh
+    /// chats just stage it in `pendingModelSelection` and get committed
+    /// when `startSend` mints the conversation id.
+    func pickModel(_ model: SupportedModel) {
+        if let id = conversationID {
+            prefs.setModel(model, for: id)
+        } else {
+            pendingModelSelection = model
+        }
+    }
+
+    func loadAgentConfigIfNeeded() async {
+        guard agentConfig == nil else { return }
+        do {
+            let config = try await LLMClient.shared.getDomainAgentConfig(agentID: agentID)
+            await MainActor.run {
+                self.agentConfig = config
+            }
+        } catch {
+            print("Failed to load agent config: \(error)")
+        }
+    }
+
+    // MARK: - Primary action button
+
+    /// True when the assistant is currently generating. Drives the icon swap
+    /// (arrow ↔ stop) and gates whether `sendMessage` enqueues vs sends now.
+    var isGenerating: Bool {
+        currentTask != nil
+    }
+
+    var hasInputText: Bool {
+        // "Has input" now also counts pasted images even if the user
+        // typed no prose. A message with just a screenshot and no
+        // accompanying text is a legitimate send.
+        let hasText = !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return hasText || !pastedImages.isEmpty
+    }
+
+    /// Shows stop only when generating *and* the input is empty. If the user
+    /// is mid-typing a follow-up while a reply streams, we keep the send glyph
+    /// — that click queues the message without interrupting the live stream.
+    var primaryActionIsStop: Bool {
+        isGenerating && !hasInputText
+    }
+
+    @ViewBuilder
+    func primaryActionButton() -> some View {
+        Button {
+            if primaryActionIsStop {
+                cancelCurrentGeneration()
+            } else {
+                sendMessage()
+            }
+        } label: {
+            if #available(macOS 14.0, *) {
+                Image(systemSymbol: primaryActionIsStop ? .stopFill : .arrowUp)
+                    .frame(width: 16, height: 16)
+                    .contentTransition(.symbolEffect(.replace))
+            } else {
+                Image(systemSymbol: primaryActionIsStop ? .stopFill : .arrowUp)
+                    .frame(width: 16, height: 16)
+            }
+        }
+        .modernButtonStyle(style: .glass, shape: .circle)
+        // Stop is always enabled while generating. Send needs text.
+        .disabled(!primaryActionIsStop && !hasInputText)
+    }
+}

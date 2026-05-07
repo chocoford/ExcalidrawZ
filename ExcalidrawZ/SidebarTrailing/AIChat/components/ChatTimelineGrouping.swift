@@ -26,11 +26,18 @@ import LLMKit
 /// One renderable row in the chat timeline. Consecutive assistant + tool
 /// messages from a single agent turn collapse into one `assistantRound`,
 /// so the user sees one logical AI reply per question instead of N bubbles.
+///
+/// `compactSummary` is the synthetic "earlier conversation" message
+/// LLMKit inserts when compact runs — rendered as its own card, not a
+/// regular user bubble. `isCompactedOut` messages, by contrast, render
+/// indistinguishably from normal messages: the user shouldn't have to
+/// reason about whether a given row is in the LLM's working set or not.
 enum MessageGroup: Identifiable {
     case user(ChatMessageContent)
     case assistantRound(id: String, messages: [ChatMessage])
     case loading(UUID)
     case error(UUID, String)
+    case compactSummary(ChatMessageContent)
 
     var id: String {
         switch self {
@@ -38,6 +45,7 @@ enum MessageGroup: Identifiable {
             case .assistantRound(let id, _): return id
             case .loading(let id): return id.uuidString
             case .error(let id, _): return id.uuidString
+            case .compactSummary(let c): return "compactSummary:\(c.id)"
         }
     }
 }
@@ -67,6 +75,18 @@ func groupMessages(_ messages: [ChatMessage]) -> [MessageGroup] {
     for message in messages {
         switch message {
             case .content(let c):
+                // Compact summary routes ahead of role-based grouping —
+                // a `.user`-role message that's actually `isCompactSummary`
+                // shouldn't render as a normal user bubble.
+                // `isCompactedOut` messages, on the other hand, fall
+                // through and render exactly like normal ones; the
+                // distinction "this is in the LLM's working set" is
+                // not a UX concern, only a context-budget concern.
+                if c.isCompactSummary {
+                    flushPending()
+                    result.append(.compactSummary(c))
+                    continue
+                }
                 switch c.role {
                     case .user:
                         flushPending()

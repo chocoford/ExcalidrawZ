@@ -45,4 +45,25 @@ extension SupportedModel {
                 return displayName
         }
     }
+
+    /// Approximate context window (in tokens) for the model. Used by the
+    /// chat input's `ContextUsageRing` to draw "how full is the context."
+    /// Numbers are vendor-published values; we treat them as soft caps for
+    /// the indicator only — the actual server may apply a smaller cap.
+    /// Unknown models return a 128k floor so the ring still draws something.
+    var approximateContextWindowTokens: Int {
+        switch self {
+            case .claudeOpus4_7, .claudeOpus4_6,
+                 .claudeSonnet4_6, .claudeHaiku4_5:
+                return 200_000
+            case .gpt4o, .gpt4oMini, .gpt4oLatest, .gpt5_5, .gpt5_4:
+                return 128_000
+            case .gpt35Turbo:
+                return 16_000
+            case .gemini15Pro, .gemini15Flash:
+                return 1_000_000
+            default:
+                return 128_000
+        }
+    }
 }

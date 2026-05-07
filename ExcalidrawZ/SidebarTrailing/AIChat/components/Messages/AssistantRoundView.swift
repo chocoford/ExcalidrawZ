@@ -82,7 +82,6 @@ struct AssistantRoundView: View {
     var body: some View {
         let actionTarget = actionRowTarget
         let isLiveTrailing = isActive && lastAssistantMessage?.id == inflightID
-        let structureSig = makeStructureSignature(actionTargetID: actionTarget?.id)
         let revealElements = computeRevealElements()
 
         VStack(alignment: .leading, spacing: 10) {
@@ -108,36 +107,19 @@ struct AssistantRoundView: View {
                     copyText: aggregatedAssistantText,
                     sourceID: c.id
                 )
-                    .opacity(actionsVisible ? 1 : 0)
-                    .allowsHitTesting(actionsVisible)
-                    .animation(.easeInOut(duration: 0.3), value: actionsVisible)
+                .opacity(actionsVisible ? 1 : 0)
+                .allowsHitTesting(actionsVisible)
+                .animation(.easeInOut(duration: 0.3), value: actionsVisible)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .animation(.easeInOut(duration: 0.35), value: structureSig)
+        .border(.red)
         // Per-element reveal animation — drives the fade-ins of
         // `SmoothStreamingText` / `ToolCallCard` / `ToolResultCard` as
         // the orchestrator advances `revealedIDs`. Separate from
         // `structureSig` so a tool-call appearing within an existing
         // assistant message doesn't trigger the round-level slide.
         .animation(.easeOut(duration: 0.25), value: revealer.revealedIDs)
-        .task(id: isLiveTrailing) {
-            await scheduleActionsVisibility(isLiveTrailing: isLiveTrailing)
-        }
-        .onAppear {
-            // First mount: pace if active (live round), snap otherwise
-            // (committed history). After this, only `onChange` updates
-            // run — `isActive` flipping false mid-stream just means the
-            // queue keeps draining naturally, no re-bootstrap.
-            if !revealerBootstrapped {
-                revealerBootstrapped = true
-                if isActive {
-                    revealer.update(revealElements)
-                } else {
-                    revealer.revealAllImmediately(revealElements)
-                }
-            }
-        }
         .onChange(of: revealElements) { newElements in
             guard revealerBootstrapped else { return }
             revealer.update(newElements)
@@ -157,6 +139,24 @@ struct AssistantRoundView: View {
                 }
             }
         }
+        .task(id: isLiveTrailing) {
+            await scheduleActionsVisibility(isLiveTrailing: isLiveTrailing)
+        }
+        .onAppear {
+            // First mount: pace if active (live round), snap otherwise
+            // (committed history). After this, only `onChange` updates
+            // run — `isActive` flipping false mid-stream just means the
+            // queue keeps draining naturally, no re-bootstrap.
+            if !revealerBootstrapped {
+                revealerBootstrapped = true
+                if isActive {
+                    revealer.update(revealElements)
+                } else {
+                    revealer.revealAllImmediately(revealElements)
+                }
+            }
+        }
+
     }
 
     // MARK: - Reveal elements
@@ -284,14 +284,38 @@ struct AssistantRoundView: View {
             }
             ForEach(nonFinalCalls, id: \.id) { call in
                 if isElementVisible("toolcall:\(c.id):\(call.id)") {
-                    ToolCallCard(call: call, isActive: isStreaming)
-                        .transition(.opacity)
+                    ToolCallCard(
+                        call: call,
+                        isActive: isStreaming,
+                        isDenied: isCallDenied(call)
+                    )
+                    .transition(.opacity)
                 }
             }
         }
     }
 
     // MARK: - Helpers
+
+    /// True when the round contains a `.tool` observation message whose
+    /// `toolCallId` matches `call.id` and whose body is the "User denied
+    /// execution of '<tool>'" string our `AgentExecutor` injects on a
+    /// `.deny` decision (see LLMCore/Agent/AgentExecutor.swift). We
+    /// match on the prefix rather than full-string compare because the
+    /// reason text varies (`user declined`, custom denial reasons,
+    /// future i18n).
+    ///
+    /// Lives on the round view rather than on `ToolCall` itself
+    /// because `ToolCall` is a value type from the protocol payload
+    /// and doesn't know about its sibling tool messages.
+    private func isCallDenied(_ call: ToolCall) -> Bool {
+        messages.contains { msg in
+            guard case .content(let c) = msg,
+                  c.role == .tool,
+                  c.toolCallId == call.id else { return false }
+            return c.content?.hasPrefix("User denied execution of") == true
+        }
+    }
 
     /// Concatenated text of every assistant message in the round, joined
     /// by blank lines. Used by the action row's Copy button — a single
@@ -388,15 +412,6 @@ struct AssistantRoundView: View {
             default:
                 return false
         }
-    }
-
-    /// Compact signature of the round's *structure* (which messages exist + is
-    /// the action row visible). Drives `.animation(value:)` so SwiftUI animates
-    /// insertions/removals. Body content changes inside cards (eg streaming
-    /// text) are *not* captured — those animate at their own cadence.
-    private func makeStructureSignature(actionTargetID: String?) -> String {
-        let ids = messages.map(\.id).joined(separator: ",")
-        return "\(ids)|a=\(actionTargetID ?? "-")"
     }
 
     // MARK: - Action row

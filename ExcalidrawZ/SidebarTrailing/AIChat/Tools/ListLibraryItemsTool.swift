@@ -62,6 +62,11 @@ struct ListLibraryItemsTool: Tool {
         ))
     }
 
+    /// Listing the items inside a user library — especially with
+    /// `verbose=true` returning raw element JSON — pulls user-authored
+    /// content into the chat. Gate on explicit approval.
+    var alwaysRequiresApproval: Bool { true }
+
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         let params = try parseInput(input)
 

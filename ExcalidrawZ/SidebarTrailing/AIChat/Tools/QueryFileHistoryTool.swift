@@ -51,6 +51,12 @@ struct QueryFileHistoryTool: Tool {
         ))
     }
 
+    /// Reading a file's checkpoint history exposes when it was edited
+    /// and which edits came from prior AI rounds — both pieces of user
+    /// data that the user should explicitly authorize before the AI
+    /// pulls them into the chat.
+    var alwaysRequiresApproval: Bool { true }
+
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         let params = try parseInput(input)
         let limit = min(max(params.limit, 1), 200)

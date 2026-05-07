@@ -39,6 +39,14 @@ struct AIConversationMessageSnapshot: Sendable {
     var toolCallsData: Data?
     var toolCallId: String?
     var filesData: Data?
+    /// Compact-out marker: this row was rolled into a later
+    /// `isCompactSummary` and is no longer sent to the LLM. The UI
+    /// still renders it (dimmed) so the user can scroll back through
+    /// pre-compaction history.
+    var isCompactedOut: Bool
+    /// "Earlier conversation summary" marker. UI renders these as a
+    /// distinct summary card rather than a normal user bubble.
+    var isCompactSummary: Bool
 }
 
 /// Actor responsible for AIConversation and AIConversationMessage entity operations
@@ -85,7 +93,9 @@ actor AIConversationRepository {
                             usageRemains: msg.usageRemains,
                             toolCallsData: msg.toolCallsData,
                             toolCallId: msg.toolCallId,
-                            filesData: msg.filesData
+                            filesData: msg.filesData,
+                            isCompactedOut: msg.isCompactedOut,
+                            isCompactSummary: msg.isCompactSummary
                         )
                     }
                 return AIConversationSnapshot(
@@ -163,7 +173,9 @@ actor AIConversationRepository {
                             usageRemains: msg.usageRemains,
                             toolCallsData: msg.toolCallsData,
                             toolCallId: msg.toolCallId,
-                            filesData: msg.filesData
+                            filesData: msg.filesData,
+                            isCompactedOut: msg.isCompactedOut,
+                            isCompactSummary: msg.isCompactSummary
                         )
                     }
                 return AIConversationSnapshot(
@@ -280,6 +292,8 @@ actor AIConversationRepository {
         toolCallsData: Data? = nil,
         toolCallId: String? = nil,
         filesData: Data? = nil,
+        isCompactedOut: Bool = false,
+        isCompactSummary: Bool = false,
         conversationObjectID: NSManagedObjectID
     ) async throws -> NSManagedObjectID {
         let context = PersistenceController.shared.newTaskContext()
@@ -297,6 +311,8 @@ actor AIConversationRepository {
             message.toolCallsData = toolCallsData
             message.toolCallId = toolCallId
             message.filesData = filesData
+            message.isCompactedOut = isCompactedOut
+            message.isCompactSummary = isCompactSummary
             message.timeStamp = Date()
             message.conversation = conversation
 
@@ -360,7 +376,14 @@ actor AIConversationRepository {
         toolCallId: String? = nil,
         clearToolCallId: Bool = false,
         filesData: Data? = nil,
-        clearFiles: Bool = false
+        clearFiles: Bool = false,
+        // Compact-state flags. Both default to nil so omitting them
+        // leaves the persisted value alone — the only callers that pass
+        // an explicit value are LLMKit-driven `compactConversation`
+        // updates that set `isCompactedOut = true` and the summary
+        // insertion (which goes through `createMessage` instead).
+        isCompactedOut: Bool? = nil,
+        isCompactSummary: Bool? = nil
     ) async throws {
         let context = PersistenceController.shared.newTaskContext()
 
@@ -397,6 +420,14 @@ actor AIConversationRepository {
                 message.filesData = nil
             } else if let filesData = filesData {
                 message.filesData = filesData
+            }
+
+            if let isCompactedOut {
+                message.isCompactedOut = isCompactedOut
+            }
+
+            if let isCompactSummary {
+                message.isCompactSummary = isCompactSummary
             }
 
             message.timeStamp = Date()
