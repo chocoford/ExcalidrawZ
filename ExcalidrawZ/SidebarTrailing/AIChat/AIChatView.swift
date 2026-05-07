@@ -50,10 +50,10 @@ struct AIChatView: View {
     /// loaded) as "don't show yet" — flashing the welcome before LLMKit
     /// finishes its first refresh would feel jumpy.
     private var shouldShowWelcome: Bool {
-#if DEBUG
-        true
-#else
         guard !hasDismissedWelcome else { return false }
+#if DEBUG
+        return true
+#else
         guard let convos = llmState.conversations.value else { return false }
         return convos.isEmpty
 #endif
@@ -96,8 +96,8 @@ struct AIChatView: View {
                 }
                 .transition(.opacity)
             } else {
-//                chatBody
-//                    .transition(.opacity)
+                chatBody
+                    .transition(.opacity)
             }
         }
         .toolbar(content: toolbar)
@@ -490,7 +490,8 @@ struct AIChatView: View {
         let fileObjectID = file.objectID
         let context = PersistenceController.shared.newTaskContext()
 
-        let checkpointObjectID: NSManagedObjectID? = await context.perform {
+        let checkpointObjectID: NSManagedObjectID? = try? await context.perform {
+            guard let file = try context.existingObject(with: fileObjectID) as? File else { return nil }
             let fetch = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
             fetch.predicate = NSPredicate(
                 format: "file == %@ AND messageID == %@ AND source == %@",

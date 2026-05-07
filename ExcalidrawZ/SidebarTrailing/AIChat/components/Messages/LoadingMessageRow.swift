@@ -35,7 +35,7 @@ struct LoadingMessageRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(Color.gray.opacity(0.2), in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.gray.opacity(0.2), in: Capsule())
         .onAppear { isAnimating = true }
     }
 }

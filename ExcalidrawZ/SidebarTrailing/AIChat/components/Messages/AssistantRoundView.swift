@@ -278,7 +278,7 @@ struct AssistantRoundView: View {
             let usage = messages.reduce(0) { $0 + ($1.usage?.consumed ?? 0) }
             HStack(spacing: 4) {
                 Image(systemSymbol: .boltCircle)
-                Text(usage.formatted())
+                Text(usage.formatted(.number.precision(.fractionLength(2))))
             }
             .font(.footnote)
             .padding(.horizontal, 4)
@@ -522,3 +522,4 @@ private final class StreamObserver: ObservableObject {
         }
     }
 }
+
