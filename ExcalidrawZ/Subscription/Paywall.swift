@@ -21,7 +21,6 @@ struct Paywall: View {
     
     @EnvironmentObject private var store: Store
 
-    @State private var selection: SubscriptionItem = .free
     @State private var selectedPlan: Product?
     @State private var isPresented = false
     
@@ -36,15 +35,21 @@ struct Paywall: View {
         store.plans
             .filter({ plan in
                 if store.purchasedPlans.isEmpty { return true }
-                if let activePlan = store.plans.first(where: {$0.id == store.purchasedPlans.first?.id}) {
+                if let activePlan = store.plans.first(where: { $0.containsProductID(store.purchasedPlans.first?.id) }) {
                     return plan >= activePlan
                 } else {
                     return false
                 }
             })
-            .filter({
-                $0 != .free || horizontalSizeClass != .compact
-            })
+    }
+
+    private var selectedSubscriptionItem: SubscriptionItem? {
+        store.plans.first { $0.containsProductID(selectedPlan?.id) }
+    }
+
+    private var isSelectedSubscriptionPurchased: Bool {
+        guard let selectedSubscriptionItem else { return false }
+        return store.purchasedPlans.contains { selectedSubscriptionItem.containsProductID($0.id) }
     }
 
     var body: some View {
@@ -52,8 +57,18 @@ struct Paywall: View {
             .watch(value: store.purchasedPlans) { newValue in
                 if let purchasedPlans = newValue.first {
                     self.selectedPlan = purchasedPlans
-                } else if horizontalSizeClass == .compact {
+                } else {
                     self.selectedPlan = store.subscriptions.first
+                }
+            }
+            .watch(value: store.subscriptions) { newValue in
+                if selectedPlan == nil {
+                    selectedPlan = newValue.first
+                }
+            }
+            .task {
+                if selectedPlan == nil {
+                    selectedPlan = store.subscriptions.first
                 }
             }
     }
@@ -192,23 +207,28 @@ struct Paywall: View {
         }
         .padding(40)
         .background {
-            ZStack {
-                LinearGradient(
-                    stops: [
-                        .init(color: .accent, location: 0),
-                    ] + [{
-                        if horizontalSizeClass == .compact {
-                            .init(color: colorScheme == .dark ? .black : Color(red: 242/255.0, green: 242/255.0, blue: 242/255.0), location: 0.4)
-                        } else {
-                            .init(color: colorScheme == .dark ? .black : .white, location: 0.4)
-                        }
-                    }()],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+            if #available(iOS 26.0, macOS 26.0, *) {
+                PaywallAuroraBackground(colorScheme: colorScheme)
+                    .ignoresSafeArea()
+            } else {
+                ZStack {
+                    LinearGradient(
+                        stops: [
+                            .init(color: .accent, location: 0),
+                        ] + [{
+                            if horizontalSizeClass == .compact {
+                                .init(color: colorScheme == .dark ? .black : Color(red: 242/255.0, green: 242/255.0, blue: 242/255.0), location: 0.4)
+                            } else {
+                                .init(color: colorScheme == .dark ? .black : .white, location: 0.4)
+                            }
+                        }()],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
+                .ignoresSafeArea()
+                .scaleEffect(1.1)
             }
-            .ignoresSafeArea()
-            .scaleEffect(1.1)
         }
         .onAppear {
             isPresented = true
@@ -255,10 +275,10 @@ struct Paywall: View {
             try await purchaseSelectedPlan()
         } label: {
             ZStack {
-                if selectedPlan == store.purchasedPlans.first {
+                if isSelectedSubscriptionPurchased {
                     Text(.localizable(.paywallButtonCurrentPlan))
                 } else if let selectedPlan {
-                    let planName: String = store.plans.first(where: {$0.id == selectedPlan.id})?.title ?? selectedPlan.displayName
+                    let planName: String = selectedSubscriptionItem?.title ?? selectedPlan.displayName
                     let period: String = selectedPlan.subscription?.subscriptionPeriod.formatted(selectedPlan.subscriptionPeriodFormatStyle) ?? ""
                     if horizontalSizeClass == .compact {
                         Text(.localizable(.paywallButtonSubscribe(planName)))
@@ -279,7 +299,7 @@ struct Paywall: View {
             }
         }())
         .buttonStyle(.borderedProminent)
-        .disabled(selectedPlan == store.purchasedPlans.first)
+        .disabled(selectedPlan == nil || isSelectedSubscriptionPurchased)
     }
     
     @MainActor @ViewBuilder
@@ -333,8 +353,84 @@ struct Paywall: View {
     }
 }
 
+private struct PaywallAuroraBackground: View {
+    let colorScheme: ColorScheme
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1 / 24, paused: false)) { context in
+            let time = context.date.timeIntervalSinceReferenceDate
+            let topHueA = 0.56 + sin(time * 0.10) * 0.035
+            let topHueB = 0.64 + cos(time * 0.14) * 0.03
+            let bottomHueA = 0.90 + sin(time * 0.12) * 0.026
+            let bottomHueB = 0.78 + cos(time * 0.09) * 0.034
+            let driftX = CGFloat(sin(time * 0.22)) * 34
+            let driftY = CGFloat(cos(time * 0.18)) * 24
+            let base = colorScheme == .dark
+                ? Color(red: 0.035, green: 0.04, blue: 0.065)
+                : Color(red: 0.965, green: 0.975, blue: 1.0)
+
+            GeometryReader { proxy in
+                ZStack {
+                    base
+
+                    LinearGradient(
+                        colors: [
+                            Color(hue: topHueA, saturation: 0.58, brightness: 1).opacity(colorScheme == .dark ? 0.30 : 0.42),
+                            Color(hue: topHueB, saturation: 0.44, brightness: 1).opacity(colorScheme == .dark ? 0.16 : 0.24),
+                            .clear
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .frame(height: proxy.size.height * 0.55)
+                    .blur(radius: 42)
+                    .offset(x: driftX * 0.45, y: -proxy.size.height * 0.18 + driftY)
+
+                    LinearGradient(
+                        colors: [
+                            .clear,
+                            Color(hue: bottomHueB, saturation: 0.48, brightness: 1).opacity(colorScheme == .dark ? 0.15 : 0.22),
+                            Color(hue: bottomHueA, saturation: 0.52, brightness: 1).opacity(colorScheme == .dark ? 0.26 : 0.34)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottomTrailing
+                    )
+                    .frame(height: proxy.size.height * 0.62)
+                    .blur(radius: 48)
+                    .offset(x: -driftX * 0.65, y: proxy.size.height * 0.22 - driftY)
+
+                    Circle()
+                        .fill(Color(hue: topHueA, saturation: 0.62, brightness: 1).opacity(colorScheme == .dark ? 0.16 : 0.20))
+                        .frame(width: 360, height: 360)
+                        .blur(radius: 72)
+                        .offset(x: -proxy.size.width * 0.34 + driftX, y: -proxy.size.height * 0.18)
+
+                    Circle()
+                        .fill(Color(hue: bottomHueA, saturation: 0.58, brightness: 1).opacity(colorScheme == .dark ? 0.14 : 0.18))
+                        .frame(width: 430, height: 430)
+                        .blur(radius: 88)
+                        .offset(x: proxy.size.width * 0.30 - driftX * 0.55, y: proxy.size.height * 0.30 + driftY)
+                }
+                .overlay {
+                    RadialGradient(
+                        colors: [
+                            Color.white.opacity(colorScheme == .dark ? 0.08 : 0.24),
+                            Color(hue: topHueB, saturation: 0.30, brightness: 1).opacity(colorScheme == .dark ? 0.05 : 0.14),
+                            .clear
+                        ],
+                        center: .topLeading,
+                        startRadius: 12,
+                        endRadius: max(proxy.size.width, proxy.size.height) * 0.72
+                    )
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+}
+
 
 #Preview {
     Paywall()
 }
-

@@ -59,30 +59,33 @@ struct ContextUsageRing: View {
     }
 
     var body: some View {
-        Button {
-            onTap?()
-        } label: {
-            ZStack {
-                Circle()
-                    .stroke(.secondary.opacity(0.25), lineWidth: 2)
-                Circle()
-                    .trim(from: 0, to: fraction)
-                    .stroke(ringColor, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .animation(.easeOut(duration: 0.25), value: fraction)
+        ZStack {
+            if fraction < 0.5 {
+                Button {
+                    onTap?()
+                } label: {
+                    ZStack {
+                        Circle()
+                            .stroke(.secondary.opacity(0.25), lineWidth: 2)
+                        Circle()
+                            .trim(from: 0, to: fraction)
+                            .stroke(ringColor, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                            .animation(.easeOut(duration: 0.25), value: fraction)
+                    }
+                    .frame(width: 12, height: 12)
+                    .contentShape(Rectangle())
+                }
+                .help(helpText)
+                .accessibilityLabel("Context usage")
+                .accessibilityValue(Text(helpText))
             }
-            .frame(width: 12, height: 12)
-            .contentShape(Rectangle())
         }
-        .help(helpText)
-        .accessibilityLabel("Context usage")
-        .accessibilityValue(Text(helpText))
+        .animation(.smooth, value: fraction < 0.5)
     }
     
 
     private var helpText: String {
-//        let usedK = Double(usedTokens) / 1000.0
-//        let maxK = Double(maxTokens) / 1000.0
         let pct = Int((fraction * 100).rounded())
         return String(format: "%d%% of context remaining until auto-compact.\nClick to compact now", pct)
     }

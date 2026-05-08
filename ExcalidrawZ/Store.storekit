@@ -103,6 +103,21 @@
       "productID" : "Donation_Lv6",
       "referenceName" : "Donation Lv6",
       "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "3582701D",
+      "localizations" : [
+        {
+          "description" : "",
+          "displayName" : "",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "product.ai_addon",
+      "referenceName" : "AI Addon",
+      "type" : "Consumable"
     }
   ],
   "settings" : {
@@ -238,39 +253,9 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "0.99",
+          "displayPrice" : "9.99",
           "familyShareable" : false,
           "groupNumber" : 2,
-          "internalID" : "CD6E119A",
-          "introductoryOffers" : [
-
-          ],
-          "localizations" : [
-            {
-              "description" : "Unlock essential premium features ideal for regular collaborators at a minimal price. Helping cover the operational costs.",
-              "displayName" : "Starter",
-              "locale" : "en_US"
-            }
-          ],
-          "productID" : "plan.starter",
-          "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Starter",
-          "subscriptionGroupID" : "914DA4EE",
-          "type" : "RecurringSubscription",
-          "winbackOffers" : [
-
-          ]
-        },
-        {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "2.99",
-          "familyShareable" : false,
-          "groupNumber" : 1,
           "internalID" : "35A4E550",
           "introductoryOffers" : [
 
@@ -298,7 +283,7 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "19.99",
+          "displayPrice" : "49.99",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "F6385868",
@@ -315,6 +300,96 @@
           "productID" : "plan.max",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Max",
+          "subscriptionGroupID" : "914DA4EE",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "2.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "CCFD0062",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "",
+              "displayName" : "",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plan.starter",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Starter",
+          "subscriptionGroupID" : "914DA4EE",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "99.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "F69ABEEE",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "",
+              "displayName" : "",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plan.pro_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Pro Yearly",
+          "subscriptionGroupID" : "914DA4EE",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "499.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "D3A7E51B",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "",
+              "displayName" : "",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plan.max_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Max Yearly",
           "subscriptionGroupID" : "914DA4EE",
           "type" : "RecurringSubscription",
           "winbackOffers" : [

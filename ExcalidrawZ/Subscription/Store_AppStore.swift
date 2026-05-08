@@ -23,9 +23,10 @@ public enum StoreError: Error {
 // the StoreKit configuration file or App Store Connect.
 public enum ServiceEntitlement: Int, Comparable {
     case notEntitled = 0
-    
-    case pro = 1
-    case starter = 2
+
+    case max = 1
+    case pro = 2
+    case starter = 3
     
     init?(for product: Product) {
         // The product must be a subscription to have service entitlements.
@@ -38,8 +39,10 @@ public enum ServiceEntitlement: Int, Comparable {
             switch product.id {
             case "plan.starter":
                 self = .starter
-            case "plan.pro":
+            case "plan.pro", "plan.pro_yearly":
                 self = .pro
+            case "plan.max", "plan.max_yearly":
+                self = .max
             default:
                 self = .notEntitled
             }
@@ -56,7 +59,7 @@ public enum ServiceEntitlement: Int, Comparable {
 class Store: ObservableObject {
     static let shared = Store()
     
-    let plans: [SubscriptionItem] = [.free, .starter, .pro]
+    let plans: [SubscriptionItem] = [.starter, .pro, .max]
     
     @Published private(set) var subscriptions: [Product]
     @Published private(set) var memberships: [Product]
@@ -72,9 +75,10 @@ class Store: ObservableObject {
         "Membership_Lv2_Monthly",
     ]
     private let planIdentifiers = [
-        SubscriptionItem.starter.id,
-        SubscriptionItem.pro.id,
-    ]
+        SubscriptionItem.starter.productIDs,
+        SubscriptionItem.pro.productIDs,
+        SubscriptionItem.max.productIDs,
+    ].flatMap { $0 }
     private let logger = Logger(label: "Store")
 
     private init() {
@@ -95,10 +99,8 @@ class Store: ObservableObject {
     
     // Features Availability
     var collaborationRoomLimits: Int? {
-        if purchasedPlans.contains(where: {$0.id == SubscriptionItem.pro.id}) || !purchasedMemberships.isEmpty {
+        if !purchasedPlans.isEmpty || !purchasedMemberships.isEmpty {
             return nil
-        } else if purchasedPlans.contains(where: {$0.id == SubscriptionItem.starter.id})  {
-             return 3
         }
         return 1
     }
@@ -287,5 +289,3 @@ class Store: ObservableObject {
     @Published var isPaywallPresented = false
     @Published var reachPaywallReason: ReachPaywallReason?
 }
-
-

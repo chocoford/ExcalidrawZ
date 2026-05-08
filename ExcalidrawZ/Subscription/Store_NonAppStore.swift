@@ -10,7 +10,7 @@ import StoreKit
 
 
 class Store: ObservableObject {
-    let plans: [SubscriptionItem] = [.free, .starter, .pro]
+    let plans: [SubscriptionItem] = [.starter, .pro, .max]
     
     @Published private(set) var subscriptions: [Product] = []
     @Published private(set) var memberships: [Product] = []

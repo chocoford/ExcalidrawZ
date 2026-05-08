@@ -257,14 +257,43 @@ struct ExcalidrawCanvasView: View {
         guard let newFile else { return }
 
         // Only reload the scene when switching to a different file.
+        //
+        // Important: `previousFileID` must only be committed AFTER
+        // `loadFile` actually succeeds. Earlier we wrote it eagerly here
+        // before the Task ran, which meant: if `core.loadFile` bailed via
+        // its own `!self.isLoading, await !self.webView.isLoading` guard
+        // (e.g. the page is loaded but `isDocumentLoaded` hasn't fired
+        // yet, so `core.isLoading` is still true), the call returned
+        // nil silently — but `previousFileID` was already updated, so
+        // the retry path triggered by `loadingState == .loaded` would
+        // see "id matches, skip" and never re-attempt. Result:
+        // `webActor.loadedFileID` stayed nil for the lifetime of the
+        // editor, and the `loadedFileID == currentFileID` gate in
+        // `onStateChanged` dropped every JS-side state update —
+        // including all AI tool mutations.
         if excalidrawCore.previousFileID?.uuidString != newFile.id {
-            excalidrawCore.previousFileID = UUID(uuidString: newFile.id)
             // Switching files within the same WebView session doesn't toggle the
             // WebView-level `isLoading`, so the sync hooked to that signal won't
             // fire. Now that `loadFile` properly awaits Excalidraw's scene
             // application, we can chain the re-sync directly.
             Task {
-                await excalidrawCore.loadFile(from: newFile)
+                let result = await excalidrawCore.loadFile(from: newFile)
+                // `result == nil` means either we bailed early (loading
+                // guards) or the file was already loaded (webActor's own
+                // `loadedFileID == id` short-circuit). For the latter
+                // we still want to commit the dedup id so the redundant
+                // SwiftUI binding-churn renders don't keep re-firing
+                // loadFile; for the former we want the next handleFileChange
+                // to retry. We disambiguate by checking the actor's tracked
+                // id post-call: if it now matches, the load (or the dedup)
+                // resolved this id — safe to commit. Otherwise leave
+                // `previousFileID` untouched so a retry can happen.
+                let loadedID = await excalidrawCore.webActor.loadedFileID
+                if loadedID == newFile.id {
+                    await MainActor.run {
+                        excalidrawCore.previousFileID = UUID(uuidString: newFile.id)
+                    }
+                }
                 if type == .normal {
                     await syncCanvasPrefsFromWeb()
                     await MainActor.run { syncCanvasDrawingSettingsFromFile() }

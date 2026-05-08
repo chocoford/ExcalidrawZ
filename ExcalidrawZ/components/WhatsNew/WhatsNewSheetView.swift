@@ -208,7 +208,7 @@ struct WhatsNewView: View {
 #endif
 //                    }
                     
-                     featuresContent()
+                      featuresContent()
                 }
                 .padding(.vertical)
                 .fixedSize(horizontal: false, vertical: true)

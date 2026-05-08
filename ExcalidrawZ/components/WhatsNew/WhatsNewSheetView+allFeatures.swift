@@ -11,33 +11,15 @@ extension WhatsNewView {
     @MainActor @ViewBuilder
     func featuresContent() -> some View {
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewTabbedInspectorTitle),
-            description: .localizable(.whatsNewTabbedInspectorDescription),
-            icon: Image(systemSymbol: .sidebarRight)
+            title: "AI with ExcalidrawZ",
+            description: "123123123",
+            icon: Image(systemSymbol: .sparkles)
         )
-
+        
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewCanvasSearchTitle),
-            description: .localizable(.whatsNewCanvasSearchDescription),
-            icon: Image(systemSymbol: .magnifyingglass)
-        )
-
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewCanvasPreferencesTitle),
-            description: .localizable(.whatsNewCanvasPreferencesDescription),
-            icon: Image(systemSymbol: .sliderHorizontal3)
-        )
-
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewLassoToolTitle),
-            description: .localizable(.whatsNewLassoToolDescription),
-            icon: Image(systemSymbol: .selectionPinInOut)
-        )
-
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewLibraryWorkflowOverhaulTitle),
-            description: .localizable(.whatsNewLibraryWorkflowOverhaulDescription),
-            icon: Image(systemSymbol: .book)
+            title: "AI with ExcalidrawZ",
+            description: "123123123",
+            icon: Image(systemSymbol: .sparkles)
         )
     }
     
@@ -62,11 +44,44 @@ extension WhatsNewView {
             
             // Content
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                LazyVStack(alignment: .leading, spacing: 20) {
                     WhatsNewVersionSection(
                         version: Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
                     ) {
                         featuresContent()
+                    }
+                    
+                    // MARK: - v1.7.4
+                    WhatsNewVersionSection(version: "v1.7.4") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewTabbedInspectorTitle),
+                            description: .localizable(.whatsNewTabbedInspectorDescription),
+                            icon: Image(systemSymbol: .sidebarRight)
+                        )
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewCanvasSearchTitle),
+                            description: .localizable(.whatsNewCanvasSearchDescription),
+                            icon: Image(systemSymbol: .magnifyingglass)
+                        )
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewCanvasPreferencesTitle),
+                            description: .localizable(.whatsNewCanvasPreferencesDescription),
+                            icon: Image(systemSymbol: .sliderHorizontal3)
+                        )
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewLassoToolTitle),
+                            description: .localizable(.whatsNewLassoToolDescription),
+                            icon: Image(systemSymbol: .selectionPinInOut)
+                        )
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewLibraryWorkflowOverhaulTitle),
+                            description: .localizable(.whatsNewLibraryWorkflowOverhaulDescription),
+                            icon: Image(systemSymbol: .book)
+                        )
                     }
                     
                     // MARK: - v1.7.3

@@ -152,6 +152,15 @@ extension FileState {
         switch file {
             case .file(let f):
                 let content = try await f.loadContent()
+                // DIAG: snapshot read — verify whether content has elements
+                // at the moment we record the checkpoint. If `.aiPost` lands
+                // here with `hasElements=false`, the JS-side debounced
+                // onStateChanged hasn't flushed back to disk yet (race).
+                let elementsHint: String = {
+                    guard let s = String(data: content, encoding: .utf8) else { return "?" }
+                    return s.contains("\"elements\":[{") ? "true" : "false"
+                }()
+                print("[aiDiag] snapshot source=\(source.rawValue) file=\(f.name ?? "?") content.bytes=\(content.count) hasElements=\(elementsHint)")
                 try await PersistenceController.shared.fileRepository.recordCheckpoint(
                     fileObjectID: f.objectID,
                     content: content,

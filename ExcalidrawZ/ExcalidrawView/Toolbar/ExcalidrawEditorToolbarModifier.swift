@@ -19,7 +19,8 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
     @EnvironmentObject var layoutState: LayoutState
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var toolState: ToolState
-    
+    @EnvironmentObject private var store: Store
+
     @State private var isCollaboratorPopoverPresented = false
     
     func body(content: Content) -> some View {
@@ -142,6 +143,12 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                 applePencilToggle()
 #endif
                 ShareToolbarButton()
+            } else {
+                Button {
+                    store.togglePaywall(reason: .manaully)
+                } label: {
+                    Image(systemSymbol: .sparkles)
+                }
             }
         }
     }

@@ -33,6 +33,7 @@ import StoreKit
 struct SubscriptionItem: Hashable, Identifiable, Comparable {
     static let free = SubscriptionItem(
         id: "free",
+        yearlyID: nil,
         title: String(localizable: .paywallPlanFreeTitle),
         // 免费的计划，可以享受绝大部分的功能
         description: String(localizable: .paywallPlanFreeDescription),
@@ -48,24 +49,10 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
     )
     static let starter = SubscriptionItem(
         id: "plan.starter",
+        yearlyID: nil,
         title: String(localizable: .paywallPlanStarterTitle),
-        // 基础计划，提供基础付费功能，收费方面也很低——$0.99，主要用来cover成本
-        description: String(localizable: .paywallPlanStarterDescription),
-        features: [
-            String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
-            String(localizable: .paywallPlanGeneralFeaturesICloudSync),
-            String(localizable: .paywallPlanGeneralFeaturesPDFExport),
-            String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
-            String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("3")),
-        ],
-        fallbackDisplayPrice: "$0.99",
-        fallbackDisplayPeriod: "a month"
-    )
-    static let pro = SubscriptionItem(
-        id: "plan.pro",
-        title: String(localizable: .paywallPlanProTitle),
-        // 无限制
-        description: String(localizable: .paywallPlanProDescription),
+        // Starter now carries the original Pro feature set.
+        description: "Unlimited collaboration and all core premium features.",
         features: [
             String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
             String(localizable: .paywallPlanGeneralFeaturesICloudSync),
@@ -74,37 +61,74 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
             String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("Unlimited")),
         ],
         fallbackDisplayPrice: "$2.99",
-        fallbackDisplayPeriod: "Forever"
+        fallbackDisplayPeriod: "a month"
+    )
+    static let pro = SubscriptionItem(
+        id: "plan.pro",
+        yearlyID: "plan.pro_yearly",
+        title: String(localizable: .paywallPlanProTitle),
+        // 无限制
+        description: "Everything in Starter, plus monthly AI credits for regular AI work.",
+        features: [
+            String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
+            String(localizable: .paywallPlanGeneralFeaturesICloudSync),
+            String(localizable: .paywallPlanGeneralFeaturesPDFExport),
+            String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
+            String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("Unlimited")),
+            "**500 AI credits** / month",
+        ],
+        fallbackDisplayPrice: "$9.99",
+        fallbackDisplayPeriod: "a month"
+    )
+    static let max = SubscriptionItem(
+        id: "plan.max",
+        yearlyID: "plan.max_yearly",
+        title: "Max",
+        description: "For heavier AI usage and larger collaborative work.",
+        features: [
+            String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
+            String(localizable: .paywallPlanGeneralFeaturesICloudSync),
+            String(localizable: .paywallPlanGeneralFeaturesPDFExport),
+            String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
+            String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("Unlimited")),
+            "**3000 AI credits** / month",
+        ],
+        fallbackDisplayPrice: "$49.99",
+        fallbackDisplayPeriod: "a month"
     )
     
     var id: String
+    var yearlyID: String?
     var title: String
     var description: String
     var features: [String]
     
     var fallbackDisplayPrice: String
     var fallbackDisplayPeriod: String
+
+    var productIDs: [String] {
+        [id, yearlyID].compactMap { $0 }
+    }
+
+    func containsProductID(_ productID: String?) -> Bool {
+        guard let productID else { return false }
+        return productIDs.contains(productID)
+    }
     
 //    // Product Info
 //    var productInfo: ProductInfo?
     
     static func < (lhs: SubscriptionItem, rhs: SubscriptionItem) -> Bool {
         if lhs == rhs { return false }
-        if lhs == .free {
-            return true
-        }
-        if lhs == .starter {
-            return rhs != .free
-        }
-        if lhs == .pro {
-            return false
-        }
-        return false
+        let order: [SubscriptionItem] = [.free, .starter, .pro, .max]
+        return (order.firstIndex(of: lhs) ?? 0) < (order.firstIndex(of: rhs) ?? 0)
     }
 }
 
 extension Store {
     enum ReachPaywallReason {
+        case manaully
+        
         case roomLimit
         /// AI chat hit `LLMError.insufficientCredits`. Drives the paywall
         /// open from the chat error funnel so the user can top up without
@@ -113,6 +137,8 @@ extension Store {
 
         var description: String {
             switch self {
+                case .manaully:
+                    "Try now!"
                 case .roomLimit:
                     String(localizable: .paywallReachReasonRoomLimit)
                 case .aiInsufficientCredits:
