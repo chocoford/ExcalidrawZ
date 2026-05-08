@@ -64,7 +64,7 @@ struct AssistantRoundView: View {
         self.onRegenerate = onRegenerate
     }
     
-    /// How long after `isActive` flips false we wait before showing the
+    /// How long after the committed answer is revealed we wait before showing the
     /// action row (copy / regenerate / usage). Lets the trailing message's
     /// fade-in complete first so the action chrome doesn't sneak in
     /// before the user has read the answer.
@@ -80,13 +80,9 @@ struct AssistantRoundView: View {
     @State private var actionsTimingBootstrapped: Bool = false
     @State private var messageRevealBootstrapped: Bool = false
     
-    /// Measured natural height of the round body. Drives the
-    /// `AssistantRoundHeightModifier` so SwiftUI can animate the round's
-    /// AppKit-reported intrinsic height through the `LoadingMessageRow →
-    /// committed message` swap. Without this, a `.animation` on the inner
-    /// VStack interpolates SwiftUI's drawing but the `NSHostingView`
-    /// reports the new size to AppKit instantly — the scroll host sees a
-    /// snap, not a smooth grow.
+    /// Measured natural height of the round body. The committed message is
+    /// mounted invisibly first, which gives the scroll host its final height
+    /// before the reveal animation starts.
     @State private var roundHeight: CGFloat = 0
     @State private var hasInitializedRoundHeight: Bool = false
     
@@ -149,23 +145,10 @@ struct AssistantRoundView: View {
     
     private var roundContent: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if keepsLoadingPlaceholderDuringReveal {
-                ZStack(alignment: .topLeading) {
-                    LoadingMessageRow()
-                        .opacity(hasRevealedAllMessages ? 0 : 1)
-                    
-                    messagesContent
-                }
-            } else {
-                messagesContent
-            }
-            
-            if isActive {
-                LoadingMessageRow()
-                    .transition(.opacity)
-            }
+            messagesContent
             
             if !isActive,
+               hasRevealedAllMessages,
                let target = lastAssistantMessage,
                case .content(let c) = target,
                displayText(of: c).nonEmpty != nil {
@@ -224,16 +207,14 @@ struct AssistantRoundView: View {
     private func scheduleActionsVisibility(isActive: Bool) async {
         if !actionsTimingBootstrapped {
             actionsTimingBootstrapped = true
-            actionsVisible = !isActive
+            actionsVisible = !isActive && hasRevealedAllMessages
             return
         }
         if isActive {
             actionsVisible = false
             return
         }
-        try? await Task.sleep(for: Self.actionRevealDelay)
-        guard !Task.isCancelled else { return }
-        actionsVisible = true
+        await revealActionsIfReady()
     }
     
     @MainActor
@@ -282,6 +263,15 @@ struct AssistantRoundView: View {
         withAnimation(Self.messageRevealAnimation) {
             revealedMessageIDs.formUnion(pendingIDs)
         }
+        await revealActionsIfReady()
+    }
+
+    @MainActor
+    private func revealActionsIfReady() async {
+        guard !isActive, hasRevealedAllMessages else { return }
+        try? await Task.sleep(for: Self.actionRevealDelay)
+        guard !Task.isCancelled else { return }
+        actionsVisible = true
     }
     
     // MARK: - Per-message rendering

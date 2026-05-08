@@ -44,17 +44,20 @@ struct NativeChatScrollView<Content: View>: View {
     @Binding var isPinnedToBottom: Bool
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
     private let isStreaming: Bool
+    private let onReachTop: (() -> Void)?
     private let content: Content
 
     init(
         isPinnedToBottom: Binding<Bool>,
         scrollToBottomRequest: Binding<ScrollToBottomRequest>,
         isStreaming: Bool = false,
+        onReachTop: (() -> Void)? = nil,
         @ViewBuilder content: () -> Content
     ) {
         _isPinnedToBottom = isPinnedToBottom
         _scrollToBottomRequest = scrollToBottomRequest
         self.isStreaming = isStreaming
+        self.onReachTop = onReachTop
         self.content = content()
     }
 
@@ -64,6 +67,7 @@ struct NativeChatScrollView<Content: View>: View {
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
             isStreaming: isStreaming,
+            onReachTop: onReachTop,
             content: wrappedContent
         )
         #elseif os(iOS)
@@ -71,6 +75,7 @@ struct NativeChatScrollView<Content: View>: View {
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
             isStreaming: isStreaming,
+            onReachTop: onReachTop,
             content: wrappedContent
         )
         #else
@@ -98,6 +103,7 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
     @Binding var isPinnedToBottom: Bool
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
     let isStreaming: Bool
+    let onReachTop: (() -> Void)?
     let content: Content
 
     /// Inherits from `NSObject` so the `@objc` selectors below are
@@ -107,6 +113,7 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
         var isPinnedToBottom: Binding<Bool>
         var scrollToBottomRequest: Binding<ScrollToBottomRequest>
         var isStreaming: Bool
+        var onReachTop: (() -> Void)?
         var lastSeenToken: Int
         /// Last measured documentView height. We compare growth against
         /// *this* (not the live frame) when deciding whether to auto-follow,
@@ -127,6 +134,9 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
         let mountedAt: Date = Date()
         let initialSettlingDuration: TimeInterval = 0.3
         let pinThreshold: CGFloat = 8
+        let topLoadThreshold: CGFloat = 80
+        let topLoadResetThreshold: CGFloat = 180
+        var didNotifyReachTop: Bool = false
         weak var scrollView: NSScrollView?
         /// The actual `documentView` — flipped, so origin is top-left.
         weak var documentContainer: FlippedContainerView?
@@ -139,11 +149,13 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
         init(
             isPinnedToBottom: Binding<Bool>,
             scrollToBottomRequest: Binding<ScrollToBottomRequest>,
-            isStreaming: Bool
+            isStreaming: Bool,
+            onReachTop: (() -> Void)?
         ) {
             self.isPinnedToBottom = isPinnedToBottom
             self.scrollToBottomRequest = scrollToBottomRequest
             self.isStreaming = isStreaming
+            self.onReachTop = onReachTop
             self.lastSeenToken = scrollToBottomRequest.wrappedValue.token
             super.init()
         }
@@ -176,6 +188,7 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
                 }
             }
             updatePinnedBinding()
+            notifyReachTopIfNeeded()
         }
 
         @objc func documentViewFrameDidChange(_ note: Notification) {
@@ -220,6 +233,31 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
             // After height change, reconcile the pin binding against the
             // (possibly-just-mutated) state.
             updatePinnedBinding()
+        }
+
+        private func notifyReachTopIfNeeded() {
+            guard let onReachTop,
+                  let scrollView,
+                  let documentContainer
+            else {
+                return
+            }
+            let visibleHeight = scrollView.contentView.bounds.height
+            guard documentContainer.frame.height > visibleHeight + topLoadThreshold else {
+                didNotifyReachTop = false
+                return
+            }
+
+            let minY = scrollView.contentView.bounds.minY
+            if minY <= topLoadThreshold {
+                guard !didNotifyReachTop else { return }
+                didNotifyReachTop = true
+                DispatchQueue.main.async {
+                    onReachTop()
+                }
+            } else if minY > topLoadResetThreshold {
+                didNotifyReachTop = false
+            }
         }
 
         private func updatePinnedBinding() {
@@ -277,7 +315,8 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
         Coordinator(
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
-            isStreaming: isStreaming
+            isStreaming: isStreaming,
+            onReachTop: onReachTop
         )
     }
 
@@ -371,6 +410,7 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
         context.coordinator.isPinnedToBottom = $isPinnedToBottom
         context.coordinator.scrollToBottomRequest = $scrollToBottomRequest
         context.coordinator.isStreaming = isStreaming
+        context.coordinator.onReachTop = onReachTop
         context.coordinator.hostingView?.rootView = content
 
         let token = scrollToBottomRequest.token
@@ -412,12 +452,14 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
     @Binding var isPinnedToBottom: Bool
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
     let isStreaming: Bool
+    let onReachTop: (() -> Void)?
     let content: Content
 
     final class Coordinator: NSObject, UIScrollViewDelegate {
         var isPinnedToBottom: Binding<Bool>
         var scrollToBottomRequest: Binding<ScrollToBottomRequest>
         var isStreaming: Bool
+        var onReachTop: (() -> Void)?
         var lastSeenToken: Int
         var lastContentHeight: CGFloat = 0
         /// Mirrors the macOS settling window — see that path for the
@@ -427,6 +469,9 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
         let mountedAt: Date = Date()
         let initialSettlingDuration: TimeInterval = 0.3
         let pinThreshold: CGFloat = 8
+        let topLoadThreshold: CGFloat = 80
+        let topLoadResetThreshold: CGFloat = 180
+        var didNotifyReachTop: Bool = false
         weak var scrollView: UIScrollView?
         var hostingController: UIHostingController<Content>?
         /// While true, swallow `scrollViewDidScroll` pin updates — used
@@ -439,17 +484,40 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
         init(
             isPinnedToBottom: Binding<Bool>,
             scrollToBottomRequest: Binding<ScrollToBottomRequest>,
-            isStreaming: Bool
+            isStreaming: Bool,
+            onReachTop: (() -> Void)?
         ) {
             self.isPinnedToBottom = isPinnedToBottom
             self.scrollToBottomRequest = scrollToBottomRequest
             self.isStreaming = isStreaming
+            self.onReachTop = onReachTop
             self.lastSeenToken = scrollToBottomRequest.wrappedValue.token
         }
 
         func scrollViewDidScroll(_ scrollView: UIScrollView) {
             guard !isProgrammaticScroll else { return }
             updatePinnedBinding()
+            notifyReachTopIfNeeded(scrollView)
+        }
+
+        private func notifyReachTopIfNeeded(_ scrollView: UIScrollView) {
+            guard let onReachTop else { return }
+            let visibleHeight = scrollView.bounds.height
+            guard scrollView.contentSize.height > visibleHeight + topLoadThreshold else {
+                didNotifyReachTop = false
+                return
+            }
+
+            let y = scrollView.contentOffset.y
+            if y <= topLoadThreshold {
+                guard !didNotifyReachTop else { return }
+                didNotifyReachTop = true
+                DispatchQueue.main.async {
+                    onReachTop()
+                }
+            } else if y > topLoadResetThreshold {
+                didNotifyReachTop = false
+            }
         }
 
         private func updatePinnedBinding() {
@@ -526,7 +594,8 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
         Coordinator(
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
-            isStreaming: isStreaming
+            isStreaming: isStreaming,
+            onReachTop: onReachTop
         )
     }
 
@@ -572,6 +641,7 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
         context.coordinator.isPinnedToBottom = $isPinnedToBottom
         context.coordinator.scrollToBottomRequest = $scrollToBottomRequest
         context.coordinator.isStreaming = isStreaming
+        context.coordinator.onReachTop = onReachTop
         context.coordinator.hostingController?.rootView = content
 
         let token = scrollToBottomRequest.token

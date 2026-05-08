@@ -23,10 +23,27 @@ import LLMKit
 import LLMCore
 
 struct AISettingsView: View {
+    private enum SettingsTab: String, CaseIterable, Identifiable {
+        case usage
+        case settings
+        case transactions
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+                case .usage: "Usage"
+                case .settings: "Settings"
+                case .transactions: "Transactions"
+            }
+        }
+    }
+
     @EnvironmentObject private var llmState: LLMStateObject
     @EnvironmentObject private var store: Store
     @ObservedObject private var prefs = AIChatPreferences.shared
 
+    @State private var selectedTab: SettingsTab = .usage
     @State private var transactions: [CreditsTransaction] = []
     @State private var totalTransactionCount: Int = 0
     @State private var loadedPage: Int = 0
@@ -44,17 +61,11 @@ struct AISettingsView: View {
     var body: some View {
         if #available(macOS 14.0, iOS 17.0, *) {
             Form {
-                Section {
-                    activityBody
-                } header: {
-                    creditsHeader
-                        .textCase(nil)            // override Form's uppercase
-                        .padding(.vertical, 4)
-                }
+                tabPicker
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
 
-                Section("Defaults") {
-                    defaultModelPicker
-                }
+                selectedTabContent
             }
             .formStyle(.grouped)
             .task { await loadInitialTransactions() }
@@ -62,16 +73,48 @@ struct AISettingsView: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    creditsHeader
-                    Divider()
-                    activityBody
-                    Divider()
-                    defaultModelPicker
+                    tabPicker
+                    selectedTabContent
                 }
                 .padding()
             }
             .task { await loadInitialTransactions() }
             .task { await loadAvailableModelsIfNeeded() }
+        }
+    }
+
+    @ViewBuilder
+    private var tabPicker: some View {
+        Picker("AI Settings", selection: $selectedTab) {
+            ForEach(SettingsTab.allCases) { tab in
+                Text(tab.title).tag(tab)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+    }
+
+    @MainActor @ViewBuilder
+    private var selectedTabContent: some View {
+        switch selectedTab {
+            case .usage:
+                Section {
+                    usageDetails
+                } header: {
+                    creditsHeader
+                        .textCase(nil)
+                        .padding(.vertical, 4)
+                }
+            case .settings:
+                Section("Defaults") {
+                    defaultModelPicker
+                }
+            case .transactions:
+                Section("Transactions") {
+                    activityBody
+                }
         }
     }
 
@@ -125,6 +168,39 @@ struct AISettingsView: View {
         VStack(alignment: .leading, spacing: 14) {
             balanceRow
             planRow
+        }
+    }
+
+    @MainActor @ViewBuilder
+    private var usageDetails: some View {
+        if let sub = llmState.creditsInfo?.subscription {
+            usageRow(
+                title: "Monthly quota",
+                value: formatCredits(sub.monthlyQuota)
+            )
+            usageRow(
+                title: "Used this month",
+                value: formatCredits(sub.usedQuota)
+            )
+            usageRow(
+                title: "Renews",
+                value: sub.renewalDate.formatted(date: .abbreviated, time: .omitted)
+            )
+        } else {
+            Text("You are using the free AI quota. Upgrade to unlock higher monthly limits.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private func usageRow(title: String, value: String) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Text(value)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
         }
     }
 

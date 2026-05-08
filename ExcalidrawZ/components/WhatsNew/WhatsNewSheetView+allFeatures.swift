@@ -10,17 +10,23 @@ import SwiftUI
 extension WhatsNewView {
     @MainActor @ViewBuilder
     func featuresContent() -> some View {
-        WhatsNewFeatureRow(
-            title: "AI with ExcalidrawZ",
-            description: "123123123",
-            icon: Image(systemSymbol: .sparkles)
-        )
+        // 不能只有一行，不知道为啥一定报错
         
         WhatsNewFeatureRow(
-            title: "AI with ExcalidrawZ",
-            description: "123123123",
-            icon: Image(systemSymbol: .sparkles)
-        )
+            title: "AI for ExcalidrawZ",
+            description: "Chat with AI directly in ExcalidrawZ to read your canvas, edit elements, navigate drawings, use library items, attach images, revise previous prompts, and safely revert AI-made canvas changes. New AI plans and credits are now available from the refreshed Paywall.",
+        ) {
+            Image(systemSymbol: .sparkles)
+                .foregroundStyle(AIAppearancePalette.foregroundGradient)
+        }
+        
+        WhatsNewFeatureRow(
+            title: "AI for ExcalidrawZ",
+            description: "Chat with AI directly in ExcalidrawZ to read your canvas, edit elements, navigate drawings, use library items, attach images, revise previous prompts, and safely revert AI-made canvas changes. New AI plans and credits are now available from the refreshed Paywall.",
+        ) {
+            Image(systemSymbol: .sparkles)
+                .foregroundStyle(AIAppearancePalette.foregroundGradient)
+        }
     }
     
     
