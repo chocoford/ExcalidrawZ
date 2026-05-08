@@ -39,6 +39,7 @@ struct AIChatView: View {
     @State private var isMessageListInitiallySettled: Bool = false
     @State private var lastActiveStreamID: String?
     @State private var revealingAssistantRoundID: String?
+    @State private var pendingLoadingRowID: String?
     /// Confirmation dialog for the "Clear chat" toolbar action — destructive,
     /// so we route through a confirmationDialog rather than firing on tap.
     @State private var isConfirmingClear: Bool = false
@@ -78,8 +79,7 @@ struct AIChatView: View {
     /// appearance/disappearance smoothly slides the input box without
     /// SwiftUI seeing an "unmotivated" layout change.
     private var shouldShowApprovalCard: Bool {
-        guard let req = llmState.pendingApprovalRequest else { return false }
-        return aiChatState.revealedToolCallIDs.contains(req.toolCallID)
+        llmState.pendingApprovalRequest != nil
     }
 
     /// True while LLMKit's `compactConversation` is running on the
@@ -280,6 +280,10 @@ struct AIChatView: View {
         .onChange(of: isStreamingActive) { nowStreaming in
             if nowStreaming {
                 lastActiveStreamID = streamingState?.id
+                pendingLoadingRowID = messages.last(where: {
+                    if case .loading = $0 { return true }
+                    return false
+                })?.id
                 // Just kicked off a new round (user sent / regenerate).
                 // Force-pin and request an explicit scroll-to-bottom: the
                 // host's growth-driven follow can race against
@@ -303,6 +307,7 @@ struct AIChatView: View {
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(600))
                 streamScrollFollowTail = false
+                pendingLoadingRowID = nil
             }
         }
     }
@@ -314,10 +319,10 @@ struct AIChatView: View {
         StaticGroupsView(
             groups: layout.staticGroups,
             revealingAssistantRoundID: revealingAssistantRoundID,
+            pendingLoadingRowID: pendingLoadingRowID,
             onRegenerate: regenerateMessage,
             onRevertUserMessage: revertToUserMessage
         )
-        .equatable()
     }
 
     /// Timeline rows are rendered directly from committed / placeholder
@@ -327,6 +332,26 @@ struct AIChatView: View {
         return RowLayout(
             staticGroups: groupMessages(messages)
         )
+    }
+
+    private func shouldShowPendingLoadingFallback(in groups: [MessageGroup]) -> Bool {
+        guard streamScrollFollowTail,
+              let revealingAssistantRoundID
+        else {
+            return false
+        }
+        let hasLoading = groups.contains { group in
+            if case .loading = group { return true }
+            return false
+        }
+        let hasRevealingAssistant = groups.contains { group in
+            guard case .assistantRound(let id, let messages) = group else {
+                return false
+            }
+            return id == revealingAssistantRoundID
+                || messages.contains { $0.id == revealingAssistantRoundID }
+        }
+        return !hasLoading && !hasRevealingAssistant
     }
     
     @MainActor @ToolbarContentBuilder

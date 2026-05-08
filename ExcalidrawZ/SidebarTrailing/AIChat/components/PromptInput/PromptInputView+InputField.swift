@@ -39,6 +39,21 @@ extension PromptInputView {
                         .stroke(.separator, lineWidth: border.lineWidth)
                 }
             }
+            .overlay {
+                if isGenerating, style.showsGeneratingEffect {
+                    GeneratingPromptInputEffect(cornerRadius: radius)
+                        // Fade-in is driven internally by the effect's
+                        // `TimelineView` (smoothstepped against mount
+                        // time). We only need an external transition
+                        // for the *removal* path so the effect doesn't
+                        // pop off when generation ends.
+                        .transition(.asymmetric(
+                            insertion: .identity,
+                            removal: .opacity
+                        ))
+                }
+            }
+            .animation(.easeInOut(duration: 0.25), value: isGenerating)
 
         if let shadow = style.shadow {
             core
@@ -136,5 +151,133 @@ extension PromptInputView {
 #else
         return nil
 #endif
+    }
+}
+
+private struct GeneratingPromptInputEffect: View {
+    let cornerRadius: CGFloat
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    /// Captured at view mount. We compute fade-in elapsed time inside
+    /// `TimelineView` against this so the effect ramps up from fully
+    /// transparent without needing an external `.transition` /
+    /// `.animation` on the call site — everything is one TimelineView
+    /// driven sample.
+    @State private var mountedAt: Date = Date()
+
+    /// How long the fade-in takes once the effect mounts.
+    private static let fadeInDuration: TimeInterval = 0.55
+
+    var body: some View {
+        TimelineView(.animation) { context in
+            let phase = context.date.timeIntervalSinceReferenceDate
+            let elapsed = context.date.timeIntervalSince(mountedAt)
+            // Smoothstep so the fade-in eases at both ends instead of
+            // ramping linearly.
+            let raw = max(0, min(1, elapsed / Self.fadeInDuration))
+            let fadeIn = raw * raw * (3 - 2 * raw)
+
+            let rotation = Angle.degrees((phase.truncatingRemainder(dividingBy: 4.2) / 4.2) * 360)
+            let pulse = 0.45 + 0.25 * sin(phase * 1.45)
+            let palette = palette(for: colorScheme)
+            let gradient = AngularGradient(
+                colors: palette.gradientStops,
+                center: .center,
+                angle: rotation
+            )
+
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .strokeBorder(gradient, lineWidth: 0.9)
+                .opacity(palette.borderOpacity)
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(gradient, lineWidth: 12)
+                        .blur(radius: 8)
+                        .opacity(palette.innerGlowBase + pulse * palette.innerGlowPulse)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(gradient, lineWidth: 24)
+                        .blur(radius: 20)
+                        .opacity(palette.midGlowBase + pulse * palette.midGlowPulse)
+                }
+                .overlay {
+                    // Outermost halo. In light mode this is a near-white
+                    // bloom that reads as luminance against the bright
+                    // page; in dark mode the same white halo would clip
+                    // the highlights and look blown-out, so we drop it
+                    // way down and shift the tint toward the accent hue
+                    // — the rim still glows, but it glows *colored*
+                    // instead of *bright*.
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(palette.haloColor.opacity(palette.haloBase + pulse * palette.haloPulse), lineWidth: 34)
+                        .blur(radius: 34)
+                }
+                .opacity(fadeIn)
+                .allowsHitTesting(false)
+        }
+    }
+
+    /// Per-color-scheme palette. Light mode pushes everything toward
+    /// white (low saturation, near-opaque) so the rim reads as bright
+    /// luminance against a bright surface. Dark mode keeps the same hue
+    /// rotation but bumps saturation back up and trims opacity — over a
+    /// dark background, low-sat colors muddy the result and a strong
+    /// white halo blows out the highlights, so we let the colors carry
+    /// more chroma and let the dark bg do the contrast work.
+    private func palette(for scheme: ColorScheme) -> Palette {
+        switch scheme {
+        case .dark:
+            return Palette(
+                gradientStops: [
+                    Color(hue: 0.56, saturation: 0.55, brightness: 1.00).opacity(0.42),
+                    Color(hue: 0.62, saturation: 0.50, brightness: 1.00).opacity(0.80),
+                    Color(hue: 0.68, saturation: 0.55, brightness: 1.00).opacity(0.74),
+                    Color(hue: 0.78, saturation: 0.55, brightness: 1.00).opacity(0.66),
+                    Color(hue: 0.92, saturation: 0.55, brightness: 1.00).opacity(0.50),
+                    Color(hue: 0.56, saturation: 0.55, brightness: 1.00).opacity(0.42)
+                ],
+                borderOpacity: 0.85,
+                innerGlowBase: 0.42,
+                innerGlowPulse: 0.18,
+                midGlowBase: 0.22,
+                midGlowPulse: 0.14,
+                haloColor: Color.accentColor,
+                haloBase: 0.10,
+                haloPulse: 0.08
+            )
+        default:
+            return Palette(
+                gradientStops: [
+                    Color(hue: 0.56, saturation: 0.22, brightness: 1.00).opacity(0.55),
+                    Color(hue: 0.62, saturation: 0.20, brightness: 1.00).opacity(0.98),
+                    Color(hue: 0.68, saturation: 0.24, brightness: 1.00).opacity(0.94),
+                    Color(hue: 0.78, saturation: 0.24, brightness: 1.00).opacity(0.86),
+                    Color(hue: 0.92, saturation: 0.22, brightness: 1.00).opacity(0.68),
+                    Color(hue: 0.56, saturation: 0.22, brightness: 1.00).opacity(0.55)
+                ],
+                borderOpacity: 0.95,
+                innerGlowBase: 0.66,
+                innerGlowPulse: 0.22,
+                midGlowBase: 0.36,
+                midGlowPulse: 0.16,
+                haloColor: Color.white,
+                haloBase: 0.18,
+                haloPulse: 0.12
+            )
+        }
+    }
+
+    private struct Palette {
+        let gradientStops: [Color]
+        let borderOpacity: Double
+        let innerGlowBase: Double
+        let innerGlowPulse: Double
+        let midGlowBase: Double
+        let midGlowPulse: Double
+        let haloColor: Color
+        let haloBase: Double
+        let haloPulse: Double
     }
 }

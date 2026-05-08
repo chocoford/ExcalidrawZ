@@ -109,8 +109,7 @@ struct AIChatIslandView: View {
     /// `.animation(value:)` knows to animate the layout shift when
     /// the card flips visibility.
     private var shouldShowApprovalCard: Bool {
-        guard let req = llmState.pendingApprovalRequest else { return false }
-        return aiChatState.revealedToolCallIDs.contains(req.toolCallID)
+        llmState.pendingApprovalRequest != nil
     }
 
     /// Same indicator gate as `AIChatView` — visible while LLMKit's

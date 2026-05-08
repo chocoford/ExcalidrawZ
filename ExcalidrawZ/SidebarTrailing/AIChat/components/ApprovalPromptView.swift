@@ -24,8 +24,7 @@ struct ApprovalPromptView: View {
     @EnvironmentObject private var aiChatState: AIChatState
 
     var body: some View {
-        if let request = llmState.pendingApprovalRequest,
-           aiChatState.revealedToolCallIDs.contains(request.toolCallID) {
+        if let request = llmState.pendingApprovalRequest {
             ApprovalCard(request: request) { decision in
                 llmState.respondToApproval(decision)
             }

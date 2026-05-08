@@ -11,10 +11,13 @@
 //
 
 import SwiftUI
+import LLMCore
+import LLMKit
 
 struct StaticGroupsView: View, Equatable {
     let groups: [MessageGroup]
     let revealingAssistantRoundID: String?
+    let pendingLoadingRowID: String?
     let onRegenerate: ((String) -> Void)?
     /// Per-user-message revert callback. `nil` hides the revert button
     /// entirely. Equatable is intentionally key'd only on `groups` ids
@@ -26,11 +29,13 @@ struct StaticGroupsView: View, Equatable {
     init(
         groups: [MessageGroup],
         revealingAssistantRoundID: String? = nil,
+        pendingLoadingRowID: String? = nil,
         onRegenerate: ((String) -> Void)? = nil,
         onRevertUserMessage: ((String) -> Void)? = nil
     ) {
         self.groups = groups
         self.revealingAssistantRoundID = revealingAssistantRoundID
+        self.pendingLoadingRowID = pendingLoadingRowID
         self.onRegenerate = onRegenerate
         self.onRevertUserMessage = onRevertUserMessage
     }
@@ -38,6 +43,7 @@ struct StaticGroupsView: View, Equatable {
     static func == (lhs: Self, rhs: Self) -> Bool {
         guard lhs.groups.count == rhs.groups.count else { return false }
         return lhs.revealingAssistantRoundID == rhs.revealingAssistantRoundID
+            && lhs.pendingLoadingRowID == rhs.pendingLoadingRowID
             && zip(lhs.groups, rhs.groups).allSatisfy { $0.id == $1.id }
     }
 
@@ -55,7 +61,9 @@ struct StaticGroupsView: View, Equatable {
             case .user(let c):
                 UserMessageBubble(content: c, onRevert: onRevertUserMessage)
             case .loading:
-                LoadingMessageRow()
+                EmptyView()
+//                LoadingMessageRow()
+//                    .transition(.opacity.animation(.smooth))
             case .error(_, let msg):
                 // Retry re-runs the most recent user message preceding the
                 // error. We only surface the button when both a target exists
@@ -67,9 +75,12 @@ struct StaticGroupsView: View, Equatable {
                     }
                 )
             case .assistantRound(let id, let messages):
+                let shouldReveal = isRevealingAssistantRound(id: id, messages: messages)
                 AssistantRoundView(
                     messages: messages,
-                    revealsCommittedMessages: id == revealingAssistantRoundID,
+                    revealsCommittedMessages: shouldReveal,
+                    playsInitialReveal: shouldReveal,
+                    keepsLoadingPlaceholderDuringReveal: shouldReveal,
                     onRegenerate: onRegenerate
                 )
             case .compactSummary(let c):
@@ -86,5 +97,31 @@ struct StaticGroupsView: View, Equatable {
             i -= 1
         }
         return nil
+    }
+
+    private func previousGroupIsPendingLoading(at index: Int) -> Bool {
+        guard index > 0 else { return false }
+        return isLoadingRowBeforeRevealingAssistant(at: index - 1)
+    }
+
+    private func isRevealingAssistantRound(id: String, messages: [ChatMessage]) -> Bool {
+        guard let revealingAssistantRoundID else { return false }
+        return id == revealingAssistantRoundID
+            || messages.contains { $0.id == revealingAssistantRoundID }
+    }
+
+    private func isLoadingRowBeforeRevealingAssistant(at index: Int) -> Bool {
+        guard index >= 0,
+              index < groups.count - 1,
+              case .loading = groups[index],
+              case .assistantRound(let nextID, let nextMessages) = groups[index + 1]
+        else {
+            return false
+        }
+        guard let pendingLoadingRowID else {
+            return isRevealingAssistantRound(id: nextID, messages: nextMessages)
+        }
+        return groups[index].id == pendingLoadingRowID
+            && isRevealingAssistantRound(id: nextID, messages: nextMessages)
     }
 }

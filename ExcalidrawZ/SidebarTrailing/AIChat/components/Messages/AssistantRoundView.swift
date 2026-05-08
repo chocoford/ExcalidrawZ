@@ -40,31 +40,37 @@ struct AssistantRoundView: View {
     /// `ApprovalPromptView` knows the corresponding card has been shown
     /// before unfurling its prompt.
     @EnvironmentObject private var aiChatState: AIChatState
-
+    
     let messages: [ChatMessage]
     let isActive: Bool
     let revealsCommittedMessages: Bool
+    let playsInitialReveal: Bool
+    let keepsLoadingPlaceholderDuringReveal: Bool
     let onRegenerate: ((String) -> Void)?
-
+    
     init(
         messages: [ChatMessage],
         isActive: Bool = false,
         revealsCommittedMessages: Bool = false,
+        playsInitialReveal: Bool = false,
+        keepsLoadingPlaceholderDuringReveal: Bool = false,
         onRegenerate: ((String) -> Void)? = nil
     ) {
         self.messages = messages
         self.isActive = isActive
         self.revealsCommittedMessages = revealsCommittedMessages
+        self.playsInitialReveal = playsInitialReveal
+        self.keepsLoadingPlaceholderDuringReveal = keepsLoadingPlaceholderDuringReveal
         self.onRegenerate = onRegenerate
     }
-
+    
     /// How long after `isActive` flips false we wait before showing the
     /// action row (copy / regenerate / usage). Lets the trailing message's
     /// fade-in complete first so the action chrome doesn't sneak in
     /// before the user has read the answer.
     private static let actionRevealDelay: Duration = .milliseconds(400)
     private static let messageRevealAnimation: Animation = .easeOut(duration: ChatScrollAnimation.revealDuration)
-
+    
     @State private var actionsVisible: Bool = false
     @State private var revealedMessageIDs: Set<String> = []
     /// Tracks whether `.task(id:)` has run at least once. The first run sets
@@ -73,7 +79,7 @@ struct AssistantRoundView: View {
     /// immediately rather than after a needless delay.
     @State private var actionsTimingBootstrapped: Bool = false
     @State private var messageRevealBootstrapped: Bool = false
-
+    
     /// Measured natural height of the round body. Drives the
     /// `AssistantRoundHeightModifier` so SwiftUI can animate the round's
     /// AppKit-reported intrinsic height through the `LoadingMessageRow →
@@ -83,7 +89,7 @@ struct AssistantRoundView: View {
     /// snap, not a smooth grow.
     @State private var roundHeight: CGFloat = 0
     @State private var hasInitializedRoundHeight: Bool = false
-
+    
     var body: some View {
         if revealsCommittedMessages {
             animatedRoundBody
@@ -91,7 +97,7 @@ struct AssistantRoundView: View {
             staticRoundBody
         }
     }
-
+    
     private var staticRoundBody: some View {
         roundContent
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -99,16 +105,16 @@ struct AssistantRoundView: View {
                 await scheduleActionsVisibility(isActive: isActive)
             }
     }
-
+    
     private var animatedRoundBody: some View {
         ZStack(alignment: .top) {
             roundContent
-            .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
             // Force the inner VStack to its natural height — otherwise it
             // would size to whatever the outer Animatable frame proposes,
             // and `readHeight` would just echo that proposal back, killing
             // the interpolation we want.
-            .fixedSize(horizontal: false, vertical: true)
+                .fixedSize(horizontal: false, vertical: true)
         }
         // Read the natural height of the inner content, then constrain
         // the outer ZStack to that height via the Animatable modifier.
@@ -140,21 +146,25 @@ struct AssistantRoundView: View {
             await scheduleMessageReveal()
         }
     }
-
+    
     private var roundContent: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ForEach(messages) { msg in
-                let isRevealed = isMessageRevealed(msg)
-                messageRow(msg, isRevealed: isRevealed)
-                    .modifier(ConditionalChatTopDownReveal(progress: isRevealed ? 1 : 0, isEnabled: revealsCommittedMessages))
-                    .transition(.opacity)
+            if keepsLoadingPlaceholderDuringReveal {
+                ZStack(alignment: .topLeading) {
+                    LoadingMessageRow()
+                        .opacity(hasRevealedAllMessages ? 0 : 1)
+                    
+                    messagesContent
+                }
+            } else {
+                messagesContent
             }
-
+            
             if isActive {
                 LoadingMessageRow()
                     .transition(.opacity)
             }
-
+            
             if let target = lastAssistantMessage,
                case .content(let c) = target,
                displayText(of: c).nonEmpty != nil {
@@ -168,12 +178,26 @@ struct AssistantRoundView: View {
             }
         }
     }
-
+    
+    private var messagesContent: some View {
+        ForEach(messages) { msg in
+            let isRevealed = isMessageRevealed(msg)
+            messageRow(msg, isRevealed: isRevealed)
+                .modifier(ConditionalChatTopDownReveal(progress: isRevealed ? 1 : 0, isEnabled: revealsCommittedMessages))
+                .transition(.opacity)
+        }
+    }
+    
+    private var hasRevealedAllMessages: Bool {
+        guard revealsCommittedMessages else { return true }
+        return Set(messages.map(\.id)).isSubset(of: revealedMessageIDs)
+    }
+    
     private func isMessageRevealed(_ msg: ChatMessage) -> Bool {
         guard revealsCommittedMessages else { return true }
         return revealedMessageIDs.contains(msg.id)
     }
-
+    
     /// Stable signature of the messages list that flips whenever a
     /// message gains or loses displayable content (text or tool calls).
     /// Used as the `.task(id:)` key for `scheduleMessageReveal` so that
@@ -183,13 +207,13 @@ struct AssistantRoundView: View {
         messages.map { msg in
             if case .content(let c) = msg {
                 let displayable = !displayText(of: c).isEmpty
-                    || !((c.toolCalls ?? []).isEmpty)
+                || !((c.toolCalls ?? []).isEmpty)
                 return "\(msg.id):\(displayable ? 1 : 0)"
             }
             return msg.id
         }
     }
-
+    
     /// Drives the `actionsVisible` state in response to round transitions.
     /// First run snaps to the current state (committed history mounts
     /// with actions already visible). Subsequent runs hide actions
@@ -210,7 +234,7 @@ struct AssistantRoundView: View {
         guard !Task.isCancelled else { return }
         actionsVisible = true
     }
-
+    
     @MainActor
     private func scheduleMessageReveal() async {
         let currentIDs = Set(messages.map(\.id))
@@ -225,37 +249,42 @@ struct AssistantRoundView: View {
             }
             return nil
         })
-
+        
         // Drop ids that no longer exist in the round (e.g., truncated).
         revealedMessageIDs = revealedMessageIDs.intersection(currentIDs)
-
+        
         guard revealsCommittedMessages else {
             revealedMessageIDs = displayableIDs
             messageRevealBootstrapped = true
             return
         }
-
+        
         if !messageRevealBootstrapped {
             messageRevealBootstrapped = true
             // Mounting an existing round (e.g., committed history): everything
             // displayable is already settled, snap them in without delay.
-            revealedMessageIDs = displayableIDs
+            if playsInitialReveal {
+                revealedMessageIDs = []
+            } else {
+                revealedMessageIDs = displayableIDs
+            }
+        }
+        
+        let pendingIDs = displayableIDs.subtracting(revealedMessageIDs)
+        guard !pendingIDs.isEmpty else {
             return
         }
-
-        let pendingIDs = displayableIDs.subtracting(revealedMessageIDs)
-        guard !pendingIDs.isEmpty else { return }
-
+        
         try? await Task.sleep(for: .seconds(ChatScrollAnimation.scrollDuration))
         guard !Task.isCancelled else { return }
-
+        
         withAnimation(Self.messageRevealAnimation) {
             revealedMessageIDs.formUnion(pendingIDs)
         }
     }
-
+    
     // MARK: - Per-message rendering
-
+    
     @MainActor @ViewBuilder
     private func messageRow(_ msg: ChatMessage, isRevealed: Bool) -> some View {
         if case .content(let c) = msg {
@@ -269,7 +298,7 @@ struct AssistantRoundView: View {
             }
         }
     }
-
+    
     @MainActor @ViewBuilder
     private func assistantMessage(_ c: ChatMessageContent, isRevealed: Bool) -> some View {
         let text = displayText(of: c)
@@ -307,9 +336,9 @@ struct AssistantRoundView: View {
             }
         }
     }
-
+    
     // MARK: - Helpers
-
+    
     /// True when the round contains a `.tool` observation message whose
     /// `toolCallId` matches `call.id` and whose body is the "User denied
     /// execution of '<tool>'" string our `AgentExecutor` injects on a
@@ -322,7 +351,7 @@ struct AssistantRoundView: View {
             return c.content?.hasPrefix("User denied execution of") == true
         }
     }
-
+    
     /// Concatenated text of every assistant message in the round, joined
     /// by blank lines. Used by the action row's Copy button — a single
     /// LLM turn often produces several `.assistant` messages (intermediate
@@ -339,7 +368,7 @@ struct AssistantRoundView: View {
             }
             .joined(separator: "\n\n")
     }
-
+    
     /// What text to display for an assistant message — `final_answer` tool-call
     /// args (parsed) take precedence over plain `content`, falling back to
     /// content if no `final_answer` call is present.
@@ -349,7 +378,7 @@ struct AssistantRoundView: View {
         }
         return c.content ?? ""
     }
-
+    
     /// The last assistant message in this round — the "final answer" the
     /// user is reading. Action row (copy / regenerate / usage) anchors here.
     private var lastAssistantMessage: ChatMessage? {
@@ -358,14 +387,14 @@ struct AssistantRoundView: View {
             return c.role == .assistant
         })
     }
-
+    
     // MARK: - Action row
-
+    
     @MainActor @ViewBuilder
     private func actionRow(copyText: String, sourceID: String) -> some View {
         HStack(spacing: 0) {
             CopyButton(text: copyText)
-
+            
             if let onRegenerate {
                 Button {
                     onRegenerate(sourceID)
@@ -375,9 +404,9 @@ struct AssistantRoundView: View {
                 .foregroundStyle(.secondary)
                 .help("Regenerate response")
             }
-
+            
             Spacer()
-
+            
             let usage = messages.reduce(0) { $0 + ($1.usage?.consumed ?? 0) }
             HStack(spacing: 4) {
                 Image(systemSymbol: .boltCircle)
@@ -398,7 +427,7 @@ struct AssistantRoundView: View {
 private struct ConditionalChatTopDownReveal: ViewModifier {
     let progress: CGFloat
     let isEnabled: Bool
-
+    
     func body(content: Content) -> some View {
         if isEnabled {
             content.chatTopDownReveal(progress: progress)
@@ -422,9 +451,9 @@ private struct AssistantRoundHeightModifier: Animatable, ViewModifier {
     init(height: CGFloat) {
         self.animatableData = height
     }
-
+    
     var animatableData: CGFloat
-
+    
     func body(content: Content) -> some View {
         content.frame(height: animatableData, alignment: .top)
     }
@@ -438,9 +467,9 @@ struct CopyButton: View {
     let text: String
     @State private var copied: Bool = false
     @State private var revertTask: Task<Void, Never>?
-
+    
     private static let revertDelay: Duration = .seconds(1.4)
-
+    
     var body: some View {
         Button {
             copyToClipboard(text)
@@ -470,7 +499,7 @@ struct CopyButton: View {
         .foregroundStyle(copied ? Color.green : .secondary)
         .help("Copy message")
     }
-
+    
     private func copyToClipboard(_ text: String) {
 #if canImport(AppKit)
         let pasteboard = NSPasteboard.general

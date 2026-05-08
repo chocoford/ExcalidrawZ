@@ -41,6 +41,12 @@ struct PromptInputStyle<Background: View> {
     /// Hairline border around the input field. `nil` disables the border.
     var border: BorderSpec?
 
+    /// Whether the animated rim/glow `GeneratingPromptInputEffect` paints
+    /// over the input box while a reply is streaming. Hosts whose own
+    /// chrome is already busy (the floating island has its own outer
+    /// glow) usually turn this off so the two effects don't fight.
+    var showsGeneratingEffect: Bool
+
     /// View painted behind the input field. The view receives the input's
     /// frame; include whatever shape/clip you want it to take. Typically a
     /// `RoundedRectangle(cornerRadius: cornerRadius)` so the corners match
@@ -53,12 +59,14 @@ struct PromptInputStyle<Background: View> {
         cornerRadius: CGFloat = 20,
         shadow: ShadowSpec? = ShadowSpec(opacity: 0.2, radius: 4),
         border: BorderSpec? = BorderSpec(lineWidth: 0.5),
+        showsGeneratingEffect: Bool = true,
         @ViewBuilder background: () -> Background
     ) {
         self.showsLowCreditsBanner = showsLowCreditsBanner
         self.cornerRadius = cornerRadius
         self.shadow = shadow
         self.border = border
+        self.showsGeneratingEffect = showsGeneratingEffect
         self.background = background()
     }
 
@@ -90,13 +98,15 @@ extension PromptInputStyle where Background == PlatformDefaultPromptBackground {
         showsLowCreditsBanner: Bool = true,
         cornerRadius: CGFloat = 20,
         shadow: ShadowSpec? = ShadowSpec(opacity: 0.2, radius: 4),
-        border: BorderSpec? = BorderSpec(lineWidth: 0.5)
+        border: BorderSpec? = BorderSpec(lineWidth: 0.5),
+        showsGeneratingEffect: Bool = true
     ) {
         self.init(
             showsLowCreditsBanner: showsLowCreditsBanner,
             cornerRadius: cornerRadius,
             shadow: shadow,
             border: border,
+            showsGeneratingEffect: showsGeneratingEffect,
             background: {
                 PlatformDefaultPromptBackground(cornerRadius: cornerRadius)
             }
@@ -113,12 +123,17 @@ extension PromptInputStyle where Background == PlatformDefaultPromptBackground {
     /// glass rim on macOS 26+ gives the text its visual padding), just with
     /// the credits banner / shadow trimmed because the island provides its
     /// own outer chrome.
+    ///
+    /// `showsGeneratingEffect: false` — the island already owns its own
+    /// streaming-state glow on the outer chrome; layering the input-box
+    /// rim glow on top makes the whole panel look noisy.
     static var island: PromptInputStyle<PlatformDefaultPromptBackground> {
          PromptInputStyle(
              showsLowCreditsBanner: false,
              cornerRadius: 24,
              shadow: .init(color: .clear, radius: 0),
-             border: BorderSpec(lineWidth: 0)
+             border: BorderSpec(lineWidth: 0),
+             showsGeneratingEffect: false
          )
     }
 }
