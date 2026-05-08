@@ -25,13 +25,8 @@
 //      *already-static* text — leaving the text masked for the
 //      catch-up animation that never had data to catch up to.
 //
-//  `LiveAssistantRoundView` is the streaming wrapper: it observes the
-//  in-flight stream object so `isActive` flips correctly when the
-//  round finishes, and forwards committed messages through.
-//
 
 import SwiftUI
-import Combine
 import LLMCore
 import LLMKit
 import ChocofordUI
@@ -48,15 +43,18 @@ struct AssistantRoundView: View {
 
     let messages: [ChatMessage]
     let isActive: Bool
+    let revealsCommittedMessages: Bool
     let onRegenerate: ((String) -> Void)?
 
     init(
         messages: [ChatMessage],
         isActive: Bool = false,
+        revealsCommittedMessages: Bool = false,
         onRegenerate: ((String) -> Void)? = nil
     ) {
         self.messages = messages
         self.isActive = isActive
+        self.revealsCommittedMessages = revealsCommittedMessages
         self.onRegenerate = onRegenerate
     }
 
@@ -65,26 +63,94 @@ struct AssistantRoundView: View {
     /// fade-in complete first so the action chrome doesn't sneak in
     /// before the user has read the answer.
     private static let actionRevealDelay: Duration = .milliseconds(400)
+    private static let messageRevealAnimation: Animation = .easeOut(duration: ChatScrollAnimation.revealDuration)
 
     @State private var actionsVisible: Bool = false
+    @State private var revealedMessageIDs: Set<String> = []
     /// Tracks whether `.task(id:)` has run at least once. The first run sets
     /// the initial visibility synchronously (no delay) so committed-history
     /// rounds — which mount with the round already finished — show actions
     /// immediately rather than after a needless delay.
     @State private var actionsTimingBootstrapped: Bool = false
+    @State private var messageRevealBootstrapped: Bool = false
+
+    /// Measured natural height of the round body. Drives the
+    /// `AssistantRoundHeightModifier` so SwiftUI can animate the round's
+    /// AppKit-reported intrinsic height through the `LoadingMessageRow →
+    /// committed message` swap. Without this, a `.animation` on the inner
+    /// VStack interpolates SwiftUI's drawing but the `NSHostingView`
+    /// reports the new size to AppKit instantly — the scroll host sees a
+    /// snap, not a smooth grow.
+    @State private var roundHeight: CGFloat = 0
+    @State private var hasInitializedRoundHeight: Bool = false
 
     var body: some View {
+        if revealsCommittedMessages {
+            animatedRoundBody
+        } else {
+            staticRoundBody
+        }
+    }
+
+    private var staticRoundBody: some View {
+        roundContent
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .task(id: isActive) {
+                await scheduleActionsVisibility(isActive: isActive)
+            }
+    }
+
+    private var animatedRoundBody: some View {
+        ZStack(alignment: .top) {
+            roundContent
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // Force the inner VStack to its natural height — otherwise it
+            // would size to whatever the outer Animatable frame proposes,
+            // and `readHeight` would just echo that proposal back, killing
+            // the interpolation we want.
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        // Read the natural height of the inner content, then constrain
+        // the outer ZStack to that height via the Animatable modifier.
+        // SwiftUI animates `roundHeight` transitions through the modifier,
+        // which propagates to `NSHostingView.intrinsicContentSize` —
+        // that's what the scroll host's `frameDidChange` observer needs
+        // to see a smooth grow.
+        .readHeight($roundHeight)
+        .modifier(AssistantRoundHeightModifier(height: roundHeight))
+        .animation(
+            hasInitializedRoundHeight
+            ? .smooth(duration: ChatScrollAnimation.revealDuration)
+            : nil,
+            value: roundHeight
+        )
+        .clipped()
+        .onChange(of: roundHeight) { newHeight in
+            guard newHeight > 0, !hasInitializedRoundHeight else { return }
+            hasInitializedRoundHeight = true
+        }
+        .task(id: isActive) {
+            await scheduleActionsVisibility(isActive: isActive)
+        }
+        // Re-run reveal scheduling when *either* the id sequence or any
+        // message's "displayable content" presence flips. The latter is
+        // what catches the moment a stub-with-no-content commits with
+        // real text — id is unchanged but the message becomes revealable.
+        .task(id: revealSignature) {
+            await scheduleMessageReveal()
+        }
+    }
+
+    private var roundContent: some View {
         VStack(alignment: .leading, spacing: 10) {
             ForEach(messages) { msg in
-                messageRow(msg)
-                    .transition(.messageReveal)
+                let isRevealed = isMessageRevealed(msg)
+                messageRow(msg, isRevealed: isRevealed)
+                    .modifier(ConditionalChatTopDownReveal(progress: isRevealed ? 1 : 0, isEnabled: revealsCommittedMessages))
+                    .transition(.opacity)
             }
 
-            // "Thinking..." while the round is active and nothing has
-            // been committed yet. Once the first message lands the
-            // condition flips false and this row fades out as the
-            // committed row fades in.
-            if isActive && !hasAnyVisibleContent {
+            if isActive {
                 LoadingMessageRow()
                     .transition(.opacity)
             }
@@ -92,12 +158,6 @@ struct AssistantRoundView: View {
             if let target = lastAssistantMessage,
                case .content(let c) = target,
                displayText(of: c).nonEmpty != nil {
-                // Copy aggregates across the whole round (every assistant
-                // message's text joined by blank lines) so a multi-step
-                // turn copies all the reasoning + final answer in order.
-                // Regenerate is anchored to the trailing message because
-                // LLMKit's `regenerate(fromMessageID:)` walks back from
-                // there.
                 actionRow(
                     copyText: aggregatedAssistantText,
                     sourceID: c.id
@@ -107,14 +167,26 @@ struct AssistantRoundView: View {
                 .animation(.easeInOut(duration: 0.3), value: actionsVisible)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        // Drives the per-row insertion/removal animation. Keying on
-        // the id sequence — not on `messages` directly — keeps the
-        // animation triggered for structural changes only, ignoring
-        // in-place mutations like `usage` updates.
-        .animation(.easeOut(duration: 0.25), value: messages.map(\.id))
-        .task(id: isActive) {
-            await scheduleActionsVisibility(isActive: isActive)
+    }
+
+    private func isMessageRevealed(_ msg: ChatMessage) -> Bool {
+        guard revealsCommittedMessages else { return true }
+        return revealedMessageIDs.contains(msg.id)
+    }
+
+    /// Stable signature of the messages list that flips whenever a
+    /// message gains or loses displayable content (text or tool calls).
+    /// Used as the `.task(id:)` key for `scheduleMessageReveal` so that
+    /// commit-time content changes (without id changes — LLMKit reuses
+    /// the stream id on commit) still re-fire the reveal logic.
+    private var revealSignature: [String] {
+        messages.map { msg in
+            if case .content(let c) = msg {
+                let displayable = !displayText(of: c).isEmpty
+                    || !((c.toolCalls ?? []).isEmpty)
+                return "\(msg.id):\(displayable ? 1 : 0)"
+            }
+            return msg.id
         }
     }
 
@@ -139,16 +211,59 @@ struct AssistantRoundView: View {
         actionsVisible = true
     }
 
+    @MainActor
+    private func scheduleMessageReveal() async {
+        let currentIDs = Set(messages.map(\.id))
+        // Only messages with displayable content (text or tool calls) are
+        // candidates for reveal. The `LoadingMessageRow` covers the "no
+        // content yet" stretch; revealing an empty message would just play
+        // the mask animation on nothing.
+        let displayableIDs: Set<String> = Set(messages.compactMap { msg -> String? in
+            if case .content(let c) = msg,
+               !displayText(of: c).isEmpty || !((c.toolCalls ?? []).isEmpty) {
+                return msg.id
+            }
+            return nil
+        })
+
+        // Drop ids that no longer exist in the round (e.g., truncated).
+        revealedMessageIDs = revealedMessageIDs.intersection(currentIDs)
+
+        guard revealsCommittedMessages else {
+            revealedMessageIDs = displayableIDs
+            messageRevealBootstrapped = true
+            return
+        }
+
+        if !messageRevealBootstrapped {
+            messageRevealBootstrapped = true
+            // Mounting an existing round (e.g., committed history): everything
+            // displayable is already settled, snap them in without delay.
+            revealedMessageIDs = displayableIDs
+            return
+        }
+
+        let pendingIDs = displayableIDs.subtracting(revealedMessageIDs)
+        guard !pendingIDs.isEmpty else { return }
+
+        try? await Task.sleep(for: .seconds(ChatScrollAnimation.scrollDuration))
+        guard !Task.isCancelled else { return }
+
+        withAnimation(Self.messageRevealAnimation) {
+            revealedMessageIDs.formUnion(pendingIDs)
+        }
+    }
+
     // MARK: - Per-message rendering
 
     @MainActor @ViewBuilder
-    private func messageRow(_ msg: ChatMessage) -> some View {
+    private func messageRow(_ msg: ChatMessage, isRevealed: Bool) -> some View {
         if case .content(let c) = msg {
             switch c.role {
                 case .tool:
                     ToolResultCard(content: c)
                 case .assistant:
-                    assistantMessage(c)
+                    assistantMessage(c, isRevealed: isRevealed)
                 default:
                     EmptyView()
             }
@@ -156,28 +271,38 @@ struct AssistantRoundView: View {
     }
 
     @MainActor @ViewBuilder
-    private func assistantMessage(_ c: ChatMessageContent) -> some View {
+    private func assistantMessage(_ c: ChatMessageContent, isRevealed: Bool) -> some View {
         let text = displayText(of: c)
         let nonFinalCalls = (c.toolCalls ?? []).filter { $0.name != "final_answer" }
-        VStack(alignment: .leading, spacing: 6) {
-            if !text.isEmpty {
-                // `isStreaming: false` — message is already committed,
-                // SmoothStreamingText just renders the text statically.
-                // (We could swap to a plain Markdown later; keeping the
-                // wrapper for now avoids touching the rendering chain.)
-                SmoothStreamingText(target: text, isStreaming: false)
-            }
-            ForEach(nonFinalCalls, id: \.id) { call in
-                ToolCallCard(
-                    call: call,
-                    isActive: false,
-                    isDenied: isCallDenied(call)
-                )
-                .onAppear {
-                    // Republish to AIChatState so `ApprovalPromptView`'s
-                    // gate (if it still uses one) can see the card has
-                    // been mounted before unfurling.
-                    aiChatState.markToolCallRevealed(call.id)
+        // Render only when there's something to show. The round-level
+        // `LoadingMessageRow` (mounted by `body` when `isActive`) covers
+        // the "still streaming, nothing committed yet" case — we deliberately
+        // don't stack a per-message loading indicator here, so the
+        // `chatTopDownReveal` mask doesn't have to worry about hiding
+        // a busy-dots row, and the round's height swap stays a clean
+        // structural transition rather than a `max(loading_h, real_h)`
+        // ZStack collapse.
+        if !text.isEmpty || !nonFinalCalls.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                if !text.isEmpty {
+                    // `isStreaming: false` — message is already committed
+                    // (or is the synthesized stub for a tool-call-bearing
+                    // stream, in which case the partial content is treated
+                    // as static for rendering purposes).
+                    SmoothStreamingText(target: text, isStreaming: false)
+                }
+                ForEach(nonFinalCalls, id: \.id) { call in
+                    ToolCallCard(
+                        call: call,
+                        isActive: false,
+                        isDenied: isCallDenied(call)
+                    )
+                    .onAppear {
+                        // Republish to `AIChatState` so `ApprovalPromptView`'s
+                        // gate can see the card has been mounted before
+                        // unfurling its prompt.
+                        aiChatState.markToolCallRevealed(call.id)
+                    }
                 }
             }
         }
@@ -234,28 +359,6 @@ struct AssistantRoundView: View {
         })
     }
 
-    /// Whether any message in the round currently produces visible UI.
-    /// Drives the loading row: while `isActive` and nothing is visible
-    /// yet, we show "Thinking…".
-    private var hasAnyVisibleContent: Bool {
-        messages.contains(where: isMessageVisible)
-    }
-
-    private func isMessageVisible(_ msg: ChatMessage) -> Bool {
-        guard case .content(let c) = msg else { return false }
-        switch c.role {
-            case .tool:
-                return true
-            case .assistant:
-                let text = displayText(of: c)
-                let nonFinalCalls = (c.toolCalls ?? []).filter { $0.name != "final_answer" }
-                if !nonFinalCalls.isEmpty { return true }
-                return !text.isEmpty
-            default:
-                return false
-        }
-    }
-
     // MARK: - Action row
 
     @MainActor @ViewBuilder
@@ -292,93 +395,38 @@ struct AssistantRoundView: View {
     }
 }
 
-// MARK: - Message reveal mask
-
-/// Top-down mask reveal driven by an `Animatable` ratio (0...1).
-///
-/// Mask layout (top to bottom):
-///   1. `Color.black` — opaque "revealed" region; height grows from
-///      0 to the full content height as the transition runs.
-///   2. `SmoothLinearGradient` strip — **fixed** height
-///      (`Self.stripHeight`); slides down on top of the revealed
-///      region as the leading edge of the wipe. Provides the soft
-///      fade so the boundary doesn't pop.
-///   3. `Color.clear` — "hidden" region; height shrinks from
-///      `(contentHeight - stripHeight)` to 0.
-///
-/// Why a fixed strip and a separate Color.clear: scaling the gradient
-/// itself (the previous version) made the strip stretch over the
-/// entire row, which spread the fade thin and the leading edge read
-/// as a gentle dim rather than a wipe. With a fixed strip the
-/// fade has a constant visual thickness throughout, giving the
-/// reveal a clearer "scanline" feel.
-///
-/// Final phase: once `Color.clear` collapses to 0 (i.e. revealed
-/// height has eaten everything except the strip), the strip itself
-/// shrinks the rest of the way so the mask ends at fully opaque
-/// `Color.black`.
-private struct MessageRevealMaskModifier: ViewModifier, Animatable {
-    /// 0 = hidden (only the gradient strip is opaque, everything
-    /// below it is clear and the row is invisible). 1 = fully
-    /// revealed (mask is solid `Color.black`).
-    var animatableData: CGFloat = 0
-
-    /// Vertical thickness of the soft "fade strip" while it's
-    /// scanning down. Stays constant for the bulk of the animation;
-    /// only shrinks once the revealed `Color.black` region has
-    /// reached `contentHeight - stripHeight`.
-    private static let stripHeight: CGFloat = 30
+private struct ConditionalChatTopDownReveal: ViewModifier {
+    let progress: CGFloat
+    let isEnabled: Bool
 
     func body(content: Content) -> some View {
-        content.mask {
-            GeometryReader { proxy in
-                let H = proxy.size.height
-                let revealed = max(0, min(1, animatableData))
-                let blackHeight = H * revealed
-                let remaining = max(0, H - blackHeight)
-                // Strip stays at `stripHeight` until the wipe nears
-                // the bottom edge; then it collapses with `remaining`.
-                let strip = min(Self.stripHeight, remaining)
-                let clear = max(0, remaining - strip)
-
-                VStack(spacing: 0) {
-                    Color.black.frame(height: blackHeight)
-                    fadeStrip.frame(height: strip)
-                    Color.clear.frame(height: clear)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var fadeStrip: some View {
-        if #available(macOS 14.0, iOS 17.0, *) {
-            SmoothLinearGradient(
-                from: .black,
-                to: .clear,
-                startPoint: .top,
-                endPoint: .bottom
-            )
+        if isEnabled {
+            content.chatTopDownReveal(progress: progress)
         } else {
-            LinearGradient(
-                colors: [.black, .clear],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            content
         }
     }
 }
 
-extension AnyTransition {
-    /// Top-down gradient mask reveal — applied to each message row when
-    /// it commits into the round. `active` is "row hidden, fade strip
-    /// at the very top"; `identity` is "fully revealed, mask is a
-    /// no-op".
-    static var messageReveal: AnyTransition {
-        .modifier(
-            active: MessageRevealMaskModifier(animatableData: 0),
-            identity: MessageRevealMaskModifier(animatableData: 1)
-        )
+// MARK: - Animatable round-height modifier
+
+/// Wraps the round body in an Animatable frame whose height tracks the
+/// inner content's natural size (read via `.readHeight`). The Animatable
+/// `animatableData` is what makes SwiftUI propagate the height change to
+/// `NSHostingView.intrinsicContentSize` *as a continuous interpolation*
+/// — without it, AppKit autolayout sees a stepwise old → new size jump
+/// and the scroll host's `frameDidChange` observer fires once with the
+/// final value, missing the smooth-grow trajectory we want during the
+/// `LoadingMessageRow → committed message` swap.
+private struct AssistantRoundHeightModifier: Animatable, ViewModifier {
+    init(height: CGFloat) {
+        self.animatableData = height
+    }
+
+    var animatableData: CGFloat
+
+    func body(content: Content) -> some View {
+        content.frame(height: animatableData, alignment: .top)
     }
 }
 
@@ -437,89 +485,3 @@ private extension String {
         isEmpty ? nil : self
     }
 }
-
-// MARK: - Live wrapper
-
-/// Hosts the trailing assistant round and forwards committed messages
-/// to `AssistantRoundView`. Observes the in-flight stream via
-/// `StreamObserver` so `isActive` flips correctly when the round
-/// finishes (no per-token side effects — we don't peek at the stream
-/// content, just at its `isFinished` flag through the observer).
-struct LiveAssistantRoundView: View {
-    let committedMessages: [ChatMessage]
-    let stream: LLMStreamingStateObject?
-    var onRegenerate: ((String) -> Void)?
-
-    @StateObject private var observer = StreamObserver()
-
-    var body: some View {
-        AssistantRoundView(
-            messages: resolvedMessages,
-            isActive: observer.stream.map { !$0.isFinished } ?? false,
-            onRegenerate: onRegenerate
-        )
-        .task(id: stream.map(ObjectIdentifier.init)) {
-            observer.observe(stream)
-        }
-    }
-
-    /// We render committed messages by default — the per-message
-    /// granularity rule. The exception is when the stream has tool
-    /// calls in flight but the assistant message hasn't committed
-    /// yet: LLMKit holds the message between "model emitted tool
-    /// calls" and "tool finished executing", which for tools that
-    /// require approval can be an indefinite wait. Without an
-    /// inflight synthesis the user sees only the loading row + the
-    /// approval prompt — they can't see *what tool* the model
-    /// actually wants to run beyond the small badge in the prompt.
-    /// Synthesise an inflight for that window so the `ToolCallCard`
-    /// renders above the approval prompt.
-    ///
-    /// Pure text streaming (no tool calls in the stream yet) does
-    /// NOT synthesize — that preserves the per-message rule for the
-    /// common case and keeps SmoothStreamingText off the per-token
-    /// path we explicitly walked away from.
-    private var resolvedMessages: [ChatMessage] {
-        guard let stream = observer.stream, !stream.isFinished else {
-            return committedMessages
-        }
-        guard !stream.toolCalls.isEmpty else {
-            return committedMessages
-        }
-        // If LLMKit *did* already commit (e.g. for tools that don't
-        // need approval, the commit lands ~instantly before we render),
-        // skip the synthesis so we don't double-add the same id.
-        if committedMessages.contains(where: { $0.id == stream.id }) {
-            return committedMessages
-        }
-        let inflight = ChatMessage.content(.init(
-            id: stream.id,
-            role: .assistant,
-            content: stream.content,
-            files: stream.files,
-            usage: nil,
-            toolCalls: stream.toolCalls
-        ))
-        return committedMessages + [inflight]
-    }
-}
-
-/// Forwards an optional `LLMStreamingStateObject`'s `objectWillChange` as our
-/// own. Letting `LiveAssistantRoundView` `@StateObject`-observe this instead
-/// of `@ObservedObject`-observing the stream directly is what allows `stream`
-/// to be optional without forcing a structural branch in the view tree.
-@MainActor
-private final class StreamObserver: ObservableObject {
-    private(set) var stream: LLMStreamingStateObject?
-    private var cancellable: AnyCancellable?
-
-    func observe(_ newStream: LLMStreamingStateObject?) {
-        guard newStream !== stream else { return }
-        objectWillChange.send()
-        stream = newStream
-        cancellable = newStream?.objectWillChange.sink { [weak self] in
-            self?.objectWillChange.send()
-        }
-    }
-}
-

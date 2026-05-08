@@ -50,14 +50,9 @@ enum MessageGroup: Identifiable {
     }
 }
 
-/// Snapshot used by `AIChatView` to drive the list. `staticGroups` are committed
-/// rows that don't change; `liveStream` (if any) feeds the in-flight assistant
-/// round, with `liveCommittedRound` being the messages of that round that *have*
-/// already landed in `conversation.messages`.
+/// Snapshot used by `AIChatView` to drive the list.
 struct RowLayout {
     let staticGroups: [MessageGroup]
-    let liveStream: LLMStreamingStateObject?
-    let liveCommittedRound: [ChatMessage]
 }
 
 /// Walk the message list and bucket it into [user | assistantRound | loading | error].

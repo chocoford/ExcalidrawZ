@@ -12,6 +12,11 @@ struct ScrollToBottomRequest: Equatable {
     var animated: Bool = false
 }
 
+enum ChatScrollAnimation {
+    static let revealDuration: Double = 0.6
+    static let scrollDuration: Double = 0.6
+}
+
 /// SwiftUI-native chat scroll view backed by `ScrollView` + `LazyVStack`.
 ///
 /// "Pinned to bottom" is observed directly: a 1pt anchor at the bottom of the
@@ -188,7 +193,7 @@ private struct ChatScrollContainer<Content: View>: View {
             proxy.scrollTo(bottomAnchorID, anchor: .bottom)
         }
         if animated {
-            withAnimation(.easeOut(duration: 0.2)) {
+            withAnimation(.easeOut(duration: ChatScrollAnimation.scrollDuration)) {
                 action()
             }
         } else {

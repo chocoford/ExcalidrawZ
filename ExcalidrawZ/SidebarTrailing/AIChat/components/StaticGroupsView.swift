@@ -14,6 +14,7 @@ import SwiftUI
 
 struct StaticGroupsView: View, Equatable {
     let groups: [MessageGroup]
+    let revealingAssistantRoundID: String?
     let onRegenerate: ((String) -> Void)?
     /// Per-user-message revert callback. `nil` hides the revert button
     /// entirely. Equatable is intentionally key'd only on `groups` ids
@@ -24,17 +25,20 @@ struct StaticGroupsView: View, Equatable {
 
     init(
         groups: [MessageGroup],
+        revealingAssistantRoundID: String? = nil,
         onRegenerate: ((String) -> Void)? = nil,
         onRevertUserMessage: ((String) -> Void)? = nil
     ) {
         self.groups = groups
+        self.revealingAssistantRoundID = revealingAssistantRoundID
         self.onRegenerate = onRegenerate
         self.onRevertUserMessage = onRevertUserMessage
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         guard lhs.groups.count == rhs.groups.count else { return false }
-        return zip(lhs.groups, rhs.groups).allSatisfy { $0.id == $1.id }
+        return lhs.revealingAssistantRoundID == rhs.revealingAssistantRoundID
+            && zip(lhs.groups, rhs.groups).allSatisfy { $0.id == $1.id }
     }
 
     var body: some View {
@@ -62,8 +66,12 @@ struct StaticGroupsView: View, Equatable {
                         onRegenerate.map { regen in { regen(id) } }
                     }
                 )
-            case .assistantRound(_, let messages):
-                AssistantRoundView(messages: messages, onRegenerate: onRegenerate)
+            case .assistantRound(let id, let messages):
+                AssistantRoundView(
+                    messages: messages,
+                    revealsCommittedMessages: id == revealingAssistantRoundID,
+                    onRegenerate: onRegenerate
+                )
             case .compactSummary(let c):
                 CompactSummaryRow(content: c)
         }

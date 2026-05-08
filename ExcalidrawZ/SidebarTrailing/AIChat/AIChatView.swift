@@ -35,6 +35,10 @@ struct AIChatView: View {
     @State private var lastBottomID: String?
     @State private var isPinnedToBottom: Bool = true
     @State private var scrollToBottomRequest = ScrollToBottomRequest()
+    @State private var streamScrollFollowTail: Bool = false
+    @State private var isMessageListInitiallySettled: Bool = false
+    @State private var lastActiveStreamID: String?
+    @State private var revealingAssistantRoundID: String?
     /// Confirmation dialog for the "Clear chat" toolbar action — destructive,
     /// so we route through a confirmationDialog rather than firing on tap.
     @State private var isConfirmingClear: Bool = false
@@ -233,13 +237,19 @@ struct AIChatView: View {
             guard let stream = streamingState else { return false }
             return shouldShowStreamingMessage(stream, messages: messages)
         }()
+        // Pass `isStreamingActive || streamScrollFollowTail` so the scroll
+        // host's growth-driven auto-follow stays armed for a short tail
+        // after the stream ends — that window covers the loading→message
+        // swap's height grow and the trailing reveal mask animation.
         NativeChatScrollView(
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
-            isStreaming: isStreamingActive
+            isStreaming: isStreamingActive || streamScrollFollowTail
         ) {
             messageListRows(messages: messages)
         }
+        .opacity(isMessageListInitiallySettled ? 1 : 0)
+        .animation(.easeOut(duration: 0.12), value: isMessageListInitiallySettled)
         .overlay(alignment: .bottom) {
             if !isPinnedToBottom {
                 Button {
@@ -255,9 +265,45 @@ struct AIChatView: View {
         }
         .onAppear {
             requestScrollToBottomIfNeeded(bottomID)
+            guard !isMessageListInitiallySettled else { return }
+            requestScrollToBottom(animated: false)
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(140))
+                requestScrollToBottom(animated: false)
+                isMessageListInitiallySettled = true
+            }
         }
         .onChange(of: bottomID) { _ in
+            guard !isStreamingActive else { return }
             requestScrollToBottomIfNeeded(bottomID)
+        }
+        .onChange(of: isStreamingActive) { nowStreaming in
+            if nowStreaming {
+                lastActiveStreamID = streamingState?.id
+                // Just kicked off a new round (user sent / regenerate).
+                // Force-pin and request an explicit scroll-to-bottom: the
+                // host's growth-driven follow can race against
+                // `isStreaming` reaching the Coordinator (the user-message
+                // frame may land before SwiftUI has propagated the new
+                // streaming state through `updateNSView`), so without this
+                // nudge the user's message + the LoadingMessageRow can
+                // appear without the viewport tracking them.
+                isPinnedToBottom = true
+                requestScrollToBottom(animated: true)
+                return
+            }
+            revealingAssistantRoundID = lastActiveStreamID ?? streamingState?.id
+            // Tail window: the round-level loading→message swap and the
+            // trailing reveal mask animation both happen *after* the
+            // stream finishes. Keep the host's growth-driven follow
+            // armed for ~600 ms so the round can smoothly slide up to
+            // accommodate the committed message instead of overflowing
+            // below the viewport.
+            streamScrollFollowTail = true
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(600))
+                streamScrollFollowTail = false
+            }
         }
     }
     
@@ -267,83 +313,19 @@ struct AIChatView: View {
         
         StaticGroupsView(
             groups: layout.staticGroups,
+            revealingAssistantRoundID: revealingAssistantRoundID,
             onRegenerate: regenerateMessage,
             onRevertUserMessage: revertToUserMessage
         )
         .equatable()
-        
-        // Mount the live slot whenever there's *anything* to host — either an
-        // active stream (whose inflight message is synthesized inside
-        // `LiveAssistantRoundView`) or a committed trailing round (pinned
-        // post-stream, until the next round pushes it out).
-        //
-        // The active-stream branch is critical: LLMKit only commits an
-        // assistant message into `conversation.messages` at `.tool` boundaries
-        // or stream end, so during the streaming of a `final_answer`-style
-        // agent there's no committed assistant in the round yet. Without this
-        // guard, the live slot stays empty for the whole streaming window and
-        // `SmoothStreamingText` mounts only at stream end with the full text
-        // already in hand — no visible streaming, no `ingest` ticks, the
-        // batching/animation pipeline never runs.
-        if layout.liveStream != nil || !layout.liveCommittedRound.isEmpty {
-            ChatScrollRow {
-                LiveAssistantRoundView(
-                    committedMessages: layout.liveCommittedRound,
-                    stream: layout.liveStream,
-                    onRegenerate: regenerateMessage,
-                )
-            }
-        }
     }
-    
-    /// Partition committed messages into static groups + the most-recent
-    /// assistant round (which lives in the "live slot").
-    ///
-    /// Crucially, `liveCommittedRound` is the trailing round **regardless of
-    /// stream state** — when there's no active stream, the round is still
-    /// hosted in the live slot, just rendered statically. This pins the round
-    /// to a stable view position from the moment it starts streaming until
-    /// a new round pushes it out, which preserves SwiftUI view identity (and
-    /// the per-message `SmoothStreamingText` state inside) across the
-    /// stream-end transition.
+
+    /// Timeline rows are rendered directly from committed / placeholder
+    /// messages. Active loading is represented by LLMKit's `.loading` message,
+    /// so no separate live slot is needed here.
     private func makeRowLayout(messages: [ChatMessage]) -> RowLayout {
-        var allGroups = groupMessages(messages)
-
-        let activeStream: LLMStreamingStateObject? = {
-            guard let s = streamingState,
-                  shouldShowStreamingMessage(s, messages: messages)
-            else { return nil }
-            return s
-        }()
-
-        // When a stream is active, `LiveAssistantRoundView`'s
-        // `AssistantRoundView` shows its own "Thinking…" loading row.
-        // Drop standalone `.loading` MessageGroups that LLMKit emits
-        // as round-start placeholders — otherwise both would render
-        // and we'd see two loading rows.
-        if activeStream != nil {
-            allGroups.removeAll { group in
-                if case .loading = group { return true }
-                return false
-            }
-        }
-
-        // Trailing round → live slot; everything before → static.
-        if let last = allGroups.last, case .assistantRound(_, let msgs) = last {
-            return RowLayout(
-                staticGroups: Array(allGroups.dropLast()),
-                liveStream: activeStream,
-                liveCommittedRound: msgs
-            )
-        }
-
-        // No trailing assistant round (e.g. only a user message so far). The
-        // active stream — if any — will land here once its first chunk gets
-        // committed. For now there's nothing to pin.
         return RowLayout(
-            staticGroups: allGroups,
-            liveStream: activeStream,
-            liveCommittedRound: []
+            staticGroups: groupMessages(messages)
         )
     }
     
@@ -573,11 +555,17 @@ struct AIChatView: View {
     private func requestScrollToBottomIfNeeded(_ newBottomID: String?) {
         guard let newBottomID else { return }
         guard newBottomID != lastBottomID else { return }
+        let wasFirstObservation = (lastBottomID == nil)
         lastBottomID = newBottomID
         guard isPinnedToBottom else { return }
-        requestScrollToBottom(animated: false)
+        // First observation (`.onAppear` with existing history) is initial
+        // positioning, not a "scroll" — the scroll host's first-measurement
+        // path snaps without visible animation. Subsequent changes (new
+        // round, newly committed message) are real content events; animate.
+        guard !wasFirstObservation else { return }
+        requestScrollToBottom(animated: true)
     }
-    
+
     private func requestScrollToBottom(animated: Bool) {
         scrollToBottomRequest = ScrollToBottomRequest(
             token: scrollToBottomRequest.token + 1,
