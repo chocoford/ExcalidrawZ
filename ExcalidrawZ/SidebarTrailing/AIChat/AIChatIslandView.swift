@@ -152,13 +152,11 @@ struct AIChatIslandView: View {
         return c.content ?? ""
     }
 
-    /// Single-line label for a tool-call frame in the ticker. Kept simple —
-    /// just the tool's identifier — so the ticker stays readable at small
-    /// widths. The richer `ToolCallCard` continues to render in the chat
-    /// view itself. Takes a raw name so both `ToolCall` (from a committed
-    /// message) and a streaming-state `String` lookup hit the same format.
+    /// Single-line label for a tool-call frame in the ticker. Resolve the
+    /// protocol-level snake_case name to the same display name used by the
+    /// full `ToolCallCard`, so the island does not leak internal tool ids.
     private func toolCallDisplay(_ name: String) -> String {
-        String(localized: "Using \(name)…")
+        String(localized: "Using \(ToolDisplayNameCache.displayName(for: name))…")
     }
 
     /// Name of the first non-final-answer tool call currently being emitted
@@ -648,14 +646,9 @@ struct ReplyTickerView: View {
     /// don't fade in, so they reveal immediately.
     private let initialMountDelay: TimeInterval = 0.3
 
-    /// Stops chosen for vividness rather than brand correctness — once
-    /// hue-rotation kicks in, the eye sees them rotate through the full
-    /// wheel anyway. Keep it 4 colors so the halo doesn't get muddy.
-    private let progressGradient = LinearGradient(
-        colors: [.purple, .pink, .orange, .blue],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    /// Keep this mapped to the shared AI token so island, paywall, and
+    /// toolbar accents evolve as one visual family.
+    private let progressGradient = AIAppearancePalette.thinkingGradient
 
     var body: some View {
         HStack(spacing: 6) {

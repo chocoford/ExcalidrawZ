@@ -8,6 +8,7 @@
 import SwiftUI
 
 import ChocofordUI
+import LLMKit
 
 struct ExcalidrawEditorToolbarModifier: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
@@ -20,6 +21,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var toolState: ToolState
     @EnvironmentObject private var store: Store
+    @EnvironmentObject private var llmState: LLMStateObject
 
     @State private var isCollaboratorPopoverPresented = false
     
@@ -147,7 +149,14 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                 Button {
                     store.togglePaywall(reason: .manaully)
                 } label: {
-                    Image(systemSymbol: .sparkles)
+                    HStack(spacing: 4) {
+                        Image(systemSymbol: .sparkles)
+                        if llmState.isAuthenticated {
+                            Text((llmState.creditsInfo?.balance ?? 0).formatted(.number.precision(.fractionLength(2))))
+                                
+                        }
+                    }
+                    .foregroundStyle(AIAppearancePalette.foregroundGradient)
                 }
             }
         }

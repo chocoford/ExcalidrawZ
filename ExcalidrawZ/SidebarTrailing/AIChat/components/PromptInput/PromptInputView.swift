@@ -34,6 +34,7 @@ struct ExcalidrawChatInvocationContext: ChatInvocationContext {
     var currentFileData: Data?
     var canvasTarget: ExcalidrawCoordinatorRegistry.CanvasTarget
     var selectedElementIDs: [String]?
+    var currentFileID: UUID?
 }
 
 struct PromptInputView<Background: View>: View {
@@ -166,7 +167,13 @@ struct PromptInputView<Background: View>: View {
         .onChange(of: aiChatState.draftRequest?.token) { _ in
             guard let req = aiChatState.draftRequest else { return }
             inputText = req.text
+            pastedImages = PastedImageHelpers.pendingImages(from: req.files)
             isInputFocused = true
+        }
+        .onChange(of: aiChatState.editCancelToken) { _ in
+            inputText = ""
+            pastedImages = []
+            isInputFocused = false
         }
     }
 

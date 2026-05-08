@@ -44,6 +44,7 @@ enum ExcalidrawAgentConfig {
         "calculator",
         "datetime",
         "adjust_elements",
+        "rename_file",
         "list_all_files",
         "query_file_history",
         "restore_file_history",

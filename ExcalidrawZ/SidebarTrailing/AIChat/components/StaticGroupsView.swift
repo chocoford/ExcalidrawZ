@@ -19,31 +19,33 @@ struct StaticGroupsView: View, Equatable {
     let revealingAssistantRoundID: String?
     let pendingLoadingRowID: String?
     let onRegenerate: ((String) -> Void)?
-    /// Per-user-message revert callback. `nil` hides the revert button
-    /// entirely. Equatable is intentionally key'd only on `groups` ids
-    /// (closure identity is unstable) — passing a different `onRevert`
-    /// instance with the same group sequence won't trigger re-render,
-    /// which is the desired perf knob.
-    let onRevertUserMessage: ((String) -> Void)?
+    let revertableUserMessageIDs: Set<String>
+    /// Per-user-message edit/revert callback. Equatable ignores closure
+    /// identity, but includes `revertableUserMessageIDs` so a message can
+    /// flip from edit pencil to revert affordance without changing history.
+    let onUserMessageAction: ((String) -> Void)?
 
     init(
         groups: [MessageGroup],
         revealingAssistantRoundID: String? = nil,
         pendingLoadingRowID: String? = nil,
         onRegenerate: ((String) -> Void)? = nil,
-        onRevertUserMessage: ((String) -> Void)? = nil
+        revertableUserMessageIDs: Set<String> = [],
+        onUserMessageAction: ((String) -> Void)? = nil
     ) {
         self.groups = groups
         self.revealingAssistantRoundID = revealingAssistantRoundID
         self.pendingLoadingRowID = pendingLoadingRowID
         self.onRegenerate = onRegenerate
-        self.onRevertUserMessage = onRevertUserMessage
+        self.revertableUserMessageIDs = revertableUserMessageIDs
+        self.onUserMessageAction = onUserMessageAction
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         guard lhs.groups.count == rhs.groups.count else { return false }
         return lhs.revealingAssistantRoundID == rhs.revealingAssistantRoundID
             && lhs.pendingLoadingRowID == rhs.pendingLoadingRowID
+            && lhs.revertableUserMessageIDs == rhs.revertableUserMessageIDs
             && zip(lhs.groups, rhs.groups).allSatisfy { $0.id == $1.id }
     }
 
@@ -59,7 +61,11 @@ struct StaticGroupsView: View, Equatable {
     private func renderGroup(_ group: MessageGroup, at index: Int) -> some View {
         switch group {
             case .user(let c):
-                UserMessageBubble(content: c, onRevert: onRevertUserMessage)
+                UserMessageBubble(
+                    content: c,
+                    actionKind: userMessageActionKind(for: c.id),
+                    onAction: onUserMessageAction
+                )
             case .loading:
                 EmptyView()
 //                LoadingMessageRow()
@@ -78,6 +84,7 @@ struct StaticGroupsView: View, Equatable {
                 let shouldReveal = isRevealingAssistantRound(id: id, messages: messages)
                 AssistantRoundView(
                     messages: messages,
+                    isActive: isAssistantRoundActive(at: index),
                     revealsCommittedMessages: shouldReveal,
                     playsInitialReveal: shouldReveal,
                     keepsLoadingPlaceholderDuringReveal: shouldReveal,
@@ -86,6 +93,11 @@ struct StaticGroupsView: View, Equatable {
             case .compactSummary(let c):
                 CompactSummaryRow(content: c)
         }
+    }
+
+    private func userMessageActionKind(for id: String) -> UserMessageBubble.ActionKind? {
+        guard onUserMessageAction != nil else { return nil }
+        return revertableUserMessageIDs.contains(id) ? .revert : .edit
     }
 
     /// Walks back from `index` to find the most recent user message id.
@@ -102,6 +114,14 @@ struct StaticGroupsView: View, Equatable {
     private func previousGroupIsPendingLoading(at index: Int) -> Bool {
         guard index > 0 else { return false }
         return isLoadingRowBeforeRevealingAssistant(at: index - 1)
+    }
+
+    private func isAssistantRoundActive(at index: Int) -> Bool {
+        guard index < groups.count - 1 else { return false }
+        if case .loading = groups[index + 1] {
+            return true
+        }
+        return false
     }
 
     private func isRevealingAssistantRound(id: String, messages: [ChatMessage]) -> Bool {

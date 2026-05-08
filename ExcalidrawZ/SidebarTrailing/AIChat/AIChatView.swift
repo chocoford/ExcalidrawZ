@@ -40,6 +40,7 @@ struct AIChatView: View {
     @State private var lastActiveStreamID: String?
     @State private var revealingAssistantRoundID: String?
     @State private var pendingLoadingRowID: String?
+    @State private var revertableUserMessageIDs: Set<String> = []
     /// Confirmation dialog for the "Clear chat" toolbar action — destructive,
     /// so we route through a confirmationDialog rather than firing on tap.
     @State private var isConfirmingClear: Bool = false
@@ -49,12 +50,14 @@ struct AIChatView: View {
     /// once dismissed in this view we never want to flash the cover again
     /// even if the user clears all chats from the More menu.
     @State private var hasDismissedWelcome: Bool = false
+    @State private var isShowingWelcomeManually: Bool = false
 
     /// Show the welcome cover when no conversations exist anywhere yet AND
     /// the user hasn't already dismissed it. We treat `nil` (cache not
     /// loaded) as "don't show yet" — flashing the welcome before LLMKit
     /// finishes its first refresh would feel jumpy.
     private var shouldShowWelcome: Bool {
+        if isShowingWelcomeManually { return true }
         guard !hasDismissedWelcome else { return false }
 #if DEBUG
         return true
@@ -89,6 +92,11 @@ struct AIChatView: View {
     private var isCompactingThisConversation: Bool {
         aiChatState.isCompacting(conversationID: fileState.aiChatConversationID)
     }
+
+    private var creditsDisplayText: String {
+        let balance = llmState.creditsInfo?.balance ?? 0
+        return balance.formatted(.number.precision(.fractionLength(2)))
+    }
     
     var body: some View {
         ZStack {
@@ -96,6 +104,7 @@ struct AIChatView: View {
                 AIChatWelcomeView {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         hasDismissedWelcome = true
+                        isShowingWelcomeManually = false
                     }
                 }
                 .transition(.opacity)
@@ -129,6 +138,13 @@ struct AIChatView: View {
             }
             
             VStack(spacing: 6) {
+                if let editSession = activeEditSession {
+                    EditSessionBanner(
+                        mode: editSession.mode,
+                        onCancel: { aiChatState.cancelEditing() }
+                    )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
 
                 PendingQueueView(
                     messages: aiChatState.pendingQueue,
@@ -169,6 +185,10 @@ struct AIChatView: View {
                 .easeInOut(duration: 0.2),
                 value: isCompactingThisConversation
             )
+            .animation(
+                .easeInOut(duration: 0.2),
+                value: activeEditSession
+            )
         }
         .padding(.bottom, 10)
         // The approval card eats vertical space from the chat scroll
@@ -183,6 +203,15 @@ struct AIChatView: View {
             isPinnedToBottom = true
             requestScrollToBottom(animated: true)
         }
+    }
+
+    private var activeEditSession: AIChatState.EditSession? {
+        guard let editSession = aiChatState.editSession,
+              editSession.conversationID == fileState.aiChatConversationID
+        else {
+            return nil
+        }
+        return editSession
     }
 
     /// Wipes the current conversation's message history via LLMKit's
@@ -310,6 +339,9 @@ struct AIChatView: View {
                 pendingLoadingRowID = nil
             }
         }
+        .task(id: revertableRefreshKey(messages: messages)) {
+            await refreshRevertableUserMessageIDs(messages: messages)
+        }
     }
     
     @ViewBuilder
@@ -321,7 +353,8 @@ struct AIChatView: View {
             revealingAssistantRoundID: revealingAssistantRoundID,
             pendingLoadingRowID: pendingLoadingRowID,
             onRegenerate: regenerateMessage,
-            onRevertUserMessage: revertToUserMessage
+            revertableUserMessageIDs: revertableUserMessageIDs,
+            onUserMessageAction: beginEditingUserMessage
         )
     }
 
@@ -383,6 +416,21 @@ struct AIChatView: View {
             
             ToolbarItemGroup(placement: .automatic) {
                 Menu {
+                    Button {} label: {
+                        Label("\(creditsDisplayText) credits", systemSymbol: .sparkles)
+                    }
+                    .disabled(true)
+
+                    Divider()
+
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            isShowingWelcomeManually = true
+                        }
+                    } label: {
+                        Label("Show welcome", systemSymbol: .sparkles)
+                    }
+
                     if #available(macOS 14.0, iOS 17.0, *) {
                         OpenSettingsMenuItem(deepLinkTo: .ai)
                     } else {
@@ -414,139 +462,71 @@ struct AIChatView: View {
         }
     }
     
-    /// "Revert" action attached to each user message in the static history.
-    /// Four steps, in order:
-    ///
-    /// 1. Cancel any in-flight stream so the restore doesn't race the
-    ///    AI's autosave-tool-call dance.
-    /// 2. Restore the file from the `.aiPre` checkpoint anchored to
-    ///    this message id (same pipeline as `FileCheckpointDetailView`'s
-    ///    manual restore).
-    /// 3. Truncate the conversation at (and including) this user
-    ///    message — wipes the old user message + AI reply + any
-    ///    subsequent rounds, so the chat reads as if this turn never
-    ///    happened.
-    /// 4. Push the message's original text back into the input box so
-    ///    the user can edit and re-send.
-    private func revertToUserMessage(_ userMessageID: String) {
+    /// Start editing a historical user message. We intentionally delay
+    /// truncation / file-restore until the user presses Send, so Cancel
+    /// can restore the original chat by simply clearing edit state.
+    private func beginEditingUserMessage(_ userMessageID: String) {
         guard let convo = conversation else { return }
         let conversationID = convo.id
 
-        // Pull message text + sanity-check that it's actually a user msg.
-        let text: String? = convo.messages.first {
+        let content: ChatMessageContent? = convo.messages.first {
             if case .content(let c) = $0,
                c.id == userMessageID,
                c.role == .user { return true }
             return false
-        }.flatMap { msg -> String? in
-            if case .content(let c) = msg { return c.content }
+        }.flatMap { msg -> ChatMessageContent? in
+            if case .content(let c) = msg { return c }
             return nil
         }
-        guard let messageText = text else { return }
+        guard let content else { return }
 
-        // Cancel any in-flight stream first — reverting while the AI is
-        // mid-reply would race the file restore against autosaves from
-        // the still-running tool calls.
         llmState.cancelGeneration(conversationID: conversationID)
-
-        Task { @MainActor in
-            await performFileRestore(forUserMessageID: userMessageID)
-
-            // Truncate the conversation: remove this user message + the
-            // assistant's old reply + anything after. `inclusive: true`
-            // because we're going to re-send a (possibly edited) version
-            // of this same user message; leaving the original would
-            // duplicate it.
-            do {
-                try await llmState.truncateConversation(
-                    in: conversationID,
-                    fromMessageID: userMessageID,
-                    inclusive: true
-                )
-            } catch {
-                alertToast.presentAIChatError(error)
-                // Don't bail: file is already restored, draft prefill
-                // still useful even if truncation failed.
-            }
-
-            // Push the original user text into the input box. Token-based
-            // request handles the "revert twice with same text" case.
-            aiChatState.requestDraft(messageText)
-        }
+        aiChatState.beginEditing(
+            conversationID: conversationID,
+            userMessageID: userMessageID,
+            text: content.content ?? "",
+            files: content.files ?? [],
+            mode: revertableUserMessageIDs.contains(userMessageID) ? .revert : .edit
+        )
+        isPinnedToBottom = true
+        requestScrollToBottom(animated: true)
     }
 
-    /// Find the `.aiPre` checkpoint with `messageID == userMessageID` for
-    /// the currently active file, and restore. Silently no-ops if no
-    /// matching checkpoint exists (shouldn't happen for messages whose
-    /// turn was opened with `beginAIChatSession`, but be defensive).
-    private func performFileRestore(forUserMessageID userMessageID: String) async {
-        guard case .file(let file) = fileState.currentActiveFile else {
-            // Local files: revert path not implemented yet (see
-            // `RestoreFileHistoryTool`'s scope note). Surface a toast
-            // rather than failing silently.
-            await MainActor.run {
-                alertToast(.init(
-                    displayMode: .hud,
-                    type: .regular,
-                    title: "Revert is currently only supported for library files."
-                ))
-            }
+    private func revertableRefreshKey(messages: [ChatMessage]) -> String {
+        let fileID: String = {
+            guard case .file(let file) = fileState.currentActiveFile else { return "no-file" }
+            return file.objectID.uriRepresentation().absoluteString
+        }()
+        let messageIDs = messages.map(\.id).joined(separator: "|")
+        return "\(fileID)::\(messageIDs)"
+    }
+
+    private func refreshRevertableUserMessageIDs(messages: [ChatMessage]) async {
+        let userMessageIDs = messages.compactMap { message -> String? in
+            guard case .content(let content) = message, content.role == .user else { return nil }
+            return content.id
+        }
+        guard !userMessageIDs.isEmpty,
+              case .file(let file) = fileState.currentActiveFile
+        else {
+            revertableUserMessageIDs = []
             return
         }
-
         let fileObjectID = file.objectID
         let context = PersistenceController.shared.newTaskContext()
-
-        let checkpointObjectID: NSManagedObjectID? = try? await context.perform {
-            guard let file = try context.existingObject(with: fileObjectID) as? File else { return nil }
+        let ids: Set<String> = await context.perform {
+            guard let file = try? context.existingObject(with: fileObjectID) as? File else { return [] }
             let fetch = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
             fetch.predicate = NSPredicate(
-                format: "file == %@ AND messageID == %@ AND source == %@",
+                format: "file == %@ AND source == %@ AND messageID IN %@",
                 file,
-                userMessageID,
-                FileCheckpointSource.aiPre.rawValue
+                FileCheckpointSource.aiPre.rawValue,
+                userMessageIDs
             )
-            fetch.fetchLimit = 1
-            return (try? context.fetch(fetch).first)?.objectID
+            guard let checkpoints = try? context.fetch(fetch) else { return [] }
+            return Set(checkpoints.compactMap(\.messageID))
         }
-
-        guard let checkpointObjectID else {
-            await MainActor.run {
-                alertToast(.init(
-                    displayMode: .hud,
-                    type: .regular,
-                    title: "No revert point found for this message."
-                ))
-            }
-            return
-        }
-
-        do {
-            let cpRepo = PersistenceController.shared.checkpointRepository
-            let fileRepo = PersistenceController.shared.fileRepository
-
-            try await cpRepo.restoreCheckpoint(
-                checkpointObjectID: checkpointObjectID,
-                to: fileObjectID
-            )
-            let content = try await cpRepo.loadCheckpointContent(
-                checkpointObjectID: checkpointObjectID
-            )
-            try await fileRepo.saveFileContentToStorage(
-                fileObjectID: fileObjectID,
-                content: content
-            )
-
-            // Reload the canvas so the user sees the revert immediately.
-            await MainActor.run {
-                Task { await fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true) }
-                fileState.didUpdateFile = false
-            }
-        } catch {
-            await MainActor.run {
-                alertToast.presentAIChatError(error)
-            }
-        }
+        revertableUserMessageIDs = ids
     }
 
     private func regenerateMessage(messageID: String) {
@@ -619,6 +599,46 @@ private struct OpenSettingsMenuItem: View {
         } label: {
             Label("Settings…", systemSymbol: .gearshape)
         }
+    }
+}
+
+private struct EditSessionBanner: View {
+    let mode: AIChatState.EditSession.Mode
+    let onCancel: () -> Void
+
+    private var title: String {
+        switch mode {
+            case .edit: "Editing message"
+            case .revert: "Editing with canvas revert"
+        }
+    }
+
+    private var symbol: SFSymbol {
+        switch mode {
+            case .edit: .pencil
+            case .revert: .arrowUturnBackward
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemSymbol: symbol)
+                .foregroundStyle(AIAppearancePalette.foregroundGradient)
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            Button(action: onCancel) {
+                Image(systemSymbol: .xmark)
+                    .font(.caption)
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.cancelAction)
+            .help("Cancel editing")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(.regularMaterial, in: Capsule())
     }
 }
 

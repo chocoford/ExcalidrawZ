@@ -165,7 +165,8 @@ struct AssistantRoundView: View {
                     .transition(.opacity)
             }
             
-            if let target = lastAssistantMessage,
+            if !isActive,
+               let target = lastAssistantMessage,
                case .content(let c) = target,
                displayText(of: c).nonEmpty != nil {
                 actionRow(

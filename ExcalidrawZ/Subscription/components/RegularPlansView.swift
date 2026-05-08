@@ -8,38 +8,76 @@
 import SwiftUI
 import StoreKit
 
+enum MaxCreditTier: String, CaseIterable, Identifiable {
+    case standard
+    case triple
+    
+    var id: Self { self }
+    
+    var title: String {
+        switch self {
+            case .standard:
+                "3x"
+            case .triple:
+                "10x"
+        }
+    }
+    
+    var credits: Int {
+        switch self {
+            case .standard:
+                1800
+            case .triple:
+                5400
+        }
+    }
+    
+    var badgeText: String {
+        "\(credits) AI"
+    }
+}
+
 struct RegularPlansView: View {
     @EnvironmentObject private var store: Store
     
     @Binding var selection: Product?
+    @Binding var maxCreditTier: MaxCreditTier
+    var billingPeriod: Paywall.BillingPeriod
     var plans: [SubscriptionItem]
+    var productProvider: (SubscriptionItem) -> Product?
+    var maxCreditTierChangeHandler: (MaxCreditTier) -> Void = { _ in }
     
     var body: some View {
-        //        if #available(iOS 26.0, macOS 26.0, *) {
-        //            GlassEffectContainer(spacing: 32) {
-        //                planCards
-        //            }
-        //        } else {
         planCards
-        //        }
     }
     
     private var planCards: some View {
-        HStack(spacing: 20) {
+        VStack(spacing: 12) {
             ForEach(plans) { item in
                 PlanCard(
-                    isSelected: item.containsProductID(selection?.id),
+                    isSelected: isSelected(item),
                     plan: item,
-                    product: store.subscriptions.first(where: {$0.id == item.id})
+                    product: productProvider(item),
+                    billingPeriod: billingPeriod,
+                    maxCreditTier: item.id == SubscriptionItem.max.id ? $maxCreditTier : nil,
+                    maxCreditTierChangeHandler: maxCreditTierChangeHandler
                 )
                 .contentShape(Rectangle())
                 .onTapGesture {
                     withAnimation(.bouncy(duration: 0.2)) {
-                        selection = store.subscriptions.first(where: {$0.id == item.id})
+                        selection = productProvider(item)
                     }
                 }
             }
         }
+    }
+    
+    private func isSelected(_ item: SubscriptionItem) -> Bool {
+        if item.id == SubscriptionItem.max.id {
+            return SubscriptionItem.max.containsProductID(selection?.id)
+                || SubscriptionItem.max10x.containsProductID(selection?.id)
+        }
+        return item.containsProductID(selection?.id)
     }
 }
 
@@ -50,15 +88,18 @@ struct PlanCard: View {
     
     var plan: SubscriptionItem
     var product: Product?
+    var billingPeriod: Paywall.BillingPeriod
+    var maxCreditTier: Binding<MaxCreditTier>?
+    var maxCreditTierChangeHandler: (MaxCreditTier) -> Void = { _ in }
     
     private var accent: Color {
         switch plan.id {
             case SubscriptionItem.starter.id:
-                Color(hue: 0.55, saturation: 1, brightness: 0.8)
+                AIAppearancePalette.planAccent(.starter)
             case SubscriptionItem.pro.id:
-                Color(hue: 0.64, saturation: 1, brightness: 0.8)
+                AIAppearancePalette.planAccent(.pro)
             case SubscriptionItem.max.id:
-                Color(hue: 0.86, saturation: 1, brightness: 0.8)
+                AIAppearancePalette.planAccent(.max)
             default:
                     .accentColor
         }
@@ -66,11 +107,13 @@ struct PlanCard: View {
     
     var body: some View {
         content()
-            .padding()
-            .frame(width: 260, height: 380, alignment: .top)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity)
+            .frame(height: 112, alignment: .center)
             .background {
                 if #available(iOS 26.0, macOS 26.0, *) {
-                    let roundedRectangle = RoundedRectangle(cornerRadius: 24)
+                    let roundedRectangle = RoundedRectangle(cornerRadius: 22)
                     ZStack {
                         roundedRectangle
                             .fill(.clear)
@@ -122,57 +165,159 @@ struct PlanCard: View {
                     .animation(.easeIn(duration: 0.2), value: isSelected)
                 }
             }
-            .scaleEffect(isSelected ? 1.03 : 1, anchor: .bottom)
+            .scaleEffect(isSelected ? 1.015 : 1, anchor: .center)
+            .overlay(alignment: .topTrailing) {
+                if let maxCreditTier {
+                    maxCreditTierSwitch(maxCreditTier)
+                        .padding(.top, 10)
+                        .padding(.trailing, 12)
+                }
+            }
     }
     
     
     @ViewBuilder
     private func content() -> some View {
-        VStack(spacing: 14) {
-            VStack(spacing: 10) {
-                
-                Text(plan.title)
-                    .font(.title)
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Text(plan.title)
+                        .font(.title3.weight(.semibold))
+                    
+                    if plan.id == SubscriptionItem.pro.id {
+                        planBadge("Recommended")
+                    }
+                }
                 
                 Text(plan.description)
-                    .font(.callout)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
-                    .frame(height: 70, alignment: .top)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             
-            HStack(alignment: .bottom) {
+            Spacer(minLength: 12)
+            
+            VStack(alignment: .trailing, spacing: 2) {
 #if APP_STORE
-                Text(product?.displayPrice ?? "")
-                    .font(.title.bold())
-                if let product, let subscription = product.subscription {
-                    Text(subscription.subscriptionPeriod.formatted(product.subscriptionPeriodFormatStyle))
+                Text(displayPriceText)
+                    .font(.title3.bold())
+                if let periodText = displayPeriodText {
+                    Text(periodText)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
 #else
-                Text(plan.fallbackDisplayPrice)
-                    .font(.title.bold())
-                Text(plan.fallbackDisplayPeriod)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                Text(displayPriceText)
+                    .font(.title3.bold())
+                if let periodText = displayPeriodText {
+                    Text(periodText)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
 #endif
-                Spacer()
             }
-            .frame(height: 30)
-            
-            Divider()
-            
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(plan.features, id: \.self) { feature in
-                    HStack(alignment: .firstTextBaseline) {
-                        Image(systemSymbol: .checkmark)
-                            .symbolVariant(.circle)
-                            .foregroundStyle(accent)
-                        Text(try! AttributedString(markdown: feature))
+        }
+    }
+    
+    private var displayPriceText: String {
+#if APP_STORE
+        if billingPeriod == .yearly, let product {
+            let monthlyPrice = NSDecimalNumber(decimal: product.price)
+                .dividing(by: NSDecimalNumber(value: 12))
+                .decimalValue
+            return monthlyPrice.formatted(
+                .currency(code: product.priceFormatStyle.currencyCode)
+            ) + "/mo"
+        }
+        guard let product else { return "" }
+        return product.displayPrice + "/mo"
+#else
+        if billingPeriod == .yearly, let monthlyPrice = fallbackMonthlyPriceFromYearlyPrice {
+            return monthlyPrice + "/mo"
+        }
+        return fallbackPlan.fallbackDisplayPrice + "/mo"
+#endif
+    }
+    
+    private var displayPeriodText: String? {
+        if billingPeriod == .yearly {
+            return fallbackPlan.fallbackYearlyDisplayPrice == nil ? "billed monthly" : "billed yearly"
+        }
+        return "billed monthly"
+    }
+    
+    private var fallbackMonthlyPriceFromYearlyPrice: String? {
+        guard let yearlyPrice = fallbackPlan.fallbackYearlyDisplayPrice else { return nil }
+        let numericString = yearlyPrice
+            .filter { $0.isNumber || $0 == "." }
+        guard let yearlyAmount = Decimal(string: numericString) else { return nil }
+        
+        let monthlyAmount = (NSDecimalNumber(decimal: yearlyAmount)
+            .dividing(by: NSDecimalNumber(value: 12)))
+            .decimalValue
+        
+        return monthlyAmount.formatted(
+            .currency(code: Locale.current.currency?.identifier ?? "USD")
+        )
+    }
+    
+    private var fallbackPlan: SubscriptionItem {
+        if plan.id == SubscriptionItem.max.id, maxCreditTier?.wrappedValue == .triple {
+            return .max10x
+        }
+        return plan
+    }
+    
+    @ViewBuilder
+    private func planBadge(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(colorScheme == .dark ? Color.white : accent)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background {
+                Capsule()
+                    .fill(accent.opacity(colorScheme == .dark ? 0.42 : 0.12))
+            }
+            .overlay {
+                if colorScheme == .dark {
+                    Capsule()
+                        .stroke(Color.white.opacity(0.20), lineWidth: 0.6)
+                }
+            }
+    }
+    
+    @ViewBuilder
+    private func maxCreditTierSwitch(_ selection: Binding<MaxCreditTier>) -> some View {
+        HStack(spacing: 3) {
+            ForEach(MaxCreditTier.allCases) { tier in
+                Button {
+                    withAnimation(.smooth(duration: 0.2)) {
+                        selection.wrappedValue = tier
+                    }
+                    maxCreditTierChangeHandler(tier)
+                } label: {
+                    Text(tier.title)
+                        .font(.caption2.weight(.bold))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(selection.wrappedValue == tier ? Color.white : accent)
+                .background {
+                    if selection.wrappedValue == tier {
+                        Capsule()
+                            .fill(accent)
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(2)
+        .background {
+            Capsule()
+                .fill(accent.opacity(colorScheme == .dark ? 0.14 : 0.10))
         }
     }
 }

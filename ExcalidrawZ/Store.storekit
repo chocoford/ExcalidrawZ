@@ -103,21 +103,6 @@
       "productID" : "Donation_Lv6",
       "referenceName" : "Donation Lv6",
       "type" : "Consumable"
-    },
-    {
-      "displayPrice" : "4.99",
-      "familyShareable" : false,
-      "internalID" : "3582701D",
-      "localizations" : [
-        {
-          "description" : "",
-          "displayName" : "",
-          "locale" : "en_US"
-        }
-      ],
-      "productID" : "product.ai_addon",
-      "referenceName" : "AI Addon",
-      "type" : "Consumable"
     }
   ],
   "settings" : {
@@ -255,7 +240,7 @@
           ],
           "displayPrice" : "9.99",
           "familyShareable" : false,
-          "groupNumber" : 2,
+          "groupNumber" : 3,
           "internalID" : "35A4E550",
           "introductoryOffers" : [
 
@@ -283,9 +268,9 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "49.99",
+          "displayPrice" : "29.99",
           "familyShareable" : false,
-          "groupNumber" : 1,
+          "groupNumber" : 2,
           "internalID" : "F6385868",
           "introductoryOffers" : [
 
@@ -297,9 +282,9 @@
               "locale" : "en_US"
             }
           ],
-          "productID" : "plan.max",
+          "productID" : "plan.max_3x",
           "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Max",
+          "referenceName" : "Max 3x",
           "subscriptionGroupID" : "914DA4EE",
           "type" : "RecurringSubscription",
           "winbackOffers" : [
@@ -315,7 +300,7 @@
           ],
           "displayPrice" : "2.99",
           "familyShareable" : false,
-          "groupNumber" : 3,
+          "groupNumber" : 4,
           "internalID" : "CCFD0062",
           "introductoryOffers" : [
 
@@ -345,7 +330,7 @@
           ],
           "displayPrice" : "99.99",
           "familyShareable" : false,
-          "groupNumber" : 2,
+          "groupNumber" : 3,
           "internalID" : "F69ABEEE",
           "introductoryOffers" : [
 
@@ -373,9 +358,9 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "499.99",
+          "displayPrice" : "299.99",
           "familyShareable" : false,
-          "groupNumber" : 1,
+          "groupNumber" : 2,
           "internalID" : "D3A7E51B",
           "introductoryOffers" : [
 
@@ -387,9 +372,69 @@
               "locale" : "en_US"
             }
           ],
-          "productID" : "plan.max_yearly",
+          "productID" : "plan.max_3x_yearly",
           "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "Max Yearly",
+          "referenceName" : "Max 3x Yearly",
+          "subscriptionGroupID" : "914DA4EE",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "99.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6D6C1241",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "",
+              "displayName" : "",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plan.max_10x",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Max 10x",
+          "subscriptionGroupID" : "914DA4EE",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "999.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "A1313708",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "",
+              "displayName" : "",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plan.max_10x_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Max 10x Yearly",
           "subscriptionGroupID" : "914DA4EE",
           "type" : "RecurringSubscription",
           "winbackOffers" : [

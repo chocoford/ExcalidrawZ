@@ -25,6 +25,20 @@ import Foundation
 import LLMCore
 import LLMKit
 
+enum AIChatEditError: LocalizedError {
+    case unsupportedFile
+    case missingRevertPoint
+
+    var errorDescription: String? {
+        switch self {
+            case .unsupportedFile:
+                "Revert is currently only supported for library files."
+            case .missingRevertPoint:
+                "No revert point found for this message."
+        }
+    }
+}
+
 @MainActor
 final class AIChatState: ObservableObject {
     /// Messages typed while a reply was streaming. PromptInputView appends
@@ -42,10 +56,28 @@ final class AIChatState: ObservableObject {
     /// its local `inputText` state, and refocuses. Token-based so two
     /// reverts with the same text still fire the second time.
     @Published var draftRequest: DraftRequest?
+    @Published var editSession: EditSession?
+    @Published var editCancelToken: Int = 0
 
     struct DraftRequest: Equatable {
         let text: String
+        let files: [ChatMessageContent.File]
         let token: Int
+
+        static func == (lhs: DraftRequest, rhs: DraftRequest) -> Bool {
+            lhs.token == rhs.token
+        }
+    }
+
+    struct EditSession: Equatable {
+        enum Mode {
+            case edit
+            case revert
+        }
+
+        let conversationID: String
+        let userMessageID: String
+        let mode: Mode
     }
 
     private var draftTokenSeed: Int = 0
@@ -53,9 +85,33 @@ final class AIChatState: ObservableObject {
     /// Push a new draft text into the input box. Increments the internal
     /// token so SwiftUI sees a fresh value even if `text` is identical
     /// to the previous request.
-    func requestDraft(_ text: String) {
+    func requestDraft(_ text: String, files: [ChatMessageContent.File] = []) {
         draftTokenSeed += 1
-        draftRequest = DraftRequest(text: text, token: draftTokenSeed)
+        draftRequest = DraftRequest(text: text, files: files, token: draftTokenSeed)
+    }
+
+    func beginEditing(
+        conversationID: String,
+        userMessageID: String,
+        text: String,
+        files: [ChatMessageContent.File],
+        mode: EditSession.Mode
+    ) {
+        editSession = EditSession(
+            conversationID: conversationID,
+            userMessageID: userMessageID,
+            mode: mode
+        )
+        requestDraft(text, files: files)
+    }
+
+    func finishEditing() {
+        editSession = nil
+    }
+
+    func cancelEditing() {
+        editSession = nil
+        editCancelToken += 1
     }
 
     /// Tool-call ids that any active `RoundRevealOrchestrator` has

@@ -82,8 +82,17 @@ struct LowCreditsBannerView: View {
             .padding(.bottom, peekBottom)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.orange.opacity(0.15))
+                if #available(macOS 26.0, iOS 26.0, *) {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(.clear)
+                        .glassEffect(
+                            .clear.tint(Color.orange.opacity(0.15)).interactive(),
+                            in: RoundedRectangle(cornerRadius: 14)
+                        )
+                } else {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.orange.opacity(0.15))
+                }
             }
             .contentShape(RoundedRectangle(cornerRadius: 14))
         }

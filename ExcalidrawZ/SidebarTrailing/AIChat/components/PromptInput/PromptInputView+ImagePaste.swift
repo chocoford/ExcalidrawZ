@@ -98,6 +98,41 @@ enum PastedImageHelpers {
             return .base64EncodedImage(dataURI)
         }
     }
+
+    /// Rehydrate persisted message attachments back into input thumbnails
+    /// when editing an older user message.
+    static func pendingImages(
+        from files: [ChatMessageContent.File]
+    ) -> [PendingPastedImage] {
+        files.compactMap { file in
+            guard let image = platformImage(from: file) else { return nil }
+            return PendingPastedImage(id: UUID(), image: image)
+        }
+    }
+
+    private static func platformImage(from file: ChatMessageContent.File) -> PlatformImage? {
+        switch file {
+            case .base64EncodedImage(let value):
+                let payload = value.split(separator: ",", maxSplits: 1).last.map(String.init) ?? value
+                guard let data = Data(base64Encoded: payload) else { return nil }
+#if canImport(AppKit)
+                return NSImage(data: data)
+#elseif canImport(UIKit)
+                return UIImage(data: data)
+#else
+                return nil
+#endif
+            case .image(let url):
+                guard let data = try? Data(contentsOf: url) else { return nil }
+#if canImport(AppKit)
+                return NSImage(data: data)
+#elseif canImport(UIKit)
+                return UIImage(data: data)
+#else
+                return nil
+#endif
+        }
+    }
 }
 
 // MARK: - Thumbnail strip

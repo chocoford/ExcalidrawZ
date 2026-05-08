@@ -156,7 +156,7 @@ struct AIChatWelcomeView: View {
                         startRadius: 12,
                         endRadius: 260
                     )
-                    .offset(x: orbit * 0.25, y: -24)
+                    .offset(x: 0, y: -24)
                     .opacity(isBackgroundPresented ? (isDismissing ? 0.14 : 1) : 0)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -236,13 +236,7 @@ struct AIChatWelcomeView: View {
                 
                 Image(systemSymbol: .sparkles)
                     .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.accentColor, .purple],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .foregroundStyle(AIAppearancePalette.foregroundGradient)
             }
             .frame(width: 64, height: 64)
         }
@@ -504,7 +498,7 @@ private struct FeatureRow: View {
             if #available(macOS 26.0, iOS 26.0, *) {
                 Capsule()
                     .fill(.clear)
-                    .glassEffect(.clear, in: Capsule())
+                    .glassEffect(.clear.interactive(), in: Capsule())
                 Capsule()
                     .stroke(
                         LinearGradient(

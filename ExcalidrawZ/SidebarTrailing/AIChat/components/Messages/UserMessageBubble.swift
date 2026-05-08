@@ -12,14 +12,39 @@ import SFSafeSymbols
 /// Right-aligned chat bubble for a `user` role message, plus any attached
 /// images and the per-message usage chip.
 struct UserMessageBubble: View {
+    enum ActionKind {
+        case edit
+        case revert
+
+        var title: String {
+            switch self {
+                case .edit: "Edit"
+                case .revert: "Revert"
+            }
+        }
+
+        var symbol: SFSymbol {
+            switch self {
+                case .edit: .pencil
+                case .revert: .arrowUturnBackward
+            }
+        }
+
+        var help: String {
+            switch self {
+                case .edit:
+                    "Reload this message into the input box so you can edit and resend it."
+                case .revert:
+                    "Revert canvas to before this message, reload its text into the input box, then resend."
+            }
+        }
+    }
+
     let content: ChatMessageContent
-    /// Optional revert handler — called with the user message's id. The
-    /// host walks back to the matching `.aiPre` checkpoint, restores the
-    /// file, prefills the input box with this message's text, and
-    /// (eventually) truncates the conversation. When `nil`, the revert
-    /// button is hidden (e.g. the message has no anchored pre-checkpoint
-    /// or the host doesn't support revert).
-    var onRevert: ((String) -> Void)?
+    /// Optional edit/revert handler — called with the user message's id.
+    /// `actionKind == nil` hides the action entirely.
+    var actionKind: ActionKind?
+    var onAction: ((String) -> Void)?
 
     @State private var isPresented = false
 
@@ -35,7 +60,7 @@ struct UserMessageBubble: View {
                         // Inline action bar — right-aligned to match the
                         // bubble. Only renders when there's something
                         // useful in it.
-                        if onRevert != nil {
+                        if actionKind != nil, onAction != nil {
                             actionBar
                         }
                     }
@@ -55,17 +80,17 @@ struct UserMessageBubble: View {
     @ViewBuilder
     private var actionBar: some View {
         HStack(spacing: 4) {
-            if let onRevert {
+            if let actionKind, let onAction {
                 Button {
-                    onRevert(content.id)
+                    onAction(content.id)
                 } label: {
-                    Label("Revert", systemSymbol: .arrowUturnBackward)
+                    Label(actionKind.title, systemSymbol: actionKind.symbol)
                         .labelStyle(.iconOnly)
                         .font(.caption)
                 }
                 .buttonStyle(.text(size: .small, square: true))
                 .foregroundStyle(.secondary)
-                .help("Revert canvas to before this message and reload its text into the input box.")
+                .help(actionKind.help)
             }
         }
     }

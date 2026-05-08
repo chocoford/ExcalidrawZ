@@ -13,6 +13,8 @@ import Shimmer
 import SmoothGradient
 
 struct Paywall: View {
+    private typealias Feature = (symbolName: String, title: String, subtitle: String)
+
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -23,9 +25,25 @@ struct Paywall: View {
 
     @State private var selectedPlan: Product?
     @State private var isPresented = false
+    @State private var billingPeriod: BillingPeriod = .monthly
+    @State private var maxCreditTier: MaxCreditTier = .standard
     
     enum Route: Hashable {
         case plans, donation
+    }
+
+    enum BillingPeriod: String, CaseIterable, Identifiable {
+        case monthly
+        case yearly
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .monthly: "Monthly"
+            case .yearly: "Yearly"
+            }
+        }
     }
     
     @State private var route: Route = .plans
@@ -43,13 +61,72 @@ struct Paywall: View {
             })
     }
 
+    private var displayedPlanCards: [SubscriptionItem] {
+        var plans = displayedPlans.filter { $0.id != SubscriptionItem.max10x.id }
+        if displayedPlans.contains(SubscriptionItem.max10x), !plans.contains(SubscriptionItem.max) {
+            plans.append(.max)
+        }
+        return plans.sorted()
+    }
+
     private var selectedSubscriptionItem: SubscriptionItem? {
         store.plans.first { $0.containsProductID(selectedPlan?.id) }
     }
 
+    private var activeSubscriptionItem: SubscriptionItem? {
+        guard let purchasedPlan = store.purchasedPlans.first else { return nil }
+        return store.plans.first { $0.containsProductID(purchasedPlan.id) }
+    }
+
+    private var selectedBillingProduct: Product? {
+        guard let selectedSubscriptionItem else { return selectedPlan }
+        return product(for: selectedSubscriptionItem, billingPeriod: billingPeriod)
+            ?? product(for: selectedSubscriptionItem, billingPeriod: .monthly)
+            ?? selectedPlan
+    }
+
     private var isSelectedSubscriptionPurchased: Bool {
-        guard let selectedSubscriptionItem else { return false }
-        return store.purchasedPlans.contains { selectedSubscriptionItem.containsProductID($0.id) }
+        guard let selectedBillingProduct else { return false }
+        return store.purchasedPlans.contains { $0.id == selectedBillingProduct.id }
+    }
+
+    private var baseFeatureLines: [Feature] {
+        [
+            ("pencil.tip.crop.circle", "Complete canvas workspace", "Unlimited drawing, organizing, and file workflows."),
+            ("icloud", "Cloud-ready library", "Sync, reuse, and keep work available across devices."),
+            ("server.rack", "MCP services", "Connect tools and automation workflows for free.")
+        ]
+    }
+
+    private var currentOwnedFeatureLines: [Feature] {
+        guard let activeSubscriptionItem else { return [] }
+        return featureLines(for: activeSubscriptionItem, maxCredits: activeMaxCredits(for: activeSubscriptionItem))
+    }
+
+    private var selectedPlanExtraFeatures: [Feature] {
+        guard let selectedSubscriptionItem else {
+            return [("sparkles", "Select a plan", "Choose Starter, Pro, or Max to see what you unlock.")]
+        }
+
+        let ownedTitles = Set(currentOwnedFeatureLines.map(\.title))
+        let features = featureLines(for: selectedSubscriptionItem, maxCredits: selectedMaxCredits)
+            .filter { !ownedTitles.contains($0.title) }
+
+        if features.isEmpty {
+            return [("checkmark.seal", "Already included", "Your current plan already includes these capabilities.")]
+        }
+        return features
+    }
+
+    private var selectedPlanExtraTitle: String {
+        guard let selectedSubscriptionItem else { return "this plan" }
+        if selectedSubscriptionItem.id == SubscriptionItem.max10x.id {
+            return "Max \(MaxCreditTier.triple.title)"
+        }
+        if selectedSubscriptionItem.id == SubscriptionItem.max.id {
+            return "Max \(maxCreditTier.title)"
+        }
+        return selectedSubscriptionItem.title
     }
 
     var body: some View {
@@ -58,19 +135,135 @@ struct Paywall: View {
                 if let purchasedPlans = newValue.first {
                     self.selectedPlan = purchasedPlans
                 } else {
-                    self.selectedPlan = store.subscriptions.first
+                    self.selectedPlan = firstProduct(for: billingPeriod)
                 }
             }
             .watch(value: store.subscriptions) { newValue in
                 if selectedPlan == nil {
-                    selectedPlan = newValue.first
+                    selectedPlan = firstProduct(for: billingPeriod)
+                }
+            }
+            .watch(value: billingPeriod) { newValue in
+                guard let selectedSubscriptionItem else {
+                    selectedPlan = firstProduct(for: newValue)
+                    return
+                }
+                selectedPlan = product(for: selectedSubscriptionItem, billingPeriod: newValue)
+                    ?? product(for: selectedSubscriptionItem, billingPeriod: .monthly)
+                    ?? firstProduct(for: newValue)
+            }
+            .watch(value: maxCreditTier) { _ in
+                guard selectedSubscriptionItem?.id == SubscriptionItem.max.id || selectedSubscriptionItem?.id == SubscriptionItem.max10x.id else { return }
+                selectMaxPlan(creditTier: maxCreditTier)
+            }
+            .watch(value: selectedPlan?.id) { productID in
+                if SubscriptionItem.max10x.containsProductID(productID) {
+                    maxCreditTier = .triple
+                } else if SubscriptionItem.max.containsProductID(productID) {
+                    maxCreditTier = .standard
                 }
             }
             .task {
                 if selectedPlan == nil {
-                    selectedPlan = store.subscriptions.first
+                    selectedPlan = firstProduct(for: billingPeriod)
                 }
             }
+    }
+
+    private func product(for item: SubscriptionItem, billingPeriod: BillingPeriod) -> Product? {
+        let productID: String? = {
+            if item.id == SubscriptionItem.max.id {
+                return maxProductID(forCreditTier: maxCreditTier, billingPeriod: billingPeriod)
+            }
+
+            return switch billingPeriod {
+            case .monthly:
+                item.id
+            case .yearly:
+                item.yearlyID
+            }
+        }()
+        guard let productID else { return nil }
+        return store.subscriptions.first { $0.id == productID }
+    }
+
+    private func firstProduct(for billingPeriod: BillingPeriod) -> Product? {
+        displayedPlanCards
+            .lazy
+            .compactMap { product(for: $0, billingPeriod: billingPeriod) ?? product(for: $0, billingPeriod: .monthly) }
+            .first
+    }
+
+    private func maxProductID(forCreditTier creditTier: MaxCreditTier, billingPeriod: BillingPeriod) -> String {
+        switch (billingPeriod, creditTier) {
+        case (.monthly, .standard):
+            "plan.max_3x"
+        case (.yearly, .standard):
+            "plan.max_3x_yearly"
+        case (.monthly, .triple):
+            "plan.max_10x"
+        case (.yearly, .triple):
+            "plan.max_10x_yearly"
+        }
+    }
+
+    private func product(forMaxCreditTier creditTier: MaxCreditTier, billingPeriod: BillingPeriod) -> Product? {
+        let productID = maxProductID(forCreditTier: creditTier, billingPeriod: billingPeriod)
+        return store.subscriptions.first { $0.id == productID }
+    }
+
+    private func selectMaxPlan(creditTier: MaxCreditTier) {
+        selectedPlan = product(forMaxCreditTier: creditTier, billingPeriod: billingPeriod)
+            ?? product(forMaxCreditTier: creditTier, billingPeriod: .monthly)
+            ?? selectedPlan
+    }
+
+    private var selectedMaxCredits: Int {
+        if selectedSubscriptionItem?.id == SubscriptionItem.max10x.id {
+            return MaxCreditTier.triple.credits
+        }
+        return maxCreditTier.credits
+    }
+
+    private func activeMaxCredits(for plan: SubscriptionItem) -> Int {
+        if plan.id == SubscriptionItem.max10x.id {
+            return MaxCreditTier.triple.credits
+        }
+        return MaxCreditTier.standard.credits
+    }
+
+    private func featureLines(for plan: SubscriptionItem, maxCredits: Int? = nil) -> [Feature] {
+        switch plan.id {
+        case SubscriptionItem.starter.id:
+            starterFeatureLines
+        case SubscriptionItem.pro.id:
+            starterFeatureLines + proFeatureLines
+        case SubscriptionItem.max.id:
+            starterFeatureLines + maxFeatureLines(credits: maxCredits ?? MaxCreditTier.standard.credits)
+        case SubscriptionItem.max10x.id:
+            starterFeatureLines + maxFeatureLines(credits: maxCredits ?? MaxCreditTier.triple.credits)
+        default:
+            []
+        }
+    }
+
+    private var starterFeatureLines: [Feature] {
+        [
+            ("person.2.wave.2", "Unlimited collaboration tools", "Open up the collaboration workspace without room limits.")
+        ]
+    }
+
+    private var proFeatureLines: [Feature] {
+        [
+            ("sparkles", "500 AI credits / month", "Enough room for regular AI-assisted editing and generation.")
+        ]
+    }
+
+    private func maxFeatureLines(credits: Int) -> [Feature] {
+        [
+            ("sparkles", "\(credits) AI credits / month", "More headroom for heavier generation, iteration, and AI workflows."),
+            ("brain.head.profile", "Extra High model capability", "Use the highest reasoning model mode for demanding AI work.")
+        ]
     }
     
     @MainActor @ViewBuilder
@@ -117,7 +310,7 @@ struct Paywall: View {
         }
         .animation(.easeOut(duration: 0.3), value: route)
 #if os(macOS)
-        .frame(width: store.purchasedPlans.isEmpty ? 915 : 630)
+        .frame(width: horizontalSizeClass == .compact ? 630 : 1040)
 #endif
     }
     
@@ -129,80 +322,11 @@ struct Paywall: View {
     
     @MainActor @ViewBuilder
     private func lagacyView() -> some View {
-        VStack(spacing: 20) {
-            VStack(spacing: 10) {
-                if horizontalSizeClass == .compact {
-                    toolbar()
-                    Spacer()
-                }
-                HStack {
-                    Text(.localizable(.paywallTitle))
-                        .font(.largeTitle)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .overlay {
-                if horizontalSizeClass != .compact {
-                    toolbar()
-                }
-            }
-            
-            Color.clear.frame(height: 80)
-                .overlay(alignment: .top) {
-                    if let reason = store.reachPaywallReason {
-                        ZStack {
-                            if isPresented {
-                                Text(reason.description)
-                                    .foregroundStyle(.red)
-                                    .font(.footnote)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 4)
-                                    .background {
-                                        Capsule().fill(Color.red.opacity(0.5))
-                                        Capsule().fill(.ultraThickMaterial)
-                                    }
-                                    .transition(.scale.animation(.bouncy.delay(0.2)))
-                                    .multilineTextAlignment(.center)
-                            }
-                        }
-                        .animation(.bouncy(duration: 0.3, extraBounce: 0.6), value: isPresented)
-                    }
-                }
-            
+        ZStack {
             if horizontalSizeClass == .compact {
-                CompactPlansView(selection: $selectedPlan, plans: displayedPlans)
+                compactLayout()
             } else {
-                RegularPlansView(selection: $selectedPlan, plans: displayedPlans)
-            }
- 
-            if horizontalSizeClass != .compact {
-                HStack {
-                    Spacer()
-                    
-                    purchaseButton()
-                    
-                    Spacer()
-                }
-                .overlay(alignment: .leading) {
-                    privacyPolicyButton()
-                }
-#if APP_STORE
-                .overlay(alignment: .trailing) {
-                    restorePurchasesButton()
-                }
-#endif
-            } else {
-                VStack {
-                    purchaseButton()
-                    HStack {
-                        privacyPolicyButton()
-                        Spacer()
-#if APP_STORE
-                        restorePurchasesButton()
-#endif
-                    }
-                    .font(.footnote)
-                }
+                regularLayout()
             }
         }
         .padding(40)
@@ -235,6 +359,307 @@ struct Paywall: View {
         }
         .onDisappear {
             isPresented = false
+        }
+    }
+
+    @MainActor @ViewBuilder
+    private func regularLayout() -> some View {
+        ZStack(alignment: .top) {
+            // toolbar()
+
+            HStack(alignment: .center, spacing: 52) {
+                leftFeatureShowcase()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(spacing: 16) {
+                    Spacer()
+                    
+                    billingToggle()
+
+                    RegularPlansView(
+                        selection: $selectedPlan,
+                        maxCreditTier: $maxCreditTier,
+                        billingPeriod: billingPeriod,
+                        plans: displayedPlanCards,
+                        productProvider: { plan in
+                            product(for: plan, billingPeriod: billingPeriod)
+                                ?? product(for: plan, billingPeriod: .monthly)
+                        },
+                        maxCreditTierChangeHandler: { tier in
+                            selectMaxPlan(creditTier: tier)
+                        }
+                    )
+
+                    HStack(spacing: 4) {
+                        // Keep center
+                        Button {
+                            dismiss()
+                        } label: {
+                            Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
+                                .labelStyle(.iconOnly)
+                        }
+                        .modernButtonStyle(
+                            style: .glass,
+                            size: .extraLarge,
+                            shape: .circle
+                        )
+                        .opacity(0)
+                        
+                        purchaseButton()
+                        
+                        Button {
+                            dismiss()
+                        } label: {
+                            Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
+                                .labelStyle(.iconOnly)
+                        }
+                        .modernButtonStyle(
+                            style: .glass,
+                            size: .extraLarge,
+                            shape: .circle
+                        )
+                        .keyboardShortcut(.cancelAction)
+                    }
+
+                    HStack {
+                        Spacer()
+#if APP_STORE
+                        restorePurchasesButton()
+#endif
+                        privacyPolicyButton()
+                        
+                        Button {
+                            route = .donation
+                        } label: {
+                            HStack {
+                                Text(.localizable(.paywallButtonDonation))
+                                Image(systemSymbol: .chevronRight2)
+                            }
+                            .foregroundStyle(.primary)
+                            .shimmering(
+                                animation: Animation.linear(duration: 1).delay(2).repeatForever(autoreverses: false),
+                                gradient: Gradient(colors: [.white, .white.opacity(0.3), .white])
+                            )
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                    .font(.footnote)
+                }
+                .frame(width: 390)
+            }
+        }
+    }
+
+    @MainActor @ViewBuilder
+    private func compactLayout() -> some View {
+        VStack(spacing: 20) {
+            VStack(spacing: 10) {
+                toolbar()
+                Spacer()
+                HStack {
+                    Text(.localizable(.paywallTitle))
+                        .font(.largeTitle)
+                }
+            }
+            .frame(maxWidth: .infinity)
+
+            reasonBadge()
+                .frame(height: 80)
+
+            CompactPlansView(selection: $selectedPlan, plans: displayedPlans)
+
+            VStack {
+                purchaseButton()
+                HStack {
+                    privacyPolicyButton()
+                    Spacer()
+#if APP_STORE
+                    restorePurchasesButton()
+#endif
+                }
+                .font(.footnote)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func billingToggle() -> some View {
+        HStack(spacing: 6) {
+            ForEach(BillingPeriod.allCases) { period in
+                Button {
+                    withAnimation(.smooth(duration: 0.22)) {
+                        billingPeriod = period
+                    }
+                } label: {
+                    Text(period.title)
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 7)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(billingPeriod == period ? .primary : .secondary)
+                .background {
+                    if billingPeriod == period {
+                        Capsule()
+                            .fill(Color.white.opacity(colorScheme == .dark ? 0.16 : 0.74))
+                            .shadow(color: .accentColor.opacity(0.16), radius: 10, y: 4)
+                    }
+                }
+            }
+        }
+        .padding(4)
+        .background {
+            Capsule()
+                .fill(Color.white.opacity(colorScheme == .dark ? 0.08 : 0.38))
+                .background {
+                    if #available(iOS 26.0, macOS 26.0, *) {
+                        Capsule()
+                            .fill(.clear)
+                            .glassEffect(.regular.interactive(), in: Capsule())
+                    } else {
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                    }
+                }
+        }
+    }
+
+    @MainActor @ViewBuilder
+    private func leftFeatureShowcase() -> some View {
+        VStack(alignment: .leading, spacing: 26) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(.localizable(.paywallTitle))
+                    .font(.system(size: 44, weight: .semibold, design: .rounded))
+                    .tracking(-1.0)
+                    .foregroundStyle(.primary)
+
+                Text("Pick the amount of AI power you need. Every paid plan keeps the core drawing, sync, export, library, and collaboration features unlocked.")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            // reasonBadge()
+
+            VStack(alignment: .leading, spacing: 14) {
+                ForEach(baseFeatureLines, id: \.title) { feature in
+                    featureLine(
+                        symbolName: feature.symbolName,
+                        title: feature.title,
+                        subtitle: feature.subtitle
+                    )
+                }
+
+                ForEach(currentOwnedFeatureLines, id: \.title) { feature in
+                    featureLine(
+                        symbolName: feature.symbolName,
+                        title: feature.title,
+                        subtitle: feature.subtitle
+                    )
+                }
+            }
+
+            selectedPlanExtras()
+        }
+    }
+
+    @ViewBuilder
+    private func selectedPlanExtras() -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [.clear, Color.secondary.opacity(0.24)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: 54, height: 1)
+
+                Text("With \(selectedPlanExtraTitle)")
+                    .font(.caption.weight(.semibold))
+                    .textCase(.uppercase)
+                    .tracking(1.2)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(selectedPlanExtraFeatures, id: \.title) { feature in
+                    featureLine(
+                        symbolName: feature.symbolName,
+                        title: feature.title,
+                        subtitle: feature.subtitle
+                    )
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+            .id("\(selectedSubscriptionItem?.id ?? "none")-\(maxCreditTier.rawValue)")
+        }
+        .frame(height: 180, alignment: .top)
+        .animation(.smooth(duration: 0.22), value: selectedSubscriptionItem?.id)
+        .animation(.smooth(duration: 0.22), value: maxCreditTier)
+    }
+    
+
+    @ViewBuilder
+    private func reasonBadge() -> some View {
+        if let reason = store.reachPaywallReason {
+            ZStack {
+                if isPresented {
+                    Text(reason.description)
+                        .foregroundStyle(.red)
+                        .font(.footnote)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 4)
+                        .background {
+                            Capsule().fill(Color.red.opacity(0.5))
+                            Capsule().fill(.ultraThickMaterial)
+                        }
+                        .transition(.scale.animation(.bouncy.delay(0.2)))
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .animation(.bouncy(duration: 0.3, extraBounce: 0.6), value: isPresented)
+        } else {
+            Color.clear.frame(height: 1)
+        }
+    }
+
+    @ViewBuilder
+    private func featureLine(symbolName: String, title: String, subtitle: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: symbolName)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(AIAppearancePalette.foregroundGradient)
+                .frame(width: 24, height: 24)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 8) {
+                    Text(title)
+                        .font(.callout.weight(.semibold))
+
+                    if title == "MCP services" {
+                        Text("Coming soon")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background {
+                                Capsule()
+                                    .fill(Color.orange.opacity(colorScheme == .dark ? 0.18 : 0.12))
+                            }
+                    }
+                }
+
+                Text(subtitle)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
     
@@ -277,14 +702,14 @@ struct Paywall: View {
             ZStack {
                 if isSelectedSubscriptionPurchased {
                     Text(.localizable(.paywallButtonCurrentPlan))
-                } else if let selectedPlan {
-                    let planName: String = selectedSubscriptionItem?.title ?? selectedPlan.displayName
-                    let period: String = selectedPlan.subscription?.subscriptionPeriod.formatted(selectedPlan.subscriptionPeriodFormatStyle) ?? ""
+                } else if let selectedBillingProduct {
+                    let planName: String = selectedSubscriptionItem?.title ?? selectedBillingProduct.displayName
+                    let period: String = selectedBillingProduct.subscription?.subscriptionPeriod.formatted(selectedBillingProduct.subscriptionPeriodFormatStyle) ?? ""
                     if horizontalSizeClass == .compact {
                         Text(.localizable(.paywallButtonSubscribe(planName)))
                     } else {
                         Text(.localizable(.paywallButtonSubscribe(planName))) +
-                        Text(" \(selectedPlan.displayPrice) \(period)").font(.footnote)
+                        Text(" \(selectedBillingProduct.displayPrice) \(period)").font(.footnote)
                     }
                 }
             }
@@ -299,7 +724,7 @@ struct Paywall: View {
             }
         }())
         .buttonStyle(.borderedProminent)
-        .disabled(selectedPlan == nil || isSelectedSubscriptionPurchased)
+        .disabled(selectedBillingProduct == nil || isSelectedSubscriptionPurchased)
     }
     
     @MainActor @ViewBuilder
@@ -316,7 +741,7 @@ struct Paywall: View {
     }
     
     private func purchaseSelectedPlan() async throws {
-        if let product = store.subscriptions.first(where: {$0.id == selectedPlan?.id}) {
+        if let product = selectedBillingProduct {
             if let _ = try await store.purchase(product) {
                 dismiss()
             }
@@ -359,15 +784,13 @@ private struct PaywallAuroraBackground: View {
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 24, paused: false)) { context in
             let time = context.date.timeIntervalSinceReferenceDate
-            let topHueA = 0.56 + sin(time * 0.10) * 0.035
-            let topHueB = 0.64 + cos(time * 0.14) * 0.03
-            let bottomHueA = 0.90 + sin(time * 0.12) * 0.026
-            let bottomHueB = 0.78 + cos(time * 0.09) * 0.034
+            let topHueA = AIAppearancePalette.Hue.cyan + sin(time * 0.10) * 0.035
+            let topHueB = AIAppearancePalette.Hue.indigo + cos(time * 0.14) * 0.03
+            let bottomHueA = AIAppearancePalette.Hue.pink + sin(time * 0.12) * 0.026
+            let bottomHueB = AIAppearancePalette.Hue.purple + cos(time * 0.09) * 0.034
             let driftX = CGFloat(sin(time * 0.22)) * 34
             let driftY = CGFloat(cos(time * 0.18)) * 24
-            let base = colorScheme == .dark
-                ? Color(red: 0.035, green: 0.04, blue: 0.065)
-                : Color(red: 0.965, green: 0.975, blue: 1.0)
+            let base = AIAppearancePalette.paywallBase(for: colorScheme)
 
             GeometryReader { proxy in
                 ZStack {
@@ -421,6 +844,17 @@ private struct PaywallAuroraBackground: View {
                         center: .topLeading,
                         startRadius: 12,
                         endRadius: max(proxy.size.width, proxy.size.height) * 0.72
+                    )
+                }
+                .overlay {
+                    LinearGradient(
+                        colors: [
+                            base.opacity(colorScheme == .dark ? 0.72 : 0.96),
+                            base.opacity(colorScheme == .dark ? 0.42 : 0.76),
+                            .clear
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
                     )
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -45,7 +45,9 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
             String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("1")),
         ],
         fallbackDisplayPrice: "Free",
-        fallbackDisplayPeriod: "Forever"
+        fallbackDisplayPeriod: "Forever",
+        fallbackYearlyDisplayPrice: "Free",
+        fallbackYearlyDisplayPeriod: "Forever"
     )
     static let starter = SubscriptionItem(
         id: "plan.starter",
@@ -61,7 +63,9 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
             String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("Unlimited")),
         ],
         fallbackDisplayPrice: "$2.99",
-        fallbackDisplayPeriod: "a month"
+        fallbackDisplayPeriod: "a month",
+        fallbackYearlyDisplayPrice: nil,
+        fallbackYearlyDisplayPeriod: nil
     )
     static let pro = SubscriptionItem(
         id: "plan.pro",
@@ -78,11 +82,13 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
             "**500 AI credits** / month",
         ],
         fallbackDisplayPrice: "$9.99",
-        fallbackDisplayPeriod: "a month"
+        fallbackDisplayPeriod: "a month",
+        fallbackYearlyDisplayPrice: "$99.99",
+        fallbackYearlyDisplayPeriod: "a year"
     )
     static let max = SubscriptionItem(
-        id: "plan.max",
-        yearlyID: "plan.max_yearly",
+        id: "plan.max_3x",
+        yearlyID: "plan.max_3x_yearly",
         title: "Max",
         description: "For heavier AI usage and larger collaborative work.",
         features: [
@@ -91,10 +97,30 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
             String(localizable: .paywallPlanGeneralFeaturesPDFExport),
             String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
             String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("Unlimited")),
-            "**3000 AI credits** / month",
+            "**1800 AI credits** / month",
         ],
-        fallbackDisplayPrice: "$49.99",
-        fallbackDisplayPeriod: "a month"
+        fallbackDisplayPrice: "$29.99",
+        fallbackDisplayPeriod: "a month",
+        fallbackYearlyDisplayPrice: "$299.99",
+        fallbackYearlyDisplayPeriod: "a year"
+    )
+    static let max10x = SubscriptionItem(
+        id: "plan.max_10x",
+        yearlyID: "plan.max_10x_yearly",
+        title: "Max 10x",
+        description: "For the highest AI usage tier.",
+        features: [
+            String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
+            String(localizable: .paywallPlanGeneralFeaturesICloudSync),
+            String(localizable: .paywallPlanGeneralFeaturesPDFExport),
+            String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
+            String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("Unlimited")),
+            "**5400 AI credits** / month",
+        ],
+        fallbackDisplayPrice: "$99.99",
+        fallbackDisplayPeriod: "a month",
+        fallbackYearlyDisplayPrice: "$999.99",
+        fallbackYearlyDisplayPeriod: "a year"
     )
     
     var id: String
@@ -105,6 +131,8 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
     
     var fallbackDisplayPrice: String
     var fallbackDisplayPeriod: String
+    var fallbackYearlyDisplayPrice: String?
+    var fallbackYearlyDisplayPeriod: String?
 
     var productIDs: [String] {
         [id, yearlyID].compactMap { $0 }
@@ -120,7 +148,7 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
     
     static func < (lhs: SubscriptionItem, rhs: SubscriptionItem) -> Bool {
         if lhs == rhs { return false }
-        let order: [SubscriptionItem] = [.free, .starter, .pro, .max]
+        let order: [SubscriptionItem] = [.free, .starter, .pro, .max, .max10x]
         return (order.firstIndex(of: lhs) ?? 0) < (order.firstIndex(of: rhs) ?? 0)
     }
 }

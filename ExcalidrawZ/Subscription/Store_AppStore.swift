@@ -24,9 +24,10 @@ public enum StoreError: Error {
 public enum ServiceEntitlement: Int, Comparable {
     case notEntitled = 0
 
-    case max = 1
-    case pro = 2
-    case starter = 3
+    case max10x = 1
+    case max = 2
+    case pro = 3
+    case starter = 4
     
     init?(for product: Product) {
         // The product must be a subscription to have service entitlements.
@@ -41,8 +42,10 @@ public enum ServiceEntitlement: Int, Comparable {
                 self = .starter
             case "plan.pro", "plan.pro_yearly":
                 self = .pro
-            case "plan.max", "plan.max_yearly":
+            case "plan.max_3x", "plan.max_3x_yearly":
                 self = .max
+            case "plan.max_10x", "plan.max_10x_yearly":
+                self = .max10x
             default:
                 self = .notEntitled
             }
@@ -59,7 +62,7 @@ public enum ServiceEntitlement: Int, Comparable {
 class Store: ObservableObject {
     static let shared = Store()
     
-    let plans: [SubscriptionItem] = [.starter, .pro, .max]
+    let plans: [SubscriptionItem] = [.starter, .pro, .max, .max10x]
     
     @Published private(set) var subscriptions: [Product]
     @Published private(set) var memberships: [Product]
@@ -78,6 +81,7 @@ class Store: ObservableObject {
         SubscriptionItem.starter.productIDs,
         SubscriptionItem.pro.productIDs,
         SubscriptionItem.max.productIDs,
+        SubscriptionItem.max10x.productIDs,
     ].flatMap { $0 }
     private let logger = Logger(label: "Store")
 

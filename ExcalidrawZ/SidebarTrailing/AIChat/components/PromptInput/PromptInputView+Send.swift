@@ -16,6 +16,7 @@
 //
 
 import SwiftUI
+import CoreData
 import LLMKit
 import LLMCore
 
@@ -48,6 +49,18 @@ extension PromptInputView {
             return
         }
 
+        if let editSession = aiChatState.editSession,
+           editSession.conversationID == conversationID {
+            inputText = ""
+            pastedImages = []
+            startEditedSend(
+                prompt: trimmedText,
+                files: files,
+                editSession: editSession
+            )
+            return
+        }
+
         // Mid-stream OR mid-compact: queue and clear the input so the user
         // can keep typing. The drain runs when the in-flight task finishes
         // (either `currentTask` for a stream, or the Task in
@@ -71,6 +84,86 @@ extension PromptInputView {
         inputText = ""
         pastedImages = []
         startSend(prompt: trimmedText, files: files)
+    }
+
+    /// Editing/reverting a previous user turn is a two-phase send:
+    /// first make the existing timeline look like the old turn never
+    /// happened, then send the replacement prompt through the normal path.
+    private func startEditedSend(
+        prompt: String,
+        files: [ChatMessageContent.File],
+        editSession: AIChatState.EditSession
+    ) {
+        currentTask = Task {
+            do {
+                llmState.cancelGeneration(conversationID: editSession.conversationID)
+                if editSession.mode == .revert {
+                    try await restoreFile(for: editSession.userMessageID)
+                }
+                try await llmState.truncateConversation(
+                    in: editSession.conversationID,
+                    fromMessageID: editSession.userMessageID,
+                    inclusive: true
+                )
+                await MainActor.run {
+                    aiChatState.finishEditing()
+                    startSend(prompt: prompt, files: files)
+                }
+            } catch {
+                await MainActor.run {
+                    currentTask = nil
+                    inputText = prompt
+                    pastedImages = PastedImageHelpers.pendingImages(from: files)
+                    alertToast.presentAIChatError(error)
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func restoreFile(for userMessageID: String) async throws {
+        guard case .file(let file) = fileState.currentActiveFile else {
+            throw AIChatEditError.unsupportedFile
+        }
+
+        let fileObjectID = file.objectID
+        let context = PersistenceController.shared.newTaskContext()
+
+        let checkpointObjectID: NSManagedObjectID? = try await context.perform {
+            guard let file = try context.existingObject(with: fileObjectID) as? File else { return nil }
+            let fetch = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+            fetch.predicate = NSPredicate(
+                format: "file == %@ AND messageID == %@ AND source == %@",
+                file,
+                userMessageID,
+                FileCheckpointSource.aiPre.rawValue
+            )
+            fetch.fetchLimit = 1
+            return try context.fetch(fetch).first?.objectID
+        }
+
+        guard let checkpointObjectID else {
+            throw AIChatEditError.missingRevertPoint
+        }
+
+        let cpRepo = PersistenceController.shared.checkpointRepository
+        let fileRepo = PersistenceController.shared.fileRepository
+        try await cpRepo.restoreCheckpoint(
+            checkpointObjectID: checkpointObjectID,
+            to: fileObjectID
+        )
+        let content = try await cpRepo.loadCheckpointContent(
+            checkpointObjectID: checkpointObjectID
+        )
+        try await fileRepo.saveFileContentToStorage(
+            fileObjectID: fileObjectID,
+            content: content
+        )
+
+        Task {
+            await fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
+        }
+        fileState.didUpdateFile = false
     }
 
     /// Append to the pending queue and clear the input. Hoisted out
@@ -160,10 +253,17 @@ extension PromptInputView {
                     let ids = coordinator?.selectedElementIDs ?? []
                     return ids.isEmpty ? nil : ids
                 }
+                let currentFileID: UUID? = await MainActor.run {
+                    if case .file(let file) = fileState.currentActiveFile {
+                        return file.id
+                    }
+                    return nil
+                }
                 let context = try await ExcalidrawChatInvocationContext(
                     currentFileData: currentFileData,
                     canvasTarget: canvasTarget,
-                    selectedElementIDs: selectedElementIDs
+                    selectedElementIDs: selectedElementIDs,
+                    currentFileID: currentFileID
                 )
 
                 // Make sure agent config is loaded so `activeModel` resolves to the

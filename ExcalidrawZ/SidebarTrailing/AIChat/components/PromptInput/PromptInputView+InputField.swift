@@ -226,58 +226,7 @@ private struct GeneratingPromptInputEffect: View {
     /// dark background, low-sat colors muddy the result and a strong
     /// white halo blows out the highlights, so we let the colors carry
     /// more chroma and let the dark bg do the contrast work.
-    private func palette(for scheme: ColorScheme) -> Palette {
-        switch scheme {
-        case .dark:
-            return Palette(
-                gradientStops: [
-                    Color(hue: 0.56, saturation: 0.55, brightness: 1.00).opacity(0.42),
-                    Color(hue: 0.62, saturation: 0.50, brightness: 1.00).opacity(0.80),
-                    Color(hue: 0.68, saturation: 0.55, brightness: 1.00).opacity(0.74),
-                    Color(hue: 0.78, saturation: 0.55, brightness: 1.00).opacity(0.66),
-                    Color(hue: 0.92, saturation: 0.55, brightness: 1.00).opacity(0.50),
-                    Color(hue: 0.56, saturation: 0.55, brightness: 1.00).opacity(0.42)
-                ],
-                borderOpacity: 0.85,
-                innerGlowBase: 0.42,
-                innerGlowPulse: 0.18,
-                midGlowBase: 0.22,
-                midGlowPulse: 0.14,
-                haloColor: Color.accentColor,
-                haloBase: 0.10,
-                haloPulse: 0.08
-            )
-        default:
-            return Palette(
-                gradientStops: [
-                    Color(hue: 0.56, saturation: 0.22, brightness: 1.00).opacity(0.55),
-                    Color(hue: 0.62, saturation: 0.20, brightness: 1.00).opacity(0.98),
-                    Color(hue: 0.68, saturation: 0.24, brightness: 1.00).opacity(0.94),
-                    Color(hue: 0.78, saturation: 0.24, brightness: 1.00).opacity(0.86),
-                    Color(hue: 0.92, saturation: 0.22, brightness: 1.00).opacity(0.68),
-                    Color(hue: 0.56, saturation: 0.22, brightness: 1.00).opacity(0.55)
-                ],
-                borderOpacity: 0.95,
-                innerGlowBase: 0.66,
-                innerGlowPulse: 0.22,
-                midGlowBase: 0.36,
-                midGlowPulse: 0.16,
-                haloColor: Color.white,
-                haloBase: 0.18,
-                haloPulse: 0.12
-            )
-        }
-    }
-
-    private struct Palette {
-        let gradientStops: [Color]
-        let borderOpacity: Double
-        let innerGlowBase: Double
-        let innerGlowPulse: Double
-        let midGlowBase: Double
-        let midGlowPulse: Double
-        let haloColor: Color
-        let haloBase: Double
-        let haloPulse: Double
+    private func palette(for scheme: ColorScheme) -> AIAppearancePalette.GeneratingPromptInputPalette {
+        AIAppearancePalette.generatingPromptInputPalette(for: scheme)
     }
 }

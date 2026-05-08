@@ -60,7 +60,7 @@ struct ContextUsageRing: View {
 
     var body: some View {
         ZStack {
-            if fraction < 0.5 {
+            if fraction > 0.5 {
                 Button {
                     onTap?()
                 } label: {
