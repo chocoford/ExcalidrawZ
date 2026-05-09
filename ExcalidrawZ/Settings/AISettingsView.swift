@@ -89,6 +89,10 @@ struct AISettingsView: View {
     @State private var loadedPage: Int = 0
     @State private var isLoadingTransactions: Bool = false
     @State private var transactionLoadError: Error?
+    @State private var allTransactions: [CreditsTransaction] = []
+    @State private var allTransactionCount: Int = 0
+    @State private var isLoadingAllTransactions: Bool = false
+    @State private var allTransactionLoadError: Error?
 
     /// Model list for the Default Model picker, sourced from the agent's
     /// `allowedModels`. Loaded lazily on first appearance so opening
@@ -96,6 +100,11 @@ struct AISettingsView: View {
     @State private var availableModels: [SupportedModel] = []
 
     private let pageSize: Int = 20
+    private let aggregatePageSize: Int = 100
+    private let tabPickerWidth: CGFloat = 156
+    private let tabPickerHeight: CGFloat = 32
+    private let tabSegmentWidth: CGFloat = 74
+    private let tabSegmentHeight: CGFloat = 26
     private let agentID = "excalidraw-canvas"
 
     var body: some View {
@@ -105,6 +114,7 @@ struct AISettingsView: View {
             }
             .formStyle(.grouped)
             .task { await loadInitialTransactions() }
+            .task { await loadAllTransactionsIfNeeded() }
             .task { await loadAvailableModelsIfNeeded() }
         } else {
             ScrollView {
@@ -114,18 +124,21 @@ struct AISettingsView: View {
                 .padding()
             }
             .task { await loadInitialTransactions() }
+            .task { await loadAllTransactionsIfNeeded() }
             .task { await loadAvailableModelsIfNeeded() }
         }
     }
 
     @ViewBuilder
     private var tabPicker: some View {
-        if #available(macOS 26.0, iOS 26.0, *) {
-            GlassEffectContainer(spacing: 8) {
+        SwiftUI.Group {
+            if #available(macOS 26.0, iOS 26.0, *) {
+                GlassEffectContainer(spacing: 8) {
+                    tabButtons
+                }
+            } else {
                 tabButtons
             }
-        } else {
-            tabButtons
         }
     }
 
@@ -138,10 +151,19 @@ struct AISettingsView: View {
                         selectedTab = tab
                     }
                 } label: {
-                    AISettingsTabButton(
-                        title: tab.title,
-                        isSelected: selectedTab == tab
+                    ZStack {
+                        Text(tab.title)
+                            .font(.caption.weight(.semibold))
+                    }
+                    .frame(width: 72, height: 26)
+                    .foregroundStyle(
+                        selectedTab == tab ? Color.primary : Color.secondary
                     )
+                    .background {
+                        Capsule()
+                            .fill(selectedTab == tab ? Color.accentColor.opacity(0.16) : Color.clear)
+                    }
+                    .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
             }
@@ -173,7 +195,6 @@ struct AISettingsView: View {
                 } header: {
                     settingsHeader
                         .textCase(nil)
-                        .padding(.vertical, 4)
                 }
         }
     }
@@ -246,7 +267,7 @@ struct AISettingsView: View {
                     }
                 }
 
-                Spacer(minLength: 12)
+                Spacer(minLength: 0)
 
                 VStack(alignment: .trailing, spacing: 12) {
                     tabPicker
@@ -260,10 +281,9 @@ struct AISettingsView: View {
                 }
             }
 
-            dailyUsageChart
+             dailyUsageChart
 
         }
-        .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -276,15 +296,28 @@ struct AISettingsView: View {
 
             Spacer()
 
-            if !transactions.isEmpty {
-                Picker("Activity View", selection: $activityGrouping) {
-                    ForEach(ActivityGrouping.allCases) { grouping in
-                        Text(grouping.title).tag(grouping)
+            if !transactions.isEmpty || !allTransactions.isEmpty {
+                if #available(macOS 14.0, *) {
+                    Picker("Activity View", selection: $activityGrouping) {
+                        ForEach(ActivityGrouping.allCases) { grouping in
+                            Text(grouping.title).tag(grouping)
+                        }
                     }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(width: 144)
+                    .buttonBorderShape(.capsule)
+                    .containerShape(.capsule)
+                } else {
+                    Picker("Activity View", selection: $activityGrouping) {
+                        ForEach(ActivityGrouping.allCases) { grouping in
+                            Text(grouping.title).tag(grouping)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(width: 144)
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(width: 144)
             } else if totalTransactionCount > 0 {
                 transactionCountLabel
             }
@@ -305,12 +338,11 @@ struct AISettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Spacer(minLength: 12)
+                Spacer(minLength: 0)
 
                 tabPicker
             }
         }
-        .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -333,9 +365,22 @@ struct AISettingsView: View {
                     .font(.headline)
                     .foregroundStyle(.primary)
                 Spacer()
-                Text("Last 7 days")
+                if isLoadingAllTransactions {
+                    HStack(spacing: 5) {
+                        ProgressView().controlSize(.small)
+                        Text("Loading full history")
+                    }
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                } else if allTransactionLoadError != nil {
+                    Text("Full history unavailable")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                } else {
+                    Text("Last 7 days")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Chart(dailyCreditUsage) { item in
@@ -409,7 +454,7 @@ struct AISettingsView: View {
         let days = (0..<7).reversed().compactMap {
             calendar.date(byAdding: .day, value: -$0, to: today)
         }
-        let consumedByDay = Dictionary(grouping: transactions.filter { $0.amount < 0 }) {
+        let consumedByDay = Dictionary(grouping: allTransactions.filter { $0.amount < 0 }) {
             calendar.startOfDay(for: $0.createdAt)
         }.mapValues { entries in
             entries.reduce(0) { $0 + abs($1.amount) }
@@ -455,7 +500,7 @@ struct AISettingsView: View {
                     .foregroundStyle(.secondary)
         } else {
             if totalTransactionCount > 0, !transactions.isEmpty {
-                transactionCountLabel
+                activityCountLabel
             }
 
             switch activityGrouping {
@@ -464,8 +509,18 @@ struct AISettingsView: View {
                         transactionRow(tx)
                     }
                 case .file:
-                    if fileActivityGroups.isEmpty {
-                        Text("No file-linked credit usage in the loaded activity.")
+                    if isLoadingAllTransactions, allTransactions.isEmpty {
+                        HStack {
+                            ProgressView().controlSize(.small)
+                            Text("Loading full activity…")
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if let error = allTransactionLoadError {
+                        Text("Couldn't load full activity: \(error.localizedDescription)")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    } else if fileActivityGroups.isEmpty {
+                        Text("No file-linked credit usage in activity.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
@@ -475,7 +530,7 @@ struct AISettingsView: View {
                     }
             }
 
-            if transactions.count < totalTransactionCount {
+            if activityGrouping == .recent, transactions.count < totalTransactionCount {
                 Button {
                     Task { await loadNextPage() }
                 } label: {
@@ -501,6 +556,18 @@ struct AISettingsView: View {
     }
 
     @ViewBuilder
+    private var activityCountLabel: some View {
+        switch activityGrouping {
+            case .recent:
+                transactionCountLabel
+            case .file:
+                Text("\(fileActivityGroups.count) \(fileActivityGroups.count == 1 ? "file" : "files")")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
     private func transactionRow(
         _ tx: CreditsTransaction,
         showsFileContext: Bool = true
@@ -509,7 +576,7 @@ struct AISettingsView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(transactionTitle(tx))
                     .font(.callout)
-                Text(tx.createdAt.formatted(date: .abbreviated, time: .shortened))
+                Text(transactionSubtitle(tx))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                 if showsFileContext, let fileLabel = transactionFileLabel(tx) {
@@ -556,6 +623,7 @@ struct AISettingsView: View {
     }
 
     private func transactionTitle(_ tx: CreditsTransaction) -> String {
+        if tx.type == .consume { return "AI usage" }
         if let reason = tx.reason, !reason.isEmpty { return reason }
         switch tx.type {
         case .purchase: return "Purchase"
@@ -571,16 +639,61 @@ struct AISettingsView: View {
         }
     }
 
+    private func transactionSubtitle(_ tx: CreditsTransaction) -> String {
+        let timestamp = tx.createdAt.formatted(date: .abbreviated, time: .shortened)
+        guard tx.type == .consume,
+              let tier = transactionModelTier(tx)
+        else {
+            return timestamp
+        }
+        return "\(timestamp) · \(tier)"
+    }
+
+    private func transactionModelTier(_ tx: CreditsTransaction) -> String? {
+        let modelKeys = [
+            "model",
+            "modelName",
+            "model_name",
+            "llmModel",
+            "llm_model"
+        ]
+
+        for key in modelKeys {
+            let value: String? = tx.getMetadataValue(key: key)
+            guard let value, !value.isEmpty else { continue }
+            let model = SupportedModel(rawValue: value)
+            if model.rawValue == value {
+                return model.excalidrawTierName
+            }
+
+            let lowered = value.lowercased()
+            if lowered.contains("opus") {
+                return "Extra High"
+            }
+            if lowered.contains("sonnet") {
+                return "High"
+            }
+            if lowered.contains("haiku") {
+                return "Medium"
+            }
+            if lowered.contains("mini") {
+                return "Low"
+            }
+        }
+
+        return nil
+    }
+
     private var fileActivityGroups: [FileActivityGroup] {
-        let grouped = Dictionary(grouping: transactions.filter { $0.amount < 0 }) { transaction in
-            transactionFileLabel(transaction) ?? "No File Context"
+        let grouped = Dictionary(grouping: allTransactions.filter { $0.amount < 0 }) { transaction in
+            transactionFileLabel(transaction) ?? "Unknown File"
         }
 
         return grouped.map { fileLabel, transactions in
             FileActivityGroup(
                 fileLabel: fileLabel,
                 transactions: transactions.sorted { $0.createdAt > $1.createdAt },
-                hasFileContext: fileLabel != "No File Context"
+                hasFileContext: fileLabel != "Unknown File"
             )
         }
         .sorted { lhs, rhs in
@@ -605,7 +718,10 @@ struct AISettingsView: View {
             "document_name",
             "canvasName",
             "canvas_name",
-            "excalidrawFileName"
+            "excalidrawFileName",
+            "metadata.fileName",
+            "metadata.file_name",
+            "metadata.excalidrawFileName"
         ]
 
         for key in nameKeys {
@@ -621,7 +737,10 @@ struct AISettingsView: View {
             "fileURL",
             "file_url",
             "path",
-            "url"
+            "url",
+            "metadata.fileURL",
+            "metadata.file_url",
+            "metadata.path"
         ]
 
         for key in pathKeys {
@@ -637,7 +756,10 @@ struct AISettingsView: View {
             "file_id",
             "documentID",
             "documentId",
-            "document_id"
+            "document_id",
+            "metadata.fileID",
+            "metadata.fileId",
+            "metadata.file_id"
         ]
 
         for key in idKeys {
@@ -689,6 +811,39 @@ struct AISettingsView: View {
     }
 
     @MainActor
+    private func loadAllTransactionsIfNeeded() async {
+        guard allTransactions.isEmpty, !isLoadingAllTransactions else { return }
+        isLoadingAllTransactions = true
+        allTransactionLoadError = nil
+        defer { isLoadingAllTransactions = false }
+
+        do {
+            var page = 1
+            var collected: [CreditsTransaction] = []
+            var totalCount = 0
+
+            repeat {
+                let history = try await LLMClient.shared.getTransactionHistory(
+                    page: page,
+                    pageSize: aggregatePageSize,
+                    type: nil
+                )
+                totalCount = history.totalCount
+                collected.append(contentsOf: history.transactions)
+
+                guard !history.transactions.isEmpty else { break }
+                page += 1
+            } while collected.count < totalCount
+
+            allTransactions = collected
+            allTransactionCount = totalCount
+            debugLogTransactionMetadata(collected, source: "all-transactions")
+        } catch {
+            allTransactionLoadError = error
+        }
+    }
+
+    @MainActor
     private func loadPage(_ page: Int) async {
         isLoadingTransactions = true
         transactionLoadError = nil
@@ -708,31 +863,104 @@ struct AISettingsView: View {
             }
             totalTransactionCount = history.totalCount
             loadedPage = page
+            debugLogTransactionMetadata(history.transactions, source: "page-\(page)")
         } catch {
             transactionLoadError = error
         }
     }
-}
 
-private struct AISettingsTabButton: View {
-    let title: String
-    let isSelected: Bool
+    private func debugLogTransactionMetadata(
+        _ transactions: [CreditsTransaction],
+        source: String
+    ) {
+        #if DEBUG
+        print("[AISettings] \(source) metadata dump: \(transactions.count) transaction(s)")
+        for (index, tx) in transactions.enumerated() {
+            print(
+                "[AISettings] tx[\(index)] type=\(tx.type) amount=\(tx.amount) createdAt=\(tx.createdAt) metadata=\(debugMetadataDescription(for: tx))"
+            )
+        }
+        #endif
+    }
 
-    var body: some View {
-        ZStack {
-            Text(title)
-                .font(.caption.weight(.semibold))
+    private func debugMetadataDescription(for tx: CreditsTransaction) -> String {
+        #if DEBUG
+        let directMetadata = tx.metadata?.description ?? "<nil>"
+        let probeKeys = [
+            "model",
+            "modelName",
+            "model_name",
+            "llmModel",
+            "llm_model",
+            "fileName",
+            "file_name",
+            "filename",
+            "fileTitle",
+            "file_title",
+            "documentName",
+            "document_name",
+            "canvasName",
+            "canvas_name",
+            "excalidrawFileName",
+            "filePath",
+            "file_path",
+            "fileURL",
+            "file_url",
+            "path",
+            "url",
+            "fileID",
+            "fileId",
+            "file_id",
+            "documentID",
+            "documentId",
+            "document_id",
+            "metadata.fileName",
+            "metadata.file_name",
+            "metadata.excalidrawFileName",
+            "metadata.fileURL",
+            "metadata.file_url",
+            "metadata.path",
+            "metadata.fileID",
+            "metadata.fileId",
+            "metadata.file_id"
+        ]
+
+        let values = probeKeys.compactMap { key -> String? in
+            let value: String? = tx.getMetadataValue(key: key)
+            guard let value, !value.isEmpty else { return nil }
+            return "\(key)=\(value)"
         }
-        .foregroundStyle(isSelected ? Color.primary : Color.secondary)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 5)
-        .background {
-            Capsule()
-                .fill(isSelected ? Color.accentColor.opacity(0.16) : Color.clear)
+
+        if values.isEmpty {
+            return directMetadata
         }
-        .contentShape(Capsule())
+        return "\(directMetadata) | probed: \(values.joined(separator: ", "))"
+        #else
+        return ""
+        #endif
     }
 }
+
+//private struct AISettingsTabButton: View {
+//    let title: String
+//    let isSelected: Bool
+//    let width: CGFloat
+//    let height: CGFloat
+//
+//    var body: some View {
+//        ZStack {
+//            Text(title)
+//                .font(.caption.weight(.semibold))
+//        }
+//        .frame(width: width, height: height)
+//        .foregroundStyle(isSelected ? Color.primary : Color.secondary)
+//        .background {
+//            Capsule()
+//                .fill(isSelected ? Color.accentColor.opacity(0.16) : Color.clear)
+//        }
+//        .contentShape(Capsule())
+//    }
+//}
 
 private struct SemiCircularUsageGauge: View {
     let fraction: Double

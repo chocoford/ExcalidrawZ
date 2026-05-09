@@ -51,7 +51,7 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
     )
     static let starter = SubscriptionItem(
         id: "plan.starter",
-        yearlyID: nil,
+        yearlyID: "plan.starter_yearly",
         title: String(localizable: .paywallPlanStarterTitle),
         // Starter now carries the original Pro feature set.
         description: "Unlimited collaboration and all core premium features.",
@@ -64,8 +64,8 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
         ],
         fallbackDisplayPrice: "$2.99",
         fallbackDisplayPeriod: "a month",
-        fallbackYearlyDisplayPrice: nil,
-        fallbackYearlyDisplayPeriod: nil
+        fallbackYearlyDisplayPrice: "$29.99",
+        fallbackYearlyDisplayPeriod: "a year"
     )
     static let pro = SubscriptionItem(
         id: "plan.pro",

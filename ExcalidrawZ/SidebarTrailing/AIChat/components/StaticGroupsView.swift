@@ -37,7 +37,8 @@ struct StaticGroupsView: View, Equatable {
     /// an empty `revealedIDs` so every message reveals individually.
     let activeRoundID: String?
     let onRegenerate: ((String) -> Void)?
-    let revertableUserMessageIDs: Set<String>
+    let revertRequiredUserMessageIDs: Set<String>
+    let disablesUserMessageActions: Bool
     let onUserMessageAction: ((String) -> Void)?
 
     init(
@@ -46,7 +47,8 @@ struct StaticGroupsView: View, Equatable {
         streamFinished: Bool = true,
         activeRoundID: String? = nil,
         onRegenerate: ((String) -> Void)? = nil,
-        revertableUserMessageIDs: Set<String> = [],
+        revertRequiredUserMessageIDs: Set<String> = [],
+        disablesUserMessageActions: Bool = false,
         onUserMessageAction: ((String) -> Void)? = nil
     ) {
         self.groups = groups
@@ -54,7 +56,8 @@ struct StaticGroupsView: View, Equatable {
         self.streamFinished = streamFinished
         self.activeRoundID = activeRoundID
         self.onRegenerate = onRegenerate
-        self.revertableUserMessageIDs = revertableUserMessageIDs
+        self.revertRequiredUserMessageIDs = revertRequiredUserMessageIDs
+        self.disablesUserMessageActions = disablesUserMessageActions
         self.onUserMessageAction = onUserMessageAction
     }
 
@@ -63,7 +66,8 @@ struct StaticGroupsView: View, Equatable {
         return lhs.streamingID == rhs.streamingID
             && lhs.streamFinished == rhs.streamFinished
             && lhs.activeRoundID == rhs.activeRoundID
-            && lhs.revertableUserMessageIDs == rhs.revertableUserMessageIDs
+            && lhs.revertRequiredUserMessageIDs == rhs.revertRequiredUserMessageIDs
+            && lhs.disablesUserMessageActions == rhs.disablesUserMessageActions
             && zip(lhs.groups, rhs.groups).allSatisfy { groupSignature($0) == groupSignature($1) }
     }
 
@@ -107,6 +111,7 @@ struct StaticGroupsView: View, Equatable {
                 UserMessageBubble(
                     content: c,
                     actionKind: userMessageActionKind(for: c.id),
+                    isActionDisabled: disablesUserMessageActions,
                     onAction: onUserMessageAction
                 )
             case .loading:
@@ -134,7 +139,7 @@ struct StaticGroupsView: View, Equatable {
 
     private func userMessageActionKind(for id: String) -> UserMessageBubble.ActionKind? {
         guard onUserMessageAction != nil else { return nil }
-        return revertableUserMessageIDs.contains(id) ? .revert : .edit
+        return revertRequiredUserMessageIDs.contains(id) ? .revert : .edit
     }
 
     private func previousUserMessageID(before index: Int) -> String? {

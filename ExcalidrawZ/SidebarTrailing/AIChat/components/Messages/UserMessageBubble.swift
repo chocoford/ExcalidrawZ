@@ -44,9 +44,11 @@ struct UserMessageBubble: View {
     /// Optional edit/revert handler — called with the user message's id.
     /// `actionKind == nil` hides the action entirely.
     var actionKind: ActionKind?
+    var isActionDisabled: Bool = false
     var onAction: ((String) -> Void)?
 
     @State private var isPresented = false
+    @State private var isConfirmingRevert = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -68,6 +70,18 @@ struct UserMessageBubble: View {
                 .opacity(isPresented ? 1 : 0)
             }
         }
+        .confirmationDialog(
+            "Revert and edit this message?",
+            isPresented: $isConfirmingRevert,
+            titleVisibility: .visible
+        ) {
+            Button("Revert and Edit", role: .destructive) {
+                onAction?(content.id)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will immediately restore the canvas to the checkpoint before this message, discard later chat messages, and refill the input with this prompt.")
+        }
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 withAnimation(.easeOut) {
@@ -82,7 +96,12 @@ struct UserMessageBubble: View {
         HStack(spacing: 4) {
             if let actionKind, let onAction {
                 Button {
-                    onAction(content.id)
+                    switch actionKind {
+                        case .edit:
+                            onAction(content.id)
+                        case .revert:
+                            isConfirmingRevert = true
+                    }
                 } label: {
                     Label(actionKind.title, systemSymbol: actionKind.symbol)
                         .labelStyle(.iconOnly)
@@ -90,7 +109,8 @@ struct UserMessageBubble: View {
                 }
                 .buttonStyle(.text(size: .small, square: true))
                 .foregroundStyle(.secondary)
-                .help(actionKind.help)
+                .disabled(isActionDisabled)
+                .help(isActionDisabled ? "Wait for the current response to finish." : actionKind.help)
             }
         }
     }

@@ -43,7 +43,7 @@ struct AIChatView: View {
     /// reveal pipeline `await scrollToBottom` and only run the wipe
     /// after the smooth scroll has actually reached the new bottom.
     @State private var scrollCompletionContinuations: [Int: CheckedContinuation<Void, Never>] = [:]
-    @State private var revertableUserMessageIDs: Set<String> = []
+    @State private var revertRequiredUserMessageIDs: Set<String> = []
     @State private var visibleMessageGroupLimit: Int = 20
     @State private var isLoadingOlderMessages: Bool = false
     @State private var loadOlderMessagesTask: Task<Void, Never>?
@@ -304,7 +304,8 @@ struct AIChatView: View {
                 visibleGroups: visibleGroups,
                 streamingID: streamingID,
                 streamFinished: streamFinished,
-                activeRoundID: activeRoundID
+                activeRoundID: activeRoundID,
+                disablesUserMessageActions: isStreamingActive || streamScrollFollowTail
             )
         }
         .environment(\.chatScrollToBottom) { animated in
@@ -367,8 +368,8 @@ struct AIChatView: View {
                 streamScrollFollowTail = false
             }
         }
-        .task(id: revertableRefreshKey(groups: visibleGroups)) {
-            await refreshRevertableUserMessageIDs(groups: visibleGroups)
+        .task(id: revertRequirementRefreshKey(groups: visibleGroups)) {
+            await refreshRevertRequiredUserMessageIDs(groups: visibleGroups)
         }
         .onChange(of: fileState.aiChatConversationID) { _ in
             resetVisibleMessageWindow()
@@ -381,7 +382,8 @@ struct AIChatView: View {
         visibleGroups: [MessageGroup],
         streamingID: String?,
         streamFinished: Bool,
-        activeRoundID: String?
+        activeRoundID: String?,
+        disablesUserMessageActions: Bool
     ) -> some View {
         let hiddenGroupCount = max(0, allGroups.count - visibleGroups.count)
 
@@ -398,7 +400,8 @@ struct AIChatView: View {
             streamFinished: streamFinished,
             activeRoundID: activeRoundID,
             onRegenerate: regenerateMessage,
-            revertableUserMessageIDs: revertableUserMessageIDs,
+            revertRequiredUserMessageIDs: revertRequiredUserMessageIDs,
+            disablesUserMessageActions: disablesUserMessageActions,
             onUserMessageAction: beginEditingUserMessage
         )
     }
@@ -606,11 +609,16 @@ struct AIChatView: View {
         }
     }
     
-    /// Start editing a historical user message. We intentionally delay
-    /// truncation / file-restore until the user presses Send, so Cancel
-    /// can restore the original chat by simply clearing edit state.
+    /// Start editing a historical user message. Plain edit is reversible
+    /// until Send because truncation is delayed. Revert is destructive by
+    /// design: after confirmation it immediately restores the canvas,
+    /// truncates the timeline, and only then refills the input box.
     private func beginEditingUserMessage(_ userMessageID: String) {
         guard let convo = conversation else { return }
+        if let streamingState,
+           shouldShowStreamingMessage(streamingState, messages: convo.messages) {
+            return
+        }
         let conversationID = convo.id
 
         let content: ChatMessageContent? = convo.messages.first {
@@ -624,34 +632,117 @@ struct AIChatView: View {
         }
         guard let content else { return }
 
+        if revertRequiredUserMessageIDs.contains(userMessageID) {
+            beginRevertingUserMessage(
+                conversationID: conversationID,
+                content: content
+            )
+            return
+        }
+
         llmState.cancelGeneration(conversationID: conversationID)
         aiChatState.beginEditing(
             conversationID: conversationID,
             userMessageID: userMessageID,
             text: content.content ?? "",
             files: content.files ?? [],
-            mode: revertableUserMessageIDs.contains(userMessageID) ? .revert : .edit
+            mode: .edit
         )
         isPinnedToBottom = true
         requestScrollToBottom(animated: true)
     }
 
-    private func revertableRefreshKey(groups: [MessageGroup]) -> String {
+    private func beginRevertingUserMessage(
+        conversationID: String,
+        content: ChatMessageContent
+    ) {
+        Task {
+            do {
+                llmState.cancelGeneration(conversationID: conversationID)
+                try await restoreFileForRevert(userMessageID: content.id)
+                try await llmState.truncateConversation(
+                    in: conversationID,
+                    fromMessageID: content.id,
+                    inclusive: true
+                )
+                await MainActor.run {
+                    aiChatState.finishEditing()
+                    aiChatState.requestDraft(content.content ?? "", files: content.files ?? [])
+                    isPinnedToBottom = true
+                    requestScrollToBottom(animated: true)
+                }
+            } catch {
+                await MainActor.run {
+                    alertToast.presentAIChatError(error)
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func restoreFileForRevert(userMessageID: String) async throws {
+        guard case .file(let file) = fileState.currentActiveFile else {
+            throw AIChatEditError.unsupportedFile
+        }
+
+        let fileObjectID = file.objectID
+        let context = PersistenceController.shared.newTaskContext()
+
+        let checkpointObjectID: NSManagedObjectID? = try await context.perform {
+            guard let file = try context.existingObject(with: fileObjectID) as? File else { return nil }
+            let fetch = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+            fetch.predicate = NSPredicate(
+                format: "file == %@ AND messageID == %@ AND source == %@",
+                file,
+                userMessageID,
+                FileCheckpointSource.aiPre.rawValue
+            )
+            fetch.fetchLimit = 1
+            return try context.fetch(fetch).first?.objectID
+        }
+
+        guard let checkpointObjectID else {
+            throw AIChatEditError.missingRevertPoint
+        }
+
+        let checkpointRepository = PersistenceController.shared.checkpointRepository
+        let fileRepository = PersistenceController.shared.fileRepository
+        try await checkpointRepository.restoreCheckpoint(
+            checkpointObjectID: checkpointObjectID,
+            to: fileObjectID
+        )
+        let content = try await checkpointRepository.loadCheckpointContent(
+            checkpointObjectID: checkpointObjectID
+        )
+        try await fileRepository.saveFileContentToStorage(
+            fileObjectID: fileObjectID,
+            content: content
+        )
+
+        Task {
+            await fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
+        }
+        fileState.didUpdateFile = false
+    }
+
+    private func revertRequirementRefreshKey(groups: [MessageGroup]) -> String {
         let fileID: String = {
             guard case .file(let file) = fileState.currentActiveFile else { return "no-file" }
             return file.objectID.uriRepresentation().absoluteString
         }()
+        let sessionID = fileState.aiChatSession.map {
+            "\($0.conversationID):\($0.userMessageID)"
+        } ?? "no-session"
         let groupIDs = groups.map(\.id).joined(separator: "|")
-        return "\(fileID)::\(groups.count)::\(groupIDs)"
+        return "\(fileID)::\(sessionID)::\(groups.count)::\(groupIDs)"
     }
 
-    private func refreshRevertableUserMessageIDs(groups: [MessageGroup]) async {
-        let roundAnchors = assistantRoundIDsByUserMessageID(groups: groups)
-        let assistantMessageIDs = Array(Set(roundAnchors.values.flatMap { $0 }))
+    private func refreshRevertRequiredUserMessageIDs(groups: [MessageGroup]) async {
+        let assistantMessageIDs = Array(Set(assistantMessageIDs(in: groups)))
         guard !assistantMessageIDs.isEmpty,
               case .file(let file) = fileState.currentActiveFile
         else {
-            revertableUserMessageIDs = []
+            revertRequiredUserMessageIDs = []
             return
         }
         let fileObjectID = file.objectID
@@ -668,31 +759,50 @@ struct AIChatView: View {
             guard let checkpoints = try? context.fetch(fetch) else { return [] }
             return Set(checkpoints.compactMap(\.messageID))
         }
-        revertableUserMessageIDs = Set(roundAnchors.compactMap { userMessageID, assistantIDs in
-            assistantIDs.contains(where: { aiPostMessageIDs.contains($0) }) ? userMessageID : nil
-        })
+        revertRequiredUserMessageIDs = userMessageIDsBeforeAnyAIPost(
+            groups: groups,
+            aiPostMessageIDs: aiPostMessageIDs
+        )
     }
 
-    private func assistantRoundIDsByUserMessageID(groups: [MessageGroup]) -> [String: [String]] {
-        var result: [String: [String]] = [:]
-        var currentUserMessageID: String?
+    private func assistantMessageIDs(in groups: [MessageGroup]) -> [String] {
+        groups.flatMap { group -> [String] in
+            guard case .assistantRound(_, let messages) = group else { return [] }
+            return messages.compactMap { message -> String? in
+                guard case .content(let content) = message,
+                      content.role == .assistant
+                else {
+                    return nil
+                }
+                return content.id
+            }
+        }
+    }
 
-        for group in groups {
+    private func userMessageIDsBeforeAnyAIPost(
+        groups: [MessageGroup],
+        aiPostMessageIDs: Set<String>
+    ) -> Set<String> {
+        var result: Set<String> = []
+        var hasAIPostAfterCurrentPosition = false
+
+        for group in groups.reversed() {
             switch group {
-                case .user(let content):
-                    currentUserMessageID = content.id
                 case .assistantRound(_, let messages):
-                    guard let currentUserMessageID else { continue }
-                    let assistantIDs = messages.compactMap { message -> String? in
+                    if messages.contains(where: { message in
                         guard case .content(let content) = message,
                               content.role == .assistant
                         else {
-                            return nil
+                            return false
                         }
-                        return content.id
+                        return aiPostMessageIDs.contains(content.id)
+                    }) {
+                        hasAIPostAfterCurrentPosition = true
                     }
-                    guard !assistantIDs.isEmpty else { continue }
-                    result[currentUserMessageID, default: []].append(contentsOf: assistantIDs)
+                case .user(let content):
+                    if hasAIPostAfterCurrentPosition {
+                        result.insert(content.id)
+                    }
                 case .loading, .error, .compactSummary:
                     continue
             }
@@ -815,14 +925,12 @@ private struct EditSessionBanner: View {
     private var title: String {
         switch mode {
             case .edit: "Editing message"
-            case .revert: "Editing with canvas revert"
         }
     }
 
     private var symbol: SFSymbol {
         switch mode {
             case .edit: .pencil
-            case .revert: .arrowUturnBackward
         }
     }
 

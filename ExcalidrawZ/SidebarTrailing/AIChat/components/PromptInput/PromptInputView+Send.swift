@@ -115,9 +115,6 @@ extension PromptInputView {
         currentTask = Task {
             do {
                 llmState.cancelGeneration(conversationID: editSession.conversationID)
-                if editSession.mode == .revert {
-                    try await restoreFile(for: editSession.userMessageID)
-                }
                 try await llmState.truncateConversation(
                     in: editSession.conversationID,
                     fromMessageID: editSession.userMessageID,
@@ -136,52 +133,6 @@ extension PromptInputView {
                 }
             }
         }
-    }
-
-    @MainActor
-    private func restoreFile(for userMessageID: String) async throws {
-        guard case .file(let file) = fileState.currentActiveFile else {
-            throw AIChatEditError.unsupportedFile
-        }
-
-        let fileObjectID = file.objectID
-        let context = PersistenceController.shared.newTaskContext()
-
-        let checkpointObjectID: NSManagedObjectID? = try await context.perform {
-            guard let file = try context.existingObject(with: fileObjectID) as? File else { return nil }
-            let fetch = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
-            fetch.predicate = NSPredicate(
-                format: "file == %@ AND messageID == %@ AND source == %@",
-                file,
-                userMessageID,
-                FileCheckpointSource.aiPre.rawValue
-            )
-            fetch.fetchLimit = 1
-            return try context.fetch(fetch).first?.objectID
-        }
-
-        guard let checkpointObjectID else {
-            throw AIChatEditError.missingRevertPoint
-        }
-
-        let cpRepo = PersistenceController.shared.checkpointRepository
-        let fileRepo = PersistenceController.shared.fileRepository
-        try await cpRepo.restoreCheckpoint(
-            checkpointObjectID: checkpointObjectID,
-            to: fileObjectID
-        )
-        let content = try await cpRepo.loadCheckpointContent(
-            checkpointObjectID: checkpointObjectID
-        )
-        try await fileRepo.saveFileContentToStorage(
-            fileObjectID: fileObjectID,
-            content: content
-        )
-
-        Task {
-            await fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
-        }
-        fileState.didUpdateFile = false
     }
 
     /// Append to the pending queue and clear the input. Hoisted out

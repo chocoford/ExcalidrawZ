@@ -11,9 +11,22 @@ import ChocofordUI
 struct ExcalidrawZSidebarRowModifier: ViewModifier {
     var isSelected: Bool
     var isMultiSelected: Bool
+    var isPressed: Bool = false
     
     @State private var isHovered = false
-        
+
+    private var isActive: Bool {
+        isHovered || isSelected || isPressed
+    }
+
+    private var cornerRadius: CGFloat {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            12
+        } else {
+            6
+        }
+    }
+
     func body(content: Content) -> some View {
         HStack(spacing: 0) {
             content
@@ -21,31 +34,52 @@ struct ExcalidrawZSidebarRowModifier: ViewModifier {
         }
         .padding(6)
         .contentShape(Rectangle())
-        .onHover { isHovered in
-            withAnimation {
-                self.isHovered = isHovered
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.16)) {
+                self.isHovered = hovering
             }
         }
-        .background {
-            let cornerRadius: CGFloat = {
-                if #available(macOS 26.0, iOS 26.0, *) {
-                    12
-                } else {
-                    4
-                }
-            }()
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(isSelected ? Color.accentColor.opacity(0.2) : Color.gray.opacity(0.2))
-                .opacity(isHovered || isSelected ? 1 : 0)
-        }
+        .background(rowBackground)
         .overlay {
             if isMultiSelected {
-                RoundedRectangle(cornerRadius: 4)
-                    .stroke(
-                        isMultiSelected ? Color.accentColor : Color.clear,
-                        lineWidth: 2
-                    )
+                if #available(macOS 26.0, iOS 26.0, *) {
+                    Capsule()
+                        .stroke(Color.accentColor, lineWidth: 1.5)
+                } else {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(Color.accentColor, lineWidth: 1.5)
+                }
             }
+        }
+        .animation(.easeInOut(duration: 0.16), value: isActive)
+    }
+
+    @MainActor @ViewBuilder
+    private var rowBackground: some View {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            if isActive {
+                let tint = isSelected
+                    ? Color.accentColor.opacity(isPressed ? 0.26 : 0.18)
+                    : Color.primary.opacity(isPressed ? 0.10 : 0.06)
+
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(.clear)
+                    .glassEffect(
+                        Glass.regular
+                            .tint(tint)
+                            .interactive(),
+                        in: Capsule()
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            }
+        } else {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(
+                    isSelected
+                    ? Color.accentColor.opacity(isPressed ? 0.28 : 0.2)
+                    : Color.gray.opacity(isPressed ? 0.28 : 0.2)
+                )
+                .opacity(isActive ? 1 : 0)
         }
     }
 }
@@ -62,7 +96,8 @@ struct ExcalidrawZSidebarRowButtonStyle: PrimitiveButtonStyle {
             configuration.label
                 .modifier(ExcalidrawZSidebarRowModifier(
                     isSelected: isSelected,
-                    isMultiSelected: isMultiSelected
+                    isMultiSelected: isMultiSelected,
+                    isPressed: isPressed
                 ))
         }
     }
@@ -79,4 +114,3 @@ extension PrimitiveButtonStyle where Self == ExcalidrawZSidebarRowButtonStyle {
         )
     }
 }
-

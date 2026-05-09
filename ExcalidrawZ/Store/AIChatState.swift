@@ -72,7 +72,6 @@ final class AIChatState: ObservableObject {
     struct EditSession: Equatable {
         enum Mode {
             case edit
-            case revert
         }
 
         let conversationID: String

@@ -38,7 +38,7 @@ public enum ServiceEntitlement: Int, Comparable {
             self.init(rawValue: subscription.groupLevel)
         } else {
             switch product.id {
-            case "plan.starter":
+            case "plan.starter", "plan.starter_yearly":
                 self = .starter
             case "plan.pro", "plan.pro_yearly":
                 self = .pro
