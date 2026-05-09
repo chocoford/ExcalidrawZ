@@ -207,11 +207,6 @@ struct AssistantRoundView: View {
                         isActive: false,
                         isDenied: isCallDenied(call)
                     )
-                    .onAppear {
-                        // Republish so ApprovalPromptView's gate sees
-                        // the card mounted before unfurling its prompt.
-                        aiChatState.markToolCallRevealed(call.id)
-                    }
                 }
             }
         }

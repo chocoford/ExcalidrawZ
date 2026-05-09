@@ -114,29 +114,6 @@ final class AIChatState: ObservableObject {
         editCancelToken += 1
     }
 
-    /// Tool-call ids that any active `RoundRevealOrchestrator` has
-    /// already revealed in the UI. Used by `ApprovalPromptView` to gate
-    /// itself: an approval card should appear only after its matching
-    /// tool-call card has been paced into view, so the user sees what
-    /// the AI is asking to run before being asked to approve it.
-    /// Without this gate, a pending approval can pop up while the
-    /// orchestrator is still waiting on prior content's settle delay
-    /// — confusing because the tool-call card isn't visible yet.
-    ///
-    /// Append-only: ids stay in the set even after the round commits,
-    /// since approvals reference historical tool-call ids and we don't
-    /// want the gate to flip closed retroactively. Memory cost is
-    /// trivial (just UUID strings).
-    @Published var revealedToolCallIDs: Set<String> = []
-
-    /// Mark a tool-call id as revealed in the UI. Idempotent — Set
-    /// dedupes naturally. Caller is `AssistantRoundView` watching its
-    /// orchestrator's `revealedIDs` and extracting the call-id portion
-    /// of `"toolcall:<msgID>:<callID>"` element ids.
-    func markToolCallRevealed(_ callID: String) {
-        revealedToolCallIDs.insert(callID)
-    }
-
     /// Conversations whose context is currently being compacted by
     /// LLMKit. Driven by `PromptInputView.compactCurrentContext()` —
     /// the prompt input flips a conversation id in here while the
