@@ -45,6 +45,12 @@ struct NativeChatScrollView<Content: View>: View {
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
     private let isStreaming: Bool
     private let onReachTop: (() -> Void)?
+    /// Fired once the token-driven scroll-to-bottom animation finishes
+    /// (or its safety timeout fires). The closure receives the token
+    /// that initiated the scroll, so the caller can correlate it back
+    /// to the request it queued — and ignore stale completions whose
+    /// token has since been superseded.
+    private let onScrollAnimationComplete: ((Int) -> Void)?
     private let content: Content
 
     init(
@@ -52,12 +58,14 @@ struct NativeChatScrollView<Content: View>: View {
         scrollToBottomRequest: Binding<ScrollToBottomRequest>,
         isStreaming: Bool = false,
         onReachTop: (() -> Void)? = nil,
+        onScrollAnimationComplete: ((Int) -> Void)? = nil,
         @ViewBuilder content: () -> Content
     ) {
         _isPinnedToBottom = isPinnedToBottom
         _scrollToBottomRequest = scrollToBottomRequest
         self.isStreaming = isStreaming
         self.onReachTop = onReachTop
+        self.onScrollAnimationComplete = onScrollAnimationComplete
         self.content = content()
     }
 
@@ -68,6 +76,7 @@ struct NativeChatScrollView<Content: View>: View {
             scrollToBottomRequest: $scrollToBottomRequest,
             isStreaming: isStreaming,
             onReachTop: onReachTop,
+            onScrollAnimationComplete: onScrollAnimationComplete,
             content: wrappedContent
         )
         #elseif os(iOS)
@@ -76,6 +85,7 @@ struct NativeChatScrollView<Content: View>: View {
             scrollToBottomRequest: $scrollToBottomRequest,
             isStreaming: isStreaming,
             onReachTop: onReachTop,
+            onScrollAnimationComplete: onScrollAnimationComplete,
             content: wrappedContent
         )
         #else
@@ -104,6 +114,7 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
     let isStreaming: Bool
     let onReachTop: (() -> Void)?
+    let onScrollAnimationComplete: ((Int) -> Void)?
     let content: Content
 
     /// Inherits from `NSObject` so the `@objc` selectors below are
@@ -114,7 +125,12 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
         var scrollToBottomRequest: Binding<ScrollToBottomRequest>
         var isStreaming: Bool
         var onReachTop: (() -> Void)?
+        var onScrollAnimationComplete: ((Int) -> Void)?
         var lastSeenToken: Int
+        /// Token of the in-flight programmatic scroll-to-bottom, if any.
+        /// Set when `scrollToBottom(animated:)` runs, cleared when its
+        /// completion fires `onScrollAnimationComplete`.
+        var inflightScrollToken: Int?
         /// Last measured documentView height. We compare growth against
         /// *this* (not the live frame) when deciding whether to auto-follow,
         /// so the bounds observation triggered by our own scrollTo doesn't
@@ -126,13 +142,19 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
         var lastClipWidth: CGFloat = 0
         /// Wall-clock time the host mounted. Combined with
         /// `initialSettlingDuration`, defines a window after mount where
-        /// growth-driven snaps to bottom run unconditionally — covers the
-        /// case where the first frame change reports a partial height
-        /// (markdown render, image load, async layout) and subsequent
-        /// growth needs to keep us pinned without going through the
-        /// streaming gate.
+        /// growth-driven snaps to bottom run unconditionally — covers
+        /// the case where the first frame change reports a partial
+        /// height (markdown render, image load, async layout) and
+        /// subsequent growth needs to keep us pinned without going
+        /// through the streaming gate.
+        ///
+        /// Sized for async image decode in tool-result cards (canvas
+        /// screenshots can take ~1 s to materialize on a cold
+        /// conversation). Anything shorter and the chat opens
+        /// "almost-at-bottom" and stays there once images flesh out
+        /// the content below the viewport.
         let mountedAt: Date = Date()
-        let initialSettlingDuration: TimeInterval = 0.3
+        let initialSettlingDuration: TimeInterval = 2.0
         let pinThreshold: CGFloat = 8
         let topLoadThreshold: CGFloat = 80
         let topLoadResetThreshold: CGFloat = 180
@@ -145,17 +167,21 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
         var hostingView: NSHostingView<Content>?
         var isProgrammaticScrollPendingToBottom: Bool = false
         var deferredScrollToBottomWorkItem: DispatchWorkItem?
+        var isPreservingTopLoadPosition: Bool = false
+        var endTopLoadPreservationWorkItem: DispatchWorkItem?
 
         init(
             isPinnedToBottom: Binding<Bool>,
             scrollToBottomRequest: Binding<ScrollToBottomRequest>,
             isStreaming: Bool,
-            onReachTop: (() -> Void)?
+            onReachTop: (() -> Void)?,
+            onScrollAnimationComplete: ((Int) -> Void)?
         ) {
             self.isPinnedToBottom = isPinnedToBottom
             self.scrollToBottomRequest = scrollToBottomRequest
             self.isStreaming = isStreaming
             self.onReachTop = onReachTop
+            self.onScrollAnimationComplete = onScrollAnimationComplete
             self.lastSeenToken = scrollToBottomRequest.wrappedValue.token
             super.init()
         }
@@ -204,6 +230,10 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
                 if isPinnedToBottom.wrappedValue {
                     scrollToBottom(animated: false)
                 }
+            } else if isPreservingTopLoadPosition,
+                      newHeight != oldHeight {
+                preserveScrollPositionAfterTopLoad(delta: newHeight - oldHeight)
+                scheduleEndTopLoadPreservation()
             } else if withinInitialSettling,
                       newHeight > oldHeight,
                       isPinnedToBottom.wrappedValue {
@@ -252,12 +282,32 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
             if minY <= topLoadThreshold {
                 guard !didNotifyReachTop else { return }
                 didNotifyReachTop = true
+                isPreservingTopLoadPosition = true
                 DispatchQueue.main.async {
                     onReachTop()
                 }
             } else if minY > topLoadResetThreshold {
                 didNotifyReachTop = false
             }
+        }
+
+        private func preserveScrollPositionAfterTopLoad(delta: CGFloat) {
+            guard delta != 0, let scrollView, let documentContainer else { return }
+            let currentOrigin = scrollView.contentView.bounds.origin
+            let maxY = max(0, documentContainer.frame.height - scrollView.contentView.bounds.height)
+            scrollView.contentView.setBoundsOrigin(
+                NSPoint(x: currentOrigin.x, y: min(max(0, currentOrigin.y + delta), maxY))
+            )
+            scrollView.reflectScrolledClipView(scrollView.contentView)
+        }
+
+        private func scheduleEndTopLoadPreservation() {
+            endTopLoadPreservationWorkItem?.cancel()
+            let workItem = DispatchWorkItem { [weak self] in
+                self?.isPreservingTopLoadPosition = false
+            }
+            endTopLoadPreservationWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
         }
 
         private func updatePinnedBinding() {
@@ -285,17 +335,34 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
                 y: max(0, documentContainer.frame.height - visibleHeight)
             )
             isProgrammaticScrollPendingToBottom = true
+            // Snapshot the token so the completion can correlate back to
+            // the request that initiated this scroll. Reads of
+            // `lastSeenToken` are synchronous on the main thread, so the
+            // value here is the token AIChatView observed when it queued
+            // the request.
+            let tokenAtStart = lastSeenToken
+            inflightScrollToken = tokenAtStart
             if animated {
                 NSAnimationContext.runAnimationGroup { ctx in
                     ctx.duration = ChatScrollAnimation.scrollDuration
                     scrollView.contentView.animator().setBoundsOrigin(target)
                 } completionHandler: { [weak self] in
-                    self?.isProgrammaticScrollPendingToBottom = false
+                    guard let self else { return }
+                    self.isProgrammaticScrollPendingToBottom = false
+                    if self.inflightScrollToken == tokenAtStart {
+                        self.inflightScrollToken = nil
+                        self.onScrollAnimationComplete?(tokenAtStart)
+                    }
                 }
             } else {
                 scrollView.contentView.setBoundsOrigin(target)
                 DispatchQueue.main.async { [weak self] in
-                    self?.isProgrammaticScrollPendingToBottom = false
+                    guard let self else { return }
+                    self.isProgrammaticScrollPendingToBottom = false
+                    if self.inflightScrollToken == tokenAtStart {
+                        self.inflightScrollToken = nil
+                        self.onScrollAnimationComplete?(tokenAtStart)
+                    }
                 }
             }
             scrollView.reflectScrolledClipView(scrollView.contentView)
@@ -316,7 +383,8 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
             isStreaming: isStreaming,
-            onReachTop: onReachTop
+            onReachTop: onReachTop,
+            onScrollAnimationComplete: onScrollAnimationComplete
         )
     }
 
@@ -411,6 +479,7 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
         context.coordinator.scrollToBottomRequest = $scrollToBottomRequest
         context.coordinator.isStreaming = isStreaming
         context.coordinator.onReachTop = onReachTop
+        context.coordinator.onScrollAnimationComplete = onScrollAnimationComplete
         context.coordinator.hostingView?.rootView = content
 
         let token = scrollToBottomRequest.token
@@ -453,6 +522,7 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
     let isStreaming: Bool
     let onReachTop: (() -> Void)?
+    let onScrollAnimationComplete: ((Int) -> Void)?
     let content: Content
 
     final class Coordinator: NSObject, UIScrollViewDelegate {
@@ -460,14 +530,20 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
         var scrollToBottomRequest: Binding<ScrollToBottomRequest>
         var isStreaming: Bool
         var onReachTop: (() -> Void)?
+        var onScrollAnimationComplete: ((Int) -> Void)?
         var lastSeenToken: Int
+        /// See macOS Coordinator: token of the in-flight programmatic
+        /// scroll, cleared when the safety timer fires
+        /// `onScrollAnimationComplete`.
+        var inflightScrollToken: Int?
         var lastContentHeight: CGFloat = 0
         /// Mirrors the macOS settling window — see that path for the
         /// rationale. While inside this window, growth-driven snap to
         /// bottom runs unconditionally so partial first-paint heights
-        /// don't leave the user mid-scroll.
+        /// (async image decode in particular) don't leave the user
+        /// mid-scroll.
         let mountedAt: Date = Date()
-        let initialSettlingDuration: TimeInterval = 0.3
+        let initialSettlingDuration: TimeInterval = 2.0
         let pinThreshold: CGFloat = 8
         let topLoadThreshold: CGFloat = 80
         let topLoadResetThreshold: CGFloat = 180
@@ -480,17 +556,21 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
         var isProgrammaticScroll: Bool = false
         var isProgrammaticScrollPendingToBottom: Bool = false
         var deferredScrollToBottomWorkItem: DispatchWorkItem?
+        var isPreservingTopLoadPosition: Bool = false
+        var endTopLoadPreservationWorkItem: DispatchWorkItem?
 
         init(
             isPinnedToBottom: Binding<Bool>,
             scrollToBottomRequest: Binding<ScrollToBottomRequest>,
             isStreaming: Bool,
-            onReachTop: (() -> Void)?
+            onReachTop: (() -> Void)?,
+            onScrollAnimationComplete: ((Int) -> Void)?
         ) {
             self.isPinnedToBottom = isPinnedToBottom
             self.scrollToBottomRequest = scrollToBottomRequest
             self.isStreaming = isStreaming
             self.onReachTop = onReachTop
+            self.onScrollAnimationComplete = onScrollAnimationComplete
             self.lastSeenToken = scrollToBottomRequest.wrappedValue.token
         }
 
@@ -512,6 +592,7 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
             if y <= topLoadThreshold {
                 guard !didNotifyReachTop else { return }
                 didNotifyReachTop = true
+                isPreservingTopLoadPosition = true
                 DispatchQueue.main.async {
                     onReachTop()
                 }
@@ -541,12 +622,19 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
             let target = max(0, scrollView.contentSize.height - visibleHeight)
             isProgrammaticScroll = true
             isProgrammaticScrollPendingToBottom = true
+            let tokenAtStart = lastSeenToken
+            inflightScrollToken = tokenAtStart
             scrollView.setContentOffset(CGPoint(x: 0, y: target), animated: animated)
             // Allow any in-flight delegate callbacks from the programmatic
             // scroll to drain before reopening the pin observer.
             DispatchQueue.main.asyncAfter(deadline: .now() + (animated ? ChatScrollAnimation.scrollDuration + 0.1 : 0.05)) { [weak self] in
-                self?.isProgrammaticScroll = false
-                self?.isProgrammaticScrollPendingToBottom = false
+                guard let self else { return }
+                self.isProgrammaticScroll = false
+                self.isProgrammaticScrollPendingToBottom = false
+                if self.inflightScrollToken == tokenAtStart {
+                    self.inflightScrollToken = nil
+                    self.onScrollAnimationComplete?(tokenAtStart)
+                }
             }
         }
 
@@ -562,6 +650,10 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
                 if isPinnedToBottom.wrappedValue {
                     scrollToBottom(animated: false)
                 }
+            } else if isPreservingTopLoadPosition,
+                      newHeight != oldHeight {
+                preserveScrollPositionAfterTopLoad(delta: newHeight - oldHeight)
+                scheduleEndTopLoadPreservation()
             } else if withinInitialSettling,
                       newHeight > oldHeight,
                       isPinnedToBottom.wrappedValue {
@@ -580,6 +672,29 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
             updatePinnedBinding()
         }
 
+        private func preserveScrollPositionAfterTopLoad(delta: CGFloat) {
+            guard delta != 0, let scrollView else { return }
+            isProgrammaticScroll = true
+            let maxY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
+            let target = CGPoint(
+                x: scrollView.contentOffset.x,
+                y: min(max(0, scrollView.contentOffset.y + delta), maxY)
+            )
+            scrollView.setContentOffset(target, animated: false)
+            DispatchQueue.main.async { [weak self] in
+                self?.isProgrammaticScroll = false
+            }
+        }
+
+        private func scheduleEndTopLoadPreservation() {
+            endTopLoadPreservationWorkItem?.cancel()
+            let workItem = DispatchWorkItem { [weak self] in
+                self?.isPreservingTopLoadPosition = false
+            }
+            endTopLoadPreservationWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
+        }
+
         func scheduleDeferredScrollToBottom(animated: Bool) {
             deferredScrollToBottomWorkItem?.cancel()
             let workItem = DispatchWorkItem { [weak self] in
@@ -595,7 +710,8 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
             isStreaming: isStreaming,
-            onReachTop: onReachTop
+            onReachTop: onReachTop,
+            onScrollAnimationComplete: onScrollAnimationComplete
         )
     }
 
@@ -642,6 +758,7 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
         context.coordinator.scrollToBottomRequest = $scrollToBottomRequest
         context.coordinator.isStreaming = isStreaming
         context.coordinator.onReachTop = onReachTop
+        context.coordinator.onScrollAnimationComplete = onScrollAnimationComplete
         context.coordinator.hostingController?.rootView = content
 
         let token = scrollToBottomRequest.token

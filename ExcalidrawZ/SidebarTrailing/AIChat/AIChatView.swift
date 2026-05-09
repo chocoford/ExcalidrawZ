@@ -38,13 +38,17 @@ struct AIChatView: View {
     @State private var isAutoScrollingToBottom: Bool = false
     @State private var streamScrollFollowTail: Bool = false
     @State private var isMessageListInitiallySettled: Bool = false
-    @State private var lastActiveStreamID: String?
-    @State private var assistantRoundIDBeforeActiveStream: String?
-    @State private var revealingAssistantRoundID: String?
-    @State private var revealedAssistantRoundIDs: Set<String> = []
-    @State private var pendingLoadingRowID: String?
+    /// Resumed by `onScrollAnimationComplete` from `NativeChatScrollView`,
+    /// keyed by the scroll-request token. Lets `AssistantRoundView`'s
+    /// reveal pipeline `await scrollToBottom` and only run the wipe
+    /// after the smooth scroll has actually reached the new bottom.
+    @State private var scrollCompletionContinuations: [Int: CheckedContinuation<Void, Never>] = [:]
     @State private var revertableUserMessageIDs: Set<String> = []
-    @State private var visibleMessageGroupLimit: Int = 80
+    @State private var visibleMessageGroupLimit: Int = 20
+    @State private var isLoadingOlderMessages: Bool = false
+    @State private var loadOlderMessagesTask: Task<Void, Never>?
+    @State private var suppressOlderMessageLoading: Bool = false
+    @State private var suppressOlderMessageLoadingTask: Task<Void, Never>?
     /// Confirmation dialog for the "Clear chat" toolbar action — destructive,
     /// so we route through a confirmationDialog rather than firing on tap.
     @State private var isConfirmingClear: Bool = false
@@ -56,8 +60,8 @@ struct AIChatView: View {
     @State private var hasDismissedWelcome: Bool = false
     @State private var isShowingWelcomeManually: Bool = false
 
-    private let initialVisibleMessageGroupLimit = 80
-    private let messageGroupLoadIncrement = 40
+    private let initialVisibleMessageGroupLimit = 20
+    private let messageGroupLoadIncrement = 20
 
     /// Show the welcome cover when no conversations exist anywhere yet AND
     /// the user hasn't already dismissed it. We treat `nil` (cache not
@@ -141,14 +145,6 @@ struct AIChatView: View {
             }
             
             VStack(spacing: 6) {
-                if let editSession = activeEditSession {
-                    EditSessionBanner(
-                        mode: editSession.mode,
-                        onCancel: { aiChatState.cancelEditing() }
-                    )
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-
                 PendingQueueView(
                     messages: aiChatState.pendingQueue,
                     onRemove: { id in
@@ -167,7 +163,15 @@ struct AIChatView: View {
                     PromptInputView(
                         conversationID: conversationID,
                         pendingQueue: $aiChatState.pendingQueue
-                    )
+                    ) {
+                        if let editSession = activeEditSession {
+                            EditSessionBanner(
+                                mode: editSession.mode,
+                                onCancel: { aiChatState.cancelEditing() }
+                            )
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                    }
                     .disabled(llmState.pendingApprovalRequest != nil)
                     
                     ApprovalPromptView()
@@ -265,25 +269,46 @@ struct AIChatView: View {
     @ViewBuilder
     private func messageList(messages: [ChatMessage]) -> some View {
         let bottomID = streamingState?.id ?? messages.last?.id
-        let latestAssistantRoundID = latestAssistantRoundID(in: messages)
-        let totalGroupCount = groupMessages(messagesForCurrentEditSession(messages)).count
+        let displayMessages = messagesForCurrentEditSession(messages)
+        let allGroups = groupMessages(displayMessages)
+        let visibleGroups = visibleMessageGroups(from: allGroups)
         let isStreamingActive: Bool = {
             guard let stream = streamingState else { return false }
             return shouldShowStreamingMessage(stream, messages: messages)
         }()
-        // Pass `isStreamingActive || streamScrollFollowTail` so the scroll
-        // host's growth-driven auto-follow stays armed for a short tail
-        // after the stream ends — that window covers the loading→message
-        // swap's height grow and the trailing reveal mask animation.
+        let streamingID: String? = streamingState?.id
+        let streamFinished: Bool = streamingState?.isFinished ?? true
+        // The active round (if any) is the latest assistantRound while
+        // the stream is in flight. This is the round whose
+        // AssistantRoundView mounts in "drive every message through the
+        // reveal pipeline" mode — even if multiple commits coalesce
+        // before its first render, none of them are pre-marked revealed.
+        let latestRoundID: String? = allGroups.last { group in
+            if case .assistantRound = group { return true }
+            return false
+        }?.id
+        let activeRoundID: String? = isStreamingActive ? latestRoundID : nil
         NativeChatScrollView(
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
             isStreaming: isStreamingActive || streamScrollFollowTail,
             onReachTop: {
-                loadMoreMessageGroupsIfNeeded(totalGroupCount: totalGroupCount)
+                loadMoreMessageGroupsIfNeeded(totalGroupCount: allGroups.count)
+            },
+            onScrollAnimationComplete: { token in
+                handleScrollAnimationComplete(token: token)
             }
         ) {
-            messageListRows(messages: messages)
+            messageListRows(
+                allGroups: allGroups,
+                visibleGroups: visibleGroups,
+                streamingID: streamingID,
+                streamFinished: streamFinished,
+                activeRoundID: activeRoundID
+            )
+        }
+        .environment(\.chatScrollToBottom) { animated in
+            await scrollToBottomAsync(animated: animated)
         }
         .opacity(isMessageListInitiallySettled ? 1 : 0)
         .animation(.easeOut(duration: 0.12), value: isMessageListInitiallySettled)
@@ -316,91 +341,88 @@ struct AIChatView: View {
             guard !isStreamingActive else { return }
             requestScrollToBottomIfNeeded(bottomID)
         }
-        .onChange(of: latestAssistantRoundID) { newRoundID in
-            guard !isStreamingActive,
-                  let newRoundID,
-                  shouldRevealAssistantRound(newRoundID)
-            else {
-                return
-            }
-            startAssistantRoundReveal(roundID: newRoundID)
-        }
         .onChange(of: isStreamingActive) { nowStreaming in
             if nowStreaming {
                 resetVisibleMessageWindowIfNeeded()
-                lastActiveStreamID = streamingState?.id
-                assistantRoundIDBeforeActiveStream = latestAssistantRoundID
-                revealingAssistantRoundID = nil
-                pendingLoadingRowID = messages.last(where: {
-                    if case .loading = $0 { return true }
-                    return false
-                })?.id
                 // Just kicked off a new round (user sent / regenerate).
-                // Force-pin and request an explicit scroll-to-bottom: the
-                // host's growth-driven follow can race against
-                // `isStreaming` reaching the Coordinator (the user-message
-                // frame may land before SwiftUI has propagated the new
-                // streaming state through `updateNSView`), so without this
-                // nudge the user's message + the LoadingMessageRow can
-                // appear without the viewport tracking them.
+                // Force-pin and request an explicit scroll-to-bottom:
+                // the host's growth-driven follow can race against
+                // `isStreaming` reaching the Coordinator (the user-
+                // message frame may land before SwiftUI has propagated
+                // the new streaming state through `updateNSView`), so
+                // without this nudge the user's message + the loading
+                // dots can appear without the viewport tracking them.
                 isPinnedToBottom = true
                 requestScrollToBottom(animated: true)
                 return
             }
-            if let latestAssistantRoundID,
-               shouldRevealAssistantRound(latestAssistantRoundID) {
-                startAssistantRoundReveal(roundID: latestAssistantRoundID)
-            }
-            // Tail window: the round-level loading→message swap and the
-            // trailing reveal mask animation both happen *after* the
-            // stream finishes. Keep the host's growth-driven follow
-            // armed for ~600 ms so the round can smoothly slide up to
-            // accommodate the committed message instead of overflowing
-            // below the viewport.
+            // Tail window: the per-round reveal pipeline (place →
+            // scroll → wipe in) needs the scroll host's growth-driven
+            // follow to stay armed past the stream end so pending
+            // placeheld rows can keep pinning the viewport while they
+            // fade in.
             streamScrollFollowTail = true
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(600))
                 streamScrollFollowTail = false
-                pendingLoadingRowID = nil
             }
         }
-        .task(id: revertableRefreshKey(messages: messages)) {
-            await refreshRevertableUserMessageIDs(messages: messages)
+        .task(id: revertableRefreshKey(groups: visibleGroups)) {
+            await refreshRevertableUserMessageIDs(groups: visibleGroups)
         }
         .onChange(of: fileState.aiChatConversationID) { _ in
             resetVisibleMessageWindow()
         }
     }
-    
+
     @ViewBuilder
-    private func messageListRows(messages: [ChatMessage]) -> some View {
-        let visibleMessages = messagesForCurrentEditSession(messages)
-        let allGroups = groupMessages(visibleMessages)
-        let visibleGroups = visibleMessageGroups(from: allGroups)
+    private func messageListRows(
+        allGroups: [MessageGroup],
+        visibleGroups: [MessageGroup],
+        streamingID: String?,
+        streamFinished: Bool,
+        activeRoundID: String?
+    ) -> some View {
         let hiddenGroupCount = max(0, allGroups.count - visibleGroups.count)
-        let latestAssistantRoundID = latestAssistantRoundID(in: visibleMessages)
-        let effectiveRevealingAssistantRoundID = revealingAssistantRoundID
-            ?? latestAssistantRoundID.flatMap { shouldRevealAssistantRound($0) ? $0 : nil }
 
         if hiddenGroupCount > 0 {
-            HiddenHistoryIndicator(hiddenGroupCount: hiddenGroupCount)
+            HiddenHistoryIndicator(
+                hiddenGroupCount: hiddenGroupCount,
+                isLoading: isLoadingOlderMessages
+            )
         }
-        
+
         StaticGroupsView(
             groups: visibleGroups,
-            revealingAssistantRoundID: effectiveRevealingAssistantRoundID,
-            pendingLoadingRowID: pendingLoadingRowID,
+            streamingID: streamingID,
+            streamFinished: streamFinished,
+            activeRoundID: activeRoundID,
             onRegenerate: regenerateMessage,
             revertableUserMessageIDs: revertableUserMessageIDs,
             onUserMessageAction: beginEditingUserMessage
         )
     }
 
-    private func latestAssistantRoundID(in messages: [ChatMessage]) -> String? {
-        groupMessages(messages).last { group in
-            if case .assistantRound = group { return true }
-            return false
-        }?.id
+    /// Bridge from `NativeChatScrollView`'s scroll-animation-complete
+    /// callback into our continuation map. The reveal controller awaits
+    /// the matching token before fading the next message in.
+    ///
+    /// We resume **every** pending continuation, not just the one
+    /// keyed by `token`. When two reveal tasks overlap, the second
+    /// scroll request overrides the first inside the host coordinator
+    /// (it tracks one in-flight token). The first task's continuation
+    /// would otherwise sit unresumed until its safety timer fires —
+    /// adding a visible ~0.5 s delay to its reveal. Visually, once any
+    /// scroll has landed at bottom, all earlier "scroll to bottom"
+    /// intents are fulfilled, so unblocking everyone is correct.
+    private func handleScrollAnimationComplete(token: Int) {
+        guard !scrollCompletionContinuations.isEmpty else { return }
+        let pending = scrollCompletionContinuations
+        scrollCompletionContinuations.removeAll()
+        isAutoScrollingToBottom = false
+        for (_, cont) in pending {
+            cont.resume()
+        }
     }
 
     private func visibleMessageGroups(from groups: [MessageGroup]) -> [MessageGroup] {
@@ -409,6 +431,20 @@ struct AIChatView: View {
     }
 
     private func loadMoreMessageGroupsIfNeeded(totalGroupCount: Int) {
+        guard !suppressOlderMessageLoading else { return }
+        guard visibleMessageGroupLimit < totalGroupCount else { return }
+        guard loadOlderMessagesTask == nil else { return }
+        isLoadingOlderMessages = true
+        loadOlderMessagesTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+            loadOlderMessageGroupsNow(totalGroupCount: totalGroupCount)
+            try? await Task.sleep(for: .milliseconds(120))
+            isLoadingOlderMessages = false
+            loadOlderMessagesTask = nil
+        }
+    }
+
+    private func loadOlderMessageGroupsNow(totalGroupCount: Int) {
         guard visibleMessageGroupLimit < totalGroupCount else { return }
         var transaction = Transaction()
         transaction.disablesAnimations = true
@@ -426,10 +462,24 @@ struct AIChatView: View {
     }
 
     private func resetVisibleMessageWindow() {
+        suppressOlderMessageLoadingTemporarily()
+        loadOlderMessagesTask?.cancel()
+        loadOlderMessagesTask = nil
+        isLoadingOlderMessages = false
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
             visibleMessageGroupLimit = initialVisibleMessageGroupLimit
+        }
+    }
+
+    private func suppressOlderMessageLoadingTemporarily() {
+        suppressOlderMessageLoadingTask?.cancel()
+        suppressOlderMessageLoading = true
+        suppressOlderMessageLoadingTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(ChatScrollAnimation.scrollDuration + 0.4))
+            suppressOlderMessageLoading = false
+            suppressOlderMessageLoadingTask = nil
         }
     }
 
@@ -442,53 +492,43 @@ struct AIChatView: View {
         else {
             return messages
         }
-        return Array(messages[...index])
+        return Array(messages[..<index])
     }
 
-    private func startAssistantRoundReveal(roundID: String) {
-        guard shouldRevealAssistantRound(roundID) else { return }
-        revealingAssistantRoundID = roundID
-        isPinnedToBottom = true
-        requestScrollToBottom(animated: true)
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(ChatScrollAnimation.scrollDuration + ChatScrollAnimation.revealDuration))
-            revealedAssistantRoundIDs.insert(roundID)
-            if revealingAssistantRoundID == roundID {
-                revealingAssistantRoundID = nil
-                lastActiveStreamID = nil
-                assistantRoundIDBeforeActiveStream = nil
+    /// Async scroll-to-bottom: queues a token-driven scroll request and
+    /// resumes when the underlying `NativeChatScrollView` reports the
+    /// scroll animation has finished (or a safety timer fires).
+    /// `AssistantRoundView` awaits this between "place" and "wipe in"
+    /// so the reveal animation runs at the final viewport position.
+    private func scrollToBottomAsync(animated: Bool) async {
+        let token = scrollToBottomRequest.token + 1
+        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+            // Store the continuation BEFORE triggering the scroll so a
+            // synchronous completion callback (e.g. already at bottom)
+            // can find it.
+            scrollCompletionContinuations[token] = cont
+            suppressOlderMessageLoadingTemporarily()
+            if animated {
+                isAutoScrollingToBottom = true
+            }
+            scrollToBottomRequest = ScrollToBottomRequest(
+                token: token,
+                animated: animated
+            )
+            // Safety net: if onScrollAnimationComplete never fires (host
+            // not yet wired up, view about to disappear, etc.), drain the
+            // continuation after the expected duration so the controller
+            // doesn't deadlock.
+            Task { @MainActor in
+                try? await Task.sleep(
+                    for: .seconds(ChatScrollAnimation.scrollDuration + 0.5)
+                )
+                if let pending = scrollCompletionContinuations.removeValue(forKey: token) {
+                    if animated { isAutoScrollingToBottom = false }
+                    pending.resume()
+                }
             }
         }
-    }
-
-    private func shouldRevealAssistantRound(_ roundID: String) -> Bool {
-        guard lastActiveStreamID != nil || streamScrollFollowTail || revealingAssistantRoundID == roundID else {
-            return false
-        }
-        guard roundID != assistantRoundIDBeforeActiveStream else {
-            return false
-        }
-        return !revealedAssistantRoundIDs.contains(roundID)
-    }
-
-    private func shouldShowPendingLoadingFallback(in groups: [MessageGroup]) -> Bool {
-        guard streamScrollFollowTail,
-              let revealingAssistantRoundID
-        else {
-            return false
-        }
-        let hasLoading = groups.contains { group in
-            if case .loading = group { return true }
-            return false
-        }
-        let hasRevealingAssistant = groups.contains { group in
-            guard case .assistantRound(let id, let messages) = group else {
-                return false
-            }
-            return id == revealingAssistantRoundID
-                || messages.contains { $0.id == revealingAssistantRoundID }
-        }
-        return !hasLoading && !hasRevealingAssistant
     }
     
     @MainActor @ToolbarContentBuilder
@@ -596,17 +636,17 @@ struct AIChatView: View {
         requestScrollToBottom(animated: true)
     }
 
-    private func revertableRefreshKey(messages: [ChatMessage]) -> String {
+    private func revertableRefreshKey(groups: [MessageGroup]) -> String {
         let fileID: String = {
             guard case .file(let file) = fileState.currentActiveFile else { return "no-file" }
             return file.objectID.uriRepresentation().absoluteString
         }()
-        let messageIDs = messages.map(\.id).joined(separator: "|")
-        return "\(fileID)::\(messageIDs)"
+        let groupIDs = groups.map(\.id).joined(separator: "|")
+        return "\(fileID)::\(groups.count)::\(groupIDs)"
     }
 
-    private func refreshRevertableUserMessageIDs(messages: [ChatMessage]) async {
-        let roundAnchors = assistantRoundIDsByUserMessageID(messages: messages)
+    private func refreshRevertableUserMessageIDs(groups: [MessageGroup]) async {
+        let roundAnchors = assistantRoundIDsByUserMessageID(groups: groups)
         let assistantMessageIDs = Array(Set(roundAnchors.values.flatMap { $0 }))
         guard !assistantMessageIDs.isEmpty,
               case .file(let file) = fileState.currentActiveFile
@@ -633,19 +673,27 @@ struct AIChatView: View {
         })
     }
 
-    private func assistantRoundIDsByUserMessageID(messages: [ChatMessage]) -> [String: [String]] {
+    private func assistantRoundIDsByUserMessageID(groups: [MessageGroup]) -> [String: [String]] {
         var result: [String: [String]] = [:]
         var currentUserMessageID: String?
 
-        for message in messages {
-            guard case .content(let content) = message else { continue }
-            switch content.role {
-                case .user:
+        for group in groups {
+            switch group {
+                case .user(let content):
                     currentUserMessageID = content.id
-                case .assistant:
+                case .assistantRound(_, let messages):
                     guard let currentUserMessageID else { continue }
-                    result[currentUserMessageID, default: []].append(content.id)
-                case .tool, .system, .developer:
+                    let assistantIDs = messages.compactMap { message -> String? in
+                        guard case .content(let content) = message,
+                              content.role == .assistant
+                        else {
+                            return nil
+                        }
+                        return content.id
+                    }
+                    guard !assistantIDs.isEmpty else { continue }
+                    result[currentUserMessageID, default: []].append(contentsOf: assistantIDs)
+                case .loading, .error, .compactSummary:
                     continue
             }
         }
@@ -696,6 +744,7 @@ struct AIChatView: View {
     }
 
     private func requestScrollToBottom(animated: Bool) {
+        suppressOlderMessageLoadingTemporarily()
         if animated {
             isAutoScrollingToBottom = true
             Task { @MainActor in
@@ -735,13 +784,21 @@ private struct OpenSettingsMenuItem: View {
 
 private struct HiddenHistoryIndicator: View {
     let hiddenGroupCount: Int
+    let isLoading: Bool
 
     var body: some View {
         ChatScrollRow {
             HStack(spacing: 8) {
-                Image(systemSymbol: .arrowUp)
-                    .font(.caption2.weight(.semibold))
-                Text("Scroll up to load \(hiddenGroupCount) earlier items")
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .scaleEffect(0.55)
+                        .frame(width: 12, height: 12)
+                } else {
+                    Image(systemSymbol: .arrowUp)
+                        .font(.caption2.weight(.semibold))
+                }
+                Text(isLoading ? "Loading earlier items..." : "Scroll up to load \(hiddenGroupCount) earlier items")
                     .font(.caption2)
             }
             .foregroundStyle(.secondary)
@@ -787,7 +844,20 @@ private struct EditSessionBanner: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
-        .background(.regularMaterial, in: Capsule())
+//        .background {
+//            if #available(macOS 26.0, *) {
+//                RoundedRectangle(cornerRadius: 14)
+//                    .fill(.clear)
+//                    .glassEffect(
+//                        .regular.interactive(),
+//                        in: RoundedRectangle(cornerRadius: 14)
+//                    )
+//            } else {
+//                RoundedRectangle(cornerRadius: 14)
+//                    .fill(.ultraThinMaterial)
+//            }
+//        }
+//        .padding(1)
     }
 }
 

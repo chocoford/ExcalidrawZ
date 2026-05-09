@@ -63,7 +63,7 @@ func groupMessages(_ messages: [ChatMessage]) -> [MessageGroup] {
 
     func flushPending() {
         guard !pending.isEmpty else { return }
-        result.append(.assistantRound(id: pending.last!.id, messages: pending))
+        result.append(.assistantRound(id: pending.first!.id, messages: pending))
         pending = []
     }
 

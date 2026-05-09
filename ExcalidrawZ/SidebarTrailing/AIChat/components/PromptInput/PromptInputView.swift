@@ -37,7 +37,7 @@ struct ExcalidrawChatInvocationContext: ChatInvocationContext {
     var currentFileID: UUID?
 }
 
-struct PromptInputView<Background: View>: View {
+struct PromptInputView<Background: View, Header: View>: View {
     @EnvironmentObject var llmState: LLMStateObject
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var aiChatState: AIChatState
@@ -51,15 +51,18 @@ struct PromptInputView<Background: View>: View {
     /// finishes, and clears here on stop.
     @Binding var pendingQueue: [PendingQueueMessage]
     let style: PromptInputStyle<Background>
+    let header: Header
 
     init(
         conversationID: Binding<String?>,
         pendingQueue: Binding<[PendingQueueMessage]>,
-        style: PromptInputStyle<Background>
+        style: PromptInputStyle<Background>,
+        @ViewBuilder header: () -> Header
     ) {
         self._conversationID = conversationID
         self._pendingQueue = pendingQueue
         self.style = style
+        self.header = header()
     }
 
     @State var inputText: String = ""
@@ -214,7 +217,22 @@ struct PromptInputView<Background: View>: View {
 
 // MARK: - Default-style convenience
 
-extension PromptInputView where Background == PlatformDefaultPromptBackground {
+extension PromptInputView where Header == EmptyView {
+    init(
+        conversationID: Binding<String?>,
+        pendingQueue: Binding<[PendingQueueMessage]>,
+        style: PromptInputStyle<Background>
+    ) {
+        self.init(
+            conversationID: conversationID,
+            pendingQueue: pendingQueue,
+            style: style,
+            header: { EmptyView() }
+        )
+    }
+}
+
+extension PromptInputView where Background == PlatformDefaultPromptBackground, Header == EmptyView {
     /// Style-less convenience init — picks `.inspector` so existing call
     /// sites keep working without forcing the caller to think about
     /// `Background` at all.
@@ -229,3 +247,21 @@ extension PromptInputView where Background == PlatformDefaultPromptBackground {
         )
     }
 }
+extension PromptInputView where Background == PlatformDefaultPromptBackground {
+    /// Style-less convenience init with a header slot. Used by the inspector
+    /// to attach contextual chrome (edit/revert state) to the prompt block
+    /// without making PromptInputView own that chat-level state.
+    init(
+        conversationID: Binding<String?>,
+        pendingQueue: Binding<[PendingQueueMessage]>,
+        @ViewBuilder header: () -> Header
+    ) {
+        self.init(
+            conversationID: conversationID,
+            pendingQueue: pendingQueue,
+            style: .inspector,
+            header: header
+        )
+    }
+}
+

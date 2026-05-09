@@ -76,6 +76,8 @@ extension PromptInputView {
             // applies to the whole stack — the strip and the text
             // share the same backdrop, no seams.
             VStack(spacing: 0) {
+                header
+                
                 AttachmentThumbnailStrip(pastedImages: $pastedImages)
 
                 TextArea(

@@ -5,12 +5,10 @@
 //  Aggregates AI-related state into one Settings tab.
 //
 //  Layout:
-//   - The first (and only) section's *header* is a custom hero block —
-//     prominent credits balance, plan badge + subtitle, Top-up / Manage
-//     buttons. Putting it in the header lets the body host just the
-//     transaction list without competing for visual weight.
-//   - The section's *body* is the activity log paginated through
-//     `LLMClient.getTransactionHistory(...)`.
+//   - Usage: custom section header with tab controls, remaining-credit Gauge,
+//     and quota details. Body shows recent activity or file-level usage.
+//   - Settings: custom section header with tab controls and title. Body is
+//     only the AI defaults.
 //
 //  Subscription naming ("Free" / "Pro") is mocked — we don't have a tier-name
 //  mapping from `SubscriptionInfo` yet. Swap `planName(for:)` when the
@@ -18,15 +16,23 @@
 //
 
 import SwiftUI
+import Charts
 import ChocofordUI
 import LLMKit
 import LLMCore
 
 struct AISettingsView: View {
+    private struct DailyCreditUsage: Identifiable {
+        let day: Date
+        let dayLabel: String
+        let amount: Double
+
+        var id: Date { day }
+    }
+
     private enum SettingsTab: String, CaseIterable, Identifiable {
         case usage
         case settings
-        case transactions
 
         var id: Self { self }
 
@@ -34,7 +40,40 @@ struct AISettingsView: View {
             switch self {
                 case .usage: "Usage"
                 case .settings: "Settings"
-                case .transactions: "Transactions"
+            }
+        }
+
+        var iconName: String {
+            switch self {
+                case .usage: "gauge.with.dots.needle.67percent"
+                case .settings: "slider.horizontal.3"
+            }
+        }
+    }
+
+    private enum ActivityGrouping: String, CaseIterable, Identifiable {
+        case recent
+        case file
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+                case .recent: "Recent"
+                case .file: "Files"
+            }
+        }
+    }
+
+    private struct FileActivityGroup: Identifiable {
+        let fileLabel: String
+        let transactions: [CreditsTransaction]
+        let hasFileContext: Bool
+
+        var id: String { fileLabel }
+        var consumedCredits: Double {
+            transactions.reduce(0) { partial, transaction in
+                transaction.amount < 0 ? partial + abs(transaction.amount) : partial
             }
         }
     }
@@ -44,6 +83,7 @@ struct AISettingsView: View {
     @ObservedObject private var prefs = AIChatPreferences.shared
 
     @State private var selectedTab: SettingsTab = .usage
+    @State private var activityGrouping: ActivityGrouping = .recent
     @State private var transactions: [CreditsTransaction] = []
     @State private var totalTransactionCount: Int = 0
     @State private var loadedPage: Int = 0
@@ -61,10 +101,6 @@ struct AISettingsView: View {
     var body: some View {
         if #available(macOS 14.0, iOS 17.0, *) {
             Form {
-                tabPicker
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-
                 selectedTabContent
             }
             .formStyle(.grouped)
@@ -73,7 +109,6 @@ struct AISettingsView: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    tabPicker
                     selectedTabContent
                 }
                 .padding()
@@ -85,15 +120,37 @@ struct AISettingsView: View {
 
     @ViewBuilder
     private var tabPicker: some View {
-        Picker("AI Settings", selection: $selectedTab) {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            GlassEffectContainer(spacing: 8) {
+                tabButtons
+            }
+        } else {
+            tabButtons
+        }
+    }
+
+    @ViewBuilder
+    private var tabButtons: some View {
+        HStack(spacing: 2) {
             ForEach(SettingsTab.allCases) { tab in
-                Text(tab.title).tag(tab)
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        selectedTab = tab
+                    }
+                } label: {
+                    AISettingsTabButton(
+                        title: tab.title,
+                        isSelected: selectedTab == tab
+                    )
+                }
+                .buttonStyle(.plain)
             }
         }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .padding(.horizontal)
-        .padding(.vertical, 8)
+        .padding(3)
+        .background {
+            Capsule()
+                .fill(Color.secondary.opacity(0.08))
+        }
     }
 
     @MainActor @ViewBuilder
@@ -101,19 +158,22 @@ struct AISettingsView: View {
         switch selectedTab {
             case .usage:
                 Section {
-                    usageDetails
+                    activityBody
                 } header: {
-                    creditsHeader
-                        .textCase(nil)
-                        .padding(.vertical, 4)
+                    VStack(spacing: 10) {
+                        usageHeader
+                            .textCase(nil)
+                        
+                        activityHeader
+                    }
                 }
             case .settings:
-                Section("Defaults") {
+                Section {
                     defaultModelPicker
-                }
-            case .transactions:
-                Section("Transactions") {
-                    activityBody
+                } header: {
+                    settingsHeader
+                        .textCase(nil)
+                        .padding(.vertical, 4)
                 }
         }
     }
@@ -161,103 +221,140 @@ struct AISettingsView: View {
         }
     }
 
-    // MARK: - Credits + plan hero (section header)
+    // MARK: - Usage header
 
     @MainActor @ViewBuilder
-    private var creditsHeader: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            balanceRow
-            planRow
-        }
-    }
+    private var usageHeader: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            HStack(alignment: .top, spacing: 22) {
+                HStack(alignment: .center, spacing: 16) {
+                    usageGauge
 
-    @MainActor @ViewBuilder
-    private var usageDetails: some View {
-        if let sub = llmState.creditsInfo?.subscription {
-            usageRow(
-                title: "Monthly quota",
-                value: formatCredits(sub.monthlyQuota)
-            )
-            usageRow(
-                title: "Used this month",
-                value: formatCredits(sub.usedQuota)
-            )
-            usageRow(
-                title: "Renews",
-                value: sub.renewalDate.formatted(date: .abbreviated, time: .omitted)
-            )
-        } else {
-            Text("You are using the free AI quota. Upgrade to unlock higher monthly limits.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-        }
-    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            Text("AI Usage")
+                                .font(.title2.weight(.semibold))
+                                .foregroundStyle(.primary)
 
-    @ViewBuilder
-    private func usageRow(title: String, value: String) -> some View {
-        HStack {
-            Text(title)
-            Spacer()
-            Text(value)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-        }
-    }
+                            planBadge
+                        }
 
-    /// Top of the hero: large balance number on the left, primary action on
-    /// the right. Loading skeleton while `creditsInfo` is nil so the layout
-    /// doesn't jump when the publisher fires.
-    @ViewBuilder
-    private var balanceRow: some View {
-        HStack(alignment: .lastTextBaseline) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Credits remaining")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                if let balance = llmState.creditsInfo?.balance {
-                    Text(formatCredits(balance))
-                        .font(.system(size: 34, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(.primary)
-                } else {
-                    Text("—")
-                        .font(.system(size: 34, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.tertiary)
+                        Text(planSubtitle)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+                }
+
+                Spacer(minLength: 12)
+
+                VStack(alignment: .trailing, spacing: 12) {
+                    tabPicker
+
+                    Button {
+                        store.togglePaywall(reason: .aiInsufficientCredits)
+                    } label: {
+                        Label("Upgrade", systemImage: "sparkles")
+                    }
+                    .modernButtonStyle(style: .glassProminent, size: .regular, shape: .modern)
                 }
             }
 
+            dailyUsageChart
+
+        }
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @MainActor @ViewBuilder
+    private var activityHeader: some View {
+        HStack(alignment: .center) {
+            Label("Activity", systemImage: "chart.line.uptrend.xyaxis")
+                .font(.headline)
+                .foregroundStyle(.primary)
+
             Spacer()
 
-            Button {
-                store.togglePaywall(reason: .aiInsufficientCredits)
-            } label: {
-                Label("Top up", systemImage: "plus.circle.fill")
+            if !transactions.isEmpty {
+                Picker("Activity View", selection: $activityGrouping) {
+                    ForEach(ActivityGrouping.allCases) { grouping in
+                        Text(grouping.title).tag(grouping)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 144)
+            } else if totalTransactionCount > 0 {
+                transactionCountLabel
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
         }
     }
 
-    /// Plan badge + subtitle (used / total this month, renewal date) + a
-    /// secondary "Manage" entry. For free users the subtitle is a soft
-    /// upsell line.
-    @ViewBuilder
-    private var planRow: some View {
-        HStack(alignment: .center, spacing: 8) {
-            planBadge
+    @MainActor @ViewBuilder
+    private var settingsHeader: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("AI Settings", systemImage: "slider.horizontal.3")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.primary)
 
-            Text(planSubtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
+                    Text("Choose the defaults AI Chat uses when starting or regenerating conversations.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
 
-            Spacer(minLength: 8)
+                Spacer(minLength: 12)
 
-            Button("Manage") {
-                store.togglePaywall(reason: .aiInsufficientCredits)
+                tabPicker
             }
-            .buttonStyle(.borderless)
-            .controlSize(.small)
+        }
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @MainActor @ViewBuilder
+    private var usageGauge: some View {
+        let metrics = usageMetrics
+        SemiCircularUsageGauge(
+            fraction: metrics.fractionRemaining,
+            percentageText: metrics.fractionRemaining.formatted(.percent.precision(.fractionLength(0))),
+            detailText: "\(formatCredits(metrics.remaining)) left"
+        )
+        .frame(width: 176, height: 106)
+    }
+
+    @MainActor @ViewBuilder
+    private var dailyUsageChart: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Daily credits")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                Text("Last 7 days")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Chart(dailyCreditUsage) { item in
+                BarMark(
+                    x: .value("Day", item.dayLabel),
+                    y: .value("Credits", item.amount)
+                )
+                .foregroundStyle(AIAppearancePalette.foregroundGradient)
+                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading)
+            }
+            .chartXAxis {
+                AxisMarks { value in
+                    AxisValueLabel(centered: true)
+                }
+            }
+            .frame(height: 120)
         }
     }
 
@@ -268,10 +365,10 @@ struct AISettingsView: View {
             .foregroundStyle(.primary)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background {
-                Capsule()
-                    .fill(isPaidPlan ? Color.accentColor.opacity(0.2) : Color.gray.opacity(0.2))
-            }
+            .aiSettingsGlassCapsule(
+                tint: isPaidPlan ? Color.accentColor : Color.secondary,
+                isInteractive: false
+            )
     }
 
     private var isPaidPlan: Bool {
@@ -294,6 +391,50 @@ struct AISettingsView: View {
         return "\(used) / \(total) this month · renews \(renew)"
     }
 
+    private var usageMetrics: (remaining: Double, total: Double, fractionRemaining: Double) {
+        if let sub = llmState.creditsInfo?.subscription {
+            let total = max(sub.monthlyQuota, 1)
+            let remaining = min(max(sub.monthlyQuota - sub.usedQuota, 0), total)
+            return (remaining, total, remaining / total)
+        }
+
+        let balance = max(llmState.creditsInfo?.balance ?? 0, 0)
+        let total = max(balance, 1)
+        return (balance, total, balance > 0 ? 1 : 0)
+    }
+
+    private var dailyCreditUsage: [DailyCreditUsage] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let days = (0..<7).reversed().compactMap {
+            calendar.date(byAdding: .day, value: -$0, to: today)
+        }
+        let consumedByDay = Dictionary(grouping: transactions.filter { $0.amount < 0 }) {
+            calendar.startOfDay(for: $0.createdAt)
+        }.mapValues { entries in
+            entries.reduce(0) { $0 + abs($1.amount) }
+        }
+
+        return days.map { day in
+            DailyCreditUsage(
+                day: day,
+                dayLabel: day.formatted(.dateTime.weekday(.abbreviated)),
+                amount: consumedByDay[day] ?? 0
+            )
+        }
+    }
+
+    private func usageTint(for fractionRemaining: Double) -> Color {
+        switch fractionRemaining {
+            case 0..<0.2:
+                return .red
+            case 0.2..<0.5:
+                return .orange
+            default:
+                return .accentColor
+        }
+    }
+
     // MARK: - Activity list (section body)
 
     @MainActor @ViewBuilder
@@ -311,11 +452,29 @@ struct AISettingsView: View {
         } else if transactions.isEmpty {
             Text("No activity yet.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                    .foregroundStyle(.secondary)
         } else {
-            ForEach(transactions) { tx in
-                transactionRow(tx)
+            if totalTransactionCount > 0, !transactions.isEmpty {
+                transactionCountLabel
             }
+
+            switch activityGrouping {
+                case .recent:
+                    ForEach(transactions) { tx in
+                        transactionRow(tx)
+                    }
+                case .file:
+                    if fileActivityGroups.isEmpty {
+                        Text("No file-linked credit usage in the loaded activity.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(fileActivityGroups) { group in
+                            fileActivityRow(group)
+                        }
+                    }
+            }
+
             if transactions.count < totalTransactionCount {
                 Button {
                     Task { await loadNextPage() }
@@ -335,21 +494,63 @@ struct AISettingsView: View {
         }
     }
 
+    private var transactionCountLabel: some View {
+        Text("\(transactions.count) of \(totalTransactionCount) loaded")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+
     @ViewBuilder
-    private func transactionRow(_ tx: CreditsTransaction) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 2) {
+    private func transactionRow(
+        _ tx: CreditsTransaction,
+        showsFileContext: Bool = true
+    ) -> some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(transactionTitle(tx))
                     .font(.callout)
                 Text(tx.createdAt.formatted(date: .abbreviated, time: .shortened))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+                if showsFileContext, let fileLabel = transactionFileLabel(tx) {
+                    Label(fileLabel, systemImage: "doc.text")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
             }
             Spacer()
             Text(formatSignedAmount(tx.amount))
                 .font(.callout.weight(.medium))
                 .monospacedDigit()
                 .foregroundStyle(tx.amount >= 0 ? .green : .secondary)
+        }
+        .padding(.vertical, 2)
+    }
+
+    @ViewBuilder
+    private func fileActivityRow(_ group: FileActivityGroup) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: group.hasFileContext ? "doc.text" : "questionmark.folder")
+                .font(.body)
+                .foregroundStyle(group.hasFileContext ? Color.accentColor : Color.secondary)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(group.fileLabel)
+                    .font(.callout.weight(.medium))
+                    .lineLimit(1)
+                Text("\(group.transactions.count) AI \(group.transactions.count == 1 ? "request" : "requests")")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Text("\(formatCredits(group.consumedCredits)) credits")
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
         }
         .padding(.vertical, 2)
     }
@@ -368,6 +569,95 @@ struct AISettingsView: View {
         case .referral: return "Referral"
         case .achievement: return "Achievement"
         }
+    }
+
+    private var fileActivityGroups: [FileActivityGroup] {
+        let grouped = Dictionary(grouping: transactions.filter { $0.amount < 0 }) { transaction in
+            transactionFileLabel(transaction) ?? "No File Context"
+        }
+
+        return grouped.map { fileLabel, transactions in
+            FileActivityGroup(
+                fileLabel: fileLabel,
+                transactions: transactions.sorted { $0.createdAt > $1.createdAt },
+                hasFileContext: fileLabel != "No File Context"
+            )
+        }
+        .sorted { lhs, rhs in
+            if lhs.hasFileContext != rhs.hasFileContext {
+                return lhs.hasFileContext
+            }
+            if lhs.consumedCredits != rhs.consumedCredits {
+                return lhs.consumedCredits > rhs.consumedCredits
+            }
+            return lhs.fileLabel.localizedCaseInsensitiveCompare(rhs.fileLabel) == .orderedAscending
+        }
+    }
+
+    private func transactionFileLabel(_ tx: CreditsTransaction) -> String? {
+        let nameKeys = [
+            "fileName",
+            "file_name",
+            "filename",
+            "fileTitle",
+            "file_title",
+            "documentName",
+            "document_name",
+            "canvasName",
+            "canvas_name",
+            "excalidrawFileName"
+        ]
+
+        for key in nameKeys {
+            let value: String? = tx.getMetadataValue(key: key)
+            if let value, !value.isEmpty {
+                return value
+            }
+        }
+
+        let pathKeys = [
+            "filePath",
+            "file_path",
+            "fileURL",
+            "file_url",
+            "path",
+            "url"
+        ]
+
+        for key in pathKeys {
+            let value: String? = tx.getMetadataValue(key: key)
+            if let value, !value.isEmpty {
+                return lastPathComponent(from: value)
+            }
+        }
+
+        let idKeys = [
+            "fileID",
+            "fileId",
+            "file_id",
+            "documentID",
+            "documentId",
+            "document_id"
+        ]
+
+        for key in idKeys {
+            let value: String? = tx.getMetadataValue(key: key)
+            if let value, !value.isEmpty {
+                return "File \(value.prefix(8))"
+            }
+        }
+
+        return nil
+    }
+
+    private func lastPathComponent(from value: String) -> String {
+        if let url = URL(string: value), url.scheme != nil {
+            let component = url.lastPathComponent
+            return component.isEmpty ? value : component
+        }
+
+        let component = URL(fileURLWithPath: value).lastPathComponent
+        return component.isEmpty ? value : component
     }
 
     // MARK: - Formatting
@@ -421,5 +711,160 @@ struct AISettingsView: View {
         } catch {
             transactionLoadError = error
         }
+    }
+}
+
+private struct AISettingsTabButton: View {
+    let title: String
+    let isSelected: Bool
+
+    var body: some View {
+        ZStack {
+            Text(title)
+                .font(.caption.weight(.semibold))
+        }
+        .foregroundStyle(isSelected ? Color.primary : Color.secondary)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 5)
+        .background {
+            Capsule()
+                .fill(isSelected ? Color.accentColor.opacity(0.16) : Color.clear)
+        }
+        .contentShape(Capsule())
+    }
+}
+
+private struct SemiCircularUsageGauge: View {
+    let fraction: Double
+    let percentageText: String
+    let detailText: String
+
+    private var clampedFraction: Double {
+        min(max(fraction, 0), 1)
+    }
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            SemiCircleShape()
+                .stroke(
+                    Color.secondary.opacity(0.16),
+                    style: StrokeStyle(lineWidth: 14, lineCap: .round)
+                )
+
+            SemiCircleShape(progress: clampedFraction)
+                .stroke(
+                    AIAppearancePalette.foregroundGradient,
+                    style: StrokeStyle(lineWidth: 14, lineCap: .round)
+                )
+
+            VStack(alignment: .center, spacing: 2) {
+                Text(percentageText)
+                    .font(.system(size: 34, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AIAppearancePalette.foregroundGradient)
+                    .monospacedDigit()
+                Text(detailText)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, 4)
+        }
+        .padding(.top, 8)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("AI credits remaining")
+        .accessibilityValue("\(percentageText), \(detailText)")
+    }
+}
+
+private struct SemiCircleShape: Shape {
+    var progress: Double = 1
+
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let clampedProgress = min(max(progress, 0), 1)
+        let radius = min(rect.width / 2, rect.height)
+        let center = CGPoint(x: rect.midX, y: rect.maxY)
+        var path = Path()
+        path.addArc(
+            center: center,
+            radius: radius,
+            startAngle: .degrees(180),
+            endAngle: .degrees(180 + 180 * clampedProgress),
+            clockwise: false
+        )
+        return path
+    }
+}
+
+private struct AISettingsGlassChipModifier: ViewModifier {
+    let cornerRadius: CGFloat
+
+    @MainActor @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            content
+                .glassEffect(.clear, in: .rect(cornerRadius: cornerRadius))
+        } else {
+            content
+                .background {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(Color.secondary.opacity(0.08))
+                }
+        }
+    }
+}
+
+private struct AISettingsGlassCapsuleModifier: ViewModifier {
+    let tint: Color
+    let isInteractive: Bool
+    let isProminent: Bool
+
+    @MainActor @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            let glass = isProminent
+                ? Glass.regular.tint(tint.opacity(0.22))
+                : Glass.clear.tint(tint.opacity(0.08))
+            if isInteractive {
+                content.glassEffect(glass.interactive(), in: Capsule())
+            } else {
+                content.glassEffect(glass, in: Capsule())
+            }
+        } else {
+            content
+                .background {
+                    Capsule()
+                        .fill(tint.opacity(isProminent ? 0.16 : 0.08))
+                }
+                .overlay {
+                    Capsule()
+                        .strokeBorder(tint.opacity(isProminent ? 0.26 : 0.0))
+                }
+        }
+    }
+}
+
+private extension View {
+    func aiSettingsGlassChip(cornerRadius: CGFloat) -> some View {
+        modifier(AISettingsGlassChipModifier(cornerRadius: cornerRadius))
+    }
+
+    func aiSettingsGlassCapsule(
+        tint: Color,
+        isInteractive: Bool,
+        isProminent: Bool = true
+    ) -> some View {
+        modifier(
+            AISettingsGlassCapsuleModifier(
+                tint: tint,
+                isInteractive: isInteractive,
+                isProminent: isProminent
+            )
+        )
     }
 }

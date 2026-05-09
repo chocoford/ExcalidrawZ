@@ -4,10 +4,17 @@
 //
 //  Created by Chocoford on 5/4/26.
 //
-//  List renderer for committed (non-streaming) chat rows. Equatable on the
-//  group ID sequence so SwiftUI can skip re-rendering the entire history when
-//  only the in-flight stream content changes — a critical perf knob given how
-//  often `stream.content` ticks during a turn.
+//  List renderer for committed (non-streaming) chat rows. Equatable on
+//  the group ID sequence so SwiftUI can skip re-rendering the entire
+//  history when only the in-flight stream content changes — a critical
+//  perf knob given how often `stream.content` ticks during a turn.
+//
+//  Reveal state is owned per-`AssistantRoundView` via that view's own
+//  `@State`; this layer just propagates the streaming context
+//  (`streamingID` / `streamFinished`) down so each round can decide,
+//  for each of its messages, whether the message is "complete" (and
+//  therefore eligible for the reveal animation) or still being
+//  streamed.
 //
 
 import SwiftUI
@@ -16,26 +23,36 @@ import LLMKit
 
 struct StaticGroupsView: View, Equatable {
     let groups: [MessageGroup]
-    let revealingAssistantRoundID: String?
-    let pendingLoadingRowID: String?
+    /// Id LLMKit is currently streaming, propagated from `AIChatView`.
+    /// Each `AssistantRoundView` compares it against its own messages
+    /// to find a streaming target.
+    let streamingID: String?
+    /// True when the in-flight stream is finished. Combined with
+    /// `streamingID`: a round message whose id equals `streamingID`
+    /// is "currently streaming" only while `!streamFinished`.
+    let streamFinished: Bool
+    /// Id of the round LLMKit's stream is currently driving (`nil`
+    /// when no stream is active). Forwarded into each
+    /// `AssistantRoundView`; the matching round's `init` starts with
+    /// an empty `revealedIDs` so every message reveals individually.
+    let activeRoundID: String?
     let onRegenerate: ((String) -> Void)?
     let revertableUserMessageIDs: Set<String>
-    /// Per-user-message edit/revert callback. Equatable ignores closure
-    /// identity, but includes `revertableUserMessageIDs` so a message can
-    /// flip from edit pencil to revert affordance without changing history.
     let onUserMessageAction: ((String) -> Void)?
 
     init(
         groups: [MessageGroup],
-        revealingAssistantRoundID: String? = nil,
-        pendingLoadingRowID: String? = nil,
+        streamingID: String? = nil,
+        streamFinished: Bool = true,
+        activeRoundID: String? = nil,
         onRegenerate: ((String) -> Void)? = nil,
         revertableUserMessageIDs: Set<String> = [],
         onUserMessageAction: ((String) -> Void)? = nil
     ) {
         self.groups = groups
-        self.revealingAssistantRoundID = revealingAssistantRoundID
-        self.pendingLoadingRowID = pendingLoadingRowID
+        self.streamingID = streamingID
+        self.streamFinished = streamFinished
+        self.activeRoundID = activeRoundID
         self.onRegenerate = onRegenerate
         self.revertableUserMessageIDs = revertableUserMessageIDs
         self.onUserMessageAction = onUserMessageAction
@@ -43,10 +60,36 @@ struct StaticGroupsView: View, Equatable {
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         guard lhs.groups.count == rhs.groups.count else { return false }
-        return lhs.revealingAssistantRoundID == rhs.revealingAssistantRoundID
-            && lhs.pendingLoadingRowID == rhs.pendingLoadingRowID
+        return lhs.streamingID == rhs.streamingID
+            && lhs.streamFinished == rhs.streamFinished
+            && lhs.activeRoundID == rhs.activeRoundID
             && lhs.revertableUserMessageIDs == rhs.revertableUserMessageIDs
-            && zip(lhs.groups, rhs.groups).allSatisfy { $0.id == $1.id }
+            && zip(lhs.groups, rhs.groups).allSatisfy { groupSignature($0) == groupSignature($1) }
+    }
+
+    private static func groupSignature(_ group: MessageGroup) -> String {
+        switch group {
+            case .assistantRound(let id, let messages):
+                let messageSignature = messages.map { message -> String in
+                    switch message {
+                        case .content(let content):
+                            let toolCallIDs = (content.toolCalls ?? []).map(\.id).joined(separator: ",")
+                            return [
+                                content.id,
+                                String(describing: content.role),
+                                "\(content.content?.count ?? 0)",
+                                toolCallIDs
+                            ].joined(separator: ":")
+                        case .loading(let id):
+                            return "loading:\(id.uuidString)"
+                        case .error(let id, let message):
+                            return "error:\(id.uuidString):\(message)"
+                    }
+                }.joined(separator: "|")
+                return "\(id)::\(messageSignature)"
+            default:
+                return group.id
+        }
     }
 
     var body: some View {
@@ -68,12 +111,7 @@ struct StaticGroupsView: View, Equatable {
                 )
             case .loading:
                 EmptyView()
-//                LoadingMessageRow()
-//                    .transition(.opacity.animation(.smooth))
             case .error(_, let msg):
-                // Retry re-runs the most recent user message preceding the
-                // error. We only surface the button when both a target exists
-                // *and* the parent provided a regenerate callback.
                 ErrorMessageRow(
                     error: msg,
                     onRetry: previousUserMessageID(before: index).flatMap { id in
@@ -81,13 +119,12 @@ struct StaticGroupsView: View, Equatable {
                     }
                 )
             case .assistantRound(let id, let messages):
-                let shouldReveal = isRevealingAssistantRound(id: id, messages: messages)
                 AssistantRoundView(
+                    roundID: id,
                     messages: messages,
-                    isActive: isAssistantRoundActive(at: index),
-                    revealsCommittedMessages: shouldReveal,
-                    playsInitialReveal: shouldReveal,
-                    keepsLoadingPlaceholderDuringReveal: shouldReveal,
+                    streamingID: streamingID,
+                    streamFinished: streamFinished,
+                    activeRoundID: activeRoundID,
                     onRegenerate: onRegenerate
                 )
             case .compactSummary(let c):
@@ -100,8 +137,6 @@ struct StaticGroupsView: View, Equatable {
         return revertableUserMessageIDs.contains(id) ? .revert : .edit
     }
 
-    /// Walks back from `index` to find the most recent user message id.
-    /// Used by error rows to know *which* turn to retry.
     private func previousUserMessageID(before index: Int) -> String? {
         var i = index - 1
         while i >= 0 {
@@ -109,39 +144,5 @@ struct StaticGroupsView: View, Equatable {
             i -= 1
         }
         return nil
-    }
-
-    private func previousGroupIsPendingLoading(at index: Int) -> Bool {
-        guard index > 0 else { return false }
-        return isLoadingRowBeforeRevealingAssistant(at: index - 1)
-    }
-
-    private func isAssistantRoundActive(at index: Int) -> Bool {
-        guard index < groups.count - 1 else { return false }
-        if case .loading = groups[index + 1] {
-            return true
-        }
-        return false
-    }
-
-    private func isRevealingAssistantRound(id: String, messages: [ChatMessage]) -> Bool {
-        guard let revealingAssistantRoundID else { return false }
-        return id == revealingAssistantRoundID
-            || messages.contains { $0.id == revealingAssistantRoundID }
-    }
-
-    private func isLoadingRowBeforeRevealingAssistant(at index: Int) -> Bool {
-        guard index >= 0,
-              index < groups.count - 1,
-              case .loading = groups[index],
-              case .assistantRound(let nextID, let nextMessages) = groups[index + 1]
-        else {
-            return false
-        }
-        guard let pendingLoadingRowID else {
-            return isRevealingAssistantRound(id: nextID, messages: nextMessages)
-        }
-        return groups[index].id == pendingLoadingRowID
-            && isRevealingAssistantRound(id: nextID, messages: nextMessages)
     }
 }

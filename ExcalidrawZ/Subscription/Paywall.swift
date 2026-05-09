@@ -170,102 +170,6 @@ struct Paywall: View {
             }
     }
 
-    private func product(for item: SubscriptionItem, billingPeriod: BillingPeriod) -> Product? {
-        let productID: String? = {
-            if item.id == SubscriptionItem.max.id {
-                return maxProductID(forCreditTier: maxCreditTier, billingPeriod: billingPeriod)
-            }
-
-            return switch billingPeriod {
-            case .monthly:
-                item.id
-            case .yearly:
-                item.yearlyID
-            }
-        }()
-        guard let productID else { return nil }
-        return store.subscriptions.first { $0.id == productID }
-    }
-
-    private func firstProduct(for billingPeriod: BillingPeriod) -> Product? {
-        displayedPlanCards
-            .lazy
-            .compactMap { product(for: $0, billingPeriod: billingPeriod) ?? product(for: $0, billingPeriod: .monthly) }
-            .first
-    }
-
-    private func maxProductID(forCreditTier creditTier: MaxCreditTier, billingPeriod: BillingPeriod) -> String {
-        switch (billingPeriod, creditTier) {
-        case (.monthly, .standard):
-            "plan.max_3x"
-        case (.yearly, .standard):
-            "plan.max_3x_yearly"
-        case (.monthly, .triple):
-            "plan.max_10x"
-        case (.yearly, .triple):
-            "plan.max_10x_yearly"
-        }
-    }
-
-    private func product(forMaxCreditTier creditTier: MaxCreditTier, billingPeriod: BillingPeriod) -> Product? {
-        let productID = maxProductID(forCreditTier: creditTier, billingPeriod: billingPeriod)
-        return store.subscriptions.first { $0.id == productID }
-    }
-
-    private func selectMaxPlan(creditTier: MaxCreditTier) {
-        selectedPlan = product(forMaxCreditTier: creditTier, billingPeriod: billingPeriod)
-            ?? product(forMaxCreditTier: creditTier, billingPeriod: .monthly)
-            ?? selectedPlan
-    }
-
-    private var selectedMaxCredits: Int {
-        if selectedSubscriptionItem?.id == SubscriptionItem.max10x.id {
-            return MaxCreditTier.triple.credits
-        }
-        return maxCreditTier.credits
-    }
-
-    private func activeMaxCredits(for plan: SubscriptionItem) -> Int {
-        if plan.id == SubscriptionItem.max10x.id {
-            return MaxCreditTier.triple.credits
-        }
-        return MaxCreditTier.standard.credits
-    }
-
-    private func featureLines(for plan: SubscriptionItem, maxCredits: Int? = nil) -> [Feature] {
-        switch plan.id {
-        case SubscriptionItem.starter.id:
-            starterFeatureLines
-        case SubscriptionItem.pro.id:
-            starterFeatureLines + proFeatureLines
-        case SubscriptionItem.max.id:
-            starterFeatureLines + maxFeatureLines(credits: maxCredits ?? MaxCreditTier.standard.credits)
-        case SubscriptionItem.max10x.id:
-            starterFeatureLines + maxFeatureLines(credits: maxCredits ?? MaxCreditTier.triple.credits)
-        default:
-            []
-        }
-    }
-
-    private var starterFeatureLines: [Feature] {
-        [
-            ("person.2.wave.2", "Unlimited collaboration tools", "Open up the collaboration workspace without room limits.")
-        ]
-    }
-
-    private var proFeatureLines: [Feature] {
-        [
-            ("sparkles", "500 AI credits / month", "Enough room for regular AI-assisted editing and generation.")
-        ]
-    }
-
-    private func maxFeatureLines(credits: Int) -> [Feature] {
-        [
-            ("sparkles", "\(credits) AI credits / month", "More headroom for heavier generation, iteration, and AI workflows."),
-            ("brain.head.profile", "Extra High model capability", "Use the highest reasoning model mode for demanding AI work.")
-        ]
-    }
-    
     @MainActor @ViewBuilder
     private func content() -> some View {
         ZStack {
@@ -329,7 +233,7 @@ struct Paywall: View {
                 regularLayout()
             }
         }
-        .padding(40)
+        .padding(50)
         .background {
             if #available(iOS 26.0, macOS 26.0, *) {
                 PaywallAuroraBackground(colorScheme: colorScheme)
@@ -372,7 +276,6 @@ struct Paywall: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 VStack(spacing: 16) {
-                    Spacer()
                     
                     billingToggle()
 
@@ -389,6 +292,8 @@ struct Paywall: View {
                             selectMaxPlan(creditTier: tier)
                         }
                     )
+                    
+                    Spacer(minLength: 0)
 
                     HStack(spacing: 4) {
                         // Keep center
@@ -563,6 +468,8 @@ struct Paywall: View {
             }
 
             selectedPlanExtras()
+            
+            Spacer(minLength: 0)
         }
     }
 
@@ -775,6 +682,102 @@ struct Paywall: View {
         }
         .foregroundStyle(.secondary)
         .buttonStyle(.borderless)
+    }
+    
+    private func product(for item: SubscriptionItem, billingPeriod: BillingPeriod) -> Product? {
+        let productID: String? = {
+            if item.id == SubscriptionItem.max.id {
+                return maxProductID(forCreditTier: maxCreditTier, billingPeriod: billingPeriod)
+            }
+
+            return switch billingPeriod {
+            case .monthly:
+                item.id
+            case .yearly:
+                item.yearlyID
+            }
+        }()
+        guard let productID else { return nil }
+        return store.subscriptions.first { $0.id == productID }
+    }
+
+    private func firstProduct(for billingPeriod: BillingPeriod) -> Product? {
+        displayedPlanCards
+            .lazy
+            .compactMap { product(for: $0, billingPeriod: billingPeriod) ?? product(for: $0, billingPeriod: .monthly) }
+            .first
+    }
+
+    private func maxProductID(forCreditTier creditTier: MaxCreditTier, billingPeriod: BillingPeriod) -> String {
+        switch (billingPeriod, creditTier) {
+        case (.monthly, .standard):
+            "plan.max_3x"
+        case (.yearly, .standard):
+            "plan.max_3x_yearly"
+        case (.monthly, .triple):
+            "plan.max_10x"
+        case (.yearly, .triple):
+            "plan.max_10x_yearly"
+        }
+    }
+
+    private func product(forMaxCreditTier creditTier: MaxCreditTier, billingPeriod: BillingPeriod) -> Product? {
+        let productID = maxProductID(forCreditTier: creditTier, billingPeriod: billingPeriod)
+        return store.subscriptions.first { $0.id == productID }
+    }
+
+    private func selectMaxPlan(creditTier: MaxCreditTier) {
+        selectedPlan = product(forMaxCreditTier: creditTier, billingPeriod: billingPeriod)
+            ?? product(forMaxCreditTier: creditTier, billingPeriod: .monthly)
+            ?? selectedPlan
+    }
+
+    private var selectedMaxCredits: Int {
+        if selectedSubscriptionItem?.id == SubscriptionItem.max10x.id {
+            return MaxCreditTier.triple.credits
+        }
+        return maxCreditTier.credits
+    }
+
+    private func activeMaxCredits(for plan: SubscriptionItem) -> Int {
+        if plan.id == SubscriptionItem.max10x.id {
+            return MaxCreditTier.triple.credits
+        }
+        return MaxCreditTier.standard.credits
+    }
+
+    private func featureLines(for plan: SubscriptionItem, maxCredits: Int? = nil) -> [Feature] {
+        switch plan.id {
+        case SubscriptionItem.starter.id:
+            starterFeatureLines
+        case SubscriptionItem.pro.id:
+            starterFeatureLines + proFeatureLines
+        case SubscriptionItem.max.id:
+            starterFeatureLines + maxFeatureLines(credits: maxCredits ?? MaxCreditTier.standard.credits)
+        case SubscriptionItem.max10x.id:
+            starterFeatureLines + maxFeatureLines(credits: maxCredits ?? MaxCreditTier.triple.credits)
+        default:
+            []
+        }
+    }
+
+    private var starterFeatureLines: [Feature] {
+        [
+            ("person.2.wave.2", "Unlimited collaboration tools", "Open up the collaboration workspace without room limits.")
+        ]
+    }
+
+    private var proFeatureLines: [Feature] {
+        [
+            ("sparkles", "500 AI credits / month", "Enough room for regular AI-assisted editing and generation.")
+        ]
+    }
+
+    private func maxFeatureLines(credits: Int) -> [Feature] {
+        [
+            ("sparkles", "\(credits) AI credits / month", "More headroom for heavier generation, iteration, and AI workflows."),
+            ("brain.head.profile", "Extra High model capability", "Use the highest reasoning model mode for demanding AI work.")
+        ]
     }
 }
 

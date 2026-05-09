@@ -484,12 +484,24 @@ extension ExcalidrawCore {
     /// — currently unused, but typed so we don't have to touch this signature again.
     @discardableResult
     func loadFile(from file: ExcalidrawFile?, force: Bool = false) async -> LoadFileResult? {
-        guard !self.isLoading, await !self.webView.isLoading else { return nil }
+        let coreLoading = self.isLoading
+        let webLoading = await self.webView.isLoading
+        guard !coreLoading, !webLoading else {
+            print("[aiDiag] core.loadFile → bailed: core.isLoading=\(coreLoading) webView.isLoading=\(webLoading) file.id=\(file?.id ?? "nil")")
+            return nil
+        }
         guard let file = file,
-              let data = file.content else { return nil }
+              let data = file.content else {
+            print("[aiDiag] core.loadFile → bailed: file=\(file == nil ? "nil" : "non-nil") content=\(file?.content == nil ? "nil" : "\(file!.content!.count) bytes")")
+            return nil
+        }
         do {
-            return try await self.webActor.loadFile(id: file.id, data: data, force: force)
+            print("[aiDiag] core.loadFile → calling webActor.loadFile id=\(file.id) bytes=\(data.count) force=\(force)")
+            let result = try await self.webActor.loadFile(id: file.id, data: data, force: force)
+            print("[aiDiag] core.loadFile → webActor returned. id=\(file.id) result=\(result == nil ? "nil (already loaded)" : "elements=\(result!.elementCount)")")
+            return result
         } catch {
+            print("[aiDiag] core.loadFile → webActor THREW: \(error)")
             self.publishError(error)
             return nil
         }

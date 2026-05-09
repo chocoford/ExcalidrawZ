@@ -20,6 +20,24 @@ import CoreData
 import LLMKit
 import LLMCore
 
+private struct ExcalidrawAITransactionMetadata: Codable, Equatable, Sendable {
+    let schemaVersion: Int
+    let source: String
+    let conversationID: String
+    let userMessageID: String
+    let requestKind: String
+    let agentID: String
+    let model: String
+    let canvasTarget: String
+    let fileID: String?
+    let fileName: String?
+    let fileKind: String?
+    let selectedElementCount: Int
+    let attachmentCount: Int
+    let hasCurrentFileData: Bool
+    let isNewConversation: Bool
+}
+
 extension PromptInputView {
     /// Pre-send threshold (fraction of the active model's context window).
     /// At/above this we run a compact before firing the send so the round
@@ -271,6 +289,18 @@ extension PromptInputView {
                 // than the hard-coded fallback.
                 await loadAgentConfigIfNeeded()
                 let model = await MainActor.run { activeModel }
+                let isNewConversation = self.conversation == nil
+                let metadata = await makeTransactionMetadata(
+                    conversationID: conversationIDForSession,
+                    userMessageID: userMessageID,
+                    requestKind: isNewConversation ? "createConversation" : "sendMessage",
+                    model: model,
+                    canvasTarget: canvasTarget,
+                    selectedElementCount: selectedElementIDs?.count ?? 0,
+                    attachmentCount: files.count,
+                    hasCurrentFileData: context.currentFileData != nil,
+                    isNewConversation: isNewConversation
+                )
 
                 // Open the AI chat session: snapshots the current active
                 // file as `.aiPre` (anchored to this user message) and
@@ -282,7 +312,7 @@ extension PromptInputView {
                 )
                 sessionOpened = true
 
-                if self.conversation == nil {
+                if isNewConversation {
                     self.conversationID = newConversationID
                     // Promote the staged pick (if any) to a per-conversation
                     // override now that we have an id. Without this, the
@@ -304,6 +334,7 @@ extension PromptInputView {
                         // restore path uses the exact same wiring.
                         agentConfig: ExcalidrawAgentConfig.defaultConfig(),
                         messages: [.content(userMessage)],
+                        metadata: metadata,
                         context: context
                     )
 
@@ -333,6 +364,7 @@ extension PromptInputView {
                         to: self.conversationID!,
                         model: model,
                         message: .content(userMessage),
+                        metadata: metadata,
                         context: context
                     )
                 }
@@ -396,6 +428,60 @@ extension PromptInputView {
                 currentTask = nil
                 drainQueueIfNeeded()
             }
+        }
+    }
+
+    private func makeTransactionMetadata(
+        conversationID: String,
+        userMessageID: String,
+        requestKind: String,
+        model: SupportedModel,
+        canvasTarget: ExcalidrawCoordinatorRegistry.CanvasTarget,
+        selectedElementCount: Int,
+        attachmentCount: Int,
+        hasCurrentFileData: Bool,
+        isNewConversation: Bool
+    ) async -> ExcalidrawAITransactionMetadata {
+        let fileContext = await MainActor.run {
+            transactionFileContext(for: fileState.currentActiveFile)
+        }
+
+        return ExcalidrawAITransactionMetadata(
+            schemaVersion: 1,
+            source: "ai-chat-sidebar",
+            conversationID: conversationID,
+            userMessageID: userMessageID,
+            requestKind: requestKind,
+            agentID: agentID,
+            model: model.rawValue,
+            canvasTarget: canvasTarget.rawValue,
+            fileID: fileContext.id,
+            fileName: fileContext.name,
+            fileKind: fileContext.kind,
+            selectedElementCount: selectedElementCount,
+            attachmentCount: attachmentCount,
+            hasCurrentFileData: hasCurrentFileData,
+            isNewConversation: isNewConversation
+        )
+    }
+
+    @MainActor
+    private func transactionFileContext(
+        for activeFile: FileState.ActiveFile?
+    ) -> (id: String?, name: String?, kind: String?) {
+        guard let activeFile else {
+            return (nil, nil, nil)
+        }
+
+        switch activeFile {
+            case .file(let file):
+                return (file.id?.uuidString, file.name, "libraryFile")
+            case .localFile(let url):
+                return (url.absoluteString, activeFile.name, "localFile")
+            case .temporaryFile(let url):
+                return (url.absoluteString, activeFile.name, "temporaryFile")
+            case .collaborationFile(let file):
+                return (file.id?.uuidString, file.name, "collaborationFile")
         }
     }
 
