@@ -33,6 +33,8 @@ extension ExcalidrawCore: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         logger.error("didFail: \(error)")
+        self.parent?.loadingState = .error(error)
+        self.publishError(error)
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {

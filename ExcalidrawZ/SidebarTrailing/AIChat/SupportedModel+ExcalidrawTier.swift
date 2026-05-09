@@ -33,7 +33,7 @@ extension SupportedModel {
     /// curated tier ladder).
     var excalidrawTierName: String {
         switch self {
-            case .gpt4oMini:
+            case .gpt4o:
                 return "Low"
             case .claudeHaiku4_5:
                 return "Medium"

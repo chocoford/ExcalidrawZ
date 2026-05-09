@@ -20,24 +20,6 @@ import CoreData
 import LLMKit
 import LLMCore
 
-private struct ExcalidrawAITransactionMetadata: Codable, Equatable, Sendable {
-    let schemaVersion: Int
-    let source: String
-    let conversationID: String
-    let userMessageID: String
-    let requestKind: String
-    let agentID: String
-    let model: String
-    let canvasTarget: String
-    let fileID: String?
-    let fileName: String?
-    let fileKind: String?
-    let selectedElementCount: Int
-    let attachmentCount: Int
-    let hasCurrentFileData: Bool
-    let isNewConversation: Bool
-}
-
 extension PromptInputView {
     /// Pre-send threshold (fraction of the active model's context window).
     /// At/above this we run a compact before firing the send so the round

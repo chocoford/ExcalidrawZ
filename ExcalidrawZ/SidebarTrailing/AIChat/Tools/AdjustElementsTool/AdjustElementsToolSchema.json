@@ -30,7 +30,8 @@
         { "$ref": "#/definitions/updateOp" },
         { "$ref": "#/definitions/moveOp" },
         { "$ref": "#/definitions/resizeOp" },
-        { "$ref": "#/definitions/deleteOp" }
+        { "$ref": "#/definitions/deleteOp" },
+        { "$ref": "#/definitions/wrapOp" }
       ]
     },
     "addOp": {
@@ -118,6 +119,61 @@
       "required": [
         "op",
         "id"
+      ]
+    },
+    "wrapOp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": { "const": "wrap" },
+        "targetIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "IDs of existing elements to wrap. The app computes their union bounding box."
+        },
+        "shape": {
+          "type": "string",
+          "enum": [
+            "rectangle",
+            "ellipse",
+            "diamond"
+          ],
+          "default": "rectangle",
+          "description": "Shape used as the wrapper."
+        },
+        "padding": {
+          "type": "number",
+          "minimum": 0,
+          "default": 24,
+          "description": "Canvas units added around the union bounds of the target elements."
+        },
+        "stylePreset": {
+          "type": "string",
+          "enum": [
+            "default",
+            "accent",
+            "note"
+          ],
+          "description": "Pre-baked wrapper style. `style` overrides individual fields."
+        },
+        "style": { "$ref": "#/definitions/stylePatch" },
+        "label": {
+          "type": "string",
+          "description": "Optional text label added with the wrapper."
+        },
+        "labelPosition": {
+          "type": "string",
+          "enum": [
+            "insideTopLeft",
+            "above"
+          ],
+          "default": "insideTopLeft"
+        }
+      },
+      "required": [
+        "op",
+        "targetIds"
       ]
     },
     "elementSkeleton": {

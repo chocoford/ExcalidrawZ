@@ -27,9 +27,15 @@ import Combine
 final class SettingsRouter: ObservableObject {
     @MainActor static let shared = SettingsRouter()
 
+    enum AISettingsRoute {
+        case usage
+        case settings
+    }
+
     /// Tab to switch to the next time `SettingsView` appears or this value
     /// changes. Cleared by `SettingsView` after consumption.
     @Published var pendingRoute: SettingsView.Route?
+    @Published var pendingAISettingsRoute: AISettingsRoute?
 
     private init() {}
 
@@ -48,5 +54,10 @@ final class SettingsRouter: ObservableObject {
             NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
         }
 #endif
+    }
+
+    func requestOpenAIUsage() {
+        pendingAISettingsRoute = .usage
+        requestOpen(.ai)
     }
 }

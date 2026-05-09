@@ -719,10 +719,10 @@ struct AIChatView: View {
             content: content
         )
 
-        Task {
-            await fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true)
-        }
-        fileState.didUpdateFile = false
+        try await fileState.restoreActiveCanvas(
+            fromCheckpointContent: content,
+            filename: nil
+        )
     }
 
     private func revertRequirementRefreshKey(groups: [MessageGroup]) -> String {

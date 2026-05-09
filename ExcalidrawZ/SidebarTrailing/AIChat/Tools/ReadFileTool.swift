@@ -21,15 +21,68 @@ struct ReadFileTool: Tool {
     var displayName: String { "Read Canvas File" }
 
     var description: String {
-        "Read the current Excalidraw file."
+        """
+        Read a filtered, simplified view of the current Excalidraw file.
+        Prefer targeted queries (`query`, `ids`, `types`, `selected_only`,
+        `frame_id`, `group_id`) and pagination (`offset`, `limit`) instead
+        of dumping the whole canvas.
+        """
     }
     
     var inputSchema: ToolInputSchema {
-        .parameters(ToolParameters(properties: [:], required: []))
+        .parameters(ToolParameters(
+            properties: [
+                "query": ParameterProperty(
+                    type: "string",
+                    description: "Case-insensitive search across id, type, text, originalText, frame name, link, and file id."
+                ),
+                "ids": ParameterProperty(
+                    type: "array",
+                    description: "Exact element ids to return."
+                ),
+                "types": ParameterProperty(
+                    type: "array",
+                    description: "Element types to include, e.g. text, rectangle, ellipse, diamond, line, arrow, freedraw, image, frame."
+                ),
+                "selected_only": ParameterProperty(
+                    type: "boolean",
+                    description: "Return only the user's currently selected elements."
+                ),
+                "frame_id": ParameterProperty(
+                    type: "string",
+                    description: "Return elements inside a specific frame."
+                ),
+                "group_id": ParameterProperty(
+                    type: "string",
+                    description: "Return elements in a specific group."
+                ),
+                "offset": ParameterProperty(
+                    type: "number",
+                    description: "Zero-based offset into the filtered result set. Defaults to 0."
+                ),
+                "limit": ParameterProperty(
+                    type: "number",
+                    description: "Maximum elements to return. Defaults to 60, hard-capped at 120. Use pagination for more."
+                ),
+                "include_files": ParameterProperty(
+                    type: "boolean",
+                    description: "Include resource file metadata. Defaults to false."
+                ),
+                "include_deleted": ParameterProperty(
+                    type: "boolean",
+                    description: "Include deleted elements. Defaults to false."
+                ),
+                "max_points": ParameterProperty(
+                    type: "number",
+                    description: "Maximum points per linear/freeDraw element. Defaults to 20."
+                )
+            ],
+            required: []
+        ))
     }
     
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
-        let _ = input
+        let params = try parseInput(input)
         guard let context else { throw ToolError.executionFailed("Missing ReadFileContext") }
         let readFileContext = try context.resolve(ReadFileContext.self)
         guard let data = readFileContext.currentFileData else {
@@ -46,10 +99,7 @@ struct ReadFileTool: Tool {
             type: type,
             source: source,
             selectedElementIDs: readFileContext.selectedElementIDs,
-            includeFiles: false,
-            includeDeleted: false,
-            maxElements: 200,
-            maxPoints: 50
+            params: params
         )
 
         let encoder = JSONEncoder()
@@ -60,6 +110,46 @@ struct ReadFileTool: Tool {
 }
 
 private extension ReadFileTool {
+    struct Params: Decodable {
+        var query: String?
+        var ids: [String]?
+        var types: [String]?
+        var selectedOnly: Bool?
+        var frameId: String?
+        var groupId: String?
+        var offset: Int?
+        var limit: Int?
+        var includeFiles: Bool?
+        var includeDeleted: Bool?
+        var maxPoints: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case query
+            case ids
+            case types
+            case selectedOnly = "selected_only"
+            case frameId = "frame_id"
+            case groupId = "group_id"
+            case offset
+            case limit
+            case includeFiles = "include_files"
+            case includeDeleted = "include_deleted"
+            case maxPoints = "max_points"
+        }
+    }
+
+    func parseInput(_ input: String) throws -> Params {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return Params() }
+        guard let data = trimmed.data(using: .utf8) else {
+            throw ToolError.invalidInput("Expected JSON object.")
+        }
+        do {
+            return try JSONDecoder().decode(Params.self, from: data)
+        } catch {
+            throw ToolError.invalidInput("Expected read_file parameters JSON object: \(error.localizedDescription)")
+        }
+    }
     
     func decodeExcalidrawPayload(
         _ data: Data,
@@ -97,25 +187,35 @@ private extension ReadFileTool {
         type: String?,
         source: String?,
         selectedElementIDs: [String]?,
-        includeFiles: Bool,
-        includeDeleted: Bool,
-        maxElements: Int,
-        maxPoints: Int
+        params: Params
     ) -> SimplifiedFile {
-        let filteredElements = includeDeleted
-        ? elements
-        : elements.filter { !isDeleted($0) }
+        let includeDeleted = params.includeDeleted ?? false
+        let searchableElements = includeDeleted ? elements : elements.filter { !isDeleted($0) }
+        let totalElements = searchableElements.count
+
+        let filteredElements = filter(
+            elements: searchableElements,
+            params: params,
+            selectedElementIDs: selectedElementIDs
+        )
         
-        let totalElements = filteredElements.count
-        let elementLimit = maxElements <= 0 ? totalElements : maxElements
-        let truncated = totalElements > elementLimit
-        let visibleElements = truncated ? Array(filteredElements.prefix(elementLimit)) : filteredElements
+        let matchingElements = filteredElements.count
+        let offset = max(0, params.offset ?? 0)
+        let requestedLimit = params.limit ?? 60
+        let elementLimit = min(max(requestedLimit, 0), 120)
+        let maxPoints = params.maxPoints ?? 20
+        let visibleElements: [ExcalidrawElement] = {
+            guard offset < filteredElements.count else { return [] }
+            guard elementLimit > 0 else { return [] }
+            return Array(filteredElements.dropFirst(offset).prefix(elementLimit))
+        }()
+        let truncated = offset + visibleElements.count < matchingElements
         
         let simplifiedElements = visibleElements.map {
             simplifyElement($0, maxPoints: maxPoints)
         }
         
-        let simplifiedFiles: [SimplifiedResourceFile]? = includeFiles
+        let simplifiedFiles: [SimplifiedResourceFile]? = (params.includeFiles ?? false)
         ? files?.values.map { SimplifiedResourceFile(from: $0) }
         : nil
         
@@ -125,11 +225,82 @@ private extension ReadFileTool {
             version: version,
             selectedElementIDs: selectedElementIDs,
             totalElements: totalElements,
+            matchingElements: matchingElements,
+            offset: offset,
             includedElements: simplifiedElements.count,
-            truncatedElements: truncated ? totalElements - simplifiedElements.count : nil,
+            truncatedElements: truncated ? matchingElements - offset - simplifiedElements.count : nil,
             elements: simplifiedElements,
             files: simplifiedFiles
         )
+    }
+
+    func filter(
+        elements: [ExcalidrawElement],
+        params: Params,
+        selectedElementIDs: [String]?
+    ) -> [ExcalidrawElement] {
+        let idSet = Set(params.ids ?? [])
+        let typeSet = Set((params.types ?? []).map { $0.lowercased() })
+        let selectedSet = Set(selectedElementIDs ?? [])
+        let query = params.query?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        return elements.filter { element in
+            let base = baseInfo(for: element)
+
+            if !idSet.isEmpty, !idSet.contains(base.id) {
+                return false
+            }
+            if !typeSet.isEmpty, !typeSet.contains(base.type.lowercased()) {
+                return false
+            }
+            if params.selectedOnly == true, !selectedSet.contains(base.id) {
+                return false
+            }
+            if let frameId = params.frameId, base.frameId != frameId {
+                return false
+            }
+            if let groupId = params.groupId, base.groupIds?.contains(groupId) != true {
+                return false
+            }
+            if let query, !query.isEmpty, !elementMatchesQuery(element, base: base, query: query) {
+                return false
+            }
+            return true
+        }
+    }
+
+    func elementMatchesQuery(
+        _ element: ExcalidrawElement,
+        base: BaseInfo,
+        query: String
+    ) -> Bool {
+        var values = [
+            base.id,
+            base.type,
+            base.frameId,
+            base.link
+        ]
+
+        switch element {
+            case .text(let item):
+                values.append(item.text)
+                values.append(item.originalText)
+                values.append(item.containerId)
+            case .image(let item):
+                values.append(item.fileId)
+                values.append(item.status.rawValue)
+            case .pdf(let item):
+                values.append(item.fileId)
+                values.append(item.status.rawValue)
+            case .frameLike(let item):
+                values.append(item.name)
+            default:
+                break
+        }
+
+        return values.contains { value in
+            value?.lowercased().contains(query) == true
+        }
     }
 }
 
@@ -140,6 +311,8 @@ private extension ReadFileTool {
         let version: Int?
         let selectedElementIDs: [String]?
         let totalElements: Int
+        let matchingElements: Int
+        let offset: Int
         let includedElements: Int
         let truncatedElements: Int?
         let elements: [SimplifiedElement]

@@ -148,6 +148,7 @@ struct AssistantRoundView: View {
                 )
                 .opacity(showsActionBar ? 1 : 0)
                 .allowsHitTesting(showsActionBar)
+                .padding(.bottom, 40)
             }
         }
         .animation(.easeOut(duration: 0.25), value: showsActionBar)

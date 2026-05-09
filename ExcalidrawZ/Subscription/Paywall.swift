@@ -376,6 +376,7 @@ struct Paywall: View {
             VStack {
                 purchaseButton()
                 HStack {
+                    aiUsageSettingsButton()
                     privacyPolicyButton()
                     Spacer()
 #if APP_STORE
@@ -470,6 +471,11 @@ struct Paywall: View {
             selectedPlanExtras()
             
             Spacer(minLength: 0)
+            
+            HStack {
+                aiUsageSettingsButton()
+                Spacer()
+            }
         }
     }
 
@@ -683,6 +689,24 @@ struct Paywall: View {
         .foregroundStyle(.secondary)
         .buttonStyle(.borderless)
     }
+
+    @MainActor @ViewBuilder
+    private func aiUsageSettingsButton() -> some View {
+        if #available(macOS 14.0, iOS 17.0, *) {
+            OpenAIUsageSettingsButton {
+                dismiss()
+            }
+        } else {
+            Button {
+                dismiss()
+                SettingsRouter.shared.requestOpenAIUsage()
+            } label: {
+                Label("AI Usage", systemImage: "gearshape")
+            }
+            .labelStyle(.titleAndIcon)
+            .buttonStyle(.borderless)
+        }
+    }
     
     private func product(for item: SubscriptionItem, billingPeriod: BillingPeriod) -> Product? {
         let productID: String? = {
@@ -864,6 +888,25 @@ private struct PaywallAuroraBackground: View {
             }
         }
         .allowsHitTesting(false)
+    }
+}
+
+@available(macOS 14.0, iOS 17.0, *)
+private struct OpenAIUsageSettingsButton: View {
+    let onOpen: () -> Void
+    @Environment(\.openSettings) private var openSettings
+
+    var body: some View {
+        Button {
+            SettingsRouter.shared.pendingRoute = .ai
+            SettingsRouter.shared.pendingAISettingsRoute = .usage
+            onOpen()
+            openSettings()
+        } label: {
+            Label("AI Usage", systemImage: "gearshape")
+        }
+        .labelStyle(.iconOnly)
+        .buttonStyle(.accessoryBar)
     }
 }
 

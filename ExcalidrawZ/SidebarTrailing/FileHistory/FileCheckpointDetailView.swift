@@ -119,36 +119,15 @@ struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
                     content = checkpointContent
                 }
 
-                // Step 2: Handle different file types
-                if checkpoint.fileID != nil {
-                    // Database file: Update on main thread
-                    await MainActor.run {
-                        if case .file(let file) = fileState.currentActiveFile {
-                            file.content = content
-                            file.name = checkpoint.filename
-                            Task { await fileState.excalidrawWebCoordinator?.loadFile(from: file, force: true) }
-                        }
-                        fileState.didUpdateFile = false
-                        dismiss()
-                    }
-                } else if case .localFolder(let folder) = fileState.currentActiveGroup,
-                          case .localFile(let fileURL) = fileState.currentActiveFile {
-                    // Parse file for UI update (before security-scoped access)
-                    var parsedFile = try ExcalidrawFile(data: content)
-                    parsedFile.id = ExcalidrawFile.localFileURLIDMapping[fileURL] ?? UUID().uuidString
-
-                    // Local file: Write to disk with security-scoped access
-                    try await folder.withSecurityScopedURL { _ in
-                        // Write to disk with FileCoordinator (background operation)
-                        try await FileCoordinator.shared.coordinatedWrite(url: fileURL, data: content)
-                    }
-
-                    // Update UI on main thread (after file is written)
-                    await MainActor.run {
-                        Task { await fileState.excalidrawWebCoordinator?.loadFile(from: parsedFile, force: true) }
-                        fileState.didUpdateFile = false
-                        dismiss()
-                    }
+                // Step 2: Restore the currently active canvas through the
+                // same path used by AI-chat revert, so database and local
+                // file reload semantics stay aligned.
+                try await fileState.restoreActiveCanvas(
+                    fromCheckpointContent: content,
+                    filename: checkpoint.filename
+                )
+                await MainActor.run {
+                    dismiss()
                 }
             } catch {
                 await MainActor.run {

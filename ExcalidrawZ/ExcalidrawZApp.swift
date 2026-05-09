@@ -33,13 +33,13 @@ extension LLMClient {
 #if DEBUG
     static let shared = LLMClient(
         authProvider: .xcode(bundleID: "com.chocoford.ExcalidrawZ-Debug"),
-        uploadProvider: .default,
+        uploadProvider: .none,
         uploadPolicy: .automatic
     )
 #else
     static let shared = LLMClient(
         authProvider: .appStore(bundleID: "com.chocoford.Excalidraw", ascAppID: 6754812067),
-        uploadProvider: .default,
+        uploadProvider: .none,
         uploadPolicy: .automatic
     )
 #endif

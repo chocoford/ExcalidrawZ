@@ -110,7 +110,9 @@ struct UserMessageBubble: View {
                 .buttonStyle(.text(size: .small, square: true))
                 .foregroundStyle(.secondary)
                 .disabled(isActionDisabled)
+                .opacity(isActionDisabled ? 0 : 1)
                 .help(isActionDisabled ? "Wait for the current response to finish." : actionKind.help)
+                .animation(.smooth, value: isActionDisabled)
             }
         }
     }
