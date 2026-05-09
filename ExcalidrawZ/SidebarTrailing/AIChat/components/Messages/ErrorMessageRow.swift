@@ -18,6 +18,9 @@ struct ErrorMessageRow: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(error)
                 .foregroundStyle(.red)
+                .lineLimit(4)
+                .truncationMode(.middle)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .textSelection(.enabled)
 
             HStack(spacing: 0) {

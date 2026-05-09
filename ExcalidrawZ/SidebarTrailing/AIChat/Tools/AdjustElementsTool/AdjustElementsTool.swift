@@ -184,6 +184,33 @@ private struct ToolInput: Decodable {
     let version: String?
     let dryRun: Bool?
     let ops: [Operation]
+
+    private enum CodingKeys: String, CodingKey {
+        case version
+        case dryRun
+        case ops
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        version = try container.decodeIfPresent(String.self, forKey: .version)
+        dryRun = try container.decodeIfPresent(Bool.self, forKey: .dryRun)
+
+        if let decodedOps = try? container.decode([Operation].self, forKey: .ops) {
+            ops = decodedOps
+            return
+        }
+
+        let encodedOps = try container.decode(String.self, forKey: .ops)
+        guard let data = encodedOps.data(using: .utf8) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .ops,
+                in: container,
+                debugDescription: "`ops` must be an array, or a JSON-encoded array string."
+            )
+        }
+        ops = try JSONDecoder().decode([Operation].self, from: data)
+    }
 }
 
 private enum Operation: Decodable {
@@ -366,11 +393,11 @@ private struct PatchResult {
     let touchedParentIDs: [String]
 }
 
-/// Result of hydrating a `wrap` op. Wrappers are inserted before the first
-/// target so the surrounding shape sits behind the wrapped elements.
+/// Result of hydrating a `wrap` op. We add wrapper elements incrementally
+/// instead of full-replacing the scene, so consecutive tool calls don't erase
+/// elements that the WebView has applied before Swift file state catches up.
 private struct WrapOpResult {
     let elements: [ExcalidrawElement]
-    let insertionIndex: Int
 }
 
 private struct AdjustElementsMiddleware {
@@ -385,7 +412,7 @@ private struct AdjustElementsMiddleware {
         var createdElementIds: [String] = []
         var updatedElementIds: [String] = []
         var deletedElementIds: [String] = []
-        var requiresFullReplace = false
+        let requiresFullReplace = false
 
         let opCounts = payload.ops.reduce(into: [String: Int]()) { partial, op in
             partial[op.kind, default: 0] += 1
@@ -435,9 +462,8 @@ private struct AdjustElementsMiddleware {
 
                 case .wrap(let wrapOp):
                     let result = try hydrateWrapOp(wrapOp, existingElements: elements)
-                    elements.insert(contentsOf: result.elements, at: result.insertionIndex)
+                    elements.append(contentsOf: result.elements)
                     createdElementIds.append(contentsOf: result.elements.map(\.id))
-                    requiresFullReplace = true
             }
         }
 
@@ -471,7 +497,7 @@ private extension AdjustElementsMiddleware {
     func hydrateAddOp(_ op: AddOp, existingElements: [ExcalidrawElement]) throws -> AddOpResult {
         let type = try parseSupportedType(op.element.type)
         let style = hydratedStylePreset(op.element.stylePreset).merged(with: op.element.style)
-        let id = op.element.id ?? UUID().uuidString
+        let id = op.element.id ?? ExcalidrawNanoID.make()
 
         switch type {
             case .text:
@@ -503,15 +529,21 @@ private extension AdjustElementsMiddleware {
         let style = hydratedStylePreset(op.stylePreset).merged(with: op.style)
         let bounds = unionBounds(of: targets)
         let padding = max(0, op.padding ?? 24)
+        let labelText = op.label?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasInsideLabel = labelText?.isEmpty == false && op.labelPosition != "above"
+        let labelFontSize = style.fontSize ?? 18
+        let labelReservedTop = hasInsideLabel
+            ? defaultTextHeight(text: labelText ?? "", fontSize: labelFontSize) + 12
+            : 0
         let wrapperX = bounds.minX - padding
-        let wrapperY = bounds.minY - padding
+        let wrapperY = bounds.minY - padding - labelReservedTop
         let wrapperWidth = max(1, bounds.maxX - bounds.minX + padding * 2)
-        let wrapperHeight = max(1, bounds.maxY - bounds.minY + padding * 2)
+        let wrapperHeight = max(1, bounds.maxY - bounds.minY + padding * 2 + labelReservedTop)
         let now = nowMillis()
 
         let wrapper = ExcalidrawGenericElement(
             type: shape,
-            id: UUID().uuidString,
+            id: ExcalidrawNanoID.make(),
             x: wrapperX,
             y: wrapperY,
             strokeColor: style.strokeColor ?? "#1e1e1e",
@@ -553,8 +585,7 @@ private extension AdjustElementsMiddleware {
         }
 
         return WrapOpResult(
-            elements: createdElements,
-            insertionIndex: targetIndexes.min() ?? existingElements.endIndex
+            elements: createdElements
         )
     }
 
@@ -585,7 +616,7 @@ private extension AdjustElementsMiddleware {
 
         return ExcalidrawTextElement(
             type: .text,
-            id: UUID().uuidString,
+            id: ExcalidrawNanoID.make(),
             x: labelX,
             y: labelY,
             strokeColor: style.strokeColor ?? "#1e1e1e",

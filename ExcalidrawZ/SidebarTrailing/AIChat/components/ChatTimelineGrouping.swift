@@ -95,12 +95,19 @@ func groupMessages(_ messages: [ChatMessage]) -> [MessageGroup] {
                 flushPending()
                 result.append(.loading(id))
             case .error(let id, let msg):
+                if isCancellationErrorMessage(msg) {
+                    continue
+                }
                 flushPending()
                 result.append(.error(id, msg))
         }
     }
     flushPending()
     return result
+}
+
+private func isCancellationErrorMessage(_ message: String) -> Bool {
+    message.contains("CancellationError")
 }
 
 // MARK: - final_answer args parsing

@@ -20,7 +20,7 @@
 //
 //  2. **ID regeneration**: library item ids are stable, so naively
 //     calling `addElements` twice would create two elements sharing
-//     ids — undefined behaviour in Excalidraw. We mint fresh UUIDs
+//     ids — undefined behaviour in Excalidraw. We mint fresh nanoIDs
 //     for every element id AND for every group id, then walk the
 //     JSON to remap all internal references (`containerId`,
 //     `boundElements[*].id`, `startBinding.elementId`,
@@ -169,18 +169,18 @@ struct AddLibraryItemToCanvasTool: Tool {
         //    one coordinate. If both are nil, we keep the original layout.
         let offset = computeOffset(elements: elements, target: target)
 
-        // 2. Build id mapping: every element id → fresh UUID. Group ids
+        // 2. Build id mapping: every element id → fresh nanoID. Group ids
         //    are a separate identity space (multiple elements share
         //    them), so we collect those distinctly.
         var idMapping: [String: String] = [:]
         var groupIDMapping: [String: String] = [:]
         for element in elements {
             if let oldID = element["id"] as? String {
-                idMapping[oldID] = idMapping[oldID] ?? UUID().uuidString
+                idMapping[oldID] = idMapping[oldID] ?? ExcalidrawNanoID.make()
             }
             if let groupIDs = element["groupIds"] as? [String] {
                 for gid in groupIDs {
-                    groupIDMapping[gid] = groupIDMapping[gid] ?? UUID().uuidString
+                    groupIDMapping[gid] = groupIDMapping[gid] ?? ExcalidrawNanoID.make()
                 }
             }
         }
