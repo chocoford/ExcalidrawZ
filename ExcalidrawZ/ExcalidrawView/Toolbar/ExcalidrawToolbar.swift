@@ -123,12 +123,14 @@ struct ExcalidrawToolbar: View {
                     }
                 }
             }
-        }
-        
-        if #available(macOS 26.0, iOS 26.0, *),
-           !secondaryPickerItems.isEmpty,
-           let tool = toolState.activatedTool {
-            secondaryPickerItemsMenu(tool: tool)
+            
+            
+            if #available(macOS 26.0, iOS 26.0, *),
+               !secondaryPickerItems.isEmpty,
+               let tool = toolState.activatedTool,
+               sizeClass != .dense {
+                secondaryPickerItemsMenu(tool: tool)
+            }
         }
         
         moreTools()
@@ -680,7 +682,7 @@ struct ExcalidrawToolbarToolContainer<Content: View>: View {
             if layoutState.isInspectorPresented,
                layoutState.isSidebarPresented {
                 switch width {
-                    case ..<1650:
+                    case ..<1600:
                         return .dense
                     case ..<1770:
                         return .compact

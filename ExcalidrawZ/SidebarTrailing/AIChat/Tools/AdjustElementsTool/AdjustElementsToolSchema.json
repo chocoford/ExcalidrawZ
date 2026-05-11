@@ -12,6 +12,10 @@
       "type": "boolean",
       "default": false
     },
+    "approvalReason": {
+      "type": "string",
+      "description": "Top-level reason for requesting user approval. Include this when an operation is risky or destructive, especially delete operations. Omit or leave empty for safe edits."
+    },
     "ops": {
       "type": "array",
       "minItems": 1,
@@ -27,11 +31,68 @@
     "operation": {
       "oneOf": [
         { "$ref": "#/definitions/addOp" },
+        { "$ref": "#/definitions/addLabeledShapeOp" },
         { "$ref": "#/definitions/updateOp" },
         { "$ref": "#/definitions/moveOp" },
         { "$ref": "#/definitions/resizeOp" },
         { "$ref": "#/definitions/deleteOp" },
-        { "$ref": "#/definitions/wrapOp" }
+        { "$ref": "#/definitions/wrapOp" },
+        { "$ref": "#/definitions/mermaidOp" }
+      ]
+    },
+    "addLabeledShapeOp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": { "const": "addLabeledShape" },
+        "shape": {
+          "type": "string",
+          "enum": [
+            "rectangle",
+            "ellipse",
+            "diamond"
+          ],
+          "default": "rectangle",
+          "description": "Shape to create. The app also creates and binds centered text inside it."
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Label text rendered inside the shape."
+        },
+        "x": {
+          "type": "number",
+          "description": "Optional top-left x. If omitted, the app places the shape to the right of the existing scene."
+        },
+        "y": {
+          "type": "number",
+          "description": "Optional top-left y. If omitted, the app vertically aligns with the existing scene."
+        },
+        "width": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Optional shape width. If omitted, the app sizes from the label text."
+        },
+        "height": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Optional shape height. If omitted, the app sizes from the label text."
+        },
+        "stylePreset": {
+          "type": "string",
+          "enum": [
+            "default",
+            "accent",
+            "note"
+          ],
+          "description": "Pre-baked shape/text style. `style` overrides individual fields."
+        },
+        "style": { "$ref": "#/definitions/stylePatch" }
+      },
+      "required": [
+        "op",
+        "shape",
+        "text"
       ]
     },
     "addOp": {
@@ -39,8 +100,86 @@
       "additionalProperties": false,
       "properties": {
         "op": { "const": "add" },
-        "element": { "$ref": "#/definitions/elementSkeleton" },
-        "place": { "$ref": "#/definitions/placeHint" }
+        "element": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Canonical Excalidraw skeleton spec. Put skeleton `id` here inside `element` when later skeletons need to bind to it. Do not put ids on the outer add op wrapper. The WebView converts this object through insertFromSkeleton."
+        },
+        "place": { "$ref": "#/definitions/placeHint" },
+        "regenerateIds": {
+          "type": "boolean",
+          "description": "Forwarded to insertFromSkeleton."
+        },
+        "position": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "auto",
+                "viewport-center",
+                "scene-center"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "x": { "type": "number" },
+                "y": { "type": "number" },
+                "anchor": {
+                  "type": "string",
+                  "enum": [
+                    "top-left",
+                    "center"
+                  ],
+                  "default": "top-left"
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ]
+            }
+          ],
+          "description": "Omit to preserve skeleton coordinates verbatim. Use auto / viewport-center / scene-center / x+y to override placement. Takes precedence over `place`."
+        },
+        "focus": {
+          "oneOf": [
+            { "type": "boolean" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "animate": { "type": "boolean" },
+                "duration": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "viewportZoomFactor": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                }
+              }
+            }
+          ]
+        },
+        "files": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Optional files map forwarded to insertFromSkeleton."
+        },
+        "captureUpdate": {
+          "type": "string",
+          "enum": [
+            "IMMEDIATELY",
+            "EVENTUALLY",
+            "NEVER"
+          ]
+        },
+        "sanitize": {
+          "type": "boolean",
+          "description": "Forwarded to insertFromSkeleton."
+        }
       },
       "required": [
         "op",
@@ -176,71 +315,95 @@
         "targetIds"
       ]
     },
-    "elementSkeleton": {
+    "mermaidOp": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string" },
-        "type": {
+        "op": { "const": "mermaid" },
+        "definition": {
           "type": "string",
-          "enum": [
-            "rectangle",
-            "ellipse",
-            "diamond",
-            "text",
-            "line",
-            "arrow"
+          "minLength": 1,
+          "description": "Mermaid source definition. Use this when the requested diagram is naturally expressed as Mermaid, such as flowchart, graph, sequenceDiagram, stateDiagram, classDiagram, journey, timeline, gitGraph, mindmap, or ER diagram."
+        },
+        "position": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "auto",
+                "viewport-center",
+                "scene-center"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "x": { "type": "number" },
+                "y": { "type": "number" },
+                "anchor": {
+                  "type": "string",
+                  "enum": [
+                    "top-left",
+                    "center"
+                  ],
+                  "default": "top-left"
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ]
+            }
           ],
-          "description": "Element family. rectangle/ellipse/diamond use width/height. text uses text/label and font sizing. line/arrow use endX+endY OR (arrow only) fromId+toId for binding."
+          "default": "auto",
+          "description": "`auto` places the converted diagram to the right of the existing scene. Use viewport-center or scene-center for explicit centering, or provide x/y."
         },
-        "x": { "type": "number" },
-        "y": { "type": "number" },
-        "width": { "type": "number", "minimum": 0 },
-        "height": { "type": "number", "minimum": 0 },
-        "endX": {
-          "type": "number",
-          "description": "line/arrow only — absolute x coordinate of the end point. Ignored when fromId+toId are present."
+        "focus": {
+          "oneOf": [
+            { "type": "boolean" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "animate": { "type": "boolean" },
+                "duration": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "viewportZoomFactor": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                }
+              }
+            }
+          ],
+          "default": false,
+          "description": "Whether to focus the inserted Mermaid elements after insertion. true uses WebView defaults; object customizes animation."
         },
-        "endY": {
-          "type": "number",
-          "description": "line/arrow only — absolute y coordinate of the end point."
-        },
-        "fromId": {
-          "type": "string",
-          "description": "arrow only — bind start to this element (centered, edge-orbit)."
-        },
-        "toId": {
-          "type": "string",
-          "description": "arrow only — bind end to this element (centered, edge-orbit)."
-        },
-        "arrowhead": {
-          "type": "string",
-          "enum": ["arrow", "triangle", "triangle_outline", "diamond", "diamond_outline", "dot", "circle", "circle_outline", "bar"],
-          "description": "arrow only — end arrowhead style. Default: arrow."
-        },
-        "elbowed": {
+        "regenerateIds": {
           "type": "boolean",
-          "description": "arrow only — use right-angle (elbow) routing. Default: false."
+          "default": true,
+          "description": "Assign fresh Excalidraw IDs to converted elements to avoid collisions."
         },
-        "containerId": {
-          "type": "string",
-          "description": "text only — bind this text inside an existing rectangle/ellipse/diamond as its label. Position is auto-centered inside the container."
+        "mermaidConfig": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Optional config forwarded to Mermaid. Common fields: startOnLoad, flowchart.curve, themeVariables.fontSize, maxEdges, maxTextSize."
         },
-        "text": { "type": "string" },
-        "label": { "type": "string" },
-        "stylePreset": {
+        "captureUpdate": {
           "type": "string",
           "enum": [
-            "default",
-            "accent",
-            "note"
+            "IMMEDIATELY",
+            "EVENTUALLY",
+            "NEVER"
           ],
-          "description": "Pre-baked color/stroke combo. `default` = black on transparent. `accent` = blue on light blue. `note` = brown on cream. Use for quick consistent looks; for arbitrary colors use `style` (which overrides preset values)."
-        },
-        "style": { "$ref": "#/definitions/stylePatch" }
+          "default": "IMMEDIATELY"
+        }
       },
       "required": [
-        "type"
+        "op",
+        "definition"
       ]
     },
     "placeHint": {

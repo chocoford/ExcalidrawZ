@@ -15,29 +15,53 @@ struct ErrorMessageRow: View {
     var onRetry: (() -> Void)?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(error)
-                .foregroundStyle(.red)
-                .lineLimit(4)
-                .truncationMode(.middle)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .padding(.top, 2)
 
-            HStack(spacing: 0) {
+                Text(error)
+                    .font(.callout)
+                    .foregroundStyle(.primary)
+                    .lineLimit(5)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+            }
+
+            HStack(spacing: 6) {
                 CopyButton(text: error)
 
                 if let onRetry {
                     Button {
                         onRetry()
                     } label: {
-                        Image(systemName: "arrow.clockwise").font(.caption)
+                        Label("Retry", systemImage: "arrow.clockwise")
+                            .font(.caption)
                     }
-                    .foregroundStyle(.secondary)
                     .help("Retry")
                 }
             }
-            .labelStyle(.iconOnly)
-            .buttonStyle(.text(size: .small, square: true))
+            .buttonStyle(.text(size: .small, square: false))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            if #available(macOS 26.0, iOS 26.0, *) {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(.clear)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
+            } else {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(.regularMaterial)
+            }
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.red.opacity(0.18), lineWidth: 0.5)
         }
     }
 }

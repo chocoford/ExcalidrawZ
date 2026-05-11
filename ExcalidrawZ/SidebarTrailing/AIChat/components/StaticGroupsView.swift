@@ -5,16 +5,13 @@
 //  Created by Chocoford on 5/4/26.
 //
 //  List renderer for committed (non-streaming) chat rows. Equatable on
-//  the group ID sequence so SwiftUI can skip re-rendering the entire
-//  history when only the in-flight stream content changes — a critical
-//  perf knob given how often `stream.content` ticks during a turn.
+//  the group ID sequence so SwiftUI can skip re-rendering unrelated
+//  history while partial assistant messages update during a turn.
 //
 //  Reveal state is owned per-`AssistantRoundView` via that view's own
-//  `@State`; this layer just propagates the streaming context
-//  (`streamingID` / `streamFinished`) down so each round can decide,
-//  for each of its messages, whether the message is "complete" (and
-//  therefore eligible for the reveal animation) or still being
-//  streamed.
+//  `@State`; this layer just propagates LLMKit's per-message streaming
+//  ids down so each round can decide whether a committed partial message
+//  is still being streamed or is eligible for reveal.
 //
 
 import SwiftUI
@@ -23,50 +20,46 @@ import LLMKit
 
 struct StaticGroupsView: View, Equatable {
     let groups: [MessageGroup]
-    /// Id LLMKit is currently streaming, propagated from `AIChatView`.
-    /// Each `AssistantRoundView` compares it against its own messages
-    /// to find a streaming target.
-    let streamingID: String?
-    /// True when the in-flight stream is finished. Combined with
-    /// `streamingID`: a round message whose id equals `streamingID`
-    /// is "currently streaming" only while `!streamFinished`.
-    let streamFinished: Bool
     /// Id of the round LLMKit's stream is currently driving (`nil`
     /// when no stream is active). Forwarded into each
     /// `AssistantRoundView`; the matching round's `init` starts with
     /// an empty `revealedIDs` so every message reveals individually.
     let activeRoundID: String?
+    /// Committed assistant message ids that LLMKit still considers
+    /// actively streaming.
+    let streamingMessageIDs: Set<String>
     let onRegenerate: ((String) -> Void)?
     let revertRequiredUserMessageIDs: Set<String>
+    let showsUserMessageActions: Bool
     let disablesUserMessageActions: Bool
     let onUserMessageAction: ((String) -> Void)?
 
     init(
         groups: [MessageGroup],
-        streamingID: String? = nil,
-        streamFinished: Bool = true,
         activeRoundID: String? = nil,
+        streamingMessageIDs: Set<String> = [],
         onRegenerate: ((String) -> Void)? = nil,
         revertRequiredUserMessageIDs: Set<String> = [],
+        showsUserMessageActions: Bool = true,
         disablesUserMessageActions: Bool = false,
         onUserMessageAction: ((String) -> Void)? = nil
     ) {
         self.groups = groups
-        self.streamingID = streamingID
-        self.streamFinished = streamFinished
         self.activeRoundID = activeRoundID
+        self.streamingMessageIDs = streamingMessageIDs
         self.onRegenerate = onRegenerate
         self.revertRequiredUserMessageIDs = revertRequiredUserMessageIDs
+        self.showsUserMessageActions = showsUserMessageActions
         self.disablesUserMessageActions = disablesUserMessageActions
         self.onUserMessageAction = onUserMessageAction
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         guard lhs.groups.count == rhs.groups.count else { return false }
-        return lhs.streamingID == rhs.streamingID
-            && lhs.streamFinished == rhs.streamFinished
-            && lhs.activeRoundID == rhs.activeRoundID
+        return lhs.activeRoundID == rhs.activeRoundID
+            && lhs.streamingMessageIDs == rhs.streamingMessageIDs
             && lhs.revertRequiredUserMessageIDs == rhs.revertRequiredUserMessageIDs
+            && lhs.showsUserMessageActions == rhs.showsUserMessageActions
             && lhs.disablesUserMessageActions == rhs.disablesUserMessageActions
             && zip(lhs.groups, rhs.groups).allSatisfy { groupSignature($0) == groupSignature($1) }
     }
@@ -77,7 +70,11 @@ struct StaticGroupsView: View, Equatable {
                 let messageSignature = messages.map { message -> String in
                     switch message {
                         case .content(let content):
-                            let toolCallIDs = (content.toolCalls ?? []).map(\.id).joined(separator: ",")
+                            let toolCallIDs = content.toolCalls.map { calls in
+                                calls.map { call in
+                                    "\(call.id):\(call.name):a\(call.arguments.count)"
+                                }.joined(separator: ",")
+                            } ?? "nil"
                             return [
                                 content.id,
                                 String(describing: content.role),
@@ -111,11 +108,12 @@ struct StaticGroupsView: View, Equatable {
                 UserMessageBubble(
                     content: c,
                     actionKind: userMessageActionKind(for: c.id),
+                    showsAction: showsUserMessageActions,
                     isActionDisabled: disablesUserMessageActions,
                     onAction: onUserMessageAction
                 )
             case .loading:
-                EmptyView()
+                LoadingMessageRow()
             case .error(_, let msg):
                 ErrorMessageRow(
                     error: msg,
@@ -127,9 +125,8 @@ struct StaticGroupsView: View, Equatable {
                 AssistantRoundView(
                     roundID: id,
                     messages: messages,
-                    streamingID: streamingID,
-                    streamFinished: streamFinished,
                     activeRoundID: activeRoundID,
+                    streamingMessageIDs: streamingMessageIDs,
                     onRegenerate: onRegenerate
                 )
             case .compactSummary(let c):

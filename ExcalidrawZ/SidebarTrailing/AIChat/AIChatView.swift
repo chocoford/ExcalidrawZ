@@ -140,6 +140,8 @@ struct AIChatView: View {
         VStack(spacing: 0) {
             if let conversation, !conversation.messages.isEmpty {
                 messageList(messages: conversation.messages)
+            } else if currentTransientError != nil {
+                messageList(messages: conversation?.messages ?? [])
             } else {
                 emptyPlaceholder()
             }
@@ -221,6 +223,15 @@ struct AIChatView: View {
         return editSession
     }
 
+    private var currentTransientError: AIChatState.TransientError? {
+        guard let error = aiChatState.transientError,
+              error.conversationID == fileState.aiChatConversationID
+        else {
+            return nil
+        }
+        return error
+    }
+
     /// Wipes the current conversation's message history via LLMKit's
     /// `clearConversation` API. The drawing file and its file-history
     /// (including AI-tagged checkpoints) stay intact — this only clears
@@ -268,16 +279,27 @@ struct AIChatView: View {
     
     @ViewBuilder
     private func messageList(messages: [ChatMessage]) -> some View {
-        let bottomID = streamingState?.id ?? messages.last?.id
+        let transientError = currentTransientError
         let displayMessages = messagesForCurrentEditSession(messages)
         let allGroups = groupMessages(displayMessages)
         let visibleGroups = visibleMessageGroups(from: allGroups)
+        let visibleTransientError: AIChatState.TransientError? = {
+            guard let transientError else { return nil }
+            guard !containsErrorMessage(in: allGroups, matching: transientError.message) else {
+                return nil
+            }
+            return transientError
+        }()
         let isStreamingActive: Bool = {
             guard let stream = streamingState else { return false }
-            return shouldShowStreamingMessage(stream, messages: messages)
+            return shouldShowStreamingMessage(stream)
         }()
+        let bottomID = visibleTransientError?.id.uuidString
+            ?? (isStreamingActive ? streamingState?.id : nil)
+            ?? messages.last?.id
         let streamingID: String? = streamingState?.id
         let streamFinished: Bool = streamingState?.isFinished ?? true
+        let isRoundLifecycleActive = streamingState != nil || streamScrollFollowTail
         // The active round (if any) is the latest assistantRound while
         // the stream is in flight. This is the round whose
         // AssistantRoundView mounts in "drive every message through the
@@ -288,6 +310,18 @@ struct AIChatView: View {
             return false
         }?.id
         let activeRoundID: String? = isStreamingActive ? latestRoundID : nil
+        let streamingMessageIDs = streamingAssistantMessageIDs(
+            in: allGroups,
+            conversationID: fileState.aiChatConversationID
+        )
+        let loadingDiagnosticSignature = loadingDiagnosticsSignature(
+            conversationID: fileState.aiChatConversationID,
+            isStreamingActive: isStreamingActive,
+            streamingID: streamingID,
+            streamFinished: streamFinished,
+            streamingMessageIDs: streamingMessageIDs,
+            groups: allGroups
+        )
         NativeChatScrollView(
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
@@ -302,14 +336,25 @@ struct AIChatView: View {
             messageListRows(
                 allGroups: allGroups,
                 visibleGroups: visibleGroups,
-                streamingID: streamingID,
-                streamFinished: streamFinished,
                 activeRoundID: activeRoundID,
+                transientError: visibleTransientError,
+                streamingMessageIDs: streamingMessageIDs,
+                showsUserMessageActions: !isRoundLifecycleActive,
                 disablesUserMessageActions: isStreamingActive || streamScrollFollowTail
             )
         }
         .environment(\.chatScrollToBottom) { animated in
             await scrollToBottomAsync(animated: animated)
+        }
+        .task(id: loadingDiagnosticSignature) {
+            logLoadingDiagnostics(
+                conversationID: fileState.aiChatConversationID,
+                isStreamingActive: isStreamingActive,
+                streamingID: streamingID,
+                streamFinished: streamFinished,
+                streamingMessageIDs: streamingMessageIDs,
+                groups: allGroups
+            )
         }
         .opacity(isMessageListInitiallySettled ? 1 : 0)
         .animation(.easeOut(duration: 0.12), value: isMessageListInitiallySettled)
@@ -376,13 +421,106 @@ struct AIChatView: View {
         }
     }
 
+    private func containsErrorMessage(
+        in groups: [MessageGroup],
+        matching message: String
+    ) -> Bool {
+        groups.contains { group in
+            guard case .error(_, let existingMessage) = group else { return false }
+            return existingMessage == message
+        }
+    }
+
+    private func streamingAssistantMessageIDs(
+        in groups: [MessageGroup],
+        conversationID: String?
+    ) -> Set<String> {
+        guard let conversationID else { return [] }
+        var result: Set<String> = []
+        for group in groups {
+            guard case .assistantRound(_, let messages) = group else { continue }
+            for message in messages {
+                guard case .content(let content) = message,
+                      content.role == .assistant
+                else {
+                    continue
+                }
+                if llmState.isStreaming(messageID: content.id, in: conversationID) {
+                    result.insert(content.id)
+                }
+            }
+        }
+        return result
+    }
+
+    private func loadingDiagnosticsSignature(
+        conversationID: String?,
+        isStreamingActive: Bool,
+        streamingID: String?,
+        streamFinished: Bool,
+        streamingMessageIDs: Set<String>,
+        groups: [MessageGroup]
+    ) -> String {
+        [
+            conversationID ?? "nil",
+            "active=\(isStreamingActive)",
+            "stream=\(streamingID ?? "nil")",
+            "finished=\(streamFinished)",
+            "ids=\(streamingMessageIDs.sorted().joined(separator: ","))",
+            "groups=\(loadingGroupSummary(groups))"
+        ].joined(separator: " ")
+    }
+
+    private func loadingGroupSummary(_ groups: [MessageGroup]) -> String {
+        groups.map { group in
+            switch group {
+                case .user(let content):
+                    return "user(\(content.id))"
+                case .assistantRound(let id, let messages):
+                    let ids = messages.compactMap { message -> String? in
+                        guard case .content(let content) = message else { return nil }
+                        return "\(content.role):\(content.id):c\(content.content?.count ?? 0):tc\(content.toolCalls?.count ?? 0)"
+                    }.joined(separator: ",")
+                    return "round(\(id))[\(ids)]"
+                case .loading(let id):
+                    return "loading(\(id.uuidString))"
+                case .error(let id, let message):
+                    return "error(\(id.uuidString):\(message))"
+                case .compactSummary(let content):
+                    return "compact(\(content.id))"
+            }
+        }.joined(separator: "|")
+    }
+
+    private func logLoadingDiagnostics(
+        conversationID: String?,
+        isStreamingActive: Bool,
+        streamingID: String?,
+        streamFinished: Bool,
+        streamingMessageIDs: Set<String>,
+        groups: [MessageGroup]
+    ) {
+        #if DEBUG
+        print(
+            "[aiChatLoadingDiag] list",
+            "conversation=\(conversationID ?? "nil")",
+            "isStreamingActive=\(isStreamingActive)",
+            "streamingID=\(streamingID ?? "nil")",
+            "streamFinished=\(streamFinished)",
+            "streamingMessageIDs=\(streamingMessageIDs.sorted())",
+            "groups=\(loadingGroupSummary(groups))"
+        )
+        #endif
+    }
+
     @ViewBuilder
     private func messageListRows(
         allGroups: [MessageGroup],
         visibleGroups: [MessageGroup],
-        streamingID: String?,
-        streamFinished: Bool,
         activeRoundID: String?,
+        transientError: AIChatState.TransientError?,
+        streamingMessageIDs: Set<String>,
+        showsUserMessageActions: Bool,
         disablesUserMessageActions: Bool
     ) -> some View {
         let hiddenGroupCount = max(0, allGroups.count - visibleGroups.count)
@@ -396,14 +534,26 @@ struct AIChatView: View {
 
         StaticGroupsView(
             groups: visibleGroups,
-            streamingID: streamingID,
-            streamFinished: streamFinished,
             activeRoundID: activeRoundID,
+            streamingMessageIDs: streamingMessageIDs,
             onRegenerate: regenerateMessage,
             revertRequiredUserMessageIDs: revertRequiredUserMessageIDs,
+            showsUserMessageActions: showsUserMessageActions,
             disablesUserMessageActions: disablesUserMessageActions,
             onUserMessageAction: beginEditingUserMessage
         )
+
+        if let transientError {
+            ChatScrollRow {
+                ErrorMessageRow(
+                    error: transientError.message,
+                    onRetry: {
+                        retryTransientError(transientError)
+                    }
+                )
+            }
+            .transition(.opacity)
+        }
     }
 
     /// Bridge from `NativeChatScrollView`'s scroll-animation-complete
@@ -616,7 +766,7 @@ struct AIChatView: View {
     private func beginEditingUserMessage(_ userMessageID: String) {
         guard let convo = conversation else { return }
         if let streamingState,
-           shouldShowStreamingMessage(streamingState, messages: convo.messages) {
+           shouldShowStreamingMessage(streamingState) {
             return
         }
         let conversationID = convo.id
@@ -813,6 +963,15 @@ struct AIChatView: View {
 
     private func regenerateMessage(messageID: String) {
         guard let id = fileState.aiChatConversationID else { return }
+        let retryContent: ChatMessageContent? = conversation?.messages.first {
+            guard case .content(let content) = $0 else { return false }
+            return content.id == messageID && content.role == .user
+        }.flatMap { message in
+            guard case .content(let content) = message else { return nil }
+            return content
+        }
+
+        aiChatState.clearTransientError(for: id)
         Task {
             do {
                 let agentConfig = try await LLMClient.shared.getDomainAgentConfig(agentID: "excalidraw-canvas")
@@ -824,19 +983,41 @@ struct AIChatView: View {
                 )
             } catch {
                 await MainActor.run {
-                    alertToast.presentAIChatError(error)
+                    aiChatState.presentTransientError(
+                        error,
+                        conversationID: id,
+                        userMessageID: messageID,
+                        retryPrompt: retryContent?.content ?? "",
+                        retryFiles: retryContent?.files ?? []
+                    )
                 }
             }
         }
     }
+
+    private func retryTransientError(_ error: AIChatState.TransientError) {
+        guard let id = fileState.aiChatConversationID,
+              id == error.conversationID
+        else {
+            return
+        }
+
+        let hasUserMessage = conversation?.messages.contains { message in
+            guard case .content(let content) = message else { return false }
+            return content.id == error.userMessageID && content.role == .user
+        } == true
+
+        aiChatState.clearTransientError(for: id)
+
+        if hasUserMessage {
+            regenerateMessage(messageID: error.userMessageID)
+        } else {
+            aiChatState.requestDraft(error.retryPrompt, files: error.retryFiles)
+        }
+    }
     
-    private func shouldShowStreamingMessage(
-        _ stream: LLMStreamingStateObject,
-        messages: [ChatMessage]
-    ) -> Bool {
-        if !stream.isFinished { return true }
-        guard let lastID = messages.last?.id else { return !stream.content.isEmpty }
-        return lastID != stream.id
+    private func shouldShowStreamingMessage(_ stream: LLMStreamingStateObject) -> Bool {
+        !stream.isFinished
     }
     
     private func requestScrollToBottomIfNeeded(_ newBottomID: String?) {

@@ -63,6 +63,15 @@ final class AICameraDirector: AICameraSessionEventSink {
         safeAreaRatio: 0.85,
         revision: nil
     )
+    private let insertedContentOptions = ExcalidrawCore.AICameraSessionOptions(
+        zoomBehavior: .fitWhenNeeded,
+        followRate: 6,
+        viewportPadding: .uniform(32),
+        minZoom: 0.1,
+        maxZoom: 2.5,
+        safeAreaRatio: 0.95,
+        revision: nil
+    )
 
     private var phase: Phase = .idle
     private var sessionID: String?
@@ -176,6 +185,41 @@ final class AICameraDirector: AICameraSessionEventSink {
         )
     }
 
+    func submitBounds(
+        _ bounds: CGRect,
+        mode: FocusUpdateMode = .append,
+        options: ExcalidrawCore.AICameraSessionOptions? = nil
+    ) async throws {
+        guard !bounds.isNull, !bounds.isEmpty else { return }
+
+        switch mode {
+            case .append:
+                focusRect = focusRect?.union(bounds) ?? bounds
+            case .replace:
+                focusRect = bounds
+        }
+
+        try await submitTarget(
+            .box(
+                .init(
+                    minX: Double(focusRect?.minX ?? bounds.minX),
+                    minY: Double(focusRect?.minY ?? bounds.minY),
+                    maxX: Double(focusRect?.maxX ?? bounds.maxX),
+                    maxY: Double(focusRect?.maxY ?? bounds.maxY)
+                )
+            ),
+            focusRect: focusRect,
+            options: options
+        )
+    }
+
+    func submitInsertedContentBounds(
+        _ bounds: CGRect,
+        mode: FocusUpdateMode = .append
+    ) async throws {
+        try await submitBounds(bounds, mode: mode, options: insertedContentOptions)
+    }
+
     private func scheduleAutoEnd() {
         autoEndTask?.cancel()
         autoEndTask = Task { @MainActor [weak self] in
@@ -209,16 +253,17 @@ final class AICameraDirector: AICameraSessionEventSink {
 
     private func submitTarget(
         _ target: ExcalidrawCore.AICameraTarget,
-        focusRect: CGRect?
+        focusRect: CGRect?,
+        options overrideOptions: ExcalidrawCore.AICameraSessionOptions? = nil
     ) async throws {
         lastMutationAt = Date()
         interruptionReason = nil
 
-        try await beginSession()
+        try await beginSession(options: overrideOptions)
         guard let coordinator, let sessionID else { return }
 
         revision += 1
-        var options = defaultOptions
+        var options = overrideOptions ?? defaultOptions
         options.revision = revision
         let response = try await coordinator.updateAICameraTarget(
             sessionId: sessionID,

@@ -181,6 +181,9 @@ extension PromptInputView {
 
             do {
                 await MainActor.run {
+                    aiChatState.clearTransientError(for: conversationIDForSession)
+                }
+                await MainActor.run {
                     ExcalidrawCoordinatorRegistry.shared.update(
                         normal: fileState.excalidrawWebCoordinator,
                         collaboration: fileState.excalidrawCollaborationWebCoordinator
@@ -308,12 +311,18 @@ extension PromptInputView {
                 // than guessing.
                 streamSucceeded = true
             } catch {
-                // Single-funnel through `presentAIChatError` so intent-based
-                // dispatch (credits / auth / rate-limit / forbidden / generic)
-                // lives in one place. CancellationError is swallowed inside
-                // the helper.
+                // Keep send-pipeline failures in the chat transcript area as
+                // a transient client row. It is not committed to LLMKit's
+                // conversation; retry regenerates from the triggering user
+                // message when that message exists.
                 await MainActor.run {
-                    alertToast.presentAIChatError(error)
+                    aiChatState.presentTransientError(
+                        error,
+                        conversationID: conversationIDForSession,
+                        userMessageID: userMessageID,
+                        retryPrompt: prompt,
+                        retryFiles: files
+                    )
                 }
             }
 

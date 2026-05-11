@@ -75,6 +75,7 @@ struct ContentView: View {
             .modifier(DragStateModifier())
             .modifier(StartupSyncModifier())
             .modifier(CoreDataMigrationModifier())
+            .modifier(ActiveFileSwitchBlockedToastModifier(fileState: fileState))
             .swiftyAlert(logs: true)
             .bindWindow($window)
             .containerSizeClassInjection()
@@ -167,6 +168,31 @@ struct ContentView: View {
             Task {
                 try? await fileState.mergeDefaultGroupAndTrashIfNeeded(context: viewContext)
             }
+        }
+    }
+}
+
+private struct ActiveFileSwitchBlockedToastModifier: ViewModifier {
+    @Environment(\.alertToast) private var alertToast
+    @ObservedObject var fileState: FileState
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: fileState.activeFileSwitchBlockedToken) { _ in
+                showToast()
+            }
+    }
+
+    private func showToast() {
+        switch fileState.activeFileSwitchBlockedReason {
+            case .aiGenerationInProgress:
+                alertToast(.init(
+                    displayMode: .hud,
+                    type: .regular,
+                    title: String(localized: "Stop AI generation before switching files.")
+                ))
+            case nil:
+                break
         }
     }
 }

@@ -385,6 +385,149 @@ extension ExcalidrawCore {
         case never = "NEVER"
     }
 
+    enum MermaidAnchor: String, Codable, Hashable {
+        case topLeft = "top-left"
+        case center
+    }
+
+    enum MermaidPosition: Codable, Hashable {
+        case auto
+        case viewportCenter
+        case sceneCenter
+        case point(MermaidPointPosition)
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            if let rawValue = try? container.decode(String.self) {
+                switch rawValue {
+                    case "auto":
+                        self = .auto
+                    case "viewport-center":
+                        self = .viewportCenter
+                    case "scene-center":
+                        self = .sceneCenter
+                    default:
+                        throw DecodingError.dataCorruptedError(
+                            in: container,
+                            debugDescription: "Unsupported Mermaid position: \(rawValue)"
+                        )
+                }
+            } else {
+                self = .point(try container.decode(MermaidPointPosition.self))
+            }
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            switch self {
+                case .auto:
+                    try container.encode("auto")
+                case .viewportCenter:
+                    try container.encode("viewport-center")
+                case .sceneCenter:
+                    try container.encode("scene-center")
+                case .point(let value):
+                    try container.encode(value)
+            }
+        }
+    }
+
+    struct MermaidPointPosition: Codable, Hashable {
+        var x: Double
+        var y: Double
+        var anchor: MermaidAnchor?
+    }
+
+    enum MermaidFocus: Codable, Hashable {
+        case enabled(Bool)
+        case options(MermaidFocusOptions)
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            if let enabled = try? container.decode(Bool.self) {
+                self = .enabled(enabled)
+            } else {
+                self = .options(try container.decode(MermaidFocusOptions.self))
+            }
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            switch self {
+                case .enabled(let value):
+                    try container.encode(value)
+                case .options(let value):
+                    try container.encode(value)
+            }
+        }
+    }
+
+    struct MermaidFocusOptions: Codable, Hashable {
+        var animate: Bool?
+        var duration: Int?
+        var viewportZoomFactor: Double?
+    }
+
+    struct MermaidInsertOptions: Codable, Hashable {
+        var position: MermaidPosition?
+        var focus: MermaidFocus?
+        var regenerateIds: Bool?
+        var mermaidConfig: JSONValue?
+        var captureUpdate: CaptureUpdate?
+    }
+
+    struct MermaidConvertOptions: Codable, Hashable {
+        var regenerateIds: Bool?
+        var mermaidConfig: JSONValue?
+    }
+
+    struct MermaidPoint: Codable, Hashable {
+        var x: Double
+        var y: Double
+    }
+
+    struct MermaidBounds: Codable, Hashable {
+        var x: Double
+        var y: Double
+        var width: Double
+        var height: Double
+    }
+
+    struct MermaidInsertResult: Codable, Hashable {
+        var elementIds: [String]
+        var insertedAt: MermaidPoint
+        var bounds: MermaidBounds
+    }
+
+    struct SkeletonInsertOptions: Codable, Hashable {
+        var regenerateIds: Bool?
+        var position: MermaidPosition?
+        var focus: MermaidFocus?
+        var files: [String: JSONValue]?
+        var captureUpdate: CaptureUpdate?
+        var sanitize: Bool?
+    }
+
+    struct SkeletonInsertResult: Codable, Hashable {
+        var elementIds: [String]
+        var insertedAt: MermaidPoint
+        var bounds: MermaidBounds
+    }
+
+    struct MermaidConvertResult: Codable, Hashable {
+        var elements: [JSONValue]
+        var files: [String: JSONValue]
+    }
+
+    /// One-time copy of the current editor scene at the moment it was requested.
+    /// This is not a persistent/live reference and must not drive autosave.
+    struct CurrentFileSnapshot: Codable, Hashable {
+        var dataString: String
+        var elements: [JSONValue]
+        var appState: JSONValue
+        var files: [String: JSONValue]
+    }
+
     struct ReplaceAllElementsOptions: Codable, Hashable {
         var captureUpdate: CaptureUpdate = .immediately
     }
@@ -521,6 +664,23 @@ extension ExcalidrawCore {
             contentWorld: .page
         )
         return SaveFileResult(fromJS: raw)
+    }
+
+    /// Returns a one-time snapshot copy of the current live canvas without
+    /// participating in the persistence/autosave flow. Use this for AI tools
+    /// and debug reads that need editor state newer than the throttled
+    /// `onStateChanged` broadcast.
+    @MainActor
+    func getCurrentFileSnapshot() async throws -> CurrentFileSnapshot {
+        guard !self.webView.isLoading else {
+            throw InvalidJavaScriptResult()
+        }
+        let result = try await self.webView.callAsyncJavaScript(
+            "return JSON.stringify(await window.excalidrawZHelper.getCurrentFileSnapshot());",
+            arguments: [:],
+            contentWorld: .page
+        )
+        return try decodeJavaScriptResult(result, as: CurrentFileSnapshot.self)
     }
     
     /// `true` if is dark mode.
@@ -812,6 +972,60 @@ extension ExcalidrawCore {
             arguments: [:],
             contentWorld: .page
         )
+    }
+
+    @MainActor
+    func insertFromMermaid(
+        _ definition: String,
+        options: MermaidInsertOptions = .init()
+    ) async throws -> MermaidInsertResult {
+        guard !self.webView.isLoading else {
+            throw InvalidJavaScriptResult()
+        }
+        let definitionJSON = try encodeJSON(definition)
+        let optionsJSON = try encodeJSON(options)
+        let result = try await webView.callAsyncJavaScript(
+            "return JSON.stringify(await window.excalidrawZHelper.insertFromMermaid(\(definitionJSON), \(optionsJSON)));",
+            arguments: [:],
+            contentWorld: .page
+        )
+        return try decodeJavaScriptResult(result, as: MermaidInsertResult.self)
+    }
+
+    @MainActor
+    func insertFromSkeleton(
+        _ skeletons: JSONValue,
+        options: SkeletonInsertOptions = .init()
+    ) async throws -> SkeletonInsertResult {
+        guard !self.webView.isLoading else {
+            throw InvalidJavaScriptResult()
+        }
+        let skeletonsJSON = try encodeJSON(skeletons)
+        let optionsJSON = try encodeJSON(options)
+        let result = try await webView.callAsyncJavaScript(
+            "return JSON.stringify(await window.excalidrawZHelper.insertFromSkeleton(\(skeletonsJSON), \(optionsJSON)));",
+            arguments: [:],
+            contentWorld: .page
+        )
+        return try decodeJavaScriptResult(result, as: SkeletonInsertResult.self)
+    }
+
+    @MainActor
+    func convertMermaidToExcalidraw(
+        _ definition: String,
+        options: MermaidConvertOptions = .init()
+    ) async throws -> MermaidConvertResult {
+        guard !self.webView.isLoading else {
+            throw InvalidJavaScriptResult()
+        }
+        let definitionJSON = try encodeJSON(definition)
+        let optionsJSON = try encodeJSON(options)
+        let result = try await webView.callAsyncJavaScript(
+            "return JSON.stringify(await window.excalidrawZHelper.convertMermaidToExcalidraw(\(definitionJSON), \(optionsJSON)));",
+            arguments: [:],
+            contentWorld: .page
+        )
+        return try decodeJavaScriptResult(result, as: MermaidConvertResult.self)
     }
 
     @MainActor

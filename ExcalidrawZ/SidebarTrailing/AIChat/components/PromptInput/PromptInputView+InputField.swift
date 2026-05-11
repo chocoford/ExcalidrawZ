@@ -78,10 +78,10 @@ extension PromptInputView {
             VStack(spacing: 0) {
                 header
                 
-                AttachmentThumbnailStrip(pastedImages: $pastedImages)
+                AttachmentThumbnailStrip(pastedImages: pastedImagesBinding)
 
                 TextArea(
-                    text: $inputText,
+                    text: inputTextBinding,
                     placeholder: Text("Ask AI to draw...")
                 )
                 .keyDownHandler(
@@ -101,7 +101,7 @@ extension PromptInputView {
             }
             .background { style.background }
         } else {
-            TextEditor(text: $inputText)
+            TextEditor(text: inputTextBinding)
                 .frame(height: 160)
                 .focused($isInputFocused)
         }

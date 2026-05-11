@@ -374,5 +374,3 @@ struct ExcalidrawCanvasView: View {
         }
     }
 }
-
-

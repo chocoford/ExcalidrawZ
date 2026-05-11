@@ -13,6 +13,7 @@ import LLMCore
 struct ReadFileTool: Tool {
     struct ReadFileContext: ToolContext {
         var currentFileData: Data?
+        var canvasTarget: ExcalidrawCoordinatorRegistry.CanvasTarget
         var selectedElementIDs: [String]?
     }
 
@@ -85,7 +86,10 @@ struct ReadFileTool: Tool {
         let params = try parseInput(input)
         guard let context else { throw ToolError.executionFailed("Missing ReadFileContext") }
         let readFileContext = try context.resolve(ReadFileContext.self)
-        guard let data = readFileContext.currentFileData else {
+        guard let data = try await CurrentExcalidrawDataResolver.resolveLiveSnapshot(
+            canvasTarget: readFileContext.canvasTarget,
+            baseContent: readFileContext.currentFileData
+        ) else {
             throw ToolError.executionFailed("Missing current file data")
         }
 

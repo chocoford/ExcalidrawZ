@@ -48,9 +48,59 @@ private struct ChatTopDownRevealModifier: ViewModifier, Animatable {
     }
 }
 
+private struct ChatRevealMeasuredHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private struct ChatTopDownRevealFrameModifier: ViewModifier, Animatable {
+    var progress: CGFloat = 0
+    @State private var measuredHeight: CGFloat = 0
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        let clamped = max(0, min(1, progress))
+        let targetHeight = clamped < 1 ? measuredHeight * clamped : nil
+
+        ZStack(alignment: .top) {
+            content
+                .chatTopDownReveal(progress: clamped)
+
+            content
+                .hidden()
+                .allowsHitTesting(false)
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear.preference(
+                            key: ChatRevealMeasuredHeightKey.self,
+                            value: proxy.size.height
+                        )
+                    }
+                }
+        }
+        .onPreferenceChange(ChatRevealMeasuredHeightKey.self) { height in
+            guard height > 0 else { return }
+            measuredHeight = height
+        }
+        .frame(height: targetHeight, alignment: .top)
+        .clipped()
+    }
+}
+
 extension View {
     func chatTopDownReveal(progress: CGFloat) -> some View {
         modifier(ChatTopDownRevealModifier(progress: progress))
+    }
+
+    func chatTopDownRevealFrame(progress: CGFloat) -> some View {
+        modifier(ChatTopDownRevealFrameModifier(progress: progress))
     }
 }
 

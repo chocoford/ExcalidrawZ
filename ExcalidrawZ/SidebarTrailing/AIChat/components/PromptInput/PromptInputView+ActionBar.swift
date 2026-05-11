@@ -153,7 +153,16 @@ extension PromptInputView {
     /// True when the assistant is currently generating. Drives the icon swap
     /// (arrow ↔ stop) and gates whether `sendMessage` enqueues vs sends now.
     var isGenerating: Bool {
-        currentTask != nil
+        currentTask != nil || isConversationStreaming
+    }
+
+    private var isConversationStreaming: Bool {
+        guard let conversationID else { return false }
+        guard let stream = llmState.streamingStore.streamIfExists(for: conversationID)
+            as? LLMStreamingStateObject else {
+            return false
+        }
+        return !stream.isFinished
     }
 
     var hasInputText: Bool {

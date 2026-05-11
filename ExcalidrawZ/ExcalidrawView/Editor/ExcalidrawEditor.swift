@@ -73,8 +73,6 @@ struct ExcalidrawEditor: View {
                 return
             }
             
-            if toolState.inDragMode { return }
-            
             switch activeFile {
                 case .file(let file):
                     // Check if there are actual updates
@@ -270,6 +268,7 @@ struct ExcalidrawEditor: View {
                 case .file(let file):
                     let content = try await file.loadContent()
                     await MainActor.run {
+                        guard self.activeFile?.id == activeFile.id else { return }
                         self.excalidrawFile = try? ExcalidrawFile(data: content, id: activeFile.id)
                     }
                     
@@ -277,6 +276,7 @@ struct ExcalidrawEditor: View {
                     let data = try await FileSyncCoordinator.shared.openFile(url)
                     let file = try ExcalidrawFile(data: data, id: activeFile.id)
                     await MainActor.run {
+                        guard self.activeFile?.id == activeFile.id else { return }
                         self.excalidrawFile = file
                     }
 
@@ -284,6 +284,7 @@ struct ExcalidrawEditor: View {
                     let data = try await FileSyncCoordinator.shared.openFile(url)
                     let file = try ExcalidrawFile(data: data, id: activeFile.id)
                     await MainActor.run {
+                        guard self.activeFile?.id == activeFile.id else { return }
                         self.excalidrawFile = file
                     }
 

@@ -7,9 +7,9 @@
 //  collapses to `EmptyView` so the host doesn't need conditionals — drop
 //  it in any chat layout above `PromptInputView` and forget about it.
 //
-//  Wiring: LLMKit raises a `ToolApprovalRequest` whenever a tool with
-//  `alwaysRequiresApproval = true` (or a non-`.autoApprove` `approvalPolicy(input:)`)
-//  is about to run. The tool's `execute` is paused on a continuation;
+//  Wiring: LLMKit raises a `ToolApprovalRequest` whenever a tool's
+//  `approvalRequirement` / `approvalPolicy(input:)` asks for approval.
+//  The tool's `execute` is paused on a continuation;
 //  `respondToApproval(_:)` resumes it with the user's choice. We expose
 //  three buttons: Allow once / Always / Deny.
 //

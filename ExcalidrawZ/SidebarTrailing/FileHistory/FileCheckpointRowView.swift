@@ -92,10 +92,11 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 0) {
                     if let file {
+                        let elementCount = file.elements.filter { !$0.isDeleted }.count
                         if #available(macOS 13.0, iOS 16.0, *) {
-                            Text(.localizable(.checkpointsElementsDescription(file.elements.count)))
+                            Text(.localizable(.checkpointsElementsDescription(elementCount)))
                         } else {
-                            Text(file.elements.count.formatted())
+                            Text(elementCount.formatted())
                         }
                     }
                     Text(" · ")

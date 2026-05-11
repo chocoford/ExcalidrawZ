@@ -14,7 +14,7 @@ struct ExcalidrawRenderer: View {
         
     var file: ExcalidrawFile
     var elements: [ExcalidrawElement] {
-        file.elements
+        file.elements.filter { !$0.isDeleted }
     }
     
     @State private var frame: CGRect = .zero

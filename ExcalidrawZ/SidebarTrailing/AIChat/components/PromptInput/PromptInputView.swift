@@ -65,14 +65,36 @@ struct PromptInputView<Background: View, Header: View>: View {
         self.header = header()
     }
 
-    @State var inputText: String = ""
     /// Side-state mirror for image attachments pasted into the input.
     /// `inputText` only carries the `[image:<UUID>]` placeholders that
     /// `PastedImageToken.plainText` produces — the actual image bytes
     /// live here keyed by token id, and we reconcile the two on send.
     /// See [PromptInputView+ImagePaste.swift](PromptInputView+ImagePaste.swift)
     /// for the full data flow.
-    @State var pastedImages: [PendingPastedImage] = []
+    var inputText: String {
+        get { aiChatState.promptDraftText }
+        nonmutating set { aiChatState.promptDraftText = newValue }
+    }
+
+    var pastedImages: [PendingPastedImage] {
+        get { aiChatState.promptDraftImages }
+        nonmutating set { aiChatState.promptDraftImages = newValue }
+    }
+
+    var inputTextBinding: Binding<String> {
+        Binding(
+            get: { inputText },
+            set: { inputText = $0 }
+        )
+    }
+
+    var pastedImagesBinding: Binding<[PendingPastedImage]> {
+        Binding(
+            get: { pastedImages },
+            set: { pastedImages = $0 }
+        )
+    }
+
     /// Drives the system image-picker sheet from the attachment menu.
     /// Selected files flow through the same `pastedImages` side-state
     /// as paste, so once they're added the rest of the pipeline (send,
@@ -161,9 +183,6 @@ struct PromptInputView<Background: View, Header: View>: View {
                     .padding(8)
             }
         }
-        .task {
-            await loadAgentConfigIfNeeded()
-        }
         // Consume one-shot draft prefill requests from the host (e.g.,
         // the per-user-message Revert action). Token-based so a second
         // revert with identical text still triggers the .onChange.
@@ -177,6 +196,9 @@ struct PromptInputView<Background: View, Header: View>: View {
             inputText = ""
             pastedImages = []
             isInputFocused = false
+        }
+        .task {
+            await loadAgentConfigIfNeeded()
         }
     }
 
@@ -264,4 +286,3 @@ extension PromptInputView where Background == PlatformDefaultPromptBackground {
         )
     }
 }
-

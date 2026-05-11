@@ -194,6 +194,12 @@ final class FileState: ObservableObject {
     /// - Throws: FileAccessError if download fails
     @MainActor
     func setActiveFile(_ file: ActiveFile?) {
+        if aiChatSession != nil, currentActiveFile != file {
+            activeFileSwitchBlockedReason = .aiGenerationInProgress
+            activeFileSwitchBlockedToken += 1
+            return
+        }
+
         guard let file else {
             self.currentActiveFile = nil
             return
@@ -302,6 +308,13 @@ final class FileState: ObservableObject {
     }
     
     // MARK: - AI Chat
+
+    enum ActiveFileSwitchBlockedReason: Equatable {
+        case aiGenerationInProgress
+    }
+
+    @Published var activeFileSwitchBlockedReason: ActiveFileSwitchBlockedReason?
+    @Published var activeFileSwitchBlockedToken: Int = 0
 
     /// The currently active AI chat conversation id.
     ///

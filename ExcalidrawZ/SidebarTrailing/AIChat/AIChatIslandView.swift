@@ -105,6 +105,13 @@ struct AIChatIslandView: View {
             as? LLMStreamingStateObject
     }
 
+    private var hasActiveGeneration: Bool {
+        if let stream = streamingState, !stream.isFinished {
+            return true
+        }
+        return activeStreamingAssistantContent != nil
+    }
+
     /// Mirror of `ApprovalPromptView`'s gate so the island's
     /// `.animation(value:)` knows to animate the layout shift when
     /// the card flips visibility.
@@ -123,18 +130,37 @@ struct AIChatIslandView: View {
             .first { $0.id == fileState.aiChatConversationID }
     }
 
+    private var activeStreamingAssistantContent: ChatMessageContent? {
+        guard let conversationID = fileState.aiChatConversationID,
+              let messages = conversation?.messages else {
+            return nil
+        }
+        return messages.compactMap { message -> ChatMessageContent? in
+            guard case .content(let content) = message,
+                  content.role == .assistant,
+                  llmState.isStreaming(messageID: content.id, in: conversationID) else {
+                return nil
+            }
+            return content
+        }.last
+    }
+
     /// The latest *committed* (not currently streaming) assistant message.
     /// We need the full message — not just its display text — so we can
     /// branch on whether it carries non-final-answer tool calls.
     private var latestAssistantMessage: ChatMessage? {
-        guard let messages = conversation?.messages else { return nil }
-        let inflightID: String? = {
-            guard let s = streamingState, !s.isFinished else { return nil }
-            return s.id
-        }()
+        guard let conversationID = fileState.aiChatConversationID,
+              let messages = conversation?.messages else {
+            return nil
+        }
         return messages.last { msg in
-            guard case .content(let c) = msg, c.role == .assistant else { return false }
-            if msg.id == inflightID { return false }
+            guard case .content(let c) = msg,
+                  c.role == .assistant else {
+                return false
+            }
+            if llmState.isStreaming(messageID: c.id, in: conversationID) {
+                return false
+            }
             return true
         }
     }
@@ -166,6 +192,9 @@ struct AIChatIslandView: View {
     /// model decides to call out, instead of waiting for the surrounding
     /// assistant message to commit into `conversation.messages`.
     private var liveToolCallName: String? {
+        if let name = activeStreamingAssistantContent?.toolCalls?.first(where: { $0.name != "final_answer" })?.name {
+            return name
+        }
         guard let stream = streamingState, !stream.isFinished else { return nil }
         return stream.toolCalls.first(where: { $0.name != "final_answer" })?.name
     }
@@ -175,6 +204,10 @@ struct AIChatIslandView: View {
     /// threshold as the inspector view, so the user doesn't see "OK!" flash
     /// here either.
     private var visibleStreamingText: String? {
+        if let content = activeStreamingAssistantContent {
+            let text = displayText(of: content)
+            return text.isEmpty ? nil : text
+        }
         guard let stream = streamingState,
               !stream.isFinished else { return nil }
         let text = stream.content
@@ -208,29 +241,11 @@ struct AIChatIslandView: View {
         // boundary entirely (`true → true`); watching `isFinished` catches
         // every round start, and stays stable through intra-round id
         // rotations at tool-call seams.
-        .onChange(of: streamingState?.isFinished == false) { hasActiveStream in
-            if hasActiveStream {
-                // A new round just started — always show the placeholder.
-                // Past rounds' assistant messages still sit in
-                // `conversation.messages`, so guarding on
-                // `latestAssistantMessage == nil` would skip Thinking…
-                // for every round after the first. The new round's own
-                // commit will fire `latestAssistantMessageID` shortly and
-                // overwrite this with the real content.
-                autoHideTask?.cancel()
-                toolCallSwitchTask?.cancel()
-                displayedReplyText = String(localized: "Thinking…")
-            } else {
-                // The round (or conversation) ended without us getting a
-                // commit-driven swap — clear the placeholder so the banner
-                // returns. A normal completion path is handled by the
-                // `latestAssistantMessageID` watcher below.
-                if displayedReplyText == String(localized: "Thinking…") {
-                    autoHideTask?.cancel()
-                    toolCallSwitchTask?.cancel()
-                    displayedReplyText = nil
-                }
-            }
+        .onAppear {
+            updateGenerationTicker(hasActiveGeneration: hasActiveGeneration)
+        }
+        .onChange(of: hasActiveGeneration) { active in
+            updateGenerationTicker(hasActiveGeneration: active)
         }
         // Real-time tool-call surfacing. The streaming message accumulates
         // tool calls before the message itself commits; reflecting that
@@ -257,6 +272,20 @@ struct AIChatIslandView: View {
         .onDisappear {
             autoHideTask?.cancel()
             toolCallSwitchTask?.cancel()
+        }
+    }
+
+    private func updateGenerationTicker(hasActiveGeneration: Bool) {
+        if hasActiveGeneration {
+            autoHideTask?.cancel()
+            toolCallSwitchTask?.cancel()
+            if displayedReplyText == nil {
+                displayedReplyText = String(localized: "Thinking…")
+            }
+        } else if displayedReplyText == String(localized: "Thinking…") {
+            autoHideTask?.cancel()
+            toolCallSwitchTask?.cancel()
+            displayedReplyText = nil
         }
     }
 

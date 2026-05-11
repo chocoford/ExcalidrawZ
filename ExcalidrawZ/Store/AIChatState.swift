@@ -58,6 +58,9 @@ final class AIChatState: ObservableObject {
     @Published var draftRequest: DraftRequest?
     @Published var editSession: EditSession?
     @Published var editCancelToken: Int = 0
+    @Published var transientError: TransientError?
+    @Published var promptDraftText: String = ""
+    @Published var promptDraftImages: [PendingPastedImage] = []
 
     struct DraftRequest: Equatable {
         let text: String
@@ -77,6 +80,31 @@ final class AIChatState: ObservableObject {
         let conversationID: String
         let userMessageID: String
         let mode: Mode
+    }
+
+    struct TransientError: Identifiable, Equatable {
+        let id: UUID
+        let conversationID: String
+        let userMessageID: String
+        let message: String
+        let retryPrompt: String
+        let retryFiles: [ChatMessageContent.File]
+
+        init(
+            id: UUID = UUID(),
+            conversationID: String,
+            userMessageID: String,
+            message: String,
+            retryPrompt: String,
+            retryFiles: [ChatMessageContent.File]
+        ) {
+            self.id = id
+            self.conversationID = conversationID
+            self.userMessageID = userMessageID
+            self.message = message
+            self.retryPrompt = retryPrompt
+            self.retryFiles = retryFiles
+        }
     }
 
     private var draftTokenSeed: Int = 0
@@ -111,6 +139,28 @@ final class AIChatState: ObservableObject {
     func cancelEditing() {
         editSession = nil
         editCancelToken += 1
+    }
+
+    func presentTransientError(
+        _ error: Error,
+        conversationID: String,
+        userMessageID: String,
+        retryPrompt: String,
+        retryFiles: [ChatMessageContent.File]
+    ) {
+        guard !(error is CancellationError) else { return }
+        transientError = TransientError(
+            conversationID: conversationID,
+            userMessageID: userMessageID,
+            message: error.localizedDescription,
+            retryPrompt: retryPrompt,
+            retryFiles: retryFiles
+        )
+    }
+
+    func clearTransientError(for conversationID: String) {
+        guard transientError?.conversationID == conversationID else { return }
+        transientError = nil
     }
 
     /// Conversations whose context is currently being compacted by

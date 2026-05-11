@@ -44,6 +44,7 @@ struct UserMessageBubble: View {
     /// Optional edit/revert handler — called with the user message's id.
     /// `actionKind == nil` hides the action entirely.
     var actionKind: ActionKind?
+    var showsAction: Bool = true
     var isActionDisabled: Bool = false
     var onAction: ((String) -> Void)?
 
@@ -64,6 +65,9 @@ struct UserMessageBubble: View {
                         // useful in it.
                         if actionKind != nil, onAction != nil {
                             actionBar
+                                .opacity(showsAction ? 1 : 0)
+                                .allowsHitTesting(showsAction)
+                                .animation(.smooth, value: showsAction)
                         }
                     }
                 }

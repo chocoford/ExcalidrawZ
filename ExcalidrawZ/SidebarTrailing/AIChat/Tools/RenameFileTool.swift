@@ -46,7 +46,7 @@ struct RenameFileTool: Tool {
 
     /// Renaming changes the user's library organization, so require an
     /// explicit approval before execution.
-    var alwaysRequiresApproval: Bool { true }
+    var approvalRequirement: ApprovalRequirement { .always }
 
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         let params = try parseInput(input)

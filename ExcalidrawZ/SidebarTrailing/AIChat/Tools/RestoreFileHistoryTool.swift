@@ -61,7 +61,7 @@ struct RestoreFileHistoryTool: Tool {
     /// approval before executing. The user can opt to "always allow" within
     /// the conversation, in which case subsequent restores within the same
     /// conversation skip the prompt (LLMKit caches the decision).
-    var alwaysRequiresApproval: Bool { true }
+    var approvalRequirement: ApprovalRequirement { .always }
 
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         let params = try parseInput(input)

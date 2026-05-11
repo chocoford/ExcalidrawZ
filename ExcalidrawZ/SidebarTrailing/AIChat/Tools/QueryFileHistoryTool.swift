@@ -55,7 +55,7 @@ struct QueryFileHistoryTool: Tool {
     /// and which edits came from prior AI rounds — both pieces of user
     /// data that the user should explicitly authorize before the AI
     /// pulls them into the chat.
-    var alwaysRequiresApproval: Bool { true }
+    var approvalRequirement: ApprovalRequirement { .always }
 
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         let params = try parseInput(input)

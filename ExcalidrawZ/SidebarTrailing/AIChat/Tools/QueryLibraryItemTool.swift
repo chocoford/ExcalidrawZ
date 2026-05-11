@@ -46,7 +46,7 @@ struct QueryLibraryItemTool: Tool {
     /// Returns the raw element payload of a single user-authored
     /// library item. That's the highest-fidelity content reveal of any
     /// of the library tools — always require explicit approval.
-    var alwaysRequiresApproval: Bool { true }
+    var approvalRequirement: ApprovalRequirement { .always }
 
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
         let params = try parseInput(input)

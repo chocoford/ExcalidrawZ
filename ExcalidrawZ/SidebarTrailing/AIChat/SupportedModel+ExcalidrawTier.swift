@@ -27,10 +27,9 @@ import LLMCore
 
 extension SupportedModel {
     /// User-facing tier label used by the chat input's model picker.
-    /// Falls back to the upstream `displayName` when a model isn't
-    /// covered by the tier scheme (e.g. legacy / experimental cases
-    /// that show up in `allowedModels` but aren't part of the
-    /// curated tier ladder).
+    /// DEBUG builds expose the upstream `displayName` for unmapped models
+    /// so newly added cases are easy to spot during development. Release
+    /// builds keep the picker on stable tier vocabulary.
     var excalidrawTierName: String {
         switch self {
             case .gpt4o:
@@ -42,7 +41,11 @@ extension SupportedModel {
             case .claudeOpus4_7, .claudeOpus4_6:
                 return "Extra High"
             default:
+#if DEBUG
                 return displayName
+#else
+                return "Experimental"
+#endif
         }
     }
 

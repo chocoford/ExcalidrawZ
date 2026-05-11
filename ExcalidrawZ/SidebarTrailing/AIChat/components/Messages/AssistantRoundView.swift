@@ -5,12 +5,14 @@
 //  Self-contained per-round reveal. From this view's perspective each
 //  displayable message is in one of two macro-states:
 //
-//   - "currently streaming" — the LLM is still emitting bytes for it.
-//     Identified by `msg.id == streamingID && !streamFinished`. The
-//     row is laid out at full height (so the scroll view sees its
-//     final size) but `chatTopDownReveal(progress: 0)` masks it
-//     invisible. Content updates from the model don't visually flicker
-//     because the mask is fully closed.
+//   - "currently streaming" — the LLM is still emitting bytes for a
+//     committed partial assistant message. Identified by
+//     `llmState.isStreaming(messageID:in:)` in the parent and passed
+//     here as `streamingMessageIDs`. The row is laid out at full height
+//     (so the scroll view sees its final size) but
+//     `chatTopDownReveal(progress: 0)` masks it invisible. Content
+//     updates from the model don't visually flicker because the mask is
+//     fully closed.
 //   - "complete" — the LLM has moved on to a different message id, or
 //     the stream has finished. Eligible for reveal.
 //
@@ -24,8 +26,8 @@
 //  conversation switched into) renders instantly with no fade-in.
 //
 //  No external controller, no priming, no `expectedRoundIDs`. The view
-//  pulls `streamingID` / `streamFinished` from props and the smooth-
-//  scroll callback from `@Environment(\.chatScrollToBottom)`.
+//  pulls per-message streaming ids from props and the smooth-scroll
+//  callback from `@Environment(\.chatScrollToBottom)`.
 //
 
 import SwiftUI
@@ -42,14 +44,9 @@ struct AssistantRoundView: View {
 
     let roundID: String
     let messages: [ChatMessage]
-    /// The id LLMKit is currently streaming. May or may not belong to
-    /// this round.
-    let streamingID: String?
-    /// True when the in-flight stream has reported `isFinished`. Once
-    /// this flips, the message whose id equals `streamingID` is
-    /// considered complete (LLMKit doesn't always rotate the id at
-    /// stream end).
-    let streamFinished: Bool
+    /// Committed assistant message ids that LLMKit still considers
+    /// actively streaming.
+    let streamingMessageIDs: Set<String>
     /// Id of the round currently being driven by the in-flight stream
     /// (`nil` when no stream is active). When `roundID == activeRoundID`
     /// this round is the one being generated — `init` starts with an
@@ -57,15 +54,13 @@ struct AssistantRoundView: View {
     /// pipeline. Otherwise the round is historical / settled and all
     /// messages render fully from frame 1.
     ///
-    /// We can't derive this from `streamingID` alone: LLMKit can commit
+    /// We can't derive this from per-message streaming alone: LLMKit can commit
     /// several messages per round in quick succession (e.g. "Let me
     /// observe…" → toolCall msg). Between commits SwiftUI coalesces
     /// renders, so by the time the round first mounts several messages
-    /// may already exist with `streamingID` pointing PAST them (at the
-    /// next, not-yet-committed message). A per-id "is this the streaming
-    /// target" check then misses every already-committed message and
-    /// pre-marks them revealed — which is the bug where the next
-    /// message's tool card showed up unanimated.
+    /// may already exist and no longer be streaming. A per-id streaming
+    /// check alone would pre-mark them revealed — which is the bug where
+    /// the next message's tool card showed up unanimated.
     let activeRoundID: String?
     let onRegenerate: ((String) -> Void)?
 
@@ -87,22 +82,37 @@ struct AssistantRoundView: View {
     @State private var actionBarTask: Task<Void, Never>?
 
     private static let revealDuration: Double = 0.3
-    private static let layoutFlushDelay: Duration = .milliseconds(80)
+    private static let layoutFlushDelay: Duration = .milliseconds(200)
     private static let actionBarDelay: Duration = .seconds(1)
+
+    private enum RenderItem: Identifiable {
+        case assistantContent(ChatMessageContent)
+        case assistantToolCall(messageID: String, call: ToolCall)
+        case toolResult(ChatMessageContent)
+
+        var id: String {
+            switch self {
+                case .assistantContent(let content):
+                    return "\(content.id):content"
+                case .assistantToolCall(let messageID, let call):
+                    return "\(messageID):toolCall:\(call.id)"
+                case .toolResult(let content):
+                    return "\(content.id):toolResult"
+            }
+        }
+    }
 
     init(
         roundID: String,
         messages: [ChatMessage],
-        streamingID: String?,
-        streamFinished: Bool,
         activeRoundID: String?,
+        streamingMessageIDs: Set<String>,
         onRegenerate: ((String) -> Void)? = nil
     ) {
         self.roundID = roundID
         self.messages = messages
-        self.streamingID = streamingID
-        self.streamFinished = streamFinished
         self.activeRoundID = activeRoundID
+        self.streamingMessageIDs = streamingMessageIDs
         self.onRegenerate = onRegenerate
 
         // The round-level "is this round being streamed" gate (not a
@@ -111,7 +121,10 @@ struct AssistantRoundView: View {
         // committed by the time this view first mounted. For a settled
         // / historical round, every displayable message is pre-marked
         // revealed.
-        let displayableIDs = Self.displayableMessageIDs(in: messages)
+        let displayableIDs = Self.renderItems(
+            in: messages,
+            streamingMessageIDs: streamingMessageIDs
+        ).map(\.id)
         let isActiveRound = (roundID == activeRoundID)
         let initialRevealed: [String] = isActiveRound ? [] : displayableIDs
         self._revealedIDs = State(initialValue: Set(initialRevealed))
@@ -139,22 +152,23 @@ struct AssistantRoundView: View {
             // doesn't shift the messages above. Without this, the
             // last message would jump when the action row materializes
             // a second after settling.
-            if let target = lastAssistantMessage,
-               case .content(let c) = target,
-               displayText(of: c).nonEmpty != nil {
+            if let target = lastActionableAssistantContent,
+               displayText(of: target).nonEmpty != nil {
                 actionRow(
-                    copyText: aggregatedAssistantText,
-                    sourceID: c.id
+                    copyText: aggregatedLaidOutAssistantText,
+                    sourceID: target.id
                 )
                 .opacity(showsActionBar ? 1 : 0)
                 .allowsHitTesting(showsActionBar)
-                .padding(.bottom, 40)
             }
         }
         .animation(.easeOut(duration: 0.25), value: showsActionBar)
-        .animation(.easeOut(duration: 0.25), value: showsLoadingRow)
+        .animation(.easeOut(duration: 0.2), value: showsLoadingRow)
         .task(id: completionSignature) {
             handleCompletionChange()
+        }
+        .task(id: loadingDiagnosticSignature) {
+            logLoadingDiagnostics()
         }
         .onDisappear {
             queueTask?.cancel()
@@ -167,9 +181,9 @@ struct AssistantRoundView: View {
     @ViewBuilder
     private var messagesContent: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ForEach(displayableMessages) { msg in
-                messageRow(msg)
-                    .chatTopDownReveal(progress: progress(for: msg.id))
+            ForEach(renderItems) { item in
+                renderItem(item)
+                    .chatTopDownRevealFrame(progress: progress(for: item.id))
             }
         }
     }
@@ -179,37 +193,34 @@ struct AssistantRoundView: View {
     }
 
     @MainActor @ViewBuilder
-    private func messageRow(_ msg: ChatMessage) -> some View {
-        if case .content(let c) = msg {
-            switch c.role {
-                case .tool:
-                    ToolResultCard(content: c)
-                case .assistant:
-                    assistantMessage(c)
-                default:
-                    EmptyView()
-            }
+    private func renderItem(_ item: RenderItem) -> some View {
+        switch item {
+            case .assistantContent(let content):
+                assistantContent(content)
+            case .assistantToolCall(_, let call):
+                assistantToolCall(item)
+            case .toolResult(let content):
+                ToolResultCard(content: content)
         }
     }
 
     @MainActor @ViewBuilder
-    private func assistantMessage(_ c: ChatMessageContent) -> some View {
+    private func assistantContent(_ c: ChatMessageContent) -> some View {
         let text = displayText(of: c)
-        let nonFinalCalls = (c.toolCalls ?? []).filter { $0.name != "final_answer" }
-        if !text.isEmpty || !nonFinalCalls.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                if !text.isEmpty {
-                    SmoothStreamingText(target: text, isStreaming: false)
-                        .padding(.bottom, 6)
-                }
-                ForEach(nonFinalCalls, id: \.id) { call in
-                    ToolCallCard(
-                        call: call,
-                        isActive: false,
-                        isDenied: isCallDenied(call)
-                    )
-                }
-            }
+        if !text.isEmpty {
+            SmoothStreamingText(target: text, isStreaming: false)
+                .padding(.bottom, 6)
+        }
+    }
+
+    @MainActor @ViewBuilder
+    private func assistantToolCall(_ item: RenderItem) -> some View {
+        if case .assistantToolCall(let messageID, let call) = item {
+            ToolCallCard(
+                call: call,
+                isActive: streamingMessageIDs.contains(messageID),
+                isDenied: isCallDenied(call)
+            )
         }
     }
 
@@ -218,107 +229,50 @@ struct AssistantRoundView: View {
     /// Hashable snapshot of every input that affects the
     /// completeness decision. `.task(id:)` re-runs
     /// `handleCompletionChange` whenever this changes — when a new
-    /// message commits, when the streaming id rotates, when the
-    /// stream ends, OR when an in-flight assistant message's
-    /// `toolCalls` flips from empty → non-empty (the LLM stream's
-    /// tail signal).
+    /// message commits or when LLMKit's per-message streaming status
+    /// flips false.
     private var completionSignature: String {
         let ids = messages.compactMap { msg -> String? in
             switch msg {
                 case .content(let c):
-                    // Include a 0/1 marker for whether toolCalls is
-                    // populated. The transition empty → non-empty is
-                    // the signal we use to mark an assistant message
-                    // "stream done" while `streamingID` is still
-                    // pinned on it.
-                    let toolMarker = (c.toolCalls?.isEmpty ?? true) ? "0" : "1"
-                    return "\(c.id):\(toolMarker)"
-                case .loading(let id): return "loading:\(id.uuidString)"
-                case .error(let id, _): return "error:\(id.uuidString)"
+                    let streamingMarker = streamingMessageIDs.contains(c.id) ? "1" : "0"
+                    let toolCallMarker = c.toolCalls.map { calls in
+                        calls.map { call in
+                            "\(call.id):\(call.name):a\(call.arguments.count)"
+                        }.joined(separator: ",")
+                    } ?? "nil"
+                    return "\(c.id):\(streamingMarker):c\(c.content?.count ?? 0):tc[\(toolCallMarker)]"
+                case .loading(let id):
+                    return "loading:\(id.uuidString)"
+                case .error(let id, _):
+                    return "error:\(id.uuidString)"
             }
         }.joined(separator: ",")
-        return "\(streamingID ?? "nil")::\(streamFinished)::\(ids)"
+        return "\(activeRoundID ?? "nil")::\(ids)"
     }
 
     /// True iff a message's LLM stream has reached a stable end-state
-    /// — its content + toolCalls aren't going to change.
-    ///
-    /// LLMKit's `streamingID` represents "current LLM stream target"
-    /// at the **agent-run** level, not per-message. Between rounds
-    /// (during tool execution by AgentExecutor) it stays pinned on
-    /// the previous assistant message even though that message's
-    /// stream has long since finished. Relying on
-    /// `id == streamingID` alone holds the message hidden through
-    /// tool execution, which can be slow (e.g. `adjust_element`).
-    ///
-    /// Instead we lean on the LLM's own end-of-message signal:
-    /// `toolCalls` arrive at the tail of the stream, so a
-    /// streaming-target message that already has any toolCalls is
-    /// effectively complete. The corner case — a pure-text message
-    /// with no toolCalls — only happens for the agent's terminal
-    /// answer, by which time `streamFinished` flips true.
+    /// — LLMKit is no longer streaming into its committed id.
     private static func isStreamDone(
         _ msg: ChatMessage,
-        streamingID: String?,
-        streamFinished: Bool
+        streamingMessageIDs: Set<String>
     ) -> Bool {
         guard case .content(let c) = msg else { return true }
         // `role: .tool` messages are synthesized synchronously by
         // AgentExecutor after each tool returns — they're stable
         // the moment they appear in the array.
         if c.role == .tool { return true }
-        // Whole agent run is done.
-        if streamFinished { return true }
-        // Not the current streaming target → previous round's, done.
-        if c.id != streamingID { return true }
-        // Streaming target with toolCalls populated → tail of stream,
-        // content has already been emitted, the message is stable.
-        if !((c.toolCalls ?? []).isEmpty) { return true }
-        // Streaming target, no toolCalls yet → still streaming.
-        return false
-    }
-
-    /// Any message still in flight (LLM stream not yet at tail)?
-    /// Drives the loading row.
-    private var hasInflightInRound: Bool {
-        guard !streamFinished else { return false }
-        return messages.contains { msg in
-            !Self.isStreamDone(msg, streamingID: streamingID, streamFinished: streamFinished)
-        }
-    }
-
-    /// Loading row: shown only while a message in this round is still
-    /// mid-stream AND no reveal has landed yet. Once the first reveal
-    /// lands, the row's content takes over.
-    private var showsLoadingRow: Bool {
-        guard hasInflightInRound else { return false }
-        return revealedIDs.isEmpty
+        return !streamingMessageIDs.contains(c.id)
     }
 
     @MainActor
     private func handleCompletionChange() {
         let queueSet = Set(revealQueue)
         var toEnqueue: [String] = []
-        // Iterate in commit order. We BREAK (not `continue`) the
-        // moment we hit a message whose stream isn't done yet —
-        // anything past it is positionally later and must wait its
-        // turn. AgentExecutor synchronously injects tool-result
-        // messages while the preceding assistant message's
-        // `streamingID` may still be pinned, so without the break a
-        // tool result could get enqueued before the assistant
-        // message + its inline toolCallCard.
-        for msg in displayableMessages {
-            guard case .content(let c) = msg else { continue }
-            let id = c.id
+        for item in renderItems {
+            let id = item.id
             if revealedIDs.contains(id) { continue }
             if queueSet.contains(id) { continue }
-            if !Self.isStreamDone(
-                msg,
-                streamingID: streamingID,
-                streamFinished: streamFinished
-            ) {
-                break
-            }
             toEnqueue.append(id)
         }
         if !toEnqueue.isEmpty {
@@ -329,6 +283,65 @@ struct AssistantRoundView: View {
         // bar: streaming may have just finished on an already-revealed
         // last message.
         evaluateActionBar()
+    }
+
+    /// Any assistant message in this round whose LLM stream has not
+    /// reached the tail yet. Stable render items can reveal before this
+    /// flips false; the row remains visible while the rest of that
+    /// message is still arriving.
+    private var hasInflightInRound: Bool {
+        return messages.contains { msg in
+            !Self.isStreamDone(msg, streamingMessageIDs: streamingMessageIDs)
+        }
+    }
+
+    /// Show while the current hidden message is actively streaming.
+    /// As soon as the message becomes stable, this disappears before
+    /// the reveal queue performs its place -> scroll -> wipe-in sequence.
+    private var showsLoadingRow: Bool {
+        hasInflightInRound
+    }
+
+    private var loadingDiagnosticSignature: String {
+        [
+            "round=\(roundID)",
+            "streamingIDs=\(streamingMessageIDs.sorted().joined(separator: ","))",
+            "loading=\(showsLoadingRow)",
+            "revealed=\(revealedIDs.sorted().joined(separator: ","))",
+            "queue=\(revealQueue.joined(separator: ","))",
+            "messages=\(loadingMessageSummary)"
+        ].joined(separator: " ")
+    }
+
+    private var loadingMessageSummary: String {
+        messages.compactMap { message -> String? in
+            guard case .content(let content) = message else {
+                return nil
+            }
+            let streaming = streamingMessageIDs.contains(content.id)
+            let revealed = revealedIDs.contains(content.id)
+            let queued = revealQueue.contains(content.id)
+            let itemIDs = Self.renderItems(
+                in: [message],
+                streamingMessageIDs: streamingMessageIDs
+            ).map(\.id).joined(separator: ",")
+            return "\(content.role):\(content.id):c\(content.content?.count ?? 0):tc\(content.toolCalls?.count ?? 0):streaming\(streaming):revealed\(revealed):queued\(queued):items[\(itemIDs)]"
+        }.joined(separator: "|")
+    }
+
+    private func logLoadingDiagnostics() {
+        #if DEBUG
+        print(
+            "[aiChatLoadingDiag] round",
+            "roundID=\(roundID)",
+            "activeRoundID=\(activeRoundID ?? "nil")",
+            "streamingMessageIDs=\(streamingMessageIDs.sorted())",
+            "showsLoadingRow=\(showsLoadingRow)",
+            "revealedIDs=\(revealedIDs.sorted())",
+            "revealQueue=\(revealQueue)",
+            "messages=\(loadingMessageSummary)"
+        )
+        #endif
     }
 
     private func startQueueIfNeeded() {
@@ -363,24 +376,23 @@ struct AssistantRoundView: View {
         evaluateActionBar()
     }
 
-    /// Schedule the action row's appearance once the round is fully
-    /// done. "Done" requires `streamFinished` — the whole agent run
-    /// has signed off — not just "no message currently mid-stream".
-    /// The latter would fire prematurely during the tool-execution
-    /// gaps between LLM rounds (M.1 done, M.2 not yet injected,
-    /// `streamingID` still pinned on M.1, `hasInflightInRound`
-    /// transiently false).
+    /// Schedule the action row's appearance once this round is no longer
+    /// the active generating round and every displayable row has revealed.
+    /// Per-message streaming alone is not enough: it can flip false
+    /// between tool/assistant phases while the agent turn is still
+    /// producing more rows for the same active round.
     ///
     /// Once flipped true, we never flip back to false. A historical
     /// round mounts with `showsActionBar = true` at init; signature
     /// changes from new conversations / streams should never tear it
     /// down.
     private func evaluateActionBar() {
-        let allRevealed = displayableMessages.allSatisfy { msg in
-            guard case .content(let c) = msg else { return true }
-            return revealedIDs.contains(c.id)
-        }
-        let settled = streamFinished && allRevealed
+        let allRevealed = renderItems.allSatisfy { revealedIDs.contains($0.id) }
+        let isActiveGeneratingRound = (roundID == activeRoundID)
+        let settled = !isActiveGeneratingRound
+            && !hasInflightInRound
+            && allRevealed
+            && lastActionableAssistantContent != nil
         actionBarTask?.cancel()
         actionBarTask = nil
         guard settled, !showsActionBar else { return }
@@ -397,6 +409,55 @@ struct AssistantRoundView: View {
         messages.filter(Self.isDisplayable)
     }
 
+    /// Rows that are allowed to participate in layout. Assistant
+    /// content can become stable before its tool-calls finish; tool
+    /// call cards wait until the whole assistant message is stable.
+    private var renderItems: [RenderItem] {
+        Self.renderItems(in: messages, streamingMessageIDs: streamingMessageIDs)
+    }
+
+    private static func renderItems(
+        in messages: [ChatMessage],
+        streamingMessageIDs: Set<String>
+    ) -> [RenderItem] {
+        var result: [RenderItem] = []
+        for message in messages {
+            guard isDisplayable(message), case .content(let content) = message else {
+                continue
+            }
+            switch content.role {
+                case .tool:
+                    result.append(.toolResult(content))
+                case .assistant:
+                    let isStreaming = streamingMessageIDs.contains(content.id)
+                    let text = displayText(of: content)
+                    let hasFinalCall = hasFinalAnswerToolCall(in: content)
+                    let hasToolCallsStarted = content.toolCalls != nil
+                    let contentIsStable = !isStreaming
+                        || (!hasFinalCall && hasToolCallsStarted && !text.isEmpty)
+
+                    if !text.isEmpty {
+                        guard contentIsStable else { return result }
+                        result.append(.assistantContent(content))
+                    }
+
+                    let nonFinalCalls = nonFinalToolCalls(in: content)
+                    if !nonFinalCalls.isEmpty {
+                        result.append(
+                            contentsOf: nonFinalCalls.map {
+                                .assistantToolCall(messageID: content.id, call: $0)
+                            }
+                        )
+                    } else if isStreaming {
+                        return result
+                    }
+                default:
+                    continue
+            }
+        }
+        return result
+    }
+
     private static func isDisplayable(_ msg: ChatMessage) -> Bool {
         guard case .content(let c) = msg else { return false }
         let text: String = {
@@ -408,15 +469,6 @@ struct AssistantRoundView: View {
         return !text.isEmpty || !((c.toolCalls ?? []).isEmpty)
     }
 
-    private static func displayableMessageIDs(in messages: [ChatMessage]) -> [String] {
-        messages.compactMap { msg -> String? in
-            guard isDisplayable(msg), case .content(let c) = msg else {
-                return nil
-            }
-            return c.id
-        }
-    }
-
     private func isCallDenied(_ call: ToolCall) -> Bool {
         messages.contains { msg in
             guard case .content(let c) = msg,
@@ -426,30 +478,46 @@ struct AssistantRoundView: View {
         }
     }
 
-    private var aggregatedAssistantText: String {
-        messages
+    private var aggregatedLaidOutAssistantText: String {
+        renderItems
             .compactMap { msg -> String? in
-                guard case .content(let c) = msg, c.role == .assistant else {
+                guard case .assistantContent(let content) = msg else {
                     return nil
                 }
-                let text = displayText(of: c)
+                let text = displayText(of: content)
                 return text.isEmpty ? nil : text
             }
             .joined(separator: "\n\n")
     }
 
-    private func displayText(of c: ChatMessageContent) -> String {
+    private static func displayText(of c: ChatMessageContent) -> String {
         if let finalCall = c.toolCalls?.first(where: { $0.name == "final_answer" }) {
             return parseFinalAnswerArgs(finalCall.arguments)
         }
         return c.content ?? ""
     }
 
-    private var lastAssistantMessage: ChatMessage? {
-        messages.last(where: { msg in
-            guard case .content(let c) = msg else { return false }
-            return c.role == .assistant
-        })
+    private func displayText(of c: ChatMessageContent) -> String {
+        Self.displayText(of: c)
+    }
+
+    private var lastActionableAssistantContent: ChatMessageContent? {
+        guard case .assistantContent(let content) = renderItems.last(where: { item in
+            guard case .assistantContent(let content) = item else { return false }
+            return !Self.displayText(of: content).isEmpty
+                && Self.nonFinalToolCalls(in: content).isEmpty
+        }) else {
+            return nil
+        }
+        return content
+    }
+
+    private static func nonFinalToolCalls(in content: ChatMessageContent) -> [ToolCall] {
+        (content.toolCalls ?? []).filter { $0.name != "final_answer" }
+    }
+
+    private static func hasFinalAnswerToolCall(in content: ChatMessageContent) -> Bool {
+        content.toolCalls?.contains(where: { $0.name == "final_answer" }) == true
     }
 
     // MARK: - Action row
