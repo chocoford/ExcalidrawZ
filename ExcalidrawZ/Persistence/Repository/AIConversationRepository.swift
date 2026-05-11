@@ -11,6 +11,18 @@ import Logging
 
 // MARK: - Snapshots
 
+struct AIConversationFileScope: Hashable, Sendable {
+    enum Kind: String, Sendable {
+        case libraryFile
+        case localFile
+        case temporaryFile
+        case collaborationFile
+    }
+
+    var kind: Kind
+    var id: String
+}
+
 /// Value-type snapshot of an `AIConversation` row + its messages.
 /// Crossing the Core Data context boundary requires either staying on
 /// the context's queue or extracting plain values inside it — managed
@@ -25,6 +37,8 @@ struct AIConversationSnapshot: Sendable {
     var title: String?
     var createdAt: Date?
     var lastChatAt: Date?
+    var fileScopeKind: String?
+    var fileScopeID: String?
     var messages: [AIConversationMessageSnapshot]
 }
 
@@ -104,6 +118,8 @@ actor AIConversationRepository {
                     title: row.title,
                     createdAt: row.createdAt,
                     lastChatAt: row.lastChatAt,
+                    fileScopeKind: row.fileScopeKind,
+                    fileScopeID: row.fileScopeID,
                     messages: messageSnapshots
                 )
             }
@@ -125,31 +141,20 @@ actor AIConversationRepository {
         }
     }
 
-    /// Fetch the snapshots of every conversation associated with the
-    /// given `File` (matched by File.id UUID). Same snapshot pattern as
-    /// `fetchAllConversationSnapshots` — all NSManagedObject reads
-    /// happen inside `context.perform`, output is plain Sendable
-    /// values safe to pass across actor / queue boundaries.
+    /// Fetch snapshots of every conversation associated with the given
+    /// active-file scope. The scope is intentionally independent of
+    /// Core Data relationships so library files, local URLs,
+    /// temporary URLs, and collaboration files all use the same lookup
+    /// path.
     ///
-    /// - Parameter fileID: The `File.id` UUID. Pass `nil` to query
-    ///   "conversations with no file association" (e.g. legacy rows
-    ///   from before file-binding was wired in, or sessions started
-    ///   on local/temporary files where binding doesn't apply).
-    /// - Returns: Snapshots for matching conversations, ordered by
-    ///   `lastChatAt` descending then `createdAt` descending. Empty
-    ///   array if no matches.
-    func fetchConversationSnapshots(forFileID fileID: UUID?) async throws -> [AIConversationSnapshot] {
+    func fetchConversationSnapshots(
+        forFileScope scope: AIConversationFileScope
+    ) async throws -> [AIConversationSnapshot] {
         let context = PersistenceController.shared.newTaskContext()
 
         return try await context.perform {
             let fetchRequest = NSFetchRequest<AIConversation>(entityName: "AIConversation")
-            if let fileID {
-                fetchRequest.predicate = NSPredicate(format: "file.id == %@", fileID as CVarArg)
-            } else {
-                // `file == nil` syntax in NSPredicate uses the explicit
-                // `== NULL` form to match unbound rows.
-                fetchRequest.predicate = NSPredicate(format: "file == NULL")
-            }
+            fetchRequest.predicate = Self.fileScopePredicate(scope)
             fetchRequest.sortDescriptors = [
                 NSSortDescriptor(key: "lastChatAt", ascending: false),
                 NSSortDescriptor(key: "createdAt", ascending: false)
@@ -157,7 +162,7 @@ actor AIConversationRepository {
             fetchRequest.relationshipKeyPathsForPrefetching = ["messages"]
 
             let rows = try context.fetch(fetchRequest)
-            print("[AIChatDiag] repo.fetchConversationSnapshots(forFileID=\(fileID?.uuidString ?? "nil")) -> \(rows.count) Core Data rows")
+            print("[AIChatDiag] repo.fetchConversationSnapshots(scope=\(scope.kind.rawValue):\(scope.id)) -> \(rows.count) Core Data rows")
             return rows.map { row in
                 let messageSet = row.messages as? Set<AIConversationMessage> ?? []
                 let messageSnapshots = messageSet
@@ -184,27 +189,23 @@ actor AIConversationRepository {
                     title: row.title,
                     createdAt: row.createdAt,
                     lastChatAt: row.lastChatAt,
+                    fileScopeKind: row.fileScopeKind,
+                    fileScopeID: row.fileScopeID,
                     messages: messageSnapshots
                 )
             }
         }
     }
 
-    /// Bind an existing conversation to a `File`. Used as a
+    /// Bind an existing conversation to an active-file scope. Used as a
     /// post-create step after `LLMKit.createConversation(...)` returns
-    /// — LLMKit's API doesn't carry our app's file association, so we
+    /// — LLMKit's API doesn't carry our app's file scope, so we
     /// stamp it on out-of-band. Idempotent: re-binding to the same
-    /// file is a no-op; binding to a different file replaces the
+    /// scope is a no-op; binding to a different file replaces the
     /// previous link.
-    ///
-    /// - Parameters:
-    ///   - conversationID: Conversation identifier (string id used in
-    ///     LLMKit), not the NSManagedObjectID.
-    ///   - fileObjectID: The File entity's permanent objectID. Caller
-    ///     must have already saved the File row.
-    func bindConversationToFile(
+    func bindConversationToFileScope(
         conversationID: String,
-        fileObjectID: NSManagedObjectID
+        scope: AIConversationFileScope
     ) async throws {
         let context = PersistenceController.shared.newTaskContext()
 
@@ -214,33 +215,52 @@ actor AIConversationRepository {
             fetchRequest.fetchLimit = 1
 
             guard let conversation = try context.fetch(fetchRequest).first else {
-                print("[AIChatDiag] repo.bindConversationToFile: conversation \(conversationID) NOT FOUND in Core Data")
+                print("[AIChatDiag] repo.bindConversationToFileScope: conversation \(conversationID) NOT FOUND in Core Data")
                 throw AppError.fileError(.notFound)
             }
-            guard let file = context.object(with: fileObjectID) as? File else {
-                print("[AIChatDiag] repo.bindConversationToFile: File at objectID \(fileObjectID) cast failed")
-                throw AppError.fileError(.notFound)
-            }
-            conversation.file = file
+            conversation.fileScopeKind = scope.kind.rawValue
+            conversation.fileScopeID = scope.id
             try context.save()
-            print("[AIChatDiag] repo.bindConversationToFile: bound \(conversationID) -> File(name=\(file.name ?? "?") id=\(file.id?.uuidString ?? "nil"))")
+            print("[AIChatDiag] repo.bindConversationToFileScope: bound \(conversationID) -> \(scope.kind.rawValue):\(scope.id)")
+        }
+    }
+
+    /// Move existing conversations from one file scope to another.
+    /// Used when URL-backed files are renamed or moved, and when a
+    /// temporary file is saved into a durable local file.
+    func rebindConversations(
+        from oldScope: AIConversationFileScope,
+        to newScope: AIConversationFileScope
+    ) async throws {
+        guard oldScope != newScope else { return }
+
+        let context = PersistenceController.shared.newTaskContext()
+        try await context.perform {
+            let fetchRequest = NSFetchRequest<AIConversation>(entityName: "AIConversation")
+            fetchRequest.predicate = Self.fileScopePredicate(oldScope)
+
+            let conversations = try context.fetch(fetchRequest)
+            for conversation in conversations {
+                conversation.fileScopeKind = newScope.kind.rawValue
+                conversation.fileScopeID = newScope.id
+            }
+
+            if context.hasChanges {
+                try context.save()
+            }
         }
     }
 
     // MARK: - Create Operations
 
-    /// Create a new conversation
-    /// - Parameters:
-    ///   - conversationID: Unique conversation identifier
-    ///   - title: Conversation title
-    ///   - type: Conversation type (e.g., "Chat")
-    ///   - fileObjectID: Optional associated file objectID
+    /// Create a new conversation. File scope is stamped separately by
+    /// app-level send wiring because LLMKit conversations don't carry
+    /// ExcalidrawZ file ownership.
     /// - Returns: The objectID of the created conversation
     func createConversation(
         conversationID: String,
         title: String,
-        type: String,
-        fileObjectID: NSManagedObjectID? = nil
+        type: String
     ) async throws -> NSManagedObjectID {
         let context = PersistenceController.shared.newTaskContext()
 
@@ -251,12 +271,6 @@ actor AIConversationRepository {
             conversation.type = type
             conversation.createdAt = Date()
             conversation.lastChatAt = Date()
-
-            if let fileObjectID = fileObjectID {
-                if let file = context.object(with: fileObjectID) as? File {
-                    conversation.file = file
-                }
-            }
 
             context.insert(conversation)
             try context.save()
@@ -500,20 +514,67 @@ actor AIConversationRepository {
     /// Delete entire conversation and all its messages
     /// - Parameter conversationID: The conversation identifier
     func deleteConversation(conversationID: String) async throws {
+        let blobs = try await deleteConversationRows(
+            matching: NSPredicate(format: "conversationID == %@", conversationID)
+        )
+        await deleteAttachments(from: blobs)
+    }
+
+    /// Delete every conversation tied to a file scope. This is the
+    /// replacement for the old Core Data relationship cleanup path:
+    /// once the file's backing record or URL is gone, its scoped
+    /// conversations should not remain resumable.
+    func deleteConversations(forFileScope scope: AIConversationFileScope) async throws {
+        let blobs = try await deleteConversationRows(matching: Self.fileScopePredicate(scope))
+        await deleteAttachments(from: blobs)
+    }
+
+    private func deleteConversationRows(matching predicate: NSPredicate) async throws -> [Data] {
         let context = PersistenceController.shared.newTaskContext()
 
-        try await context.perform {
+        return try await context.perform {
             let fetchRequest = NSFetchRequest<AIConversation>(entityName: "AIConversation")
-            fetchRequest.predicate = NSPredicate(format: "conversationID == %@", conversationID)
+            fetchRequest.predicate = predicate
+            fetchRequest.relationshipKeyPathsForPrefetching = ["messages"]
 
-            guard let conversation = try context.fetch(fetchRequest).first else {
-                return // Already deleted
+            let conversations = try context.fetch(fetchRequest)
+            guard !conversations.isEmpty else {
+                return []
             }
 
-            // Core Data will handle cascading delete of messages based on deletion rule
-            context.delete(conversation)
-            try context.save()
+            var blobs: [Data] = []
+            for conversation in conversations {
+                let messages = conversation.messages as? Set<AIConversationMessage> ?? []
+                blobs.append(contentsOf: messages.compactMap(\.filesData))
+                for message in messages {
+                    context.delete(message)
+                }
+                context.delete(conversation)
+            }
+
+            if context.hasChanges {
+                try context.save()
+            }
+            return blobs
         }
+    }
+
+    private func deleteAttachments(from blobs: [Data]) async {
+        let referenced = blobs.flatMap(Self.decodePersistedFiles(from:))
+        await PersistenceController.shared.aiChatAttachmentRepository.deleteAll(referencedFiles: referenced)
+    }
+
+    private static func fileScopePredicate(_ scope: AIConversationFileScope) -> NSPredicate {
+        NSPredicate(
+            format: "fileScopeKind == %@ AND fileScopeID == %@",
+            scope.kind.rawValue,
+            scope.id
+        )
+    }
+
+    private static func decodePersistedFiles(from data: Data?) -> [PersistedFile] {
+        guard let data, !data.isEmpty else { return [] }
+        return (try? JSONDecoder().decode([PersistedFile].self, from: data)) ?? []
     }
 
     // MARK: - Helper Methods

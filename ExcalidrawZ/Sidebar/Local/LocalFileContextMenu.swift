@@ -87,12 +87,26 @@ struct LocalFileMenuProvider: View {
                 
                 // Also update checkpoints
                 updateCheckpoints(oldURL: file, newURL: newURL)
+                rebindAIConversations(oldURL: file, newURL: newURL)
                 
                 localFolderState.itemRenamedPublisher.send(newURL.filePath)
             }
             
         } catch {
             alertToast(error)
+        }
+    }
+
+    private func rebindAIConversations(oldURL: URL, newURL: URL) {
+        Task.detached {
+            do {
+                try await PersistenceController.shared.aiConversationRepository.rebindConversations(
+                    from: AIConversationFileScope(kind: .localFile, id: oldURL.absoluteString),
+                    to: AIConversationFileScope(kind: .localFile, id: newURL.absoluteString)
+                )
+            } catch {
+                print("Warning: Failed to rebind AI conversations for renamed local file: \(error)")
+            }
         }
     }
     
@@ -459,6 +473,17 @@ struct LocalFileRowMenuItems: View {
                         // Item removed will be handled in `LocalFilesListView`
                         for file in filesToDelete {
                             _ = try await FileCoordinator.shared.coordinatedTrash(url: file)
+                            do {
+                                try await PersistenceController.shared.aiConversationRepository
+                                    .deleteConversations(
+                                        forFileScope: AIConversationFileScope(
+                                            kind: .localFile,
+                                            id: file.absoluteString
+                                        )
+                                    )
+                            } catch {
+                                print("Warning: Failed to delete AI conversations for local file \(file): \(error)")
+                            }
                         }
                     }
 

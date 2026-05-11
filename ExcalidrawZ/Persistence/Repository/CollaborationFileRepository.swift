@@ -303,9 +303,9 @@ actor CollaborationFileRepository {
         let context = PersistenceController.shared.newTaskContext()
 
         // Extract file info before deletion
-        let (filePath, fileID, checkpointPaths): (String?, UUID?, [(String, UUID)]) = try await context.perform {
+        let (filePath, fileID, fileScopeID, checkpointPaths): (String?, UUID?, String?, [(String, UUID)]) = try await context.perform {
             guard let collaborationFile = context.object(with: collaborationFileObjectID) as? CollaborationFile else {
-                return (nil, nil, [])
+                return (nil, nil, nil, [])
             }
 
             // Collect checkpoint info before deletion
@@ -326,6 +326,9 @@ actor CollaborationFileRepository {
 
             let path = collaborationFile.filePath
             let id = collaborationFile.id
+            let scopeID = collaborationFile.id?.uuidString
+                ?? collaborationFile.roomID
+                ?? collaborationFile.objectID.uriRepresentation().absoluteString
 
             // Delete collaboration file from database
             context.delete(collaborationFile)
@@ -334,7 +337,7 @@ actor CollaborationFileRepository {
                 try context.save()
             }
 
-            return (path, id, checkpointInfo)
+            return (path, id, scopeID, checkpointInfo)
         }
 
         // Delete physical files from storage (local + iCloud)
@@ -353,6 +356,20 @@ actor CollaborationFileRepository {
                 try await FileStorageManager.shared.deleteContent(relativePath: relativePath, fileID: fileUUID.uuidString)
             } catch {
                 print("Warning: Failed to delete collaboration file from storage: \(error)")
+            }
+        }
+
+        if let fileScopeID {
+            do {
+                try await PersistenceController.shared.aiConversationRepository
+                    .deleteConversations(
+                        forFileScope: AIConversationFileScope(
+                            kind: .collaborationFile,
+                            id: fileScopeID
+                        )
+                    )
+            } catch {
+                print("Warning: Failed to delete AI conversations for collaboration file \(fileScopeID): \(error)")
             }
         }
     }

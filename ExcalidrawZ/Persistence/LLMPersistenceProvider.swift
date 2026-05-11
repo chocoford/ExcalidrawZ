@@ -111,15 +111,6 @@ struct LLMPersistenceProvider: PersistenceProvider {
                 try await updateConversationAction(conversationID: conversationID, action: action)
 
             case .delete(let conversationID):
-                // Order matters: harvest attachment references *before*
-                // the cascade delete drops the message rows, otherwise
-                // `fetchFilesDataBlobs` returns nothing and the on-disk
-                // attachments are orphaned forever (until the next GC
-                // sweep, which is best-effort).
-                let blobs = (try? await repository.fetchFilesDataBlobs(forConversationID: conversationID)) ?? []
-                let referenced = blobs.flatMap(decodePersistedFiles(from:))
-                await attachmentRepository.deleteAll(referencedFiles: referenced)
-
                 try await repository.deleteConversation(conversationID: conversationID)
         }
     }
@@ -207,11 +198,7 @@ struct LLMPersistenceProvider: PersistenceProvider {
         let conversationObjectID = try await repository.createConversation(
             conversationID: conversation.id,
             title: conversation.title,
-            type: conversation.type.rawValue,
-            // File association isn't pushed through LLMKit's
-            // Conversation type; it's set by app-level wiring elsewhere
-            // when a conversation is bound to a canvas file.
-            fileObjectID: nil
+            type: conversation.type.rawValue
         )
 
         for message in conversation.messages {

@@ -149,6 +149,7 @@ struct TemporaryFileMenuItems: View {
             for file in filesToClose {
                 fileState.temporaryFiles.removeAll(where: { $0 == file })
             }
+            deleteAIConversations(for: filesToClose)
             
             if didCloseCurrent {
                 if fileState.temporaryFiles.isEmpty {
@@ -172,6 +173,24 @@ struct TemporaryFileMenuItems: View {
             }
         }
     }
+
+    private func deleteAIConversations(for temporaryFiles: [URL]) {
+        Task.detached {
+            for file in temporaryFiles {
+                do {
+                    try await PersistenceController.shared.aiConversationRepository
+                        .deleteConversations(
+                            forFileScope: AIConversationFileScope(
+                                kind: .temporaryFile,
+                                id: file.absoluteString
+                            )
+                        )
+                } catch {
+                    print("Warning: Failed to delete AI conversations for temporary file \(file): \(error)")
+                }
+            }
+        }
+    }
     
     private func moveFile(to groupID: NSManagedObjectID) {
         let currentFileURL: URL? = if case .temporaryFile(let file) = fileState.currentActiveFile {
@@ -192,13 +211,13 @@ struct TemporaryFileMenuItems: View {
                         file,
                         groupObjectID: groupID
                     )
-                    let id: NSManagedObjectID? = try await context.perform {
+                    let result: (id: NSManagedObjectID?, scopeID: String?) = try await context.perform {
                         guard case let group as Group = context.object(with: groupID) else {
-                            return nil
+                            return (nil, nil)
                         }
                         var currentTemporaryFileID :NSManagedObjectID? = nil
                         guard let newFile = context.object(with: newFileID) as? File else {
-                            return nil
+                            return (nil, nil)
                         }
                         newFile.group = group
                         context.insert(newFile)
@@ -206,11 +225,23 @@ struct TemporaryFileMenuItems: View {
                             currentTemporaryFileID = newFile.objectID
                         }
                         try context.save()
-                        return currentTemporaryFileID
+                        let scopeID = newFile.id?.uuidString
+                            ?? newFile.objectID.uriRepresentation().absoluteString
+                        return (currentTemporaryFileID, scopeID)
                     }
                     
-                    if let id {
+                    if let id = result.id {
                         currentTemporaryFileID = id
+                    }
+                    if let scopeID = result.scopeID {
+                        do {
+                            try await PersistenceController.shared.aiConversationRepository.rebindConversations(
+                                from: AIConversationFileScope(kind: .temporaryFile, id: file.absoluteString),
+                                to: AIConversationFileScope(kind: .libraryFile, id: scopeID)
+                            )
+                        } catch {
+                            print("Warning: Failed to rebind AI conversations for saved temporary file: \(error)")
+                        }
                     }
                 }
                 

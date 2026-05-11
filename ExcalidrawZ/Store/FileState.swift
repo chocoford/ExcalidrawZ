@@ -72,6 +72,27 @@ final class FileState: ObservableObject {
                     collaborationFile.id?.uuidString ?? UUID().uuidString
             }
         }
+
+        var aiConversationFileScope: AIConversationFileScope {
+            switch self {
+                case .file(let file):
+                    AIConversationFileScope(
+                        kind: .libraryFile,
+                        id: file.id?.uuidString ?? file.objectID.uriRepresentation().absoluteString
+                    )
+                case .localFile(let url):
+                    AIConversationFileScope(kind: .localFile, id: url.absoluteString)
+                case .temporaryFile(let url):
+                    AIConversationFileScope(kind: .temporaryFile, id: url.absoluteString)
+                case .collaborationFile(let file):
+                    AIConversationFileScope(
+                        kind: .collaborationFile,
+                        id: file.id?.uuidString
+                            ?? file.roomID
+                            ?? file.objectID.uriRepresentation().absoluteString
+                    )
+            }
+        }
         
         var name: String? {
             switch self {

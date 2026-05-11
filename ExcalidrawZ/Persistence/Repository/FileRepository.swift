@@ -476,9 +476,9 @@ actor FileRepository {
         let context = PersistenceController.shared.newTaskContext()
 
         // Extract file info before deletion (for permanent deletion only)
-        let (filePath, fileID, checkpointPaths): (String?, UUID?, [(String, UUID)]) = try await context.perform {
+        let (filePath, fileID, fileScopeID, checkpointPaths): (String?, UUID?, String?, [(String, UUID)]) = try await context.perform {
             guard let file = context.object(with: fileObjectID) as? File else {
-                return (nil, nil, [])
+                return (nil, nil, nil, [])
             }
 
             if file.inTrash || forcePermanently {
@@ -501,6 +501,7 @@ actor FileRepository {
 
                 let path = file.filePath
                 let id = file.id
+                let scopeID = file.id?.uuidString ?? file.objectID.uriRepresentation().absoluteString
 
                 // Delete file from database
                 context.delete(file)
@@ -509,7 +510,7 @@ actor FileRepository {
                     try context.save()
                 }
 
-                return (path, id, checkpointInfo)
+                return (path, id, scopeID, checkpointInfo)
             } else {
                 // Soft deletion: move to trash
                 file.inTrash = true
@@ -519,7 +520,7 @@ actor FileRepository {
                     try context.save()
                 }
 
-                return (nil, nil, [])
+                return (nil, nil, nil, [])
             }
         }
 
@@ -539,6 +540,20 @@ actor FileRepository {
                 try await FileStorageManager.shared.deleteContent(relativePath: relativePath, fileID: fileUUID.uuidString)
             } catch {
                 print("Warning: Failed to delete file from storage: \(error)")
+            }
+        }
+
+        if let fileScopeID {
+            do {
+                try await PersistenceController.shared.aiConversationRepository
+                    .deleteConversations(
+                        forFileScope: AIConversationFileScope(
+                            kind: .libraryFile,
+                            id: fileScopeID
+                        )
+                    )
+            } catch {
+                print("Warning: Failed to delete AI conversations for file \(fileScopeID): \(error)")
             }
         }
     }

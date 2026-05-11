@@ -233,14 +233,12 @@ extension AIChatState {
     /// "Pre-select" writes to `fileState.aiChatConversationID`. If
     /// the active file has no persisted history, the id is set to
     /// nil and the next send creates a fresh conversation bound to
-    /// the file via `bindConversationToFile`.
+    /// the active file's unified scope.
     ///
-    /// Only `.file(File)` participates in file-scoped resume; local /
-    /// temporary / collaboration files start with no preselected
-    /// conversation. We could revisit this — `.collaborationFile`
-    /// has its own NSManagedObjectID and the schema could grow a
-    /// second relationship — but it's not worth doing until the
-    /// product wants per-room chat history.
+    /// Library files, local URLs, temporary URLs, and collaboration
+    /// files all participate. The repository keeps the lookup
+    /// independent of Core Data relationships so URL-backed files can
+    /// be scoped without first becoming Core Data entities.
     func loadConversationForActiveFile(
         in llmState: LLMStateObject,
         fileState: FileState
@@ -264,23 +262,23 @@ extension AIChatState {
 
     /// Returns the id of the most-recent file-bound conversation that
     /// has real activity (user or assistant message). Nil when:
-    /// - the active file isn't a `.file` case (no CoreData binding),
-    /// - no conversations exist for that file, or
+    /// - there is no active file,
+    /// - no conversations exist for that active-file scope, or
     /// - all of them are empty shells (system-only).
     private func pickLatestConversationID(
         forActiveFile activeFile: FileState.ActiveFile?
     ) async -> String? {
-        guard case .file(let file) = activeFile, let fileID = file.id else {
-            print("[AIChatDiag] pick: activeFile is not .file or has nil id, skipping")
+        guard let scope = activeFile?.aiConversationFileScope else {
+            print("[AIChatDiag] pick: activeFile is nil, skipping")
             return nil
         }
-        print("[AIChatDiag] pick: querying snapshots for fileID=\(fileID.uuidString)")
+        print("[AIChatDiag] pick: querying snapshots for scope=\(scope.kind.rawValue):\(scope.id)")
         let repo = PersistenceController.shared.aiConversationRepository
         let snapshots: [AIConversationSnapshot]
         do {
-            snapshots = try await repo.fetchConversationSnapshots(forFileID: fileID)
+            snapshots = try await repo.fetchConversationSnapshots(forFileScope: scope)
         } catch {
-            print("[AIChatDiag] pick: fetchConversationSnapshots threw \(error.localizedDescription)")
+            print("[AIChatDiag] pick: fetchConversationSnapshots(forFileScope:) threw \(error.localizedDescription)")
             return nil
         }
         print("[AIChatDiag] pick: got \(snapshots.count) snapshots for this file. \(snapshots.map { "[\(($0.conversationID ?? "?").prefix(8)) msgs=\($0.messages.count) ua=\($0.hasUserOrAssistantMessage)]" }.joined(separator: " "))")

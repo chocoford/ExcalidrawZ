@@ -274,22 +274,19 @@ extension PromptInputView {
                         context: context
                     )
 
-                    // Bind the new conversation to the active File so
-                    // `fetchConversationSnapshots(forFileID:)` can find
-                    // it on the next file-load. Only `.file` carries a
-                    // CoreData NSManagedObjectID we can persist
-                    // against the schema's `AIConversation.file`
-                    // relationship — local / temporary / collaboration
-                    // files don't, and would leave the conversation
-                    // with no file scoping (which is fine for v1).
-                    let activeFileForBinding = await MainActor.run { fileState.currentActiveFile }
-                    if case .file(let file) = activeFileForBinding {
-                        let fileObjectID = await MainActor.run { file.objectID }
+                    // Bind the new conversation to the active file's
+                    // unified scope so library files, URL-backed files,
+                    // and collaboration files can all resume their own
+                    // latest conversation on the next open.
+                    let scopeForBinding = await MainActor.run {
+                        fileState.currentActiveFile?.aiConversationFileScope
+                    }
+                    if let scope = scopeForBinding {
                         do {
                             try await PersistenceController.shared.aiConversationRepository
-                                .bindConversationToFile(
+                                .bindConversationToFileScope(
                                     conversationID: newConversationID,
-                                    fileObjectID: fileObjectID
+                                    scope: scope
                                 )
                         } catch {
                             print("[AIChatDiag] post-create bind threw \(error.localizedDescription)")
@@ -417,13 +414,17 @@ extension PromptInputView {
 
         switch activeFile {
             case .file(let file):
-                return (file.id?.uuidString, file.name, "libraryFile")
-            case .localFile(let url):
-                return (url.absoluteString, activeFile.name, "localFile")
-            case .temporaryFile(let url):
-                return (url.absoluteString, activeFile.name, "temporaryFile")
+                let scope = activeFile.aiConversationFileScope
+                return (scope.id, file.name, scope.kind.rawValue)
+            case .localFile:
+                let scope = activeFile.aiConversationFileScope
+                return (scope.id, activeFile.name, scope.kind.rawValue)
+            case .temporaryFile:
+                let scope = activeFile.aiConversationFileScope
+                return (scope.id, activeFile.name, scope.kind.rawValue)
             case .collaborationFile(let file):
-                return (file.id?.uuidString, file.name, "collaborationFile")
+                let scope = activeFile.aiConversationFileScope
+                return (scope.id, file.name, scope.kind.rawValue)
         }
     }
 

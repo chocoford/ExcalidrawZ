@@ -3,10 +3,11 @@
     <entity name="AIConversation" representedClassName="AIConversation" syncable="YES" codeGenerationType="class">
         <attribute name="conversationID" optional="YES" attributeType="String"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="fileScopeID" optional="YES" attributeType="String"/>
+        <attribute name="fileScopeKind" optional="YES" attributeType="String"/>
         <attribute name="lastChatAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="title" optional="YES" attributeType="String"/>
         <attribute name="type" optional="YES" attributeType="String"/>
-        <relationship name="file" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="File" inverseName="conversations" inverseEntity="File"/>
         <relationship name="messages" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="AIConversationMessage" inverseName="conversation" inverseEntity="AIConversationMessage"/>
     </entity>
     <entity name="AIConversationMessage" representedClassName="AIConversationMessage" syncable="YES" codeGenerationType="class">
@@ -53,7 +54,6 @@
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="visitedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="checkpoints" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="FileCheckpoint" inverseName="file" inverseEntity="FileCheckpoint"/>
-        <relationship name="conversations" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="AIConversation" inverseName="file" inverseEntity="AIConversation"/>
         <relationship name="group" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Group" inverseName="files" inverseEntity="Group"/>
         <relationship name="medias" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="MediaItem" inverseName="file" inverseEntity="MediaItem"/>
     </entity>
