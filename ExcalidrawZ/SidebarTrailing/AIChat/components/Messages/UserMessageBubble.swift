@@ -140,17 +140,73 @@ struct UserMessageBubble: View {
         }
         
         if let text = content.content, !text.isEmpty {
-            if #available(macOS 14.0, *) {
-                SmoothStreamingText(target: text)
-                    .padding(10)
-                    .background(Color.accentColor.gradient.secondary)
-                    .cornerRadius(20)
-            } else {
-                SmoothStreamingText(target: text)
-                    .padding(10)
-                    .background(Color.secondary.gradient)
-                    .cornerRadius(20)
+            UserMessageTextBubble(text: text)
+        }
+    }
+}
+
+private struct UserMessageTextBubble: View {
+    let text: String
+
+    @State private var isShowingFullText = false
+
+    private let maxVisibleCharacters = 900
+    private let maxVisibleLines = 10
+
+    private var visibleText: String {
+        guard shouldTruncate else { return text }
+
+        let lineLimitedText = text
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .prefix(maxVisibleLines)
+            .joined(separator: "\n")
+
+        let characterLimitedText = String(lineLimitedText.prefix(maxVisibleCharacters))
+        return characterLimitedText.trimmingCharacters(in: .whitespacesAndNewlines) + "..."
+    }
+
+    private var shouldTruncate: Bool {
+        text.count > maxVisibleCharacters || text.split(separator: "\n", omittingEmptySubsequences: false).count > maxVisibleLines
+    }
+
+    var body: some View {
+        if #available(macOS 14.0, *) {
+            contents
+                .background {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.accentColor.gradient.secondary)
+                }
+        } else {
+            contents
+                .background {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.secondary.gradient)
+                }
+                
+        }
+    }
+
+    private var contents: some View {
+        VStack(alignment: .trailing, spacing: 6) {
+            SmoothStreamingText(target: visibleText)
+
+            if shouldTruncate {
+                Button("Show More") {
+                    isShowingFullText = true
+                }
+                .foregroundStyle(.secondary)
+                .buttonStyle(.text(size: .small))
+                .foregroundStyle(.secondary)
             }
+        }
+        .padding(10)
+        .popover(isPresented: $isShowingFullText, arrowEdge: .trailing) {
+            ScrollView {
+                SmoothStreamingText(target: text)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(minWidth: 360, idealWidth: 480, maxWidth: 560, minHeight: 180, idealHeight: 360, maxHeight: 520)
         }
     }
 }
