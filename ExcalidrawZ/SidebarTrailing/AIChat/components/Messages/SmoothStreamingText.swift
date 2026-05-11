@@ -39,15 +39,12 @@ struct SmoothStreamingText: View {
             )
             .mask(maskShape)
             .onAppear {
-                print("[DEBUG] onAppear target.count=\(target.count)")
                 flusher.bootstrap(target)
             }
             .onChange(of: target) { newValue in
-                print("[DEBUG] onChange target.count=\(newValue.count)")
                 flusher.ingest(newValue)
             }
             .onChange(of: isStreaming, debounce: 1) { newValue in
-                print("[DEBUG] isStreaming changed", isStreaming)
                 localIsStreaming = newValue
             }
             .onAppear {
@@ -56,7 +53,6 @@ struct SmoothStreamingText: View {
                 }
             }
             .onDisappear {
-                print("[DEBUG] onDisappear")
                 flusher.cancel()
             }
     }
@@ -152,7 +148,6 @@ private final class StreamFlusher: ObservableObject {
     
     func ingest(_ target: String) {
         latestTarget = target
-        print("[DEBUG] ingest", target)
         // Divergence (conversation switch / regenerate): snap, no animation.
         if !target.hasPrefix(displayText) {
             flushTask?.cancel()

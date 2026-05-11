@@ -167,9 +167,6 @@ struct AssistantRoundView: View {
         .task(id: completionSignature) {
             handleCompletionChange()
         }
-        .task(id: loadingDiagnosticSignature) {
-            logLoadingDiagnostics()
-        }
         .onDisappear {
             queueTask?.cancel()
             actionBarTask?.cancel()
@@ -300,48 +297,6 @@ struct AssistantRoundView: View {
     /// the reveal queue performs its place -> scroll -> wipe-in sequence.
     private var showsLoadingRow: Bool {
         hasInflightInRound
-    }
-
-    private var loadingDiagnosticSignature: String {
-        [
-            "round=\(roundID)",
-            "streamingIDs=\(streamingMessageIDs.sorted().joined(separator: ","))",
-            "loading=\(showsLoadingRow)",
-            "revealed=\(revealedIDs.sorted().joined(separator: ","))",
-            "queue=\(revealQueue.joined(separator: ","))",
-            "messages=\(loadingMessageSummary)"
-        ].joined(separator: " ")
-    }
-
-    private var loadingMessageSummary: String {
-        messages.compactMap { message -> String? in
-            guard case .content(let content) = message else {
-                return nil
-            }
-            let streaming = streamingMessageIDs.contains(content.id)
-            let revealed = revealedIDs.contains(content.id)
-            let queued = revealQueue.contains(content.id)
-            let itemIDs = Self.renderItems(
-                in: [message],
-                streamingMessageIDs: streamingMessageIDs
-            ).map(\.id).joined(separator: ",")
-            return "\(content.role):\(content.id):c\(content.content?.count ?? 0):tc\(content.toolCalls?.count ?? 0):streaming\(streaming):revealed\(revealed):queued\(queued):items[\(itemIDs)]"
-        }.joined(separator: "|")
-    }
-
-    private func logLoadingDiagnostics() {
-        #if DEBUG
-        print(
-            "[aiChatLoadingDiag] round",
-            "roundID=\(roundID)",
-            "activeRoundID=\(activeRoundID ?? "nil")",
-            "streamingMessageIDs=\(streamingMessageIDs.sorted())",
-            "showsLoadingRow=\(showsLoadingRow)",
-            "revealedIDs=\(revealedIDs.sorted())",
-            "revealQueue=\(revealQueue)",
-            "messages=\(loadingMessageSummary)"
-        )
-        #endif
     }
 
     private func startQueueIfNeeded() {

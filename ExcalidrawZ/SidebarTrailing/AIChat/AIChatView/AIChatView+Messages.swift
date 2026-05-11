@@ -55,8 +55,6 @@ extension AIChatView {
         let bottomID = visibleTransientError?.id.uuidString
             ?? (isStreamingActive ? streamingState?.id : nil)
             ?? messages.last?.id
-        let streamingID: String? = streamingState?.id
-        let streamFinished: Bool = streamingState?.isFinished ?? true
         let isRoundLifecycleActive = streamingState != nil || streamScrollFollowTail
         // The active round (if any) is the latest assistantRound while
         // the stream is in flight. This is the round whose
@@ -71,14 +69,6 @@ extension AIChatView {
         let streamingMessageIDs = streamingAssistantMessageIDs(
             in: allGroups,
             conversationID: fileState.aiChatConversationID
-        )
-        let loadingDiagnosticSignature = loadingDiagnosticsSignature(
-            conversationID: fileState.aiChatConversationID,
-            isStreamingActive: isStreamingActive,
-            streamingID: streamingID,
-            streamFinished: streamFinished,
-            streamingMessageIDs: streamingMessageIDs,
-            groups: allGroups
         )
         NativeChatScrollView(
             isPinnedToBottom: $isPinnedToBottom,
@@ -103,16 +93,6 @@ extension AIChatView {
         }
         .environment(\.chatScrollToBottom) { animated in
             await scrollToBottomAsync(animated: animated)
-        }
-        .task(id: loadingDiagnosticSignature) {
-            logLoadingDiagnostics(
-                conversationID: fileState.aiChatConversationID,
-                isStreamingActive: isStreamingActive,
-                streamingID: streamingID,
-                streamFinished: streamFinished,
-                streamingMessageIDs: streamingMessageIDs,
-                groups: allGroups
-            )
         }
         .overlay(alignment: .bottom) {
             if !isPinnedToBottom && !isAutoScrollingToBottom {
@@ -198,66 +178,6 @@ extension AIChatView {
             }
         }
         return result
-    }
-
-    func loadingDiagnosticsSignature(
-        conversationID: String?,
-        isStreamingActive: Bool,
-        streamingID: String?,
-        streamFinished: Bool,
-        streamingMessageIDs: Set<String>,
-        groups: [MessageGroup]
-    ) -> String {
-        [
-            conversationID ?? "nil",
-            "active=\(isStreamingActive)",
-            "stream=\(streamingID ?? "nil")",
-            "finished=\(streamFinished)",
-            "ids=\(streamingMessageIDs.sorted().joined(separator: ","))",
-            "groups=\(loadingGroupSummary(groups))"
-        ].joined(separator: " ")
-    }
-
-    func loadingGroupSummary(_ groups: [MessageGroup]) -> String {
-        groups.map { group in
-            switch group {
-                case .user(let content):
-                    return "user(\(content.id))"
-                case .assistantRound(let id, let messages):
-                    let ids = messages.compactMap { message -> String? in
-                        guard case .content(let content) = message else { return nil }
-                        return "\(content.role):\(content.id):c\(content.content?.count ?? 0):tc\(content.toolCalls?.count ?? 0)"
-                    }.joined(separator: ",")
-                    return "round(\(id))[\(ids)]"
-                case .loading(let id):
-                    return "loading(\(id.uuidString))"
-                case .error(let id, let message):
-                    return "error(\(id.uuidString):\(message))"
-                case .compactSummary(let content):
-                    return "compact(\(content.id))"
-            }
-        }.joined(separator: "|")
-    }
-
-    func logLoadingDiagnostics(
-        conversationID: String?,
-        isStreamingActive: Bool,
-        streamingID: String?,
-        streamFinished: Bool,
-        streamingMessageIDs: Set<String>,
-        groups: [MessageGroup]
-    ) {
-        #if DEBUG
-        print(
-            "[aiChatLoadingDiag] list",
-            "conversation=\(conversationID ?? "nil")",
-            "isStreamingActive=\(isStreamingActive)",
-            "streamingID=\(streamingID ?? "nil")",
-            "streamFinished=\(streamFinished)",
-            "streamingMessageIDs=\(streamingMessageIDs.sorted())",
-            "groups=\(loadingGroupSummary(groups))"
-        )
-        #endif
     }
 
     @ViewBuilder
