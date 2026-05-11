@@ -49,6 +49,17 @@ extension SupportedModel {
         }
     }
 
+    /// Extra High is reserved for Max plan users. Keep this separate from
+    /// the display string so entitlement checks do not depend on UI text.
+    var requiresMaxAIPlan: Bool {
+        switch self {
+            case .claudeOpus4_7, .claudeOpus4_6:
+                return true
+            default:
+                return false
+        }
+    }
+
     /// Approximate context window (in tokens) for the model. Used by the
     /// chat input's `ContextUsageRing` to draw "how full is the context."
     /// Numbers are vendor-published values; we treat them as soft caps for

@@ -24,7 +24,7 @@ extension PromptInputView {
     /// model picker. Wrapped in an HStack so the whole group can take a
     /// shared `buttonStyle` from the caller (`.accessoryBar` on macOS 14+,
     /// `.plain` below).
-    @ViewBuilder
+    @MainActor @ViewBuilder
     func actionBarLeading() -> some View {
         HStack(spacing: 0) {
             attachmentMenu
@@ -94,7 +94,7 @@ extension PromptInputView {
         }
     }
 
-    @ViewBuilder
+    @MainActor @ViewBuilder
     var modelPicker: some View {
         // Agent config hasn't loaded → show a quiet placeholder. Loading is fast
         // (one HTTP round-trip on first appearance) so a permanent skeleton would
@@ -102,6 +102,7 @@ extension PromptInputView {
         let models = agentConfig?.allowedModels ?? []
         Menu {
             ForEach(models, id: \.rawValue) { model in
+                let isLocked = !canSelectModel(model)
                 Button {
                     pickModel(model)
                 } label: {
@@ -111,6 +112,7 @@ extension PromptInputView {
                         Text(model.excalidrawTierName)
                     }
                 }
+                .disabled(isLocked)
             }
         } label: {
             HStack(spacing: 4) {
@@ -128,7 +130,10 @@ extension PromptInputView {
     /// stored override (so reopening that thread restores the pick); fresh
     /// chats just stage it in `pendingModelSelection` and get committed
     /// when `startSend` mints the conversation id.
+    @MainActor
     func pickModel(_ model: SupportedModel) {
+        guard canSelectModel(model) else { return }
+
         if let id = conversationID {
             prefs.setModel(model, for: id)
         } else {

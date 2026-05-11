@@ -11,7 +11,7 @@ import SFSafeSymbols
 
 struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
-
+    
     @Environment(\.colorScheme) var colorScheme
     
     @Environment(\.managedObjectContext) var managedObjectContext
@@ -45,21 +45,19 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
     @MainActor @ViewBuilder
     private func content() -> some View {
 #if os(iOS)
-            NavigationLink {
-                FileCheckpointDetailView(checkpoint: checkpoint)
-            } label: {
-                label()
-            }
+        NavigationLink {
+            FileCheckpointDetailView(checkpoint: checkpoint)
+        } label: {
+            label()
+        }
 #elseif os(macOS)
-            Popover(arrowEdge: .trailing) {
-                FileCheckpointDetailView(checkpoint: checkpoint)
-            } label: {
-                label()
-            }
-            .buttonStyle(
-                ExcalidrawZSidebarRowButtonStyle(isSelected: false, isMultiSelected: false)
-            )
-//            .buttonStyle(ListButtonStyle())
+        Popover(arrowEdge: .trailing) {
+            FileCheckpointDetailView(checkpoint: checkpoint)
+        } label: {
+            label()
+        }
+        .buttonStyle(.fileCheckpointRow)
+        
 #endif
     }
     
@@ -76,7 +74,7 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
                 // visual noise).
                 sourceBadge
             }
-
+            
             // Git-style description, only when present. AI fills this on
             // `.aiPost` rows; user rows are nil unless the user explicitly
             // edits one (TBD UI). Allow up to 2 lines so the AI's summary
@@ -88,7 +86,7 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
             }
-
+            
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 0) {
                     if let file {
@@ -100,24 +98,24 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
                         }
                     }
                     Text(" · ")
-
+                    
                     Text("\(fileSize.formatted(.byteCount(style: .file)))")
-
+                    
                 }
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-
+                
                 Text(checkpoint.updatedAt?.formatted() ?? "")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
         }
-        .padding(.horizontal, 4)
+        .padding(.horizontal, 8)
         .padding(.vertical, 8)
     }
-
+    
     /// Capsule badge for AI-authored checkpoints. We collapse `.aiPre` /
     /// `.aiPost` into one user-facing "AI" label — the pre/post split is
     /// internal infrastructure for revert (only `.aiPost` actually
@@ -143,7 +141,7 @@ private struct BadgeLabel: View {
     let text: String
     let icon: SFSymbol
     let tint: Color
-
+    
     var body: some View {
         HStack(spacing: 3) {
             Image(systemSymbol: icon)
@@ -162,6 +160,68 @@ private struct BadgeLabel: View {
             Capsule()
                 .stroke(tint.opacity(0.3), lineWidth: 0.5)
         )
+    }
+}
+
+private struct FileCheckpointRowButtonStyle: PrimitiveButtonStyle {
+    @State private var isHovered = false
+    
+    private var cornerRadius: CGFloat {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            18
+        } else {
+            8
+        }
+    }
+    
+    func makeBody(configuration: Configuration) -> some View {
+        PrimitiveButtonWrapper {
+            configuration.trigger()
+        } content: { isPressed in
+            HStack(spacing: 0) {
+                configuration.label
+                Spacer(minLength: 0)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .onHover { hovering in
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    isHovered = hovering
+                }
+            }
+            .background {
+                rowBackground(isPressed: isPressed)
+            }
+            .animation(.easeInOut(duration: 0.16), value: isHovered)
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    private func rowBackground(isPressed: Bool) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        
+        if #available(macOS 26.0, iOS 26.0, *) {
+            if isHovered || isPressed {
+                shape
+                    .fill(.clear)
+                    .glassEffect(
+                        Glass.regular
+                            .tint(Color.primary.opacity(isPressed ? 0.10 : 0.06))
+                            .interactive(),
+                        in: shape
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            }
+        } else {
+            shape
+                .fill(Color.gray.opacity(isPressed ? 0.28 : 0.18))
+                .opacity(isHovered || isPressed ? 1 : 0)
+        }
+    }
+}
+
+private extension PrimitiveButtonStyle where Self == FileCheckpointRowButtonStyle {
+    static var fileCheckpointRow: FileCheckpointRowButtonStyle {
+        FileCheckpointRowButtonStyle()
     }
 }
 

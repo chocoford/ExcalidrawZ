@@ -21,6 +21,7 @@ struct HomeTipsSection: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack {
                     HomeTipItemView.whatsNew
+                    HomeTipItemView.ai
                     HomeTipItemView.orginzeFiles
                     HomeTipItemView.fileHistory
                     HomeTipItemView.share
@@ -35,15 +36,15 @@ struct HomeTipsSection: View {
 
 struct HomeTipItemView: View {
     
-    var title: LocalizedStringKey
-    var message: LocalizedStringKey
+    var title: String
+    var message: String
     var image: AnyView
     var detail: AnyView
     var action: (() -> Void)?
     
     init<Detail: View>(
-        title: LocalizedStringKey,
-        message: LocalizedStringKey,
+        title: String,
+        message: String,
         image: Image,
         @ViewBuilder detail: () -> Detail
     ) {
@@ -57,8 +58,8 @@ struct HomeTipItemView: View {
     }
     
     init<Detail: View>(
-        title: LocalizedStringKey,
-        message: LocalizedStringKey,
+        title: String,
+        message: String,
         icon: SFSymbol,
         @ViewBuilder detail: () -> Detail
     ) {
@@ -73,8 +74,8 @@ struct HomeTipItemView: View {
     }
     
 //    init(
-//        title: LocalizedStringKey,
-//        message: LocalizedStringKey,
+//        title: String,
+//        message: String,
 //        image: Image,
 //        action: @escaping () -> Void
 //    ) {

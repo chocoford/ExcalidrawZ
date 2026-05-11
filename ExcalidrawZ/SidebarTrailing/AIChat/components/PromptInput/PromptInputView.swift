@@ -41,6 +41,7 @@ struct PromptInputView<Background: View, Header: View>: View {
     @EnvironmentObject var llmState: LLMStateObject
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var aiChatState: AIChatState
+    @EnvironmentObject var store: Store
     @Environment(\.alertToast) var alertToast
 
     @Binding var conversationID: String?
@@ -133,14 +134,28 @@ struct PromptInputView<Background: View, Header: View>: View {
     ///   3. User's global default (Settings → AI)
     /// Picker writes directly into either (1) or (2); (3) is mutated
     /// from Settings only.
+    @MainActor
     var activeModel: SupportedModel {
-        if let stored = prefs.model(for: conversationID) {
-            return stored
-        }
-        if let pending = pendingModelSelection {
-            return pending
-        }
-        return prefs.defaultModel
+        let selectedModel = prefs.model(for: conversationID)
+            ?? pendingModelSelection
+            ?? prefs.defaultModel
+
+        return fallbackModelIfNeeded(selectedModel)
+    }
+
+    @MainActor
+    func canSelectModel(_ model: SupportedModel) -> Bool {
+        !model.requiresMaxAIPlan || store.canUseExtraHighAIModel
+    }
+
+    @MainActor
+    func fallbackModelIfNeeded(_ model: SupportedModel) -> SupportedModel {
+        guard !canSelectModel(model) else { return model }
+
+        let availableModels = agentConfig?.allowedModels ?? []
+        return availableModels.first(where: { $0 == .claudeSonnet4_6 })
+            ?? availableModels.first(where: { canSelectModel($0) })
+            ?? .claudeSonnet4_6
     }
 
     var conversation: Conversation? {
@@ -202,7 +217,7 @@ struct PromptInputView<Background: View, Header: View>: View {
         }
     }
 
-    @ViewBuilder
+    @MainActor @ViewBuilder
     private func content() -> some View {
         VStack(spacing: 6) {
             if style.showsLowCreditsBanner {

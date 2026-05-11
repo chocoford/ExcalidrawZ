@@ -12,8 +12,8 @@ import MarkdownUI
 
 extension HomeTipItemView {
     static let orginzeFiles = HomeTipItemView(
-        title: .localizable(.tipsOrganizeFilesOverviewTitle),
-        message: .localizable(.tipsOrganizeFilesOverviewDescription),
+        title: String(localizable: .tipsOrganizeFilesOverviewTitle),
+        message: String(localizable: .tipsOrganizeFilesOverviewDescription),
         icon: .squareFillTextGrid1x2
     ) {
         OrginzeFilesTipsDetail()

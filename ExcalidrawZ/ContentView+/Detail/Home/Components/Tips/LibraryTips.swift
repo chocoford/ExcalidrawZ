@@ -10,8 +10,8 @@ import MarkdownUI
 
 extension HomeTipItemView {
     static let library = HomeTipItemView(
-        title: .localizable(.tipsLibraryOverviewTitle),
-        message: .localizable(.tipsLibraryOverviewDescription),
+        title: String(localizable: .tipsLibraryOverviewTitle),
+        message: String(localizable: .tipsLibraryOverviewDescription),
         icon: .book
     ) {
         LibraryTipsDetail()

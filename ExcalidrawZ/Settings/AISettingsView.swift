@@ -231,11 +231,13 @@ struct AISettingsView: View {
     /// allowed models with the user's current pick spliced in if it
     /// somehow isn't there (e.g., backend dropped a model from the
     /// allowed list after the user already picked it).
-    @ViewBuilder
+    @MainActor @ViewBuilder
     private var defaultModelPicker: some View {
-        let current = prefs.defaultModel
+        let current = fallbackModelIfNeeded(prefs.defaultModel, from: availableModels)
         let mergedModels: [SupportedModel] = {
-            if availableModels.isEmpty { return [current] }
+            if availableModels.isEmpty {
+                return [current]
+            }
             if availableModels.contains(where: { $0.rawValue == current.rawValue }) {
                 return availableModels
             }
@@ -243,14 +245,37 @@ struct AISettingsView: View {
         }()
         
         Picker("Default model", selection: Binding(
-            get: { prefs.defaultModel.rawValue },
-            set: { prefs.defaultModel = SupportedModel(rawValue: $0) }
+            get: { current.rawValue },
+            set: { rawValue in
+                let model = SupportedModel(rawValue: rawValue)
+                guard canSelectModel(model) else { return }
+                prefs.defaultModel = model
+            }
         )) {
             ForEach(mergedModels, id: \.rawValue) { model in
-                Text(model.excalidrawTierName).tag(model.rawValue)
+                Text(model.excalidrawTierName)
+                    .tag(model.rawValue)
+                    .disabled(!canSelectModel(model))
             }
         }
         .help("Used for new conversations and as the picker default. Each conversation can override this from its own model picker.")
+    }
+
+    @MainActor
+    private func canSelectModel(_ model: SupportedModel) -> Bool {
+        !model.requiresMaxAIPlan || store.canUseExtraHighAIModel
+    }
+
+    @MainActor
+    private func fallbackModelIfNeeded(
+        _ model: SupportedModel,
+        from availableModels: [SupportedModel]
+    ) -> SupportedModel {
+        guard !canSelectModel(model) else { return model }
+
+        return availableModels.first(where: { $0 == .claudeSonnet4_6 })
+            ?? availableModels.first(where: { canSelectModel($0) })
+            ?? .claudeSonnet4_6
     }
     
     private func loadAvailableModelsIfNeeded() async {

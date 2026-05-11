@@ -525,7 +525,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
 #if os(iOS)
             .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
 #else
-            .modernButtonStyle(shape: .capsule)
+            .modifier(FileHomeQuickActionButtonStyleModifier())
 #endif
         }
     }
@@ -599,6 +599,21 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
         }
     }
     
+}
+
+private struct FileHomeQuickActionButtonStyleModifier: ViewModifier {
+    @MainActor @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            content
+                .buttonStyle(.glass)
+                .buttonBorderShape(.capsule)
+                .controlSize(.regular)
+        } else {
+            content
+                .modernButtonStyle(shape: .capsule)
+        }
+    }
 }
 
 

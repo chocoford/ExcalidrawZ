@@ -149,74 +149,7 @@ struct ShareView: View {
                     .font(containerSizeClass == .compact ? .headline : .title)
 #endif
                 Spacer()
-                HStack(spacing: 10) {
-                    SquareButton(title: .localizable(.exportSheetButtonImage), icon: .photo) {
-                        activeRoute = .exportImage
-                        route.append(.exportImage)
-                    }
-                    .disabled(sharedFile.elements.isEmpty != false)
-                    
-                    SquareButton(title: .localizable(.exportSheetButtonFile), icon: .doc) {
-                        activeRoute = .exportFile
-                        route.append(.exportFile)
-                    }
-                    //                    }
-                    //                    HStack(spacing: 10) {
-                    SquareButton(title: .localizable(.exportSheetButtonPDF), icon: .docRichtext, priority: .background) {
-                        do {
-                            let imageData = try await exportState.exportCurrentFileToImage(
-                                type: .svg,
-                                embedScene: false,
-                                withBackground: true,
-                                colorScheme: .light
-                            )
-#if os(macOS)
-                            await exportPDF(name: imageData.name, svgURL: imageData.url)
-#elseif os(iOS)
-                            exportedPDFURL = await exportPDF(name: imageData.name, svgURL: imageData.url)
-                            //                            route.append(Route.svgPreview(imageData.url))
-#endif
-                        } catch {
-                            alertToast(error)
-                        }
-                    }
-#if os(iOS)
-                    .activitySheet(item: $exportedPDFURL)
-#endif
-                    if let roomID = self.sharedFile.roomID {
-                        SquareButton(title: .localizable(.exportActionInvite), icon: .link) {
-                            copyRoomShareLink(roomID: roomID, filename: sharedFile.name)
-                            alertToast(.init(displayMode: .hud, type: .complete(.green), title: String(localizable: .exportActionCopied)))
-                        }
-                    } else {
-#if os(macOS)
-                        SquareButton(
-                            title: .localizable(.exportSheetButtonArchive),
-                            icon: .archivebox,
-                            loading: isArchiving
-                        ) {
-                            isArchiving = true
-                            isArchiveFilesExporterPresented = true
-                        }
-                        .archiveFilesExporter(
-                            isPresented: $isArchiveFilesExporterPresented,
-                            context: viewContext,
-                            onComplete: { result in
-                                isArchiving = false
-                                switch result {
-                                    case .success(let archiveResult):
-                                        self.archiveResult = archiveResult
-                                    case .failure:
-                                        break
-                                }
-                            },
-                            onCancellation: {
-                                isArchiving = false
-                            }
-                        )
-#endif
-                    }
-                }
+                exportActionButtons()
                 
                 ZStack {
                     Color.clear
@@ -279,6 +212,82 @@ struct ShareView: View {
                 }
             }
 #endif
+        }
+    }
+
+    @MainActor @ViewBuilder
+    private func exportActionButtons() -> some View {
+        exportActionButtonGroup()
+    }
+
+    @MainActor @ViewBuilder
+    private func exportActionButtonGroup() -> some View {
+        HStack(spacing: 10) {
+            SquareButton(title: .localizable(.exportSheetButtonImage), icon: .photo) {
+                activeRoute = .exportImage
+                route.append(.exportImage)
+            }
+            .disabled(sharedFile.elements.isEmpty != false)
+
+            SquareButton(title: .localizable(.exportSheetButtonFile), icon: .doc) {
+                activeRoute = .exportFile
+                route.append(.exportFile)
+            }
+
+            SquareButton(title: .localizable(.exportSheetButtonPDF), icon: .docRichtext, priority: .background) {
+                do {
+                    let imageData = try await exportState.exportCurrentFileToImage(
+                        type: .svg,
+                        embedScene: false,
+                        withBackground: true,
+                        colorScheme: .light
+                    )
+#if os(macOS)
+                    await exportPDF(name: imageData.name, svgURL: imageData.url)
+#elseif os(iOS)
+                    exportedPDFURL = await exportPDF(name: imageData.name, svgURL: imageData.url)
+                    //                            route.append(Route.svgPreview(imageData.url))
+#endif
+                } catch {
+                    alertToast(error)
+                }
+            }
+#if os(iOS)
+            .activitySheet(item: $exportedPDFURL)
+#endif
+            if let roomID = self.sharedFile.roomID {
+                SquareButton(title: .localizable(.exportActionInvite), icon: .link) {
+                    copyRoomShareLink(roomID: roomID, filename: sharedFile.name)
+                    alertToast(.init(displayMode: .hud, type: .complete(.green), title: String(localizable: .exportActionCopied)))
+                }
+            } else {
+#if os(macOS)
+                SquareButton(
+                    title: .localizable(.exportSheetButtonArchive),
+                    icon: .archivebox,
+                    loading: isArchiving
+                ) {
+                    isArchiving = true
+                    isArchiveFilesExporterPresented = true
+                }
+                .archiveFilesExporter(
+                    isPresented: $isArchiveFilesExporterPresented,
+                    context: viewContext,
+                    onComplete: { result in
+                        isArchiving = false
+                        switch result {
+                            case .success(let archiveResult):
+                                self.archiveResult = archiveResult
+                            case .failure:
+                                break
+                        }
+                    },
+                    onCancellation: {
+                        isArchiving = false
+                    }
+                )
+#endif
+            }
         }
     }
     

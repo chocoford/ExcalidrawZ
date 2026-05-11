@@ -34,6 +34,7 @@ extension PromptInputView {
     /// pipeline immediately, queue the message behind an in-flight reply
     /// or compact, or run an auto-compact first because the round would
     /// otherwise overshoot the context window.
+    @MainActor
     func sendMessage() {
         let trimmedText = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         let files = PastedImageHelpers.buildFiles(from: pastedImages)
@@ -140,6 +141,7 @@ extension PromptInputView {
     /// Skips the check when there's no conversation yet (a fresh
     /// chat has nothing to roll up — the prompt itself is the first
     /// turn).
+    @MainActor
     private func shouldAutoCompactBeforeSend(
         prompt: String,
         files: [ChatMessageContent.File]
@@ -255,9 +257,9 @@ extension PromptInputView {
                     // user's pre-send model choice would be lost on reopen
                     // — `pendingModelSelection` is @State, conversation
                     // overrides survive the view's lifetime.
-                    if let pending = await MainActor.run(body: { pendingModelSelection }) {
+                    if await MainActor.run(body: { pendingModelSelection != nil }) {
                         await MainActor.run {
-                            prefs.setModel(pending, for: newConversationID)
+                            prefs.setModel(model, for: newConversationID)
                             pendingModelSelection = nil
                         }
                     }

@@ -154,6 +154,14 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
 }
 
 extension Store {
+    @MainActor
+    var canUseExtraHighAIModel: Bool {
+        purchasedPlans.contains { product in
+            SubscriptionItem.max.containsProductID(product.id)
+                || SubscriptionItem.max10x.containsProductID(product.id)
+        }
+    }
+
     enum ReachPaywallReason {
         case manaully
         
