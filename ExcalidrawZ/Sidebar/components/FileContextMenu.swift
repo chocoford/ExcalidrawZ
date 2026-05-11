@@ -81,6 +81,7 @@ struct FileMenuProvider: View {
 
     private func deleteFilePermanently() {
         let fileIDsToDelete: [NSManagedObjectID] = files.map { $0.objectID }
+        let shouldClearActiveFile = containsCurrentActiveFile(fileIDsToDelete)
 
         Task.detached {
             do {
@@ -92,12 +93,22 @@ struct FileMenuProvider: View {
                     )
                 }
                 await MainActor.run {
+                    if shouldClearActiveFile {
+                        fileState.setActiveFile(nil)
+                    }
                     fileState.resetSelections()
                 }
             } catch {
                 await alertToast(error)
             }
         }
+    }
+
+    private func containsCurrentActiveFile(_ fileIDs: [NSManagedObjectID]) -> Bool {
+        guard case .file(let currentFile) = fileState.currentActiveFile else {
+            return false
+        }
+        return fileIDs.contains(currentFile.objectID)
     }
 
 }
@@ -442,15 +453,18 @@ struct FileMenuItems: View {
     
     private func deleteFile() async {
         do {
-            for selectedFile in files {
+            let fileIDsToDelete = files.map { $0.objectID }
+            let shouldClearActiveFile = containsCurrentActiveFile(fileIDsToDelete)
+
+            for fileID in fileIDsToDelete {
                 try await PersistenceController.shared.fileRepository.delete(
-                    fileObjectID: selectedFile.objectID
+                    fileObjectID: fileID
                 )
             }
             try viewContext.save()
 
             // If the current file was deleted, clear it
-            if let firstFile, .file(firstFile) == fileState.currentActiveFile {
+            if shouldClearActiveFile {
                 fileState.setActiveFile(nil)
             }
 
@@ -458,5 +472,12 @@ struct FileMenuItems: View {
         } catch {
             alertToast(error)
         }
+    }
+
+    private func containsCurrentActiveFile(_ fileIDs: [NSManagedObjectID]) -> Bool {
+        guard case .file(let currentFile) = fileState.currentActiveFile else {
+            return false
+        }
+        return fileIDs.contains(currentFile.objectID)
     }
 }
