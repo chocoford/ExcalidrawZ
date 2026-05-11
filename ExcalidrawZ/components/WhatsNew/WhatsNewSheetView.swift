@@ -8,6 +8,10 @@
 import SwiftUI
 import ChocofordUI
 import AVKit
+import SmoothGradient
+#if canImport(AppKit)
+import AppKit
+#endif
 
 struct WhatsNewSheetViewModifier: ViewModifier {
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
@@ -85,12 +89,94 @@ struct WhatsNewView: View {
     }
 
     @State var route: Route? = nil
+    @State var navigationPath: [Route] = []
     
     @State private var navigationMaxHeight: CGFloat = .zero
+
+#if os(macOS)
+    @State private var activeRoute: Route?
+    @State private var window: NSWindow?
+    @State private var sheetContentHeight: CGFloat = 640
+
+    private var preferredSheetHeight: CGFloat {
+        preferredSheetHeight(for: activeRoute)
+    }
+
+    private var maximumSheetContentHeight: CGFloat {
+        guard let window, let screen = window.screen else {
+            return 780
+        }
+
+        let contentRect = window.contentRect(forFrameRect: window.frame)
+        let chromeHeight = window.frame.height - contentRect.height
+        let verticalMargin: CGFloat = 80
+        let currentTop = min(window.frame.maxY, screen.visibleFrame.maxY - 20)
+        let availableBelowTop = currentTop - screen.visibleFrame.minY - verticalMargin - chromeHeight
+        let availableOnScreen = screen.visibleFrame.height - verticalMargin - chromeHeight
+
+        return max(420, min(availableBelowTop, availableOnScreen, 820))
+    }
+
+    private func preferredSheetHeight(for route: Route?) -> CGFloat {
+        let desiredHeight: CGFloat
+
+        switch route {
+            case .allFeatures:
+                desiredHeight = 760
+            case .video:
+                desiredHeight = 620
+            case .none:
+                desiredHeight = 640
+        }
+
+        return min(desiredHeight, maximumSheetContentHeight)
+    }
+
+    private func updateSheetHeight(to targetHeight: CGFloat, animated: Bool) {
+        if animated {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                sheetContentHeight = targetHeight
+            }
+        } else {
+            sheetContentHeight = targetHeight
+        }
+
+        resizeSheetWindow(to: targetHeight, animated: animated)
+    }
+
+    private func resizeSheetWindow(to targetHeight: CGFloat, animated: Bool) {
+        guard let window else { return }
+
+        let currentContentRect = window.contentRect(forFrameRect: window.frame)
+        let targetContentRect = NSRect(
+            x: currentContentRect.origin.x,
+            y: currentContentRect.origin.y,
+            width: currentContentRect.width,
+            height: targetHeight
+        )
+
+        let targetFrameRect = window.frameRect(forContentRect: targetContentRect)
+        let heightDelta = targetFrameRect.height - window.frame.height
+
+        var nextFrame = window.frame
+        nextFrame.origin.y -= heightDelta
+        nextFrame.size.height = targetFrameRect.height
+
+        if animated {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.25
+                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                window.animator().setFrame(nextFrame, display: true)
+            }
+        } else {
+            window.setFrame(nextFrame, display: true)
+        }
+    }
+#endif
     
     var body: some View {
         if #available(macOS 13.0, iOS 16.0, *) {
-            NavigationStack {
+            NavigationStack(path: $navigationPath) {
                 ZStack {
                     if containerHorizontalSizeClass == .compact {
                         navigationContent()
@@ -107,9 +193,22 @@ struct WhatsNewView: View {
                     }
                 }
             }
+            .onChange(of: navigationPath) { newValue in
 #if os(macOS)
-            .frame(width: 720, height: nil)
-            .frame(minHeight: 500)
+                activeRoute = newValue.last
+#endif
+            }
+#if os(macOS)
+            .bindWindow($window)
+            .frame(width: 720, height: sheetContentHeight)
+            .clipped()
+            .toolbar(.hidden, for: .windowToolbar)
+            .onAppear {
+                updateSheetHeight(to: preferredSheetHeight, animated: false)
+            }
+            .onChange(of: preferredSheetHeight) { newValue in
+                updateSheetHeight(to: newValue, animated: true)
+            }
 #endif
         } else {
             if route == nil {
@@ -157,6 +256,59 @@ struct WhatsNewView: View {
             }
             .padding(20)
         }
+        .background {
+            VStack {
+                Color.clear.frame(height: 20)
+                // V2 special
+                Image("AI Cover")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 400, alignment: .top)
+                    .mask {
+                        VStack(spacing: 0) {
+                            Color.black.frame(height: 100)
+                            if #available(macOS 14.0, *) {
+                                SmoothLinearGradient(
+                                    from: .black,
+                                    to: .black.opacity(0),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            } else {
+                                LinearGradient(
+                                    colors: [.black, .black.opacity(0)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            }
+                        }
+                    }
+                    .mask {
+                        HStack(spacing: 0) {
+                            if #available(macOS 14.0, *) {
+                                SmoothLinearGradient(
+                                    from: .black.opacity(0),
+                                    to: .black,
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                                .frame(width: 200)
+                            } else {
+                                LinearGradient(
+                                    colors: [.black.opacity(0), .black],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                                .frame(width: 200)
+                            }
+                            Color.black
+                        }
+                    }
+
+                Spacer()
+            }
+            .ignoresSafeArea()
+        }
 #elseif os(iOS)
         .navigationTitle(Text(.localizable(.whatsNewTitle)))
         .navigationBarTitleDisplayMode(.large)
@@ -199,20 +351,21 @@ struct WhatsNewView: View {
 //                        }
 //                        .frame(height: 300)
 //                    } else {
-                        Image("What's New Cover")
-                            .resizable()
-                            .scaledToFit()
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-#if os(macOS)
-                            .padding(.horizontal, 40)
-#endif
+//                        Image("What's New Cover")
+//                            .resizable()
+//                            .scaledToFit()
+//                            .clipShape(RoundedRectangle(cornerRadius: 12))
+//#if os(macOS)
+//                            .padding(.horizontal, 40)
+//#endif
 //                    }
-                    
-                      featuresContent()
+
+                    Color.clear.frame(height: 300)
+
+                    featuresContent()
                 }
                 .padding(.vertical)
                 .fixedSize(horizontal: false, vertical: true)
-                
 #if os(iOS)
                 ViewThatFits {
                     HStack {

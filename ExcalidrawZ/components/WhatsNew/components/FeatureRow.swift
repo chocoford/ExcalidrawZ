@@ -48,7 +48,9 @@ struct WhatsNewFeatureRow: View {
         @ViewBuilder trailing: @escaping () -> Trailing = { EmptyView().frame(width: 0, height: 0) }
     ) {
         self.init(title: title, description: description) {
-            icon.resizable()
+            icon
+                .resizable()
+                .symbolRenderingMode(.multicolor)
         } trailing: {
             trailing()
         }
@@ -60,7 +62,6 @@ struct WhatsNewFeatureRow: View {
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
             icon
-                .symbolRenderingMode(.multicolor)
                 .scaledToFit()
                 .frame(width: 68, height: 40, alignment: .center)
             

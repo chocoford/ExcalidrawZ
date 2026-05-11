@@ -17,24 +17,57 @@ extension WhatsNewView {
             description: "Chat with AI directly in ExcalidrawZ to read your canvas, edit elements, navigate drawings, use library items, attach images, revise previous prompts, and safely revert AI-made canvas changes. New AI plans and credits are now available from the refreshed Paywall.",
         ) {
             Image(systemSymbol: .sparkles)
+                .resizable()
                 .foregroundStyle(AIAppearancePalette.foregroundGradient)
         }
         
         WhatsNewFeatureRow(
-            title: "AI for ExcalidrawZ",
-            description: "Chat with AI directly in ExcalidrawZ to read your canvas, edit elements, navigate drawings, use library items, attach images, revise previous prompts, and safely revert AI-made canvas changes. New AI plans and credits are now available from the refreshed Paywall.",
+            title: "Updated Subscription Plans",
+            description: "Subscription plans have been reorganized around the new AI credit system, with clearer tiers for Starter, Pro, and Max users. You can review the updated options from the refreshed Paywall.",
         ) {
-            Image(systemSymbol: .sparkles)
-                .foregroundStyle(AIAppearancePalette.foregroundGradient)
+            Image(systemSymbol: .creditcard)
+                .resizable()
+                .symbolRenderingMode(.multicolor)
         }
     }
     
     
     @MainActor @ViewBuilder
     func allFeaturesList() -> some View {
-        VStack {
+        VStack(spacing: 0) {
             // Navigation Back button
-            if #available(macOS 13.0, iOS 16.0, *) {} else {
+#if os(macOS)
+            if #available(macOS 13.0, *) {
+                HStack {
+                    Button {
+                        if !navigationPath.isEmpty {
+                            navigationPath.removeLast()
+                        }
+                    } label: {
+                        Label(.localizable(.navigationButtonBack), systemSymbol: .chevronLeft)
+                    }
+                    .modernButtonStyle(style: .glass, shape: .circle)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 8)
+            } else {
+                HStack {
+                    Button {
+                        route = nil
+                    } label: {
+                        Label(.localizable(.navigationButtonBack), systemSymbol: .chevronLeft)
+                    }
+                    .modernButtonStyle(style: .glass, shape: .circle)
+
+                    Spacer()
+                }
+                .padding(4)
+            }
+#else
+            if #available(iOS 16.0, *) {} else {
                 HStack {
                     Button {
                         route = nil
@@ -47,6 +80,7 @@ extension WhatsNewView {
                 }
                 .padding(4)
             }
+#endif
             
             // Content
             ScrollView {
@@ -410,21 +444,38 @@ extension WhatsNewView {
                 }
                 .padding(.top, 20)
                 .padding(.bottom, 40)
+
+#if os(macOS)
+                HStack {
+                    Spacer()
+
+                    changeLogLink()
+                }
+                .padding(.horizontal, 40)
+                .padding(.bottom, 24)
+#endif
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+#if !os(macOS)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Link(destination: URL(string: "https://github.com/chocoford/ExcalidrawZ/blob/main/CHANGELOG.md")!) {
-                    HStack(spacing: 2) {
-                        Text("Change Log")
-                        Image(systemSymbol: .arrowRight)
-                    }
-                }
-                .hoverCursor(.link)
+                changeLogLink()
             }
         }
+#endif
     }
-    
+
+    @MainActor @ViewBuilder
+    private func changeLogLink() -> some View {
+        Link(destination: URL(string: "https://github.com/chocoford/ExcalidrawZ/blob/main/CHANGELOG.md")!) {
+            HStack(spacing: 2) {
+                Text("Change Log")
+                Image(systemSymbol: .arrowRight)
+            }
+        }
+        .hoverCursor(.link)
+    }
 }
 
 struct WhatsNewVersionSection: View {
