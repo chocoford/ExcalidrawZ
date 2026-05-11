@@ -38,6 +38,7 @@ struct AIChatView: View {
     @State private var isAutoScrollingToBottom: Bool = false
     @State private var streamScrollFollowTail: Bool = false
     @State private var isMessageListInitiallySettled: Bool = false
+    @State private var messageListSettleTask: Task<Void, Never>?
     /// Resumed by `onScrollAnimationComplete` from `NativeChatScrollView`,
     /// keyed by the scroll-request token. Lets `AssistantRoundView`'s
     /// reveal pipeline `await scrollToBottom` and only run the wipe
@@ -72,6 +73,13 @@ struct AIChatView: View {
         guard !hasDismissedWelcome else { return false }
         guard let convos = llmState.conversations.value else { return false }
         return convos.isEmpty
+    }
+
+    private var messageListSwitchID: String {
+        [
+            fileState.currentActiveFile?.id ?? "nil",
+            fileState.aiChatConversationID ?? "nil"
+        ].joined(separator: "|")
     }
     
     var conversation: Conversation? {
@@ -138,13 +146,17 @@ struct AIChatView: View {
     @ViewBuilder
     private var chatBody: some View {
         VStack(spacing: 0) {
-            if let conversation, !conversation.messages.isEmpty {
-                messageList(messages: conversation.messages)
-            } else if currentTransientError != nil {
-                messageList(messages: conversation?.messages ?? [])
-            } else {
-                emptyPlaceholder()
+            ZStack {
+                if let conversation, !conversation.messages.isEmpty {
+                    messageList(messages: conversation.messages)
+                } else if currentTransientError != nil {
+                    messageList(messages: conversation?.messages ?? [])
+                } else {
+                    emptyPlaceholder()
+                }
             }
+            .opacity(isMessageListInitiallySettled ? 1 : 0)
+            .animation(.easeOut(duration: 0.12), value: isMessageListInitiallySettled)
             
             VStack(spacing: 6) {
                 PendingQueueView(
@@ -211,6 +223,9 @@ struct AIChatView: View {
             guard showing else { return }
             isPinnedToBottom = true
             requestScrollToBottom(animated: true)
+        }
+        .task(id: messageListSwitchID) {
+            settleMessageListAfterSwitch()
         }
     }
 
@@ -356,8 +371,6 @@ struct AIChatView: View {
                 groups: allGroups
             )
         }
-        .opacity(isMessageListInitiallySettled ? 1 : 0)
-        .animation(.easeOut(duration: 0.12), value: isMessageListInitiallySettled)
         .overlay(alignment: .bottom) {
             if !isPinnedToBottom && !isAutoScrollingToBottom {
                 Button {
@@ -373,15 +386,6 @@ struct AIChatView: View {
         }
         .onAppear {
             requestScrollToBottomIfNeeded(bottomID)
-            guard !isMessageListInitiallySettled else { return }
-            requestScrollToBottom(animated: false)
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(140))
-                requestScrollToBottom(animated: false)
-                try? await Task.sleep(for: .milliseconds(260))
-                requestScrollToBottom(animated: false)
-                isMessageListInitiallySettled = true
-            }
         }
         .onChange(of: bottomID) { _ in
             guard !isStreamingActive else { return }
@@ -623,6 +627,30 @@ struct AIChatView: View {
         transaction.disablesAnimations = true
         withTransaction(transaction) {
             visibleMessageGroupLimit = initialVisibleMessageGroupLimit
+        }
+    }
+
+    private func settleMessageListAfterSwitch() {
+        messageListSettleTask?.cancel()
+        messageListSettleTask = Task { @MainActor in
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                isMessageListInitiallySettled = false
+                isPinnedToBottom = true
+                lastBottomID = nil
+                resetVisibleMessageWindow()
+            }
+
+            requestScrollToBottom(animated: false)
+            try? await Task.sleep(for: .milliseconds(140))
+            guard !Task.isCancelled else { return }
+            requestScrollToBottom(animated: false)
+            try? await Task.sleep(for: .milliseconds(260))
+            guard !Task.isCancelled else { return }
+            requestScrollToBottom(animated: false)
+            isMessageListInitiallySettled = true
+            messageListSettleTask = nil
         }
     }
 
