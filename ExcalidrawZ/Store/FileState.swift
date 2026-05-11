@@ -21,6 +21,7 @@ final class FileState: ObservableObject {
     
     var currentGroupPublisherCancellables: [AnyCancellable] = []
     var currentFilePublisherCancellables: [AnyCancellable] = []
+    private var isRestoringActiveGroupAfterBlockedSwitch = false
     
     enum ActiveGroup: Identifiable, Equatable {
         case group(Group)
@@ -44,20 +45,10 @@ final class FileState: ObservableObject {
     
     @Published var currentActiveGroup: ActiveGroup? {
         didSet {
-            currentGroupPublisherCancellables.forEach {$0.cancel()}
-            guard let currentActiveGroup else { return }
-            if case .group(let group) = currentActiveGroup {
-                currentGroupPublisherCancellables = [
-                    group.publisher(for: \.name).sink { [weak self] _ in
-                        DispatchQueue.main.async {
-                            self?.objectWillChange.send()
-                        }
-                    }
-                ]
+            if shouldRestoreActiveGroupAfterBlockedSwitch(from: oldValue) {
+                return
             }
-            DispatchQueue.main.async {
-                self.resetSelections()
-            }
+            resetCurrentGroupChangesListener()
         }
     }
     
@@ -109,6 +100,15 @@ final class FileState: ObservableObject {
                     (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? nil
                 case .collaborationFile(let file):
                     file.updatedAt
+            }
+        }
+
+        var isInTrash: Bool {
+            switch self {
+                case .file(let file):
+                    file.inTrash
+                case .localFile, .temporaryFile, .collaborationFile:
+                    false
             }
         }
         
@@ -179,7 +179,12 @@ final class FileState: ObservableObject {
             if let newValue {
                 didUpdateFileState[newValue] = false
             }
+            resetCurrentFileChangesListener()
         }
+    }
+
+    var currentActiveFileIsInTrash: Bool {
+        currentActiveFile?.isInTrash == true
     }
     
     /// Set active file with automatic iCloud download handling
@@ -1142,6 +1147,40 @@ final class FileState: ObservableObject {
         }
     }
     
+    /// Restores the previous group/space while an AI round is active.
+    /// File switching is already blocked in `setActiveFile`; this catches
+    /// direct space changes such as Home, Collaboration, temporary, and
+    /// local-folder navigation.
+    private func shouldRestoreActiveGroupAfterBlockedSwitch(from oldValue: ActiveGroup?) -> Bool {
+        guard !isRestoringActiveGroupAfterBlockedSwitch else { return false }
+        guard aiChatSession != nil else { return false }
+        guard oldValue != currentActiveGroup else { return false }
+
+        activeFileSwitchBlockedReason = .aiGenerationInProgress
+        activeFileSwitchBlockedToken += 1
+        isRestoringActiveGroupAfterBlockedSwitch = true
+        currentActiveGroup = oldValue
+        isRestoringActiveGroupAfterBlockedSwitch = false
+        return true
+    }
+
+    private func resetCurrentGroupChangesListener() {
+        currentGroupPublisherCancellables.forEach {$0.cancel()}
+        currentGroupPublisherCancellables = []
+        if case .group(let group) = currentActiveGroup {
+            currentGroupPublisherCancellables = [
+                group.publisher(for: \.name).sink { [weak self] _ in
+                    DispatchQueue.main.async {
+                        self?.objectWillChange.send()
+                    }
+                }
+            ]
+        }
+        DispatchQueue.main.async {
+            self.resetSelections()
+        }
+    }
+
     /// Reset the current file changes listener.
     /// Everytime the current file changes, the listeners will send a `objectWillChange` event.
     private func resetCurrentFileChangesListener() {
@@ -1155,6 +1194,11 @@ final class FileState: ObservableObject {
                     }
                 },
                 currentFile.publisher(for: \.updatedAt).sink { [weak self] _ in
+                    DispatchQueue.main.async {
+                        self?.objectWillChange.send()
+                    }
+                },
+                currentFile.publisher(for: \.inTrash).sink { [weak self] _ in
                     DispatchQueue.main.async {
                         self?.objectWillChange.send()
                     }

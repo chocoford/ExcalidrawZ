@@ -18,6 +18,7 @@ struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
     var checkpoint: Checkpoint
 
     @State private var loadedContent: Data?
+    @State private var isRecoverAlertPresented = false
 
     init(checkpoint: Checkpoint) {
         self.checkpoint = checkpoint
@@ -105,9 +106,38 @@ struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
                 loadedContent = checkpoint.content
             }
         }
+        .alert(
+            String(localizable: .deletedFileRecoverAlertTitle),
+            isPresented: $isRecoverAlertPresented
+        ) {
+            Button(role: .cancel) {
+                isRecoverAlertPresented.toggle()
+            } label: {
+                Text(.localizable(.deletedFileRecoverAlertButtonCancel))
+            }
+
+            Button(role: {
+                if #available(iOS 26.0, macOS 26.0, *) {
+                    return .confirm
+                } else {
+                    return .none
+                }
+            }()) {
+                recoverActiveTrashedFile()
+            } label: {
+                Text(.localizable(.deletedFileRecoverAlertButtonRecover))
+            }
+        } message: {
+            Text(.localizable(.deletedFileRecoverAlertMessage))
+        }
     }
 
     private func restoreCheckpoint() {
+        guard !fileState.currentActiveFileIsInTrash else {
+            isRecoverAlertPresented = true
+            return
+        }
+
         Task {
             do {
                 // Step 1: Load checkpoint content (background)
@@ -129,6 +159,22 @@ struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
                 await MainActor.run {
                     dismiss()
                 }
+            } catch {
+                await MainActor.run {
+                    alertToast(error)
+                }
+            }
+        }
+    }
+
+    private func recoverActiveTrashedFile() {
+        guard case .file(let currentFile) = fileState.currentActiveFile else { return }
+        Task {
+            do {
+                try await fileState.recoverFile(
+                    fileID: currentFile.objectID,
+                    context: viewContext
+                )
             } catch {
                 await MainActor.run {
                     alertToast(error)

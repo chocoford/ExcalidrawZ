@@ -194,13 +194,23 @@ struct ExcalidrawEditor: View {
         // home content are *not* in this view's frame, so bottom-center here
         // means bottom-center of the actual canvas the user is looking at.
         .overlay(alignment: .bottom) {
-            if layoutState.isAIChatIslandMode {
+            if layoutState.isAIChatIslandMode,
+               !fileState.currentActiveFileIsInTrash {
                 AIChatIslandView(canvasSize: editorContentSize)
                     .padding(.bottom, 24)
                     .transition(.scale.combined(with: .opacity))
             }
         }
         .animation(.smooth(duration: 0.3), value: layoutState.isAIChatIslandMode)
+        .onAppear {
+            collapseAIChatIslandIfCurrentFileIsTrashed()
+        }
+        .onChange(of: fileState.currentActiveFileIsInTrash) { _ in
+            collapseAIChatIslandIfCurrentFileIsTrashed()
+        }
+        .onChange(of: layoutState.isAIChatIslandMode) { _ in
+            collapseAIChatIslandIfCurrentFileIsTrashed()
+        }
         .allowsHitTesting(interactionEnabled)
         .observeExcalidrawFileStatus(
             for: activeFile,
@@ -233,6 +243,12 @@ struct ExcalidrawEditor: View {
         .task {
             await loadExcalidrawFile(from: activeFile)
         }
+    }
+
+    private func collapseAIChatIslandIfCurrentFileIsTrashed() {
+        guard fileState.currentActiveFileIsInTrash else { return }
+        guard layoutState.isAIChatIslandMode else { return }
+        layoutState.isAIChatIslandMode = false
     }
     
     private func loadExcalidrawFile(from activeFile: FileState.ActiveFile?) async {

@@ -17,10 +17,16 @@ struct ExcalidrawTrailingControls: View {
     @EnvironmentObject private var fileState: FileState
 
     private var historyDisabled: Bool {
-        if case .group(let group) = fileState.currentActiveGroup, group.groupType == .trash {
-            return true
+        fileState.currentActiveFile == nil
+    }
+
+    private func isDisabled(tab: LayoutState.InspectorTab) -> Bool {
+        switch tab {
+            case .history:
+                return historyDisabled
+            default:
+                return false
         }
-        return fileState.currentActiveFile == nil
     }
 
     var body: some View {
@@ -29,40 +35,45 @@ struct ExcalidrawTrailingControls: View {
                 InspectorTabButton(
                     tab: .preference,
                     icon: .sliderHorizontal3,
-                    title: String(localizable: .canvasPreferencesTitle)
+                    title: String(localizable: .canvasPreferencesTitle),
+                    isDisabled: isDisabled(tab: .preference)
                 )
 
                 InspectorTabButton(
                     tab: .search,
                     icon: .magnifyingglass,
-                    title: String(localizable: .searchButtonTitle)
+                    title: String(localizable: .searchButtonTitle),
+                    isDisabled: isDisabled(tab: .search)
                 )
                 .keyboardShortcut("f", modifiers: .command)
 
                 InspectorTabButton(
                     tab: .library,
                     icon: .book,
-                    title: String(localizable: .librariesTitle)
+                    title: String(localizable: .librariesTitle),
+                    isDisabled: isDisabled(tab: .library)
                 )
 
                 InspectorTabButton(
                     tab: .history,
                     icon: .clockArrowCirclepath,
-                    title: String(localizable: .checkpoints)
+                    title: String(localizable: .checkpoints),
+                    isDisabled: isDisabled(tab: .history)
                 )
-                .disabled(historyDisabled)
 
                 InspectorTabButton(
                     tab: .aiChat,
                     icon: .sparkles,
-                    title: "AI Chat"
+                    title: "AI Chat",
+                    isDisabled: isDisabled(tab: .aiChat)
                 )
 
 #if DEBUG
                 InspectorTabButton(
                     tab: .debug,
                     icon: .ladybug,
-                    title: "Debug"
+                    title: "Debug",
+                    isDisabled: isDisabled(tab: .debug)
                 )
 #endif
             }
@@ -78,6 +89,7 @@ private struct InspectorTabButton: View {
     let tab: LayoutState.InspectorTab
     let icon: SFSymbol
     let title: String
+    var isDisabled: Bool = false
 
     private var isActive: Bool {
         layoutState.isInspectorPresented && layoutState.activeInspectorTab == tab
@@ -85,6 +97,7 @@ private struct InspectorTabButton: View {
 
     var body: some View {
         Button {
+            guard !isDisabled else { return }
             layoutState.toggleInspector(tab)
         } label: {
             Label(title, systemSymbol: icon)
@@ -98,5 +111,7 @@ private struct InspectorTabButton: View {
             shape: .circle
         )
         .help(title)
+        .opacity(isDisabled && !isActive ? 0.55 : 1)
+        .allowsHitTesting(!isDisabled)
     }
 }

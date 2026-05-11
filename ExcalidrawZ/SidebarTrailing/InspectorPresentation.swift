@@ -18,6 +18,7 @@ struct InspectorPresentationModifier: ViewModifier {
 
     @EnvironmentObject private var appPreference: AppPreference
     @EnvironmentObject private var layoutState: LayoutState
+    @EnvironmentObject private var fileState: FileState
 
     @State private var librariesToImport: [ExcalidrawLibrary] = []
 
@@ -40,6 +41,11 @@ struct InspectorPresentationModifier: ViewModifier {
         }
     }
 
+    private var shouldDisableInspectorContent: Bool {
+        fileState.currentActiveFileIsInTrash &&
+        layoutState.activeInspectorTab != .history
+    }
+
     func body(content: Content) -> some View {
         ZStack {
             if shouldUseFloatingInspector {
@@ -48,11 +54,13 @@ struct InspectorPresentationModifier: ViewModifier {
                 content
                     .sheet(isPresented: $layoutState.isInspectorPresented) {
                         inspectorContent()
+                            .disabled(shouldDisableInspectorContent)
                     }
             } else if #available(macOS 14.0, iOS 17.0, *) {
                 content
                     .inspector(isPresented: $layoutState.isInspectorPresented) {
                         inspectorContent()
+                            .disabled(shouldDisableInspectorContent)
                             .inspectorColumnWidth(min: 280, ideal: 350, max: 400)
                     }
             } else {
@@ -129,6 +137,7 @@ struct InspectorPresentationModifier: ViewModifier {
                             .padding(.horizontal, 4)
 
                         inspectorContent()
+                            .disabled(shouldDisableInspectorContent)
                     }
                     .frame(minWidth: 240, idealWidth: 250, maxWidth: 300)
                     .clipShape(RoundedRectangle(cornerRadius: 12))

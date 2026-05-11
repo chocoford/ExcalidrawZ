@@ -189,7 +189,7 @@ private struct ActiveFileSwitchBlockedToastModifier: ViewModifier {
                 alertToast(.init(
                     displayMode: .hud,
                     type: .regular,
-                    title: String(localized: "Stop AI generation before switching files.")
+                    title: String(localized: "Stop AI generation before switching files or spaces.")
                 ))
             case nil:
                 break

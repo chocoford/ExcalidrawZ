@@ -342,6 +342,7 @@ struct AIChatIslandView: View {
                 pendingQueue: $aiChatState.pendingQueue,
                 style: .island
             )
+            .disabled(fileState.currentActiveFileIsInTrash)
         }
         .padding(16)
         // Drive on the gate result (`pendingApprovalRequest != nil`

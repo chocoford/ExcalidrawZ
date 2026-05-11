@@ -1,0 +1,109 @@
+//
+//  AIChatView+SupportViews.swift
+//  ExcalidrawZ
+//
+
+import ChocofordUI
+import SFSafeSymbols
+import SwiftUI
+
+/// Menu item that opens Settings via `@Environment(\.openSettings)` (macOS 14+
+/// / iOS 17+) and writes the deep-link target into `SettingsRouter` first.
+/// Lives in its own struct because the `openSettings` env value is gated to
+/// macOS 14 — declaring it as a property on `AIChatView` (deployment target
+/// is older) would compile-error.
+@available(macOS 14.0, iOS 17.0, *)
+struct OpenSettingsMenuItem: View {
+    let deepLinkTo: SettingsView.Route
+    @Environment(\.openSettings) private var openSettings
+    
+    var body: some View {
+        Button {
+            // Write the route *before* `openSettings()` so that whichever
+            // arrives first at `SettingsView`, the value is in place — `.task`
+            // (first mount) or `.onChange` (window reused) consumes it.
+            SettingsRouter.shared.pendingRoute = deepLinkTo
+            openSettings()
+        } label: {
+            Label("Settings…", systemSymbol: .gearshape)
+        }
+    }
+}
+
+struct HiddenHistoryIndicator: View {
+    let hiddenGroupCount: Int
+    let isLoading: Bool
+
+    var body: some View {
+        ChatScrollRow {
+            HStack(spacing: 8) {
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .scaleEffect(0.55)
+                        .frame(width: 12, height: 12)
+                } else {
+                    Image(systemSymbol: .arrowUp)
+                        .font(.caption2.weight(.semibold))
+                }
+                Text(isLoading ? "Loading earlier items..." : "Scroll up to load \(hiddenGroupCount) earlier items")
+                    .font(.caption2)
+            }
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+        }
+    }
+}
+
+struct EditSessionBanner: View {
+    let mode: AIChatState.EditSession.Mode
+    let onCancel: () -> Void
+
+    var title: String {
+        switch mode {
+            case .edit: "Editing message"
+        }
+    }
+
+    var symbol: SFSymbol {
+        switch mode {
+            case .edit: .pencil
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemSymbol: symbol)
+                .foregroundStyle(AIAppearancePalette.foregroundGradient)
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            Button(action: onCancel) {
+                Image(systemSymbol: .xmark)
+                    .font(.caption)
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.cancelAction)
+            .help("Cancel editing")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+//        .background {
+//            if #available(macOS 26.0, *) {
+//                RoundedRectangle(cornerRadius: 14)
+//                    .fill(.clear)
+//                    .glassEffect(
+//                        .regular.interactive(),
+//                        in: RoundedRectangle(cornerRadius: 14)
+//                    )
+//            } else {
+//                RoundedRectangle(cornerRadius: 14)
+//                    .fill(.ultraThinMaterial)
+//            }
+//        }
+//        .padding(1)
+    }
+}
+
