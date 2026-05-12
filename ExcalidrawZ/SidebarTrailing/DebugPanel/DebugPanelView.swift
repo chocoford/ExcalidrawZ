@@ -11,6 +11,7 @@ import LLMCore
 
 struct DebugPanelView: View {
     @EnvironmentObject private var fileState: FileState
+    @ObservedObject private var aiChatRenderDebug = AIChatRenderDebug.state
 
     private let actionColumns = [
         GridItem(.flexible(minimum: 100), spacing: 8),
@@ -32,10 +33,10 @@ struct DebugPanelView: View {
       "ops": [
         {
           "op": "add",
-          "element": {
+          "elements": [{
             "type": "text",
             "text": "Hello from Debug"
-          }
+          }]
         }
       ]
     }
@@ -50,6 +51,7 @@ struct DebugPanelView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 debugHeader
+                aiChatRenderDebugSection
                 cameraSection
                 adjustSection
                 logsSection
@@ -57,6 +59,27 @@ struct DebugPanelView: View {
             .padding(12)
         }
         .scrollIndicators(.hidden)
+    }
+
+    @ViewBuilder
+    private var aiChatRenderDebugSection: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 12) {
+                Toggle("Render counters", isOn: $aiChatRenderDebug.isEnabled)
+
+                Text("Counters print once per second with the [AIChatRender] prefix for the AI chat publish/render hot path.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                debugActionButton("Reset AI Chat Debug Flags") {
+                    aiChatRenderDebug.reset()
+                }
+            }
+        } label: {
+            Label("AI Chat Render Debug", systemImage: "waveform.path.ecg")
+                .font(.headline)
+        }
     }
 
     private var cameraTarget: ExcalidrawCoordinatorRegistry.CanvasTarget {
@@ -546,22 +569,22 @@ struct DebugPanelView: View {
                       "ops": [
                         {
                           "op": "add",
-                          "element": {
+                          "elements": [{
                             "type": "text",
                             "text": "Stage 1",
                             "x": 180,
                             "y": 220
-                          }
+                          }]
                         },
                         {
                           "op": "add",
-                          "element": {
+                          "elements": [{
                             "type": "rectangle",
                             "x": 120,
                             "y": 300,
                             "width": 180,
                             "height": 96
-                          }
+                          }]
                         }
                       ]
                     }
@@ -572,22 +595,22 @@ struct DebugPanelView: View {
                       "ops": [
                         {
                           "op": "add",
-                          "element": {
+                          "elements": [{
                             "type": "text",
                             "text": "Stage 2",
                             "x": 760,
                             "y": 180
-                          }
+                          }]
                         },
                         {
                           "op": "add",
-                          "element": {
+                          "elements": [{
                             "type": "ellipse",
                             "x": 700,
                             "y": 290,
                             "width": 160,
                             "height": 110
-                          }
+                          }]
                         }
                       ]
                     }
@@ -598,22 +621,22 @@ struct DebugPanelView: View {
                       "ops": [
                         {
                           "op": "add",
-                          "element": {
+                          "elements": [{
                             "type": "text",
                             "text": "Stage 3",
                             "x": 1260,
                             "y": 420
-                          }
+                          }]
                         },
                         {
                           "op": "add",
-                          "element": {
+                          "elements": [{
                             "type": "rectangle",
                             "x": 1180,
                             "y": 520,
                             "width": 220,
                             "height": 120
-                          }
+                          }]
                         }
                       ]
                     }

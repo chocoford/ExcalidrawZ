@@ -137,6 +137,8 @@ struct AssistantRoundView: View {
     }
 
     var body: some View {
+        let _ = AIChatRenderDebug.hit("AssistantRoundView.body")
+
         VStack(alignment: .leading, spacing: 10) {
             messagesContent
 
@@ -205,7 +207,10 @@ struct AssistantRoundView: View {
     private func assistantContent(_ c: ChatMessageContent) -> some View {
         let text = displayText(of: c)
         if !text.isEmpty {
-            SmoothStreamingText(target: text, isStreaming: false)
+            SmoothStreamingText(
+                target: text,
+                isStreaming: streamingMessageIDs.contains(c.id)
+            )
                 .padding(.bottom, 6)
         }
     }
@@ -235,10 +240,14 @@ struct AssistantRoundView: View {
                     let streamingMarker = streamingMessageIDs.contains(c.id) ? "1" : "0"
                     let toolCallMarker = c.toolCalls.map { calls in
                         calls.map { call in
-                            "\(call.id):\(call.name):a\(call.arguments.count)"
+                            Self.toolCallSignature(
+                                call,
+                                content: c,
+                                streamingMessageIDs: streamingMessageIDs
+                            )
                         }.joined(separator: ",")
                     } ?? "nil"
-                    return "\(c.id):\(streamingMarker):c\(c.content?.count ?? 0):tc[\(toolCallMarker)]"
+                    return "\(c.id):\(streamingMarker):\(Self.contentSignature(c, streamingMessageIDs: streamingMessageIDs)):tc[\(toolCallMarker)]"
                 case .loading(let id):
                     return "loading:\(id.uuidString)"
                 case .error(let id, _):
@@ -246,6 +255,41 @@ struct AssistantRoundView: View {
             }
         }.joined(separator: ",")
         return "\(activeRoundID ?? "nil")::\(ids)"
+    }
+
+    private static func contentSignature(
+        _ content: ChatMessageContent,
+        streamingMessageIDs: Set<String>
+    ) -> String {
+        guard content.role == .assistant,
+              streamingMessageIDs.contains(content.id),
+              shouldHideStreamingAssistantContent(content)
+        else {
+            return "c\(content.content?.count ?? 0)"
+        }
+        return "hidden-streaming-content"
+    }
+
+    private static func toolCallSignature(
+        _ call: ToolCall,
+        content: ChatMessageContent,
+        streamingMessageIDs: Set<String>
+    ) -> String {
+        let isHiddenStreamingAssistant = content.role == .assistant
+            && streamingMessageIDs.contains(content.id)
+        if isHiddenStreamingAssistant {
+            return "\(call.id):\(call.name):hidden-streaming-args"
+        }
+        return "\(call.id):\(call.name):a\(call.arguments.count)"
+    }
+
+    private static func shouldHideStreamingAssistantContent(_ content: ChatMessageContent) -> Bool {
+        let hasFinalCall = content.toolCalls?.contains(where: { $0.name == "final_answer" }) == true
+        if hasFinalCall { return true }
+        let text = displayText(of: content)
+        guard !text.isEmpty else { return false }
+        let hasToolCallsStarted = content.toolCalls != nil
+        return !hasToolCallsStarted
     }
 
     /// True iff a message's LLM stream has reached a stable end-state

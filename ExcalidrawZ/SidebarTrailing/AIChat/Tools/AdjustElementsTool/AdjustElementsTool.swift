@@ -78,12 +78,22 @@ struct AdjustElementsTool: Tool {
         }
 
         let middleware = AdjustElementsMiddleware(file: currentFile)
-        let result = try middleware.apply(payload)
+        let result: AdjustmentResult
+        do {
+            result = try middleware.apply(payload)
+        } catch {
+            throw ToolError.executionFailed(Self.describeExecutionError(error))
+        }
 
-        let canvasResults = if payload.dryRun ?? false {
-            CanvasApplyResult()
-        } else {
-            try await apply(result, canvasTarget: adjustContext.canvasTarget)
+        let canvasResults: CanvasApplyResult
+        do {
+            canvasResults = if payload.dryRun ?? false {
+                CanvasApplyResult()
+            } else {
+                try await apply(result, canvasTarget: adjustContext.canvasTarget)
+            }
+        } catch {
+            throw ToolError.executionFailed(Self.describeExecutionError(error))
         }
 
         let output = ToolOutput(
@@ -93,13 +103,22 @@ struct AdjustElementsTool: Tool {
             opCount: payload.ops.count,
             opCounts: result.opCounts,
             mermaidResults: canvasResults.mermaidResults.isEmpty ? nil : canvasResults.mermaidResults,
-            skeletonResults: canvasResults.skeletonResults.isEmpty ? nil : canvasResults.skeletonResults
+            skeletonResults: canvasResults.skeletonResults.isEmpty ? nil : canvasResults.skeletonResults,
+            connectResults: canvasResults.connectResults.isEmpty ? nil : canvasResults.connectResults
         )
 
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         let encoded = try encoder.encode(output)
         return .text(String(data: encoded, encoding: .utf8) ?? "")
+    }
+
+    private static func describeExecutionError(_ error: Error) -> String {
+        if let localizedError = error as? LocalizedError,
+           let description = localizedError.errorDescription {
+            return description
+        }
+        return error.localizedDescription
     }
 }
 
@@ -149,6 +168,7 @@ private extension AdjustElementsTool {
 
         var mermaidResults: [ExcalidrawCore.MermaidInsertResult] = []
         var skeletonResults: [ExcalidrawCore.SkeletonInsertResult] = []
+        var connectResults: [ExcalidrawCore.ConnectElementsResult] = []
         for action in result.canvasActions {
             switch action {
                 case .insertMermaid(let op):
@@ -180,11 +200,20 @@ private extension AdjustElementsTool {
                     )
                     skeletonResults.append(insertResult)
                     try await cameraDirector.submitInsertedContentBounds(makeRect(from: insertResult.bounds))
+                case .connect(let op):
+                    let connectResult = try await coordinator.connectElements(
+                        from: op.from,
+                        to: op.to,
+                        arrow: op.arrow,
+                        captureUpdate: op.captureUpdate
+                    )
+                    connectResults.append(connectResult)
             }
         }
         return CanvasApplyResult(
             mermaidResults: mermaidResults,
-            skeletonResults: skeletonResults
+            skeletonResults: skeletonResults,
+            connectResults: connectResults
         )
     }
 
@@ -238,11 +267,13 @@ struct ToolOutput: Encodable {
     let opCounts: [String: Int]
     let mermaidResults: [ExcalidrawCore.MermaidInsertResult]?
     let skeletonResults: [ExcalidrawCore.SkeletonInsertResult]?
+    let connectResults: [ExcalidrawCore.ConnectElementsResult]?
 }
 
 private struct CanvasApplyResult {
     var mermaidResults: [ExcalidrawCore.MermaidInsertResult] = []
     var skeletonResults: [ExcalidrawCore.SkeletonInsertResult] = []
+    var connectResults: [ExcalidrawCore.ConnectElementsResult] = []
 }
 
 struct ToolInput: Decodable {
@@ -293,6 +324,7 @@ enum Operation: Decodable {
     case delete(DeleteOp)
     case wrap(WrapOp)
     case mermaid(MermaidOp)
+    case connect(ConnectOp)
 
     var kind: String {
         switch self {
@@ -304,6 +336,7 @@ enum Operation: Decodable {
             case .delete: return "delete"
             case .wrap: return "wrap"
             case .mermaid: return "mermaid"
+            case .connect: return "connect"
         }
     }
 
@@ -331,6 +364,8 @@ enum Operation: Decodable {
                 self = .wrap(try WrapOp(from: decoder))
             case "mermaid":
                 self = .mermaid(try MermaidOp(from: decoder))
+            case "connect":
+                self = .connect(try ConnectOp(from: decoder))
             default:
                 throw DecodingError.dataCorruptedError(
                     forKey: .op,
@@ -343,7 +378,7 @@ enum Operation: Decodable {
 
 struct AddOp: Decodable {
     let op: String
-    let element: ExcalidrawCore.JSONValue
+    let elements: ExcalidrawCore.JSONValue
     let place: PlaceHint?
     let regenerateIds: Bool?
     let position: ExcalidrawCore.MermaidPosition?
@@ -411,6 +446,14 @@ struct MermaidOp: Decodable {
     let focus: ExcalidrawCore.MermaidFocus?
     let regenerateIds: Bool?
     let mermaidConfig: ExcalidrawCore.JSONValue?
+    let captureUpdate: ExcalidrawCore.CaptureUpdate?
+}
+
+struct ConnectOp: Decodable {
+    let op: String
+    let from: String
+    let to: String
+    let arrow: ExcalidrawCore.JSONValue?
     let captureUpdate: ExcalidrawCore.CaptureUpdate?
 }
 
@@ -494,6 +537,7 @@ struct AdjustmentResult {
 enum CanvasAction {
     case insertMermaid(MermaidOp)
     case insertSkeleton(SkeletonInsertAction)
+    case connect(ConnectOp)
 }
 
 /// Result of hydrating an `add` op: the new element plus any boundElements
@@ -599,6 +643,13 @@ struct AdjustElementsMiddleware {
 
                 case .mermaid(let mermaidOp):
                     try applyMermaidOp(mermaidOp, canvasActions: &canvasActions)
+
+                case .connect(let connectOp):
+                    try applyConnectOp(
+                        connectOp,
+                        elements: elements,
+                        canvasActions: &canvasActions
+                    )
 
             }
         }

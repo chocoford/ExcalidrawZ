@@ -61,6 +61,10 @@ struct AIChatView: View {
     @State var hasDismissedWelcome: Bool = false
     @State var isShowingWelcomeManually: Bool = false
 
+    #if DEBUG
+    @ObservedObject var aiChatRenderDebug = AIChatRenderDebug.state
+    #endif
+
     let initialVisibleMessageGroupLimit = 20
     let messageGroupLoadIncrement = 20
 
@@ -114,6 +118,8 @@ struct AIChatView: View {
     }
     
     var body: some View {
+        let _ = AIChatRenderDebug.hit("AIChatView.body")
+
         ZStack {
             if shouldShowWelcome {
                 AIChatWelcomeView {
@@ -141,6 +147,30 @@ struct AIChatView: View {
         } message: {
             Text("All messages in this conversation will be removed. The drawing file is unaffected.")
         }
+        .background {
+            debugPublishProbe
+        }
+    }
+
+    @ViewBuilder
+    private var debugPublishProbe: some View {
+        #if DEBUG
+        Color.clear
+            .frame(width: 0, height: 0)
+            .onReceive(llmState.objectWillChange) { _ in
+                AIChatRenderDebug.hit("publish.llmState")
+            }
+
+        if let streamingState {
+            Color.clear
+                .frame(width: 0, height: 0)
+                .onReceive(streamingState.objectWillChange) { _ in
+                    AIChatRenderDebug.hit("publish.streamingState")
+                }
+        }
+        #else
+        EmptyView()
+        #endif
     }
 
     @ViewBuilder
@@ -190,7 +220,7 @@ struct AIChatView: View {
                         llmState.pendingApprovalRequest != nil ||
                         fileState.currentActiveFileIsInTrash
                     )
-                    
+
                     ApprovalPromptView()
                 }
             }

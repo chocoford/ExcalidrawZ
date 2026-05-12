@@ -24,19 +24,24 @@ struct LoadingMessageRow: View {
                 Circle()
                     .fill(Color.secondary)
                     .frame(width: dotSize, height: dotSize)
-                    .opacity(isAnimating ? 1 : 0.25)
-                    .animation(
-                        .easeInOut(duration: cycleDuration / 2)
-                            .repeatForever()
-                            .delay(stagger * Double(index)),
-                        value: isAnimating
-                    )
+                    .opacity(dotOpacity(index: index))
+                    .animation(dotAnimation(index: index), value: isAnimating)
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(Color.gray.opacity(0.2), in: Capsule())
         .onAppear { isAnimating = true }
+    }
+
+    private func dotOpacity(index: Int) -> Double {
+        return isAnimating ? 1 : 0.25
+    }
+
+    private func dotAnimation(index: Int) -> Animation? {
+        return .easeInOut(duration: cycleDuration / 2)
+            .repeatForever()
+            .delay(stagger * Double(index))
     }
 }
 

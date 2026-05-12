@@ -142,14 +142,13 @@ actor LocalStorageManager {
             do {
                 let existingContent = try Data(contentsOf: fileURL)
                 if existingContent == content {
-                    logger.info("Content unchanged, skipping write: \(filename)")
                     do {
                         try FileManager.default.setAttributes(
                             [.modificationDate: updatedAt ?? Date()],
                             ofItemAtPath: fileURL.filePath
                         )
                     } catch {
-                        logger.info("Update \(type.fileExtension)'s modified_at failed.")
+                        logger.warning("Failed to update \(type.fileExtension) modification date: \(error.localizedDescription)")
                     }
                     return SaveResult(relativePath: relativePath, wasModified: false)
                 }
@@ -170,10 +169,9 @@ actor LocalStorageManager {
                     ofItemAtPath: fileURL.filePath
                 )
             } catch {
-                logger.info("Update \(type.fileExtension)'s modified_at failed.")
+                logger.warning("Failed to update \(type.fileExtension) modification date: \(error.localizedDescription)")
             }
-            
-            logger.debug("Saved \(type.fileExtension) to local storage: \(fileURL)")
+
             return SaveResult(relativePath: relativePath, wasModified: true)
         } catch {
             logger.error("Failed to save file: \(error.localizedDescription)")
@@ -197,7 +195,6 @@ actor LocalStorageManager {
         
         do {
             let data = try Data(contentsOf: fileURL)
-            logger.info("Loaded content from local storage: \(relativePath)")
             return data
         } catch {
             logger.error("Failed to load file: \(error.localizedDescription)")
@@ -215,13 +212,11 @@ actor LocalStorageManager {
         let fileURL = baseURL.appendingPathComponent(relativePath)
         
         guard FileManager.default.fileExists(at: fileURL) else {
-            logger.warning("File already deleted or not found: \(relativePath)")
             return
         }
         
         do {
             try FileManager.default.removeItem(at: fileURL)
-            logger.info("Deleted file from local storage: \(relativePath)")
         } catch {
             logger.error("Failed to delete file: \(error.localizedDescription)")
             throw FileStorageError.deleteFailed(error.localizedDescription)
@@ -296,7 +291,6 @@ actor LocalStorageManager {
                 ofItemAtPath: fileURL.filePath
             )
 
-            logger.debug("Saved media item to local storage: \(filename)")
             return relativePath
         } catch {
             throw FileStorageError.writeFailed(error.localizedDescription)

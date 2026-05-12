@@ -44,6 +44,7 @@ struct NativeChatScrollView<Content: View>: View {
     @Binding var isPinnedToBottom: Bool
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
     private let isStreaming: Bool
+    private let contentRevision: AnyHashable
     private let onReachTop: (() -> Void)?
     /// Fired once the token-driven scroll-to-bottom animation finishes
     /// (or its safety timeout fires). The closure receives the token
@@ -57,6 +58,7 @@ struct NativeChatScrollView<Content: View>: View {
         isPinnedToBottom: Binding<Bool>,
         scrollToBottomRequest: Binding<ScrollToBottomRequest>,
         isStreaming: Bool = false,
+        contentRevision: some Hashable,
         onReachTop: (() -> Void)? = nil,
         onScrollAnimationComplete: ((Int) -> Void)? = nil,
         @ViewBuilder content: () -> Content
@@ -64,6 +66,7 @@ struct NativeChatScrollView<Content: View>: View {
         _isPinnedToBottom = isPinnedToBottom
         _scrollToBottomRequest = scrollToBottomRequest
         self.isStreaming = isStreaming
+        self.contentRevision = AnyHashable(contentRevision)
         self.onReachTop = onReachTop
         self.onScrollAnimationComplete = onScrollAnimationComplete
         self.content = content()
@@ -75,6 +78,7 @@ struct NativeChatScrollView<Content: View>: View {
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
             isStreaming: isStreaming,
+            contentRevision: contentRevision,
             onReachTop: onReachTop,
             onScrollAnimationComplete: onScrollAnimationComplete,
             content: wrappedContent
@@ -84,6 +88,7 @@ struct NativeChatScrollView<Content: View>: View {
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
             isStreaming: isStreaming,
+            contentRevision: contentRevision,
             onReachTop: onReachTop,
             onScrollAnimationComplete: onScrollAnimationComplete,
             content: wrappedContent
@@ -113,6 +118,7 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
     @Binding var isPinnedToBottom: Bool
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
     let isStreaming: Bool
+    let contentRevision: AnyHashable
     let onReachTop: (() -> Void)?
     let onScrollAnimationComplete: ((Int) -> Void)?
     let content: Content
@@ -165,6 +171,7 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
         /// The SwiftUI host inside the container; needed only for
         /// `rootView` updates from `updateNSView`.
         var hostingView: NSHostingView<Content>?
+        var lastContentRevision: AnyHashable?
         var isProgrammaticScrollPendingToBottom: Bool = false
         var deferredScrollToBottomWorkItem: DispatchWorkItem?
         var isPreservingTopLoadPosition: Bool = false
@@ -451,6 +458,7 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
         coordinator.scrollView = scrollView
         coordinator.documentContainer = container
         coordinator.hostingView = hosting
+        coordinator.lastContentRevision = contentRevision
 
         NotificationCenter.default.addObserver(
             coordinator,
@@ -469,6 +477,8 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        AIChatRenderDebug.hit("NativeChatScrollView.updateNSView")
+
         // Order matters: update the gate flags BEFORE pushing the new
         // rootView. `rootView = content` schedules a SwiftUI layout pass
         // that may emit `frameDidChange` synchronously; if `isStreaming`
@@ -480,7 +490,10 @@ private struct AppKitChatScrollHost<Content: View>: NSViewRepresentable {
         context.coordinator.isStreaming = isStreaming
         context.coordinator.onReachTop = onReachTop
         context.coordinator.onScrollAnimationComplete = onScrollAnimationComplete
-        context.coordinator.hostingView?.rootView = content
+        if context.coordinator.lastContentRevision != contentRevision {
+            context.coordinator.hostingView?.rootView = content
+            context.coordinator.lastContentRevision = contentRevision
+        }
 
         let token = scrollToBottomRequest.token
         if token != context.coordinator.lastSeenToken {
@@ -521,6 +534,7 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
     @Binding var isPinnedToBottom: Bool
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
     let isStreaming: Bool
+    let contentRevision: AnyHashable
     let onReachTop: (() -> Void)?
     let onScrollAnimationComplete: ((Int) -> Void)?
     let content: Content
@@ -550,6 +564,7 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
         var didNotifyReachTop: Bool = false
         weak var scrollView: UIScrollView?
         var hostingController: UIHostingController<Content>?
+        var lastContentRevision: AnyHashable?
         /// While true, swallow `scrollViewDidScroll` pin updates — used
         /// to mask the scroll-position changes that our own
         /// `setContentOffset` triggers.
@@ -747,6 +762,7 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
 
         context.coordinator.scrollView = scrollView
         context.coordinator.hostingController = hosting
+        context.coordinator.lastContentRevision = contentRevision
         return scrollView
     }
 
@@ -759,7 +775,10 @@ private struct UIKitChatScrollHost<Content: View>: UIViewRepresentable {
         context.coordinator.isStreaming = isStreaming
         context.coordinator.onReachTop = onReachTop
         context.coordinator.onScrollAnimationComplete = onScrollAnimationComplete
-        context.coordinator.hostingController?.rootView = content
+        if context.coordinator.lastContentRevision != contentRevision {
+            context.coordinator.hostingController?.rootView = content
+            context.coordinator.lastContentRevision = contentRevision
+        }
 
         let token = scrollToBottomRequest.token
         if token != context.coordinator.lastSeenToken {

@@ -26,7 +26,14 @@ extension ExcalidrawCore: WKScriptMessageHandler {
         didReceive message: WKScriptMessage
     ) {
         do {
-            let data = try JSONSerialization.data(withJSONObject: message.body)
+            let sanitization = sanitizeScriptMessageBody(message.body)
+#if DEBUG
+            if !sanitization.nonFiniteNumberPaths.isEmpty {
+                logger.warning("[WKScriptMessageHandler] Replaced non-finite numbers in \(scriptMessageEventName(message.body)): \(sanitization.nonFiniteNumberPaths.prefix(12).joined(separator: ", "))")
+            }
+#endif
+            let sanitizedBody = sanitization.value
+            let data = try JSONSerialization.data(withJSONObject: sanitizedBody)
             let message = try JSONDecoder().decode(ExcalidrawZMessage.self, from: data)
             
             switch message {
@@ -165,6 +172,63 @@ extension ExcalidrawCore: WKScriptMessageHandler {
             self.logger.error("[WKScriptMessageHandler] Decode received message failed. Raw data:\n\(String(describing: message.body))")
             self.publishError(error)
         }
+    }
+
+    private func sanitizeScriptMessageBody(_ value: Any) -> SanitizedScriptMessageBody {
+        sanitizeScriptMessageValue(value, path: "$")
+    }
+
+    private func scriptMessageEventName(_ value: Any) -> String {
+        guard let dictionary = value as? [String: Any],
+              let event = dictionary["event"] as? String else {
+            return "unknown event"
+        }
+        return event
+    }
+
+    private func sanitizeScriptMessageValue(_ value: Any, path: String) -> SanitizedScriptMessageBody {
+        switch value {
+            case let dictionary as [String: Any]:
+                var paths: [String] = []
+                var sanitized: [String: Any] = [:]
+                for (key, child) in dictionary {
+                    let result = sanitizeScriptMessageValue(child, path: "\(path).\(key)")
+                    paths.append(contentsOf: result.nonFiniteNumberPaths)
+                    sanitized[key] = result.value
+                }
+                return SanitizedScriptMessageBody(value: sanitized, nonFiniteNumberPaths: paths)
+            case let array as [Any]:
+                var paths: [String] = []
+                let sanitized = array.enumerated().map { index, child in
+                    let result = sanitizeScriptMessageValue(child, path: "\(path)[\(index)]")
+                    paths.append(contentsOf: result.nonFiniteNumberPaths)
+                    return result.value
+                }
+                return SanitizedScriptMessageBody(value: sanitized, nonFiniteNumberPaths: paths)
+            case let number as NSNumber:
+                if CFGetTypeID(number) == CFBooleanGetTypeID() {
+                    return SanitizedScriptMessageBody(value: number, nonFiniteNumberPaths: [])
+                }
+                let double = number.doubleValue
+                return double.isFinite
+                    ? SanitizedScriptMessageBody(value: number, nonFiniteNumberPaths: [])
+                    : SanitizedScriptMessageBody(value: NSNull(), nonFiniteNumberPaths: [path])
+            case let double as Double:
+                return double.isFinite
+                    ? SanitizedScriptMessageBody(value: double, nonFiniteNumberPaths: [])
+                    : SanitizedScriptMessageBody(value: NSNull(), nonFiniteNumberPaths: [path])
+            case let float as Float:
+                return float.isFinite
+                    ? SanitizedScriptMessageBody(value: float, nonFiniteNumberPaths: [])
+                    : SanitizedScriptMessageBody(value: NSNull(), nonFiniteNumberPaths: [path])
+            default:
+                return SanitizedScriptMessageBody(value: value, nonFiniteNumberPaths: [])
+        }
+    }
+
+    private struct SanitizedScriptMessageBody {
+        var value: Any
+        var nonFiniteNumberPaths: [String]
     }
 }
 

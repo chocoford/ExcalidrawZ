@@ -35,6 +35,13 @@ struct ToolEventCard<Content: View, Trailing: View>: View {
     /// Pulsing shimmer on the title — used while a tool call is in flight
     /// so the user reads it as "busy" rather than "settled".
     var isShimmering: Bool = false
+    /// When false the header remains visible but does not toggle the
+    /// foldout. Used while raw tool-call arguments are still streaming:
+    /// rendering a huge, changing JSON body is expensive and not useful.
+    var isExpandable: Bool = true
+    /// Replaces the chevron with an indeterminate spinner while the
+    /// foldout is temporarily unavailable.
+    var showsLoadingIndicator: Bool = false
     /// Right-aligned accessory in the header row, drawn after the
     /// `Spacer`. Used by `ToolCallCard` to show a "Denied" badge when
     /// the user rejected a tool's approval prompt; defaults to
@@ -62,7 +69,7 @@ struct ToolEventCard<Content: View, Trailing: View>: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             ZStack(alignment: .top) {
-                content(isExpanded)
+                content(isExpandable && isExpanded)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
@@ -83,20 +90,36 @@ struct ToolEventCard<Content: View, Trailing: View>: View {
             RoundedRectangle(cornerRadius: 24)
                 .fill(accent.opacity(0.1))
         }
+        .onChange(of: isExpandable) { canExpand in
+            guard !canExpand, isExpanded else { return }
+            withAnimation(.easeInOut(duration: 0.18)) {
+                isExpanded = false
+            }
+        }
     }
 
     @ViewBuilder
     private var header: some View {
         Button {
+            guard isExpandable else { return }
             withAnimation(.easeInOut(duration: 0.18)) {
                 isExpanded.toggle()
             }
         } label: {
             HStack(spacing: 6) {
-                Image(systemSymbol: .chevronRight)
-                    .font(.caption)
-                    .rotationEffect(isExpanded ? .degrees(90) : .zero)
-                    .animation(.easeInOut(duration: 0.15), value: isExpanded)
+                if showsLoadingIndicator {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(accent)
+                        .scaleEffect(0.55)
+                        .frame(width: 10, height: 10)
+                } else {
+                    Image(systemSymbol: .chevronRight)
+                        .font(.caption)
+                        .rotationEffect(isExpanded ? .degrees(90) : .zero)
+                        .animation(.easeInOut(duration: 0.15), value: isExpanded)
+                        .frame(width: 10, height: 10)
+                }
                 Image(systemSymbol: icon)
                     .font(.caption)
                 Text(title)
@@ -144,12 +167,16 @@ extension ToolEventCard where Trailing == EmptyView {
         title: String,
         accent: Color,
         isShimmering: Bool = false,
+        isExpandable: Bool = true,
+        showsLoadingIndicator: Bool = false,
         @ViewBuilder content: @escaping (_ isExpanded: Bool) -> Content
     ) {
         self.icon = icon
         self.title = title
         self.accent = accent
         self.isShimmering = isShimmering
+        self.isExpandable = isExpandable
+        self.showsLoadingIndicator = showsLoadingIndicator
         self.trailing = { EmptyView() }
         self.content = content
     }

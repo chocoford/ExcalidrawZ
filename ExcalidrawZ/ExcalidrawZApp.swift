@@ -141,7 +141,8 @@ struct ExcalidrawZApp: App {
         self._llmState = StateObject(wrappedValue: LLMStateObject(
             llmClient: .shared,
             toolRegistry: toolRegistry,
-            persistenceProvider: llmPersistenceProvider
+            persistenceProvider: llmPersistenceProvider,
+            streamPublishStrategy: .throttled(0.33)
         ))
 
         Task {

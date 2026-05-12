@@ -61,25 +61,26 @@ struct StaticGroupsView: View, Equatable {
             && lhs.revertRequiredUserMessageIDs == rhs.revertRequiredUserMessageIDs
             && lhs.showsUserMessageActions == rhs.showsUserMessageActions
             && lhs.disablesUserMessageActions == rhs.disablesUserMessageActions
-            && zip(lhs.groups, rhs.groups).allSatisfy { groupSignature($0) == groupSignature($1) }
+            && zip(lhs.groups, rhs.groups).allSatisfy {
+                groupSignature($0, streamingMessageIDs: lhs.streamingMessageIDs)
+                    == groupSignature($1, streamingMessageIDs: rhs.streamingMessageIDs)
+            }
     }
 
-    private static func groupSignature(_ group: MessageGroup) -> String {
+    private static func groupSignature(
+        _ group: MessageGroup,
+        streamingMessageIDs: Set<String>
+    ) -> String {
         switch group {
             case .assistantRound(let id, let messages):
                 let messageSignature = messages.map { message -> String in
                     switch message {
                         case .content(let content):
-                            let toolCallIDs = content.toolCalls.map { calls in
-                                calls.map { call in
-                                    "\(call.id):\(call.name):a\(call.arguments.count)"
-                                }.joined(separator: ",")
-                            } ?? "nil"
                             return [
                                 content.id,
                                 String(describing: content.role),
-                                "\(content.content?.count ?? 0)",
-                                toolCallIDs
+                                contentSignature(content, streamingMessageIDs: streamingMessageIDs),
+                                toolCallSignature(content, streamingMessageIDs: streamingMessageIDs)
                             ].joined(separator: ":")
                         case .loading(let id):
                             return "loading:\(id.uuidString)"
@@ -91,6 +92,50 @@ struct StaticGroupsView: View, Equatable {
             default:
                 return group.id
         }
+    }
+
+    private static func contentSignature(
+        _ content: ChatMessageContent,
+        streamingMessageIDs: Set<String>
+    ) -> String {
+        guard content.role == .assistant,
+              streamingMessageIDs.contains(content.id),
+              shouldHideStreamingAssistantContent(content)
+        else {
+            return "c\(content.content?.count ?? 0)"
+        }
+        return "hidden-streaming-content"
+    }
+
+    private static func toolCallSignature(
+        _ content: ChatMessageContent,
+        streamingMessageIDs: Set<String>
+    ) -> String {
+        guard let calls = content.toolCalls else { return "nil" }
+        let isHiddenStreamingAssistant = content.role == .assistant
+            && streamingMessageIDs.contains(content.id)
+        return calls.map { call in
+            if isHiddenStreamingAssistant {
+                return "\(call.id):\(call.name):hidden-streaming-args"
+            }
+            return "\(call.id):\(call.name):a\(call.arguments.count)"
+        }.joined(separator: ",")
+    }
+
+    private static func shouldHideStreamingAssistantContent(_ content: ChatMessageContent) -> Bool {
+        let hasFinalCall = content.toolCalls?.contains(where: { $0.name == "final_answer" }) == true
+        if hasFinalCall { return true }
+        let text = displayText(of: content)
+        guard !text.isEmpty else { return false }
+        let hasToolCallsStarted = content.toolCalls != nil
+        return !hasToolCallsStarted
+    }
+
+    private static func displayText(of content: ChatMessageContent) -> String {
+        if let finalCall = content.toolCalls?.first(where: { $0.name == "final_answer" }) {
+            return parseFinalAnswerArgs(finalCall.arguments)
+        }
+        return content.content ?? ""
     }
 
     var body: some View {

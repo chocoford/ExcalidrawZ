@@ -10,17 +10,13 @@ extension AdjustElementsMiddleware {
         elements: inout [ExcalidrawElement],
         canvasActions: inout [CanvasAction]
     ) throws {
-        guard case .object = op.element else {
-            throw AdjustmentError(message: "add requires `element` to be a skeleton object.")
-        }
-
         let position = try op.position ?? resolvedPlacePosition(
             op.place,
-            skeleton: op.element,
+            skeleton: op.elements,
             existingElements: elements
         )
         canvasActions.append(.insertSkeleton(SkeletonInsertAction(
-            skeletons: op.element,
+            skeletons: op.elements,
             regenerateIds: op.regenerateIds,
             position: position,
             focus: op.focus,

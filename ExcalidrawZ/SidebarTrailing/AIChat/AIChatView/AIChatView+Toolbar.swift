@@ -65,6 +65,24 @@ extension AIChatView {
                             Label("Settings…", systemSymbol: .gearshape)
                         }
                     }
+
+                    #if DEBUG
+                    Divider()
+
+                    Menu {
+                        Toggle("Render counters", isOn: $aiChatRenderDebug.isEnabled)
+
+                        Divider()
+
+                        Button {
+                            aiChatRenderDebug.reset()
+                        } label: {
+                            Label("Reset flags", systemSymbol: .arrowCounterclockwise)
+                        }
+                    } label: {
+                        Label("Render debug", systemImage: "waveform.path.ecg")
+                    }
+                    #endif
                     
                     Divider()
                     

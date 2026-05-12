@@ -514,6 +514,18 @@ extension ExcalidrawCore {
         var bounds: MermaidBounds
     }
 
+    struct ConnectElementsParams: Codable, Hashable {
+        var from: String
+        var to: String
+        var arrow: JSONValue?
+        var captureUpdate: CaptureUpdate?
+    }
+
+    struct ConnectElementsResult: Codable, Hashable {
+        var arrowId: String
+        var labelId: String?
+    }
+
     struct MermaidConvertResult: Codable, Hashable {
         var elements: [JSONValue]
         var files: [String: JSONValue]
@@ -594,14 +606,73 @@ extension ExcalidrawCore {
     private func decodeJavaScriptResult<T: Decodable>(_ result: Any?, as type: T.Type) throws -> T {
         if let string = result as? String,
            let data = string.data(using: .utf8) {
-            return try JSONDecoder().decode(type, from: data)
+            do {
+                return try JSONDecoder().decode(type, from: data)
+            } catch {
+                throw JavaScriptResultDecodingError(
+                    targetType: String(describing: type),
+                    reason: Self.describeDecodingFailure(error),
+                    rawJSON: string
+                )
+            }
         }
         if let result,
            JSONSerialization.isValidJSONObject(result) {
             let data = try JSONSerialization.data(withJSONObject: result)
-            return try JSONDecoder().decode(type, from: data)
+            do {
+                return try JSONDecoder().decode(type, from: data)
+            } catch {
+                throw JavaScriptResultDecodingError(
+                    targetType: String(describing: type),
+                    reason: Self.describeDecodingFailure(error),
+                    rawJSON: String(data: data, encoding: .utf8)
+                )
+            }
         }
         throw InvalidJavaScriptResult()
+    }
+
+    private struct JavaScriptResultDecodingError: LocalizedError {
+        let targetType: String
+        let reason: String
+        let rawJSON: String?
+
+        var errorDescription: String? {
+            var message = "Failed to decode JavaScript result as \(targetType): \(reason)"
+            if let rawJSON {
+                message += "\nRaw result: \(Self.preview(rawJSON))"
+            }
+            return message
+        }
+
+        private static func preview(_ rawJSON: String) -> String {
+            let limit = 2000
+            if rawJSON.count <= limit {
+                return rawJSON
+            }
+            return String(rawJSON.prefix(limit)) + "...(truncated)"
+        }
+    }
+
+    private static func describeDecodingFailure(_ error: Error) -> String {
+        switch error {
+            case DecodingError.keyNotFound(let key, let context):
+                return "missing key `\(key.stringValue)` at \(formatCodingPath(context.codingPath, appending: key)); \(context.debugDescription)"
+            case DecodingError.valueNotFound(let type, let context):
+                return "missing value for \(type) at \(formatCodingPath(context.codingPath)); \(context.debugDescription)"
+            case DecodingError.typeMismatch(let type, let context):
+                return "type mismatch for \(type) at \(formatCodingPath(context.codingPath)); \(context.debugDescription)"
+            case DecodingError.dataCorrupted(let context):
+                return "data corrupted at \(formatCodingPath(context.codingPath)); \(context.debugDescription)"
+            default:
+                return error.localizedDescription
+        }
+    }
+
+    private static func formatCodingPath(_ path: [any CodingKey], appending key: (any CodingKey)? = nil) -> String {
+        let fullPath = key.map { path + [$0] } ?? path
+        guard !fullPath.isEmpty else { return "$" }
+        return "$." + fullPath.map(\.stringValue).joined(separator: ".")
     }
 
     func updateCameraState(_ camera: CameraState) {
@@ -1011,6 +1082,31 @@ extension ExcalidrawCore {
     }
 
     @MainActor
+    func connectElements(
+        from: String,
+        to: String,
+        arrow: JSONValue? = nil,
+        captureUpdate: CaptureUpdate? = nil
+    ) async throws -> ConnectElementsResult {
+        guard !self.webView.isLoading else {
+            throw InvalidJavaScriptResult()
+        }
+        let params = ConnectElementsParams(
+            from: from,
+            to: to,
+            arrow: arrow,
+            captureUpdate: captureUpdate
+        )
+        let paramsJSON = try encodeJSON(params)
+        let result = try await webView.callAsyncJavaScript(
+            "return JSON.stringify(await window.excalidrawZHelper.connectElements(\(paramsJSON)));",
+            arguments: [:],
+            contentWorld: .page
+        )
+        return try decodeJavaScriptResult(result, as: ConnectElementsResult.self)
+    }
+
+    @MainActor
     func convertMermaidToExcalidraw(
         _ definition: String,
         options: MermaidConvertOptions = .init()
@@ -1269,7 +1365,6 @@ extension ExcalidrawCore {
     /// Insert media files to IndexedDB
     @MainActor
     func insertMediaFiles(_ files: [ExcalidrawFile.ResourceFile]) async throws {
-        logger.info("insertMediaFiles: \(files.count)")
         let jsonStringified = try files.jsonStringified()
         _ = try await webView.callAsyncJavaScript(
             "window.excalidrawZHelper.insertMedias('\(jsonStringified)');",
@@ -1283,8 +1378,6 @@ extension ExcalidrawCore {
     /// Most work (fetching, loading files) runs on background threads for better performance
     /// - Returns: The count of injected MediaItems
     func injectAllMediaItems() async throws -> Int {
-        logger.info("Starting MediaItem injection...")
-
         // Check WebView readiness on main thread
         let isReady = await MainActor.run {
             !isNavigating && (hasInjectIndexedDBData || isDocumentLoaded)
@@ -1301,8 +1394,6 @@ extension ExcalidrawCore {
             return try context.fetch(allMediasFetch)
         }
         let allMediaIDs = allMedias.compactMap(\.id)
-        
-        logger.info("Fetched \(allMedias.count) MediaItems from CoreData")
 
         // Load media items using async method with iCloud Drive support (concurrent)
         // This can run on background threads for better performance
@@ -1337,7 +1428,6 @@ extension ExcalidrawCore {
             self.hasInjectIndexedDBData = true
         }
 
-        logger.info("Successfully injected \(mediaFiles.count) MediaItems")
         return mediaFiles.count
     }
 
@@ -1360,13 +1450,7 @@ extension ExcalidrawCore {
         let hasChanges = currentIDs != loadedIDs
 
         if hasChanges {
-            let addedCount = currentIDs.subtracting(loadedIDs).count
-            let removedCount = loadedIDs.subtracting(currentIDs).count
-            logger.info("MediaItem changes detected: +\(addedCount) added, -\(removedCount) removed, re-injecting...")
-
             _ = try await injectAllMediaItems()
-        } else {
-            logger.debug("No MediaItem changes detected, skipping injection")
         }
     }
 

@@ -37,7 +37,8 @@
         { "$ref": "#/definitions/resizeOp" },
         { "$ref": "#/definitions/deleteOp" },
         { "$ref": "#/definitions/wrapOp" },
-        { "$ref": "#/definitions/mermaidOp" }
+        { "$ref": "#/definitions/mermaidOp" },
+        { "$ref": "#/definitions/connectOp" }
       ]
     },
     "addLabeledShapeOp": {
@@ -100,10 +101,8 @@
       "additionalProperties": false,
       "properties": {
         "op": { "const": "add" },
-        "element": {
-          "type": "object",
-          "additionalProperties": true,
-          "description": "Canonical Excalidraw skeleton spec. Put skeleton `id` here inside `element` when later skeletons need to bind to it. Do not put ids on the outer add op wrapper. The WebView converts this object through insertFromSkeleton."
+        "elements": {
+          "description": "Canonical Excalidraw skeleton objects passed together to one insertFromSkeleton call. Put temporary skeleton ids inside these skeleton objects when arrows need to bind to shapes created in this same elements array. Do not put ids on the outer add op wrapper. Relationship arrows should specify start.id and end.id only. Use connect for existing elements or cross-batch links. Use bound arrows for both directed and undirected relationships; set arrowheads to null for visually headless connectors. If fontFamily is included, use 5 by default; do not use 4. Do not include unsupported CSS-style text fields such as fontWeight. For centered standalone text, include an explicit width; textAlign alone does not center auto-width text."
         },
         "place": { "$ref": "#/definitions/placeHint" },
         "regenerateIds": {
@@ -183,7 +182,7 @@
       },
       "required": [
         "op",
-        "element"
+        "elements"
       ]
     },
     "updateOp": {
@@ -323,7 +322,7 @@
         "definition": {
           "type": "string",
           "minLength": 1,
-          "description": "Mermaid source definition. Use this when the requested diagram is naturally expressed as Mermaid, such as flowchart, graph, sequenceDiagram, stateDiagram, classDiagram, journey, timeline, gitGraph, mindmap, or ER diagram."
+          "description": "Mermaid source definition. Use this when the requested diagram is naturally expressed as Mermaid, such as flowchart, graph, sequenceDiagram, stateDiagram, classDiagram, journey, timeline, gitGraph, mindmap, or ER diagram. User/App/Auth Server flows, API flows, OAuth/login flows, and cross-participant message flows are often sequence diagrams."
         },
         "position": {
           "oneOf": [
@@ -404,6 +403,106 @@
       "required": [
         "op",
         "definition"
+      ]
+    },
+    "connectOp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": { "const": "connect" },
+        "from": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Existing source element id from read_file."
+        },
+        "to": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Existing target element id from read_file."
+        },
+        "arrow": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Optional arrow styling and label. Geometry is computed by Excalidraw; do not calculate edge coordinates. For undirected relationships, set startArrowhead and endArrowhead to null.",
+          "properties": {
+            "strokeColor": { "type": "string" },
+            "strokeWidth": { "type": "number" },
+            "strokeStyle": {
+              "type": "string",
+              "enum": ["solid", "dashed", "dotted"]
+            },
+            "roughness": { "type": "number" },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "startArrowhead": {
+              "type": ["string", "null"],
+              "description": "Optional start arrowhead. Common values: arrow, bar, dot, triangle, diamond, or null."
+            },
+            "endArrowhead": {
+              "type": ["string", "null"],
+              "description": "Optional end arrowhead. Common values: arrow, bar, dot, triangle, diamond, or null."
+            },
+            "elbowed": { "type": "boolean" },
+            "label": {
+              "oneOf": [
+                { "type": "string" },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "text": { "type": "string", "minLength": 1 },
+                    "fontSize": { "type": "number" },
+                    "fontFamily": {
+                      "type": "number",
+                      "description": "Font family id. Use 5 by default. Do not use 4."
+                    },
+                    "strokeColor": { "type": "string" }
+                  },
+                  "required": ["text"]
+                }
+              ]
+            },
+            "fixedPoint": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "start": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": { "type": "number" }
+                },
+                "end": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": { "type": "number" }
+                }
+              }
+            },
+            "mode": {
+              "type": "string",
+              "enum": ["inside", "orbit", "skip"]
+            }
+          }
+        },
+        "captureUpdate": {
+          "type": "string",
+          "enum": [
+            "IMMEDIATELY",
+            "EVENTUALLY",
+            "NEVER"
+          ],
+          "default": "IMMEDIATELY"
+        }
+      },
+      "required": [
+        "op",
+        "from",
+        "to"
       ]
     },
     "placeHint": {
@@ -499,12 +598,12 @@
         },
         "fontFamily": {
           "type": "number",
-          "description": "text only — font family id. 1 = Virgil (hand-drawn), 2 = Helvetica, 3 = Cascadia (mono), 5 = Excalifont (default)."
+          "description": "text only — font family id. 1 = Virgil (hand-drawn), 2 = Helvetica, 3 = Cascadia (mono), 4 = legacy/unused and should not be used, 5 = Excalifont / app default."
         },
         "textAlign": {
           "type": "string",
           "enum": ["left", "center", "right"],
-          "description": "text only — horizontal alignment within the text frame."
+          "description": "text only — horizontal alignment within the text frame. For standalone text, provide an explicit width when using center/right alignment; auto-width text is anchored at x/y."
         },
         "verticalAlign": {
           "type": "string",

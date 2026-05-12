@@ -11,7 +11,6 @@
 import SwiftUI
 import LLMKit
 import LLMCore
-import MarkdownUI
 import SFSafeSymbols
 import ChocofordUI
 
@@ -187,16 +186,13 @@ struct AIChatIslandView: View {
 
     /// Name of the first non-final-answer tool call currently being emitted
     /// in the active stream (or nil when no stream is active or only the
-    /// `final_answer` synthetic call is present). Watched in `body` so the
-    /// ticker can flip from "Thinking…" to "Using <tool>…" the instant the
-    /// model decides to call out, instead of waiting for the surrounding
-    /// assistant message to commit into `conversation.messages`.
+    /// `final_answer` synthetic call is present). LLMKit keeps streaming
+    /// content/tool calls on `conversation.messages`; `streamingState` is now
+    /// only a lightweight id/finished pointer.
     private var liveToolCallName: String? {
-        if let name = activeStreamingAssistantContent?.toolCalls?.first(where: { $0.name != "final_answer" })?.name {
-            return name
-        }
-        guard let stream = streamingState, !stream.isFinished else { return nil }
-        return stream.toolCalls.first(where: { $0.name != "final_answer" })?.name
+        activeStreamingAssistantContent?.toolCalls?
+            .first(where: { $0.name != "final_answer" })?
+            .name
     }
 
     /// Show the streaming preview only while the assistant is actively
@@ -208,10 +204,7 @@ struct AIChatIslandView: View {
             let text = displayText(of: content)
             return text.isEmpty ? nil : text
         }
-        guard let stream = streamingState,
-              !stream.isFinished else { return nil }
-        let text = stream.content
-        return text
+        return nil
     }
 
     var body: some View {
@@ -548,7 +541,7 @@ struct AIChatIslandView: View {
     @ViewBuilder
     private func streamingPreview(_ text: String) -> some View {
         ScrollView {
-            Markdown(text)
+            Text(verbatim: text)
                 .textSelection(.enabled)
                 .font(.callout)
                 .frame(maxWidth: .infinity, alignment: .leading)

@@ -34,12 +34,9 @@ struct MediaItemSyncModifier: ViewModifier {
     // MARK: - Monitoring
 
     private func startMonitoring() {
-        logger.info("Starting MediaItem change monitoring...")
-
         // Get initial MediaItem count
         Task {
             lastKnownMediaItemCount = await getCurrentMediaItemCount()
-            logger.info("Initial MediaItem count: \(lastKnownMediaItemCount)")
         }
 
         // Listen for remote changes from CloudKit
@@ -56,7 +53,6 @@ struct MediaItemSyncModifier: ViewModifier {
     }
 
     private func stopMonitoring() {
-        logger.info("Stopping MediaItem change monitoring...")
         remoteChangeTask?.cancel()
         refreshDebounceTask?.cancel()
     }
@@ -64,8 +60,6 @@ struct MediaItemSyncModifier: ViewModifier {
     // MARK: - Change Handling
 
     private func handleRemoteChange(_ notification: Notification) async {
-        logger.debug("Received remote change notification")
-
         // Debounce: cancel previous task
         refreshDebounceTask?.cancel()
 
@@ -74,7 +68,6 @@ struct MediaItemSyncModifier: ViewModifier {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
 
             guard !Task.isCancelled else {
-                logger.debug("MediaItem refresh debounce task cancelled")
                 return
             }
 
@@ -86,8 +79,6 @@ struct MediaItemSyncModifier: ViewModifier {
 
                 // Trigger MediaItem re-injection
                 await refreshMediaItems()
-            } else {
-                logger.debug("Remote change detected but MediaItem count unchanged (\(currentCount)), skipping refresh")
             }
         }
     }
@@ -114,7 +105,6 @@ struct MediaItemSyncModifier: ViewModifier {
 
         do {
             try await excalidrawCore.refreshMediaItemsIfNeeded()
-            logger.info("MediaItem refresh completed")
         } catch {
             logger.error("Failed to refresh MediaItems: \(error.localizedDescription)")
         }

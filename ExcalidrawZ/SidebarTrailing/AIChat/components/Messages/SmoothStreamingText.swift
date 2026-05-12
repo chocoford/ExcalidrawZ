@@ -21,7 +21,7 @@ struct SmoothStreamingText: View {
     @State private var localIsStreaming = true
     
     var body: some View {
-        Markdown(flusher.displayText)
+        renderedText
             .textSelection(.enabled)
             .fixedSize(horizontal: false, vertical: true)
             .background {
@@ -55,6 +55,15 @@ struct SmoothStreamingText: View {
             .onDisappear {
                 flusher.cancel()
             }
+    }
+
+    @ViewBuilder
+    private var renderedText: some View {
+        if isStreaming {
+            Text(verbatim: flusher.displayText)
+        } else {
+            Markdown(flusher.displayText)
+        }
     }
     
     @ViewBuilder

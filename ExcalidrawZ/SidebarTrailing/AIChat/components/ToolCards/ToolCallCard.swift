@@ -30,6 +30,7 @@ struct ToolCallCard: View {
     var isDenied: Bool = false
 
     var body: some View {
+        let isStreamingArguments = isActive && !isDenied
         ToolEventCard(
             icon: .hammerFill,
             // Resolve the snake_case `name` (LLM protocol payload) to the
@@ -39,13 +40,15 @@ struct ToolCallCard: View {
             title: ToolDisplayNameCache.displayName(for: call.name),
             accent: .purple,
             isShimmering: isActive && !isDenied,
+            isExpandable: !isStreamingArguments,
+            showsLoadingIndicator: isStreamingArguments,
             trailing: {
                 if isDenied {
                     deniedBadge
                 }
             }
         ) { isExpanded in
-            if isExpanded, !call.arguments.isEmpty {
+            if isExpanded, !isStreamingArguments, !call.arguments.isEmpty {
                 Text(call.arguments)
             }
         }

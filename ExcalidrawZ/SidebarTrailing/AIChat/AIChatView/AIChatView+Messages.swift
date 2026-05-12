@@ -4,10 +4,72 @@
 //
 
 import ChocofordUI
+import Foundation
 import LLMCore
 import LLMKit
 import SFSafeSymbols
 import SwiftUI
+
+#if DEBUG
+final class AIChatRenderDebugState: ObservableObject {
+    @Published var isEnabled = false
+
+    func reset() {
+        isEnabled = false
+    }
+}
+
+enum AIChatRenderDebug {
+    static let state = AIChatRenderDebugState()
+
+    static var isEnabled: Bool {
+        state.isEnabled
+    }
+
+    private static let counterStore = CounterStore()
+
+    static func hit(_ name: String) {
+        guard isEnabled else { return }
+        counterStore.hit(name)
+    }
+
+    private final class CounterStore: @unchecked Sendable {
+        private let lock = NSLock()
+        private var counts: [String: Int] = [:]
+        private var lastFlush = CFAbsoluteTimeGetCurrent()
+
+        func hit(_ name: String) {
+            lock.lock()
+            counts[name, default: 0] += 1
+
+            let now = CFAbsoluteTimeGetCurrent()
+            guard now - lastFlush >= 1 else {
+                lock.unlock()
+                return
+            }
+
+            let snapshot = counts
+                .sorted { lhs, rhs in
+                    if lhs.value == rhs.value { return lhs.key < rhs.key }
+                    return lhs.value > rhs.value
+                }
+                .prefix(20)
+                .map { "\($0.key)=\($0.value)" }
+                .joined(separator: " | ")
+
+            counts.removeAll(keepingCapacity: true)
+            lastFlush = now
+            lock.unlock()
+
+            print("[AIChatRender] \(snapshot)")
+        }
+    }
+}
+#else
+enum AIChatRenderDebug {
+    static func hit(_ name: String) {}
+}
+#endif
 
 extension AIChatView {
     @ViewBuilder
@@ -70,10 +132,22 @@ extension AIChatView {
             in: allGroups,
             conversationID: fileState.aiChatConversationID
         )
+        let showsUserMessageActions = !isRoundLifecycleActive
+        let disablesUserMessageActions = isStreamingActive || streamScrollFollowTail
+        let contentRevision = messageListContentRevision(
+            allGroups: allGroups,
+            visibleGroups: visibleGroups,
+            activeRoundID: activeRoundID,
+            transientError: visibleTransientError,
+            streamingMessageIDs: streamingMessageIDs,
+            showsUserMessageActions: showsUserMessageActions,
+            disablesUserMessageActions: disablesUserMessageActions
+        )
         NativeChatScrollView(
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
             isStreaming: isStreamingActive || streamScrollFollowTail,
+            contentRevision: contentRevision,
             onReachTop: {
                 loadMoreMessageGroupsIfNeeded(totalGroupCount: allGroups.count)
             },
@@ -87,8 +161,8 @@ extension AIChatView {
                 activeRoundID: activeRoundID,
                 transientError: visibleTransientError,
                 streamingMessageIDs: streamingMessageIDs,
-                showsUserMessageActions: !isRoundLifecycleActive,
-                disablesUserMessageActions: isStreamingActive || streamScrollFollowTail
+                showsUserMessageActions: showsUserMessageActions,
+                disablesUserMessageActions: disablesUserMessageActions
             )
         }
         .environment(\.chatScrollToBottom) { animated in
@@ -178,6 +252,130 @@ extension AIChatView {
             }
         }
         return result
+    }
+
+    func messageListContentRevision(
+        allGroups: [MessageGroup],
+        visibleGroups: [MessageGroup],
+        activeRoundID: String?,
+        transientError: AIChatState.TransientError?,
+        streamingMessageIDs: Set<String>,
+        showsUserMessageActions: Bool,
+        disablesUserMessageActions: Bool
+    ) -> String {
+        let hiddenGroupCount = max(0, allGroups.count - visibleGroups.count)
+        let groupSignature = visibleGroups
+            .map { messageGroupPresentationSignature($0, streamingMessageIDs: streamingMessageIDs) }
+            .joined(separator: "|")
+        let transientErrorSignature = transientError.map {
+            "\($0.id.uuidString):\($0.message)"
+        } ?? "nil"
+        return [
+            "hidden:\(hiddenGroupCount)",
+            "loadingOlder:\(isLoadingOlderMessages ? "1" : "0")",
+            "activeRound:\(activeRoundID ?? "nil")",
+            "streaming:\(streamingMessageIDs.sorted().joined(separator: ","))",
+            "transient:\(transientErrorSignature)",
+            "revert:\(revertRequiredUserMessageIDs.sorted().joined(separator: ","))",
+            "userActions:\(showsUserMessageActions ? "1" : "0")",
+            "disabledActions:\(disablesUserMessageActions ? "1" : "0")",
+            "groups:\(groupSignature)"
+        ].joined(separator: "::")
+    }
+
+    func messageGroupPresentationSignature(
+        _ group: MessageGroup,
+        streamingMessageIDs: Set<String>
+    ) -> String {
+        switch group {
+            case .user(let content):
+                return [
+                    "user",
+                    content.id,
+                    "\(content.content?.count ?? 0)",
+                    "files:\(content.files?.count ?? 0)"
+                ].joined(separator: ":")
+            case .assistantRound(let id, let messages):
+                let messageSignature = messages.map { message -> String in
+                    switch message {
+                        case .content(let content):
+                            return [
+                                content.id,
+                                String(describing: content.role),
+                                messageContentPresentationSignature(
+                                    content,
+                                    streamingMessageIDs: streamingMessageIDs
+                                ),
+                                toolCallPresentationSignature(
+                                    content,
+                                    streamingMessageIDs: streamingMessageIDs
+                                ),
+                                "toolCallID:\(content.toolCallId ?? "nil")",
+                                "files:\(content.files?.count ?? 0)"
+                            ].joined(separator: ":")
+                        case .loading(let id):
+                            return "loading:\(id.uuidString)"
+                        case .error(let id, let message):
+                            return "error:\(id.uuidString):\(message)"
+                    }
+                }.joined(separator: "|")
+                return "assistantRound:\(id)::\(messageSignature)"
+            case .loading(let id):
+                return "loading:\(id.uuidString)"
+            case .error(let id, let message):
+                return "error:\(id.uuidString):\(message)"
+            case .compactSummary(let content):
+                return [
+                    "compactSummary",
+                    content.id,
+                    "\(content.content?.count ?? 0)"
+                ].joined(separator: ":")
+        }
+    }
+
+    func messageContentPresentationSignature(
+        _ content: ChatMessageContent,
+        streamingMessageIDs: Set<String>
+    ) -> String {
+        guard content.role == .assistant,
+              streamingMessageIDs.contains(content.id),
+              shouldHideStreamingAssistantContent(content)
+        else {
+            return "content:\(content.content?.count ?? 0)"
+        }
+        return "hidden-streaming-content"
+    }
+
+    func toolCallPresentationSignature(
+        _ content: ChatMessageContent,
+        streamingMessageIDs: Set<String>
+    ) -> String {
+        guard let calls = content.toolCalls else { return "toolCalls:nil" }
+        let isHiddenStreamingAssistant = content.role == .assistant
+            && streamingMessageIDs.contains(content.id)
+        let callSignature = calls.map { call in
+            if isHiddenStreamingAssistant {
+                return "\(call.id):\(call.name):hidden-streaming-args"
+            }
+            return "\(call.id):\(call.name):args:\(call.arguments.count)"
+        }.joined(separator: ",")
+        return "toolCalls:\(callSignature)"
+    }
+
+    func shouldHideStreamingAssistantContent(_ content: ChatMessageContent) -> Bool {
+        let hasFinalCall = content.toolCalls?.contains(where: { $0.name == "final_answer" }) == true
+        if hasFinalCall { return true }
+        let text = displayText(of: content)
+        guard !text.isEmpty else { return false }
+        let hasToolCallsStarted = content.toolCalls != nil
+        return !hasToolCallsStarted
+    }
+
+    func displayText(of content: ChatMessageContent) -> String {
+        if let finalCall = content.toolCalls?.first(where: { $0.name == "final_answer" }) {
+            return parseFinalAnswerArgs(finalCall.arguments)
+        }
+        return content.content ?? ""
     }
 
     @ViewBuilder
@@ -374,6 +572,4 @@ extension AIChatView {
             }
         }
     }
-    
-
 }
