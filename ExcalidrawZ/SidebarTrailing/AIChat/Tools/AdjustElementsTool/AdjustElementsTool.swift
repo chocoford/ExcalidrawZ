@@ -187,6 +187,8 @@ private extension AdjustElementsTool {
                     try await cameraDirector.submitInsertedContentBounds(makeRect(from: insertResult.bounds))
                 case .insertSkeleton(let op):
                     let options = ExcalidrawCore.SkeletonInsertOptions(
+                        layout: op.layout,
+                        layoutOptions: op.layoutOptions,
                         regenerateIds: op.regenerateIds,
                         position: op.position,
                         focus: op.focus,
@@ -379,6 +381,8 @@ enum Operation: Decodable {
 struct AddOp: Decodable {
     let op: String
     let elements: ExcalidrawCore.JSONValue
+    let layout: String?
+    let layoutOptions: [String: ExcalidrawCore.JSONValue]?
     let place: PlaceHint?
     let regenerateIds: Bool?
     let position: ExcalidrawCore.MermaidPosition?
@@ -459,6 +463,8 @@ struct ConnectOp: Decodable {
 
 struct SkeletonInsertAction {
     let skeletons: ExcalidrawCore.JSONValue
+    let layout: String?
+    let layoutOptions: [String: ExcalidrawCore.JSONValue]?
     let regenerateIds: Bool?
     let position: ExcalidrawCore.MermaidPosition?
     let focus: ExcalidrawCore.MermaidFocus?

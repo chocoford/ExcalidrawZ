@@ -29,7 +29,7 @@ extension PromptInputView {
     /// `.shadow(color: .clear, radius: 0)` fallback: SwiftUI still spins up
     /// a shadow effect layer even when all parameters are zero-equivalent,
     /// which left a faint compositing artifact in island mode.
-    @ViewBuilder
+    @MainActor @ViewBuilder
     var inputBox: some View {
         let radius = style.cornerRadius
         let core = inputField()
@@ -67,7 +67,7 @@ extension PromptInputView {
         }
     }
 
-    @ViewBuilder
+    @MainActor @ViewBuilder
     func inputField() -> some View {
         if #available(macOS 15.0, iOS 18.0, *) {
             // Composite: thumbnail strip sits *inside* the rounded
@@ -117,6 +117,7 @@ extension PromptInputView {
     /// Non-image pastes (plain text, web URLs, unknown UTIs, non-image
     /// files) return `nil`, falling through to TextArea's default
     /// handling.
+    @MainActor
     func handlePastedItem(_ item: TextAreaPasteItem) -> TextAreaInsertion? {
         let image: PlatformImage?
         switch item {
@@ -133,6 +134,10 @@ extension PromptInputView {
         }
 
         guard let image else { return nil }
+        guard upgradeModelForImageInputIfNeeded() else {
+            alertToast(AIChatInputCapabilityError(message: "No available AI model can read images."))
+            return .action {}
+        }
 
         // Append synchronously so a same-runloop send picks it up.
         pastedImages.append(PendingPastedImage(id: UUID(), image: image))

@@ -39,6 +39,11 @@ extension PromptInputView {
         let trimmedText = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         let files = PastedImageHelpers.buildFiles(from: pastedImages)
         guard !trimmedText.isEmpty || !files.isEmpty else { return }
+        let model = modelForSend(files: files)
+        guard !files.containsImageInput || model.supportsExcalidrawImageInput else {
+            alertToast(AIChatInputCapabilityError(message: "No available AI model can read images."))
+            return
+        }
 
         // Client-side credits gate: if we already know the balance is empty,
         // skip the round-trip and open the paywall immediately. We only block
@@ -76,7 +81,7 @@ extension PromptInputView {
         // context window, run compact first and queue the message so it
         // lands after the summary insertion. The compact's completion
         // path calls `drainQueueIfNeeded()`, which fires this send.
-        if shouldAutoCompactBeforeSend(prompt: trimmedText, files: files) {
+        if shouldAutoCompactBeforeSend() {
             enqueue(text: trimmedText, files: files)
             compactCurrentContext()
             return
@@ -131,27 +136,20 @@ extension PromptInputView {
         pastedImages = []
     }
 
-    /// Returns true when sending this prompt would push the
-    /// conversation's estimated token count above
-    /// `autoCompactThreshold` of the active model's context window.
-    /// Char-count/4 heuristic — same one the ring uses; not a true
-    /// tokenizer, just enough to decide "is this round worth
-    /// pre-compacting."
+    /// Returns true when the conversation's LLMKit-estimated active
+    /// context is above `autoCompactThreshold` of the active model's
+    /// context window.
     ///
     /// Skips the check when there's no conversation yet (a fresh
     /// chat has nothing to roll up — the prompt itself is the first
     /// turn).
     @MainActor
-    private func shouldAutoCompactBeforeSend(
-        prompt: String,
-        files: [ChatMessageContent.File]
-    ) -> Bool {
-        guard conversationID != nil else { return false }
-        let used = ContextUsageRing.estimateTokens(for: conversation)
-        let projected = used + (prompt.count / 4)
-        let cap = activeModel.approximateContextWindowTokens
+    private func shouldAutoCompactBeforeSend() -> Bool {
+        guard let conversationID else { return false }
+        let used = llmState.estimatedTokenUsage(in: conversationID)
+        guard let cap = activeModel.maxContextTokens else { return false }
         guard cap > 0 else { return false }
-        return Double(projected) >= Double(cap) * Self.autoCompactThreshold
+        return Double(used) >= Double(cap) * Self.autoCompactThreshold
     }
 
     // MARK: - Stream pipeline
@@ -215,19 +213,25 @@ extension PromptInputView {
                     }
                     return nil
                 }
-                let context = try await ExcalidrawChatInvocationContext(
-                    currentFileData: currentFileData,
-                    canvasTarget: canvasTarget,
-                    selectedElementIDs: selectedElementIDs,
-                    currentFileID: currentFileID
-                )
-
                 // Make sure agent config is loaded so `activeModel` resolves to the
                 // server-blessed default (or the user's picker selection) rather
                 // than the hard-coded fallback.
                 await loadAgentConfigIfNeeded()
-                let model = await MainActor.run { activeModel }
+                let model = await MainActor.run { modelForSend(files: files) }
                 let isNewConversation = self.conversation == nil
+                if !isNewConversation {
+                    try await refreshExistingConversationToolsIfNeeded(
+                        conversationID: conversationIDForSession,
+                        model: model
+                    )
+                }
+                let context = try await ExcalidrawChatInvocationContext(
+                    currentFileData: currentFileData,
+                    canvasTarget: canvasTarget,
+                    selectedElementIDs: selectedElementIDs,
+                    currentFileID: currentFileID,
+                    currentModelSupportsImageInput: model.supportsExcalidrawImageInput
+                )
                 let metadata = await makeTransactionMetadata(
                     conversationID: conversationIDForSession,
                     userMessageID: userMessageID,
@@ -270,7 +274,9 @@ extension PromptInputView {
                         // Tool roster + agentID centralized in
                         // `ExcalidrawAgentConfig` so the persistence
                         // restore path uses the exact same wiring.
-                        agentConfig: ExcalidrawAgentConfig.defaultConfig(),
+                        agentConfig: ExcalidrawAgentConfig.defaultConfig(
+                            supportsImageInput: model.supportsExcalidrawImageInput
+                        ),
                         messages: [.content(userMessage)],
                         metadata: metadata,
                         context: context
@@ -370,6 +376,25 @@ extension PromptInputView {
                 drainQueueIfNeeded()
             }
         }
+    }
+
+    private func refreshExistingConversationToolsIfNeeded(
+        conversationID: String,
+        model: SupportedModel
+    ) async throws {
+        let tools = ExcalidrawAgentConfig.toolNames(
+            supportsImageInput: model.supportsExcalidrawImageInput
+        )
+        let currentTools = await MainActor.run {
+            conversation?.agentConfig.tools
+        }
+        guard currentTools != tools else { return }
+
+        try await PersistenceController.shared.aiConversationRepository.updateTools(
+            conversationID: conversationID,
+            toolsData: ExcalidrawAgentConfig.encodeToolNames(tools)
+        )
+        await llmState.refreshConversations()
     }
 
     private func makeTransactionMetadata(

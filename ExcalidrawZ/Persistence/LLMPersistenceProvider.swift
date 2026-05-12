@@ -17,13 +17,11 @@
 //  ## Persistence model — what's stored vs reconstructed
 //
 //  - `Conversation.id / type / title / createdAt / lastChatAt` — stored.
-//  - `Conversation.agentConfig` — **not stored**, rebuilt from
-//    `ExcalidrawAgentConfig.defaultConfig()` on restore. This is
-//    deliberate: this app's chat is fixed (single agent, fixed tool
-//    roster), so persisting agentConfig would just lock old conversations
-//    to their original tool list. Rebuilding picks up new tools added
-//    in later releases. If the chat ever becomes user-selectable, this
-//    is the spot to add a stored override.
+//  - `Conversation.agentConfig` — rebuilt from
+//    `ExcalidrawAgentConfig.defaultConfig(...)` on restore. The server
+//    agent id stays app-owned, while the current conversation's tool
+//    roster is persisted as `AIConversation.toolsData` so model-specific
+//    capability filters survive relaunch.
 //  - `ChatMessageContent.id / role / content / usage` — stored as
 //    columns on `AIConversationMessage`.
 //  - `ChatMessageContent.toolCalls` — stored as JSON (`toolCallsData`).
@@ -127,9 +125,9 @@ struct LLMPersistenceProvider: PersistenceProvider {
         return LLMKit.Conversation(
             id: snapshot.conversationID ?? UUID().uuidString,
             type: decodeConversationType(snapshot.type),
-            // agentConfig intentionally not persisted — rebuild from the
-            // app's single source of truth. See file header for why.
-            agentConfig: ExcalidrawAgentConfig.defaultConfig(),
+            agentConfig: ExcalidrawAgentConfig.defaultConfig(
+                tools: decodeToolNames(snapshot.toolsData)
+            ),
             title: snapshot.title ?? "Untitled",
             messages: chatMessages,
             createdAt: snapshot.createdAt ?? Date(),
@@ -198,7 +196,8 @@ struct LLMPersistenceProvider: PersistenceProvider {
         let conversationObjectID = try await repository.createConversation(
             conversationID: conversation.id,
             title: conversation.title,
-            type: conversation.type.rawValue
+            type: conversation.type.rawValue,
+            toolsData: ExcalidrawAgentConfig.encodeToolNames(conversation.agentConfig.tools)
         )
 
         for message in conversation.messages {
@@ -384,6 +383,10 @@ struct LLMPersistenceProvider: PersistenceProvider {
     private func decodeToolCalls(_ data: Data?) -> [ToolCall]? {
         guard let data, !data.isEmpty else { return nil }
         return try? JSONDecoder().decode([ToolCall].self, from: data)
+    }
+
+    private func decodeToolNames(_ data: Data?) -> [String]? {
+        ExcalidrawAgentConfig.decodeToolNames(data)
     }
 
     // MARK: - Files (attachments)

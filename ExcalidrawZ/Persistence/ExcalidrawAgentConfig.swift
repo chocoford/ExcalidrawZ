@@ -5,18 +5,16 @@
 //  Single source of truth for ExcalidrawZ's chat agent wiring.
 //
 //  This app's chat is **not user-selectable**: every conversation runs
-//  against the `excalidraw-canvas` server-side agent with the same
-//  fixed local tool roster. We keep that wiring here so both paths
-//  agree:
+//  against the `excalidraw-canvas` server-side agent. The baseline
+//  local tool roster lives here, and model capability filters derive
+//  from the same list so create/send/restore can't drift:
 //
 //  - `PromptInputView.startSend` calls `defaultConfig()` when minting a
 //    fresh conversation.
-//  - `LLMPersistenceProvider` calls `defaultConfig()` when restoring
-//    conversations from Core Data — the conversation's `agentConfig` is
-//    intentionally NOT persisted, so a restore picks up whatever the
-//    current binary's tool roster is. New tools are then immediately
-//    available to old conversations on regenerate, which is what we
-//    want as the app evolves.
+//  - `LLMPersistenceProvider` calls `defaultConfig(tools:)` when
+//    restoring conversations from Core Data. The tool roster can be
+//    conversation-specific (for example, filtered by model image-input
+//    capability), while agentID and defaults remain centralized here.
 //
 //  When/if we ever want per-conversation overrides (e.g. user picks a
 //  light/heavy tool set), this becomes the migration point: add a
@@ -55,11 +53,31 @@ enum ExcalidrawAgentConfig {
         "final_answer"
     ]
 
+    static func toolNames(supportsImageInput: Bool) -> [String] {
+        guard supportsImageInput else {
+            return toolNames.filter { $0 != "read_canvas_image" }
+        }
+        return toolNames
+    }
+
     /// Build the `AgentConfig` used by every chat conversation in this
     /// app. Centralized so the create-conversation path and the
     /// restore-conversation path can't drift.
-    static func defaultConfig() -> AgentConfig {
-        .withTools(toolNames, agentID: agentID)
+    static func defaultConfig(supportsImageInput: Bool = true) -> AgentConfig {
+        defaultConfig(tools: toolNames(supportsImageInput: supportsImageInput))
+    }
+
+    static func defaultConfig(tools: [String]?) -> AgentConfig {
+        .withTools(tools ?? toolNames, agentID: agentID)
+    }
+
+    static func encodeToolNames(_ tools: [String]) -> Data? {
+        try? JSONEncoder().encode(tools)
+    }
+
+    static func decodeToolNames(_ data: Data?) -> [String]? {
+        guard let data, !data.isEmpty else { return nil }
+        return try? JSONDecoder().decode([String].self, from: data)
     }
 
     /// Tools whose execution mutates the canvas. Used by the AI chat

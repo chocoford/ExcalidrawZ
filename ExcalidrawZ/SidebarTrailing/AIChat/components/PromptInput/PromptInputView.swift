@@ -33,8 +33,14 @@ import LLMCore
 struct ExcalidrawChatInvocationContext: ChatInvocationContext {
     var currentFileData: Data?
     var canvasTarget: ExcalidrawCoordinatorRegistry.CanvasTarget
-    var selectedElementIDs: [String]?
-    var currentFileID: UUID?
+    var selectedElementIDs: [String]? = nil
+    var currentFileID: UUID? = nil
+    var currentModelSupportsImageInput: Bool = true
+}
+
+struct AIChatInputCapabilityError: LocalizedError {
+    let message: String
+    var errorDescription: String? { message }
 }
 
 struct PromptInputView<Background: View, Header: View>: View {
@@ -136,26 +142,99 @@ struct PromptInputView<Background: View, Header: View>: View {
     /// from Settings only.
     @MainActor
     var activeModel: SupportedModel {
-        let selectedModel = prefs.model(for: conversationID)
-            ?? pendingModelSelection
-            ?? prefs.defaultModel
-
-        return fallbackModelIfNeeded(selectedModel)
+        fallbackModelIfNeeded(selectedModelBeforeFallback)
     }
 
     @MainActor
     func canSelectModel(_ model: SupportedModel) -> Bool {
+        canSelectModel(model, requiresImageInput: requiresImageInputModel)
+    }
+
+    @MainActor
+    func canSelectModel(_ model: SupportedModel, requiresImageInput: Bool) -> Bool {
+        (agentConfig?.allowedModels.contains(model) ?? true)
+            && canUsePlan(for: model)
+            && (!requiresImageInput || model.supportsExcalidrawImageInput)
+    }
+
+    @MainActor
+    func canUsePlan(for model: SupportedModel) -> Bool {
         !model.requiresMaxAIPlan || store.canUseExtraHighAIModel
     }
 
     @MainActor
     func fallbackModelIfNeeded(_ model: SupportedModel) -> SupportedModel {
-        guard !canSelectModel(model) else { return model }
+        fallbackModelIfNeeded(model, requiresImageInput: requiresImageInputModel)
+    }
+
+    @MainActor
+    func fallbackModelIfNeeded(
+        _ model: SupportedModel,
+        requiresImageInput: Bool
+    ) -> SupportedModel {
+        guard !canSelectModel(model, requiresImageInput: requiresImageInput) else { return model }
 
         let availableModels = agentConfig?.allowedModels ?? []
-        return availableModels.first(where: { $0 == .claudeSonnet4_6 })
-            ?? availableModels.first(where: { canSelectModel($0) })
+        let candidates = availableModels.filter {
+            canSelectModel($0, requiresImageInput: requiresImageInput)
+        }
+        return SupportedModel.nearestExcalidrawFallback(to: model, from: candidates)
             ?? .claudeSonnet4_6
+    }
+
+    @MainActor
+    func modelForSend(files: [ChatMessageContent.File]) -> SupportedModel {
+        return fallbackModelIfNeeded(
+            selectedModelBeforeFallback,
+            requiresImageInput: requiresImageInputModel || files.containsImageInput
+        )
+    }
+
+    @MainActor
+    var selectedModelBeforeFallback: SupportedModel {
+        prefs.model(for: conversationID)
+            ?? pendingModelSelection
+            ?? prefs.defaultModel
+    }
+
+    @MainActor
+    @discardableResult
+    func upgradeModelForImageInputIfNeeded() -> Bool {
+        guard canInsertImages else { return false }
+        let selectedModel = selectedModelBeforeFallback
+        guard !selectedModel.supportsExcalidrawImageInput else { return true }
+
+        let upgradedModel = fallbackModelIfNeeded(selectedModel, requiresImageInput: true)
+        guard upgradedModel.supportsExcalidrawImageInput else { return false }
+
+        if let id = conversationID {
+            prefs.setModel(upgradedModel, for: id)
+        } else {
+            pendingModelSelection = upgradedModel
+        }
+        return true
+    }
+
+    @MainActor
+    var requiresImageInputModel: Bool {
+        !pastedImages.isEmpty
+            || pendingQueue.contains(where: { $0.files.containsImageInput })
+            || conversationContainsImageInput
+    }
+
+    @MainActor
+    var canInsertImages: Bool {
+        guard let agentConfig else { return true }
+        return agentConfig.allowedModels.contains {
+            canUsePlan(for: $0) && $0.supportsExcalidrawImageInput
+        }
+    }
+
+    @MainActor
+    var conversationContainsImageInput: Bool {
+        conversation?.messages.contains { message in
+            message.files?.containsImageInput == true
+        } ?? false
     }
 
     var conversation: Conversation? {

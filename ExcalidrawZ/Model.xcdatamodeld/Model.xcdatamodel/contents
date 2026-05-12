@@ -7,6 +7,7 @@
         <attribute name="fileScopeKind" optional="YES" attributeType="String"/>
         <attribute name="lastChatAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="title" optional="YES" attributeType="String"/>
+        <attribute name="toolsData" optional="YES" attributeType="Binary"/>
         <attribute name="type" optional="YES" attributeType="String"/>
         <relationship name="messages" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="AIConversationMessage" inverseName="conversation" inverseEntity="AIConversationMessage"/>
     </entity>

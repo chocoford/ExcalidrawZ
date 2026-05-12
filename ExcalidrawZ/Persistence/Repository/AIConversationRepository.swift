@@ -39,6 +39,7 @@ struct AIConversationSnapshot: Sendable {
     var lastChatAt: Date?
     var fileScopeKind: String?
     var fileScopeID: String?
+    var toolsData: Data?
     var messages: [AIConversationMessageSnapshot]
 }
 
@@ -120,6 +121,7 @@ actor AIConversationRepository {
                     lastChatAt: row.lastChatAt,
                     fileScopeKind: row.fileScopeKind,
                     fileScopeID: row.fileScopeID,
+                    toolsData: row.toolsData,
                     messages: messageSnapshots
                 )
             }
@@ -191,6 +193,7 @@ actor AIConversationRepository {
                     lastChatAt: row.lastChatAt,
                     fileScopeKind: row.fileScopeKind,
                     fileScopeID: row.fileScopeID,
+                    toolsData: row.toolsData,
                     messages: messageSnapshots
                 )
             }
@@ -260,7 +263,8 @@ actor AIConversationRepository {
     func createConversation(
         conversationID: String,
         title: String,
-        type: String
+        type: String,
+        toolsData: Data? = nil
     ) async throws -> NSManagedObjectID {
         let context = PersistenceController.shared.newTaskContext()
 
@@ -269,6 +273,7 @@ actor AIConversationRepository {
             conversation.conversationID = conversationID
             conversation.title = title
             conversation.type = type
+            conversation.toolsData = toolsData
             conversation.createdAt = Date()
             conversation.lastChatAt = Date()
 
@@ -342,6 +347,28 @@ actor AIConversationRepository {
     }
 
     // MARK: - Update Operations
+
+    /// Persist the conversation-level tool roster used to rebuild
+    /// `Conversation.agentConfig.tools` on restore.
+    func updateTools(
+        conversationID: String,
+        toolsData: Data?
+    ) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+
+        try await context.perform {
+            let fetchRequest = NSFetchRequest<AIConversation>(entityName: "AIConversation")
+            fetchRequest.predicate = NSPredicate(format: "conversationID == %@", conversationID)
+            fetchRequest.fetchLimit = 1
+
+            guard let conversation = try context.fetch(fetchRequest).first else {
+                throw AppError.fileError(.notFound)
+            }
+
+            conversation.toolsData = toolsData
+            try context.save()
+        }
+    }
 
     /// Update conversation title
     /// - Parameters:

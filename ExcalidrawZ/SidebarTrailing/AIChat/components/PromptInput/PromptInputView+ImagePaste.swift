@@ -135,6 +135,21 @@ enum PastedImageHelpers {
     }
 }
 
+extension ChatMessageContent.File {
+    var isImageInput: Bool {
+        switch self {
+            case .base64EncodedImage, .image:
+                return true
+        }
+    }
+}
+
+extension Array where Element == ChatMessageContent.File {
+    var containsImageInput: Bool {
+        contains { $0.isImageInput }
+    }
+}
+
 // MARK: - Thumbnail strip
 
 /// Horizontal row of pasted-image thumbnails, each with a hover-

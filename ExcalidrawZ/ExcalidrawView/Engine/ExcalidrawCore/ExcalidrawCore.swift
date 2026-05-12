@@ -500,6 +500,8 @@ extension ExcalidrawCore {
     }
 
     struct SkeletonInsertOptions: Codable, Hashable {
+        var layout: String?
+        var layoutOptions: [String: JSONValue]?
         var regenerateIds: Bool?
         var position: MermaidPosition?
         var focus: MermaidFocus?

@@ -220,15 +220,34 @@ extension AIChatView {
             guard case .content(let content) = message else { return nil }
             return content
         }
+        let requiresImageInput = conversation?.messages.contains { message in
+            message.files?.containsImageInput == true
+        } ?? false
 
         aiChatState.clearTransientError(for: id)
         Task {
             do {
                 let agentConfig = try await LLMClient.shared.getDomainAgentConfig(agentID: "excalidraw-canvas")
+                let model = await MainActor.run {
+                    let selected = AIChatPreferences.shared.model(for: id) ?? agentConfig.defaultModel
+                    let canUse: (SupportedModel) -> Bool = { model in
+                        agentConfig.allowedModels.contains(model)
+                            && (!model.requiresMaxAIPlan || Store.shared.canUseExtraHighAIModel)
+                            && (!requiresImageInput || model.supportsExcalidrawImageInput)
+                    }
+                    guard !canUse(selected) else { return selected }
+                    let candidates = agentConfig.allowedModels.filter(canUse)
+                    return SupportedModel.nearestExcalidrawFallback(to: selected, from: candidates)
+                        ?? .claudeSonnet4_6
+                }
+                try await refreshConversationToolsIfNeeded(
+                    conversationID: id,
+                    model: model
+                )
                 try await llmState.regenerateMessage(
                     in: id,
                     fromMessageID: messageID,
-                    model: agentConfig.defaultModel,
+                    model: model,
                     stream: true
                 )
             } catch {
@@ -243,6 +262,25 @@ extension AIChatView {
                 }
             }
         }
+    }
+
+    private func refreshConversationToolsIfNeeded(
+        conversationID: String,
+        model: SupportedModel
+    ) async throws {
+        let tools = ExcalidrawAgentConfig.toolNames(
+            supportsImageInput: model.supportsExcalidrawImageInput
+        )
+        let currentTools = await MainActor.run {
+            conversation?.agentConfig.tools
+        }
+        guard currentTools != tools else { return }
+
+        try await PersistenceController.shared.aiConversationRepository.updateTools(
+            conversationID: conversationID,
+            toolsData: ExcalidrawAgentConfig.encodeToolNames(tools)
+        )
+        await llmState.refreshConversations()
     }
 
     func retryTransientError(_ error: AIChatState.TransientError) {

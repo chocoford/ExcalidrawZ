@@ -30,7 +30,7 @@ extension PromptInputView {
             attachmentMenu
 
             ContextUsageRing(
-                conversation: conversation,
+                conversationID: conversationID,
                 model: activeModel,
                 onTap: conversationID != nil && !isCompactingContext
                     ? { compactCurrentContext() }
@@ -49,7 +49,7 @@ extension PromptInputView {
     /// We deliberately don't use the `primaryAction:` closure form —
     /// the icon doesn't have a single "default" action; tapping it
     /// just opens the menu.
-    @ViewBuilder
+    @MainActor @ViewBuilder
     var attachmentMenu: some View {
         if #available(macOS 14.0, *) {
             Menu {
@@ -58,6 +58,7 @@ extension PromptInputView {
                 } label: {
                     Label("Image", systemSymbol: .photo)
                 }
+                .disabled(!canInsertImages)
             } label: {
                 Image(systemSymbol: .paperclip)
                     .resizable()
@@ -82,8 +83,18 @@ extension PromptInputView {
     /// because `fileImporter` returns user-domain paths the app
     /// doesn't have ambient access to. Failures are swallowed
     /// per-file: a bad image shouldn't block the rest.
+    @MainActor
     func handleImagePickerResult(_ result: Result<[URL], Error>) {
+        guard canInsertImages else {
+            alertToast(AIChatInputCapabilityError(message: "No available AI model can read images."))
+            return
+        }
         guard case .success(let urls) = result else { return }
+        guard !urls.isEmpty else { return }
+        guard upgradeModelForImageInputIfNeeded() else {
+            alertToast(AIChatInputCapabilityError(message: "No available AI model can read images."))
+            return
+        }
         for url in urls {
             let didStart = url.startAccessingSecurityScopedResource()
             defer {

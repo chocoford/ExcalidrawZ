@@ -17,6 +17,8 @@ extension AdjustElementsMiddleware {
         )
         canvasActions.append(.insertSkeleton(SkeletonInsertAction(
             skeletons: op.elements,
+            layout: op.layout,
+            layoutOptions: op.layoutOptions,
             regenerateIds: op.regenerateIds,
             position: position,
             focus: op.focus,

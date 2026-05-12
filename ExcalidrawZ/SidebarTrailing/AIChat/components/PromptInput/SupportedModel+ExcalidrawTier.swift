@@ -38,7 +38,7 @@ extension SupportedModel {
                 return "Medium"
             case .claudeSonnet4_6:
                 return "High"
-            case .claudeOpus4_7, .claudeOpus4_6:
+            case .claudeOpus4_7:
                 return "Extra High"
             default:
 #if DEBUG
@@ -60,24 +60,66 @@ extension SupportedModel {
         }
     }
 
-    /// Approximate context window (in tokens) for the model. Used by the
-    /// chat input's `ContextUsageRing` to draw "how full is the context."
-    /// Numbers are vendor-published values; we treat them as soft caps for
-    /// the indicator only — the actual server may apply a smaller cap.
-    /// Unknown models return a 128k floor so the ring still draws something.
-    var approximateContextWindowTokens: Int {
+    var supportsExcalidrawImageInput: Bool {
+        supportsImageInput
+    }
+
+    /// Internal ordering used for automatic capability fallback.
+    ///
+    /// Only models with an explicit Excalidraw tier get a rank. Models
+    /// that fall through to provider names / "Experimental" are left
+    /// unranked so they do not influence tier-based fallback.
+    var excalidrawSelectionRank: Int? {
         switch self {
-            case .claudeOpus4_7, .claudeOpus4_6,
-                 .claudeSonnet4_6, .claudeHaiku4_5:
-                return 200_000
-            case .gpt4o, .gpt4oMini, .gpt4oLatest, .gpt5_5, .gpt5_4:
-                return 128_000
-            case .gpt35Turbo:
-                return 16_000
-            case .gemini15Pro, .gemini15Flash:
-                return 1_000_000
+            case .hy3Preview:
+                return 0
+            case .qwen3_6Plus:
+                return 1
+            case .claudeSonnet4_6:
+                return 2
+            case .claudeOpus4_7:
+                return 3
             default:
-                return 128_000
+                return nil
         }
+    }
+
+    static func nearestExcalidrawFallback(
+        to selected: SupportedModel,
+        from candidates: [SupportedModel]
+    ) -> SupportedModel? {
+        guard !candidates.isEmpty else { return nil }
+        guard let selectedRank = selected.excalidrawSelectionRank else {
+            return candidates.first
+        }
+
+        let rankedCandidates = candidates.enumerated().compactMap { index, model in
+            model.excalidrawSelectionRank.map { rank in
+                (index: index, model: model, rank: rank)
+            }
+        }
+        guard !rankedCandidates.isEmpty else {
+            return candidates.first
+        }
+
+        return rankedCandidates.min { lhs, rhs in
+            let lhsDistance = abs(lhs.rank - selectedRank)
+            let rhsDistance = abs(rhs.rank - selectedRank)
+            if lhsDistance != rhsDistance {
+                return lhsDistance < rhsDistance
+            }
+
+            // When two candidates are equally far away, prefer a same-or-
+            // higher capability move over a downgrade. This keeps "missing
+            // image input" as an upgrade path while still allowing downgrade
+            // fallback when Extra High is unavailable on the current plan.
+            let lhsIsDowngrade = lhs.rank < selectedRank
+            let rhsIsDowngrade = rhs.rank < selectedRank
+            if lhsIsDowngrade != rhsIsDowngrade {
+                return !lhsIsDowngrade
+            }
+
+            return lhs.index < rhs.index
+        }?.model
     }
 }

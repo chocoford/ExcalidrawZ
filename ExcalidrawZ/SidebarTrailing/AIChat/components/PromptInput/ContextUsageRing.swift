@@ -5,12 +5,9 @@
 //  Small ring gauge that lives next to the prompt input's attachment
 //  menu and visualizes "how full is the conversation's context window."
 //
-//  Token counting is a heuristic — we don't ship a real tokenizer
-//  client-side. Per-message char count divided by 4 (rough English
-//  average) plus tool-call argument size; close enough for a "you're
-//  near the limit" warning, not a billing oracle. The denominator is
-//  the model's vendor-published context window, exposed via
-//  `SupportedModel.approximateContextWindowTokens`.
+//  Token counting is provided by LLMKit so the gauge and auto-compact
+//  trigger share the same active-context estimate. The denominator is
+//  the model context window exposed by LLMCore.
 //
 //  Click action is reserved for a future "compact context" command.
 //  v1 just shows the indicator; the button is there so the layout
@@ -22,9 +19,10 @@ import LLMCore
 import LLMKit
 
 struct ContextUsageRing: View {
-    /// The conversation we're measuring. Nil when no chat is open yet —
-    /// the ring renders empty and the help text says "0 / Nk".
-    let conversation: Conversation?
+    @EnvironmentObject var llmState: LLMStateObject
+
+    /// The conversation we're measuring. Nil when no chat is open yet.
+    let conversationID: String?
 
     /// Model whose context window we compare against. Driven by the
     /// active model from `PromptInputView` so the denominator follows
@@ -37,10 +35,11 @@ struct ContextUsageRing: View {
     /// callers.
     var onTap: (() -> Void)? = nil
 
-    private var maxTokens: Int { model.approximateContextWindowTokens }
+    private var maxTokens: Int { model.maxContextTokens ?? 0 }
 
     private var usedTokens: Int {
-        Self.estimateTokens(for: conversation)
+        guard let conversationID else { return 0 }
+        return llmState.estimatedTokenUsage(in: conversationID)
     }
 
     private var fraction: Double {
@@ -87,26 +86,6 @@ struct ContextUsageRing: View {
 
     private var helpText: String {
         let pct = Int((fraction * 100).rounded())
-        return String(format: "%d%% of context remaining until auto-compact.\nClick to compact now", pct)
-    }
-
-    // MARK: - Heuristic token counter
-
-    /// Rough char-count → tokens mapping. We don't ship a tokenizer
-    /// client-side; the ring just needs "are we approaching the cap?"
-    /// granularity. ~4 chars/token is the canonical English heuristic.
-    /// Tool-call arguments and tool-result observations both count —
-    /// they all consume the same context budget on the next round.
-    static func estimateTokens(for conversation: Conversation?) -> Int {
-        guard let conversation else { return 0 }
-        var totalChars = 0
-        for msg in conversation.messages {
-            guard case .content(let c) = msg else { continue }
-            totalChars += (c.content?.count ?? 0)
-            for tc in c.toolCalls ?? [] {
-                totalChars += tc.name.count + tc.arguments.count
-            }
-        }
-        return totalChars / 4
+        return String(format: "%d%% of context used before auto-compact.\nClick to compact now", pct)
     }
 }

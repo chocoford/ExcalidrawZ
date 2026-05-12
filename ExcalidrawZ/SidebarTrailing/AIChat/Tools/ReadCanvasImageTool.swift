@@ -16,6 +16,7 @@ import LLMCore
 struct ReadCanvasImageTool: Tool {
     struct ReadCanvasImageContext: ToolContext {
         var canvasTarget: ExcalidrawCoordinatorRegistry.CanvasTarget
+        var currentModelSupportsImageInput: Bool?
     }
 
     var name: String { "read_canvas_image" }
@@ -41,6 +42,9 @@ struct ReadCanvasImageTool: Tool {
             throw ToolError.executionFailed("Missing ReadCanvasImageContext")
         }
         let canvasContext = try context.resolve(ReadCanvasImageContext.self)
+        guard canvasContext.currentModelSupportsImageInput ?? true else {
+            return .text("The current model cannot read image tool results. Use read_file for structural canvas data instead.")
+        }
 
         let coordinator = await MainActor.run {
             ExcalidrawCoordinatorRegistry.shared.coordinator(for: canvasContext.canvasTarget)
