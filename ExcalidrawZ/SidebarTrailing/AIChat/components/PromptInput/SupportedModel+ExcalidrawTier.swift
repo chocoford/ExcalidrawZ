@@ -32,9 +32,9 @@ extension SupportedModel {
     /// builds keep the picker on stable tier vocabulary.
     var excalidrawTierName: String {
         switch self {
-            case .gpt4o:
+            case .hy3Preview:
                 return "Low"
-            case .claudeHaiku4_5:
+            case .qwen3_6Plus:
                 return "Medium"
             case .claudeSonnet4_6:
                 return "High"
