@@ -51,30 +51,26 @@ extension PromptInputView {
     /// just opens the menu.
     @MainActor @ViewBuilder
     var attachmentMenu: some View {
-        if #available(macOS 14.0, *) {
-            Menu {
-                Button {
-                    isImagePickerPresented = true
-                } label: {
-                    Label("Image", systemSymbol: .photo)
-                }
-                .disabled(!canInsertImages)
+        Menu {
+            Button {
+                isImagePickerPresented = true
             } label: {
-                Image(systemSymbol: .paperclip)
-                    .resizable()
-                    .frame(height: 12)
+                Label(.localizable(.aiChatInputAttachmentMenuItemImage), systemSymbol: .photo)
             }
-            .labelStyle(.iconOnly)
-            .menuIndicator(.hidden)
-            .fileImporter(
-                isPresented: $isImagePickerPresented,
-                allowedContentTypes: [.image],
-                allowsMultipleSelection: true
-            ) { result in
-                handleImagePickerResult(result)
-            }
-        } else {
-            // Fallback on earlier versions
+            .disabled(!canInsertImages)
+        } label: {
+            Image(systemSymbol: .paperclip)
+                .resizable()
+                .frame(height: 12)
+        }
+        .labelStyle(.iconOnly)
+        .menuIndicator(.hidden)
+        .fileImporter(
+            isPresented: $isImagePickerPresented,
+            allowedContentTypes: [.image],
+            allowsMultipleSelection: true
+        ) { result in
+            handleImagePickerResult(result)
         }
     }
 
@@ -86,13 +82,15 @@ extension PromptInputView {
     @MainActor
     func handleImagePickerResult(_ result: Result<[URL], Error>) {
         guard canInsertImages else {
-            alertToast(AIChatInputCapabilityError(message: "No available AI model can read images."))
+            alertToast(AIChatInputCapabilityError.noModelCanReadImages)
             return
         }
         guard case .success(let urls) = result else { return }
         guard !urls.isEmpty else { return }
         guard upgradeModelForImageInputIfNeeded() else {
-            alertToast(AIChatInputCapabilityError(message: "No available AI model can read images."))
+            alertToast(
+                AIChatInputCapabilityError.noModelCanReadImages
+            )
             return
         }
         for url in urls {
@@ -160,7 +158,17 @@ extension PromptInputView {
                 self.agentConfig = config
             }
         } catch {
-            print("Failed to load agent config: \(error)")
+            alertToast(
+                .init(
+                    displayMode: .hud,
+                    type: .error(.red),
+                    title: String(
+                        localizable: .aiChatErrorLoadAgentConfigFailed(
+                            error.localizedDescription
+                        )
+                    ),
+                )
+            )
         }
     }
 

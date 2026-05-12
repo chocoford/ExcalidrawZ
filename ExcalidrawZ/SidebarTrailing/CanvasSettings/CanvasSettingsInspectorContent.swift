@@ -168,7 +168,7 @@ struct CanvasSettingsInspectorContent: View {
     private var drawingPreferencesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Drawing Preferences")
+                Text(localizable: .drawingPreferencesTitle)
                     .font(.headline)
 
                 Spacer()
@@ -177,9 +177,9 @@ struct CanvasSettingsInspectorContent: View {
                 .toggleStyle(.switch)
                 .controlSize(.mini)
             }
-            Text(isCustomizingDrawingSettings
-                 ? "This canvas overrides the global defaults. Turn off to reset."
-                 : "Following the global defaults from Settings → Excalidraw.")
+            Text(localizable: isCustomizingDrawingSettings
+                 ? .drawingPreferencesIsCustomizedMessage
+                 : .drawingPreferencesNotCustomizedMessage)
             .font(.caption)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)

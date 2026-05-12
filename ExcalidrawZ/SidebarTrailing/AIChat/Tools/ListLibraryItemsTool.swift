@@ -20,7 +20,7 @@ import LLMCore
 struct ListLibraryItemsTool: Tool {
     var name: String { "list_library_items" }
 
-    var displayName: String { "List Library Items" }
+    var displayName: String { String(localizable: .aiChatToolListLibraryItemsName) }
 
     var description: String {
         """

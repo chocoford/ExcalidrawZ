@@ -30,7 +30,7 @@ struct RestoreFileHistoryTool: Tool {
 
     var name: String { "restore_file_history" }
 
-    var displayName: String { "Restore File" }
+    var displayName: String { String(localizable: .aiChatToolRestoreFileHistoryName) }
 
     var description: String {
         """

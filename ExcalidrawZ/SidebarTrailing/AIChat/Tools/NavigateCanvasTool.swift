@@ -70,7 +70,7 @@ struct NavigateCanvasTool: Tool {
 
     var name: String { "navigate_canvas" }
 
-    var displayName: String { "Navigate Canvas" }
+    var displayName: String { String(localizable: .aiChatToolNavigateCanvasName) }
 
     var description: String {
         "Navigate the Excalidraw canvas viewport by reading or changing camera position and zoom."

@@ -17,7 +17,7 @@ struct ErrorMessageRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
+                Image(systemSymbol: .exclamationmarkTriangleFill)
                     .font(.caption)
                     .foregroundStyle(.red)
                     .padding(.top, 2)
@@ -38,10 +38,10 @@ struct ErrorMessageRow: View {
                     Button {
                         onRetry()
                     } label: {
-                        Label("Retry", systemImage: "arrow.clockwise")
+                        Label(.localizable(.generalButtonRetry), systemSymbol: .arrowClockwise)
                             .font(.caption)
                     }
-                    .help("Retry")
+                    .help(.generalButtonRetry)
                 }
             }
             .buttonStyle(.text(size: .small, square: false))

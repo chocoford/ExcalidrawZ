@@ -33,7 +33,7 @@ struct ToolResultCard: View {
         let resolvedContent = content.content ?? ""
         ToolEventCard(
             icon: .eyeFill,
-            title: "Observe result",
+            title: String(localizable: .aiChatToolCallObservationTitle),
             accent: .green
         ) { isExpanded in
             

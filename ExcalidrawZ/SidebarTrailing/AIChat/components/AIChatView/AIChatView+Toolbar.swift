@@ -11,48 +11,50 @@ extension AIChatView {
     @MainActor @ToolbarContentBuilder
     func toolbar() -> some ToolbarContent {
         if layoutState.isInspectorPresented {
+            ToolbarItemGroup(placement: .destructiveAction) {
+                Button {
+                    layoutState.enterAIChatIsland()
+                } label: {
+                    Label(.localizable(.aiChatButtonIslandMode), systemSymbol: .menubarDockRectangle)
+                }
+                .disabled(fileState.currentActiveFileIsInTrash)
+                .help(String(localizable: .aiChatButtonIslandModeHelp))
+            }
+            
+            // This work...
+            ToolbarItemGroup(placement: .principal) {
+                Spacer()
+            }
+            
             if #available(macOS 26.0, *) {
-                ToolbarItemGroup(placement: .destructiveAction) {
-                    Button {
-                        layoutState.enterAIChatIsland()
-                    } label: {
-                        Label("Float as island", systemSymbol: .menubarDockRectangle)
-                    }
-                    .disabled(fileState.currentActiveFileIsInTrash)
-                    .help("Float chat as a draggable island over the editor")
-                }
-                
-                // This work...
-                ToolbarItemGroup(placement: .principal) {
-                    Spacer()
-                }
-                
                 // Not working...
                 ToolbarSpacer(.fixed)
             }
             
             InspectorHeaderToolbar(
-                title: "AI Chat",
+                title: String(localizable: .aiChatTitle),
                 isInspectorPresented: layoutState.isInspectorPresented
             )
             
             ToolbarItemGroup(placement: .automatic) {
                 Menu {
                     Button {} label: {
-                        Label("\(creditsDisplayText) credits", systemSymbol: .sparkles)
+                        Label(.localizable( .aiChatButtonCreditsCount(creditsDisplayText)),
+                            systemSymbol: .sparkles
+                        )
                     }
                     .disabled(true)
-
+                    
                     Divider()
-
+                    
                     Button {
                         withAnimation(.easeInOut(duration: 0.25)) {
                             isShowingWelcomeManually = true
                         }
                     } label: {
-                        Label("Show welcome", systemSymbol: .sparkles)
+                        Label(.localizable(.aiChatButtonShowWelcome), systemSymbol: .sparkles)
                     }
-
+                    
                     if #available(macOS 14.0, iOS 17.0, *) {
                         OpenSettingsMenuItem(deepLinkTo: .ai)
                     } else {
@@ -62,18 +64,18 @@ extension AIChatView {
                         Button {
                             SettingsRouter.shared.requestOpen(.ai)
                         } label: {
-                            Label("Settings…", systemSymbol: .gearshape)
+                            Label(.localizable(.generalButtonSettings), systemSymbol: .gearshape)
                         }
                     }
-
-                    #if DEBUG
+                    
+#if DEBUG
                     Divider()
-
+                    
                     Menu {
                         Toggle("Render counters", isOn: $aiChatRenderDebug.isEnabled)
-
+                        
                         Divider()
-
+                        
                         Button {
                             aiChatRenderDebug.reset()
                         } label: {
@@ -82,25 +84,25 @@ extension AIChatView {
                     } label: {
                         Label("Render debug", systemImage: "waveform.path.ecg")
                     }
-                    #endif
+#endif
                     
                     Divider()
                     
                     Button(role: .destructive) {
                         isConfirmingClear = true
                     } label: {
-                        Label("Clear chat", systemSymbol: .trash)
+                        Label(.localizable(.aiChatButtonClearChat), systemSymbol: .trash)
                     }
                     // Disable when there's no conversation to clear, so the
                     // user doesn't get a confirmationDialog for a no-op.
                     .disabled(fileState.aiChatConversationID == nil)
                 } label: {
-                    Label("More", systemSymbol: .ellipsis)
+                    Label(.localizable(.generalButtonMore), systemSymbol: .ellipsis)
                 }
                 .menuIndicator(.hidden)
             }
         }
     }
     
-
+    
 }

@@ -12,7 +12,7 @@ import LLMCore
 struct FinalAnswerTool: Tool {
     var name: String { "final_answer" }
 
-    var displayName: String { "Final Answer" }
+    var displayName: String { String(localizable: .aiChatToolFinalAnswerName) }
 
     var description: String {
         "Return the final response to the user."

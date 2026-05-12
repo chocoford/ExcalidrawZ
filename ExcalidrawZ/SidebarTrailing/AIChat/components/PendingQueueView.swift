@@ -102,14 +102,14 @@ struct PendingQueueView: View {
             Button {
                 onRemove(item.id)
             } label: {
-                Image(systemSymbol: .trash)
+                Label(.localizable(.aiChatPendingQueueButtonRemove), systemSymbol: .trash)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .padding(4)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Remove from queue")
+            .help(.localizable(.aiChatPendingQueueButtonRemove))
         }
     }
 }

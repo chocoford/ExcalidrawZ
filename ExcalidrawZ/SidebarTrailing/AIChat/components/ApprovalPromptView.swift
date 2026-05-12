@@ -66,14 +66,9 @@ private struct ApprovalCard: View {
         HStack(spacing: 6) {
             Image(systemSymbol: .exclamationmarkShieldFill)
                 .foregroundStyle(.orange)
-            Text("Approval required")
+            Text(localizable: .aiChatApprovalPanelTitle)
                 .font(.callout.weight(.semibold))
             Spacer()
-            // Tool name pill — uses the tool's `displayName` (friendly,
-            // title-cased) rather than the snake_case machine `name`,
-            // which would look hostile to the user. Falls back to the
-            // machine name automatically when a tool hasn't overridden
-            // `displayName` (LLMKit's default impl returns `name`).
             Text(request.toolDisplayName)
                 .font(.caption.weight(.medium))
                 .padding(.horizontal, 6)
@@ -86,8 +81,6 @@ private struct ApprovalCard: View {
     @ViewBuilder
     private var reasonLine: some View {
         DisclosureGroup(request.reason) {
-            // Pretty-print JSON if we can; fall back to raw string. Mono
-            // font + selectable so users can copy-inspect.
             ScrollView {
                 Text(prettyArguments(request.arguments))
                     .font(.caption.monospaced())
@@ -109,7 +102,7 @@ private struct ApprovalCard: View {
             Button {
                 onDecide(.approve)
             } label: {
-                Text("Allow once")
+                Text(localizable: .aiChatApprovalPanelButtonAllowOnce)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .modernButtonStyle(style: .glass, size: .regular, shape: .modern)
@@ -120,7 +113,7 @@ private struct ApprovalCard: View {
             Button {
                 onDecide(.approveAlways)
             } label: {
-                Text("Always")
+                Text(localizable: .aiChatApprovalPanelButtonAllowAlways)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .modernButtonStyle(style: .glassProminent, size: .regular, shape: .modern)
@@ -131,7 +124,7 @@ private struct ApprovalCard: View {
             Button(role: .destructive) {
                 onDecide(.deny(reason: nil))
             } label: {
-                Text("Deny")
+                Text(localizable: .aiChatApprovalPanelButtonDeny)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .modernButtonStyle(style: .glass, size: .regular, shape: .modern)
@@ -140,7 +133,7 @@ private struct ApprovalCard: View {
             }
             .keyboardShortcut(.escape)
             
-            TextField("Tell the AI why (optional, then ⏎)", text: $denyReason)
+            TextField(.localizable(.aiChatApprovalPanelDenyTextFieldPlaceholder), text: $denyReason)
                 .focused($isFocused)
                 .textFieldStyle(.plain)
                 .padding(.horizontal, 12)
@@ -160,7 +153,7 @@ private struct ApprovalCard: View {
                 }
             
             HStack {
-                Text("Esc to cancel").font(.caption)
+                Text(localizable: .aiChatApprovalPanelCancelTips).font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
             }

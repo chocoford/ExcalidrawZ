@@ -69,42 +69,31 @@ extension PromptInputView {
 
     @MainActor @ViewBuilder
     func inputField() -> some View {
-        if #available(macOS 15.0, iOS 18.0, *) {
-            // Composite: thumbnail strip sits *inside* the rounded
-            // chrome above the TextArea so they read as one unit
-            // ("attachments + prompt about to be sent"). Background
-            // applies to the whole stack — the strip and the text
-            // share the same backdrop, no seams.
-            VStack(spacing: 0) {
-                header
-                
-                AttachmentThumbnailStrip(pastedImages: pastedImagesBinding)
-
-                TextArea(
-                    text: inputTextBinding,
-                    placeholder: Text("Ask AI to draw...")
-                )
-                .keyDownHandler(
-                    TextFieldKeyDownEventHandler(triggers: [(36, nil)]) { event in
-                        guard let event else { return nil }
-                        if event.keyCode == 36, !event.modifierFlags.contains(.shift) {
-                            sendMessage()
-                            return nil           // 消费 plain enter
-                        }
-                        return event             // shift+enter 透传，系统自动插入 \n 并移动光标
+        VStack(spacing: 0) {
+            header
+            
+            AttachmentThumbnailStrip(pastedImages: pastedImagesBinding)
+            
+            TextArea(
+                text: inputTextBinding,
+                placeholder: Text(localizable: .aiChatInputPlaceholder)
+            )
+            .keyDownHandler(
+                TextFieldKeyDownEventHandler(triggers: [(36, nil)]) { event in
+                    guard let event else { return nil }
+                    if event.keyCode == 36, !event.modifierFlags.contains(.shift) {
+                        sendMessage()
+                        return nil           // 消费 plain enter
                     }
-                )
-                .onPaste { item in
-                    handlePastedItem(item)
+                    return event             // shift+enter 透传，系统自动插入 \n 并移动光标
                 }
-                .focused($isInputFocused)
+            )
+            .onPaste { item in
+                handlePastedItem(item)
             }
-            .background { style.background }
-        } else {
-            TextEditor(text: inputTextBinding)
-                .frame(height: 160)
-                .focused($isInputFocused)
+            .focused($isInputFocused)
         }
+        .background { style.background }
     }
 
     /// Convert a TextArea paste event into the right `TextAreaInsertion`.
@@ -135,7 +124,9 @@ extension PromptInputView {
 
         guard let image else { return nil }
         guard upgradeModelForImageInputIfNeeded() else {
-            alertToast(AIChatInputCapabilityError(message: "No available AI model can read images."))
+            alertToast(
+                AIChatInputCapabilityError.noModelCanReadImages
+            )
             return .action {}
         }
 

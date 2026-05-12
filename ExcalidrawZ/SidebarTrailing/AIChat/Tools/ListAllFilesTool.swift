@@ -18,7 +18,7 @@ import LLMCore
 struct ListAllFilesTool: Tool {
     var name: String { "list_all_files" }
 
-    var displayName: String { "List Files" }
+    var displayName: String { String(localizable: .aiChatToolListAllFilesName) }
 
     var description: String {
         """

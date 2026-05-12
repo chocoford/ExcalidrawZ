@@ -41,6 +41,14 @@ struct ExcalidrawChatInvocationContext: ChatInvocationContext {
 struct AIChatInputCapabilityError: LocalizedError {
     let message: String
     var errorDescription: String? { message }
+    
+    static var noModelCanReadImages: Self {
+        AIChatInputCapabilityError(
+            message: String(
+                localizable: .aiChatErrorNoModelCanReadImages
+            )
+        )
+    }
 }
 
 struct PromptInputView<Background: View, Header: View>: View {

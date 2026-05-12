@@ -174,18 +174,18 @@ struct AIChatWelcomeView: View {
             heroIcon
             
             VStack(spacing: 6) {
-                Text("AI on ExcalidrawZ")
+                Text(localizable: .aiChatWelcomeCaption)
                     .font(.caption.weight(.semibold))
                     .textCase(.uppercase)
                     .tracking(1.4)
                     .foregroundStyle(.secondary)
                 
-                Text("Welcome")
+                Text(localizable: .aiChatWelcomeTitle)
                     .font(.title2.weight(.semibold))
                     .tracking(-0.3)
                     .multilineTextAlignment(.center)
                 
-                Text("Ask, edit, generate.")
+                Text(localizable: .aiChatWelcomeMessage)
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -291,26 +291,26 @@ struct AIChatWelcomeView: View {
             FeatureRow(
                 icon: .pencilTipCropCircle,
                 tint: .accentColor,
-                title: "Edit your canvas",
-                subtitle: "Adjust elements, position shapes, or restyle existing drawings."
+                title: String(localizable: .aiChatWelcomeFeatureDrawTitle),
+                subtitle: String(localizable: .aiChatWelcomeFeatureDrawSubtitle)
             )
             FeatureRow(
                 icon: .photoOnRectangle,
                 tint: .pink,
-                title: "Read what you've drawn",
-                subtitle: "Snapshot the canvas so the AI can reason about it visually."
+                title: String(localizable: .aiChatWelcomeFeatureReadTitle),
+                subtitle: String(localizable: .aiChatWelcomeFeatureReadSubtitle),
             )
             FeatureRow(
                 icon: .booksVertical,
                 tint: .purple,
-                title: "Browse files & libraries",
-                subtitle: "Find prior work and pull in library items — with your permission."
+                title: String(localizable: .aiChatWelcomeFeatureBrowseTitle),
+                subtitle: String(localizable: .aiChatWelcomeFeatureBrowseSubtitle)
             )
             FeatureRow(
                 icon: .arrowUturnBackwardCircle,
                 tint: .orange,
-                title: "Revert any turn",
-                subtitle: "Every AI edit is checkpointed — roll back instantly if you don't like it."
+                title: String(localizable: .aiChatWelcomeFeatureRevertTitle),
+                subtitle: String(localizable: .aiChatWelcomeFeatureRevertSubtitle)
             )
         }
         .offset(y: featureListOffset)
@@ -329,7 +329,7 @@ struct AIChatWelcomeView: View {
                 }
             } label: {
                 HStack(spacing: 6) {
-                    Text("Get Started")
+                    Text(localizable: .aiChatWelcomeButtonGetStarted)
                         .fontWeight(.semibold)
                     Image(systemSymbol: .arrowRight)
                         .font(.callout.weight(.semibold))
@@ -340,7 +340,7 @@ struct AIChatWelcomeView: View {
             .keyboardShortcut(.defaultAction)
             .disabled(isDismissing)
             
-            Text("You can change AI settings any time from the More menu.")
+            Text(localizable: .aiChatWelcomeGetStartedCaption)
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)

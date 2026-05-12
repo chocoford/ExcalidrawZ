@@ -17,7 +17,7 @@ struct AdjustElementsTool: Tool {
 
     var name: String { "adjust_elements" }
 
-    var displayName: String { "Adjust Canvas" }
+    var displayName: String { String(localizable: .aiChatToolAdjustElementName) }
 
     var description: String {
         return Self.descriptionText

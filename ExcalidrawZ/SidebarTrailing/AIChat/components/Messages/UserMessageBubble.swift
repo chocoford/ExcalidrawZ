@@ -18,8 +18,8 @@ struct UserMessageBubble: View {
 
         var title: String {
             switch self {
-                case .edit: "Edit"
-                case .revert: "Revert"
+                case .edit: String(localizable: .aiChatUserMessageActionEditTitle)
+                case .revert: String(localizable: .aiChatUserMessageActionRevertTitle)
             }
         }
 
@@ -33,9 +33,9 @@ struct UserMessageBubble: View {
         var help: String {
             switch self {
                 case .edit:
-                    "Reload this message into the input box so you can edit and resend it."
+                    String(localizable: .aiChatUserMessageActionEditHelp)
                 case .revert:
-                    "Revert canvas to before this message, reload its text into the input box, then resend."
+                    String(localizable: .aiChatUserMessageActionRevertHelp)
             }
         }
     }
@@ -75,16 +75,16 @@ struct UserMessageBubble: View {
             }
         }
         .confirmationDialog(
-            "Revert and edit this message?",
+            String(localizable: .aiChatRevertConfirmationDialogTitle),
             isPresented: $isConfirmingRevert,
             titleVisibility: .visible
         ) {
-            Button("Revert and Edit", role: .destructive) {
+            Button(.localizable(.aiChatRevertConfirmationDialogButtonConfirm), role: .destructive) {
                 onAction?(content.id)
             }
-            Button("Cancel", role: .cancel) {}
+            Button(.localizable(.generalButtonCancel), role: .cancel) {}
         } message: {
-            Text("This will immediately restore the canvas to the checkpoint before this message, discard later chat messages, and refill the input with this prompt.")
+            Text(localizable: .aiChatRevertConfirmationDialogMessage)
         }
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
@@ -115,7 +115,6 @@ struct UserMessageBubble: View {
                 .foregroundStyle(.secondary)
                 .disabled(isActionDisabled)
                 .opacity(isActionDisabled ? 0 : 1)
-                .help(isActionDisabled ? "Wait for the current response to finish." : actionKind.help)
                 .animation(.smooth, value: isActionDisabled)
             }
         }
@@ -191,7 +190,7 @@ private struct UserMessageTextBubble: View {
             SmoothStreamingText(target: visibleText)
 
             if shouldTruncate {
-                Button("Show More") {
+                Button(.localizable(.generalButtonShowMore)) {
                     isShowingFullText = true
                 }
                 .foregroundStyle(.secondary)

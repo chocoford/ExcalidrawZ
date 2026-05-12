@@ -8,12 +8,21 @@
 
 import Foundation
 
+enum ExcalidrawAITransactionSource: String, Codable, Equatable, Sendable {
+    case aiChatSidebar = "ai-chat-sidebar"
+}
+
+enum ExcalidrawAITransactionRequestKind: String, Codable, Equatable, Sendable {
+    case createConversation
+    case sendMessage
+}
+
 struct ExcalidrawAITransactionMetadata: Codable, Equatable, Sendable {
     let schemaVersion: Int
-    let source: String
+    let source: ExcalidrawAITransactionSource
     let conversationID: String
     let userMessageID: String
-    let requestKind: String
+    let requestKind: ExcalidrawAITransactionRequestKind
     let agentID: String
     let model: String
     let canvasTarget: String

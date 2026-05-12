@@ -48,11 +48,11 @@ extension AlertToastAction {
             Store.shared.togglePaywall(reason: .aiInsufficientCredits)
         case .unauthorized:
             // TODO: open sign-in sheet once an entry point lands.
-            self(AIChatToastMessage("Please sign in to continue."))
+                self(AIChatToastMessage(String(localizable: .aiChatErrorUnauthorization)))
         case .forbidden(let reason):
-            self(AIChatToastMessage(reason ?? "Request was denied."))
+                self(AIChatToastMessage(reason ?? String(localizable: .aiChatErrorForbiddenFallback)))
         case .rateLimited:
-            self(AIChatToastMessage("Too many requests. Please slow down."))
+                self(AIChatToastMessage(String(localizable: .aiChatErrorRateLimited)))
         case .server, .decoding, .network:
             // Defers to `LLMError.errorDescription` (generic by design — the
             // server's reason string is not exposed). The underlying error is

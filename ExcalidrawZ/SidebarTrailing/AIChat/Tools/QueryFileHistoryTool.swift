@@ -19,7 +19,7 @@ import LLMCore
 struct QueryFileHistoryTool: Tool {
     var name: String { "query_file_history" }
 
-    var displayName: String { "File History" }
+    var displayName: String { String(localizable: .aiChatToolQueryFileHistoryName) }
 
     var description: String {
         """

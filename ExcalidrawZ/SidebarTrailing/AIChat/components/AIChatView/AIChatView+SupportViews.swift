@@ -19,13 +19,10 @@ struct OpenSettingsMenuItem: View {
     
     var body: some View {
         Button {
-            // Write the route *before* `openSettings()` so that whichever
-            // arrives first at `SettingsView`, the value is in place — `.task`
-            // (first mount) or `.onChange` (window reused) consumes it.
             SettingsRouter.shared.pendingRoute = deepLinkTo
             openSettings()
         } label: {
-            Label("Settings…", systemSymbol: .gearshape)
+            Label(.localizable(.generalButtonSettings), systemSymbol: .gearshape)
         }
     }
 }
@@ -46,8 +43,12 @@ struct HiddenHistoryIndicator: View {
                     Image(systemSymbol: .arrowUp)
                         .font(.caption2.weight(.semibold))
                 }
-                Text(isLoading ? "Loading earlier items..." : "Scroll up to load \(hiddenGroupCount) earlier items")
-                    .font(.caption2)
+                Text(
+                    localizable: isLoading
+                    ? .aiChatLoadingMoreText
+                    : .aiChatLoadMoreText(hiddenGroupCount)
+                )
+                .font(.caption2)
             }
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity)
@@ -62,7 +63,7 @@ struct EditSessionBanner: View {
 
     var title: String {
         switch mode {
-            case .edit: "Editing message"
+            case .edit: String(localizable: .aiChatEditingMessageBannerText)
         }
     }
 
@@ -86,24 +87,10 @@ struct EditSessionBanner: View {
             }
             .buttonStyle(.plain)
             .keyboardShortcut(.cancelAction)
-            .help("Cancel editing")
+            .help(.generalButtonCancel)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
-//        .background {
-//            if #available(macOS 26.0, *) {
-//                RoundedRectangle(cornerRadius: 14)
-//                    .fill(.clear)
-//                    .glassEffect(
-//                        .regular.interactive(),
-//                        in: RoundedRectangle(cornerRadius: 14)
-//                    )
-//            } else {
-//                RoundedRectangle(cornerRadius: 14)
-//                    .fill(.ultraThinMaterial)
-//            }
-//        }
-//        .padding(1)
     }
 }
 

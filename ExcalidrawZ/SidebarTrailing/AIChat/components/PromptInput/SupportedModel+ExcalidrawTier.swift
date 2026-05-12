@@ -33,13 +33,13 @@ extension SupportedModel {
     var excalidrawTierName: String {
         switch self {
             case .hy3Preview:
-                return "Low"
+                return String(localizable: .aiChatModelTierLow)
             case .qwen3_6Plus:
-                return "Medium"
+                return String(localizable: .aiChatModelTierMedium)
             case .claudeSonnet4_6:
-                return "High"
+                return String(localizable: .aiChatModelTierHigh)
             case .claudeOpus4_7:
-                return "Extra High"
+                return String(localizable: .aiChatModelTierExtraHigh)
             default:
 #if DEBUG
                 return displayName

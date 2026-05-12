@@ -41,7 +41,7 @@ extension PromptInputView {
         guard !trimmedText.isEmpty || !files.isEmpty else { return }
         let model = modelForSend(files: files)
         guard !files.containsImageInput || model.supportsExcalidrawImageInput else {
-            alertToast(AIChatInputCapabilityError(message: "No available AI model can read images."))
+            alertToast(AIChatInputCapabilityError.noModelCanReadImages)
             return
         }
 
@@ -235,7 +235,7 @@ extension PromptInputView {
                 let metadata = await makeTransactionMetadata(
                     conversationID: conversationIDForSession,
                     userMessageID: userMessageID,
-                    requestKind: isNewConversation ? "createConversation" : "sendMessage",
+                    requestKind: isNewConversation ? .createConversation : .sendMessage,
                     model: model,
                     canvasTarget: canvasTarget,
                     selectedElementCount: selectedElementIDs?.count ?? 0,
@@ -400,7 +400,7 @@ extension PromptInputView {
     private func makeTransactionMetadata(
         conversationID: String,
         userMessageID: String,
-        requestKind: String,
+        requestKind: ExcalidrawAITransactionRequestKind,
         model: SupportedModel,
         canvasTarget: ExcalidrawCoordinatorRegistry.CanvasTarget,
         selectedElementCount: Int,
@@ -414,7 +414,7 @@ extension PromptInputView {
 
         return ExcalidrawAITransactionMetadata(
             schemaVersion: 1,
-            source: "ai-chat-sidebar",
+            source: .aiChatSidebar,
             conversationID: conversationID,
             userMessageID: userMessageID,
             requestKind: requestKind,

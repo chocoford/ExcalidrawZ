@@ -16,7 +16,7 @@ import LLMCore
 struct QueryLibraryItemTool: Tool {
     var name: String { "query_library_item" }
 
-    var displayName: String { "Query Library Item" }
+    var displayName: String { String(localizable: .aiChatToolQueryLibraryItemName) }
 
     var description: String {
         """

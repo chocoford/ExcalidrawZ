@@ -69,7 +69,7 @@ struct LowCreditsBannerView: View {
             HStack(spacing: 6) {
                 Image(systemSymbol: .exclamationmarkTriangleFill)
                     .foregroundStyle(.orange)
-                Text("Only \(Int(balance)) credits left — tap to top up")
+                Text(localizable: .aiChatLowCreditsBannerLabel(balance.formatted(.number.precision(.fractionLength(2)))))
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
                 Image(systemSymbol: .arrowRight)

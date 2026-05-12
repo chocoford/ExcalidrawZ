@@ -28,7 +28,7 @@ struct CompactingIndicatorView: View {
         HStack(spacing: 8) {
             ProgressView()
                 .controlSize(.small)
-            Text("Compacting context…")
+            Text(localizable: .aiChatCompactIndicatorLabel)
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer(minLength: 0)

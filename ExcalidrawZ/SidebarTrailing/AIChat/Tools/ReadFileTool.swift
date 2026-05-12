@@ -19,7 +19,7 @@ struct ReadFileTool: Tool {
 
     var name: String { "read_file" }
 
-    var displayName: String { "Read Canvas File" }
+    var displayName: String { String(localizable: .aiChatToolReadFileName) }
 
     var description: String {
         """

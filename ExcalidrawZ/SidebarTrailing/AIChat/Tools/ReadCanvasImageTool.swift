@@ -21,7 +21,7 @@ struct ReadCanvasImageTool: Tool {
 
     var name: String { "read_canvas_image" }
 
-    var displayName: String { "Read Canvas Image" }
+    var displayName: String { String(localizable: .aiChatToolReadCanvasImageName) }
 
     var description: String {
         """

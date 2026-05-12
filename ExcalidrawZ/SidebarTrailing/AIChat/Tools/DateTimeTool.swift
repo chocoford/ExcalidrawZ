@@ -12,7 +12,7 @@ import LLMCore
 struct DateTimeTool: Tool {
     var name: String { "datetime" }
 
-    var displayName: String { "Date & Time" }
+    var displayName: String { String(localizable: .aiChatToolDateTimeName) }
 
     var description: String {
         "Get current date and time information in various formats. Can also calculate time differences and convert timezones."

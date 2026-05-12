@@ -76,7 +76,7 @@ struct ContextUsageRing: View {
                     .contentShape(Rectangle())
                 }
                 .help(helpText)
-                .accessibilityLabel("Context usage")
+                .accessibilityLabel(String(localizable: .aiChatContextUsageTitle))
                 .accessibilityValue(Text(helpText))
             }
         }
@@ -86,6 +86,8 @@ struct ContextUsageRing: View {
 
     private var helpText: String {
         let pct = Int((fraction * 100).rounded())
-        return String(format: "%d%% of context used before auto-compact.\nClick to compact now", pct)
+        return String(
+            localizable: .aiChatContextUsageHelp(pct.formatted(.percent))
+        )
     }
 }

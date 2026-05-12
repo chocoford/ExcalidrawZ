@@ -196,7 +196,7 @@ struct AssistantRoundView: View {
         switch item {
             case .assistantContent(let content):
                 assistantContent(content)
-            case .assistantToolCall(_, let call):
+            case .assistantToolCall:
                 assistantToolCall(item)
             case .toolResult(let content):
                 ToolResultCard(content: content)

@@ -13,8 +13,8 @@ extension WhatsNewView {
         // 不能只有一行，不知道为啥一定报错
         
         WhatsNewFeatureRow(
-            title: "AI for ExcalidrawZ",
-            description: "Chat with AI directly in ExcalidrawZ to read your canvas, edit elements, navigate drawings, use library items, attach images, revise previous prompts, and safely revert AI-made canvas changes. New AI plans and credits are now available from the refreshed Paywall.",
+            title: .localizable(.whatsNewAIForExcalidrawZTitle),
+            description: .localizable(.whatsNewAIForExcalidrawZDescription),
         ) {
             Image(systemSymbol: .sparkles)
                 .resizable()
@@ -22,8 +22,8 @@ extension WhatsNewView {
         }
         
         WhatsNewFeatureRow(
-            title: "Updated Subscription Plans",
-            description: "Subscription plans have been reorganized around the new AI credit system, with clearer tiers for Starter, Pro, and Max users. You can review the updated options from the refreshed Paywall.",
+            title: .localizable(.whatsNewUpdatedSubscriptionPlansTitle),
+            description: .localizable(.whatsNewUpdatedSubscriptionPlansDescription),
         ) {
             Image(systemSymbol: .creditcard)
                 .resizable()

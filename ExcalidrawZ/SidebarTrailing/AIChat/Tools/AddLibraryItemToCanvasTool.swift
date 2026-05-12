@@ -41,7 +41,7 @@ struct AddLibraryItemToCanvasTool: Tool {
 
     var name: String { "add_library_item_to_canvas" }
 
-    var displayName: String { "Insert Library Item" }
+    var displayName: String { String(localizable: .aiChatToolInsertLibraryItemName) }
 
     var description: String {
         """

@@ -165,7 +165,7 @@ struct AttachmentThumbnailStrip: View {
 
     var body: some View {
         if !pastedImages.isEmpty {
-            ScrollView(.horizontal, showsIndicators: false) {
+            ScrollView(.horizontal) {
                 HStack(spacing: 8) {
                     ForEach(pastedImages) { entry in
                         // Each tile is its own view so per-tile hover
@@ -177,8 +177,9 @@ struct AttachmentThumbnailStrip: View {
                             onRemove: { remove(entry.id) }
                         )
                     }
+                    .padding(.horizontal, 12)
                 }
-                .padding(.horizontal, 12)
+                .scrollIndicators(.hidden)
                 .padding(.top, 10)
                 // Bottom padding intentionally small — the TextArea
                 // sits right below; we want a single visual block.
@@ -236,17 +237,21 @@ private struct AttachmentThumbnailTile: View {
             // image when hidden — important on iOS where there's no
             // hover and we'd otherwise have a phantom hitbox.
             Button(action: onRemove) {
-                Image(systemSymbol: .xmarkCircleFill)
-                    .font(.system(size: 16))
-                    .symbolRenderingMode(.palette)
-                    .foregroundStyle(.white, .black.opacity(0.55))
+                Label(
+                    .localizable(.aiChatButtonRemoveAttachment),
+                    systemSymbol: .xmarkCircleFill
+                )
+                .font(.system(size: 16))
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white, .black.opacity(0.55))
+                .labelStyle(.iconOnly)
             }
             .buttonStyle(.plain)
             .offset(x: 6, y: -6)
             .opacity(isHovering ? 1 : 0)
             .allowsHitTesting(isHovering)
             .animation(.easeInOut(duration: 0.12), value: isHovering)
-            .help("Remove attachment")
+            .help(.localizable(.aiChatButtonRemoveAttachment))
         }
         .padding(.top, 6)
         .padding(.trailing, 6)

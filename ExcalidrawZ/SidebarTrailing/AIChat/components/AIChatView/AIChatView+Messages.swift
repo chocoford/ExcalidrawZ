@@ -83,10 +83,10 @@ extension AIChatView {
                 .foregroundStyle(.secondary)
             
             VStack(spacing: 10) {
-                Text("AI Chat Assistant")
+                Text(localizable: .aiChatEmptyContentPlaceholderTitle)
                     .foregroundStyle(.secondary)
                     .font(.title3)
-                Text("Ask questions about your diagrams or get help with Excalidraw features.")
+                Text(localizable: .aiChatEmptyContentPlaceholderDescription)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

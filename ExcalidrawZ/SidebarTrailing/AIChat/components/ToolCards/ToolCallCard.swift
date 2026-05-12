@@ -61,7 +61,7 @@ struct ToolCallCard: View {
     private var deniedBadge: some View {
         HStack(spacing: 3) {
             Image(systemSymbol: .handRaisedFill)
-            Text("Denied")
+            Text(localizable: .aiChatToolCallDeniedTitle)
         }
         .font(.caption2.weight(.medium))
         .foregroundStyle(.red)

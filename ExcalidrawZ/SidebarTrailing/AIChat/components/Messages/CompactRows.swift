@@ -116,7 +116,7 @@ struct CompactSummaryRow: View {
             HStack(spacing: 6) {
                 Image(systemSymbol: .archiveboxFill)
                     .font(.caption)
-                Text("Earlier conversation")
+                Text(localizable: .aiChatCompactSummaryHeadline)
                     .font(.caption.weight(.semibold))
                 Spacer()
                 Image(systemSymbol: .chevronRight)

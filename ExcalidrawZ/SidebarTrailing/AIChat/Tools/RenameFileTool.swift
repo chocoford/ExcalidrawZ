@@ -16,7 +16,7 @@ struct RenameFileTool: Tool {
 
     var name: String { "rename_file" }
 
-    var displayName: String { "Rename File" }
+    var displayName: String { String(localizable: .aiChatToolRenameFileName) }
 
     var description: String {
         """

@@ -181,7 +181,9 @@ struct AIChatIslandView: View {
     /// protocol-level snake_case name to the same display name used by the
     /// full `ToolCallCard`, so the island does not leak internal tool ids.
     private func toolCallDisplay(_ name: String) -> String {
-        String(localized: "Using \(ToolDisplayNameCache.displayName(for: name))…")
+        String(
+            localizable: .aiChatToolCallDisplay(ToolDisplayNameCache.displayName(for: name))
+        )
     }
 
     /// Name of the first non-final-answer tool call currently being emitted
@@ -273,9 +275,9 @@ struct AIChatIslandView: View {
             autoHideTask?.cancel()
             toolCallSwitchTask?.cancel()
             if displayedReplyText == nil {
-                displayedReplyText = String(localized: "Thinking…")
+                displayedReplyText = String(localizable: .aiChatThinking)
             }
-        } else if displayedReplyText == String(localized: "Thinking…") {
+        } else if displayedReplyText == String(localizable: .aiChatThinking) {
             autoHideTask?.cancel()
             toolCallSwitchTask?.cancel()
             displayedReplyText = nil
@@ -374,7 +376,7 @@ struct AIChatIslandView: View {
             Image(systemSymbol: .bubbleLeftAndBubbleRight)
                 .foregroundStyle(.secondary)
                 .font(.caption)
-            Text("AI Chat")
+            Text(localizable: .aiChatTitle)
                 .foregroundStyle(.secondary)
                 .font(.caption)
 
@@ -394,7 +396,7 @@ struct AIChatIslandView: View {
                 }
             }
             .buttonStyle(.plain)
-            .help("Dock back to inspector")
+            .help(.localizable(.aiChatButtonInspectMode))
         }
         .hoverCursor(.grabIdle, forceAppKit: true)
     }

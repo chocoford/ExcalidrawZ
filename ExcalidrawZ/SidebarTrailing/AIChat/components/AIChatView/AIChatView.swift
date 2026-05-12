@@ -136,16 +136,16 @@ struct AIChatView: View {
         }
         .toolbar(content: toolbar)
         .confirmationDialog(
-            "Clear chat?",
+            String(localizable: .aiChatClearChatConfimationDialogTitle),
             isPresented: $isConfirmingClear,
             titleVisibility: .visible
         ) {
-            Button("Clear chat", role: .destructive) {
+            Button(.localizable(.generalButtonConfirm), role: .destructive) {
                 clearCurrentConversation()
             }
-            Button("Cancel", role: .cancel) {}
+            Button(.localizable(.generalButtonCancel), role: .cancel) {}
         } message: {
-            Text("All messages in this conversation will be removed. The drawing file is unaffected.")
+            Text(localizable: .aiChatClearChatConfimationDialogMessage)
         }
         .background {
             debugPublishProbe
