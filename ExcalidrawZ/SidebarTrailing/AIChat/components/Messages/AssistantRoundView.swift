@@ -47,6 +47,7 @@ struct AssistantRoundView: View {
     /// Committed assistant message ids that LLMKit still considers
     /// actively streaming.
     let streamingMessageIDs: Set<String>
+    let isRoundCancelled: Bool
     /// Id of the round currently being driven by the in-flight stream
     /// (`nil` when no stream is active). When `roundID == activeRoundID`
     /// this round is the one being generated — `init` starts with an
@@ -107,12 +108,14 @@ struct AssistantRoundView: View {
         messages: [ChatMessage],
         activeRoundID: String?,
         streamingMessageIDs: Set<String>,
+        isRoundCancelled: Bool = false,
         onRegenerate: ((String) -> Void)? = nil
     ) {
         self.roundID = roundID
         self.messages = messages
         self.activeRoundID = activeRoundID
         self.streamingMessageIDs = streamingMessageIDs
+        self.isRoundCancelled = isRoundCancelled
         self.onRegenerate = onRegenerate
 
         // The round-level "is this round being streamed" gate (not a
@@ -254,7 +257,7 @@ struct AssistantRoundView: View {
                     return "error:\(id.uuidString)"
             }
         }.joined(separator: ",")
-        return "\(activeRoundID ?? "nil")::\(ids)"
+        return "\(activeRoundID ?? "nil")::cancel:\(isRoundCancelled ? "1" : "0")::\(ids)"
     }
 
     private static func contentSignature(
@@ -391,7 +394,7 @@ struct AssistantRoundView: View {
         let settled = !isActiveGeneratingRound
             && !hasInflightInRound
             && allRevealed
-            && lastActionableAssistantContent != nil
+            && hasTerminalActionableAssistantContent
         actionBarTask?.cancel()
         actionBarTask = nil
         guard settled, !showsActionBar else { return }
@@ -504,11 +507,17 @@ struct AssistantRoundView: View {
         guard case .assistantContent(let content) = renderItems.last(where: { item in
             guard case .assistantContent(let content) = item else { return false }
             return !Self.displayText(of: content).isEmpty
-                && Self.nonFinalToolCalls(in: content).isEmpty
         }) else {
             return nil
         }
         return content
+    }
+
+    private var hasTerminalActionableAssistantContent: Bool {
+        guard let content = lastActionableAssistantContent else { return false }
+        if isRoundCancelled { return true }
+        if Self.hasFinalAnswerToolCall(in: content) { return true }
+        return Self.nonFinalToolCalls(in: content).isEmpty
     }
 
     private static func nonFinalToolCalls(in content: ChatMessageContent) -> [ToolCall] {

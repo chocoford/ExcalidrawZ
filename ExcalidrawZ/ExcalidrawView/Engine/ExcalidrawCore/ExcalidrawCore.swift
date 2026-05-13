@@ -63,7 +63,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     @Published var canRedo = false
     @Published private(set) var aiCameraSession = AICameraSessionInfo()
     
-    var previousFileID: UUID? = nil
+    var previousFileID: String? = nil
     private var lastVersion: Int = 0
 
     var hasInjectIndexedDBData = false
@@ -634,6 +634,34 @@ extension ExcalidrawCore {
         throw InvalidJavaScriptResult()
     }
 
+    private func makeJavaScriptHelperCall(_ expression: String) -> String {
+        """
+        const __excalidrawZHelperCall = async () => {
+            try {
+                const value = await \(expression);
+                return JSON.stringify({ ok: true, value });
+            } catch (error) {
+                const name = error && error.name ? String(error.name) : null;
+                const message = error && error.message ? String(error.message) : String(error);
+                const stack = error && error.stack ? String(error.stack) : null;
+                return JSON.stringify({
+                    ok: false,
+                    error: { name, message, stack }
+                });
+            }
+        };
+        return await __excalidrawZHelperCall();
+        """
+    }
+
+    private func decodeJavaScriptHelperResult<T: Decodable>(_ result: Any?, as type: T.Type) throws -> T {
+        let envelope = try decodeJavaScriptResult(result, as: JavaScriptHelperResult<T>.self)
+        if envelope.ok, let value = envelope.value {
+            return value
+        }
+        throw JavaScriptHelperExecutionError(payload: envelope.error)
+    }
+
     private struct JavaScriptResultDecodingError: LocalizedError {
         let targetType: String
         let reason: String
@@ -653,6 +681,48 @@ extension ExcalidrawCore {
                 return rawJSON
             }
             return String(rawJSON.prefix(limit)) + "...(truncated)"
+        }
+    }
+
+    private struct JavaScriptHelperResult<T: Decodable>: Decodable {
+        let ok: Bool
+        let value: T?
+        let error: JavaScriptHelperErrorPayload?
+    }
+
+    private struct JavaScriptHelperErrorPayload: Decodable {
+        let name: String?
+        let message: String?
+        let stack: String?
+    }
+
+    private struct JavaScriptHelperExecutionError: LocalizedError {
+        let payload: JavaScriptHelperErrorPayload?
+
+        var errorDescription: String? {
+            guard let payload else {
+                return "JavaScript helper execution failed without an error payload."
+            }
+
+            var message = "JavaScript helper execution failed"
+            if let name = payload.name, !name.isEmpty {
+                message += ": \(name)"
+            }
+            if let errorMessage = payload.message, !errorMessage.isEmpty {
+                message += " - \(errorMessage)"
+            }
+            if let stack = payload.stack, !stack.isEmpty {
+                message += "\nStack: \(Self.preview(stack))"
+            }
+            return message
+        }
+
+        private static func preview(_ value: String) -> String {
+            let limit = 2000
+            if value.count <= limit {
+                return value
+            }
+            return String(value.prefix(limit)) + "...(truncated)"
         }
     }
 
@@ -700,26 +770,50 @@ extension ExcalidrawCore {
     /// — currently unused, but typed so we don't have to touch this signature again.
     @discardableResult
     func loadFile(from file: ExcalidrawFile?, force: Bool = false) async -> LoadFileResult? {
-        let coreLoading = self.isLoading
-        let webLoading = await self.webView.isLoading
-        guard !coreLoading, !webLoading else {
-            print("[aiDiag] core.loadFile → bailed: core.isLoading=\(coreLoading) webView.isLoading=\(webLoading) file.id=\(file?.id ?? "nil")")
-            return nil
-        }
         guard let file = file,
               let data = file.content else {
-            print("[aiDiag] core.loadFile → bailed: file=\(file == nil ? "nil" : "non-nil") content=\(file?.content == nil ? "nil" : "\(file!.content!.count) bytes")")
+            return nil
+        }
+        guard await waitUntilReadyForFileLoad(fileID: file.id) else {
             return nil
         }
         do {
-            print("[aiDiag] core.loadFile → calling webActor.loadFile id=\(file.id) bytes=\(data.count) force=\(force)")
-            let result = try await self.webActor.loadFile(id: file.id, data: data, force: force)
-            print("[aiDiag] core.loadFile → webActor returned. id=\(file.id) result=\(result == nil ? "nil (already loaded)" : "elements=\(result!.elementCount)")")
-            return result
+            return try await self.webActor.loadFile(id: file.id, data: data, force: force)
         } catch {
-            print("[aiDiag] core.loadFile → webActor THREW: \(error)")
             self.publishError(error)
             return nil
+        }
+    }
+
+    func waitUntilReadyForFileLoad(
+        fileID: String,
+        timeout: TimeInterval = 5
+    ) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        var didLogWait = false
+
+        while true {
+            let coreLoading = self.isLoading || self.isNavigating || !self.isDocumentLoaded
+            let webLoading = await self.webView.isLoading
+
+            if !coreLoading && !webLoading {
+                return true
+            }
+
+            if Task.isCancelled {
+                return false
+            }
+
+            if Date() >= deadline {
+                logger.warning("Timed out waiting to load file \(fileID). coreLoading=\(coreLoading) webLoading=\(webLoading)")
+                return false
+            }
+
+            if !didLogWait {
+                logger.info("Waiting for Excalidraw readiness before loading file \(fileID)")
+                didLogWait = true
+            }
+            try? await Task.sleep(nanoseconds: 100_000_000)
         }
     }
     
@@ -1058,11 +1152,13 @@ extension ExcalidrawCore {
         let definitionJSON = try encodeJSON(definition)
         let optionsJSON = try encodeJSON(options)
         let result = try await webView.callAsyncJavaScript(
-            "return JSON.stringify(await window.excalidrawZHelper.insertFromMermaid(\(definitionJSON), \(optionsJSON)));",
+            makeJavaScriptHelperCall(
+                "window.excalidrawZHelper.insertFromMermaid(\(definitionJSON), \(optionsJSON))"
+            ),
             arguments: [:],
             contentWorld: .page
         )
-        return try decodeJavaScriptResult(result, as: MermaidInsertResult.self)
+        return try decodeJavaScriptHelperResult(result, as: MermaidInsertResult.self)
     }
 
     @MainActor
@@ -1076,11 +1172,13 @@ extension ExcalidrawCore {
         let skeletonsJSON = try encodeJSON(skeletons)
         let optionsJSON = try encodeJSON(options)
         let result = try await webView.callAsyncJavaScript(
-            "return JSON.stringify(await window.excalidrawZHelper.insertFromSkeleton(\(skeletonsJSON), \(optionsJSON)));",
+            makeJavaScriptHelperCall(
+                "window.excalidrawZHelper.insertFromSkeleton(\(skeletonsJSON), \(optionsJSON))"
+            ),
             arguments: [:],
             contentWorld: .page
         )
-        return try decodeJavaScriptResult(result, as: SkeletonInsertResult.self)
+        return try decodeJavaScriptHelperResult(result, as: SkeletonInsertResult.self)
     }
 
     @MainActor
@@ -1101,11 +1199,13 @@ extension ExcalidrawCore {
         )
         let paramsJSON = try encodeJSON(params)
         let result = try await webView.callAsyncJavaScript(
-            "return JSON.stringify(await window.excalidrawZHelper.connectElements(\(paramsJSON)));",
+            makeJavaScriptHelperCall(
+                "window.excalidrawZHelper.connectElements(\(paramsJSON))"
+            ),
             arguments: [:],
             contentWorld: .page
         )
-        return try decodeJavaScriptResult(result, as: ConnectElementsResult.self)
+        return try decodeJavaScriptHelperResult(result, as: ConnectElementsResult.self)
     }
 
     @MainActor

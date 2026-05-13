@@ -114,11 +114,80 @@ struct AdjustElementsTool: Tool {
     }
 
     private static func describeExecutionError(_ error: Error) -> String {
+        if let javaScriptError = describeJavaScriptException(error) {
+            return javaScriptError
+        }
         if let localizedError = error as? LocalizedError,
            let description = localizedError.errorDescription {
             return description
         }
         return error.localizedDescription
+    }
+
+    private static func describeJavaScriptException(_ error: Error) -> String? {
+        var visited: Set<ObjectIdentifier> = []
+        return describeJavaScriptException(error as NSError, visited: &visited)
+    }
+
+    private static func describeJavaScriptException(
+        _ error: NSError,
+        visited: inout Set<ObjectIdentifier>
+    ) -> String? {
+        let identifier = ObjectIdentifier(error)
+        guard !visited.contains(identifier) else { return nil }
+        visited.insert(identifier)
+
+        if isJavaScriptException(error) {
+            var parts = ["JavaScript exception"]
+            if let message = javaScriptUserInfoString(error, key: "WKJavaScriptExceptionMessage"),
+               !message.isEmpty {
+                parts.append("message: \(message)")
+            } else {
+                parts.append("message: \(error.localizedDescription)")
+            }
+            if let sourceURL = javaScriptUserInfoString(error, key: "WKJavaScriptExceptionSourceURL"),
+               !sourceURL.isEmpty {
+                parts.append("source: \(sourceURL)")
+            }
+            if let line = javaScriptUserInfoString(error, key: "WKJavaScriptExceptionLineNumber") {
+                parts.append("line: \(line)")
+            }
+            if let column = javaScriptUserInfoString(error, key: "WKJavaScriptExceptionColumnNumber") {
+                parts.append("column: \(column)")
+            }
+            parts.append("webkit: \(error.domain) code \(error.code)")
+            return parts.joined(separator: "; ")
+        }
+
+        if let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError {
+            return describeJavaScriptException(underlying, visited: &visited)
+        }
+        if let underlying = error.userInfo[NSUnderlyingErrorKey] as? Error {
+            return describeJavaScriptException(underlying)
+        }
+        return nil
+    }
+
+    private static func isJavaScriptException(_ error: NSError) -> Bool {
+        error.domain == "WKErrorDomain" ||
+            error.userInfo.keys.contains("WKJavaScriptExceptionMessage") ||
+            error.userInfo.keys.contains("WKJavaScriptExceptionLineNumber")
+    }
+
+    private static func javaScriptUserInfoString(_ error: NSError, key: String) -> String? {
+        guard let value = error.userInfo[key] else { return nil }
+        return String(describing: value)
+    }
+
+    private struct CanvasActionExecutionError: LocalizedError {
+        let index: Int
+        let action: String
+        let underlying: Error
+
+        var errorDescription: String? {
+            let detail = AdjustElementsTool.describeExecutionError(underlying)
+            return "Canvas action #\(index + 1) (\(action)) failed: \(detail)"
+        }
     }
 }
 
@@ -169,47 +238,55 @@ private extension AdjustElementsTool {
         var mermaidResults: [ExcalidrawCore.MermaidInsertResult] = []
         var skeletonResults: [ExcalidrawCore.SkeletonInsertResult] = []
         var connectResults: [ExcalidrawCore.ConnectElementsResult] = []
-        for action in result.canvasActions {
-            switch action {
-                case .insertMermaid(let op):
-                    let options = ExcalidrawCore.MermaidInsertOptions(
-                        position: op.position,
-                        focus: op.focus,
-                        regenerateIds: op.regenerateIds,
-                        mermaidConfig: op.mermaidConfig,
-                        captureUpdate: op.captureUpdate
-                    )
-                    let insertResult = try await coordinator.insertFromMermaid(
-                        op.definition,
-                        options: options
-                    )
-                    mermaidResults.append(insertResult)
-                    try await cameraDirector.submitInsertedContentBounds(makeRect(from: insertResult.bounds))
-                case .insertSkeleton(let op):
-                    let options = ExcalidrawCore.SkeletonInsertOptions(
-                        layout: op.layout,
-                        layoutOptions: op.layoutOptions,
-                        regenerateIds: op.regenerateIds,
-                        position: op.position,
-                        focus: op.focus,
-                        files: op.files,
-                        captureUpdate: op.captureUpdate,
-                        sanitize: op.sanitize
-                    )
-                    let insertResult = try await coordinator.insertFromSkeleton(
-                        op.skeletons,
-                        options: options
-                    )
-                    skeletonResults.append(insertResult)
-                    try await cameraDirector.submitInsertedContentBounds(makeRect(from: insertResult.bounds))
-                case .connect(let op):
-                    let connectResult = try await coordinator.connectElements(
-                        from: op.from,
-                        to: op.to,
-                        arrow: op.arrow,
-                        captureUpdate: op.captureUpdate
-                    )
-                    connectResults.append(connectResult)
+        for (index, action) in result.canvasActions.enumerated() {
+            do {
+                switch action {
+                    case .insertMermaid(let op):
+                        let options = ExcalidrawCore.MermaidInsertOptions(
+                            position: op.position,
+                            focus: op.focus,
+                            regenerateIds: op.regenerateIds,
+                            mermaidConfig: op.mermaidConfig,
+                            captureUpdate: op.captureUpdate
+                        )
+                        let insertResult = try await coordinator.insertFromMermaid(
+                            op.definition,
+                            options: options
+                        )
+                        mermaidResults.append(insertResult)
+                        try await cameraDirector.submitInsertedContentBounds(makeRect(from: insertResult.bounds))
+                    case .insertSkeleton(let op):
+                        let options = ExcalidrawCore.SkeletonInsertOptions(
+                            layout: op.layout,
+                            layoutOptions: op.layoutOptions,
+                            regenerateIds: op.regenerateIds,
+                            position: op.position,
+                            focus: op.focus,
+                            files: op.files,
+                            captureUpdate: op.captureUpdate,
+                            sanitize: op.sanitize
+                        )
+                        let insertResult = try await coordinator.insertFromSkeleton(
+                            op.skeletons,
+                            options: options
+                        )
+                        skeletonResults.append(insertResult)
+                        try await cameraDirector.submitInsertedContentBounds(makeRect(from: insertResult.bounds))
+                    case .connect(let op):
+                        let connectResult = try await coordinator.connectElements(
+                            from: op.from,
+                            to: op.to,
+                            arrow: op.arrow,
+                            captureUpdate: op.captureUpdate
+                        )
+                        connectResults.append(connectResult)
+                }
+            } catch {
+                throw AdjustElementsTool.CanvasActionExecutionError(
+                    index: index,
+                    action: canvasActionDescription(action),
+                    underlying: error
+                )
             }
         }
         return CanvasApplyResult(
@@ -226,6 +303,40 @@ private extension AdjustElementsTool {
             width: bounds.width,
             height: bounds.height
         )
+    }
+
+    func canvasActionDescription(_ action: CanvasAction) -> String {
+        switch action {
+            case .insertMermaid(let op):
+                return "insertMermaid definition=\(preview(op.definition))"
+            case .insertSkeleton(let op):
+                var parts = ["insertSkeleton"]
+                if let layout = op.layout {
+                    parts.append("layout=\(layout)")
+                }
+                parts.append("skeletons=\(previewJSON(op.skeletons))")
+                return parts.joined(separator: " ")
+            case .connect(let op):
+                return "connect from=\(op.from) to=\(op.to)"
+        }
+    }
+
+    func preview(_ value: String, limit: Int = 240) -> String {
+        let flattened = value
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+        if flattened.count <= limit {
+            return flattened
+        }
+        return String(flattened.prefix(limit)) + "...(truncated)"
+    }
+
+    func previewJSON<T: Encodable>(_ value: T, limit: Int = 500) -> String {
+        guard let data = try? JSONEncoder().encode(value),
+              let string = String(data: data, encoding: .utf8) else {
+            return "<unavailable>"
+        }
+        return preview(string, limit: limit)
     }
 
     func makeElementUpdates(from element: ExcalidrawElement) throws -> [String: ExcalidrawCore.JSONValue] {

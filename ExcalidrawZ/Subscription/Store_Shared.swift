@@ -54,13 +54,17 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
         yearlyID: "plan.starter_yearly",
         title: String(localizable: .paywallPlanStarterTitle),
         // Starter now carries the original Pro feature set.
-        description: "Unlimited collaboration and all core premium features.",
+        description: String(localizable: .paywallPlanStarterDescription),
         features: [
             String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
             String(localizable: .paywallPlanGeneralFeaturesICloudSync),
             String(localizable: .paywallPlanGeneralFeaturesPDFExport),
             String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
-            String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("Unlimited")),
+            String(
+                localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount(
+                    String(localizable: .paywallPlanGeneralFeaturesUnlimitedValue)
+                )
+            ),
         ],
         fallbackDisplayPrice: "$2.99",
         fallbackDisplayPeriod: "a month",
@@ -72,14 +76,18 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
         yearlyID: "plan.pro_yearly",
         title: String(localizable: .paywallPlanProTitle),
         // 无限制
-        description: "Everything in Starter, plus monthly AI credits for regular AI work.",
+        description: String(localizable: .paywallPlanProDescription),
         features: [
             String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
             String(localizable: .paywallPlanGeneralFeaturesICloudSync),
             String(localizable: .paywallPlanGeneralFeaturesPDFExport),
             String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
-            String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("Unlimited")),
-            "**500 AI credits** / month",
+            String(
+                localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount(
+                    String(localizable: .paywallPlanGeneralFeaturesUnlimitedValue)
+                )
+            ),
+            String(localizable: .paywallPlanGeneralFeaturesAICredits(500)),
         ],
         fallbackDisplayPrice: "$9.99",
         fallbackDisplayPeriod: "a month",
@@ -89,15 +97,19 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
     static let max = SubscriptionItem(
         id: "plan.max_3x",
         yearlyID: "plan.max_3x_yearly",
-        title: "Max",
-        description: "For heavier AI usage and larger collaborative work.",
+        title: String(localizable: .paywallPlanMaxTitle),
+        description: String(localizable: .paywallPlanMaxDescription),
         features: [
             String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
             String(localizable: .paywallPlanGeneralFeaturesICloudSync),
             String(localizable: .paywallPlanGeneralFeaturesPDFExport),
             String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
-            String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("Unlimited")),
-            "**1800 AI credits** / month",
+            String(
+                localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount(
+                    String(localizable: .paywallPlanGeneralFeaturesUnlimitedValue)
+                )
+            ),
+            String(localizable: .paywallPlanGeneralFeaturesAICredits(1800)),
         ],
         fallbackDisplayPrice: "$29.99",
         fallbackDisplayPeriod: "a month",
@@ -107,15 +119,19 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
     static let max10x = SubscriptionItem(
         id: "plan.max_10x",
         yearlyID: "plan.max_10x_yearly",
-        title: "Max 10x",
-        description: "For the highest AI usage tier.",
+        title: String(localizable: .paywallPlanMax10xTitle),
+        description: String(localizable: .paywallPlanMax10xDescription),
         features: [
             String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
             String(localizable: .paywallPlanGeneralFeaturesICloudSync),
             String(localizable: .paywallPlanGeneralFeaturesPDFExport),
             String(localizable: .paywallPlanGeneralFeaturesLibrariesSupport),
-            String(localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount("Unlimited")),
-            "**5400 AI credits** / month",
+            String(
+                localizable: .paywallPlanGeneralFeaturesCollaborationRoomsCount(
+                    String(localizable: .paywallPlanGeneralFeaturesUnlimitedValue)
+                )
+            ),
+            String(localizable: .paywallPlanGeneralFeaturesAICredits(5400)),
         ],
         fallbackDisplayPrice: "$99.99",
         fallbackDisplayPeriod: "a month",

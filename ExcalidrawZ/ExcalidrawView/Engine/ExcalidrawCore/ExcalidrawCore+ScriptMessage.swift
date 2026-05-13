@@ -234,12 +234,7 @@ extension ExcalidrawCore: WKScriptMessageHandler {
 
 extension ExcalidrawCore {
     func onStateChanged(_ data: StateChangedMessageData) {
-        // DIAG: entry point — confirms JS messages reach Swift and whether
-        // the early `isLoading` gate or the (later) `loadedFileID == currentFileID`
-        // gate is what's dropping updates.
-        print("[aiDiag] onStateChanged elements=\(data.data.elements?.count ?? -1) isLoading=\(self.isLoading) parentFileID=\(self.parent?.file?.id ?? "nil")")
         guard !(self.isLoading) else {
-            print("[aiDiag] onStateChanged → DROPPED by isLoading gate")
             return
         }
         let type = self.parent?.type
@@ -249,7 +244,6 @@ extension ExcalidrawCore {
             do {
                 let loadedID = await self.webActor.loadedFileID
                 guard loadedID == currentFileID || type == .collaboration else {
-                    print("[aiDiag] onStateChanged → DROPPED by loadedFileID gate. loaded=\(loadedID ?? "nil") current=\(currentFileID ?? "nil")")
                     return
                 }
 

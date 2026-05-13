@@ -34,7 +34,7 @@ extension SupportedModel {
         switch self {
             case .hy3Preview:
                 return String(localizable: .aiChatModelTierLow)
-            case .qwen3_6Plus:
+            case .claudeHaiku4_5:
                 return String(localizable: .aiChatModelTierMedium)
             case .claudeSonnet4_6:
                 return String(localizable: .aiChatModelTierHigh)
@@ -73,7 +73,7 @@ extension SupportedModel {
         switch self {
             case .hy3Preview:
                 return 0
-            case .qwen3_6Plus:
+            case .claudeHaiku4_5:
                 return 1
             case .claudeSonnet4_6:
                 return 2
@@ -82,6 +82,18 @@ extension SupportedModel {
             default:
                 return nil
         }
+    }
+
+    /// Model picker visibility. Release builds only expose models that
+    /// have an explicit Excalidraw tier mapping; DEBUG builds keep
+    /// unmapped upstream models visible so new backend options are easy
+    /// to notice during development.
+    var isVisibleInExcalidrawModelPicker: Bool {
+#if DEBUG
+        return true
+#else
+        return excalidrawSelectionRank != nil
+#endif
     }
 
     static func nearestExcalidrawFallback(

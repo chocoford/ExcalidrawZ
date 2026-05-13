@@ -160,7 +160,8 @@ struct PromptInputView<Background: View, Header: View>: View {
 
     @MainActor
     func canSelectModel(_ model: SupportedModel, requiresImageInput: Bool) -> Bool {
-        (agentConfig?.allowedModels.contains(model) ?? true)
+        model.isVisibleInExcalidrawModelPicker
+            && (agentConfig?.allowedModels.contains(model) ?? true)
             && canUsePlan(for: model)
             && (!requiresImageInput || model.supportsExcalidrawImageInput)
     }
@@ -234,7 +235,9 @@ struct PromptInputView<Background: View, Header: View>: View {
     var canInsertImages: Bool {
         guard let agentConfig else { return true }
         return agentConfig.allowedModels.contains {
-            canUsePlan(for: $0) && $0.supportsExcalidrawImageInput
+            $0.isVisibleInExcalidrawModelPicker
+                && canUsePlan(for: $0)
+                && $0.supportsExcalidrawImageInput
         }
     }
 

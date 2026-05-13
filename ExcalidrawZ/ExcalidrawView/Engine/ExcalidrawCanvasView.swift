@@ -67,6 +67,8 @@ struct ExcalidrawCanvasView: View {
     
     @StateObject private var excalidrawCore = ExcalidrawCore()
     @State private var hasSetupCore = false
+    @State private var fileLoadTask: Task<Void, Never>?
+    @State private var pendingFileLoadID: String?
     
     // MARK: - Computed Properties
     
@@ -106,7 +108,22 @@ struct ExcalidrawCanvasView: View {
             .onReceive(
                 NotificationCenter.default.publisher(for: .forceReloadExcalidrawFile)
             ) { _ in
-                Task { await excalidrawCore.loadFile(from: file, force: true) }
+                let targetFile = file
+                fileLoadTask?.cancel()
+                pendingFileLoadID = targetFile?.id
+                fileLoadTask = Task {
+                    await excalidrawCore.loadFile(from: targetFile, force: true)
+                    let loadedID = await excalidrawCore.webActor.loadedFileID
+                    await MainActor.run {
+                        if loadedID == targetFile?.id {
+                            excalidrawCore.previousFileID = targetFile?.id
+                        }
+                        if pendingFileLoadID == targetFile?.id {
+                            pendingFileLoadID = nil
+                            fileLoadTask = nil
+                        }
+                    }
+                }
             }
             .onReceive(
                 NotificationCenter.default.publisher(for: .captureCurrentDrawingSettings)
@@ -245,12 +262,6 @@ struct ExcalidrawCanvasView: View {
     // MARK: - Event Handlers
     
     private func handleFileChange(_ newFile: ExcalidrawFile?) {
-        print("[aiDiag] handleFileChange entry. newFile.id=\(newFile?.id ?? "nil") content.bytes=\(newFile?.content?.count ?? -1) webView.isLoading=\(excalidrawCore.webView.isLoading) core.isLoading=\(excalidrawCore.isLoading) previousFileID=\(excalidrawCore.previousFileID?.uuidString ?? "nil") loadingState=\(loadingState)")
-        guard !excalidrawCore.webView.isLoading else {
-            print("[aiDiag] handleFileChange → bailed: webView.isLoading=true")
-            return
-        }
-
         if type == .collaboration {
             if newFile?.roomID?.isEmpty == false {
                 // has roomID
@@ -259,57 +270,70 @@ struct ExcalidrawCanvasView: View {
         }
 
         guard let newFile else {
-            print("[aiDiag] handleFileChange → bailed: newFile is nil")
+            fileLoadTask?.cancel()
+            pendingFileLoadID = nil
+            excalidrawCore.previousFileID = nil
             return
         }
 
         // Only reload the scene when switching to a different file.
         //
-        // Important: `previousFileID` must only be committed AFTER
-        // `loadFile` actually succeeds. Earlier we wrote it eagerly here
-        // before the Task ran, which meant: if `core.loadFile` bailed via
-        // its own `!self.isLoading, await !self.webView.isLoading` guard
-        // (e.g. the page is loaded but `isDocumentLoaded` hasn't fired
-        // yet, so `core.isLoading` is still true), the call returned
-        // nil silently — but `previousFileID` was already updated, so
-        // the retry path triggered by `loadingState == .loaded` would
-        // see "id matches, skip" and never re-attempt. Result:
-        // `webActor.loadedFileID` stayed nil for the lifetime of the
-        // editor, and the `loadedFileID == currentFileID` gate in
-        // `onStateChanged` dropped every JS-side state update —
-        // including all AI tool mutations.
-        if excalidrawCore.previousFileID?.uuidString != newFile.id {
-            print("[aiDiag] handleFileChange → spawning loadFile task for id=\(newFile.id)")
+        // Commit `previousFileID` only after the JS side reports that this file
+        // is loaded. If the first open races WebView readiness, keeping this nil
+        // lets the ready callback or the retry loop re-attempt the load.
+        if excalidrawCore.previousFileID != newFile.id {
+            guard pendingFileLoadID != newFile.id else { return }
+
+            fileLoadTask?.cancel()
+            pendingFileLoadID = newFile.id
             // Switching files within the same WebView session doesn't toggle the
             // WebView-level `isLoading`, so the sync hooked to that signal won't
             // fire. Now that `loadFile` properly awaits Excalidraw's scene
             // application, we can chain the re-sync directly.
-            Task {
-                let result = await excalidrawCore.loadFile(from: newFile)
-                let loadedID = await excalidrawCore.webActor.loadedFileID
-                print("[aiDiag] handleFileChange → loadFile returned. result=\(result == nil ? "nil" : "elements=\(result!.elementCount)") loadedID=\(loadedID ?? "nil") wanted=\(newFile.id)")
-                // `result == nil` means either we bailed early (loading
-                // guards) or the file was already loaded (webActor's own
-                // `loadedFileID == id` short-circuit). For the latter
-                // we still want to commit the dedup id so the redundant
-                // SwiftUI binding-churn renders don't keep re-firing
-                // loadFile; for the former we want the next handleFileChange
-                // to retry. We disambiguate by checking the actor's tracked
-                // id post-call: if it now matches, the load (or the dedup)
-                // resolved this id — safe to commit. Otherwise leave
-                // `previousFileID` untouched so a retry can happen.
-                if loadedID == newFile.id {
-                    await MainActor.run {
-                        excalidrawCore.previousFileID = UUID(uuidString: newFile.id)
+            fileLoadTask = Task {
+                let maxAttempts = 2
+
+                for attempt in 1...maxAttempts {
+                    guard !Task.isCancelled else { return }
+                    guard await MainActor.run(body: { file?.id == newFile.id }) else { return }
+
+                    await excalidrawCore.loadFile(from: newFile)
+
+                    guard !Task.isCancelled else { return }
+                    guard await MainActor.run(body: { file?.id == newFile.id }) else { return }
+
+                    let loadedID = await excalidrawCore.webActor.loadedFileID
+                    if loadedID == newFile.id {
+                        await MainActor.run {
+                            excalidrawCore.previousFileID = newFile.id
+                            if pendingFileLoadID == newFile.id {
+                                pendingFileLoadID = nil
+                                fileLoadTask = nil
+                            }
+                        }
+                        if type == .normal {
+                            await syncCanvasPrefsFromWeb()
+                            await MainActor.run { syncCanvasDrawingSettingsFromFile() }
+                        }
+                        return
+                    }
+
+                    if attempt < maxAttempts {
+                        try? await Task.sleep(nanoseconds: 300_000_000)
                     }
                 }
-                if type == .normal {
-                    await syncCanvasPrefsFromWeb()
-                    await MainActor.run { syncCanvasDrawingSettingsFromFile() }
+
+                let loadedID = await excalidrawCore.webActor.loadedFileID
+                logger.warning("Failed to load file \(newFile.id) into Excalidraw after retries. loadedID=\(loadedID ?? "nil")")
+                await MainActor.run {
+                    if pendingFileLoadID == newFile.id {
+                        pendingFileLoadID = nil
+                        fileLoadTask = nil
+                    }
                 }
             }
         } else {
-            print("[aiDiag] handleFileChange → previousFileID matches newFile.id, skipping loadFile")
+            pendingFileLoadID = nil
         }
     }
     

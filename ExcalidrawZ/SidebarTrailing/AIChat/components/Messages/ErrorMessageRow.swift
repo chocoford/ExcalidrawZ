@@ -9,9 +9,9 @@ import SwiftUI
 
 struct ErrorMessageRow: View {
     let error: String
-    /// Re-runs the user message that triggered this error. Wired by the
-    /// parent so it can resolve the right turn to regenerate from. Nil when
-    /// no preceding user message exists (rare — error without prompt).
+    /// Retries the failed generation. Error rows usually represent
+    /// LLMKit's tail `.error` stub, so the parent resumes the current
+    /// conversation instead of regenerating from an earlier message.
     var onRetry: (() -> Void)?
 
     var body: some View {

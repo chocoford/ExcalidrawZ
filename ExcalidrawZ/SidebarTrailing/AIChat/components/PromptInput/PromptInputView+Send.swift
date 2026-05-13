@@ -159,6 +159,8 @@ extension PromptInputView {
     /// (success or failure) it clears the slot and drains the queue.
     func startSend(prompt: String, files: [ChatMessageContent.File] = []) {
         let newConversationID = UUID().uuidString
+        let conversationIDForSession: String = self.conversationID ?? newConversationID
+        aiChatState.clearGenerationCancellation(for: conversationIDForSession)
 
         // Build the user message ahead of time so we can capture its id
         // for the AI chat session begin hook (anchors the `.aiPre`
@@ -177,7 +179,6 @@ extension PromptInputView {
             // cancel).
             var sessionOpened = false
             var streamSucceeded = false
-            let conversationIDForSession: String = self.conversationID ?? newConversationID
 
             do {
                 await MainActor.run {
@@ -318,8 +319,9 @@ extension PromptInputView {
             } catch {
                 // Keep send-pipeline failures in the chat transcript area as
                 // a transient client row. It is not committed to LLMKit's
-                // conversation; retry regenerates from the triggering user
-                // message when that message exists.
+                // conversation; retry resumes when the triggering user
+                // message already reached the timeline, otherwise it
+                // restores the draft into the input.
                 await MainActor.run {
                     aiChatState.presentTransientError(
                         error,
@@ -499,6 +501,7 @@ extension PromptInputView {
     func cancelCurrentGeneration() {
         if let id = conversationID {
             llmState.cancelGeneration(conversationID: id)
+            aiChatState.markGenerationCancelled(conversationID: id)
         }
         currentTask?.cancel()
         withAnimation(.easeInOut(duration: 0.2)) {

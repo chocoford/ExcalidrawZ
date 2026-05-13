@@ -185,7 +185,7 @@ struct PlanCard: View {
                         .font(.title3.weight(.semibold))
                     
                     if plan.id == SubscriptionItem.pro.id {
-                        planBadge("Recommended")
+                        planBadge(String(localizable: .paywallPlanRecommendedBadge))
                     }
                 }
                 
@@ -228,23 +228,25 @@ struct PlanCard: View {
                 .decimalValue
             return monthlyPrice.formatted(
                 .currency(code: product.priceFormatStyle.currencyCode)
-            ) + "/mo"
+            ) + String(localizable: .paywallPriceMonthlyUnit)
         }
         guard let product else { return "" }
-        return product.displayPrice + "/mo"
+        return product.displayPrice + String(localizable: .paywallPriceMonthlyUnit)
 #else
         if billingPeriod == .yearly, let monthlyPrice = fallbackMonthlyPriceFromYearlyPrice {
-            return monthlyPrice + "/mo"
+            return monthlyPrice + String(localizable: .paywallPriceMonthlyUnit)
         }
-        return fallbackPlan.fallbackDisplayPrice + "/mo"
+        return fallbackPlan.fallbackDisplayPrice + String(localizable: .paywallPriceMonthlyUnit)
 #endif
     }
     
     private var displayPeriodText: String? {
         if billingPeriod == .yearly {
-            return fallbackPlan.fallbackYearlyDisplayPrice == nil ? "billed monthly" : "billed yearly"
+            return fallbackPlan.fallbackYearlyDisplayPrice == nil 
+            ? String(localizable: .paywallPriceBillingPeriodMonthly)
+            : String(localizable: .paywallPriceBillingPeriodYearly)
         }
-        return "billed monthly"
+        return String(localizable: .paywallPriceBillingPeriodMonthly)
     }
     
     private var fallbackMonthlyPriceFromYearlyPrice: String? {

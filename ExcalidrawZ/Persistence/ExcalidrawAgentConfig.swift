@@ -68,7 +68,7 @@ enum ExcalidrawAgentConfig {
     }
 
     static func defaultConfig(tools: [String]?) -> AgentConfig {
-        .withTools(tools ?? toolNames, agentID: agentID)
+        .withTools(tools ?? toolNames, maxThoughts: 30, agentID: agentID)
     }
 
     static func encodeToolNames(_ tools: [String]) -> Data? {

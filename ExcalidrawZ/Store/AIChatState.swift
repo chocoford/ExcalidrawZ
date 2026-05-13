@@ -61,6 +61,7 @@ final class AIChatState: ObservableObject {
     @Published var transientError: TransientError?
     @Published var promptDraftText: String = ""
     @Published var promptDraftImages: [PendingPastedImage] = []
+    @Published private var cancelledGenerationTokens: [String: Int] = [:]
 
     struct DraftRequest: Equatable {
         let text: String
@@ -161,6 +162,22 @@ final class AIChatState: ObservableObject {
     func clearTransientError(for conversationID: String) {
         guard transientError?.conversationID == conversationID else { return }
         transientError = nil
+    }
+
+    func markGenerationCancelled(conversationID: String) {
+        cancelledGenerationTokens[conversationID, default: 0] += 1
+    }
+
+    func clearGenerationCancellation(for conversationID: String) {
+        cancelledGenerationTokens[conversationID] = nil
+    }
+
+    func generationCancelToken(for conversationID: String) -> Int {
+        cancelledGenerationTokens[conversationID] ?? 0
+    }
+
+    func isGenerationCancelled(conversationID: String) -> Bool {
+        cancelledGenerationTokens[conversationID] != nil
     }
 
     /// Conversations whose context is currently being compacted by

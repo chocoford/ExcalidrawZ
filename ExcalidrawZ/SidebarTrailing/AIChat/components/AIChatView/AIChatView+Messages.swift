@@ -114,10 +114,17 @@ extension AIChatView {
             guard let stream = streamingState else { return false }
             return shouldShowStreamingMessage(stream)
         }()
+        let generationCancelToken = fileState.aiChatConversationID.map {
+            aiChatState.generationCancelToken(for: $0)
+        } ?? 0
+        let isGenerationCancelled = fileState.aiChatConversationID.map {
+            aiChatState.isGenerationCancelled(conversationID: $0)
+        } ?? false
         let bottomID = visibleTransientError?.id.uuidString
             ?? (isStreamingActive ? streamingState?.id : nil)
             ?? messages.last?.id
-        let isRoundLifecycleActive = streamingState != nil || streamScrollFollowTail
+        let isRoundLifecycleActive = !isGenerationCancelled
+            && (isStreamingActive || streamScrollFollowTail)
         // The active round (if any) is the latest assistantRound while
         // the stream is in flight. This is the round whose
         // AssistantRoundView mounts in "drive every message through the
@@ -127,13 +134,14 @@ extension AIChatView {
             if case .assistantRound = group { return true }
             return false
         }?.id
-        let activeRoundID: String? = isStreamingActive ? latestRoundID : nil
+        let activeRoundID: String? = isRoundLifecycleActive ? latestRoundID : nil
         let streamingMessageIDs = streamingAssistantMessageIDs(
             in: allGroups,
             conversationID: fileState.aiChatConversationID
         )
         let showsUserMessageActions = !isRoundLifecycleActive
-        let disablesUserMessageActions = isStreamingActive || streamScrollFollowTail
+        let disablesUserMessageActions = !isGenerationCancelled
+            && (isStreamingActive || streamScrollFollowTail)
         let contentRevision = messageListContentRevision(
             allGroups: allGroups,
             visibleGroups: visibleGroups,
@@ -141,12 +149,13 @@ extension AIChatView {
             transientError: visibleTransientError,
             streamingMessageIDs: streamingMessageIDs,
             showsUserMessageActions: showsUserMessageActions,
-            disablesUserMessageActions: disablesUserMessageActions
+            disablesUserMessageActions: disablesUserMessageActions,
+            generationCancelToken: generationCancelToken
         )
         NativeChatScrollView(
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
-            isStreaming: isStreamingActive || streamScrollFollowTail,
+            isStreaming: !isGenerationCancelled && (isStreamingActive || streamScrollFollowTail),
             contentRevision: contentRevision,
             onReachTop: {
                 loadMoreMessageGroupsIfNeeded(totalGroupCount: allGroups.count)
@@ -161,6 +170,7 @@ extension AIChatView {
                 activeRoundID: activeRoundID,
                 transientError: visibleTransientError,
                 streamingMessageIDs: streamingMessageIDs,
+                isGenerationCancelled: isGenerationCancelled,
                 showsUserMessageActions: showsUserMessageActions,
                 disablesUserMessageActions: disablesUserMessageActions
             )
@@ -237,6 +247,9 @@ extension AIChatView {
         conversationID: String?
     ) -> Set<String> {
         guard let conversationID else { return [] }
+        guard !aiChatState.isGenerationCancelled(conversationID: conversationID) else {
+            return []
+        }
         var result: Set<String> = []
         for group in groups {
             guard case .assistantRound(_, let messages) = group else { continue }
@@ -261,7 +274,8 @@ extension AIChatView {
         transientError: AIChatState.TransientError?,
         streamingMessageIDs: Set<String>,
         showsUserMessageActions: Bool,
-        disablesUserMessageActions: Bool
+        disablesUserMessageActions: Bool,
+        generationCancelToken: Int
     ) -> String {
         let hiddenGroupCount = max(0, allGroups.count - visibleGroups.count)
         let groupSignature = visibleGroups
@@ -279,6 +293,7 @@ extension AIChatView {
             "revert:\(revertRequiredUserMessageIDs.sorted().joined(separator: ","))",
             "userActions:\(showsUserMessageActions ? "1" : "0")",
             "disabledActions:\(disablesUserMessageActions ? "1" : "0")",
+            "cancel:\(generationCancelToken)",
             "groups:\(groupSignature)"
         ].joined(separator: "::")
     }
@@ -385,6 +400,7 @@ extension AIChatView {
         activeRoundID: String?,
         transientError: AIChatState.TransientError?,
         streamingMessageIDs: Set<String>,
+        isGenerationCancelled: Bool,
         showsUserMessageActions: Bool,
         disablesUserMessageActions: Bool
     ) -> some View {
@@ -402,6 +418,8 @@ extension AIChatView {
             activeRoundID: activeRoundID,
             streamingMessageIDs: streamingMessageIDs,
             onRegenerate: regenerateMessage,
+            onResumeGeneration: resumeGeneration,
+            isGenerationCancelled: isGenerationCancelled,
             revertRequiredUserMessageIDs: revertRequiredUserMessageIDs,
             showsUserMessageActions: showsUserMessageActions,
             disablesUserMessageActions: disablesUserMessageActions,

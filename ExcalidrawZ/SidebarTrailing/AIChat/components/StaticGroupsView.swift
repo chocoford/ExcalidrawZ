@@ -29,6 +29,8 @@ struct StaticGroupsView: View, Equatable {
     /// actively streaming.
     let streamingMessageIDs: Set<String>
     let onRegenerate: ((String) -> Void)?
+    let onResumeGeneration: (() -> Void)?
+    let isGenerationCancelled: Bool
     let revertRequiredUserMessageIDs: Set<String>
     let showsUserMessageActions: Bool
     let disablesUserMessageActions: Bool
@@ -39,6 +41,8 @@ struct StaticGroupsView: View, Equatable {
         activeRoundID: String? = nil,
         streamingMessageIDs: Set<String> = [],
         onRegenerate: ((String) -> Void)? = nil,
+        onResumeGeneration: (() -> Void)? = nil,
+        isGenerationCancelled: Bool = false,
         revertRequiredUserMessageIDs: Set<String> = [],
         showsUserMessageActions: Bool = true,
         disablesUserMessageActions: Bool = false,
@@ -48,6 +52,8 @@ struct StaticGroupsView: View, Equatable {
         self.activeRoundID = activeRoundID
         self.streamingMessageIDs = streamingMessageIDs
         self.onRegenerate = onRegenerate
+        self.onResumeGeneration = onResumeGeneration
+        self.isGenerationCancelled = isGenerationCancelled
         self.revertRequiredUserMessageIDs = revertRequiredUserMessageIDs
         self.showsUserMessageActions = showsUserMessageActions
         self.disablesUserMessageActions = disablesUserMessageActions
@@ -58,6 +64,7 @@ struct StaticGroupsView: View, Equatable {
         guard lhs.groups.count == rhs.groups.count else { return false }
         return lhs.activeRoundID == rhs.activeRoundID
             && lhs.streamingMessageIDs == rhs.streamingMessageIDs
+            && lhs.isGenerationCancelled == rhs.isGenerationCancelled
             && lhs.revertRequiredUserMessageIDs == rhs.revertRequiredUserMessageIDs
             && lhs.showsUserMessageActions == rhs.showsUserMessageActions
             && lhs.disablesUserMessageActions == rhs.disablesUserMessageActions
@@ -162,9 +169,7 @@ struct StaticGroupsView: View, Equatable {
             case .error(_, let msg):
                 ErrorMessageRow(
                     error: msg,
-                    onRetry: previousUserMessageID(before: index).flatMap { id in
-                        onRegenerate.map { regen in { regen(id) } }
-                    }
+                    onRetry: onResumeGeneration
                 )
             case .assistantRound(let id, let messages):
                 AssistantRoundView(
@@ -172,6 +177,7 @@ struct StaticGroupsView: View, Equatable {
                     messages: messages,
                     activeRoundID: activeRoundID,
                     streamingMessageIDs: streamingMessageIDs,
+                    isRoundCancelled: isGenerationCancelled,
                     onRegenerate: onRegenerate
                 )
             case .compactSummary(let c):
@@ -184,12 +190,4 @@ struct StaticGroupsView: View, Equatable {
         return revertRequiredUserMessageIDs.contains(id) ? .revert : .edit
     }
 
-    private func previousUserMessageID(before index: Int) -> String? {
-        var i = index - 1
-        while i >= 0 {
-            if case .user(let c) = groups[i] { return c.id }
-            i -= 1
-        }
-        return nil
-    }
 }

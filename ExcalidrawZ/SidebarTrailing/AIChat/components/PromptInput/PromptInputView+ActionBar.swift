@@ -108,7 +108,8 @@ extension PromptInputView {
         // Agent config hasn't loaded → show a quiet placeholder. Loading is fast
         // (one HTTP round-trip on first appearance) so a permanent skeleton would
         // be visual noise; we just render the active model name disabled.
-        let models = agentConfig?.allowedModels ?? []
+        let models = (agentConfig?.allowedModels ?? [])
+            .filter(\.isVisibleInExcalidrawModelPicker)
         Menu {
             ForEach(models, id: \.rawValue) { model in
                 let isLocked = !canSelectModel(model)

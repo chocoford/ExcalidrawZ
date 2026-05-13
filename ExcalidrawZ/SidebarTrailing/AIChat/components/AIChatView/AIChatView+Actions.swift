@@ -213,33 +213,13 @@ extension AIChatView {
 
     func regenerateMessage(messageID: String) {
         guard let id = fileState.aiChatConversationID else { return }
-        let retryContent: ChatMessageContent? = conversation?.messages.first {
-            guard case .content(let content) = $0 else { return false }
-            return content.id == messageID && content.role == .user
-        }.flatMap { message in
-            guard case .content(let content) = message else { return nil }
-            return content
-        }
-        let requiresImageInput = conversation?.messages.contains { message in
-            message.files?.containsImageInput == true
-        } ?? false
+        let retryContent = retryUserContent(forSourceMessageID: messageID)
 
         aiChatState.clearTransientError(for: id)
+        aiChatState.clearGenerationCancellation(for: id)
         Task {
             do {
-                let agentConfig = try await LLMClient.shared.getDomainAgentConfig(agentID: "excalidraw-canvas")
-                let model = await MainActor.run {
-                    let selected = AIChatPreferences.shared.model(for: id) ?? agentConfig.defaultModel
-                    let canUse: (SupportedModel) -> Bool = { model in
-                        agentConfig.allowedModels.contains(model)
-                            && (!model.requiresMaxAIPlan || Store.shared.canUseExtraHighAIModel)
-                            && (!requiresImageInput || model.supportsExcalidrawImageInput)
-                    }
-                    guard !canUse(selected) else { return selected }
-                    let candidates = agentConfig.allowedModels.filter(canUse)
-                    return SupportedModel.nearestExcalidrawFallback(to: selected, from: candidates)
-                        ?? .claudeSonnet4_6
-                }
+                let model = try await retryModel(conversationID: id)
                 try await refreshConversationToolsIfNeeded(
                     conversationID: id,
                     model: model
@@ -255,13 +235,91 @@ extension AIChatView {
                     aiChatState.presentTransientError(
                         error,
                         conversationID: id,
-                        userMessageID: messageID,
+                        userMessageID: retryContent?.id ?? messageID,
                         retryPrompt: retryContent?.content ?? "",
                         retryFiles: retryContent?.files ?? []
                     )
                 }
             }
         }
+    }
+
+    func resumeGeneration() {
+        guard let id = fileState.aiChatConversationID else { return }
+        let retryContent = lastUserContent()
+
+        aiChatState.clearTransientError(for: id)
+        aiChatState.clearGenerationCancellation(for: id)
+        Task {
+            do {
+                let model = try await retryModel(conversationID: id)
+                try await refreshConversationToolsIfNeeded(
+                    conversationID: id,
+                    model: model
+                )
+                try await llmState.resumeGeneration(
+                    in: id,
+                    model: model,
+                    stream: true
+                )
+            } catch {
+                await MainActor.run {
+                    aiChatState.presentTransientError(
+                        error,
+                        conversationID: id,
+                        userMessageID: retryContent?.id ?? "",
+                        retryPrompt: retryContent?.content ?? "",
+                        retryFiles: retryContent?.files ?? []
+                    )
+                }
+            }
+        }
+    }
+
+    private func retryModel(conversationID: String) async throws -> SupportedModel {
+        let agentConfig = try await LLMClient.shared.getDomainAgentConfig(agentID: "excalidraw-canvas")
+        return await MainActor.run {
+            let requiresImageInput = conversation?.messages.contains { message in
+                message.files?.containsImageInput == true
+            } ?? false
+            let selected = AIChatPreferences.shared.model(for: conversationID) ?? agentConfig.defaultModel
+            let canUse: (SupportedModel) -> Bool = { model in
+                model.isVisibleInExcalidrawModelPicker
+                    && agentConfig.allowedModels.contains(model)
+                    && (!model.requiresMaxAIPlan || Store.shared.canUseExtraHighAIModel)
+                    && (!requiresImageInput || model.supportsExcalidrawImageInput)
+            }
+            guard !canUse(selected) else { return selected }
+            let candidates = agentConfig.allowedModels.filter(canUse)
+            return SupportedModel.nearestExcalidrawFallback(to: selected, from: candidates)
+                ?? .claudeSonnet4_6
+        }
+    }
+
+    private func retryUserContent(forSourceMessageID messageID: String) -> ChatMessageContent? {
+        guard let messages = conversation?.messages else { return nil }
+        if let directUser = messages.compactMap(Self.contentMessage).first(where: {
+            $0.id == messageID && $0.role == .user
+        }) {
+            return directUser
+        }
+        guard let sourceIndex = messages.firstIndex(where: { $0.id == messageID }) else {
+            return nil
+        }
+        return messages[..<sourceIndex].reversed().compactMap(Self.contentMessage).first {
+            $0.role == .user
+        }
+    }
+
+    private func lastUserContent() -> ChatMessageContent? {
+        conversation?.messages.reversed().compactMap(Self.contentMessage).first {
+            $0.role == .user
+        }
+    }
+
+    private static func contentMessage(_ message: ChatMessage) -> ChatMessageContent? {
+        guard case .content(let content) = message else { return nil }
+        return content
     }
 
     private func refreshConversationToolsIfNeeded(
@@ -298,14 +356,17 @@ extension AIChatView {
         aiChatState.clearTransientError(for: id)
 
         if hasUserMessage {
-            regenerateMessage(messageID: error.userMessageID)
+            resumeGeneration()
         } else {
             aiChatState.requestDraft(error.retryPrompt, files: error.retryFiles)
         }
     }
     
     func shouldShowStreamingMessage(_ stream: LLMStreamingStateObject) -> Bool {
-        !stream.isFinished
+        guard !aiChatState.isGenerationCancelled(conversationID: stream.conversationID) else {
+            return false
+        }
+        return !stream.isFinished
     }
     
     func requestScrollToBottomIfNeeded(_ newBottomID: String?) {
