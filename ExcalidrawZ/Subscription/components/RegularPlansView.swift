@@ -38,12 +38,11 @@ enum MaxCreditTier: String, CaseIterable, Identifiable {
 }
 
 struct RegularPlansView: View {
-    @EnvironmentObject private var store: Store
-    
-    @Binding var selection: Product?
+    @Binding var selection: SubscriptionItem?
     @Binding var maxCreditTier: MaxCreditTier
     var billingPeriod: Paywall.BillingPeriod
     var plans: [SubscriptionItem]
+    var activePlan: SubscriptionItem?
     var productProvider: (SubscriptionItem) -> Product?
     var maxCreditTierChangeHandler: (MaxCreditTier) -> Void = { _ in }
     
@@ -59,13 +58,18 @@ struct RegularPlansView: View {
                     plan: item,
                     product: productProvider(item),
                     billingPeriod: billingPeriod,
+                    activePlan: activePlan,
                     maxCreditTier: item.id == SubscriptionItem.max.id ? $maxCreditTier : nil,
                     maxCreditTierChangeHandler: maxCreditTierChangeHandler
                 )
                 .contentShape(Rectangle())
                 .onTapGesture {
                     withAnimation(.bouncy(duration: 0.2)) {
-                        selection = productProvider(item)
+                        if item.id == SubscriptionItem.max.id, maxCreditTier == .triple {
+                            selection = .max10x
+                        } else {
+                            selection = item
+                        }
                     }
                 }
             }
@@ -74,10 +78,9 @@ struct RegularPlansView: View {
     
     private func isSelected(_ item: SubscriptionItem) -> Bool {
         if item.id == SubscriptionItem.max.id {
-            return SubscriptionItem.max.containsProductID(selection?.id)
-                || SubscriptionItem.max10x.containsProductID(selection?.id)
+            return selection == .max || selection == .max10x
         }
-        return item.containsProductID(selection?.id)
+        return item == selection
     }
 }
 
@@ -89,6 +92,7 @@ struct PlanCard: View {
     var plan: SubscriptionItem
     var product: Product?
     var billingPeriod: Paywall.BillingPeriod
+    var activePlan: SubscriptionItem?
     var maxCreditTier: Binding<MaxCreditTier>?
     var maxCreditTierChangeHandler: (MaxCreditTier) -> Void = { _ in }
     
@@ -103,6 +107,30 @@ struct PlanCard: View {
             default:
                     .accentColor
         }
+    }
+
+    private var isCurrentPlan: Bool {
+        if plan.id == SubscriptionItem.max.id {
+            activePlan == .max || activePlan == .max10x
+        } else {
+            activePlan == plan
+        }
+    }
+
+    private var shouldShowRecommendedBadge: Bool {
+        guard plan.id == SubscriptionItem.pro.id else { return false }
+        guard let activePlan else { return true }
+        return activePlan < .pro
+    }
+
+    private var badgeText: String? {
+        if isCurrentPlan {
+            return String(localizable: .paywallButtonCurrentPlan)
+        }
+        if shouldShowRecommendedBadge {
+            return String(localizable: .paywallPlanRecommendedBadge)
+        }
+        return nil
     }
     
     var body: some View {
@@ -184,8 +212,8 @@ struct PlanCard: View {
                     Text(plan.title)
                         .font(.title3.weight(.semibold))
                     
-                    if plan.id == SubscriptionItem.pro.id {
-                        planBadge(String(localizable: .paywallPlanRecommendedBadge))
+                    if let badgeText {
+                        planBadge(badgeText)
                     }
                 }
                 

@@ -541,9 +541,9 @@ actor AIConversationRepository {
     /// Delete entire conversation and all its messages
     /// - Parameter conversationID: The conversation identifier
     func deleteConversation(conversationID: String) async throws {
-        let blobs = try await deleteConversationRows(
-            matching: NSPredicate(format: "conversationID == %@", conversationID)
-        )
+        let blobs = try await deleteConversationRows {
+            NSPredicate(format: "conversationID == %@", conversationID)
+        }
         await deleteAttachments(from: blobs)
     }
 
@@ -552,16 +552,20 @@ actor AIConversationRepository {
     /// once the file's backing record or URL is gone, its scoped
     /// conversations should not remain resumable.
     func deleteConversations(forFileScope scope: AIConversationFileScope) async throws {
-        let blobs = try await deleteConversationRows(matching: Self.fileScopePredicate(scope))
+        let blobs = try await deleteConversationRows {
+            Self.fileScopePredicate(scope)
+        }
         await deleteAttachments(from: blobs)
     }
 
-    private func deleteConversationRows(matching predicate: NSPredicate) async throws -> [Data] {
+    private func deleteConversationRows(
+        matching makePredicate: @escaping @Sendable () -> NSPredicate
+    ) async throws -> [Data] {
         let context = PersistenceController.shared.newTaskContext()
 
         return try await context.perform {
             let fetchRequest = NSFetchRequest<AIConversation>(entityName: "AIConversation")
-            fetchRequest.predicate = predicate
+            fetchRequest.predicate = makePredicate()
             fetchRequest.relationshipKeyPathsForPrefetching = ["messages"]
 
             let conversations = try context.fetch(fetchRequest)

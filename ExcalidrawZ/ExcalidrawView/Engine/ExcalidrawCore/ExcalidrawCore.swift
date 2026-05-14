@@ -772,9 +772,11 @@ extension ExcalidrawCore {
     func loadFile(from file: ExcalidrawFile?, force: Bool = false) async -> LoadFileResult? {
         guard let file = file,
               let data = file.content else {
+            logLoadFileDiag(logger, "[LoadFileDiag] coreLoad skipped: missing file or content", level: .warning)
             return nil
         }
         guard await waitUntilReadyForFileLoad(fileID: file.id) else {
+            logLoadFileDiag(logger, "[LoadFileDiag] coreLoad notReady id=\(file.id)", level: .warning)
             return nil
         }
         do {

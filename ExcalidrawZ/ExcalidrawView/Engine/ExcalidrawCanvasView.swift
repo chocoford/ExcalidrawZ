@@ -297,14 +297,17 @@ struct ExcalidrawCanvasView: View {
                     guard !Task.isCancelled else { return }
                     guard await MainActor.run(body: { file?.id == newFile.id }) else { return }
 
+                    logLoadFileDiag(logger, "[LoadFileDiag] canvasAttempt start id=\(newFile.id) attempt=\(attempt)/\(maxAttempts)")
                     await excalidrawCore.loadFile(from: newFile)
 
                     guard !Task.isCancelled else { return }
                     guard await MainActor.run(body: { file?.id == newFile.id }) else { return }
 
                     let loadedID = await excalidrawCore.webActor.loadedFileID
+                    logLoadFileDiag(logger, "[LoadFileDiag] canvasAttempt result id=\(newFile.id) attempt=\(attempt)/\(maxAttempts) loadedID=\(loadedID ?? "nil")")
                     if loadedID == newFile.id {
                         await MainActor.run {
+                            logLoadFileDiag(logger, "[LoadFileDiag] canvasCommit id=\(newFile.id) attempt=\(attempt)/\(maxAttempts)")
                             excalidrawCore.previousFileID = newFile.id
                             if pendingFileLoadID == newFile.id {
                                 pendingFileLoadID = nil

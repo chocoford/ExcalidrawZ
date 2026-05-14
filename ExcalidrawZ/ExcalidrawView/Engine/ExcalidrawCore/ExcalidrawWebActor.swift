@@ -17,6 +17,34 @@ private func jsDouble(_ dict: [String: Any], _ key: String) -> Double {
     (dict[key] as? Double) ?? Double((dict[key] as? Int) ?? 0)
 }
 
+func logLoadFileDiag(_ logger: Logger, _ message: String, level: Logger.Level = .info) {
+    switch level {
+        case .warning:
+            logger.warning("\(message)")
+        case .error:
+            logger.error("\(message)")
+        default:
+            logger.info("\(message)")
+    }
+}
+
+private func loadFileDataSummary(_ data: Data) -> String {
+    guard
+        let object = try? JSONSerialization.jsonObject(with: data),
+        let dict = object as? [String: Any]
+    else {
+        return "json=unreadable"
+    }
+
+    let elements = dict["elements"] as? [[String: Any]] ?? []
+    let deletedCount = elements.reduce(0) { count, element in
+        count + ((element["isDeleted"] as? Bool) == true ? 1 : 0)
+    }
+    let filesCount = (dict["files"] as? [String: Any])?.count ?? 0
+
+    return "elements=\(elements.count), visible=\(elements.count - deletedCount), deleted=\(deletedCount), files=\(filesCount)"
+}
+
 /// Mirrors the JS-side return value from `loadFileBuffer`/`loadFileString`:
 /// `{ fileId?: string, elementCount: number, durationMs: number }`.
 /// `fileId` is only populated by `loadFileBuffer`.
@@ -83,10 +111,18 @@ actor ExcalidrawWebActor {
     @discardableResult
     func loadFile(id: String, data: Data, force: Bool = false) async throws -> LoadFileResult? {
         let webView = webView
-        guard loadedFileID != id || force else { return nil }
+        let targetSummary = loadFileDataSummary(data)
+        guard loadedFileID != id || force else {
+            logLoadFileDiag(
+                self.logger,
+                "[LoadFileDiag] skip id=\(id) loadedFileID=\(self.loadedFileID ?? "nil") force=\(force) target=\(targetSummary)"
+            )
+            return nil
+        }
 
-        self.logger.info(
-            "Load file<\(String(describing: id)), \(data.count.formatted(.byteCount(style: .file)))>, force: \(force), Thread: \(Thread().description)"
+        logLoadFileDiag(
+            self.logger,
+            "[LoadFileDiag] start id=\(id) bytes=\(data.count.formatted(.byteCount(style: .file))) force=\(force) loadedFileID=\(self.loadedFileID ?? "nil") target=\(targetSummary)"
         )
 
         var buffer = [UInt8].init(repeating: 0, count: data.count)
@@ -103,7 +139,15 @@ actor ExcalidrawWebActor {
                 contentWorld: .page
             )
             self.loadedFileID = id
-            return LoadFileResult(fromJS: raw)
+            let result = LoadFileResult(fromJS: raw)
+            let resultFileID = result?.fileId ?? "nil"
+            let jsElements = result.map { String($0.elementCount) } ?? "nil"
+            let durationMs = result.map { String(format: "%.1f", $0.durationMs) } ?? "nil"
+            logLoadFileDiag(
+                self.logger,
+                "[LoadFileDiag] success id=\(id) resultFileId=\(resultFileID) jsElements=\(jsElements) durationMs=\(durationMs)"
+            )
+            return result
         } catch {
             // JS-side `loadFileBuffer` has a watchdog timeout that fires
             // when its `onChange` listener can't tell the post-load scene
@@ -124,10 +168,19 @@ actor ExcalidrawWebActor {
             // user draws and AI tool mutations) gets dropped for the
             // lifetime of the editor on this file.
             if Self.isLoadTimeoutError(error) {
-                self.logger.info("loadFileBuffer timeout suppressed; treating as success for id=\(id)")
+                logLoadFileDiag(
+                    self.logger,
+                    "[LoadFileDiag] timeout-suppressed id=\(id) target=\(targetSummary) error=\(String(describing: error))",
+                    level: .warning
+                )
                 self.loadedFileID = id
                 return nil
             }
+            logLoadFileDiag(
+                self.logger,
+                "[LoadFileDiag] failure id=\(id) target=\(targetSummary) error=\(String(describing: error))",
+                level: .error
+            )
             throw error
         }
     }

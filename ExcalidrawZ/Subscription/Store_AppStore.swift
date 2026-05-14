@@ -70,6 +70,20 @@ class Store: ObservableObject {
     @Published private(set) var purchasedPlans: [Product] = []
     @Published private(set) var purchasedMemberships: [Product] = []
     @Published private(set) var subscriptionGroupStatus: Product.SubscriptionInfo.Status?
+
+#if DEBUG && !APP_STORE
+    @Published var debugActiveSubscriptionItem: SubscriptionItem? = .pro
+#endif
+
+    var activeSubscriptionItem: SubscriptionItem? {
+#if DEBUG && !APP_STORE
+        if let debugActiveSubscriptionItem {
+            return debugActiveSubscriptionItem
+        }
+#endif
+        guard let purchasedPlan = purchasedPlans.first else { return nil }
+        return plans.first { $0.containsProductID(purchasedPlan.id) }
+    }
         
     var updateListenerTask: Task<Void, Error>? = nil
     
@@ -164,7 +178,10 @@ class Store: ObservableObject {
         }
     }
     
-    func purchase(_ product: Product) async throws -> StoreKit.Transaction? {
+    func purchase(
+        _ product: Product,
+        handleVerifiedPurchase: ((VerificationResult<StoreKit.Transaction>) async throws -> Void)? = nil
+    ) async throws -> StoreKit.Transaction? {
         // Begin purchasing the `Product` the user selects.
         let result = try await product.purchase()
         
@@ -173,6 +190,8 @@ class Store: ObservableObject {
                 // Check whether the transaction is verified. If it isn't,
                 // this function rethrows the verification error.
                 let transaction = try checkVerified(verification)
+
+                try await handleVerifiedPurchase?(verification)
                 
                 // The transaction is verified. Deliver content to the user.
                 await updateCustomerProductStatus()

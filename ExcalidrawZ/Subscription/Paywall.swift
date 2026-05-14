@@ -9,6 +9,7 @@ import SwiftUI
 import StoreKit
 
 import ChocofordUI
+import LLMKit
 import Shimmer
 import SmoothGradient
 import SFSafeSymbols
@@ -21,8 +22,9 @@ struct Paywall: View {
     @Environment(\.alert) private var alert
     
     @EnvironmentObject private var store: Store
+    @EnvironmentObject private var llmState: LLMStateObject
     
-    @State private var selectedPlan: Product?
+    @State private var selectedSubscriptionItem: SubscriptionItem?
     @State private var isPresented = false
     @State private var billingPeriod: BillingPeriod = .monthly
     @State private var maxCreditTier: MaxCreditTier = .standard
@@ -50,14 +52,6 @@ struct Paywall: View {
     
     var displayedPlans: [SubscriptionItem] {
         store.plans
-            .filter({ plan in
-                if store.purchasedPlans.isEmpty { return true }
-                if let activePlan = store.plans.first(where: { $0.containsProductID(store.purchasedPlans.first?.id) }) {
-                    return plan >= activePlan
-                } else {
-                    return false
-                }
-            })
     }
     
     private var displayedPlanCards: [SubscriptionItem] {
@@ -68,23 +62,24 @@ struct Paywall: View {
         return plans.sorted()
     }
     
-    private var selectedSubscriptionItem: SubscriptionItem? {
-        store.plans.first { $0.containsProductID(selectedPlan?.id) }
-    }
-    
     private var activeSubscriptionItem: SubscriptionItem? {
-        guard let purchasedPlan = store.purchasedPlans.first else { return nil }
-        return store.plans.first { $0.containsProductID(purchasedPlan.id) }
+        store.activeSubscriptionItem
+    }
+
+    private var currentSubscriptionItemForComparison: SubscriptionItem {
+        activeSubscriptionItem ?? .free
     }
     
     private var selectedBillingProduct: Product? {
-        guard let selectedSubscriptionItem else { return selectedPlan }
+        guard let selectedSubscriptionItem else { return nil }
         return product(for: selectedSubscriptionItem, billingPeriod: billingPeriod)
         ?? product(for: selectedSubscriptionItem, billingPeriod: .monthly)
-        ?? selectedPlan
     }
     
     private var isSelectedSubscriptionPurchased: Bool {
+        if let selectedSubscriptionItem, selectedSubscriptionItem == activeSubscriptionItem {
+            return true
+        }
         guard let selectedBillingProduct else { return false }
         return store.purchasedPlans.contains { $0.id == selectedBillingProduct.id }
     }
@@ -97,74 +92,73 @@ struct Paywall: View {
         ]
     }
     
-    private var currentOwnedFeatureLines: [Feature] {
-        guard let activeSubscriptionItem else { return [] }
-        return featureLines(for: activeSubscriptionItem, maxCredits: activeMaxCredits(for: activeSubscriptionItem))
+    private var baselinePlan: SubscriptionItem? {
+        guard let selectedSubscriptionItem else { return currentSubscriptionItemForComparison }
+        return min(selectedSubscriptionItem, currentSubscriptionItemForComparison)
     }
-    
-    private var selectedPlanExtraFeatures: [Feature] {
-        guard let selectedSubscriptionItem else {
+
+    private var baselinePlanFeatureLines: [Feature] {
+        guard let baselinePlan else { return [] }
+        return featureLines(for: baselinePlan, maxCredits: maxCredits(for: baselinePlan))
+    }
+
+    private var supplementTargetPlan: SubscriptionItem? {
+        guard let selectedSubscriptionItem else { return currentSubscriptionItemForComparison }
+        return max(selectedSubscriptionItem, currentSubscriptionItemForComparison)
+    }
+
+    private var selectedPlanSupplementFeatures: [Feature] {
+        guard let supplementTargetPlan,
+              let baselinePlan,
+              supplementTargetPlan != baselinePlan else {
             return []
         }
-        
-        let ownedFeatureIDs = Set(currentOwnedFeatureLines.map(\.id))
-        let features = featureLines(for: selectedSubscriptionItem, maxCredits: selectedMaxCredits)
-            .filter { !ownedFeatureIDs.contains($0.id) }
-        
-        if features.isEmpty {
-            return []
-        }
-        return features
+
+        let baselineFeatureIDs = Set(baselinePlanFeatureLines.map(\.id))
+        return featureLines(for: supplementTargetPlan, maxCredits: maxCredits(for: supplementTargetPlan))
+            .filter { !baselineFeatureIDs.contains($0.id) }
     }
     
-    private var selectedPlanExtraTitle: String {
-        guard let selectedSubscriptionItem else { return "" }
-        if selectedSubscriptionItem.id == SubscriptionItem.max10x.id {
-            return "Max \(MaxCreditTier.triple.title)"
-        }
-        if selectedSubscriptionItem.id == SubscriptionItem.max.id {
-            return "Max \(maxCreditTier.title)"
-        }
-        return selectedSubscriptionItem.title
+    private var selectedPlanSupplementTitle: String {
+        guard let supplementTargetPlan else { return "" }
+        return planDeltaTitle(for: supplementTargetPlan, maxCredits: maxCredits(for: supplementTargetPlan))
     }
     
     var body: some View {
         content()
-            .watch(value: store.purchasedPlans) { newValue in
-                if let purchasedPlans = newValue.first {
-                    self.selectedPlan = purchasedPlans
-                } else {
-                    self.selectedPlan = firstProduct(for: billingPeriod)
+            .watch(value: store.purchasedPlans) { _ in
+                if let activeSubscriptionItem {
+                    selectedSubscriptionItem = activeSubscriptionItem
+                } else if selectedSubscriptionItem == nil {
+                    selectedSubscriptionItem = recommendedSubscriptionItem()
                 }
             }
-            .watch(value: store.subscriptions) { newValue in
-                if selectedPlan == nil {
-                    selectedPlan = firstProduct(for: billingPeriod)
+            .watch(value: store.subscriptions) { _ in
+                if selectedSubscriptionItem == nil {
+                    selectedSubscriptionItem = defaultSubscriptionItem()
                 }
             }
-            .watch(value: billingPeriod) { newValue in
-                guard let selectedSubscriptionItem else {
-                    selectedPlan = firstProduct(for: newValue)
-                    return
+            .watch(value: activeSubscriptionItem) { newValue in
+                if let newValue {
+                    selectedSubscriptionItem = newValue
+                } else if selectedSubscriptionItem == nil {
+                    selectedSubscriptionItem = recommendedSubscriptionItem()
                 }
-                selectedPlan = product(for: selectedSubscriptionItem, billingPeriod: newValue)
-                ?? product(for: selectedSubscriptionItem, billingPeriod: .monthly)
-                ?? firstProduct(for: newValue)
             }
             .watch(value: maxCreditTier) { _ in
                 guard selectedSubscriptionItem?.id == SubscriptionItem.max.id || selectedSubscriptionItem?.id == SubscriptionItem.max10x.id else { return }
                 selectMaxPlan(creditTier: maxCreditTier)
             }
-            .watch(value: selectedPlan?.id) { productID in
-                if SubscriptionItem.max10x.containsProductID(productID) {
+            .watch(value: selectedSubscriptionItem?.id) { itemID in
+                if itemID == SubscriptionItem.max10x.id {
                     maxCreditTier = .triple
-                } else if SubscriptionItem.max.containsProductID(productID) {
+                } else if itemID == SubscriptionItem.max.id {
                     maxCreditTier = .standard
                 }
             }
             .task {
-                if selectedPlan == nil {
-                    selectedPlan = firstProduct(for: billingPeriod)
+                if selectedSubscriptionItem == nil {
+                    selectedSubscriptionItem = defaultSubscriptionItem()
                 }
             }
     }
@@ -275,14 +269,15 @@ struct Paywall: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
                 VStack(spacing: 16) {
-                    
                     billingToggle()
                     
+                    Spacer(minLength: 0)
                     RegularPlansView(
-                        selection: $selectedPlan,
+                        selection: $selectedSubscriptionItem,
                         maxCreditTier: $maxCreditTier,
                         billingPeriod: billingPeriod,
                         plans: displayedPlanCards,
+                        activePlan: activeSubscriptionItem,
                         productProvider: { plan in
                             product(for: plan, billingPeriod: billingPeriod)
                             ?? product(for: plan, billingPeriod: .monthly)
@@ -291,9 +286,8 @@ struct Paywall: View {
                             selectMaxPlan(creditTier: tier)
                         }
                     )
-                    
                     Spacer(minLength: 0)
-                    
+
                     HStack(spacing: 4) {
                         // Keep center
                         Button {
@@ -352,6 +346,7 @@ struct Paywall: View {
                 .frame(width: 390)
             }
         }
+        .frame(height: 550)
     }
     
     @MainActor @ViewBuilder
@@ -370,7 +365,7 @@ struct Paywall: View {
             reasonBadge()
                 .frame(height: 80)
             
-            CompactPlansView(selection: $selectedPlan, plans: displayedPlans)
+            CompactPlansView(selection: $selectedSubscriptionItem, plans: displayedPlans)
             
             VStack {
                 purchaseButton()
@@ -454,24 +449,76 @@ struct Paywall: View {
                     featureLine(feature)
                 }
                 
-                ForEach(currentOwnedFeatureLines) { feature in
+                ForEach(baselinePlanFeatureLines) { feature in
                     featureLine(feature)
                 }
             }
-            
-            selectedPlanExtras()
-            
+            selectedPlanDeltaSections()
+
             Spacer(minLength: 0)
-            
+
             HStack {
                 aiUsageSettingsButton()
+
                 Spacer()
+                    .overlay(alignment: .leading) {
+#if DEBUG && !APP_STORE
+                        debugMockPlanControl()
+#endif
+                    }
             }
         }
     }
+
+#if DEBUG && !APP_STORE
+    @ViewBuilder
+    private func debugMockPlanControl() -> some View {
+        HStack(spacing: 8) {
+            Text("Debug current plan")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+
+            Picker("Debug current plan", selection: debugActivePlanBinding) {
+                Text("None").tag(Optional<SubscriptionItem>.none)
+                Text(SubscriptionItem.starter.title).tag(Optional.some(SubscriptionItem.starter))
+                Text(SubscriptionItem.pro.title).tag(Optional.some(SubscriptionItem.pro))
+                Text(SubscriptionItem.max.title).tag(Optional.some(SubscriptionItem.max))
+                Text(SubscriptionItem.max10x.title).tag(Optional.some(SubscriptionItem.max10x))
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .frame(width: 140)
+        }
+    }
+
+    private var debugActivePlanBinding: Binding<SubscriptionItem?> {
+        Binding {
+            store.debugActiveSubscriptionItem
+        } set: { newValue in
+            store.debugActiveSubscriptionItem = newValue
+            selectedSubscriptionItem = newValue ?? recommendedSubscriptionItem()
+        }
+    }
+#endif
     
     @ViewBuilder
-    private func selectedPlanExtras() -> some View {
+    private func selectedPlanDeltaSections() -> some View {
+        VStack(alignment: .leading, spacing: 18) {
+            if !selectedPlanSupplementFeatures.isEmpty {
+                planDeltaSection(
+                    title: "With \(selectedPlanSupplementTitle)",
+                    features: selectedPlanSupplementFeatures
+                )
+            }
+        }
+        .id("\(selectedSubscriptionItem?.id ?? "none")-\(activeSubscriptionItem?.id ?? "none")-\(maxCreditTier.rawValue)")
+        .animation(.smooth(duration: 0.22), value: selectedSubscriptionItem?.id)
+        .animation(.smooth(duration: 0.22), value: activeSubscriptionItem?.id)
+        .animation(.smooth(duration: 0.22), value: maxCreditTier)
+    }
+
+    @ViewBuilder
+    private func planDeltaSection(title: String, features: [Feature]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 Rectangle()
@@ -483,25 +530,21 @@ struct Paywall: View {
                         )
                     )
                     .frame(width: 54, height: 1)
-                
-                Text("With \(selectedPlanExtraTitle)")
+
+                Text(title)
                     .font(.caption.weight(.semibold))
                     .textCase(.uppercase)
                     .tracking(1.2)
                     .foregroundStyle(.secondary)
             }
-            
+
             VStack(alignment: .leading, spacing: 12) {
-                ForEach(selectedPlanExtraFeatures) { feature in
+                ForEach(features) { feature in
                     featureLine(feature)
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
-            .id("\(selectedSubscriptionItem?.id ?? "none")-\(maxCreditTier.rawValue)")
         }
-        .frame(height: 180, alignment: .top)
-        .animation(.smooth(duration: 0.22), value: selectedSubscriptionItem?.id)
-        .animation(.smooth(duration: 0.22), value: maxCreditTier)
     }
     
     
@@ -640,9 +683,12 @@ struct Paywall: View {
         .buttonStyle(.borderless)
     }
     
+    @MainActor
     private func purchaseSelectedPlan() async throws {
         if let product = selectedBillingProduct {
-            if let _ = try await store.purchase(product) {
+            if let _ = try await store.purchase(product, handleVerifiedPurchase: { verificationResult in
+                try await llmState.handlePurchase(verificationResult: verificationResult)
+            }) {
                 dismiss()
             }
         }
@@ -712,11 +758,26 @@ struct Paywall: View {
         return store.subscriptions.first { $0.id == productID }
     }
     
-    private func firstProduct(for billingPeriod: BillingPeriod) -> Product? {
-        displayedPlanCards
-            .lazy
-            .compactMap { product(for: $0, billingPeriod: billingPeriod) ?? product(for: $0, billingPeriod: .monthly) }
-            .first
+    private func recommendedSubscriptionItem() -> SubscriptionItem? {
+        if displayedPlanCards.contains(.pro) {
+            return .pro
+        }
+        return displayedPlanCards.first
+    }
+
+    private func defaultSubscriptionItem() -> SubscriptionItem? {
+        activeSubscriptionItem ?? recommendedSubscriptionItem()
+    }
+
+    private func planDeltaTitle(for plan: SubscriptionItem, maxCredits: Int) -> String {
+        if plan.id == SubscriptionItem.max10x.id {
+            return "Max \(MaxCreditTier.triple.title)"
+        }
+        if plan.id == SubscriptionItem.max.id {
+            let tier = maxCredits == MaxCreditTier.triple.credits ? MaxCreditTier.triple : MaxCreditTier.standard
+            return "Max \(tier.title)"
+        }
+        return plan.title
     }
     
     private func maxProductID(forCreditTier creditTier: MaxCreditTier, billingPeriod: BillingPeriod) -> String {
@@ -732,15 +793,8 @@ struct Paywall: View {
         }
     }
     
-    private func product(forMaxCreditTier creditTier: MaxCreditTier, billingPeriod: BillingPeriod) -> Product? {
-        let productID = maxProductID(forCreditTier: creditTier, billingPeriod: billingPeriod)
-        return store.subscriptions.first { $0.id == productID }
-    }
-    
     private func selectMaxPlan(creditTier: MaxCreditTier) {
-        selectedPlan = product(forMaxCreditTier: creditTier, billingPeriod: billingPeriod)
-        ?? product(forMaxCreditTier: creditTier, billingPeriod: .monthly)
-        ?? selectedPlan
+        selectedSubscriptionItem = creditTier == .triple ? .max10x : .max
     }
     
     private var selectedMaxCredits: Int {
@@ -756,9 +810,18 @@ struct Paywall: View {
         }
         return MaxCreditTier.standard.credits
     }
+
+    private func maxCredits(for plan: SubscriptionItem) -> Int {
+        if plan == selectedSubscriptionItem {
+            return selectedMaxCredits
+        }
+        return activeMaxCredits(for: plan)
+    }
     
     private func featureLines(for plan: SubscriptionItem, maxCredits: Int? = nil) -> [Feature] {
         switch plan.id {
+            case SubscriptionItem.free.id:
+                []
             case SubscriptionItem.starter.id:
                 starterFeatureLines
             case SubscriptionItem.pro.id:

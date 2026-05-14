@@ -17,6 +17,18 @@ class Store: ObservableObject {
     
     @Published private(set) var purchasedPlans: [Product] = []
     @Published private(set) var purchasedMemberships: [Product] = []
+
+#if DEBUG
+    @Published var debugActiveSubscriptionItem: SubscriptionItem? = .pro
+#endif
+
+    var activeSubscriptionItem: SubscriptionItem? {
+#if DEBUG
+        debugActiveSubscriptionItem
+#else
+        nil
+#endif
+    }
     
     @Published var isPaywallPresented = false
     @Published var reachPaywallReason: ReachPaywallReason?

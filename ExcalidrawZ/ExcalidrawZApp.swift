@@ -5,8 +5,10 @@
 //  Created by Dove Zachary on 2022/12/25.
 //
 
+import Foundation
 import SwiftUI
 import Logging
+import OSLog
 #if os(macOS)
 import ServiceManagement
 #endif
@@ -29,16 +31,76 @@ extension Notification.Name {
     static let toggleShare = Notification.Name("ToggleShare")
 }
 
+private struct UnifiedLogHandler: LogHandler {
+    let label: String
+    let subsystem: String = Bundle.main.bundleIdentifier ?? "com.chocoford.excalidraw"
+    var metadata: Logging.Logger.Metadata = [:]
+    var logLevel: Logging.Logger.Level = .info
+    var metadataProvider: Logging.Logger.MetadataProvider?
+
+    subscript(metadataKey metadataKey: String) -> Logging.Logger.Metadata.Value? {
+        get {
+            metadata[metadataKey]
+        }
+        set {
+            metadata[metadataKey] = newValue
+        }
+    }
+
+    func log(event: LogEvent) {
+        let log = OSLog(subsystem: subsystem, category: label)
+        var mergedMetadata = metadata
+        if let eventMetadata = event.metadata {
+            for (key, value) in eventMetadata {
+                mergedMetadata[key] = value
+            }
+        }
+
+        let metadataSuffix: String
+        if mergedMetadata.isEmpty {
+            metadataSuffix = ""
+        } else {
+            let metadataText = mergedMetadata
+                .map { "\($0.key)=\($0.value)" }
+                .sorted()
+                .joined(separator: " ")
+            metadataSuffix = " \(metadataText)"
+        }
+
+        os_log(
+            "%{public}@",
+            log: log,
+            type: osLogType(for: event.level),
+            "[\(event.level)] \(label): \(event.message.description)\(metadataSuffix)"
+        )
+    }
+
+    private func osLogType(for level: Logging.Logger.Level) -> OSLogType {
+        switch level {
+            case .trace, .debug:
+                .debug
+            case .info, .notice:
+                .info
+            case .warning:
+                .default
+            case .error:
+                .error
+            case .critical:
+                .fault
+        }
+    }
+}
+
 extension LLMClient {
 #if DEBUG
     static let shared = LLMClient(
-        authProvider: .xcode(bundleID: "com.chocoford.ExcalidrawZ-Debug"),
+        authProvider: .xcode(bundleID: "com.chocoford.excalidrawZ-Debug"),
         uploadProvider: .none,
         uploadPolicy: .automatic
     )
 #else
     static let shared = LLMClient(
-        authProvider: .appStore(bundleID: "com.chocoford.Excalidraw", ascAppID: 6754812067),
+        authProvider: .appStore(bundleID: "com.chocoford.excalidraw", ascAppID: 6754812067),
         uploadProvider: .none,
         uploadPolicy: .automatic
     )
@@ -61,13 +123,18 @@ struct ExcalidrawZApp: App {
     init() {
         // Configure logging level
         LoggingSystem.bootstrap { label in
-            var handler = StreamLogHandler.standardOutput(label: label)
+            var stdoutHandler = StreamLogHandler.standardOutput(label: label)
 #if DEBUG
-            handler.logLevel = .debug
+            stdoutHandler.logLevel = .debug
+            return stdoutHandler
 #else
-            handler.logLevel = .info
+            var unifiedLogHandler = UnifiedLogHandler(label: label)
+            let logLevel: Logging.Logger.Level = .info
+            stdoutHandler.logLevel = logLevel
+            unifiedLogHandler.logLevel = logLevel
+            let handlers: [any LogHandler] = [stdoutHandler, unifiedLogHandler]
+            return MultiplexLogHandler(handlers)
 #endif
-            return handler
         }
 
         // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
@@ -203,7 +270,7 @@ struct ExcalidrawZApp: App {
 
 
     let server = ExcalidrawServer()
-    let logger = Logger(label: "ExcalidrawApp")
+    let logger = Logging.Logger(label: "ExcalidrawApp")
     
     var body: some Scene {
         WindowGroup {

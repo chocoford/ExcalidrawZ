@@ -194,9 +194,7 @@ extension AISettingsView {
     }
 
     var isHighestAIPlan: Bool {
-        store.purchasedPlans.contains { product in
-            SubscriptionItem.max10x.containsProductID(product.id)
-        }
+        store.activeSubscriptionItem == .max10x
     }
 
     var planName: String {

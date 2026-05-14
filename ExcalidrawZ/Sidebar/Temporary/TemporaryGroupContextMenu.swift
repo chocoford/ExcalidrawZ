@@ -112,7 +112,7 @@ struct TemporaryGroupMenuItems: View {
                         file,
                         groupObjectID: groupID
                     )
-                    let newFileScopeID: String? = try await context.perform {
+                    let newFileScopeID: String? = await context.perform {
                         guard let newFile = context.object(with: newFileID) as? File else {
                             return nil
                         }

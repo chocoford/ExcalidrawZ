@@ -12,13 +12,13 @@ struct CompactPlansView: View {
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var store: Store
     
-    @Binding var selection: Product?
+    @Binding var selection: SubscriptionItem?
     var plans: [SubscriptionItem]
     
     var body: some View {
         VStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 6) {
-                let plan: SubscriptionItem = store.plans.first(where: { $0.containsProductID(selection?.id) }) ?? .starter
+                let plan: SubscriptionItem = selection ?? .starter
                 ForEach(plan.features, id: \.self) { feature in
                     HStack {
                         Image(systemSymbol: .checkmark)
@@ -45,7 +45,7 @@ struct CompactPlansView: View {
         HStack(spacing: 10) {
             ForEach(plans) { plan in
                 let product: Product? = store.subscriptions.first(where: {$0.id == plan.id})
-                let isSelected = selection == product
+                let isSelected = selection == plan
                 let accent = accentColor(for: plan)
 
                 VStack {
@@ -112,7 +112,7 @@ struct CompactPlansView: View {
                 }
                 .onTapGesture {
                     withAnimation(.bouncy(duration: 0.2)) {
-                        selection = product
+                        selection = plan
                     }
                 }
             }
