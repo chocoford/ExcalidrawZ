@@ -234,51 +234,9 @@ extension ExcalidrawCore: WKScriptMessageHandler {
 
 extension ExcalidrawCore {
     func onStateChanged(_ data: StateChangedMessageData) {
-        guard !(self.isLoading) else {
-            return
-        }
-        let type = self.parent?.type
-        let currentFileID = self.parent?.file?.id
-        let onError = self.publishError
+        let documentSyncController = documentSyncController
         Task {
-            do {
-                let loadedID = await self.webActor.loadedFileID
-                guard loadedID == currentFileID || type == .collaboration else {
-                    return
-                }
-
-                let elements = data.data.elements
-                switch self.parent?.savingType {
-                    case .excalidrawPNG, .png:
-                        let data = try await self.exportElementsToPNGData(
-                            elements: elements ?? [],
-                            embedScene: true,
-                            colorScheme: .light
-                        )
-                        await MainActor.run {
-                            self.parent?.file?.content = data
-                        }
-                    case .excalidrawSVG, .svg:
-                        let data = try await self.exportElementsToSVGData(
-                            elements: elements ?? [],
-                            embedScene: true,
-                            colorScheme: .light
-                        )
-                        await MainActor.run {
-                            self.parent?.file?.content = data
-                        }
-                    default:
-                        await MainActor.run {
-                            do {
-                                try self.parent?.file?.update(data: data.data)
-                            } catch {
-                                onError(error)
-                            }
-                        }
-                }
-            } catch {
-                onError(error)
-            }
+            await documentSyncController.save(data)
         }
     }
     

@@ -254,7 +254,16 @@ struct ExcalidrawEditor: View {
     private func loadExcalidrawFile(from activeFile: FileState.ActiveFile?) async {
         guard let activeFile else {
             self.excalidrawFile = ExcalidrawFile()
+            fileState.excalidrawWebCoordinator?.documentSyncController.setTargetFileID(nil)
             return
+        }
+
+        switch activeFile {
+            case .file(_), .localFile(_), .temporaryFile(_):
+                fileState.excalidrawWebCoordinator?.documentSyncController
+                    .setTargetFileID(activeFile.id)
+            default:
+                fileState.excalidrawWebCoordinator?.documentSyncController.setTargetFileID(nil)
         }
         
         var canSetLoading = true
@@ -283,9 +292,10 @@ struct ExcalidrawEditor: View {
             switch activeFile {
                 case .file(let file):
                     let content = try await file.loadContent()
+                    let parsedFile = try? ExcalidrawFile(data: content, id: activeFile.id)
                     await MainActor.run {
                         guard self.activeFile?.id == activeFile.id else { return }
-                        self.excalidrawFile = try? ExcalidrawFile(data: content, id: activeFile.id)
+                        self.excalidrawFile = parsedFile
                     }
                     
                 case .localFile(let url):
@@ -310,6 +320,7 @@ struct ExcalidrawEditor: View {
                     }
             }
         } catch {
+            fileState.excalidrawWebCoordinator?.documentSyncController.setTargetFileID(nil)
             alertToast(error)
             await MainActor.run {
                 self.excalidrawFile = nil

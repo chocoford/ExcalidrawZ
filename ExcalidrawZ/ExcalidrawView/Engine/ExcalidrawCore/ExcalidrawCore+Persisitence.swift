@@ -14,14 +14,11 @@ extension ExcalidrawCore {
             logLoadFileDiag(logger, "[LoadFileDiag] coreDataLoad skipped: missing file id or content", level: .warning)
             return
         }
-        guard await waitUntilReadyForFileLoad(fileID: fileID.uuidString) else {
-            logLoadFileDiag(logger, "[LoadFileDiag] coreDataLoad notReady id=\(fileID.uuidString)", level: .warning)
-            return
-        }
-        do {
-            try await self.webActor.loadFile(id: fileID.uuidString, data: data, force: force)
-        } catch {
-            self.publishError(error)
-        }
+        await documentSyncController.load(
+            fileID: fileID.uuidString,
+            data: data,
+            force: force,
+            validateCurrentParentFile: false
+        )
     }
 }

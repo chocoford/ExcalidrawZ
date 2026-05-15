@@ -45,6 +45,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     override init() {
         self.publishError = { error in }
         super.init()
+        self.documentSyncController.attach(core: self)
         self.configWebView()
     }
     
@@ -63,7 +64,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     @Published var canRedo = false
     @Published private(set) var aiCameraSession = AICameraSessionInfo()
     
-    var previousFileID: String? = nil
+    let documentSyncController = ExcalidrawDocumentSyncController()
     private var lastVersion: Int = 0
 
     var hasInjectIndexedDBData = false
@@ -775,16 +776,16 @@ extension ExcalidrawCore {
             logLoadFileDiag(logger, "[LoadFileDiag] coreLoad skipped: missing file or content", level: .warning)
             return nil
         }
-        guard await waitUntilReadyForFileLoad(fileID: file.id) else {
-            logLoadFileDiag(logger, "[LoadFileDiag] coreLoad notReady id=\(file.id)", level: .warning)
-            return nil
+        let outcome = await documentSyncController.load(
+            fileID: file.id,
+            data: data,
+            force: force,
+            validateCurrentParentFile: false
+        )
+        if case .loaded(let result) = outcome {
+            return result
         }
-        do {
-            return try await self.webActor.loadFile(id: file.id, data: data, force: force)
-        } catch {
-            self.publishError(error)
-            return nil
-        }
+        return nil
     }
 
     func waitUntilReadyForFileLoad(

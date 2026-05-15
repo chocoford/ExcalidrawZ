@@ -28,7 +28,7 @@ func logLoadFileDiag(_ logger: Logger, _ message: String, level: Logger.Level = 
     }
 }
 
-private func loadFileDataSummary(_ data: Data) -> String {
+func loadFileDataSummary(_ data: Data) -> String {
     guard
         let object = try? JSONSerialization.jsonObject(with: data),
         let dict = object as? [String: Any]

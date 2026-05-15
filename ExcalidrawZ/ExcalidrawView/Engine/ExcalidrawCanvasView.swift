@@ -67,8 +67,6 @@ struct ExcalidrawCanvasView: View {
     
     @StateObject private var excalidrawCore = ExcalidrawCore()
     @State private var hasSetupCore = false
-    @State private var fileLoadTask: Task<Void, Never>?
-    @State private var pendingFileLoadID: String?
     
     // MARK: - Computed Properties
     
@@ -109,20 +107,8 @@ struct ExcalidrawCanvasView: View {
                 NotificationCenter.default.publisher(for: .forceReloadExcalidrawFile)
             ) { _ in
                 let targetFile = file
-                fileLoadTask?.cancel()
-                pendingFileLoadID = targetFile?.id
-                fileLoadTask = Task {
-                    await excalidrawCore.loadFile(from: targetFile, force: true)
-                    let loadedID = await excalidrawCore.webActor.loadedFileID
-                    await MainActor.run {
-                        if loadedID == targetFile?.id {
-                            excalidrawCore.previousFileID = targetFile?.id
-                        }
-                        if pendingFileLoadID == targetFile?.id {
-                            pendingFileLoadID = nil
-                            fileLoadTask = nil
-                        }
-                    }
+                Task {
+                    _ = await excalidrawCore.documentSyncController.load(targetFile, force: true)
                 }
             }
             .onReceive(
@@ -270,73 +256,31 @@ struct ExcalidrawCanvasView: View {
         }
 
         guard let newFile else {
-            fileLoadTask?.cancel()
-            pendingFileLoadID = nil
-            excalidrawCore.previousFileID = nil
+            excalidrawCore.documentSyncController.resetFileLoadState()
             return
         }
 
         // Only reload the scene when switching to a different file.
         //
-        // Commit `previousFileID` only after the JS side reports that this file
+        // Commit the loaded file id only after the JS side reports that this file
         // is loaded. If the first open races WebView readiness, keeping this nil
         // lets the ready callback or the retry loop re-attempt the load.
-        if excalidrawCore.previousFileID != newFile.id {
-            guard pendingFileLoadID != newFile.id else { return }
-
-            fileLoadTask?.cancel()
-            pendingFileLoadID = newFile.id
-            // Switching files within the same WebView session doesn't toggle the
-            // WebView-level `isLoading`, so the sync hooked to that signal won't
-            // fire. Now that `loadFile` properly awaits Excalidraw's scene
-            // application, we can chain the re-sync directly.
-            fileLoadTask = Task {
-                let maxAttempts = 2
-
-                for attempt in 1...maxAttempts {
-                    guard !Task.isCancelled else { return }
-                    guard await MainActor.run(body: { file?.id == newFile.id }) else { return }
-
-                    logLoadFileDiag(logger, "[LoadFileDiag] canvasAttempt start id=\(newFile.id) attempt=\(attempt)/\(maxAttempts)")
-                    await excalidrawCore.loadFile(from: newFile)
-
-                    guard !Task.isCancelled else { return }
-                    guard await MainActor.run(body: { file?.id == newFile.id }) else { return }
-
-                    let loadedID = await excalidrawCore.webActor.loadedFileID
-                    logLoadFileDiag(logger, "[LoadFileDiag] canvasAttempt result id=\(newFile.id) attempt=\(attempt)/\(maxAttempts) loadedID=\(loadedID ?? "nil")")
-                    if loadedID == newFile.id {
-                        await MainActor.run {
-                            logLoadFileDiag(logger, "[LoadFileDiag] canvasCommit id=\(newFile.id) attempt=\(attempt)/\(maxAttempts)")
-                            excalidrawCore.previousFileID = newFile.id
-                            if pendingFileLoadID == newFile.id {
-                                pendingFileLoadID = nil
-                                fileLoadTask = nil
-                            }
-                        }
-                        if type == .normal {
-                            await syncCanvasPrefsFromWeb()
-                            await MainActor.run { syncCanvasDrawingSettingsFromFile() }
-                        }
-                        return
-                    }
-
-                    if attempt < maxAttempts {
-                        try? await Task.sleep(nanoseconds: 300_000_000)
-                    }
+        // Switching files within the same WebView session doesn't toggle the
+        // WebView-level `isLoading`, so the sync hooked to that signal won't
+        // fire. Now that `loadFile` properly awaits Excalidraw's scene
+        // application, we can chain the re-sync directly.
+        Task {
+            let outcome = await excalidrawCore.documentSyncController.load(newFile)
+            if outcome.didLoad, type == .normal {
+                let isStillCurrent = await MainActor.run {
+                    file?.id == newFile.id
                 }
-
-                let loadedID = await excalidrawCore.webActor.loadedFileID
-                logger.warning("Failed to load file \(newFile.id) into Excalidraw after retries. loadedID=\(loadedID ?? "nil")")
+                guard isStillCurrent else { return }
+                await syncCanvasPrefsFromWeb()
                 await MainActor.run {
-                    if pendingFileLoadID == newFile.id {
-                        pendingFileLoadID = nil
-                        fileLoadTask = nil
-                    }
+                    syncCanvasDrawingSettingsFromFile()
                 }
             }
-        } else {
-            pendingFileLoadID = nil
         }
     }
     

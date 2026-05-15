@@ -37,7 +37,9 @@ extension File {
         // Try to load from storage first (local/iCloud with bidirectional sync)
         if let filePath = filePath, let fileID = fileID {
             do {
-                return try await FileStorageManager.shared.loadContent(relativePath: filePath, fileID: fileID.uuidString)
+                let data = try await FileStorageManager.shared.loadContent(relativePath: filePath, fileID: fileID.uuidString)
+                Self.logger.info("[LoadFileDiag] fileLoadContent source=storage id=\(fileID.uuidString) path=\(filePath) bytes=\(data.count.formatted(.byteCount(style: .file))) \(loadFileDataSummary(data))")
+                return data
             } catch {
                 Self.logger.warning("\(error.localizedDescription), falling back to CoreData.")
             }
@@ -45,6 +47,11 @@ extension File {
 
         // Fallback to CoreData content
         if let content = content {
+            if let fileID {
+                Self.logger.info("[LoadFileDiag] fileLoadContent source=coreData id=\(fileID.uuidString) bytes=\(content.count.formatted(.byteCount(style: .file))) \(loadFileDataSummary(content))")
+            } else {
+                Self.logger.info("[LoadFileDiag] fileLoadContent source=coreData id=nil bytes=\(content.count.formatted(.byteCount(style: .file))) \(loadFileDataSummary(content))")
+            }
             return content
         }
 

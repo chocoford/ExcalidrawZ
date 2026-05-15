@@ -674,11 +674,9 @@ struct Paywall: View {
     private func restorePurchasesButton() -> some View {
         AsyncButton {
             await store.updateCustomerProductStatus()
-            alert(title: .localizable(.paywallRestorePurchasesDoneAlertTitle)) {
-                
-            }
+            alertToast(.init(displayMode: .hud, type: .complete(.green), title: String(localizable: .paywallRestorePurchasesDoneAlertTitle)))
         } label: {
-            Text(.localizable(.paywallButtonRestorePurchases))
+            Text(localizable: .paywallButtonRestorePurchases)
         }
         .buttonStyle(.borderless)
     }
