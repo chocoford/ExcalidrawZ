@@ -11,20 +11,20 @@ import AppKit
 struct NativeChatTableView<RowContent: View>: NSViewRepresentable {
     @Binding var isPinnedToBottom: Bool
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
-    let rows: [ChatTableRowModel]
+    let rows: [NativeChatRowSnapshot]
     let isStreaming: Bool
     let onReachTop: (() -> Void)?
     let onScrollAnimationComplete: ((Int) -> Void)?
-    let rowContent: (ChatTableRowModel) -> RowContent
+    let rowContent: (ChatScrollRowModel) -> RowContent
 
     init(
-        rows: [ChatTableRowModel],
+        rows: [NativeChatRowSnapshot],
         isPinnedToBottom: Binding<Bool>,
         scrollToBottomRequest: Binding<ScrollToBottomRequest>,
         isStreaming: Bool = false,
         onReachTop: (() -> Void)? = nil,
         onScrollAnimationComplete: ((Int) -> Void)? = nil,
-        @ViewBuilder rowContent: @escaping (ChatTableRowModel) -> RowContent
+        @ViewBuilder rowContent: @escaping (ChatScrollRowModel) -> RowContent
     ) {
         self.rows = rows
         _isPinnedToBottom = isPinnedToBottom
@@ -36,8 +36,8 @@ struct NativeChatTableView<RowContent: View>: NSViewRepresentable {
     }
 
     final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
-        var rows: [ChatTableRowModel]
-        var rowContent: (ChatTableRowModel) -> RowContent
+        var rows: [NativeChatRowSnapshot]
+        var rowContent: (ChatScrollRowModel) -> RowContent
         var isPinnedToBottom: Binding<Bool>
         var scrollToBottomRequest: Binding<ScrollToBottomRequest>
         var isStreaming: Bool
@@ -63,8 +63,8 @@ struct NativeChatTableView<RowContent: View>: NSViewRepresentable {
         let columnIdentifier = NSUserInterfaceItemIdentifier("chat-row")
 
         init(
-            rows: [ChatTableRowModel],
-            rowContent: @escaping (ChatTableRowModel) -> RowContent,
+            rows: [NativeChatRowSnapshot],
+            rowContent: @escaping (ChatScrollRowModel) -> RowContent,
             isPinnedToBottom: Binding<Bool>,
             scrollToBottomRequest: Binding<ScrollToBottomRequest>,
             isStreaming: Bool,
@@ -104,14 +104,14 @@ struct NativeChatTableView<RowContent: View>: NSViewRepresentable {
 
         private func configure(
             _ cell: ChatTableCellView,
-            with rowModel: ChatTableRowModel,
+            with rowModel: NativeChatRowSnapshot,
             in tableView: NSTableView
         ) {
             cell.configure(
                 rowID: rowModel.id,
-                signature: rowModel.signature,
+                renderKey: rowModel.renderKey,
                 rootView: AnyView(
-                    rowContent(rowModel)
+                    rowContent(rowModel.model)
                         .id(rowModel.id)
                         .environment(
                             \.aiChatTableRowWidth,
@@ -133,38 +133,58 @@ struct NativeChatTableView<RowContent: View>: NSViewRepresentable {
             false
         }
 
-        func updateRows(_ nextRows: [ChatTableRowModel], in tableView: NSTableView) {
+        func updateRows(_ nextRows: [NativeChatRowSnapshot], in tableView: NSTableView) {
             let previousRows = rows
-
-            let previousIDs = previousRows.map(\.id)
-            let nextIDs = nextRows.map(\.id)
-            let commonCount = min(previousRows.count, nextRows.count)
-            let changedCommonRows = IndexSet(
-                (0..<commonCount).filter { index in
-                    previousRows[index].signature != nextRows[index].signature
-                }
-            )
-
+            let diff = NativeChatRowDiff.make(previous: previousRows, next: nextRows)
             rows = nextRows
 
-            if previousIDs == nextIDs {
-                if !changedCommonRows.isEmpty {
-                    updateVisibleRows(changedCommonRows, in: tableView)
-                    tableView.noteHeightOfRows(withIndexesChanged: changedCommonRows)
-                }
-            } else if previousIDs.elementsEqual(nextIDs.prefix(previousIDs.count)) {
-                if !changedCommonRows.isEmpty {
-                    updateVisibleRows(changedCommonRows, in: tableView)
-                    tableView.noteHeightOfRows(withIndexesChanged: changedCommonRows)
-                }
-                let insertedRows = IndexSet(integersIn: previousRows.count..<nextRows.count)
-                tableView.insertRows(at: insertedRows, withAnimation: [])
-            } else {
-                tableView.reloadData()
-                tableView.noteHeightOfRows(
-                    withIndexesChanged: IndexSet(integersIn: 0..<nextRows.count)
-                )
+            switch diff {
+                case .same(let changedIndexes):
+                    updateVisibleRows(changedIndexes, in: tableView)
+                    noteHeightIfNeeded(changedIndexes, in: tableView)
+
+                case .append(let changedIndexes, let insertedRange):
+                    updateVisibleRows(changedIndexes, in: tableView)
+                    noteHeightIfNeeded(changedIndexes, in: tableView)
+                    tableView.insertRows(
+                        at: IndexSet(integersIn: insertedRange),
+                        withAnimation: []
+                    )
+
+                case .replaceSuffix(
+                    _,
+                    let changedIndexes,
+                    let oldSuffixRange,
+                    let newSuffixRange
+                ):
+                    tableView.beginUpdates()
+                    if !oldSuffixRange.isEmpty {
+                        tableView.removeRows(
+                            at: IndexSet(integersIn: oldSuffixRange),
+                            withAnimation: []
+                        )
+                    }
+                    if !newSuffixRange.isEmpty {
+                        tableView.insertRows(
+                            at: IndexSet(integersIn: newSuffixRange),
+                            withAnimation: []
+                        )
+                    }
+                    tableView.endUpdates()
+                    updateVisibleRows(changedIndexes, in: tableView)
+                    noteHeightIfNeeded(changedIndexes, in: tableView)
+
+                case .reload:
+                    tableView.reloadData()
+                    tableView.noteHeightOfRows(
+                        withIndexesChanged: IndexSet(integersIn: 0..<nextRows.count)
+                    )
             }
+        }
+
+        private func noteHeightIfNeeded(_ rowIndexes: IndexSet, in tableView: NSTableView) {
+            guard !rowIndexes.isEmpty else { return }
+            tableView.noteHeightOfRows(withIndexesChanged: rowIndexes)
         }
 
         private func updateVisibleRows(_ rowIndexes: IndexSet, in tableView: NSTableView) {
@@ -454,11 +474,11 @@ struct NativeChatTableView<RowContent: View>: NSViewRepresentable {
 private final class ChatTableCellView: NSTableCellView {
     private var hostingView: NSHostingView<AnyView>?
     private var rowID: String?
-    private var signature: String?
+    private var renderKey: String?
 
     func configure(
         rowID: String,
-        signature: String,
+        renderKey: String,
         rootView: AnyView,
         onHeightInvalidated: @escaping () -> Void
     ) {
@@ -479,9 +499,9 @@ private final class ChatTableCellView: NSTableCellView {
             hostingView = hosting
         }
 
-        guard self.rowID != rowID || self.signature != signature else { return }
+        guard self.rowID != rowID || self.renderKey != renderKey else { return }
         self.rowID = rowID
-        self.signature = signature
+        self.renderKey = renderKey
         hostingView.rootView = rootView
         onHeightInvalidated()
     }

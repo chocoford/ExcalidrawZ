@@ -29,24 +29,27 @@ struct ChatScrollView<RowContent: View>: View {
     @Binding var isPinnedToBottom: Bool
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
 
-    private let rows: [ChatTableRowModel]
+    private let rows: [ChatScrollRowModel]
+    private let rowRenderKey: (ChatScrollRowModel) -> String
     private let isStreaming: Bool
     private let backend: ChatScrollBackend
     private let onReachTop: (() -> Void)?
     private let onScrollAnimationComplete: ((Int) -> Void)?
-    private let rowContent: (ChatTableRowModel) -> RowContent
+    private let rowContent: (ChatScrollRowModel) -> RowContent
 
     init(
-        rows: [ChatTableRowModel],
+        rows: [ChatScrollRowModel],
         isPinnedToBottom: Binding<Bool>,
         scrollToBottomRequest: Binding<ScrollToBottomRequest>,
         isStreaming: Bool = false,
         backend: ChatScrollBackend = .automatic,
+        rowRenderKey: @escaping (ChatScrollRowModel) -> String = { $0.id },
         onReachTop: (() -> Void)? = nil,
         onScrollAnimationComplete: ((Int) -> Void)? = nil,
-        @ViewBuilder rowContent: @escaping (ChatTableRowModel) -> RowContent
+        @ViewBuilder rowContent: @escaping (ChatScrollRowModel) -> RowContent
     ) {
         self.rows = rows
+        self.rowRenderKey = rowRenderKey
         _isPinnedToBottom = isPinnedToBottom
         _scrollToBottomRequest = scrollToBottomRequest
         self.isStreaming = isStreaming
@@ -71,7 +74,7 @@ struct ChatScrollView<RowContent: View>: View {
 #if os(macOS)
             case .nativeStack:
                 NativeChatStackView(
-                    rows: rows,
+                    rows: nativeRows,
                     isPinnedToBottom: $isPinnedToBottom,
                     scrollToBottomRequest: $scrollToBottomRequest,
                     isStreaming: isStreaming,
@@ -82,7 +85,7 @@ struct ChatScrollView<RowContent: View>: View {
 
             case .nativeTable:
                 NativeChatTableView(
-                    rows: rows,
+                    rows: nativeRows,
                     isPinnedToBottom: $isPinnedToBottom,
                     scrollToBottomRequest: $scrollToBottomRequest,
                     isStreaming: isStreaming,
@@ -131,9 +134,18 @@ struct ChatScrollView<RowContent: View>: View {
     }
 
     private var contentRevision: String {
-        rows
-            .map { "\($0.id):\($0.signature)" }
+        nativeRows
+            .map { "\($0.id):\($0.renderKey)" }
             .joined(separator: "|")
+    }
+
+    private var nativeRows: [NativeChatRowSnapshot] {
+        rows.map { row in
+            NativeChatRowSnapshot(
+                model: row,
+                renderKey: rowRenderKey(row)
+            )
+        }
     }
 
     private var rowsContent: some View {

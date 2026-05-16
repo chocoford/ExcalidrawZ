@@ -11,20 +11,20 @@ import AppKit
 struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
     @Binding var isPinnedToBottom: Bool
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
-    let rows: [ChatTableRowModel]
+    let rows: [NativeChatRowSnapshot]
     let isStreaming: Bool
     let onReachTop: (() -> Void)?
     let onScrollAnimationComplete: ((Int) -> Void)?
-    let rowContent: (ChatTableRowModel) -> RowContent
+    let rowContent: (ChatScrollRowModel) -> RowContent
 
     init(
-        rows: [ChatTableRowModel],
+        rows: [NativeChatRowSnapshot],
         isPinnedToBottom: Binding<Bool>,
         scrollToBottomRequest: Binding<ScrollToBottomRequest>,
         isStreaming: Bool = false,
         onReachTop: (() -> Void)? = nil,
         onScrollAnimationComplete: ((Int) -> Void)? = nil,
-        @ViewBuilder rowContent: @escaping (ChatTableRowModel) -> RowContent
+        @ViewBuilder rowContent: @escaping (ChatScrollRowModel) -> RowContent
     ) {
         self.rows = rows
         _isPinnedToBottom = isPinnedToBottom
@@ -36,8 +36,8 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
     }
 
     final class Coordinator: NSObject {
-        var rows: [ChatTableRowModel] = []
-        var rowContent: (ChatTableRowModel) -> RowContent
+        var rows: [NativeChatRowSnapshot] = []
+        var rowContent: (ChatScrollRowModel) -> RowContent
         var isPinnedToBottom: Binding<Bool>
         var scrollToBottomRequest: Binding<ScrollToBottomRequest>
         var onReachTop: (() -> Void)?
@@ -46,7 +46,7 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
         var lastClipWidth: CGFloat = 0
         var didNotifyReachTop = false
         var hostingViewsByID: [String: NSHostingView<AnyView>] = [:]
-        var signaturesByID: [String: String] = [:]
+        var renderKeysByID: [String: String] = [:]
         weak var scrollView: NSScrollView?
         weak var stackView: FlippedChatStackView?
 
@@ -55,7 +55,7 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
         let topLoadResetThreshold: CGFloat = 180
 
         init(
-            rowContent: @escaping (ChatTableRowModel) -> RowContent,
+            rowContent: @escaping (ChatScrollRowModel) -> RowContent,
             isPinnedToBottom: Binding<Bool>,
             scrollToBottomRequest: Binding<ScrollToBottomRequest>,
             onReachTop: (() -> Void)?,
@@ -70,26 +70,35 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
             super.init()
         }
 
-        func updateRows(_ nextRows: [ChatTableRowModel], in stackView: FlippedChatStackView) {
+        func updateRows(_ nextRows: [NativeChatRowSnapshot], in stackView: FlippedChatStackView) {
             let previousRows = rows
-            let previousIDs = previousRows.map(\.id)
-            let nextIDs = nextRows.map(\.id)
+            let diff = NativeChatRowDiff.make(previous: previousRows, next: nextRows)
             rows = nextRows
 
-            if previousIDs == nextIDs {
-                for row in nextRows where signaturesByID[row.id] != row.signature {
-                    updateHostingView(for: row, in: stackView)
-                }
-            } else if previousIDs.elementsEqual(nextIDs.prefix(previousIDs.count)) {
-                for row in nextRows.prefix(previousRows.count)
-                    where signaturesByID[row.id] != row.signature {
-                    updateHostingView(for: row, in: stackView)
-                }
-                for row in nextRows.dropFirst(previousRows.count) {
-                    appendHostingView(for: row, to: stackView)
-                }
-            } else {
-                rebuildRows(nextRows, in: stackView)
+            switch diff {
+                case .same(let changedIndexes):
+                    updateHostingViews(at: changedIndexes, in: stackView)
+
+                case .append(let changedIndexes, let insertedRange):
+                    updateHostingViews(at: changedIndexes, in: stackView)
+                    appendHostingViews(in: insertedRange, to: stackView)
+
+                case .replaceSuffix(
+                    _,
+                    let changedIndexes,
+                    let oldSuffixRange,
+                    let newSuffixRange
+                ):
+                    updateHostingViews(at: changedIndexes, in: stackView)
+                    removeHostingViews(
+                        for: previousRows,
+                        in: oldSuffixRange,
+                        from: stackView
+                    )
+                    appendHostingViews(in: newSuffixRange, to: stackView)
+
+                case .reload:
+                    rebuildRows(nextRows, in: stackView)
             }
 
             stackView.needsLayout = true
@@ -103,7 +112,7 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
         }
 
         private func rebuildRows(
-            _ rows: [ChatTableRowModel],
+            _ rows: [NativeChatRowSnapshot],
             in stackView: FlippedChatStackView
         ) {
             for subview in stackView.arrangedSubviews {
@@ -112,26 +121,60 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
             }
 
             hostingViewsByID.removeAll(keepingCapacity: true)
-            signaturesByID.removeAll(keepingCapacity: true)
+            renderKeysByID.removeAll(keepingCapacity: true)
 
             for row in rows {
                 appendHostingView(for: row, to: stackView)
             }
         }
 
+        private func updateHostingViews(
+            at indexes: IndexSet,
+            in stackView: FlippedChatStackView
+        ) {
+            for index in indexes where rows.indices.contains(index) {
+                updateHostingView(for: rows[index], in: stackView)
+            }
+        }
+
+        private func appendHostingViews(
+            in range: Range<Int>,
+            to stackView: FlippedChatStackView
+        ) {
+            for index in range where rows.indices.contains(index) {
+                appendHostingView(for: rows[index], to: stackView)
+            }
+        }
+
+        private func removeHostingViews(
+            for previousRows: [NativeChatRowSnapshot],
+            in range: Range<Int>,
+            from stackView: FlippedChatStackView
+        ) {
+            for index in range.reversed() where previousRows.indices.contains(index) {
+                let row = previousRows[index]
+                guard let hostingView = hostingViewsByID.removeValue(forKey: row.id) else {
+                    continue
+                }
+                renderKeysByID.removeValue(forKey: row.id)
+                stackView.removeArrangedSubview(hostingView)
+                hostingView.removeFromSuperview()
+            }
+        }
+
         private func appendHostingView(
-            for row: ChatTableRowModel,
+            for row: NativeChatRowSnapshot,
             to stackView: FlippedChatStackView
         ) {
             let hostingView = NSHostingView(rootView: rootView(for: row, in: stackView))
             hostingView.translatesAutoresizingMaskIntoConstraints = false
             stackView.addArrangedSubview(hostingView)
             hostingViewsByID[row.id] = hostingView
-            signaturesByID[row.id] = row.signature
+            renderKeysByID[row.id] = row.renderKey
         }
 
         private func updateHostingView(
-            for row: ChatTableRowModel,
+            for row: NativeChatRowSnapshot,
             in stackView: FlippedChatStackView,
             force: Bool = false
         ) {
@@ -140,19 +183,19 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
                 return
             }
 
-            guard force || signaturesByID[row.id] != row.signature else { return }
+            guard force || renderKeysByID[row.id] != row.renderKey else { return }
             hostingView.rootView = rootView(for: row, in: stackView)
             hostingView.invalidateIntrinsicContentSize()
-            signaturesByID[row.id] = row.signature
+            renderKeysByID[row.id] = row.renderKey
         }
 
         private func rootView(
-            for row: ChatTableRowModel,
+            for row: NativeChatRowSnapshot,
             in stackView: FlippedChatStackView
         ) -> AnyView {
             let rowWidth = currentRowWidth(in: stackView)
             return AnyView(
-                rowContent(row)
+                rowContent(row.model)
                     .id(row.id)
                     .environment(\.aiChatTableRowWidth, rowWidth)
                     .environment(\.aiChatUsesNativeRowHeightCache, false)
