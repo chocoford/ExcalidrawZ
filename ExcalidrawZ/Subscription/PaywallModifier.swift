@@ -10,11 +10,11 @@ import SwiftUI
 import SwiftyAlert
 
 struct PaywallModifier: ViewModifier {
-    @EnvironmentObject private var store: Store
+    @ObservedObject private var paywallPresentation = PaywallPresentationState.shared
 
     func body(content: Content) -> some View {
         content
-            .sheet(isPresented: $store.isPaywallPresented) {
+            .sheet(isPresented: $paywallPresentation.isPresented) {
                 Paywall()
                     .swiftyAlert()
             }

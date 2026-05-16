@@ -198,8 +198,7 @@ extension Store {
     }
 
     func togglePaywall(reason: ReachPaywallReason) {
-        self.reachPaywallReason = reason
-        self.isPaywallPresented.toggle()
+        PaywallPresentationState.shared.present(reason: reason)
     }
 
 }

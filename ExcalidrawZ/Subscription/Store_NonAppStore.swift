@@ -30,8 +30,5 @@ class Store: ObservableObject {
 #endif
     }
     
-    @Published var isPaywallPresented = false
-    @Published var reachPaywallReason: ReachPaywallReason?
-    
     var collaborationRoomLimits: Int? { 1 }
 }

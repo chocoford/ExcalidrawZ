@@ -23,6 +23,7 @@ struct Paywall: View {
     
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var llmState: LLMStateObject
+    @ObservedObject private var paywallPresentation = PaywallPresentationState.shared
     
     @State private var selectedSubscriptionItem: SubscriptionItem?
     @State private var isPresented = false
@@ -559,7 +560,7 @@ struct Paywall: View {
     
     @ViewBuilder
     private func reasonBadge() -> some View {
-        if let reason = store.reachPaywallReason {
+        if let reason = paywallPresentation.reachReason {
             ZStack {
                 if isPresented {
                     Text(reason.description)

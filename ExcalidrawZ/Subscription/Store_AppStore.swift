@@ -479,6 +479,4 @@ class Store: ObservableObject {
     }
     
     // MARK: - UI
-    @Published var isPaywallPresented = false
-    @Published var reachPaywallReason: ReachPaywallReason?
 }
