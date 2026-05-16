@@ -112,6 +112,15 @@ struct NativeChatTableView<RowContent: View>: NSViewRepresentable {
                 as? ChatTableCellView
                 ?? ChatTableCellView()
             cell.identifier = identifier
+            configure(cell, with: rowModel, in: tableView)
+            return cell
+        }
+
+        private func configure(
+            _ cell: ChatTableCellView,
+            with rowModel: ChatTableRowModel,
+            in tableView: NSTableView
+        ) {
             cell.configure(
                 rowID: rowModel.id,
                 signature: rowModel.signature,
@@ -128,7 +137,6 @@ struct NativeChatTableView<RowContent: View>: NSViewRepresentable {
                     self.scheduleHeightInvalidation(for: cell, in: tableView)
                 }
             )
-            return cell
         }
 
         func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
@@ -141,28 +149,49 @@ struct NativeChatTableView<RowContent: View>: NSViewRepresentable {
 
         func updateRows(_ nextRows: [ChatTableRowModel], in tableView: NSTableView) {
             let previousRows = rows
-            rows = nextRows
 
             let previousIDs = previousRows.map(\.id)
             let nextIDs = nextRows.map(\.id)
-            if previousIDs == nextIDs {
-                let changedRows = IndexSet(
-                    nextRows.indices.filter { index in
-                        previousRows[index].signature != nextRows[index].signature
-                    }
-                )
-                if !changedRows.isEmpty {
-                    tableView.reloadData(
-                        forRowIndexes: changedRows,
-                        columnIndexes: IndexSet(integer: 0)
-                    )
-                    tableView.noteHeightOfRows(withIndexesChanged: changedRows)
+            let commonCount = min(previousRows.count, nextRows.count)
+            let changedCommonRows = IndexSet(
+                (0..<commonCount).filter { index in
+                    previousRows[index].signature != nextRows[index].signature
                 }
+            )
+
+            rows = nextRows
+
+            if previousIDs == nextIDs {
+                if !changedCommonRows.isEmpty {
+                    updateVisibleRows(changedCommonRows, in: tableView)
+                    tableView.noteHeightOfRows(withIndexesChanged: changedCommonRows)
+                }
+            } else if previousIDs.elementsEqual(nextIDs.prefix(previousIDs.count)) {
+                if !changedCommonRows.isEmpty {
+                    updateVisibleRows(changedCommonRows, in: tableView)
+                    tableView.noteHeightOfRows(withIndexesChanged: changedCommonRows)
+                }
+                let insertedRows = IndexSet(integersIn: previousRows.count..<nextRows.count)
+                tableView.insertRows(at: insertedRows, withAnimation: [])
             } else {
                 tableView.reloadData()
                 tableView.noteHeightOfRows(
                     withIndexesChanged: IndexSet(integersIn: 0..<nextRows.count)
                 )
+            }
+        }
+
+        private func updateVisibleRows(_ rowIndexes: IndexSet, in tableView: NSTableView) {
+            for row in rowIndexes {
+                guard rows.indices.contains(row),
+                      let cell = tableView.view(
+                        atColumn: 0,
+                        row: row,
+                        makeIfNecessary: false
+                      ) as? ChatTableCellView else {
+                    continue
+                }
+                configure(cell, with: rows[row], in: tableView)
             }
         }
 
@@ -212,7 +241,6 @@ struct NativeChatTableView<RowContent: View>: NSViewRepresentable {
             } else if newHeight > oldHeight,
                       ((isStreaming && isPinnedToBottom.wrappedValue) ||
                        isProgrammaticScrollPendingToBottom) {
-                scrollToBottom(animated: true)
                 scheduleDeferredScrollToBottom(animated: true)
             }
 
@@ -277,6 +305,8 @@ struct NativeChatTableView<RowContent: View>: NSViewRepresentable {
 
         func scrollToBottom(animated: Bool) {
             guard let scrollView, let tableView else { return }
+            scrollView.layoutSubtreeIfNeeded()
+            tableView.layoutSubtreeIfNeeded()
             let visibleHeight = scrollView.contentView.bounds.height
             let target = NSPoint(
                 x: 0,
@@ -421,9 +451,10 @@ struct NativeChatTableView<RowContent: View>: NSViewRepresentable {
             context.coordinator.lastSeenToken = token
             let animated = scrollToBottomRequest.animated
             DispatchQueue.main.async { [coordinator = context.coordinator] in
-                coordinator.scrollToBottom(animated: animated)
                 if animated {
                     coordinator.scheduleDeferredScrollToBottom(animated: true)
+                } else {
+                    coordinator.scrollToBottom(animated: false)
                 }
             }
         }

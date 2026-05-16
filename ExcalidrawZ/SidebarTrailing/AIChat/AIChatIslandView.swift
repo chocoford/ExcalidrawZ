@@ -98,17 +98,10 @@ struct AIChatIslandView: View {
         )
     }
 
-    private var streamingState: LLMStreamingStateObject? {
-        guard let id = fileState.aiChatConversationID else { return nil }
-        return llmState.streamingStore.streamIfExists(for: id)
-            as? LLMStreamingStateObject
-    }
-
     private var hasActiveGeneration: Bool {
-        if let stream = streamingState, !stream.isFinished {
-            return true
-        }
-        return activeStreamingAssistantContent != nil
+        guard let conversationID = fileState.aiChatConversationID else { return false }
+        return llmState.isRunning(conversationID: conversationID)
+            || activeStreamingAssistantContent != nil
     }
 
     /// Mirror of `ApprovalPromptView`'s gate so the island's
@@ -189,8 +182,7 @@ struct AIChatIslandView: View {
     /// Name of the first non-final-answer tool call currently being emitted
     /// in the active stream (or nil when no stream is active or only the
     /// `final_answer` synthetic call is present). LLMKit keeps streaming
-    /// content/tool calls on `conversation.messages`; `streamingState` is now
-    /// only a lightweight id/finished pointer.
+    /// content/tool calls on `conversation.messages`.
     private var liveToolCallName: String? {
         activeStreamingAssistantContent?.toolCalls?
             .first(where: { $0.name != "final_answer" })?
@@ -228,14 +220,9 @@ struct AIChatIslandView: View {
             snapBackTask?.cancel()
             snapBackIfOutOfBounds()
         }
-        // Watch only the *boundary* of the stream lifecycle (active ↔ idle).
-        // We use `isFinished == false` rather than `id != nil` because
-        // LLMKit keeps the stream object around between rounds — round 2
-        // doesn't recreate it, it just flips `isFinished` back to false
-        // (and rotates the id). Watching id-presence misses the round 2
-        // boundary entirely (`true → true`); watching `isFinished` catches
-        // every round start, and stays stable through intra-round id
-        // rotations at tool-call seams.
+        // Watch only the *boundary* of the run lifecycle (active ↔ idle).
+        // Token-level streaming can pause around tool calls; `isRunning`
+        // remains true through those seams.
         .onAppear {
             updateGenerationTicker(hasActiveGeneration: hasActiveGeneration)
         }

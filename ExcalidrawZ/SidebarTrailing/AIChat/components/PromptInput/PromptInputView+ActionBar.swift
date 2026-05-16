@@ -191,11 +191,7 @@ extension PromptInputView {
 
     private var isConversationStreaming: Bool {
         guard let conversationID else { return false }
-        guard let stream = llmState.streamingStore.streamIfExists(for: conversationID)
-            as? LLMStreamingStateObject else {
-            return false
-        }
-        return !stream.isFinished
+        return llmState.isRunning(conversationID: conversationID)
     }
 
     var hasInputText: Bool {

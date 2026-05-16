@@ -67,7 +67,7 @@ private struct ChatTopDownRevealFrameModifier: ViewModifier, Animatable {
 
     func body(content: Content) -> some View {
         let clamped = max(0, min(1, progress))
-        let targetHeight = clamped < 1 ? measuredHeight * clamped : nil
+        let targetHeight = measuredHeight > 0 ? measuredHeight : nil
 
         ZStack(alignment: .top) {
             content

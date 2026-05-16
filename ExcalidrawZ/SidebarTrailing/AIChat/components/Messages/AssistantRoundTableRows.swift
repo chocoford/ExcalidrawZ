@@ -12,10 +12,19 @@ private struct AIChatTableRowWidthKey: EnvironmentKey {
     static let defaultValue: CGFloat? = nil
 }
 
+private struct AIChatUsesNativeRowHeightCacheKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
 extension EnvironmentValues {
     var aiChatTableRowWidth: CGFloat? {
         get { self[AIChatTableRowWidthKey.self] }
         set { self[AIChatTableRowWidthKey.self] = newValue }
+    }
+
+    var aiChatUsesNativeRowHeightCache: Bool {
+        get { self[AIChatUsesNativeRowHeightCacheKey.self] }
+        set { self[AIChatUsesNativeRowHeightCacheKey.self] = newValue }
     }
 }
 
@@ -85,6 +94,7 @@ extension View {
 
 private struct AssistantContentStableHeightContainer<Content: View>: View {
     @Environment(\.aiChatTableRowWidth) private var tableRowWidth
+    @Environment(\.aiChatUsesNativeRowHeightCache) private var usesNativeRowHeightCache
 
     let cacheKey: String
     let isStreaming: Bool
@@ -103,7 +113,7 @@ private struct AssistantContentStableHeightContainer<Content: View>: View {
     }
 
     var body: some View {
-        if isStreaming {
+        if isStreaming || !usesNativeRowHeightCache {
             content
         } else {
             ZStack(alignment: .topLeading) {

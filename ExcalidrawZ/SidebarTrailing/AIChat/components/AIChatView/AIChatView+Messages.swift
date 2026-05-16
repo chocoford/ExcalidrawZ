@@ -17,6 +17,7 @@ final class AIChatRenderDebugState: ObservableObject {
     @Published var useMinimalPromptInput = false
     @Published var hidePromptActionBar = false
     @Published var hideGeneratingEffect = false
+    @Published var useStackMessageListHost = true
 
     func reset() {
         isEnabled = false
@@ -24,6 +25,7 @@ final class AIChatRenderDebugState: ObservableObject {
         useMinimalPromptInput = false
         hidePromptActionBar = false
         hideGeneratingEffect = false
+        useStackMessageListHost = true
     }
 }
 
@@ -48,6 +50,10 @@ enum AIChatRenderDebug {
 
     static var hideGeneratingEffect: Bool {
         state.hideGeneratingEffect
+    }
+
+    static var useStackMessageListHost: Bool {
+        state.useStackMessageListHost
     }
 
     private static let counterStore = CounterStore()
@@ -151,6 +157,7 @@ enum AIChatRenderDebug {
     static var useMinimalPromptInput: Bool { false }
     static var hidePromptActionBar: Bool { false }
     static var hideGeneratingEffect: Bool { false }
+    static var useStackMessageListHost: Bool { false }
 }
 #endif
 
@@ -195,10 +202,9 @@ extension AIChatView {
             }
             return transientError
         }()
-        let isStreamingActive: Bool = {
-            guard let stream = streamingState else { return false }
-            return shouldShowStreamingMessage(stream)
-        }()
+        let isRunActive = fileState.aiChatConversationID.map {
+            llmState.isRunning(conversationID: $0)
+        } ?? false
         let generationCancelToken = fileState.aiChatConversationID.map {
             aiChatState.generationCancelToken(for: $0)
         } ?? 0
@@ -206,27 +212,26 @@ extension AIChatView {
             aiChatState.isGenerationCancelled(conversationID: $0)
         } ?? false
         let bottomID = visibleTransientError?.id.uuidString
-        ?? (isStreamingActive ? streamingState?.id : nil)
+        ?? (isRunActive ? streamingState?.id : nil)
         ?? messages.last?.id
         let isRoundLifecycleActive = !isGenerationCancelled
-        && (isStreamingActive || streamScrollFollowTail)
-        // The active round (if any) is the latest assistantRound while
-        // the stream is in flight. This is the round whose
-        // AssistantRoundView mounts in "drive every message through the
-        // reveal pipeline" mode — even if multiple commits coalesce
-        // before its first render, none of them are pre-marked revealed.
-        let latestRoundID: String? = allGroups.last { group in
-            if case .assistantRound = group { return true }
-            return false
-        }?.id
-        let activeRoundID: String? = isRoundLifecycleActive ? latestRoundID : nil
+        && (isRunActive || streamScrollFollowTail)
+        // The active round (if any) must be the timeline tail. Right
+        // after the user sends a new message, the latest assistant round
+        // is still the previous turn; marking that historical round active
+        // would remount it in reveal mode and replay all of its rows.
+        let tailRoundID: String? = {
+            guard case .assistantRound(let id, _) = allGroups.last else { return nil }
+            return id
+        }()
+        let activeRoundID: String? = isRoundLifecycleActive ? tailRoundID : nil
         let streamingMessageIDs = streamingAssistantMessageIDs(
             in: allGroups,
             conversationID: fileState.aiChatConversationID
         )
         let showsUserMessageActions = !isRoundLifecycleActive
         let disablesUserMessageActions = !isGenerationCancelled
-        && (isStreamingActive || streamScrollFollowTail)
+        && (isRunActive || streamScrollFollowTail)
         let contentRevision = messageListContentRevision(
             allGroups: allGroups,
             visibleGroups: visibleGroups,
@@ -248,33 +253,61 @@ extension AIChatView {
             disablesUserMessageActions: disablesUserMessageActions
         )
         let isScrollStreaming = !isGenerationCancelled
-            && (isStreamingActive || streamScrollFollowTail)
+            && (isRunActive || streamScrollFollowTail)
 
         SwiftUI.Group {
 #if os(macOS)
-            NativeChatTableView(
-                rows: tableRows,
-                isPinnedToBottom: $isPinnedToBottom,
-                scrollToBottomRequest: $scrollToBottomRequest,
-                isStreaming: isScrollStreaming,
-                onReachTop: {
-                    loadMoreMessageGroupsIfNeeded(totalGroupCount: allGroups.count)
-                },
-                onScrollAnimationComplete: { token in
-                    handleScrollAnimationComplete(token: token)
+            if AIChatRenderDebug.useStackMessageListHost {
+                NativeChatStackView(
+                    rows: tableRows,
+                    isPinnedToBottom: $isPinnedToBottom,
+                    scrollToBottomRequest: $scrollToBottomRequest,
+                    isStreaming: isScrollStreaming,
+                    onReachTop: {
+                        loadMoreMessageGroupsIfNeeded(totalGroupCount: allGroups.count)
+                    },
+                    onScrollAnimationComplete: { token in
+                        handleScrollAnimationComplete(token: token)
+                    }
+                ) { row in
+                    chatTableRowContent(
+                        row,
+                        activeRoundID: activeRoundID,
+                        streamingMessageIDs: streamingMessageIDs,
+                        isGenerationCancelled: isGenerationCancelled,
+                        showsUserMessageActions: showsUserMessageActions,
+                        disablesUserMessageActions: disablesUserMessageActions
+                    )
+                    .environmentObject(aiChatState)
+                    .environment(\.chatScrollToBottom) { animated in
+                        await scrollToBottomAsync(animated: animated)
+                    }
                 }
-            ) { row in
-                chatTableRowContent(
-                    row,
-                    activeRoundID: activeRoundID,
-                    streamingMessageIDs: streamingMessageIDs,
-                    isGenerationCancelled: isGenerationCancelled,
-                    showsUserMessageActions: showsUserMessageActions,
-                    disablesUserMessageActions: disablesUserMessageActions
-                )
-                .environmentObject(aiChatState)
-                .environment(\.chatScrollToBottom) { animated in
-                    await scrollToBottomAsync(animated: animated)
+            } else {
+                NativeChatTableView(
+                    rows: tableRows,
+                    isPinnedToBottom: $isPinnedToBottom,
+                    scrollToBottomRequest: $scrollToBottomRequest,
+                    isStreaming: isScrollStreaming,
+                    onReachTop: {
+                        loadMoreMessageGroupsIfNeeded(totalGroupCount: allGroups.count)
+                    },
+                    onScrollAnimationComplete: { token in
+                        handleScrollAnimationComplete(token: token)
+                    }
+                ) { row in
+                    chatTableRowContent(
+                        row,
+                        activeRoundID: activeRoundID,
+                        streamingMessageIDs: streamingMessageIDs,
+                        isGenerationCancelled: isGenerationCancelled,
+                        showsUserMessageActions: showsUserMessageActions,
+                        disablesUserMessageActions: disablesUserMessageActions
+                    )
+                    .environmentObject(aiChatState)
+                    .environment(\.chatScrollToBottom) { animated in
+                        await scrollToBottomAsync(animated: animated)
+                    }
                 }
             }
 #else
@@ -323,16 +356,16 @@ extension AIChatView {
             requestScrollToBottomIfNeeded(bottomID)
         }
         .onChange(of: bottomID) { _ in
-            guard !isStreamingActive else { return }
+            guard !isRunActive else { return }
             requestScrollToBottomIfNeeded(bottomID)
         }
-        .onChange(of: isStreamingActive) { nowStreaming in
-            if nowStreaming {
+        .onChange(of: isRunActive) { nowRunning in
+            if nowRunning {
                 resetVisibleMessageWindowIfNeeded()
                 // Just kicked off a new round (user sent / regenerate).
                 // Force-pin and request an explicit scroll-to-bottom:
                 // the host's growth-driven follow can race against
-                // `isStreaming` reaching the Coordinator (the user-
+                // `isRunning` reaching the Coordinator (the user-
                 // message frame may land before SwiftUI has propagated
                 // the new streaming state through `updateNSView`), so
                 // without this nudge the user's message + the loading

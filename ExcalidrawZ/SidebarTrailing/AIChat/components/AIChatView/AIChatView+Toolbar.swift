@@ -77,6 +77,7 @@ extension AIChatView {
                         Toggle("Minimal prompt input", isOn: $aiChatRenderDebug.useMinimalPromptInput)
                         Toggle("Hide prompt action bar", isOn: $aiChatRenderDebug.hidePromptActionBar)
                         Toggle("Hide generating effect", isOn: $aiChatRenderDebug.hideGeneratingEffect)
+                        Toggle("Stack message host", isOn: $aiChatRenderDebug.useStackMessageListHost)
                         
                         Divider()
                         

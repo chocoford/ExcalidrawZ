@@ -15,8 +15,7 @@ extension AIChatView {
     /// truncates the timeline, and only then refills the input box.
     func beginEditingUserMessage(_ userMessageID: String) {
         guard let convo = conversation else { return }
-        if let streamingState,
-           shouldShowStreamingMessage(streamingState) {
+        if llmState.isRunning(conversationID: convo.id) {
             return
         }
         let conversationID = convo.id
@@ -360,13 +359,6 @@ extension AIChatView {
         } else {
             aiChatState.requestDraft(error.retryPrompt, files: error.retryFiles)
         }
-    }
-    
-    func shouldShowStreamingMessage(_ stream: LLMStreamingStateObject) -> Bool {
-        guard !aiChatState.isGenerationCancelled(conversationID: stream.conversationID) else {
-            return false
-        }
-        return !stream.isFinished
     }
     
     func requestScrollToBottomIfNeeded(_ newBottomID: String?) {
