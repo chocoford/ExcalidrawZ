@@ -14,8 +14,27 @@ fileprivate typealias Transaction = StoreKit.Transaction
 fileprivate typealias RenewalInfo = StoreKit.Product.SubscriptionInfo.RenewalInfo
 fileprivate typealias RenewalState = StoreKit.Product.SubscriptionInfo.RenewalState
 
+private extension String {
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
+    }
+}
+
 public enum StoreError: Error {
     case failedVerification
+}
+
+enum StoreKitEntitlementRefreshReason: String {
+    case appLaunch
+    case transactionUpdate
+    case purchase
+    case restorePurchases
+    case appBecameActive
+    case windowBecameKey
+    case paywallPresented
+    case entitlementExpirationTimer
+    case coalesced
+    case manual
 }
 
 // Define the app's subscription entitlements by level of service, with the highest level of service first.
@@ -70,6 +89,7 @@ class Store: ObservableObject {
     @Published private(set) var purchasedPlans: [Product] = []
     @Published private(set) var purchasedMemberships: [Product] = []
     @Published private(set) var subscriptionGroupStatus: Product.SubscriptionInfo.Status?
+    @Published private(set) var activePlanExpirationDate: Date?
 
 #if DEBUG && !APP_STORE
     @Published var debugActiveSubscriptionItem: SubscriptionItem? = .pro
@@ -86,6 +106,12 @@ class Store: ObservableObject {
     }
         
     var updateListenerTask: Task<Void, Error>? = nil
+    private var isRefreshingEntitlements = false
+    private var hasPendingEntitlementRefresh = false
+    private var pendingEntitlementRefreshForce = false
+    private var lastEntitlementRefreshAt: Date = .distantPast
+    private let entitlementRefreshThrottleInterval: TimeInterval = 60
+    private var entitlementExpirationRefreshTask: Task<Void, Never>?
     
     private let membershipIdentifiers = [
         "Membership_Lv1_Monthly",
@@ -111,7 +137,7 @@ class Store: ObservableObject {
             await requestProducts()
 
             // Deliver products that the customer purchases.
-            await updateCustomerProductStatus()
+            await refreshEntitlements(reason: .appLaunch, force: true)
         }
     }
     
@@ -133,7 +159,7 @@ class Store: ObservableObject {
                     let transaction = try await self.checkVerified(result)
                     
                     // Deliver products to the user.
-                    await self.updateCustomerProductStatus()
+                    await self.refreshEntitlements(reason: .transactionUpdate, force: true)
                     
                     // Always finish a transaction.
                     await transaction.finish()
@@ -194,7 +220,7 @@ class Store: ObservableObject {
                 try await handleVerifiedPurchase?(verification)
                 
                 // The transaction is verified. Deliver content to the user.
-                await updateCustomerProductStatus()
+                await refreshEntitlements(reason: .purchase, force: true)
                 
                 // Always finish a transaction.
                 await transaction.finish()
@@ -231,14 +257,58 @@ class Store: ObservableObject {
     
     @MainActor
     func updateCustomerProductStatus() async {
+        await refreshEntitlements(reason: .manual, force: true)
+    }
+
+    @MainActor
+    func refreshEntitlements(
+        reason: StoreKitEntitlementRefreshReason,
+        force: Bool = false
+    ) async {
+        let now = Date()
+        if !force {
+            let elapsed = now.timeIntervalSince(lastEntitlementRefreshAt)
+            guard elapsed >= entitlementRefreshThrottleInterval else {
+                let remaining = max(entitlementRefreshThrottleInterval - elapsed, 0)
+                logger.debug("[Store] entitlement refresh skipped reason=\(reason.rawValue) throttleRemaining=\(String(format: "%.1f", remaining))s")
+                return
+            }
+        }
+
+        if isRefreshingEntitlements {
+            hasPendingEntitlementRefresh = true
+            pendingEntitlementRefreshForce = pendingEntitlementRefreshForce || force
+            logger.debug("[Store] entitlement refresh coalesced reason=\(reason.rawValue) force=\(force)")
+            return
+        }
+
+        isRefreshingEntitlements = true
+        lastEntitlementRefreshAt = now
+        logger.info("[Store] refresh entitlements reason=\(reason.rawValue) force=\(force)")
+
+        await loadCustomerProductStatus(reason: reason)
+
+        isRefreshingEntitlements = false
+
+        if hasPendingEntitlementRefresh {
+            let pendingForce = pendingEntitlementRefreshForce
+            hasPendingEntitlementRefresh = false
+            pendingEntitlementRefreshForce = false
+            await refreshEntitlements(reason: .coalesced, force: pendingForce)
+        }
+    }
+
+    @MainActor
+    private func loadCustomerProductStatus(reason: StoreKitEntitlementRefreshReason) async {
         // var purchasedCars: [Product] = []
         var purchasedSubscriptions: [Product] = []
         var purchasedMemberships: [Product] = []
+        var planTransactionsByProductID: [String: StoreKit.Transaction] = [:]
+        var entitlementExpirationDates: [Date] = []
         // var purchasedNonRenewableSubscriptions: [Product] = []
 
         // Iterate through all of the user's purchased products.
         for await result in Transaction.currentEntitlements {
-            self.logger.debug("[Store] currentEntitlements: \(String(describing: result))")
             do {
                 // Check whether the transaction is verified. If it isn’t, catch `failedVerification` error.
                 let transaction = try checkVerified(result)
@@ -251,15 +321,20 @@ class Store: ObservableObject {
                         break
                     case .autoRenewable:
                         if let subscription = subscriptions.first(where: { $0.id == transaction.productID }) {
+                            logPlanEntitlementTransaction(transaction)
                             purchasedSubscriptions.append(subscription)
+                            planTransactionsByProductID[subscription.id] = transaction
                         } else if let membership = memberships.first(where: { $0.id == transaction.productID }) {
                             purchasedMemberships.append(membership)
+                        }
+                        if let expirationDate = transaction.expirationDate {
+                            entitlementExpirationDates.append(expirationDate)
                         }
                     default:
                         break
                 }
             } catch {
-                self.logger.error("[Store] updateCustomerProductStatus error: \(error)")
+                self.logger.error("[Store] refresh entitlements error: \(error)")
             }
         }
 
@@ -267,30 +342,68 @@ class Store: ObservableObject {
         // ...
         
         // Update the store information with auto-renewable subscription products.
-        self.purchasedPlans = purchasedSubscriptions
+        let sortedPurchasedPlans = sortPurchasedPlansByEntitlement(purchasedSubscriptions)
+        self.purchasedPlans = sortedPurchasedPlans
         self.purchasedMemberships = purchasedMemberships
-
-        // Check the `subscriptionGroupStatus` to learn the auto-renewable subscription state to determine whether the customer
-        // is new (never subscribed), active, or inactive (expired subscription).
-        // This app has only one subscription group, so products in the subscriptions array all belong to the same group.
-        // Customers can be subscribed to only one product in the subscription group.
-        // The statuses that `product.subscription.status` returns apply to the entire subscription group.
-        subscriptionGroupStatus = try? await subscriptions.first?.subscription?.status.max { lhs, rhs in
-            // There may be multiple statuses for different family members, because this app supports Family Sharing.
-            // The subscriber is entitled to service for the status with the highest level of service.
-            let lhsEntitlement = entitlement(for: lhs)
-            let rhsEntitlement = entitlement(for: rhs)
-            return lhsEntitlement < rhsEntitlement
+        self.activePlanExpirationDate = sortedPurchasedPlans.first.flatMap { product in
+            planTransactionsByProductID[product.id]?.expirationDate
         }
+
+        subscriptionGroupStatus = await latestPlanSubscriptionStatus()
+        logPlanStatus(subscriptionGroupStatus)
+        scheduleNextEntitlementExpirationRefresh(from: entitlementExpirationDates)
         
         logger.info("[Store] ----------")
-        logger.info("[Store] purchased plans: \(String(describing: self.purchasedPlans))")
-        logger.info("[Store] purchased memberships: \(String(describing: self.purchasedMemberships))")
+        logger.info("[Store] entitlement refresh reason: \(reason.rawValue)")
+        logger.info("[Store] purchased plan IDs: \(self.purchasedPlans.map(\.id).joined(separator: ",").nilIfEmpty ?? "none")")
+        logger.info("[Store] purchased membership IDs: \(self.purchasedMemberships.map(\.id).joined(separator: ",").nilIfEmpty ?? "none")")
+        logger.info("[Store] active plan: \(self.activeSubscriptionItem?.id ?? "none")")
         logger.info("[Store] ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
     }
     
     func sortByPrice(_ products: [Product]) -> [Product] {
         products.sorted(by: { return $0.price < $1.price })
+    }
+
+    private func subscriptionItem(forProductID productID: String?) -> SubscriptionItem? {
+        plans.first { $0.containsProductID(productID) }
+    }
+
+    private func sortPurchasedPlansByEntitlement(_ products: [Product]) -> [Product] {
+        products.sorted { lhs, rhs in
+            let lhsItem = subscriptionItem(forProductID: lhs.id) ?? .free
+            let rhsItem = subscriptionItem(forProductID: rhs.id) ?? .free
+
+            if lhsItem == rhsItem {
+                return lhs.id < rhs.id
+            }
+            return lhsItem > rhsItem
+        }
+    }
+
+    private func scheduleNextEntitlementExpirationRefresh(from expirationDates: [Date]) {
+        entitlementExpirationRefreshTask?.cancel()
+
+        let now = Date()
+        guard let nextExpiration = expirationDates
+            .filter({ $0 > now })
+            .min()
+        else {
+            entitlementExpirationRefreshTask = nil
+            return
+        }
+
+        let refreshDate = nextExpiration.addingTimeInterval(1)
+        let seconds = max(refreshDate.timeIntervalSinceNow, 0)
+        let nanoseconds = UInt64(min(seconds, Double(UInt64.max) / 1_000_000_000) * 1_000_000_000)
+
+        logger.info("[Store] scheduled entitlement expiration refresh at \(refreshDate.description)")
+
+        entitlementExpirationRefreshTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: nanoseconds)
+            guard !Task.isCancelled else { return }
+            await self?.refreshEntitlements(reason: .entitlementExpirationTimer, force: true)
+        }
     }
     
     // Get a subscription's level of service using the product ID.
@@ -306,6 +419,63 @@ class Store: ObservableObject {
         }
         // Finally, get the corresponding entitlement for this product.
         return ServiceEntitlement(for: product) ?? .notEntitled
+    }
+
+    private func latestPlanSubscriptionStatus() async -> Product.SubscriptionInfo.Status? {
+        guard let subscription = subscriptions.first?.subscription else {
+            logger.info("[Store] plan status unavailable: no plan products")
+            return nil
+        }
+
+        do {
+            let statuses = try await subscription.status
+            guard !statuses.isEmpty else {
+                logger.info("[Store] plan status unavailable: status count=0")
+                return nil
+            }
+            return statuses.max { lhs, rhs in
+                let lhsEntitlement = entitlement(for: lhs)
+                let rhsEntitlement = entitlement(for: rhs)
+                return lhsEntitlement < rhsEntitlement
+            }
+        } catch {
+            logger.warning("[Store] plan status unavailable: \(String(describing: error))")
+            return nil
+        }
+    }
+
+    private func logPlanEntitlementTransaction(_ transaction: StoreKit.Transaction) {
+        logger.info(
+            """
+            [Store] plan entitlement productID=\(transaction.productID) \
+            expires=\(transaction.expirationDate?.description ?? "nil") \
+            revoked=\(transaction.revocationDate?.description ?? "nil")
+            """
+        )
+    }
+
+    private func logPlanStatus(_ status: Product.SubscriptionInfo.Status?) {
+        guard let status else {
+            logger.info("[Store] plan status: none")
+            return
+        }
+
+        do {
+            let transaction = try checkVerified(status.transaction)
+            let renewalInfo = try checkVerified(status.renewalInfo)
+            logger.info(
+                """
+                [Store] plan status state=\(String(describing: status.state)) \
+                productID=\(transaction.productID) \
+                expires=\(transaction.expirationDate?.description ?? "nil") \
+                autoRenewPreference=\(renewalInfo.autoRenewPreference ?? "nil") \
+                willAutoRenew=\(renewalInfo.willAutoRenew) \
+                expirationReason=\(String(describing: renewalInfo.expirationReason))
+                """
+            )
+        } catch {
+            logger.error("[Store] plan status failedVerification error=\(String(describing: error)) state=\(String(describing: status.state))")
+        }
     }
     
     // MARK: - UI

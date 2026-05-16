@@ -190,7 +190,7 @@ extension AISettingsView {
     }
 
     var isPaidPlan: Bool {
-        llmState.creditsInfo?.subscription != nil
+        store.activeSubscriptionItem != nil
     }
 
     var isHighestAIPlan: Bool {
@@ -198,31 +198,36 @@ extension AISettingsView {
     }
 
     var planName: String {
-        // TODO: real tier-name mapping from `SubscriptionInfo` once the
-        // backend ships it. Two-state mock for now.
-        isPaidPlan
-        ? String(localizable: .settingsAIUsagePlanProName)
-        : String(localizable: .settingsAIUsagePlanFreeName)
+        store.activeSubscriptionItem?.title
+        ?? String(localizable: .settingsAIUsagePlanFreeName)
     }
 
     var planSubtitle: String {
-        guard let sub = llmState.creditsInfo?.subscription else {
+        guard let periodicCredits = llmState.creditsInfo?.periodicCredits else {
             return String(localizable: .settingsAIUsagePlanFreeSubtitle)
         }
-        let used = formatCredits(sub.usedQuota)
-        let total = formatCredits(sub.monthlyQuota)
-        let renew = sub.renewalDate.formatted(date: .abbreviated, time: .omitted)
-        return String(localizable: .settingsAIUsagePlanSubscriptionSubtitle(used, total, renew))
+        let used = formatCredits(periodicCredits.used)
+        let total = formatCredits(periodicCredits.quota)
+        let reset = periodicCredits.resetDate.formatted(date: .abbreviated, time: .omitted)
+        return String(localizable: .settingsAIUsagePlanSubscriptionSubtitle(used, total, reset))
     }
 
     var usageMetrics: (remaining: Double, total: Double, fractionRemaining: Double) {
-        if let sub = llmState.creditsInfo?.subscription {
-            let total = max(sub.monthlyQuota, 1)
-            let remaining = min(max(sub.monthlyQuota - sub.usedQuota, 0), total)
-            return (remaining, total, remaining / total)
+        guard let creditsInfo = llmState.creditsInfo else {
+            return (0, 1, 0)
         }
 
-        let balance = max(llmState.creditsInfo?.balance ?? 0, 0)
+        let balance = max(creditsInfo.balance, 0)
+
+        if let periodicCredits = creditsInfo.periodicCredits {
+            let total = max(
+                periodicCredits.quota + max(creditsInfo.purchasedCredits, 0),
+                balance,
+                1
+            )
+            return (balance, total, balance > 0 ? min(balance / total, 1) : 0)
+        }
+
         let total = max(balance, 1)
         return (balance, total, balance > 0 ? 1 : 0)
     }

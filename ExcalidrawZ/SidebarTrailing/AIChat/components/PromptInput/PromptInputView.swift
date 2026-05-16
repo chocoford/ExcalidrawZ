@@ -80,40 +80,10 @@ struct PromptInputView<Background: View, Header: View>: View {
         self.header = header()
     }
 
-    /// Side-state mirror for image attachments pasted into the input.
-    /// `inputText` only carries the `[image:<UUID>]` placeholders that
-    /// `PastedImageToken.plainText` produces — the actual image bytes
-    /// live here keyed by token id, and we reconcile the two on send.
-    /// See [PromptInputView+ImagePaste.swift](PromptInputView+ImagePaste.swift)
-    /// for the full data flow.
-    var inputText: String {
-        get { aiChatState.promptDraftText }
-        nonmutating set { aiChatState.promptDraftText = newValue }
-    }
-
-    var pastedImages: [PendingPastedImage] {
-        get { aiChatState.promptDraftImages }
-        nonmutating set { aiChatState.promptDraftImages = newValue }
-    }
-
-    var inputTextBinding: Binding<String> {
-        Binding(
-            get: { inputText },
-            set: { inputText = $0 }
-        )
-    }
-
-    var pastedImagesBinding: Binding<[PendingPastedImage]> {
-        Binding(
-            get: { pastedImages },
-            set: { pastedImages = $0 }
-        )
-    }
-
     /// Drives the system image-picker sheet from the attachment menu.
-    /// Selected files flow through the same `pastedImages` side-state
-    /// as paste, so once they're added the rest of the pipeline (send,
-    /// thumbnail strip, persist) is unchanged.
+    /// Selected files are resolved here, then appended to the draft owner
+    /// through `AIChatState` so the parent view does not subscribe to
+    /// high-frequency draft text/image changes.
     @State var isImagePickerPresented: Bool = false
     @State var agentConfig: DomainAgentConfigResponse?
 
@@ -132,6 +102,13 @@ struct PromptInputView<Background: View, Header: View>: View {
     /// Cancelling this task propagates Swift cooperative cancellation through
     /// `llmState.sendMessage`'s stream consumer, which terminates the request.
     @State var currentTask: Task<Void, Never>?
+    /// Draft text/images are stored in a reference object, but this parent
+    /// keeps it as plain `@State` so object publishes do not invalidate the
+    /// whole prompt view. Only `PromptDraftInputField` observes it.
+    @State var promptDraftState = AIChatPromptDraftState()
+    @State var draftHasContent: Bool = false
+    @State var draftHasImages: Bool = false
+    @State var draftSendRequestToken: Int = 0
 
     @FocusState var isInputFocused: Bool
 
@@ -150,7 +127,9 @@ struct PromptInputView<Background: View, Header: View>: View {
     /// from Settings only.
     @MainActor
     var activeModel: SupportedModel {
-        fallbackModelIfNeeded(selectedModelBeforeFallback)
+        AIChatRenderDebug.measure("prompt.activeModel") {
+            fallbackModelIfNeeded(selectedModelBeforeFallback)
+        }
     }
 
     @MainActor
@@ -183,9 +162,11 @@ struct PromptInputView<Background: View, Header: View>: View {
     ) -> SupportedModel {
         guard !canSelectModel(model, requiresImageInput: requiresImageInput) else { return model }
 
-        let availableModels = agentConfig?.allowedModels ?? []
-        let candidates = availableModels.filter {
-            canSelectModel($0, requiresImageInput: requiresImageInput)
+        let candidates = AIChatRenderDebug.measure("prompt.fallbackModel.candidates") {
+            let availableModels = agentConfig?.allowedModels ?? []
+            return availableModels.filter {
+                canSelectModel($0, requiresImageInput: requiresImageInput)
+            }
         }
         return SupportedModel.nearestExcalidrawFallback(to: model, from: candidates)
             ?? .claudeSonnet4_6
@@ -226,31 +207,39 @@ struct PromptInputView<Background: View, Header: View>: View {
 
     @MainActor
     var requiresImageInputModel: Bool {
-        !pastedImages.isEmpty
-            || pendingQueue.contains(where: { $0.files.containsImageInput })
-            || conversationContainsImageInput
+        AIChatRenderDebug.measure("prompt.requiresImageInputModel") {
+            draftHasImages
+                || pendingQueue.contains(where: { $0.files.containsImageInput })
+                || conversationContainsImageInput
+        }
     }
 
     @MainActor
     var canInsertImages: Bool {
         guard let agentConfig else { return true }
-        return agentConfig.allowedModels.contains {
-            $0.isVisibleInExcalidrawModelPicker
-                && canUsePlan(for: $0)
-                && $0.supportsExcalidrawImageInput
+        return AIChatRenderDebug.measure("prompt.canInsertImages") {
+            agentConfig.allowedModels.contains {
+                $0.isVisibleInExcalidrawModelPicker
+                    && canUsePlan(for: $0)
+                    && $0.supportsExcalidrawImageInput
+            }
         }
     }
 
     @MainActor
     var conversationContainsImageInput: Bool {
-        conversation?.messages.contains { message in
-            message.files?.containsImageInput == true
-        } ?? false
+        AIChatRenderDebug.measure("prompt.conversationContainsImageInput") {
+            conversation?.messages.contains { message in
+                message.files?.containsImageInput == true
+            } ?? false
+        }
     }
 
     var conversation: Conversation? {
         guard let conversationID else { return nil }
-        return llmState.getConversation(by: conversationID)
+        return AIChatRenderDebug.measure("prompt.getConversation") {
+            llmState.getConversation(by: conversationID)
+        }
     }
 
     var currentFileData: Data? {
@@ -280,6 +269,8 @@ struct PromptInputView<Background: View, Header: View>: View {
     }
 
     var body: some View {
+        let _ = AIChatRenderDebug.hit("PromptInputView.body")
+
         ZStack {
             if #available(macOS 26.0, iOS 26.0, *) {
                 content()
@@ -288,29 +279,29 @@ struct PromptInputView<Background: View, Header: View>: View {
                     .padding(8)
             }
         }
-        // Consume one-shot draft prefill requests from the host (e.g.,
-        // the per-user-message Revert action). Token-based so a second
-        // revert with identical text still triggers the .onChange.
-        .onChange(of: aiChatState.draftRequest?.token) { _ in
-            guard let req = aiChatState.draftRequest else { return }
-            inputText = req.text
-            pastedImages = PastedImageHelpers.pendingImages(from: req.files)
-            isInputFocused = true
-        }
-        .onChange(of: aiChatState.editCancelToken) { _ in
-            inputText = ""
-            pastedImages = []
-            isInputFocused = false
-        }
         .task {
             await loadAgentConfigIfNeeded()
         }
     }
 
+    @MainActor
+    func updateDraftSummary(hasContent: Bool, hasImages: Bool) {
+        if draftHasContent != hasContent {
+            draftHasContent = hasContent
+        }
+        if draftHasImages != hasImages {
+            draftHasImages = hasImages
+        }
+    }
+
     @MainActor @ViewBuilder
     private func content() -> some View {
+        let _ = AIChatRenderDebug.hit("PromptInputView.content")
+
         VStack(spacing: 6) {
-            if style.showsLowCreditsBanner {
+            if AIChatRenderDebug.useMinimalPromptInput {
+                debugMinimalInputBox
+            } else if style.showsLowCreditsBanner {
                 VStack(spacing: 0) {
                     LowCreditsBannerView(peekBottom: 18)
                         .padding(.horizontal, 10)
@@ -323,21 +314,24 @@ struct PromptInputView<Background: View, Header: View>: View {
                 inputBox
             }
 
-            HStack {
-                if #available(macOS 14.0, iOS 17.0, *) {
-                    actionBarLeading()
-                        .buttonBorderShape(.roundedRectangle(radius: 6))
-                        .buttonStyle(.accessoryBar)
-                } else {
-                    actionBarLeading()
-                        .buttonStyle(.plain)
+            if !AIChatRenderDebug.useMinimalPromptInput,
+               !AIChatRenderDebug.hidePromptActionBar {
+                HStack {
+                    if #available(macOS 14.0, iOS 17.0, *) {
+                        actionBarLeading()
+                            .buttonBorderShape(.roundedRectangle(radius: 6))
+                            .buttonStyle(.accessoryBar)
+                    } else {
+                        actionBarLeading()
+                            .buttonStyle(.plain)
+                    }
+
+                    Spacer()
+
+                    primaryActionButton()
                 }
-
-                Spacer()
-
-                primaryActionButton()
+                .controlSize(.large)
             }
-            .controlSize(.large)
         }
     }
 }

@@ -65,61 +65,21 @@ struct ExcalidrawEditor: View {
             return fileState.currentActiveFile == nil ? ExcalidrawFile() : excalidrawFile
         } set: { val in
             guard let val else { return }
-            guard activeFile?.id == val.id else { return }
-            
-            // Block updates while loading new file
-            guard !isLoadingFile else {
-                logger.info("Blocked update during file loading")
-                return
-            }
-            
-            switch activeFile {
-                case .file(let file):
-                    // Check if there are actual updates
-                    if let currentFile = excalidrawFile, val.elements == currentFile.elements {
-                        logger.info("no updates, ignored.")
-                        return
-                    }
-                    fileState.updateFile(file, with: val)
-                case .localFile(let url):
-                    guard case .localFolder(let folder) = fileState.currentActiveGroup else { return }
-                    Task {
-                        try folder.withSecurityScopedURL { _ in
-                            do {
-                                let oldElements = try ExcalidrawFile(contentsOf: url).elements
-                                if val.elements == oldElements {
-                                    logger.info("no updates, ignored.")
-                                    return
-                                }
-                                try await fileState.updateLocalFile(
-                                    to: url,
-                                    with: val,
-                                    context: viewContext
-                                )
-                            } catch {
-                                alertToast(error)
-                            }
-                        }
-                    }
-                case .temporaryFile(let url):
-                    Task {
-                        do {
-                            let oldElements = try ExcalidrawFile(contentsOf: url).elements
-                            if val.elements == oldElements {
-                                logger.info("no updates, ignored.")
-                                return
-                            }
-                            try await fileState.updateLocalFile(
-                                to: url,
-                                with: val,
-                                context: viewContext
-                            )
-                        } catch {
-                            alertToast(error)
-                        }
-                    }
-                default:
-                    break
+            _ = persistCanvasUpdate(val)
+        }
+    }
+
+    private enum CanvasUpdatePersistenceResult {
+        case accepted
+        case ignoredNoChanges
+        case rejected
+
+        var shouldUpdateEditorState: Bool {
+            switch self {
+                case .accepted, .ignoredNoChanges:
+                    return true
+                case .rejected:
+                    return false
             }
         }
     }
@@ -442,6 +402,8 @@ struct ExcalidrawEditor: View {
             return
         }
 
+        guard persistCanvasUpdate(file).shouldUpdateEditorState else { return }
+
         // Content changed, update tracking
         lastReceivedFileContent = currentContent
         lastEditTime = Date()
@@ -451,10 +413,70 @@ struct ExcalidrawEditor: View {
         cloudSyncTask?.cancel()
         cloudSyncTask = nil
 
-        // Apply local edits
-        localFileBinding.wrappedValue = file
-
         // Keep in-memory file in sync so exports read the latest elements.
         excalidrawFile = file
+    }
+
+    private func persistCanvasUpdate(_ file: ExcalidrawFile) -> CanvasUpdatePersistenceResult {
+        guard activeFile?.id == file.id else { return .rejected }
+
+        // Block updates while loading new file.
+        guard !isLoadingFile else {
+            logger.info("Blocked update during file loading")
+            return .rejected
+        }
+
+        switch activeFile {
+            case .file(let activeFile):
+                if let currentFile = excalidrawFile, file.elements == currentFile.elements {
+                    logger.info("no updates, ignored.")
+                    return .ignoredNoChanges
+                }
+                return fileState.updateFile(activeFile, with: file) ? .accepted : .rejected
+
+            case .localFile(let url):
+                guard case .localFolder(let folder) = fileState.currentActiveGroup else { return .rejected }
+                Task {
+                    try folder.withSecurityScopedURL { _ in
+                        do {
+                            let oldElements = try ExcalidrawFile(contentsOf: url).elements
+                            if file.elements == oldElements {
+                                logger.info("no updates, ignored.")
+                                return
+                            }
+                            try await fileState.updateLocalFile(
+                                to: url,
+                                with: file,
+                                context: viewContext
+                            )
+                        } catch {
+                            alertToast(error)
+                        }
+                    }
+                }
+                return .accepted
+
+            case .temporaryFile(let url):
+                Task {
+                    do {
+                        let oldElements = try ExcalidrawFile(contentsOf: url).elements
+                        if file.elements == oldElements {
+                            logger.info("no updates, ignored.")
+                            return
+                        }
+                        try await fileState.updateLocalFile(
+                            to: url,
+                            with: file,
+                            context: viewContext
+                        )
+                    } catch {
+                        alertToast(error)
+                    }
+                }
+                return .accepted
+
+            default:
+                return .rejected
+        }
     }
 }

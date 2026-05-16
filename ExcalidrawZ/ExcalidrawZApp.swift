@@ -39,7 +39,11 @@ extension LLMClient {
     )
 #else
     static let shared = LLMClient(
-        authProvider: .appStore(bundleID: "com.chocoford.excalidraw", ascAppID: 6754812067),
+        authProvider: .appStore(
+            bundleID: "com.chocoford.excalidraw",
+            ascAppID: 6754812067,
+            subscriptionGroupID: "914DA4EE"
+        ),
         uploadProvider: .none,
         uploadPolicy: .automatic
     )
@@ -147,7 +151,7 @@ struct ExcalidrawZApp: App {
         ))
 
         Task {
-             await LLMClient.shared.restore(groupID: "914DA4EE")
+             await LLMClient.shared.restore()
         }
 
         // AI chat attachment GC. Kicked off in the background after a

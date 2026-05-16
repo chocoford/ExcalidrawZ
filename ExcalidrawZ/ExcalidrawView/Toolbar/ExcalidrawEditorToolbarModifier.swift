@@ -151,9 +151,8 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemSymbol: .sparkles)
-                        if llmState.isAuthenticated {
-                            Text((llmState.creditsInfo?.balance ?? 0).formatted(.number.precision(.fractionLength(2))))
-                                
+                        if let balance = llmState.creditsInfo?.balance, balance > 0 {
+                            Text(balance.formatted(.number.precision(.fractionLength(2))))
                         }
                     }
                     .foregroundStyle(AIAppearancePalette.foregroundGradient)

@@ -97,7 +97,7 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
     static let max = SubscriptionItem(
         id: "plan.max_3x",
         yearlyID: "plan.max_3x_yearly",
-        title: String(localizable: .paywallPlanMaxTitle),
+        title: "Max",
         description: String(localizable: .paywallPlanMaxDescription),
         features: [
             String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),
@@ -119,7 +119,7 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
     static let max10x = SubscriptionItem(
         id: "plan.max_10x",
         yearlyID: "plan.max_10x_yearly",
-        title: String(localizable: .paywallPlanMax10xTitle),
+        title: "Max 10x",
         description: String(localizable: .paywallPlanMax10xDescription),
         features: [
             String(localizable: .paywallPlanGeneralFeaturesUnlimitedDraws),

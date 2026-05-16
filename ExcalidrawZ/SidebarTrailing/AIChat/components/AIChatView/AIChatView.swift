@@ -29,7 +29,6 @@ struct AIChatView: View {
         )
     }
     
-    @State var inputText: String = ""
     @FocusState var isInputFocused: Bool
 
     @State var lastBottomID: String?
@@ -175,9 +174,13 @@ struct AIChatView: View {
 
     @ViewBuilder
     var chatBody: some View {
+        let _ = AIChatRenderDebug.hit("AIChatView.chatBody")
+
         VStack(spacing: 0) {
             ZStack {
-                if let conversation, !conversation.messages.isEmpty {
+                if AIChatRenderDebug.hideMessageList {
+                    Color.clear
+                } else if let conversation, !conversation.messages.isEmpty {
                     messageList(messages: conversation.messages)
                 } else if currentTransientError != nil {
                     messageList(messages: conversation?.messages ?? [])

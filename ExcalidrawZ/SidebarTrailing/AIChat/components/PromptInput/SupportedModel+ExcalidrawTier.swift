@@ -49,8 +49,12 @@ extension SupportedModel {
         }
     }
 
-    /// Extra High is reserved for Max plan users. Keep this separate from
-    /// the display string so entitlement checks do not depend on UI text.
+    var supportsExcalidrawImageInput: Bool {
+        supportsImageInput
+    }
+
+    /// Extra High is a Max-plan capability. Other tiers are only gated by
+    /// credits/server-side availability.
     var requiresMaxAIPlan: Bool {
         switch self {
             case .claudeOpus4_7, .claudeOpus4_6:
@@ -58,10 +62,6 @@ extension SupportedModel {
             default:
                 return false
         }
-    }
-
-    var supportsExcalidrawImageInput: Bool {
-        supportsImageInput
     }
 
     /// Internal ordering used for automatic capability fallback.

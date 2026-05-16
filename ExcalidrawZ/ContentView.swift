@@ -58,6 +58,7 @@ struct ContentView: View {
             .modifier(PrintModifier())
             .modifier(WhatsNewSheetViewModifier())
             .modifier(NewRoomModifier())
+            .modifier(StoreKitEntitlementRefreshModifier())
             .modifier(PaywallModifier())
             .modifier(SearchableModifier())
             .handlesExternalEvents(preferring: ["*"], allowing: ["*"])

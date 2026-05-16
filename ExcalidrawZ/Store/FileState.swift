@@ -518,7 +518,8 @@ final class FileState: ObservableObject {
         }
     }
     
-    func updateFile(_ file: File, with excalidrawFile: ExcalidrawFile) {
+    @discardableResult
+    func updateFile(_ file: File, with excalidrawFile: ExcalidrawFile) -> Bool {
         // DIAG: third checkpoint in the update chain — confirms what flags
         // are in play when a Swift-side save would be issued, and whether
         // `shouldIgnoreUpdate` / `inTrash` are silently dropping updates.
@@ -526,7 +527,7 @@ final class FileState: ObservableObject {
         print("[aiDiag] updateFile elements=\(excalidrawFile.elements.count) shouldIgnore=\(shouldIgnoreUpdate) aiSession=\(aiChatSession != nil) didUpdateFile=\(didUpdateFlag) inTrash=\(file.inTrash)")
         guard !shouldIgnoreUpdate, !file.inTrash else {
             print("[aiDiag] updateFile → DROPPED by guard")
-            return
+            return false
         }
         let didUpdateFile = didUpdateFlag
         let id = file.objectID
@@ -565,6 +566,7 @@ final class FileState: ObservableObject {
                 print(error)
             }
         }
+        return true
     }
     
     @discardableResult

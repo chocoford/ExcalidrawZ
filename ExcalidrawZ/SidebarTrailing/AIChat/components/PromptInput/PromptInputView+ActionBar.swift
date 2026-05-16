@@ -8,9 +8,9 @@
 //  composition + state and isn't dominated by control glue.
 //
 //  Everything here is an `extension` of `PromptInputView` and uses its
-//  private state directly (`pastedImages`, `isImagePickerPresented`,
-//  `agentConfig`, `pendingModelSelection`, etc.) — no parameters
-//  threaded through, just the same scope split across files.
+//  private state directly (`isImagePickerPresented`, `agentConfig`,
+//  `pendingModelSelection`, etc.) — no parameters threaded through, just
+//  the same scope split across files.
 //
 
 import SwiftUI
@@ -26,15 +26,17 @@ extension PromptInputView {
     /// `.plain` below).
     @MainActor @ViewBuilder
     func actionBarLeading() -> some View {
+        let _ = AIChatRenderDebug.hit("PromptInputView.actionBarLeading")
+
         HStack(spacing: 0) {
             attachmentMenu
 
             ContextUsageRing(
-                conversationID: conversationID,
                 model: activeModel,
                 onTap: conversationID != nil && !isCompactingContext
                     ? { compactCurrentContext() }
-                    : nil
+                    : nil,
+                usedTokens: nil
             )
 
             modelPicker
@@ -43,14 +45,16 @@ extension PromptInputView {
 
     /// Bottom-left attachment menu. Currently has only "Image" — clicking
     /// it opens the system file picker constrained to `UTType.image`,
-    /// and selected files flow through the same `pastedImages`
-    /// pipeline as a Cmd+V paste. Future entries (file uploads,
-    /// canvas snapshots, etc.) drop in here as additional `Button`s.
+    /// then appends accepted images to the prompt draft owner. Future
+    /// entries (file uploads, canvas snapshots, etc.) drop in here as
+    /// additional `Button`s.
     /// We deliberately don't use the `primaryAction:` closure form —
     /// the icon doesn't have a single "default" action; tapping it
     /// just opens the menu.
     @MainActor @ViewBuilder
     var attachmentMenu: some View {
+        let _ = AIChatRenderDebug.hit("PromptInputView.attachmentMenu")
+
         Menu {
             Button {
                 isImagePickerPresented = true
@@ -74,11 +78,11 @@ extension PromptInputView {
         }
     }
 
-    /// Resolve the picked URLs into `PlatformImage`s and append to
-    /// `pastedImages`. Each URL needs `startAccessingSecurityScopedResource`
-    /// because `fileImporter` returns user-domain paths the app
-    /// doesn't have ambient access to. Failures are swallowed
-    /// per-file: a bad image shouldn't block the rest.
+    /// Resolve the picked URLs into `PlatformImage`s and request the draft
+    /// owner to append them. Each URL needs
+    /// `startAccessingSecurityScopedResource` because `fileImporter`
+    /// returns user-domain paths the app doesn't have ambient access to.
+    /// Failures are swallowed per-file: a bad image shouldn't block the rest.
     @MainActor
     func handleImagePickerResult(_ result: Result<[URL], Error>) {
         guard canInsertImages else {
@@ -93,26 +97,31 @@ extension PromptInputView {
             )
             return
         }
+        var images: [PendingPastedImage] = []
         for url in urls {
             let didStart = url.startAccessingSecurityScopedResource()
             defer {
                 if didStart { url.stopAccessingSecurityScopedResource() }
             }
             guard let image = imageFromFileURL(url) else { continue }
-            pastedImages.append(PendingPastedImage(id: UUID(), image: image))
+            images.append(PendingPastedImage(id: UUID(), image: image))
         }
+        aiChatState.requestAppendDraftImages(images)
     }
 
     @MainActor @ViewBuilder
     var modelPicker: some View {
+        let _ = AIChatRenderDebug.hit("PromptInputView.modelPicker")
+
         // Agent config hasn't loaded → show a quiet placeholder. Loading is fast
         // (one HTTP round-trip on first appearance) so a permanent skeleton would
         // be visual noise; we just render the active model name disabled.
-        let models = (agentConfig?.allowedModels ?? [])
-            .filter(\.isVisibleInExcalidrawModelPicker)
+        let models = AIChatRenderDebug.measure("prompt.modelPicker.models") {
+            (agentConfig?.allowedModels ?? [])
+                .filter { canSelectModel($0) }
+        }
         Menu {
             ForEach(models, id: \.rawValue) { model in
-                let isLocked = !canSelectModel(model)
                 Button {
                     pickModel(model)
                 } label: {
@@ -122,7 +131,6 @@ extension PromptInputView {
                         Text(model.excalidrawTierName)
                     }
                 }
-                .disabled(isLocked)
             }
         } label: {
             HStack(spacing: 4) {
@@ -194,8 +202,7 @@ extension PromptInputView {
         // "Has input" now also counts pasted images even if the user
         // typed no prose. A message with just a screenshot and no
         // accompanying text is a legitimate send.
-        let hasText = !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        return hasText || !pastedImages.isEmpty
+        draftHasContent
     }
 
     /// Shows stop only when generating *and* the input is empty. If the user
@@ -207,11 +214,13 @@ extension PromptInputView {
 
     @ViewBuilder
     func primaryActionButton() -> some View {
+        let _ = AIChatRenderDebug.hit("PromptInputView.primaryActionButton")
+
         Button {
             if primaryActionIsStop {
                 cancelCurrentGeneration()
             } else {
-                sendMessage()
+                draftSendRequestToken += 1
             }
         } label: {
             if #available(macOS 14.0, *) {

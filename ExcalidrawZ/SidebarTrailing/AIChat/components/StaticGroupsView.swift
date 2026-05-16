@@ -146,6 +146,8 @@ struct StaticGroupsView: View, Equatable {
     }
 
     var body: some View {
+        let _ = AIChatRenderDebug.hit("StaticGroupsView.body")
+
         ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
             ChatScrollRow {
                 renderGroup(group, at: index)
@@ -180,6 +182,7 @@ struct StaticGroupsView: View, Equatable {
                     isRoundCancelled: isGenerationCancelled,
                     onRegenerate: onRegenerate
                 )
+                .equatable()
             case .compactSummary(let c):
                 CompactSummaryRow(content: c)
         }

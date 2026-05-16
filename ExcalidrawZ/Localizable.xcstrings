@@ -47362,6 +47362,17 @@
         }
       }
     },
+    "paywallButtonIncludedInCurrentPlan": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Included in your current plan"
+          }
+        }
+      }
+    },
     "paywallButtonDonation": {
       "extractionState": "manual",
       "localizations": {

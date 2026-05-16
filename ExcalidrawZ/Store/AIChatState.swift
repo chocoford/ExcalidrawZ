@@ -40,6 +40,28 @@ enum AIChatEditError: LocalizedError {
 }
 
 @MainActor
+final class AIChatPromptDraftState: ObservableObject {
+    @Published var text: String = "" {
+        didSet {
+            AIChatRenderDebug.hit("publish.promptDraft.text")
+        }
+    }
+    @Published var images: [PendingPastedImage] = [] {
+        didSet {
+            AIChatRenderDebug.hit("publish.promptDraft.images")
+        }
+    }
+
+    var hasContent: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !images.isEmpty
+    }
+
+    var hasImages: Bool {
+        !images.isEmpty
+    }
+}
+
+@MainActor
 final class AIChatState: ObservableObject {
     /// Messages typed while a reply was streaming. PromptInputView appends
     /// to this on mid-stream send, drains it FIFO when the in-flight reply
@@ -50,17 +72,16 @@ final class AIChatState: ObservableObject {
     /// same reason the AI quota balance is.
     @Published var pendingQueue: [PendingQueueMessage] = []
 
-    /// One-shot prefill request for `PromptInputView`'s input box. Driven
-    /// by the per-user-message "Revert" action: the host sets this, the
-    /// input view picks it up via `.onChange(of:)`, copies the text into
-    /// its local `inputText` state, and refocuses. Token-based so two
-    /// reverts with the same text still fire the second time.
+    /// One-shot prefill request for the prompt draft owner. Driven by the
+    /// per-user-message "Revert" action: the host sets this, the input
+    /// field picks it up via `.onChange(of:)`, copies the text/files into
+    /// its local draft state, and refocuses. Token-based so two reverts
+    /// with the same text still fire the second time.
     @Published var draftRequest: DraftRequest?
+    @Published var draftImageAppendRequest: DraftImageAppendRequest?
     @Published var editSession: EditSession?
     @Published var editCancelToken: Int = 0
     @Published var transientError: TransientError?
-    @Published var promptDraftText: String = ""
-    @Published var promptDraftImages: [PendingPastedImage] = []
     @Published private var cancelledGenerationTokens: [String: Int] = [:]
 
     struct DraftRequest: Equatable {
@@ -69,6 +90,15 @@ final class AIChatState: ObservableObject {
         let token: Int
 
         static func == (lhs: DraftRequest, rhs: DraftRequest) -> Bool {
+            lhs.token == rhs.token
+        }
+    }
+
+    struct DraftImageAppendRequest: Equatable {
+        let images: [PendingPastedImage]
+        let token: Int
+
+        static func == (lhs: DraftImageAppendRequest, rhs: DraftImageAppendRequest) -> Bool {
             lhs.token == rhs.token
         }
     }
@@ -109,6 +139,7 @@ final class AIChatState: ObservableObject {
     }
 
     private var draftTokenSeed: Int = 0
+    private var draftImageAppendTokenSeed: Int = 0
 
     /// Push a new draft text into the input box. Increments the internal
     /// token so SwiftUI sees a fresh value even if `text` is identical
@@ -116,6 +147,15 @@ final class AIChatState: ObservableObject {
     func requestDraft(_ text: String, files: [ChatMessageContent.File] = []) {
         draftTokenSeed += 1
         draftRequest = DraftRequest(text: text, files: files, token: draftTokenSeed)
+    }
+
+    func requestAppendDraftImages(_ images: [PendingPastedImage]) {
+        guard !images.isEmpty else { return }
+        draftImageAppendTokenSeed += 1
+        draftImageAppendRequest = DraftImageAppendRequest(
+            images: images,
+            token: draftImageAppendTokenSeed
+        )
     }
 
     func beginEditing(

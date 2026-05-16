@@ -19,7 +19,7 @@ extension AISettingsView {
     /// allowed list after the user already picked it).
     @MainActor @ViewBuilder
     var defaultModelPicker: some View {
-        let selectableModels = availableModels.filter(\.isVisibleInExcalidrawModelPicker)
+        let selectableModels = availableModels.filter { canSelectModel($0) }
         let current = fallbackModelIfNeeded(prefs.defaultModel, from: selectableModels)
         let mergedModels: [SupportedModel] = {
             if selectableModels.isEmpty {

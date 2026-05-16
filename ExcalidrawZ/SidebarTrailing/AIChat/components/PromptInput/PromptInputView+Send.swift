@@ -35,14 +35,16 @@ extension PromptInputView {
     /// or compact, or run an auto-compact first because the round would
     /// otherwise overshoot the context window.
     @MainActor
-    func sendMessage() {
-        let trimmedText = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+    func submitDraft(
+        prompt trimmedText: String,
+        pastedImages: [PendingPastedImage]
+    ) -> Bool {
         let files = PastedImageHelpers.buildFiles(from: pastedImages)
-        guard !trimmedText.isEmpty || !files.isEmpty else { return }
+        guard !trimmedText.isEmpty || !files.isEmpty else { return false }
         let model = modelForSend(files: files)
         guard !files.containsImageInput || model.supportsExcalidrawImageInput else {
             alertToast(AIChatInputCapabilityError.noModelCanReadImages)
-            return
+            return false
         }
 
         // Client-side credits gate: if we already know the balance is empty,
@@ -52,19 +54,17 @@ extension PromptInputView {
         // catch-side dispatcher still routes to the paywall).
         if let balance = llmState.creditsInfo?.balance, balance <= 0 {
             Store.shared.togglePaywall(reason: .aiInsufficientCredits)
-            return
+            return false
         }
 
         if let editSession = aiChatState.editSession,
            editSession.conversationID == conversationID {
-            inputText = ""
-            pastedImages = []
             startEditedSend(
                 prompt: trimmedText,
                 files: files,
                 editSession: editSession
             )
-            return
+            return true
         }
 
         // Mid-stream OR mid-compact: queue and clear the input so the user
@@ -73,7 +73,7 @@ extension PromptInputView {
         // `compactCurrentContext` for a compact).
         if isGenerating || isCompactingContext {
             enqueue(text: trimmedText, files: files)
-            return
+            return true
         }
 
         // Auto-compact gate: if appending this prompt would push the
@@ -84,12 +84,11 @@ extension PromptInputView {
         if shouldAutoCompactBeforeSend() {
             enqueue(text: trimmedText, files: files)
             compactCurrentContext()
-            return
+            return true
         }
 
-        inputText = ""
-        pastedImages = []
         startSend(prompt: trimmedText, files: files)
+        return true
     }
 
     /// Editing/reverting a previous user turn is a two-phase send:
@@ -115,8 +114,7 @@ extension PromptInputView {
             } catch {
                 await MainActor.run {
                     currentTask = nil
-                    inputText = prompt
-                    pastedImages = PastedImageHelpers.pendingImages(from: files)
+                    aiChatState.requestDraft(prompt, files: files)
                     alertToast.presentAIChatError(error)
                 }
             }
@@ -132,8 +130,6 @@ extension PromptInputView {
                 PendingQueueMessage(text: text, files: files)
             )
         }
-        inputText = ""
-        pastedImages = []
     }
 
     /// Returns true when the conversation's LLMKit-estimated active

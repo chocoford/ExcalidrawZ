@@ -73,6 +73,10 @@ extension AIChatView {
                     
                     Menu {
                         Toggle("Render counters", isOn: $aiChatRenderDebug.isEnabled)
+                        Toggle("Hide message list", isOn: $aiChatRenderDebug.hideMessageList)
+                        Toggle("Minimal prompt input", isOn: $aiChatRenderDebug.useMinimalPromptInput)
+                        Toggle("Hide prompt action bar", isOn: $aiChatRenderDebug.hidePromptActionBar)
+                        Toggle("Hide generating effect", isOn: $aiChatRenderDebug.hideGeneratingEffect)
                         
                         Divider()
                         

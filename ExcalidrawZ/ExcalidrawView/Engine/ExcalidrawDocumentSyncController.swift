@@ -122,10 +122,6 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
                 }
             }
 
-            if let core {
-                logLoadFileDiag(core.logger, "[LoadFileDiag] canvasAttempt start id=\(fileID) attempt=\(attempt)/\(maxAttempts)")
-            }
-
             let result = await loadPreparedFile(fileID: fileID, data: data, force: force)
 
             if validateCurrentParentFile {
@@ -139,15 +135,9 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
             }
 
             let loadedID = await core?.webActor.loadedFileID
-            if let core {
-                logLoadFileDiag(core.logger, "[LoadFileDiag] canvasAttempt result id=\(fileID) attempt=\(attempt)/\(maxAttempts) loadedID=\(loadedID ?? "nil")")
-            }
 
             if loadedID == fileID {
                 commitLoadedFile(fileID: fileID)
-                if let core {
-                    logLoadFileDiag(core.logger, "[LoadFileDiag] canvasCommit id=\(fileID) attempt=\(attempt)/\(maxAttempts)")
-                }
                 return .loaded(result)
             }
 

@@ -31,6 +31,8 @@ extension PromptInputView {
     /// which left a faint compositing artifact in island mode.
     @MainActor @ViewBuilder
     var inputBox: some View {
+        let _ = AIChatRenderDebug.hit("PromptInputView.inputBox")
+
         let radius = style.cornerRadius
         let core = inputField()
             .overlay {
@@ -40,7 +42,9 @@ extension PromptInputView {
                 }
             }
             .overlay {
-                if isGenerating, style.showsGeneratingEffect {
+                if isGenerating,
+                   style.showsGeneratingEffect,
+                   !AIChatRenderDebug.hideGeneratingEffect {
                     GeneratingPromptInputEffect(cornerRadius: radius)
                         // Fade-in is driven internally by the effect's
                         // `TimelineView` (smoothstepped against mount
@@ -68,46 +72,59 @@ extension PromptInputView {
     }
 
     @MainActor @ViewBuilder
+    var debugMinimalInputBox: some View {
+        PromptDraftInputField(
+            draftState: promptDraftState,
+            showsAttachments: false,
+            sendRequestToken: draftSendRequestToken,
+            focus: $isInputFocused,
+            onSubmit: { text, images in
+                submitDraft(prompt: text, pastedImages: images)
+            },
+            onPaste: handlePastedItem,
+            onSummaryChange: { hasContent, hasImages in
+                updateDraftSummary(hasContent: hasContent, hasImages: hasImages)
+            }
+        )
+        .padding(8)
+        .background { style.background }
+    }
+
+    @MainActor @ViewBuilder
     func inputField() -> some View {
+        let _ = AIChatRenderDebug.hit("PromptInputView.inputField")
+
         VStack(spacing: 0) {
             header
-            
-            AttachmentThumbnailStrip(pastedImages: pastedImagesBinding)
-            
-            TextArea(
-                text: inputTextBinding,
-                placeholder: Text(localizable: .aiChatInputPlaceholder)
-            )
-            .keyDownHandler(
-                TextFieldKeyDownEventHandler(triggers: [(36, nil)]) { event in
-                    guard let event else { return nil }
-                    if event.keyCode == 36, !event.modifierFlags.contains(.shift) {
-                        sendMessage()
-                        return nil           // 消费 plain enter
-                    }
-                    return event             // shift+enter 透传，系统自动插入 \n 并移动光标
+
+            PromptDraftInputField(
+                draftState: promptDraftState,
+                showsAttachments: true,
+                sendRequestToken: draftSendRequestToken,
+                focus: $isInputFocused,
+                onSubmit: { text, images in
+                    submitDraft(prompt: text, pastedImages: images)
+                },
+                onPaste: handlePastedItem,
+                onSummaryChange: { hasContent, hasImages in
+                    updateDraftSummary(hasContent: hasContent, hasImages: hasImages)
                 }
             )
-            .onPaste { item in
-                handlePastedItem(item)
-            }
-            .focused($isInputFocused)
         }
         .background { style.background }
     }
 
-    /// Convert a TextArea paste event into the right `TextAreaInsertion`.
-    /// Image-bearing items get captured into `pastedImages` (which the
-    /// thumbnail strip above the input renders); we return
-    /// `.action {}` so TextArea inserts nothing into the prompt text
-    /// — the prompt stays clean for the model, and the image lives
-    /// out-of-band as an attachment.
+    /// Resolve image-bearing TextArea paste events into draft attachments.
+    /// The child draft owner appends accepted images and returns
+    /// `.action {}` so TextArea inserts nothing into the prompt text: the
+    /// prompt stays clean for the model, and the image lives out-of-band
+    /// as an attachment.
     ///
     /// Non-image pastes (plain text, web URLs, unknown UTIs, non-image
     /// files) return `nil`, falling through to TextArea's default
     /// handling.
     @MainActor
-    func handlePastedItem(_ item: TextAreaPasteItem) -> TextAreaInsertion? {
+    func handlePastedItem(_ item: TextAreaPasteItem) -> PromptImagePasteResult {
         let image: PlatformImage?
         switch item {
             case .image(let img):
@@ -122,18 +139,15 @@ extension PromptInputView {
                 image = nil
         }
 
-        guard let image else { return nil }
+        guard let image else { return .notHandled }
         guard upgradeModelForImageInputIfNeeded() else {
             alertToast(
                 AIChatInputCapabilityError.noModelCanReadImages
             )
-            return .action {}
+            return .rejected
         }
 
-        // Append synchronously so a same-runloop send picks it up.
-        pastedImages.append(PendingPastedImage(id: UUID(), image: image))
-        // No-op action to swallow the paste — TextArea inserts nothing.
-        return .action {}
+        return .accepted(PendingPastedImage(id: UUID(), image: image))
     }
 
     /// Try to turn a file URL into a `PlatformImage`. macOS reads
@@ -149,6 +163,125 @@ extension PromptInputView {
 #else
         return nil
 #endif
+    }
+}
+
+enum PromptImagePasteResult {
+    case notHandled
+    case rejected
+    case accepted(PendingPastedImage)
+}
+
+@MainActor
+private struct PromptDraftInputField: View {
+    @EnvironmentObject private var aiChatState: AIChatState
+    @ObservedObject var draftState: AIChatPromptDraftState
+
+    let showsAttachments: Bool
+    let sendRequestToken: Int
+    let focus: FocusState<Bool>.Binding
+    let onSubmit: (String, [PendingPastedImage]) -> Bool
+    let onPaste: (TextAreaPasteItem) -> PromptImagePasteResult
+    let onSummaryChange: (Bool, Bool) -> Void
+
+    private var textBinding: Binding<String> {
+        Binding(
+            get: { draftState.text },
+            set: { draftState.text = $0 }
+        )
+    }
+
+    private var pastedImagesBinding: Binding<[PendingPastedImage]> {
+        Binding(
+            get: { draftState.images },
+            set: { draftState.images = $0 }
+        )
+    }
+
+    var body: some View {
+        let _ = AIChatRenderDebug.hit("PromptDraftInputField.body")
+
+        VStack(spacing: 0) {
+            if showsAttachments {
+                AttachmentThumbnailStrip(pastedImages: pastedImagesBinding)
+            }
+
+            TextArea(
+                text: textBinding,
+                placeholder: Text(localizable: .aiChatInputPlaceholder)
+            )
+            .keyDownHandler(
+                TextFieldKeyDownEventHandler(triggers: [(36, nil)]) { event in
+                    guard let event else { return nil }
+                    if event.keyCode == 36, !event.modifierFlags.contains(.shift) {
+                        submit()
+                        return nil           // 消费 plain enter
+                    }
+                    return event             // shift+enter 透传，系统自动插入 \n 并移动光标
+                }
+            )
+            .onPaste { item in
+                handlePaste(item)
+            }
+            .focused(focus)
+        }
+        .onAppear {
+            publishSummary()
+        }
+        .onChange(of: draftState.text) { _ in
+            publishSummary()
+        }
+        .onChange(of: draftState.images) { _ in
+            publishSummary()
+        }
+        .onChange(of: sendRequestToken) { _ in
+            submit()
+        }
+        .onChange(of: aiChatState.draftRequest?.token) { _ in
+            guard let req = aiChatState.draftRequest else { return }
+            draftState.text = req.text
+            draftState.images = PastedImageHelpers.pendingImages(from: req.files)
+            publishSummary()
+            focus.wrappedValue = true
+        }
+        .onChange(of: aiChatState.draftImageAppendRequest?.token) { _ in
+            guard let req = aiChatState.draftImageAppendRequest else { return }
+            draftState.images.append(contentsOf: req.images)
+            publishSummary()
+        }
+        .onChange(of: aiChatState.editCancelToken) { _ in
+            draftState.text = ""
+            draftState.images = []
+            publishSummary()
+            focus.wrappedValue = false
+        }
+    }
+
+    private func publishSummary() {
+        onSummaryChange(draftState.hasContent, draftState.hasImages)
+    }
+
+    private func submit() {
+        let trimmedText = draftState.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let pastedImages = draftState.images
+        guard !trimmedText.isEmpty || !pastedImages.isEmpty else { return }
+        guard onSubmit(trimmedText, pastedImages) else { return }
+        draftState.text = ""
+        draftState.images = []
+        publishSummary()
+    }
+
+    private func handlePaste(_ item: TextAreaPasteItem) -> TextAreaInsertion? {
+        switch onPaste(item) {
+            case .notHandled:
+                return nil
+            case .rejected:
+                return .action {}
+            case .accepted(let image):
+                draftState.images.append(image)
+                publishSummary()
+                return .action {}
+        }
     }
 }
 

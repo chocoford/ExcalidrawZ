@@ -16,14 +16,8 @@
 
 import SwiftUI
 import LLMCore
-import LLMKit
 
 struct ContextUsageRing: View {
-    @EnvironmentObject var llmState: LLMStateObject
-
-    /// The conversation we're measuring. Nil when no chat is open yet.
-    let conversationID: String?
-
     /// Model whose context window we compare against. Driven by the
     /// active model from `PromptInputView` so the denominator follows
     /// the user's tier choice.
@@ -34,16 +28,12 @@ struct ContextUsageRing: View {
     /// so the next iteration can drop in a closure without touching
     /// callers.
     var onTap: (() -> Void)? = nil
+    var usedTokens: Int?
 
     private var maxTokens: Int { model.maxContextTokens ?? 0 }
 
-    private var usedTokens: Int {
-        guard let conversationID else { return 0 }
-        return llmState.estimatedTokenUsage(in: conversationID)
-    }
-
     private var fraction: Double {
-        guard maxTokens > 0 else { return 0 }
+        guard let usedTokens, maxTokens > 0 else { return 0 }
         return min(1, Double(usedTokens) / Double(maxTokens))
     }
 
@@ -58,6 +48,8 @@ struct ContextUsageRing: View {
     }
 
     var body: some View {
+        let _ = AIChatRenderDebug.hit("ContextUsageRing.body")
+
         ZStack {
             if fraction > 0.5 {
                 Button {

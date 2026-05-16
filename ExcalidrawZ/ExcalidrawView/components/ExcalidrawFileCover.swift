@@ -19,7 +19,7 @@ class FileItemPreviewCache: NSCache<NSString, PlatformImage> {
     static let shared = FileItemPreviewCache()
     
     static func cacheKey(forID id: String, colorScheme: ColorScheme) -> NSString {
-        id + (colorScheme == .light ? "_light" : "_dark") as NSString
+        (id + (colorScheme == .light ? "_light" : "_dark")) as NSString
     }
     
     func getPreviewCache(forID id: String, colorScheme: ColorScheme) -> PlatformImage? {
@@ -28,6 +28,11 @@ class FileItemPreviewCache: NSCache<NSString, PlatformImage> {
     
     func removePreviewCache(forID id: String, colorScheme: ColorScheme) {
         self.removeObject(forKey: Self.cacheKey(forID: id, colorScheme: colorScheme))
+    }
+
+    func removePreviewCache(forID id: String) {
+        self.removePreviewCache(forID: id, colorScheme: .light)
+        self.removePreviewCache(forID: id, colorScheme: .dark)
     }
 }
 
@@ -74,11 +79,17 @@ struct ExcalidrawFileCover: View {
     
     @State private var coverImage: Image? = nil
     @State private var error: Error?
+    @State private var generationTask: Task<Void, Never>?
+    @State private var generatingCacheKey: String?
+    @State private var generationToken = UUID()
     
     var body: some View {
         previewContent
             .apply { view in
                 applyListeners(to: view)
+            }
+            .task(id: cacheKey) {
+                loadCover()
             }
             .onReceive(
                 NotificationCenter.default.publisher(for: .filePreviewShouldRefresh)
@@ -87,42 +98,14 @@ struct ExcalidrawFileCover: View {
                       self.fileID == fileID else { return }
                 
                 print("Refreshing preview for file: \(fileID)")
-                
-                self.generateCover()
-            }
-            .onChange(of: fileID) { _ in
-                self.generateCover()
-            }
-            .watch(value: colorScheme) { _ in
-                guard scenePhase == .active else { return }
-                if let image = cache.getPreviewCache(forID: fileID, colorScheme: colorScheme) {
-                    Task.detached {
-                        let image = Image(platformImage: image)
-                        await MainActor.run {
-                            self.coverImage = image
-                        }
-                    }
-                } else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        self.generateCover()
-                    }
-                }
+
+                cache.removePreviewCache(forID: fileID)
+                self.generateCover(forceRefresh: true)
             }
             .onChange(of: scenePhase) { newValue in
                 guard fileState.currentActiveFile == nil else { return }
                 if newValue == .active {
-                    if let image = cache.getPreviewCache(forID: fileID, colorScheme: colorScheme) {
-                        Task.detached {
-                            let image = Image(platformImage: image)
-                            await MainActor.run {
-                                self.coverImage = image
-                            }
-                        }
-                    } else {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            self.generateCover()
-                        }
-                    }
+                    self.loadCover(delay: 0.5)
                 }
             }
     }
@@ -152,7 +135,8 @@ struct ExcalidrawFileCover: View {
                     .observeFileStatus(for: file) { status in
 #if os(macOS)
                         if status.iCloudStatus == .outdated {
-                            self.generateCover()
+                            cache.removePreviewCache(forID: file.id)
+                            self.generateCover(forceRefresh: true)
                         }
 #endif
                     }
@@ -161,8 +145,55 @@ struct ExcalidrawFileCover: View {
         }
     }
     
-    private func generateCover() {
-        Task {
+    private func loadCover(delay: TimeInterval = 0) {
+        if showCachedCoverIfAvailable() {
+            return
+        }
+
+        guard delay > 0 else {
+            generateCover()
+            return
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            if !showCachedCoverIfAvailable() {
+                generateCover()
+            }
+        }
+    }
+
+    @discardableResult
+    private func showCachedCoverIfAvailable() -> Bool {
+        guard let image = cache.getPreviewCache(forID: fileID, colorScheme: colorScheme) else {
+            return false
+        }
+
+        generationTask?.cancel()
+        generationToken = UUID()
+        generatingCacheKey = nil
+        coverImage = Image(platformImage: image)
+        error = nil
+        return true
+    }
+
+    private func generateCover(forceRefresh: Bool = false) {
+        let fileID = self.fileID
+        let colorScheme = self.colorScheme
+        let cacheKey = self.cacheKey
+
+        if !forceRefresh, showCachedCoverIfAvailable() {
+            return
+        }
+
+        guard forceRefresh || generatingCacheKey != cacheKey else {
+            return
+        }
+
+        generationTask?.cancel()
+        generatingCacheKey = cacheKey
+        let generationToken = UUID()
+        self.generationToken = generationToken
+        generationTask = Task {
             do {
                 // Load ExcalidrawFile based on source
                 let excalidrawFile: ExcalidrawFile
@@ -200,28 +231,57 @@ struct ExcalidrawFileCover: View {
                     files: excalidrawFile.files.isEmpty ? nil : excalidrawFile.files,
                     colorScheme: colorScheme
                 ) {
+                    guard !Task.isCancelled else {
+                        await finishGeneration(cacheKey: cacheKey, generationToken: generationToken)
+                        return
+                    }
                     Task.detached {
-                        guard let cgThumb = image.downsampledCGImage(maxPixelSize: 720) else { return }
+                        guard let cgThumb = image.downsampledCGImage(maxPixelSize: 720) else {
+                            await MainActor.run {
+                                self.finishGeneration(cacheKey: cacheKey, generationToken: generationToken)
+                            }
+                            return
+                        }
 #if canImport(UIKit)
                         let thumbnail = UIImage(cgImage: cgThumb)
 #elseif canImport(AppKit)
                         let thumbnail = NSImage(cgImage: cgThumb, size: .zero)
 #endif
                         await MainActor.run {
+                            guard self.generationToken == generationToken,
+                                  self.fileID == fileID,
+                                  self.colorScheme == colorScheme else { return }
                             cache.setObject(thumbnail, forKey: cacheKey as NSString)
-                        }
-                        let image = Image(platformImage: thumbnail)
-                        await MainActor.run {
+                            let image = Image(platformImage: thumbnail)
                             self.coverImage = image
                             self.error = nil
+                            self.finishGeneration(cacheKey: cacheKey, generationToken: generationToken)
                         }
                     }
+                } else {
+                    await finishGeneration(cacheKey: cacheKey, generationToken: generationToken)
                 }
             } catch {
+                guard !Task.isCancelled else {
+                    await finishGeneration(cacheKey: cacheKey, generationToken: generationToken)
+                    return
+                }
                 self.logger.error("Failed to load excalidraw file for preview: \(error)")
-                self.error = error
+                await MainActor.run {
+                    guard self.generationToken == generationToken else { return }
+                    self.error = error
+                    self.finishGeneration(cacheKey: cacheKey, generationToken: generationToken)
+                }
             }
         }
+    }
+
+    @MainActor
+    private func finishGeneration(cacheKey: String, generationToken: UUID) {
+        guard self.generationToken == generationToken,
+              generatingCacheKey == cacheKey else { return }
+        generatingCacheKey = nil
+        generationTask = nil
     }
 }
 

@@ -83,6 +83,15 @@ struct Paywall: View {
         guard let selectedBillingProduct else { return false }
         return store.purchasedPlans.contains { $0.id == selectedBillingProduct.id }
     }
+
+    private var isSelectedPlanIncludedInActivePlan: Bool {
+        guard let selectedSubscriptionItem,
+              let activeSubscriptionItem,
+              selectedSubscriptionItem != activeSubscriptionItem else {
+            return false
+        }
+        return selectedSubscriptionItem < activeSubscriptionItem
+    }
     
     private var baseFeatureLines: [Feature] {
         [
@@ -645,6 +654,8 @@ struct Paywall: View {
             ZStack {
                 if isSelectedSubscriptionPurchased {
                     Text(.localizable(.paywallButtonCurrentPlan))
+                } else if isSelectedPlanIncludedInActivePlan {
+                    Text(.localizable(.paywallButtonIncludedInCurrentPlan))
                 } else if let selectedBillingProduct {
                     let planName: String = selectedSubscriptionItem?.title ?? selectedBillingProduct.displayName
                     let period: String = selectedBillingProduct.subscription?.subscriptionPeriod.formatted(selectedBillingProduct.subscriptionPeriodFormatStyle) ?? ""
@@ -667,13 +678,13 @@ struct Paywall: View {
             }
         }())
         .buttonStyle(.borderedProminent)
-        .disabled(selectedBillingProduct == nil || isSelectedSubscriptionPurchased)
+        .disabled(selectedBillingProduct == nil || isSelectedSubscriptionPurchased || isSelectedPlanIncludedInActivePlan)
     }
     
     @MainActor @ViewBuilder
     private func restorePurchasesButton() -> some View {
         AsyncButton {
-            await store.updateCustomerProductStatus()
+            await store.refreshEntitlements(reason: .restorePurchases, force: true)
             alertToast(.init(displayMode: .hud, type: .complete(.green), title: String(localizable: .paywallRestorePurchasesDoneAlertTitle)))
         } label: {
             Text(localizable: .paywallButtonRestorePurchases)

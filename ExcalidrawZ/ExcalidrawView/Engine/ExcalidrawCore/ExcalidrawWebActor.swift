@@ -120,11 +120,6 @@ actor ExcalidrawWebActor {
             return nil
         }
 
-        logLoadFileDiag(
-            self.logger,
-            "[LoadFileDiag] start id=\(id) bytes=\(data.count.formatted(.byteCount(style: .file))) force=\(force) loadedFileID=\(self.loadedFileID ?? "nil") target=\(targetSummary)"
-        )
-
         var buffer = [UInt8].init(repeating: 0, count: data.count)
         data.copyBytes(to: &buffer, count: data.count)
         let buf = buffer
@@ -145,7 +140,7 @@ actor ExcalidrawWebActor {
             let durationMs = result.map { String(format: "%.1f", $0.durationMs) } ?? "nil"
             logLoadFileDiag(
                 self.logger,
-                "[LoadFileDiag] success id=\(id) resultFileId=\(resultFileID) jsElements=\(jsElements) durationMs=\(durationMs)"
+                "[LoadFileDiag] loaded id=\(id) bytes=\(data.count.formatted(.byteCount(style: .file))) resultFileId=\(resultFileID) jsElements=\(jsElements) durationMs=\(durationMs)"
             )
             return result
         } catch {

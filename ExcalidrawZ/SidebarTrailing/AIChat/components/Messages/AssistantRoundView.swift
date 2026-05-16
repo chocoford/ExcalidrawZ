@@ -561,6 +561,16 @@ struct AssistantRoundView: View {
     }
 }
 
+extension AssistantRoundView: Equatable {
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.roundID == rhs.roundID
+            && lhs.messages == rhs.messages
+            && lhs.streamingMessageIDs == rhs.streamingMessageIDs
+            && lhs.isRoundCancelled == rhs.isRoundCancelled
+            && lhs.activeRoundID == rhs.activeRoundID
+    }
+}
+
 // MARK: - Environment key for the smooth-scroll callback
 
 private struct ChatScrollToBottomKey: EnvironmentKey {
