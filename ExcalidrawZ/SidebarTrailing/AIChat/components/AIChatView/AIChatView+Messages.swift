@@ -232,16 +232,6 @@ extension AIChatView {
         let showsUserMessageActions = !isRoundLifecycleActive
         let disablesUserMessageActions = !isGenerationCancelled
         && (isRunActive || streamScrollFollowTail)
-        let contentRevision = messageListContentRevision(
-            allGroups: allGroups,
-            visibleGroups: visibleGroups,
-            activeRoundID: activeRoundID,
-            transientError: visibleTransientError,
-            streamingMessageIDs: streamingMessageIDs,
-            showsUserMessageActions: showsUserMessageActions,
-            disablesUserMessageActions: disablesUserMessageActions,
-            generationCancelToken: generationCancelToken
-        )
         let tableRows = chatTableRows(
             allGroups: allGroups,
             visibleGroups: visibleGroups,
@@ -256,85 +246,31 @@ extension AIChatView {
             && (isRunActive || streamScrollFollowTail)
 
         SwiftUI.Group {
-#if os(macOS)
-            if AIChatRenderDebug.useStackMessageListHost {
-                NativeChatStackView(
-                    rows: tableRows,
-                    isPinnedToBottom: $isPinnedToBottom,
-                    scrollToBottomRequest: $scrollToBottomRequest,
-                    isStreaming: isScrollStreaming,
-                    onReachTop: {
-                        loadMoreMessageGroupsIfNeeded(totalGroupCount: allGroups.count)
-                    },
-                    onScrollAnimationComplete: { token in
-                        handleScrollAnimationComplete(token: token)
-                    }
-                ) { row in
-                    chatTableRowContent(
-                        row,
-                        activeRoundID: activeRoundID,
-                        streamingMessageIDs: streamingMessageIDs,
-                        isGenerationCancelled: isGenerationCancelled,
-                        showsUserMessageActions: showsUserMessageActions,
-                        disablesUserMessageActions: disablesUserMessageActions
-                    )
-                    .environmentObject(aiChatState)
-                    .environment(\.chatScrollToBottom) { animated in
-                        await scrollToBottomAsync(animated: animated)
-                    }
-                }
-            } else {
-                NativeChatTableView(
-                    rows: tableRows,
-                    isPinnedToBottom: $isPinnedToBottom,
-                    scrollToBottomRequest: $scrollToBottomRequest,
-                    isStreaming: isScrollStreaming,
-                    onReachTop: {
-                        loadMoreMessageGroupsIfNeeded(totalGroupCount: allGroups.count)
-                    },
-                    onScrollAnimationComplete: { token in
-                        handleScrollAnimationComplete(token: token)
-                    }
-                ) { row in
-                    chatTableRowContent(
-                        row,
-                        activeRoundID: activeRoundID,
-                        streamingMessageIDs: streamingMessageIDs,
-                        isGenerationCancelled: isGenerationCancelled,
-                        showsUserMessageActions: showsUserMessageActions,
-                        disablesUserMessageActions: disablesUserMessageActions
-                    )
-                    .environmentObject(aiChatState)
-                    .environment(\.chatScrollToBottom) { animated in
-                        await scrollToBottomAsync(animated: animated)
-                    }
-                }
-            }
-#else
-            NativeChatScrollView(
+            ChatScrollView(
+                rows: tableRows,
                 isPinnedToBottom: $isPinnedToBottom,
                 scrollToBottomRequest: $scrollToBottomRequest,
                 isStreaming: isScrollStreaming,
-                contentRevision: contentRevision,
                 onReachTop: {
                     loadMoreMessageGroupsIfNeeded(totalGroupCount: allGroups.count)
                 },
                 onScrollAnimationComplete: { token in
                     handleScrollAnimationComplete(token: token)
                 }
-            ) {
-                messageListRows(
-                    allGroups: allGroups,
-                    visibleGroups: visibleGroups,
+            ) { row in
+                chatTableRowContent(
+                    row,
                     activeRoundID: activeRoundID,
-                    transientError: visibleTransientError,
                     streamingMessageIDs: streamingMessageIDs,
                     isGenerationCancelled: isGenerationCancelled,
                     showsUserMessageActions: showsUserMessageActions,
                     disablesUserMessageActions: disablesUserMessageActions
                 )
+                .environmentObject(aiChatState)
+                .environment(\.chatScrollToBottom) { animated in
+                    await scrollToBottomAsync(animated: animated)
+                }
             }
-#endif
         }
         .environment(\.chatScrollToBottom) { animated in
             await scrollToBottomAsync(animated: animated)
@@ -630,37 +566,6 @@ extension AIChatView {
         return result
     }
 
-    func messageListContentRevision(
-        allGroups: [MessageGroup],
-        visibleGroups: [MessageGroup],
-        activeRoundID: String?,
-        transientError: AIChatState.TransientError?,
-        streamingMessageIDs: Set<String>,
-        showsUserMessageActions: Bool,
-        disablesUserMessageActions: Bool,
-        generationCancelToken: Int
-    ) -> String {
-        let hiddenGroupCount = max(0, allGroups.count - visibleGroups.count)
-        let groupSignature = visibleGroups
-            .map { messageGroupPresentationSignature($0, streamingMessageIDs: streamingMessageIDs) }
-            .joined(separator: "|")
-        let transientErrorSignature = transientError.map {
-            "\($0.id.uuidString):\($0.message)"
-        } ?? "nil"
-        return [
-            "hidden:\(hiddenGroupCount)",
-            "loadingOlder:\(isLoadingOlderMessages ? "1" : "0")",
-            "activeRound:\(activeRoundID ?? "nil")",
-            "streaming:\(streamingMessageIDs.sorted().joined(separator: ","))",
-            "transient:\(transientErrorSignature)",
-            "revert:\(revertRequiredUserMessageIDs.sorted().joined(separator: ","))",
-            "userActions:\(showsUserMessageActions ? "1" : "0")",
-            "disabledActions:\(disablesUserMessageActions ? "1" : "0")",
-            "cancel:\(generationCancelToken)",
-            "groups:\(groupSignature)"
-        ].joined(separator: "::")
-    }
-
     func messageGroupPresentationSignature(
         _ group: MessageGroup,
         streamingMessageIDs: Set<String>
@@ -754,53 +659,6 @@ extension AIChatView {
             return parseFinalAnswerArgs(finalCall.arguments)
         }
         return content.content ?? ""
-    }
-
-    @ViewBuilder
-    func messageListRows(
-        allGroups: [MessageGroup],
-        visibleGroups: [MessageGroup],
-        activeRoundID: String?,
-        transientError: AIChatState.TransientError?,
-        streamingMessageIDs: Set<String>,
-        isGenerationCancelled: Bool,
-        showsUserMessageActions: Bool,
-        disablesUserMessageActions: Bool
-    ) -> some View {
-        let hiddenGroupCount = max(0, allGroups.count - visibleGroups.count)
-
-        if hiddenGroupCount > 0 {
-            HiddenHistoryIndicator(
-                hiddenGroupCount: hiddenGroupCount,
-                isLoading: isLoadingOlderMessages
-            )
-        }
-
-        StaticGroupsView(
-            groups: visibleGroups,
-            activeRoundID: activeRoundID,
-            streamingMessageIDs: streamingMessageIDs,
-            onRegenerate: regenerateMessage,
-            onResumeGeneration: resumeGeneration,
-            isGenerationCancelled: isGenerationCancelled,
-            revertRequiredUserMessageIDs: revertRequiredUserMessageIDs,
-            showsUserMessageActions: showsUserMessageActions,
-            disablesUserMessageActions: disablesUserMessageActions,
-            onUserMessageAction: beginEditingUserMessage
-        )
-        .equatable()
-
-        if let transientError {
-            ChatScrollRow {
-                ErrorMessageRow(
-                    error: transientError.message,
-                    onRetry: {
-                        retryTransientError(transientError)
-                    }
-                )
-            }
-            .transition(.opacity)
-        }
     }
 
     /// Bridge from `NativeChatScrollView`'s scroll-animation-complete
