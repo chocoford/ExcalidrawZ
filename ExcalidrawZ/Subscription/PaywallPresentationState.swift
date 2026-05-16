@@ -7,6 +7,7 @@ import SwiftUI
 
 final class PaywallPresentationState: ObservableObject {
     static let shared = PaywallPresentationState()
+    static let didPresentNotification = Notification.Name("PaywallPresentationState.didPresent")
 
     @Published var isPresented = false
     @Published var reachReason: Store.ReachPaywallReason?
@@ -18,5 +19,6 @@ final class PaywallPresentationState: ObservableObject {
         if !isPresented {
             isPresented = true
         }
+        NotificationCenter.default.post(name: Self.didPresentNotification, object: nil)
     }
 }

@@ -14,7 +14,6 @@ import ChocofordUI
 struct StoreKitEntitlementRefreshModifier: ViewModifier {
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var store: Store
-    @ObservedObject private var paywallPresentation = PaywallPresentationState.shared
 
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -39,10 +38,8 @@ struct StoreKitEntitlementRefreshModifier: ViewModifier {
                 }
             }
 #endif
-            .onChange(of: paywallPresentation.isPresented) { isPresented in
-                if isPresented {
-                    refresh(reason: .paywallPresented, force: true)
-                }
+            .onReceive(NotificationCenter.default.publisher(for: PaywallPresentationState.didPresentNotification)) { _ in
+                refresh(reason: .paywallPresented, force: true)
             }
 #endif
     }

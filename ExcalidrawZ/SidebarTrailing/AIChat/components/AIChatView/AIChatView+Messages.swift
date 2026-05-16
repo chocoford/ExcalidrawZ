@@ -164,7 +164,7 @@ extension AIChatView {
                 .scaledToFit()
                 .frame(height: 40)
                 .foregroundStyle(.secondary)
-            
+
             VStack(spacing: 10) {
                 Text(localizable: .aiChatEmptyContentPlaceholderTitle)
                     .foregroundStyle(.secondary)
@@ -179,7 +179,7 @@ extension AIChatView {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+
     @ViewBuilder
     func messageList(messages: [ChatMessage]) -> some View {
         let _ = AIChatRenderDebug.hit("AIChatView.messageList")
@@ -206,10 +206,10 @@ extension AIChatView {
             aiChatState.isGenerationCancelled(conversationID: $0)
         } ?? false
         let bottomID = visibleTransientError?.id.uuidString
-            ?? (isStreamingActive ? streamingState?.id : nil)
-            ?? messages.last?.id
+        ?? (isStreamingActive ? streamingState?.id : nil)
+        ?? messages.last?.id
         let isRoundLifecycleActive = !isGenerationCancelled
-            && (isStreamingActive || streamScrollFollowTail)
+        && (isStreamingActive || streamScrollFollowTail)
         // The active round (if any) is the latest assistantRound while
         // the stream is in flight. This is the round whose
         // AssistantRoundView mounts in "drive every message through the
@@ -226,7 +226,7 @@ extension AIChatView {
         )
         let showsUserMessageActions = !isRoundLifecycleActive
         let disablesUserMessageActions = !isGenerationCancelled
-            && (isStreamingActive || streamScrollFollowTail)
+        && (isStreamingActive || streamScrollFollowTail)
         let contentRevision = messageListContentRevision(
             allGroups: allGroups,
             visibleGroups: visibleGroups,
@@ -237,28 +237,71 @@ extension AIChatView {
             disablesUserMessageActions: disablesUserMessageActions,
             generationCancelToken: generationCancelToken
         )
-        NativeChatScrollView(
-            isPinnedToBottom: $isPinnedToBottom,
-            scrollToBottomRequest: $scrollToBottomRequest,
-            isStreaming: !isGenerationCancelled && (isStreamingActive || streamScrollFollowTail),
-            contentRevision: contentRevision,
-            onReachTop: {
-                loadMoreMessageGroupsIfNeeded(totalGroupCount: allGroups.count)
-            },
-            onScrollAnimationComplete: { token in
-                handleScrollAnimationComplete(token: token)
+        let tableRows = chatTableRows(
+            allGroups: allGroups,
+            visibleGroups: visibleGroups,
+            activeRoundID: activeRoundID,
+            transientError: visibleTransientError,
+            streamingMessageIDs: streamingMessageIDs,
+            isGenerationCancelled: isGenerationCancelled,
+            showsUserMessageActions: showsUserMessageActions,
+            disablesUserMessageActions: disablesUserMessageActions
+        )
+        let isScrollStreaming = !isGenerationCancelled
+            && (isStreamingActive || streamScrollFollowTail)
+
+        SwiftUI.Group {
+#if os(macOS)
+            NativeChatTableView(
+                rows: tableRows,
+                isPinnedToBottom: $isPinnedToBottom,
+                scrollToBottomRequest: $scrollToBottomRequest,
+                isStreaming: isScrollStreaming,
+                onReachTop: {
+                    loadMoreMessageGroupsIfNeeded(totalGroupCount: allGroups.count)
+                },
+                onScrollAnimationComplete: { token in
+                    handleScrollAnimationComplete(token: token)
+                }
+            ) { row in
+                chatTableRowContent(
+                    row,
+                    activeRoundID: activeRoundID,
+                    streamingMessageIDs: streamingMessageIDs,
+                    isGenerationCancelled: isGenerationCancelled,
+                    showsUserMessageActions: showsUserMessageActions,
+                    disablesUserMessageActions: disablesUserMessageActions
+                )
+                .environmentObject(aiChatState)
+                .environment(\.chatScrollToBottom) { animated in
+                    await scrollToBottomAsync(animated: animated)
+                }
             }
-        ) {
-            messageListRows(
-                allGroups: allGroups,
-                visibleGroups: visibleGroups,
-                activeRoundID: activeRoundID,
-                transientError: visibleTransientError,
-                streamingMessageIDs: streamingMessageIDs,
-                isGenerationCancelled: isGenerationCancelled,
-                showsUserMessageActions: showsUserMessageActions,
-                disablesUserMessageActions: disablesUserMessageActions
-            )
+#else
+            NativeChatScrollView(
+                isPinnedToBottom: $isPinnedToBottom,
+                scrollToBottomRequest: $scrollToBottomRequest,
+                isStreaming: isScrollStreaming,
+                contentRevision: contentRevision,
+                onReachTop: {
+                    loadMoreMessageGroupsIfNeeded(totalGroupCount: allGroups.count)
+                },
+                onScrollAnimationComplete: { token in
+                    handleScrollAnimationComplete(token: token)
+                }
+            ) {
+                messageListRows(
+                    allGroups: allGroups,
+                    visibleGroups: visibleGroups,
+                    activeRoundID: activeRoundID,
+                    transientError: visibleTransientError,
+                    streamingMessageIDs: streamingMessageIDs,
+                    isGenerationCancelled: isGenerationCancelled,
+                    showsUserMessageActions: showsUserMessageActions,
+                    disablesUserMessageActions: disablesUserMessageActions
+                )
+            }
+#endif
         }
         .environment(\.chatScrollToBottom) { animated in
             await scrollToBottomAsync(animated: animated)
@@ -315,6 +358,208 @@ extension AIChatView {
         .onChange(of: fileState.aiChatConversationID) { _ in
             resetVisibleMessageWindow()
         }
+    }
+
+    func chatTableRows(
+        allGroups: [MessageGroup],
+        visibleGroups: [MessageGroup],
+        activeRoundID: String?,
+        transientError: AIChatState.TransientError?,
+        streamingMessageIDs: Set<String>,
+        isGenerationCancelled: Bool,
+        showsUserMessageActions: Bool,
+        disablesUserMessageActions: Bool
+    ) -> [ChatTableRowModel] {
+        let hiddenGroupCount = max(0, allGroups.count - visibleGroups.count)
+        let commonSignature = [
+            "activeRound:\(activeRoundID ?? "nil")",
+            "streaming:\(streamingMessageIDs.sorted().joined(separator: ","))",
+            "revert:\(revertRequiredUserMessageIDs.sorted().joined(separator: ","))",
+            "userActions:\(showsUserMessageActions ? "1" : "0")",
+            "disabledActions:\(disablesUserMessageActions ? "1" : "0")",
+            "cancel:\(isGenerationCancelled ? "1" : "0")"
+        ].joined(separator: "::")
+        var rows: [ChatTableRowModel] = []
+
+        if hiddenGroupCount > 0 {
+            rows.append(
+                ChatTableRowModel(
+                    id: "hidden-history",
+                    signature: "hidden:\(hiddenGroupCount):loading:\(isLoadingOlderMessages ? "1" : "0")",
+                    kind: .hiddenHistory(
+                        hiddenGroupCount: hiddenGroupCount,
+                        isLoading: isLoadingOlderMessages
+                    )
+                )
+            )
+        }
+
+        for group in visibleGroups {
+            if case .assistantRound(let roundID, let messages) = group,
+               roundID != activeRoundID {
+                let items = AssistantRoundTableRows.items(
+                    in: messages,
+                    streamingMessageIDs: streamingMessageIDs
+                )
+                rows.append(
+                    contentsOf: items.map { item in
+                        ChatTableRowModel(
+                            id: "\(roundID):\(item.id)",
+                            signature: [
+                                item.signature,
+                                commonSignature
+                            ].joined(separator: "::"),
+                            kind: .assistantItem(item)
+                        )
+                    }
+                )
+                if let action = AssistantRoundTableRows.action(
+                    roundID: roundID,
+                    messages: messages,
+                    items: items,
+                    isRoundCancelled: isGenerationCancelled
+                ) {
+                    rows.append(
+                        ChatTableRowModel(
+                            id: action.id,
+                            signature: [
+                                "assistantAction:\(action.id):source:\(action.sourceID):usage:\(action.usage):copy:\(action.copyText.count)",
+                                commonSignature
+                            ].joined(separator: "::"),
+                            kind: .assistantAction(action)
+                        )
+                    )
+                }
+            } else {
+                rows.append(
+                    ChatTableRowModel(
+                        id: group.id,
+                        signature: [
+                            messageGroupPresentationSignature(
+                                group,
+                                streamingMessageIDs: streamingMessageIDs
+                            ),
+                            commonSignature
+                        ].joined(separator: "::"),
+                        kind: .group(group)
+                    )
+                )
+            }
+        }
+
+        if let transientError {
+            rows.append(
+                ChatTableRowModel(
+                    id: "transient-error:\(transientError.id.uuidString)",
+                    signature: "transient:\(transientError.id.uuidString):\(transientError.message)",
+                    kind: .transientError(
+                        id: transientError.id,
+                        message: transientError.message
+                    )
+                )
+            )
+        }
+
+        return rows
+    }
+
+    @MainActor @ViewBuilder
+    func chatTableRowContent(
+        _ row: ChatTableRowModel,
+        activeRoundID: String?,
+        streamingMessageIDs: Set<String>,
+        isGenerationCancelled: Bool,
+        showsUserMessageActions: Bool,
+        disablesUserMessageActions: Bool
+    ) -> some View {
+        switch row.kind {
+            case .hiddenHistory(let hiddenGroupCount, let isLoading):
+                ChatScrollRow {
+                    HiddenHistoryIndicator(
+                        hiddenGroupCount: hiddenGroupCount,
+                        isLoading: isLoading
+                    )
+                }
+            case .group(let group):
+                ChatScrollRow {
+                    chatTableGroupContent(
+                        group,
+                        activeRoundID: activeRoundID,
+                        streamingMessageIDs: streamingMessageIDs,
+                        isGenerationCancelled: isGenerationCancelled,
+                        showsUserMessageActions: showsUserMessageActions,
+                        disablesUserMessageActions: disablesUserMessageActions
+                    )
+                }
+            case .assistantItem(let item):
+                ChatScrollRow {
+                    AssistantRoundTableItemView(
+                        item: item,
+                        streamingMessageIDs: streamingMessageIDs
+                    )
+                }
+            case .assistantAction(let action):
+                ChatScrollRow {
+                    AssistantRoundTableActionRow(
+                        action: action,
+                        onRegenerate: regenerateMessage
+                    )
+                }
+            case .transientError(_, let message):
+                ChatScrollRow {
+                    ErrorMessageRow(
+                        error: message,
+                        onRetry: {
+                            guard let transientError = currentTransientError else { return }
+                            retryTransientError(transientError)
+                        }
+                    )
+                }
+        }
+    }
+
+    @MainActor @ViewBuilder
+    func chatTableGroupContent(
+        _ group: MessageGroup,
+        activeRoundID: String?,
+        streamingMessageIDs: Set<String>,
+        isGenerationCancelled: Bool,
+        showsUserMessageActions: Bool,
+        disablesUserMessageActions: Bool
+    ) -> some View {
+        switch group {
+            case .user(let content):
+                UserMessageBubble(
+                    content: content,
+                    actionKind: chatTableUserMessageActionKind(for: content.id),
+                    showsAction: showsUserMessageActions,
+                    isActionDisabled: disablesUserMessageActions,
+                    onAction: beginEditingUserMessage
+                )
+            case .loading:
+                LoadingMessageRow()
+            case .error(_, let message):
+                ErrorMessageRow(
+                    error: message,
+                    onRetry: resumeGeneration
+                )
+            case .assistantRound(let id, let messages):
+                AssistantRoundView(
+                    roundID: id,
+                    messages: messages,
+                    activeRoundID: activeRoundID,
+                    streamingMessageIDs: streamingMessageIDs,
+                    isRoundCancelled: isGenerationCancelled,
+                    onRegenerate: regenerateMessage
+                )
+                .equatable()
+            case .compactSummary(let content):
+                CompactSummaryRow(content: content)
+        }
+    }
+
+    func chatTableUserMessageActionKind(for id: String) -> UserMessageBubble.ActionKind? {
+        revertRequiredUserMessageIDs.contains(id) ? .revert : .edit
     }
 
     func containsErrorMessage(
@@ -452,7 +697,7 @@ extension AIChatView {
     ) -> String {
         guard let calls = content.toolCalls else { return "toolCalls:nil" }
         let isHiddenStreamingAssistant = content.role == .assistant
-            && streamingMessageIDs.contains(content.id)
+        && streamingMessageIDs.contains(content.id)
         let callSignature = calls.map { call in
             if isHiddenStreamingAssistant {
                 return "\(call.id):\(call.name):hidden-streaming-args"

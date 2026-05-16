@@ -10,10 +10,21 @@ import SwiftUI
 import SwiftyAlert
 
 struct PaywallModifier: ViewModifier {
-    @ObservedObject private var paywallPresentation = PaywallPresentationState.shared
-
     func body(content: Content) -> some View {
         content
+            .background {
+                PaywallPresenter()
+                    .frame(width: 0, height: 0)
+            }
+    }
+}
+
+private struct PaywallPresenter: View {
+    @ObservedObject private var paywallPresentation = PaywallPresentationState.shared
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
             .sheet(isPresented: $paywallPresentation.isPresented) {
                 Paywall()
                     .swiftyAlert()
