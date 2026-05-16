@@ -229,9 +229,7 @@ extension AIChatView {
             in: allGroups,
             conversationID: fileState.aiChatConversationID
         )
-        let showsUserMessageActions = !isRoundLifecycleActive
-        let disablesUserMessageActions = !isGenerationCancelled
-        && (isRunActive || streamScrollFollowTail)
+        let suppressedUserActionMessageID = fileState.aiChatSession?.userMessageID
         let scrollRows = chatScrollRows(
             allGroups: allGroups,
             visibleGroups: visibleGroups,
@@ -255,8 +253,7 @@ extension AIChatView {
                         activeRoundID: activeRoundID,
                         streamingMessageIDs: streamingMessageIDs,
                         isGenerationCancelled: isGenerationCancelled,
-                        showsUserMessageActions: showsUserMessageActions,
-                        disablesUserMessageActions: disablesUserMessageActions
+                        suppressedUserActionMessageID: suppressedUserActionMessageID
                     )
                 },
                 onReachTop: {
@@ -271,10 +268,8 @@ extension AIChatView {
                     activeRoundID: activeRoundID,
                     streamingMessageIDs: streamingMessageIDs,
                     isGenerationCancelled: isGenerationCancelled,
-                    showsUserMessageActions: showsUserMessageActions,
-                    disablesUserMessageActions: disablesUserMessageActions
+                    suppressedUserActionMessageID: suppressedUserActionMessageID
                 )
-                .environmentObject(aiChatState)
                 .environment(\.chatScrollToBottom) { animated in
                     await scrollToBottomAsync(animated: animated)
                 }
@@ -418,8 +413,7 @@ extension AIChatView {
         activeRoundID: String?,
         streamingMessageIDs: Set<String>,
         isGenerationCancelled: Bool,
-        showsUserMessageActions: Bool,
-        disablesUserMessageActions: Bool
+        suppressedUserActionMessageID: String?
     ) -> String {
         switch row.kind {
             case .hiddenHistory(let hiddenGroupCount, let isLoading):
@@ -431,8 +425,7 @@ extension AIChatView {
                     activeRoundID: activeRoundID,
                     streamingMessageIDs: streamingMessageIDs,
                     isGenerationCancelled: isGenerationCancelled,
-                    showsUserMessageActions: showsUserMessageActions,
-                    disablesUserMessageActions: disablesUserMessageActions
+                    suppressedUserActionMessageID: suppressedUserActionMessageID
                 )
 
             case .assistantItem(let item):
@@ -457,29 +450,31 @@ extension AIChatView {
         activeRoundID: String?,
         streamingMessageIDs: Set<String>,
         isGenerationCancelled: Bool,
-        showsUserMessageActions: Bool,
-        disablesUserMessageActions: Bool
+        suppressedUserActionMessageID: String?
     ) -> String {
         switch group {
             case .user(let content):
+                let actionKind = userMessageActionKind(
+                    for: content.id,
+                    suppressedUserActionMessageID: suppressedUserActionMessageID
+                )
                 return [
                     messageGroupPresentationSignature(
                         group,
                         streamingMessageIDs: streamingMessageIDs
                     ),
-                    "action:\(userMessageActionKind(for: content.id).map { String(describing: $0) } ?? "none")",
-                    "showAction:\(showsUserMessageActions ? "1" : "0")",
-                    "disableAction:\(disablesUserMessageActions ? "1" : "0")"
+                    "action:\(actionKind.map { String(describing: $0) } ?? "none")"
                 ].joined(separator: "::")
 
             case .assistantRound(let id, _):
+                let isActiveRound = activeRoundID == id
                 return [
                     messageGroupPresentationSignature(
                         group,
                         streamingMessageIDs: streamingMessageIDs
                     ),
-                    "active:\(activeRoundID == id ? "1" : "0")",
-                    "cancel:\(isGenerationCancelled ? "1" : "0")"
+                    "active:\(isActiveRound ? "1" : "0")",
+                    "cancel:\(isActiveRound && isGenerationCancelled ? "1" : "0")"
                 ].joined(separator: "::")
 
             default:
@@ -496,8 +491,7 @@ extension AIChatView {
         activeRoundID: String?,
         streamingMessageIDs: Set<String>,
         isGenerationCancelled: Bool,
-        showsUserMessageActions: Bool,
-        disablesUserMessageActions: Bool
+        suppressedUserActionMessageID: String?
     ) -> some View {
         switch row.kind {
             case .hiddenHistory(let hiddenGroupCount, let isLoading):
@@ -514,8 +508,7 @@ extension AIChatView {
                         activeRoundID: activeRoundID,
                         streamingMessageIDs: streamingMessageIDs,
                         isGenerationCancelled: isGenerationCancelled,
-                        showsUserMessageActions: showsUserMessageActions,
-                        disablesUserMessageActions: disablesUserMessageActions
+                        suppressedUserActionMessageID: suppressedUserActionMessageID
                     )
                 }
             case .assistantItem(let item):
@@ -551,16 +544,18 @@ extension AIChatView {
         activeRoundID: String?,
         streamingMessageIDs: Set<String>,
         isGenerationCancelled: Bool,
-        showsUserMessageActions: Bool,
-        disablesUserMessageActions: Bool
+        suppressedUserActionMessageID: String?
     ) -> some View {
         switch group {
             case .user(let content):
                 UserMessageBubble(
                     content: content,
-                    actionKind: userMessageActionKind(for: content.id),
-                    showsAction: showsUserMessageActions,
-                    isActionDisabled: disablesUserMessageActions,
+                    actionKind: userMessageActionKind(
+                        for: content.id,
+                        suppressedUserActionMessageID: suppressedUserActionMessageID
+                    ),
+                    showsAction: true,
+                    isActionDisabled: false,
                     onAction: beginEditingUserMessage
                 )
             case .loading:
@@ -585,8 +580,12 @@ extension AIChatView {
         }
     }
 
-    func userMessageActionKind(for id: String) -> UserMessageBubble.ActionKind? {
-        revertRequiredUserMessageIDs.contains(id) ? .revert : .edit
+    func userMessageActionKind(
+        for id: String,
+        suppressedUserActionMessageID: String? = nil
+    ) -> UserMessageBubble.ActionKind? {
+        guard id != suppressedUserActionMessageID else { return nil }
+        return revertRequiredUserMessageIDs.contains(id) ? .revert : .edit
     }
 
     func containsErrorMessage(

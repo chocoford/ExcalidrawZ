@@ -39,7 +39,6 @@ import AppKit
 #endif
 
 struct AssistantRoundView: View {
-    @EnvironmentObject private var aiChatState: AIChatState
     @Environment(\.chatScrollToBottom) private var chatScrollToBottom
 
     let roundID: String
