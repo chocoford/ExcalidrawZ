@@ -106,7 +106,13 @@ struct ContentView: View {
             // layer is already file-scoped, so this is just picking
             // the latest from that file's bin.
             .task(id: fileState.currentActiveFile?.id) {
-                print("[AIChatDiag] ContentView.task(id:) fired with id=\(fileState.currentActiveFile?.id ?? "nil")")
+                let activeFileID = fileState.currentActiveFile?.id
+                print("[AIChatDiag] ContentView.task(id:) fired with id=\(activeFileID ?? "nil")")
+                if activeFileID != nil {
+                    try? await Task.sleep(nanoseconds: 350_000_000)
+                    guard !Task.isCancelled,
+                          fileState.currentActiveFile?.id == activeFileID else { return }
+                }
                 await aiChatState.loadConversationForActiveFile(
                     in: llmState,
                     fileState: fileState

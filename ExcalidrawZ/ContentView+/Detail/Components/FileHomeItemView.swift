@@ -37,7 +37,7 @@ struct FileHomeItemView: View {
 #endif
     
     @EnvironmentObject var fileState: FileState
-    @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
+    @EnvironmentObject private var fileHomeItemTransitionItemState: FileHomeItemTransitionItemState
     
     var file: FileState.ActiveFile
     var canMultiSelect: Bool
@@ -170,7 +170,7 @@ struct FileHomeItemView: View {
                 isHovered = $0
             }
             .modifier(FileHomeItemDragModifier(file: file))
-            .opacity(fileHomeItemTransitionState.shouldHideItem == fileID ? 0 : 1)
+            .opacity(fileHomeItemTransitionItemState.shouldHideItem == fileID ? 0 : 1)
             .animation(.smooth(duration: 0.2), value: isHovered)
         }
     }
@@ -220,6 +220,7 @@ private struct FileHomeItemContentView: View {
 
     @EnvironmentObject private var layoutState: LayoutState
     @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var fileHomeItemTransitionItemState: FileHomeItemTransitionItemState
 
     var style: FileHomeItemStyle
     var file: FileState.ActiveFile
@@ -302,7 +303,9 @@ private struct FileHomeItemContentView: View {
         .background {
             Color.clear
                 .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
-                    [fileID+"SOURCE": value]
+                    fileHomeItemTransitionItemState.sourceFileID == fileID
+                    ? [fileID+"SOURCE": value]
+                    : [:]
                 }
         }
         .overlay {

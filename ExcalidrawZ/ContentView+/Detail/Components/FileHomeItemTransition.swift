@@ -9,20 +9,22 @@ import SwiftUI
 import CoreData
 
 final class FileHomeItemTransitionState: ObservableObject {
-    
-    @Published var shouldHideItem: String? = nil
-    
-    
-    
     @Published var canShowExcalidrawCanvas: Bool = false
     @Published var canShowItemContainerView: Bool = true
-    
-    func toggleOpenTransition() {
-        
+}
+
+final class FileHomeItemTransitionItemState: ObservableObject {
+    @Published private(set) var shouldHideItem: String?
+    @Published private(set) var sourceFileID: String?
+
+    func setShouldHideItem(_ value: String?) {
+        guard shouldHideItem != value else { return }
+        shouldHideItem = value
     }
-    
-    func toggleCloseTransition() {
-        
+
+    func setSourceFileID(_ value: String?) {
+        guard sourceFileID != value else { return }
+        sourceFileID = value
     }
 }
 
@@ -34,10 +36,12 @@ struct FileHomeItemTransitionModifier: ViewModifier {
     
     @State private var show: Bool = true
     @State private var animateFlag: Bool = false
+    @State private var transitionRevision: Int = 0
     
     @State private var file: FileState.ActiveFile?
     
-    @State private var state: FileHomeItemTransitionState = FileHomeItemTransitionState()
+    @StateObject private var state = FileHomeItemTransitionState()
+    @StateObject private var itemState = FileHomeItemTransitionItemState()
     
     func body(content: Content) -> some View {
         content
@@ -65,8 +69,11 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                 }
             }
             .environmentObject(state)
+            .environmentObject(itemState)
             .onChange(of: fileState.currentActiveFile) { newValue in
                 let oldValue = self.file
+                transitionRevision += 1
+                let revision = transitionRevision
    
                 /// Check if the newValue is in the same group as currentActiveGroup
                 func groupCheck(file: FileState.ActiveFile?) -> Bool {
@@ -112,63 +119,87 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                 
                 if oldValue == nil, let newValue { // open
                     self.file = newValue
+                    itemState.setSourceFileID(newValue.id)
+                    itemState.setShouldHideItem(nil)
                     state.canShowItemContainerView = true
                     self.animateFlag = false
                     self.show = true
                     state.canShowExcalidrawCanvas = false
                     
                     if #available(macOS 14.0, iOS 17.0, *) {
-                        withAnimation(.smooth(duration: duration)) {
-                            self.animateFlag = true
-                        } completion: {
-                            withAnimation {
-                                self.show = false
-                                state.canShowExcalidrawCanvas = true
+                        DispatchQueue.main.async {
+                            guard revision == transitionRevision else { return }
+                            withAnimation(.smooth(duration: duration)) {
+                                self.animateFlag = true
+                            } completion: {
+                                guard revision == transitionRevision else { return }
+                                withAnimation {
+                                    self.show = false
+                                    state.canShowExcalidrawCanvas = true
+                                }
+
+                                state.canShowItemContainerView = false
+                                itemState.setSourceFileID(nil)
                             }
-                            
-                            state.canShowItemContainerView = false
                         }
                     } else {
-                        withAnimation(.smooth(duration: duration)) {
-                            self.animateFlag = true
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.15) {
-                            withAnimation {
-                                self.show = false
-                                state.canShowExcalidrawCanvas = true
+                        DispatchQueue.main.async {
+                            guard revision == transitionRevision else { return }
+                            withAnimation(.smooth(duration: duration)) {
+                                self.animateFlag = true
                             }
-                            // self.file = newValue
-                            state.canShowItemContainerView = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.15) {
+                                guard revision == transitionRevision else { return }
+                                withAnimation {
+                                    self.show = false
+                                    state.canShowExcalidrawCanvas = true
+                                }
+                                // self.file = newValue
+                                state.canShowItemContainerView = false
+                                itemState.setSourceFileID(nil)
+                            }
                         }
                     }
                 } else if oldValue != nil, newValue == nil {
                     // dismiss
                     
                     self.animateFlag = true
-                    state.shouldHideItem = oldValue!.id
+                    itemState.setSourceFileID(oldValue!.id)
+                    itemState.setShouldHideItem(oldValue!.id)
                     state.canShowItemContainerView = true
                     self.show = true
                     
                     if #available(macOS 14.0, iOS 17.0, *) {
-                        withAnimation(.smooth(duration: duration)) {
-                            self.animateFlag = false
-                        } completion: {
-                            self.show = true
-                            self.file = nil
-                            state.shouldHideItem = nil
+                        DispatchQueue.main.async {
+                            guard revision == transitionRevision else { return }
+                            withAnimation(.smooth(duration: duration)) {
+                                self.animateFlag = false
+                            } completion: {
+                                guard revision == transitionRevision else { return }
+                                self.show = true
+                                self.file = nil
+                                itemState.setSourceFileID(nil)
+                                itemState.setShouldHideItem(nil)
+                            }
                         }
                     } else {
-                        withAnimation(.smooth(duration: duration)) {
-                            self.animateFlag = false
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.15) {
-                            self.show = true
-                            self.file = nil
-                            state.shouldHideItem = nil
+                        DispatchQueue.main.async {
+                            guard revision == transitionRevision else { return }
+                            withAnimation(.smooth(duration: duration)) {
+                                self.animateFlag = false
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.15) {
+                                guard revision == transitionRevision else { return }
+                                self.show = true
+                                self.file = nil
+                                itemState.setSourceFileID(nil)
+                                itemState.setShouldHideItem(nil)
+                            }
                         }
                     }
                 } else {
                     self.file = newValue
+                    itemState.setSourceFileID(nil)
                 }
             }
     }
@@ -208,9 +239,7 @@ struct FileHomeItemHeroLayer: View {
     var platformImage: PlatformImage? {
         FileItemPreviewCache.shared.object(forKey: cacheKey as NSString)
     }
-    
-    @State private var image: Image?
-    
+
     var background: Color {
         appPreference.excalidrawAppearance.colorScheme
         ?? appPreference.appearance.colorScheme
@@ -236,18 +265,22 @@ struct FileHomeItemHeroLayer: View {
             ZStack {
                 background
 
-                image?
-                    .resizable()
-                    .scaledToFill()
+                if let platformImage {
+                    Image(platformImage: platformImage)
+                        .resizable()
+                        .scaledToFill()
+                }
             }
-            .drawingGroup()
             .frame(width: viewSize.width, height: viewSize.height)
             .clipShape(RoundedRectangle(cornerRadius: isAnimating ? 0 : 12))
             .background {
                 if show {
                     RoundedRectangle(cornerRadius: isAnimating ? 0 : 12)
                         .fill(background)
-                        .shadow(color: Color.gray.opacity(0.2), radius: 4)
+                        .shadow(
+                            color: isAnimating ? .clear : Color.gray.opacity(0.2),
+                            radius: isAnimating ? 0 : 4
+                        )
                 }
             }
             .offset(viewPosition)
@@ -255,15 +288,6 @@ struct FileHomeItemHeroLayer: View {
             // can not use with if condition
             .opacity(show ? 1 : 0) // <-- important
             // .animation(.default, value: show)
-        }
-        .onAppear {
-            guard let platformImage else { return }
-            Task.detached {
-                let image = Image(platformImage: platformImage)
-                await MainActor.run {
-                    self.image = image
-                }
-            }
         }
     }
 }
@@ -290,4 +314,3 @@ struct SizeAnimatableContainer: Animatable, View {
         .frame(width: animatableData.width, height: animatableData.height)
     }
 }
-

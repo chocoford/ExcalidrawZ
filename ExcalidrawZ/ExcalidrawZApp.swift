@@ -33,7 +33,7 @@ extension Notification.Name {
 extension LLMClient {
 #if DEBUG
     static let shared = LLMClient(
-        authProvider: .xcode(bundleID: "com.chocoford.excalidrawZ-Debug"),
+        authProvider: .xcode(bundleID: "com.chocoford.excalidraw-Debug"),
         uploadProvider: .none,
         uploadPolicy: .automatic
     )
