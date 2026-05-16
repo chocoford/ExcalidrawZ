@@ -232,7 +232,7 @@ struct ExcalidrawFileCover: View {
                     colorScheme: colorScheme
                 ) {
                     guard !Task.isCancelled else {
-                        await finishGeneration(cacheKey: cacheKey, generationToken: generationToken)
+                        finishGeneration(cacheKey: cacheKey, generationToken: generationToken)
                         return
                     }
                     Task.detached {
@@ -259,11 +259,11 @@ struct ExcalidrawFileCover: View {
                         }
                     }
                 } else {
-                    await finishGeneration(cacheKey: cacheKey, generationToken: generationToken)
+                    finishGeneration(cacheKey: cacheKey, generationToken: generationToken)
                 }
             } catch {
                 guard !Task.isCancelled else {
-                    await finishGeneration(cacheKey: cacheKey, generationToken: generationToken)
+                    finishGeneration(cacheKey: cacheKey, generationToken: generationToken)
                     return
                 }
                 self.logger.error("Failed to load excalidraw file for preview: \(error)")

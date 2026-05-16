@@ -593,7 +593,8 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
         ) {
             ForEach(files) { file in
                 FileHomeItemView(
-                    file: file
+                    file: file,
+                    selectionSiblings: files
                 )
             }
         }

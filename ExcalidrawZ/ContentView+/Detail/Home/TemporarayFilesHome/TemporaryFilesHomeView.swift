@@ -38,7 +38,9 @@ struct TemporaryFilesHomeView: View {
             }
             .padding(.top, 36)
             .padding(.horizontal, 30)
-            
+
+            let activeFiles = files.map { FileState.ActiveFile.temporaryFile($0) }
+
             // Files
             LazyVGrid(
                 columns: [
@@ -46,9 +48,10 @@ struct TemporaryFilesHomeView: View {
                 ],
                 spacing: 20
             ) {
-                ForEach(files, id: \.self) { file in
+                ForEach(activeFiles) { file in
                     FileHomeItemView(
-                        file: .temporaryFile(file)
+                        file: file,
+                        selectionSiblings: activeFiles
                     )
                 }
                 
