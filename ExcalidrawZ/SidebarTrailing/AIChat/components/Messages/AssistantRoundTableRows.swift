@@ -8,6 +8,17 @@ import ChocofordUI
 import LLMCore
 import SFSafeSymbols
 
+private struct AIChatTableRowWidthKey: EnvironmentKey {
+    static let defaultValue: CGFloat? = nil
+}
+
+extension EnvironmentValues {
+    var aiChatTableRowWidth: CGFloat? {
+        get { self[AIChatTableRowWidthKey.self] }
+        set { self[AIChatTableRowWidthKey.self] = newValue }
+    }
+}
+
 struct AssistantRoundTableItem: Identifiable {
     enum Kind {
         case assistantContent(ChatMessageContent)
@@ -41,6 +52,10 @@ struct AssistantRoundTableItemView: View {
                         isStreaming: streamingMessageIDs.contains(content.id)
                     )
                     .padding(.bottom, 6)
+                    .assistantContentStableHeight(
+                        cacheKey: "\(item.signature):text:\(text.hashValue)",
+                        isStreaming: streamingMessageIDs.contains(content.id)
+                    )
                 }
             case .toolCall(let messageID, let call, let isDenied):
                 ToolCallCard(
@@ -51,6 +66,123 @@ struct AssistantRoundTableItemView: View {
             case .toolResult(let content):
                 ToolResultCard(content: content)
         }
+    }
+}
+
+extension View {
+    func assistantContentStableHeight(
+        cacheKey: String,
+        isStreaming: Bool
+    ) -> some View {
+        AssistantContentStableHeightContainer(
+            cacheKey: cacheKey,
+            isStreaming: isStreaming
+        ) {
+            self
+        }
+    }
+}
+
+private struct AssistantContentStableHeightContainer<Content: View>: View {
+    @Environment(\.aiChatTableRowWidth) private var tableRowWidth
+
+    let cacheKey: String
+    let isStreaming: Bool
+    let content: Content
+
+    @State private var measuredHeight: CGFloat?
+
+    init(
+        cacheKey: String,
+        isStreaming: Bool,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.cacheKey = cacheKey
+        self.isStreaming = isStreaming
+        self.content = content()
+    }
+
+    var body: some View {
+        if isStreaming {
+            content
+        } else {
+            ZStack(alignment: .topLeading) {
+                content
+                    .background(heightReader)
+            }
+            .frame(
+                height: measuredHeight ?? AssistantContentHeightCache.shared.height(
+                    for: cacheKey,
+                    tableRowWidth: tableRowWidth
+                ),
+                alignment: .top
+            )
+            .onPreferenceChange(AssistantContentMeasuredHeightKey.self) { newHeight in
+                recordMeasuredHeight(newHeight)
+            }
+        }
+    }
+
+    private var heightReader: some View {
+        GeometryReader { proxy in
+            Color.clear.preference(
+                key: AssistantContentMeasuredHeightKey.self,
+                value: proxy.size.height
+            )
+        }
+    }
+
+    private func recordMeasuredHeight(_ newHeight: CGFloat) {
+        guard newHeight.isFinite, newHeight > 0 else { return }
+        let normalizedHeight = ceil(newHeight)
+        if let measuredHeight, abs(measuredHeight - normalizedHeight) < 1 {
+            return
+        }
+        measuredHeight = normalizedHeight
+        AssistantContentHeightCache.shared.set(
+            normalizedHeight,
+            for: cacheKey,
+            tableRowWidth: tableRowWidth
+        )
+    }
+}
+
+private struct AssistantContentMeasuredHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private final class AssistantContentHeightCache {
+    static let shared = AssistantContentHeightCache()
+
+    private var values: [String: CGFloat] = [:]
+
+    func height(
+        for cacheKey: String,
+        tableRowWidth: CGFloat?
+    ) -> CGFloat? {
+        values[key(for: cacheKey, tableRowWidth: tableRowWidth)]
+    }
+
+    func set(
+        _ height: CGFloat,
+        for cacheKey: String,
+        tableRowWidth: CGFloat?
+    ) {
+        if values.count > 512 {
+            values.removeAll(keepingCapacity: true)
+        }
+        values[key(for: cacheKey, tableRowWidth: tableRowWidth)] = height
+    }
+
+    private func key(for cacheKey: String, tableRowWidth: CGFloat?) -> String {
+        let widthKey = tableRowWidth.map {
+            "\(Int($0.rounded(.toNearestOrAwayFromZero)))"
+        } ?? "unknown"
+        return "\(cacheKey):w\(widthKey)"
     }
 }
 

@@ -48,30 +48,21 @@ struct UserMessageBubble: View {
     var isActionDisabled: Bool = false
     var onAction: ((String) -> Void)?
 
-    @State private var isPresented = false
     @State private var isConfirmingRevert = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            Color.clear
-                .frame(height: isPresented ? 0 : 20)
-            if isPresented {
-                HStack {
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 4) {
-                        bubbleContents
-                        // Inline action bar — right-aligned to match the
-                        // bubble. Only renders when there's something
-                        // useful in it.
-                        if actionKind != nil, onAction != nil {
-                            actionBar
-                                .opacity(showsAction ? 1 : 0)
-                                .allowsHitTesting(showsAction)
-                                .animation(.smooth, value: showsAction)
-                        }
-                    }
+        HStack {
+            Spacer()
+            VStack(alignment: .trailing, spacing: 4) {
+                bubbleContents
+                // Inline action bar — right-aligned to match the
+                // bubble. Only renders when there's something useful in it.
+                if actionKind != nil, onAction != nil {
+                    actionBar
+                        .opacity(showsAction ? 1 : 0)
+                        .allowsHitTesting(showsAction)
+                        .animation(.smooth, value: showsAction)
                 }
-                .opacity(isPresented ? 1 : 0)
             }
         }
         .confirmationDialog(
@@ -85,13 +76,6 @@ struct UserMessageBubble: View {
             Button(.localizable(.generalButtonCancel), role: .cancel) {}
         } message: {
             Text(localizable: .aiChatRevertConfirmationDialogMessage)
-        }
-        .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                withAnimation(.easeOut) {
-                    isPresented = true
-                }
-            }
         }
     }
 

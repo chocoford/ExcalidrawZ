@@ -11,37 +11,33 @@ import SwiftUI
 /// any meaningful content yet. Three dots fade in sequentially to signal
 /// "still working" without dominating the row.
 struct LoadingMessageRow: View {
-    @State private var isAnimating: Bool = false
-
     private let dotSize: CGFloat = 8
     private let dotSpacing: CGFloat = 6
     private let cycleDuration: Double = 1.0
     private let stagger: Double = 0.18
 
     var body: some View {
-        HStack(spacing: dotSpacing) {
-            ForEach(0..<3, id: \.self) { index in
-                Circle()
-                    .fill(Color.secondary)
-                    .frame(width: dotSize, height: dotSize)
-                    .opacity(dotOpacity(index: index))
-                    .animation(dotAnimation(index: index), value: isAnimating)
+        TimelineView(.animation) { context in
+            HStack(spacing: dotSpacing) {
+                ForEach(0..<3, id: \.self) { index in
+                    Circle()
+                        .fill(Color.secondary)
+                        .frame(width: dotSize, height: dotSize)
+                        .opacity(dotOpacity(index: index, at: context.date))
+                }
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(Color.gray.opacity(0.2), in: Capsule())
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(Color.gray.opacity(0.2), in: Capsule())
-        .onAppear { isAnimating = true }
     }
 
-    private func dotOpacity(index: Int) -> Double {
-        return isAnimating ? 1 : 0.25
-    }
-
-    private func dotAnimation(index: Int) -> Animation? {
-        return .easeInOut(duration: cycleDuration / 2)
-            .repeatForever()
-            .delay(stagger * Double(index))
+    private func dotOpacity(index: Int, at date: Date) -> Double {
+        let shiftedTime = date.timeIntervalSinceReferenceDate - stagger * Double(index)
+        var phase = shiftedTime.truncatingRemainder(dividingBy: cycleDuration)
+        if phase < 0 { phase += cycleDuration }
+        let wave = (sin(phase / cycleDuration * .pi * 2 - .pi / 2) + 1) / 2
+        return 0.25 + 0.75 * wave
     }
 }
 

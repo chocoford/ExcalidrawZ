@@ -64,6 +64,7 @@ struct ToolEventCard<Content: View, Trailing: View>: View {
     /// `contentSize` lags — content overflows the viewport with no
     /// way to scroll to it.
     @State private var contentHeight: CGFloat = 0
+    @State private var hasMeasuredContentHeight = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -79,7 +80,11 @@ struct ToolEventCard<Content: View, Trailing: View>: View {
             .padding(.top, isExpanded ? 4 : 0)
             .readHeight($contentHeight)
             .modifier(ToolEventBodyHeightModifier(height: contentHeight))
-            .animation(.smooth, value: contentHeight)
+            .animation(hasMeasuredContentHeight ? .smooth : nil, value: contentHeight)
+            .onChange(of: contentHeight) { newValue in
+                guard newValue > 0, !hasMeasuredContentHeight else { return }
+                hasMeasuredContentHeight = true
+            }
             .clipped()
             
         }

@@ -215,6 +215,10 @@ struct AssistantRoundView: View {
                 isStreaming: streamingMessageIDs.contains(c.id)
             )
                 .padding(.bottom, 6)
+                .assistantContentStableHeight(
+                    cacheKey: "assistantContent:\(c.id):c\(text.count):text:\(text.hashValue):streaming:\(streamingMessageIDs.contains(c.id) ? "1" : "0")",
+                    isStreaming: streamingMessageIDs.contains(c.id)
+                )
         }
     }
 
