@@ -42,6 +42,8 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                         self.isDocumentLoaded = true
                     }
                     logger.info("onload")
+                case .legacyNoop:
+                    break
                 case .stateChanged(let message):
                     onStateChanged(message.data)
                 case .blobData(let message):
@@ -507,6 +509,7 @@ extension ExcalidrawCore {
     
     enum ExcalidrawZMessage: Codable {
         case onload
+        case legacyNoop(String)
         case stateChanged(StateChangedMessage)
         case blobData(BlobDataMessage)
         case onCopy(CopyMessage)
@@ -548,9 +551,28 @@ extension ExcalidrawCore {
             case eventType = "event"
         }
 
+        private static let legacyNoopEventNames: Set<String> = [
+            "blobData",
+            "getAllMedias",
+            "getElementsBlob",
+            "getElementsSVG",
+            "saveFileDone",
+        ]
+
         public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            let eventType = try container.decode(ExcalidrawZEventType.self, forKey: .eventType)
+            let eventName = try container.decode(String.self, forKey: .eventType)
+            if Self.legacyNoopEventNames.contains(eventName) {
+                self = .legacyNoop(eventName)
+                return
+            }
+            guard let eventType = ExcalidrawZEventType(rawValue: eventName) else {
+                throw DecodingError.dataCorruptedError(
+                    forKey: .eventType,
+                    in: container,
+                    debugDescription: "Unknown ExcalidrawZ event: \(eventName)"
+                )
+            }
 
             switch eventType {
                 case .onload:

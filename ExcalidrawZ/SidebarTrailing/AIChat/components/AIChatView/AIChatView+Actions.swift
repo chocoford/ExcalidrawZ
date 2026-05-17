@@ -217,8 +217,10 @@ extension AIChatView {
         aiChatState.clearTransientError(for: id)
         aiChatState.clearGenerationCancellation(for: id)
         Task {
+            var attemptedModel: SupportedModel?
             do {
                 let model = try await retryModel(conversationID: id)
+                attemptedModel = model
                 try await refreshConversationToolsIfNeeded(
                     conversationID: id,
                     model: model
@@ -238,22 +240,28 @@ extension AIChatView {
                         conversationID: id,
                         userMessageID: retryContent?.id ?? messageID,
                         retryPrompt: retryContent?.content ?? "",
-                        retryFiles: retryContent?.files ?? []
+                        retryFiles: retryContent?.files ?? [],
+                        retryModel: attemptedModel
                     )
                 }
             }
         }
     }
 
-    func resumeGeneration() {
+    func resumeGeneration(modelOverride: SupportedModel? = nil) {
         guard let id = fileState.aiChatConversationID else { return }
         let retryContent = lastUserContent()
 
         aiChatState.clearTransientError(for: id)
         aiChatState.clearGenerationCancellation(for: id)
         Task {
+            var attemptedModel: SupportedModel?
             do {
-                let model = try await retryModel(conversationID: id)
+                let model = try await retryModel(
+                    conversationID: id,
+                    preferredModel: modelOverride
+                )
+                attemptedModel = model
                 try await refreshConversationToolsIfNeeded(
                     conversationID: id,
                     model: model
@@ -272,7 +280,8 @@ extension AIChatView {
                         conversationID: id,
                         userMessageID: retryContent?.id ?? "",
                         retryPrompt: retryContent?.content ?? "",
-                        retryFiles: retryContent?.files ?? []
+                        retryFiles: retryContent?.files ?? [],
+                        retryModel: attemptedModel
                     )
                 }
             }
@@ -327,23 +336,37 @@ extension AIChatView {
         )
     }
 
-    private func retryModel(conversationID: String) async throws -> SupportedModel {
+    private func retryModel(
+        conversationID: String,
+        preferredModel: SupportedModel? = nil
+    ) async throws -> SupportedModel {
         let agentConfig = try await LLMClient.shared.getDomainAgentConfig(agentID: "excalidraw-canvas")
-        return await MainActor.run {
+        return try await MainActor.run {
             let requiresImageInput = conversation?.messages.contains { message in
                 message.files?.containsImageInput == true
             } ?? false
-            let selected = AIChatPreferences.shared.model(for: conversationID) ?? agentConfig.defaultModel
+            let preferences = AIChatPreferences.shared
             let canUse: (SupportedModel) -> Bool = { model in
                 model.isVisibleInExcalidrawModelPicker
                     && agentConfig.allowedModels.contains(model)
                     && (!model.requiresMaxAIPlan || Store.shared.canUseExtraHighAIModel)
                     && (!requiresImageInput || model.supportsExcalidrawImageInput)
             }
+            let selected: SupportedModel
+            if let preferredModel {
+                selected = preferredModel
+            } else {
+                let tier = preferences.tier(for: conversationID) ?? preferences.defaultTier
+                selected = SupportedModel.nearestExcalidrawFallback(
+                    to: tier,
+                    from: agentConfig.allowedModels.filter(canUse)
+                ) ?? tier.canonicalModel
+            }
             guard !canUse(selected) else { return selected }
-            let candidates = agentConfig.allowedModels.filter(canUse)
-            return SupportedModel.nearestExcalidrawFallback(to: selected, from: candidates)
-                ?? .claudeSonnet4_6
+            throw AIChatRetryModelUnavailableError(
+                model: selected,
+                requiresImageInput: requiresImageInput
+            )
         }
     }
 
@@ -407,7 +430,7 @@ extension AIChatView {
         aiChatState.clearTransientError(for: id)
 
         if hasUserMessage {
-            resumeGeneration()
+            resumeGeneration(modelOverride: error.retryModel)
         } else {
             aiChatState.requestDraft(error.retryPrompt, files: error.retryFiles)
         }
@@ -439,5 +462,17 @@ extension AIChatView {
             token: scrollToBottomRequest.token + 1,
             animated: animated
         )
+    }
+}
+
+private struct AIChatRetryModelUnavailableError: LocalizedError {
+    let model: SupportedModel
+    let requiresImageInput: Bool
+
+    var errorDescription: String? {
+        if requiresImageInput, !model.supportsExcalidrawImageInput {
+            return "The original model for this retry cannot read image input."
+        }
+        return "The original model for this retry is no longer available."
     }
 }

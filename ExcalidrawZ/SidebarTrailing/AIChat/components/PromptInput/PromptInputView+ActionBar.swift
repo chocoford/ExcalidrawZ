@@ -9,7 +9,7 @@
 //
 //  Everything here is an `extension` of `PromptInputView` and uses its
 //  private state directly (`isImagePickerPresented`, `agentConfig`,
-//  `pendingModelSelection`, etc.) — no parameters threaded through, just
+//  `pendingTierSelection`, etc.) — no parameters threaded through, just
 //  the same scope split across files.
 //
 
@@ -118,19 +118,24 @@ extension PromptInputView {
         // be visual noise; we just render the active model name disabled.
         let models = AIChatRenderDebug.measure("prompt.modelPicker.models") {
             (agentConfig?.allowedModels ?? [])
-                .filter { canSelectModel($0) }
+                .filter { canShowModelInPicker($0) }
         }
+        let tiers = ExcalidrawModelTier.pickerOrder.filter { tier in
+            models.contains { $0.excalidrawTier == tier }
+        }
+        let activeTier = activeModel.excalidrawTier ?? selectedTierBeforeFallback
         Menu {
-            ForEach(models, id: \.rawValue) { model in
+            ForEach(tiers) { tier in
                 Button {
-                    pickModel(model)
+                    pickTier(tier)
                 } label: {
-                    if model == activeModel {
-                        Label(model.excalidrawTierName, systemSymbol: .checkmark)
+                    if tier == activeTier {
+                        Label(tier.name, systemSymbol: .checkmark)
                     } else {
-                        Text(model.excalidrawTierName)
+                        Text(tier.name)
                     }
                 }
+                .disabled(!canSelectTier(tier))
             }
         } label: {
             HStack(spacing: 4) {
@@ -141,21 +146,29 @@ extension PromptInputView {
             .contentShape(Rectangle())
         }
         .menuIndicator(.visible)
-        .disabled(models.isEmpty)
+        .disabled(tiers.isEmpty)
     }
 
-    /// Route a model pick to the right place: existing conversations get a
+    /// Route a tier pick to the right place: existing conversations get a
     /// stored override (so reopening that thread restores the pick); fresh
-    /// chats just stage it in `pendingModelSelection` and get committed
+    /// chats just stage it in `pendingTierSelection` and get committed
     /// when `startSend` mints the conversation id.
     @MainActor
-    func pickModel(_ model: SupportedModel) {
-        guard canSelectModel(model) else { return }
+    func pickTier(_ tier: ExcalidrawModelTier) {
+        guard canSelectTier(tier) else { return }
 
         if let id = conversationID {
-            prefs.setModel(model, for: id)
+            prefs.setTier(tier, for: id)
         } else {
-            pendingModelSelection = model
+            pendingTierSelection = tier
+        }
+    }
+
+    @MainActor
+    func canSelectTier(_ tier: ExcalidrawModelTier) -> Bool {
+        let models = agentConfig?.allowedModels ?? []
+        return models.contains { model in
+            model.excalidrawTier == tier && canSelectModel(model)
         }
     }
 

@@ -175,6 +175,7 @@ extension PromptInputView {
             // cancel).
             var sessionOpened = false
             var streamSucceeded = false
+            var attemptedModel: SupportedModel?
 
             do {
                 await MainActor.run {
@@ -215,6 +216,7 @@ extension PromptInputView {
                 // than the hard-coded fallback.
                 await loadAgentConfigIfNeeded()
                 let model = await MainActor.run { modelForSend(files: files) }
+                attemptedModel = model
                 let isNewConversation = self.conversation == nil
                 if !isNewConversation {
                     try await refreshExistingConversationToolsIfNeeded(
@@ -253,15 +255,15 @@ extension PromptInputView {
 
                 if isNewConversation {
                     self.conversationID = newConversationID
-                    // Promote the staged pick (if any) to a per-conversation
+                    // Promote the staged tier (if any) to a per-conversation
                     // override now that we have an id. Without this, the
-                    // user's pre-send model choice would be lost on reopen
-                    // — `pendingModelSelection` is @State, conversation
+                    // user's pre-send tier choice would be lost on reopen
+                    // — `pendingTierSelection` is @State, conversation
                     // overrides survive the view's lifetime.
-                    if await MainActor.run(body: { pendingModelSelection != nil }) {
+                    if let pendingTier = await MainActor.run(body: { pendingTierSelection }) {
                         await MainActor.run {
-                            prefs.setModel(model, for: newConversationID)
-                            pendingModelSelection = nil
+                            prefs.setTier(pendingTier, for: newConversationID)
+                            pendingTierSelection = nil
                         }
                     }
                     try await llmState.createConversation(
@@ -324,7 +326,8 @@ extension PromptInputView {
                         conversationID: conversationIDForSession,
                         userMessageID: userMessageID,
                         retryPrompt: prompt,
-                        retryFiles: files
+                        retryFiles: files,
+                        retryModel: attemptedModel
                     )
                 }
             }

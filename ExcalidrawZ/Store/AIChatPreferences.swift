@@ -3,12 +3,12 @@
 //  ExcalidrawZ
 //
 //  Single source of truth for AI-chat user preferences:
-//   - `defaultModel`: the model used when a conversation has no explicit
-//     pick yet. Mutated from the Settings tab's "Default Model" picker.
-//   - `conversationOverrides`: per-conversation model assignments. Set
-//     when the user opens a conversation's model picker; survives across
+//   - `defaultTier`: the model tier used when a conversation has no
+//     explicit pick yet. Mutated from the Settings tab's picker.
+//   - `conversationTierOverrides`: per-conversation tier assignments.
+//     Set when the user opens a conversation's picker; survives across
 //     launches so reopening a conversation always picks back up with the
-//     model the user last chose for it.
+//     tier the user last chose for it.
 //
 //  Both are persisted to `UserDefaults` rather than Core Data — they're
 //  small (a single string + a flat dict), and don't need iCloud sync (a
@@ -24,66 +24,86 @@ import LLMCore
 final class AIChatPreferences: ObservableObject {
     static let shared = AIChatPreferences()
 
-    /// Model used for a fresh conversation that has no explicit pick yet,
+    /// Tier used for a fresh conversation that has no explicit pick yet,
     /// and as the fallback shown in the picker when no conversation is
     /// active. User-controlled via Settings → AI.
-    @Published var defaultModel: SupportedModel {
-        didSet { saveDefaultModel() }
+    @Published var defaultTier: ExcalidrawModelTier {
+        didSet { saveDefaultTier() }
     }
 
-    /// Per-conversation model picks, keyed by conversation id. Updated
+    /// Per-conversation tier picks, keyed by conversation id. Updated
     /// from `PromptInputView`'s inline picker; the side-effect goes
-    /// through `setModel(_:for:)` so persistence stays in one place.
-    @Published private(set) var conversationOverrides: [String: SupportedModel]
+    /// through `setTier(_:for:)` so persistence stays in one place.
+    @Published private(set) var conversationTierOverrides: [String: ExcalidrawModelTier]
 
-    private let defaultModelKey = "AIChat.defaultModel"
-    private let overridesKey = "AIChat.conversationModelOverrides"
-    /// "Medium" tier. The user-facing default for new conversations
-    /// and the fallback when no per-conversation override is stored.
-    /// Picked Haiku rather than Sonnet so first-time users don't burn
-    /// credits at the higher tier without knowing — they can opt up
-    /// from Settings → AI or per-conversation in the picker.
-    private let fallbackModel: SupportedModel = .claudeHaiku4_5
+    private let defaultTierKey = "AIChat.defaultModelTier"
+    private let overridesTierKey = "AIChat.conversationModelTierOverrides"
+
+    /// Legacy concrete-model keys. Kept only for one-way migration from
+    /// versions that persisted a specific upstream model instead of a tier.
+    private let legacyDefaultModelKey = "AIChat.defaultModel"
+    private let legacyOverridesKey = "AIChat.conversationModelOverrides"
 
     private init() {
         let defaults = UserDefaults.standard
-        if let raw = defaults.string(forKey: defaultModelKey) {
-            self.defaultModel = SupportedModel(rawValue: raw)
+        if let raw = defaults.string(forKey: defaultTierKey),
+           let tier = ExcalidrawModelTier(rawValue: raw) {
+            self.defaultTier = tier
+        } else if let raw = defaults.string(forKey: legacyDefaultModelKey),
+                  let tier = Self.tier(forLegacyStoredModelRawValue: raw) {
+            self.defaultTier = tier
         } else {
-            self.defaultModel = .claudeHaiku4_5
+            self.defaultTier = .medium
         }
 
-        let dict = defaults.dictionary(forKey: overridesKey) as? [String: String] ?? [:]
-        self.conversationOverrides = dict.mapValues { SupportedModel(rawValue: $0) }
+        if let dict = defaults.dictionary(forKey: overridesTierKey) as? [String: String] {
+            self.conversationTierOverrides = dict.compactMapValues {
+                ExcalidrawModelTier(rawValue: $0)
+            }
+        } else {
+            let dict = defaults.dictionary(forKey: legacyOverridesKey) as? [String: String] ?? [:]
+            self.conversationTierOverrides = dict.compactMapValues {
+                Self.tier(forLegacyStoredModelRawValue: $0)
+            }
+        }
     }
 
-    /// Returns the model picked for `conversationID`, or nil if the
-    /// conversation has no override (caller falls back to `defaultModel`).
-    func model(for conversationID: String?) -> SupportedModel? {
+    /// Returns the tier picked for `conversationID`, or nil if the
+    /// conversation has no override (caller falls back to `defaultTier`).
+    func tier(for conversationID: String?) -> ExcalidrawModelTier? {
         guard let id = conversationID else { return nil }
-        return conversationOverrides[id]
+        return conversationTierOverrides[id]
     }
 
-    func setModel(_ model: SupportedModel, for conversationID: String) {
-        conversationOverrides[conversationID] = model
-        saveOverrides()
+    func setTier(_ tier: ExcalidrawModelTier, for conversationID: String) {
+        conversationTierOverrides[conversationID] = tier
+        saveTierOverrides()
     }
 
     /// Drop the override for a removed conversation. Called from anywhere
     /// that deletes / clears a conversation so the dict doesn't grow
     /// indefinitely with dead keys.
     func forgetConversation(_ conversationID: String) {
-        guard conversationOverrides[conversationID] != nil else { return }
-        conversationOverrides.removeValue(forKey: conversationID)
-        saveOverrides()
+        if conversationTierOverrides[conversationID] != nil {
+            conversationTierOverrides.removeValue(forKey: conversationID)
+            saveTierOverrides()
+        }
     }
 
-    private func saveDefaultModel() {
-        UserDefaults.standard.set(defaultModel.rawValue, forKey: defaultModelKey)
+    private func saveDefaultTier() {
+        UserDefaults.standard.set(defaultTier.rawValue, forKey: defaultTierKey)
     }
 
-    private func saveOverrides() {
-        let raw = conversationOverrides.mapValues { $0.rawValue }
-        UserDefaults.standard.set(raw, forKey: overridesKey)
+    private func saveTierOverrides() {
+        let raw = conversationTierOverrides.mapValues { $0.rawValue }
+        UserDefaults.standard.set(raw, forKey: overridesTierKey)
+    }
+
+    private static func tier(forLegacyStoredModelRawValue rawValue: String) -> ExcalidrawModelTier? {
+        let model = SupportedModel(rawValue: rawValue)
+        if model == .claudeHaiku4_5 {
+            return .medium
+        }
+        return model.excalidrawTier
     }
 }

@@ -11,59 +11,86 @@ import LLMKit
 import LLMCore
 
 extension AISettingsView {
-    /// Picker for `prefs.defaultModel`. Bound through rawValue so the
-    /// underlying `SupportedModel` enum doesn't need explicit Hashable
-    /// conformance for the Picker tag matching. List is the agent's
-    /// allowed models with the user's current pick spliced in if it
-    /// somehow isn't there (e.g., backend dropped a model from the
-    /// allowed list after the user already picked it).
+    /// Picker for `prefs.defaultTier`. The concrete model is resolved at
+    /// send time from the current backend-allowed model list, so backend
+    /// model rotation does not rewrite the user's preferred capability tier.
     @MainActor @ViewBuilder
     var defaultModelPicker: some View {
-        let selectableModels = availableModels.filter { canSelectModel($0) }
-        let current = fallbackModelIfNeeded(prefs.defaultModel, from: selectableModels)
-        let mergedModels: [SupportedModel] = {
-            if selectableModels.isEmpty {
+        let visibleModels = availableModels.filter { canShowModelInPicker($0) }
+        let selectableModels = visibleModels.filter { canSelectModel($0) }
+        let visibleTiers = ExcalidrawModelTier.pickerOrder.filter { tier in
+            visibleModels.contains { $0.excalidrawTier == tier }
+        }
+        let selectableTiers = ExcalidrawModelTier.pickerOrder.filter { tier in
+            selectableModels.contains { $0.excalidrawTier == tier }
+        }
+        let current = fallbackTierIfNeeded(prefs.defaultTier, from: selectableTiers)
+        let mergedTiers: [ExcalidrawModelTier] = {
+            if visibleTiers.isEmpty {
                 return [current]
             }
-            if selectableModels.contains(where: { $0.rawValue == current.rawValue }) {
-                return selectableModels
+            if visibleTiers.contains(current) {
+                return visibleTiers
             }
-            return [current] + selectableModels
+            return [current] + visibleTiers
         }()
 
         Picker(.localizable(.settingsAIDefaultModelTitle), selection: Binding(
             get: { current.rawValue },
             set: { rawValue in
-                let model = SupportedModel(rawValue: rawValue)
-                guard canSelectModel(model) else { return }
-                prefs.defaultModel = model
+                guard let tier = ExcalidrawModelTier(rawValue: rawValue),
+                      canSelectTier(tier, from: selectableModels)
+                else { return }
+                prefs.defaultTier = tier
             }
         )) {
-            ForEach(mergedModels, id: \.rawValue) { model in
-                Text(model.excalidrawTierName)
-                    .tag(model.rawValue)
-                    .disabled(!canSelectModel(model))
+            ForEach(mergedTiers) { tier in
+                Text(tier.name)
+                    .tag(tier.rawValue)
+                    .disabled(!canSelectTier(tier, from: selectableModels))
             }
         }
         .help(.localizable(.settingsAIDefaultModelHelp))
     }
 
     @MainActor
-    func canSelectModel(_ model: SupportedModel) -> Bool {
+    func canShowModelInPicker(_ model: SupportedModel) -> Bool {
         model.isVisibleInExcalidrawModelPicker
-        && (!model.requiresMaxAIPlan || store.canUseExtraHighAIModel)
     }
 
     @MainActor
-    func fallbackModelIfNeeded(
-        _ model: SupportedModel,
-        from availableModels: [SupportedModel]
-    ) -> SupportedModel {
-        guard !canSelectModel(model) else { return model }
+    func canSelectModel(_ model: SupportedModel) -> Bool {
+        canShowModelInPicker(model)
+            && (!model.requiresMaxAIPlan || store.canUseExtraHighAIModel)
+    }
 
-        return availableModels.first(where: { $0 == .claudeSonnet4_6 })
-        ?? availableModels.first(where: { canSelectModel($0) })
-        ?? .claudeSonnet4_6
+    @MainActor
+    func canSelectTier(
+        _ tier: ExcalidrawModelTier,
+        from availableModels: [SupportedModel]
+    ) -> Bool {
+        availableModels.contains { model in
+            model.excalidrawTier == tier && canSelectModel(model)
+        }
+    }
+
+    @MainActor
+    func fallbackTierIfNeeded(
+        _ tier: ExcalidrawModelTier,
+        from availableTiers: [ExcalidrawModelTier]
+    ) -> ExcalidrawModelTier {
+        guard !availableTiers.isEmpty else { return tier }
+        guard !tier.requiresMaxAIPlan || store.canUseExtraHighAIModel else {
+            return availableTiers.first(where: { $0 == .high })
+            ?? availableTiers.first(where: { $0 == .medium })
+            ?? availableTiers[0]
+        }
+        guard availableTiers.contains(tier) else {
+            return availableTiers.first(where: { $0 == .medium })
+            ?? availableTiers[0]
+        }
+
+        return tier
     }
 
     func loadAvailableModelsIfNeeded() async {

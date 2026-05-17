@@ -87,13 +87,13 @@ struct PromptInputView<Background: View, Header: View>: View {
     @State var isImagePickerPresented: Bool = false
     @State var agentConfig: DomainAgentConfigResponse?
 
-    /// User's model pick made *before* a conversation has been created
+    /// User's model-tier pick made *before* a conversation has been created
     /// (i.e., a fresh chat). Promoted to a per-conversation override in
     /// `AIChatPreferences` the moment `startSend` mints a conversation id.
     /// Once the conversation exists, the picker writes straight to prefs.
-    @State var pendingModelSelection: SupportedModel?
+    @State var pendingTierSelection: ExcalidrawModelTier?
 
-    /// Global default + per-conversation overrides, persisted across
+    /// Global default + per-conversation tier overrides, persisted across
     /// launches. Drives `activeModel` and reflected back from picker
     /// taps / Settings changes.
     @ObservedObject var prefs = AIChatPreferences.shared
@@ -128,7 +128,7 @@ struct PromptInputView<Background: View, Header: View>: View {
     @MainActor
     var activeModel: SupportedModel {
         AIChatRenderDebug.measure("prompt.activeModel") {
-            fallbackModelIfNeeded(selectedModelBeforeFallback)
+            fallbackModelIfNeeded(selectedTierBeforeFallback)
         }
     }
 
@@ -139,9 +139,19 @@ struct PromptInputView<Background: View, Header: View>: View {
 
     @MainActor
     func canSelectModel(_ model: SupportedModel, requiresImageInput: Bool) -> Bool {
+        canShowModelInPicker(model, requiresImageInput: requiresImageInput)
+            && canUsePlan(for: model)
+    }
+
+    @MainActor
+    func canShowModelInPicker(_ model: SupportedModel) -> Bool {
+        canShowModelInPicker(model, requiresImageInput: requiresImageInputModel)
+    }
+
+    @MainActor
+    func canShowModelInPicker(_ model: SupportedModel, requiresImageInput: Bool) -> Bool {
         model.isVisibleInExcalidrawModelPicker
             && (agentConfig?.allowedModels.contains(model) ?? true)
-            && canUsePlan(for: model)
             && (!requiresImageInput || model.supportsExcalidrawImageInput)
     }
 
@@ -156,6 +166,32 @@ struct PromptInputView<Background: View, Header: View>: View {
     }
 
     @MainActor
+    func fallbackModelIfNeeded(_ tier: ExcalidrawModelTier) -> SupportedModel {
+        fallbackModelIfNeeded(tier, requiresImageInput: requiresImageInputModel)
+    }
+
+    @MainActor
+    func fallbackModelIfNeeded(
+        _ tier: ExcalidrawModelTier,
+        requiresImageInput: Bool
+    ) -> SupportedModel {
+        let preferred = tier.canonicalModel
+        guard !canSelectModel(preferred, requiresImageInput: requiresImageInput) else {
+            return preferred
+        }
+
+        let candidates = AIChatRenderDebug.measure("prompt.fallbackModel.candidates") {
+            let availableModels = agentConfig?.allowedModels
+                ?? ExcalidrawModelTier.allCases.map(\.canonicalModel)
+            return availableModels.filter {
+                canSelectModel($0, requiresImageInput: requiresImageInput)
+            }
+        }
+        return SupportedModel.nearestExcalidrawFallback(to: tier, from: candidates)
+            ?? preferred
+    }
+
+    @MainActor
     func fallbackModelIfNeeded(
         _ model: SupportedModel,
         requiresImageInput: Bool
@@ -163,44 +199,49 @@ struct PromptInputView<Background: View, Header: View>: View {
         guard !canSelectModel(model, requiresImageInput: requiresImageInput) else { return model }
 
         let candidates = AIChatRenderDebug.measure("prompt.fallbackModel.candidates") {
-            let availableModels = agentConfig?.allowedModels ?? []
+            let availableModels = agentConfig?.allowedModels
+                ?? ExcalidrawModelTier.allCases.map(\.canonicalModel)
             return availableModels.filter {
                 canSelectModel($0, requiresImageInput: requiresImageInput)
             }
         }
         return SupportedModel.nearestExcalidrawFallback(to: model, from: candidates)
-            ?? .claudeSonnet4_6
+            ?? ExcalidrawModelTier.medium.canonicalModel
     }
 
     @MainActor
     func modelForSend(files: [ChatMessageContent.File]) -> SupportedModel {
         return fallbackModelIfNeeded(
-            selectedModelBeforeFallback,
+            selectedTierBeforeFallback,
             requiresImageInput: requiresImageInputModel || files.containsImageInput
         )
     }
 
     @MainActor
-    var selectedModelBeforeFallback: SupportedModel {
-        prefs.model(for: conversationID)
-            ?? pendingModelSelection
-            ?? prefs.defaultModel
+    var selectedTierBeforeFallback: ExcalidrawModelTier {
+        prefs.tier(for: conversationID)
+            ?? pendingTierSelection
+            ?? prefs.defaultTier
     }
 
     @MainActor
     @discardableResult
     func upgradeModelForImageInputIfNeeded() -> Bool {
         guard canInsertImages else { return false }
-        let selectedModel = selectedModelBeforeFallback
+
+        let selectedTier = selectedTierBeforeFallback
+        let selectedModel = selectedTier.canonicalModel
         guard !selectedModel.supportsExcalidrawImageInput else { return true }
 
-        let upgradedModel = fallbackModelIfNeeded(selectedModel, requiresImageInput: true)
-        guard upgradedModel.supportsExcalidrawImageInput else { return false }
+        let upgradedModel = fallbackModelIfNeeded(selectedTier, requiresImageInput: true)
+        guard upgradedModel.supportsExcalidrawImageInput,
+              let upgradedTier = upgradedModel.excalidrawTier
+        else { return false }
 
         if let id = conversationID {
-            prefs.setModel(upgradedModel, for: id)
+            prefs.setTier(upgradedTier, for: id)
         } else {
-            pendingModelSelection = upgradedModel
+            pendingTierSelection = upgradedTier
         }
         return true
     }

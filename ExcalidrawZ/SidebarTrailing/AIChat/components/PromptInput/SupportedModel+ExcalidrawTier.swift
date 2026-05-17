@@ -25,28 +25,87 @@
 import Foundation
 import LLMCore
 
+enum ExcalidrawModelTier: String, Codable, CaseIterable, Identifiable, Sendable {
+    case low
+    case medium
+    case high
+    case extraHigh
+
+    static var pickerOrder: [Self] {
+        [.extraHigh, .high, .medium, .low]
+    }
+
+    var id: String { rawValue }
+
+    var rank: Int {
+        switch self {
+            case .low: 0
+            case .medium: 1
+            case .high: 2
+            case .extraHigh: 3
+        }
+    }
+
+    var name: String {
+        switch self {
+            case .low:
+                return String(localizable: .aiChatModelTierLow)
+            case .medium:
+                return String(localizable: .aiChatModelTierMedium)
+            case .high:
+                return String(localizable: .aiChatModelTierHigh)
+            case .extraHigh:
+                return String(localizable: .aiChatModelTierExtraHigh)
+        }
+    }
+
+    var requiresMaxAIPlan: Bool {
+        self == .extraHigh
+    }
+
+    var canonicalModel: SupportedModel {
+        switch self {
+            case .low:
+                return .hy3Preview
+            case .medium:
+                return .qwen3_6Plus
+            case .high:
+                return .claudeSonnet4_6
+            case .extraHigh:
+                return .claudeOpus4_7
+        }
+    }
+}
+
 extension SupportedModel {
+    var excalidrawTier: ExcalidrawModelTier? {
+        switch self {
+            case .hy3Preview:
+                return .low
+            case .qwen3_6Plus:
+                return .medium
+            case .claudeSonnet4_6:
+                return .high
+            case .claudeOpus4_7:
+                return .extraHigh
+            default:
+                return nil
+        }
+    }
+
     /// User-facing tier label used by the chat input's model picker.
     /// DEBUG builds expose the upstream `displayName` for unmapped models
     /// so newly added cases are easy to spot during development. Release
     /// builds keep the picker on stable tier vocabulary.
     var excalidrawTierName: String {
-        switch self {
-            case .hy3Preview:
-                return String(localizable: .aiChatModelTierLow)
-            case .claudeHaiku4_5:
-                return String(localizable: .aiChatModelTierMedium)
-            case .claudeSonnet4_6:
-                return String(localizable: .aiChatModelTierHigh)
-            case .claudeOpus4_7:
-                return String(localizable: .aiChatModelTierExtraHigh)
-            default:
-#if DEBUG
-                return displayName
-#else
-                return "Experimental"
-#endif
+        if let tier = excalidrawTier {
+            return tier.name
         }
+#if DEBUG
+        return displayName
+#else
+        return "Experimental"
+#endif
     }
 
     var supportsExcalidrawImageInput: Bool {
@@ -70,18 +129,7 @@ extension SupportedModel {
     /// that fall through to provider names / "Experimental" are left
     /// unranked so they do not influence tier-based fallback.
     var excalidrawSelectionRank: Int? {
-        switch self {
-            case .hy3Preview:
-                return 0
-            case .claudeHaiku4_5:
-                return 1
-            case .claudeSonnet4_6:
-                return 2
-            case .claudeOpus4_7:
-                return 3
-            default:
-                return nil
-        }
+        excalidrawTier?.rank
     }
 
     /// Model picker visibility. Release builds only expose models that
@@ -100,14 +148,21 @@ extension SupportedModel {
         to selected: SupportedModel,
         from candidates: [SupportedModel]
     ) -> SupportedModel? {
-        guard !candidates.isEmpty else { return nil }
-        guard let selectedRank = selected.excalidrawSelectionRank else {
+        guard let selectedTier = selected.excalidrawTier else {
             return candidates.first
         }
+        return nearestExcalidrawFallback(to: selectedTier, from: candidates)
+    }
+
+    static func nearestExcalidrawFallback(
+        to selectedTier: ExcalidrawModelTier,
+        from candidates: [SupportedModel]
+    ) -> SupportedModel? {
+        guard !candidates.isEmpty else { return nil }
 
         let rankedCandidates = candidates.enumerated().compactMap { index, model in
-            model.excalidrawSelectionRank.map { rank in
-                (index: index, model: model, rank: rank)
+            model.excalidrawTier.map { tier in
+                (index: index, model: model, tier: tier)
             }
         }
         guard !rankedCandidates.isEmpty else {
@@ -115,8 +170,8 @@ extension SupportedModel {
         }
 
         return rankedCandidates.min { lhs, rhs in
-            let lhsDistance = abs(lhs.rank - selectedRank)
-            let rhsDistance = abs(rhs.rank - selectedRank)
+            let lhsDistance = abs(lhs.tier.rank - selectedTier.rank)
+            let rhsDistance = abs(rhs.tier.rank - selectedTier.rank)
             if lhsDistance != rhsDistance {
                 return lhsDistance < rhsDistance
             }
@@ -125,8 +180,8 @@ extension SupportedModel {
             // higher capability move over a downgrade. This keeps "missing
             // image input" as an upgrade path while still allowing downgrade
             // fallback when Extra High is unavailable on the current plan.
-            let lhsIsDowngrade = lhs.rank < selectedRank
-            let rhsIsDowngrade = rhs.rank < selectedRank
+            let lhsIsDowngrade = lhs.tier.rank < selectedTier.rank
+            let rhsIsDowngrade = rhs.tier.rank < selectedTier.rank
             if lhsIsDowngrade != rhsIsDowngrade {
                 return !lhsIsDowngrade
             }
