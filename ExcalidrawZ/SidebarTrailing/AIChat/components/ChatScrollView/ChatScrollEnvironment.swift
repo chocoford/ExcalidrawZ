@@ -10,7 +10,7 @@ private struct AIChatTableRowWidthKey: EnvironmentKey {
 }
 
 private struct AIChatUsesNativeRowHeightCacheKey: EnvironmentKey {
-    static let defaultValue = true
+    static let defaultValue = false
 }
 
 extension EnvironmentValues {

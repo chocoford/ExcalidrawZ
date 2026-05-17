@@ -401,13 +401,17 @@ struct AssistantRoundView: View {
             && !hasInflightInRound
             && allRevealed
             && hasTerminalActionableAssistantContent
-        actionBarTask?.cancel()
-        actionBarTask = nil
-        guard settled, !showsActionBar else { return }
+        guard settled else {
+            actionBarTask?.cancel()
+            actionBarTask = nil
+            return
+        }
+        guard !showsActionBar, actionBarTask == nil else { return }
         actionBarTask = Task { @MainActor [self] in
             try? await Task.sleep(for: Self.actionBarDelay)
             guard !Task.isCancelled else { return }
             showsActionBar = true
+            actionBarTask = nil
         }
     }
 

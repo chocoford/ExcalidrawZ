@@ -65,32 +65,37 @@ private struct ChatTopDownRevealFrameModifier: ViewModifier, Animatable {
         set { progress = newValue }
     }
 
+    @ViewBuilder
     func body(content: Content) -> some View {
         let clamped = max(0, min(1, progress))
         let targetHeight = measuredHeight > 0 ? measuredHeight : nil
 
-        ZStack(alignment: .top) {
+        if clamped >= 0.999 {
             content
-                .chatTopDownReveal(progress: clamped)
+        } else {
+            ZStack(alignment: .top) {
+                content
+                    .chatTopDownReveal(progress: clamped)
 
-            content
-                .hidden()
-                .allowsHitTesting(false)
-                .background {
-                    GeometryReader { proxy in
-                        Color.clear.preference(
-                            key: ChatRevealMeasuredHeightKey.self,
-                            value: proxy.size.height
-                        )
+                content
+                    .hidden()
+                    .allowsHitTesting(false)
+                    .background {
+                        GeometryReader { proxy in
+                            Color.clear.preference(
+                                key: ChatRevealMeasuredHeightKey.self,
+                                value: proxy.size.height
+                            )
+                        }
                     }
-                }
+            }
+            .onPreferenceChange(ChatRevealMeasuredHeightKey.self) { height in
+                guard height > 0 else { return }
+                measuredHeight = height
+            }
+            .frame(height: targetHeight, alignment: .top)
+            .clipped()
         }
-        .onPreferenceChange(ChatRevealMeasuredHeightKey.self) { height in
-            guard height > 0 else { return }
-            measuredHeight = height
-        }
-        .frame(height: targetHeight, alignment: .top)
-        .clipped()
     }
 }
 

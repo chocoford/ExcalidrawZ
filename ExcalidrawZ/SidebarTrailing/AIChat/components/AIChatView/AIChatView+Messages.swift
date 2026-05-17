@@ -163,6 +163,20 @@ enum AIChatRenderDebug {
 
 extension AIChatView {
     @ViewBuilder
+    func conversationLoadingPlaceholder() -> some View {
+        VStack(spacing: 12) {
+            Spacer()
+            ProgressView()
+                .controlSize(.small)
+            Text(localizable: .generalLoading)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
     func emptyPlaceholder() -> some View {
         VStack(spacing: 20) {
             Spacer()
@@ -874,6 +888,9 @@ extension AIChatView {
             guard !Task.isCancelled else { return }
             requestScrollToBottom(animated: false)
             isMessageListInitiallySettled = true
+            if !fileState.isAIChatConversationLoading {
+                isHoldingConversationLoadingPlaceholder = false
+            }
             messageListSettleTask = nil
         }
     }

@@ -301,6 +301,7 @@ extension AIChatState {
         fileState: FileState
     ) async {
         let activeFile = fileState.currentActiveFile
+        let activeFileScope = activeFile?.aiConversationFileScope
         print("[AIChatDiag] loadConversationForActiveFile fired. activeFile=\(describe(activeFile))")
 
         // Always refresh first: the global cache also drives
@@ -313,7 +314,12 @@ extension AIChatState {
         let chosen = await pickLatestConversationID(forActiveFile: activeFile)
         print("[AIChatDiag] pickLatestConversationID -> \(chosen ?? "nil")")
         await MainActor.run {
+            guard fileState.currentActiveFile?.aiConversationFileScope == activeFileScope else {
+                print("[AIChatDiag] skip stale conversation pick; active file changed during load")
+                return
+            }
             fileState.aiChatConversationID = chosen
+            fileState.isAIChatConversationLoading = false
         }
     }
 

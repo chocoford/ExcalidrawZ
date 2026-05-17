@@ -37,6 +37,7 @@ struct AIChatView: View {
     @State var isAutoScrollingToBottom: Bool = false
     @State var streamScrollFollowTail: Bool = false
     @State var isMessageListInitiallySettled: Bool = false
+    @State var isHoldingConversationLoadingPlaceholder: Bool = false
     @State var messageListSettleTask: Task<Void, Never>?
     /// Resumed by `onScrollAnimationComplete` from `NativeChatScrollView`,
     /// keyed by the scroll-request token. Lets `AssistantRoundView`'s
@@ -65,6 +66,7 @@ struct AIChatView: View {
     /// loaded) as "don't show yet" — flashing the welcome before LLMKit
     /// finishes its first refresh would feel jumpy.
     var shouldShowWelcome: Bool {
+        guard !fileState.isAIChatConversationLoading else { return false }
         if isShowingWelcomeManually { return true }
         guard !hasDismissedWelcome else { return false }
         guard let convos = llmState.conversations.value else { return false }
@@ -102,6 +104,10 @@ struct AIChatView: View {
     /// being held until the summary lands.
     var isCompactingThisConversation: Bool {
         aiChatState.isCompacting(conversationID: fileState.aiChatConversationID)
+    }
+
+    var shouldShowConversationLoadingPlaceholder: Bool {
+        fileState.isAIChatConversationLoading || isHoldingConversationLoadingPlaceholder
     }
 
     var creditsDisplayText: String {
@@ -173,6 +179,8 @@ struct AIChatView: View {
             ZStack {
                 if AIChatRenderDebug.hideMessageList {
                     Color.clear
+                } else if shouldShowConversationLoadingPlaceholder {
+                    conversationLoadingPlaceholder()
                 } else if let conversation, !conversation.messages.isEmpty {
                     messageList(messages: conversation.messages)
                 } else if currentTransientError != nil {
@@ -181,8 +189,17 @@ struct AIChatView: View {
                     emptyPlaceholder()
                 }
             }
-            .opacity(isMessageListInitiallySettled ? 1 : 0)
+            .opacity(isMessageListInitiallySettled || shouldShowConversationLoadingPlaceholder ? 1 : 0)
             .animation(.easeOut(duration: 0.12), value: isMessageListInitiallySettled)
+            .onChange(of: fileState.isAIChatConversationLoading) { isLoading in
+                if isLoading {
+                    isHoldingConversationLoadingPlaceholder = true
+                } else if isMessageListInitiallySettled {
+                    isHoldingConversationLoadingPlaceholder = false
+                } else {
+                    isHoldingConversationLoadingPlaceholder = fileState.currentActiveFile != nil
+                }
+            }
             
             VStack(spacing: 6) {
                 PendingQueueView(
@@ -214,6 +231,7 @@ struct AIChatView: View {
                     }
                     .disabled(
                         llmState.pendingApprovalRequest != nil ||
+                        fileState.isAIChatConversationLoading ||
                         fileState.currentActiveFileIsInTrash
                     )
 

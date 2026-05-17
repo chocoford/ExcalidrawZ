@@ -117,6 +117,7 @@ struct NativeChatTableView<RowContent: View>: NSViewRepresentable {
                             \.aiChatTableRowWidth,
                             tableView.tableColumns.first?.width ?? tableView.bounds.width
                         )
+                        .environment(\.aiChatUsesNativeRowHeightCache, true)
                 ),
                 onHeightInvalidated: { [weak self, weak cell, weak tableView] in
                     guard let self, let cell, let tableView else { return }

@@ -171,6 +171,13 @@ final class FileState: ObservableObject {
         }
         
         set {
+            let previousConversationScope = currentActiveFile?.aiConversationFileScope
+            let nextConversationScope = newValue?.aiConversationFileScope
+            if previousConversationScope != nextConversationScope {
+                aiChatConversationID = nil
+                isAIChatConversationLoading = nextConversationScope != nil
+            }
+
             if let currentActiveFileID = self.currentActiveFile?.id {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     NotificationCenter.default.post(
@@ -352,6 +359,7 @@ final class FileState: ObservableObject {
     /// inspector and the floating island stay in sync across presentation
     /// toggles.
     @Published var aiChatConversationID: String? = nil
+    @Published var isAIChatConversationLoading: Bool = false
 
     /// Active AI chat session, if any. While this is non-nil:
     ///

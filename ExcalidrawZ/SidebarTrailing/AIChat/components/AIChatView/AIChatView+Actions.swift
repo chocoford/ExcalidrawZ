@@ -223,11 +223,13 @@ extension AIChatView {
                     conversationID: id,
                     model: model
                 )
+                let context = try await makeInvocationContext(model: model)
                 try await llmState.regenerateMessage(
                     in: id,
                     fromMessageID: messageID,
                     model: model,
-                    stream: true
+                    stream: true,
+                    context: context
                 )
             } catch {
                 await MainActor.run {
@@ -256,10 +258,12 @@ extension AIChatView {
                     conversationID: id,
                     model: model
                 )
+                let context = try await makeInvocationContext(model: model)
                 try await llmState.resumeGeneration(
                     in: id,
                     model: model,
-                    stream: true
+                    stream: true,
+                    context: context
                 )
             } catch {
                 await MainActor.run {
@@ -273,6 +277,54 @@ extension AIChatView {
                 }
             }
         }
+    }
+
+    @MainActor
+    private func makeInvocationContext(
+        model: SupportedModel
+    ) async throws -> ExcalidrawChatInvocationContext {
+        ExcalidrawCoordinatorRegistry.shared.update(
+            normal: fileState.excalidrawWebCoordinator,
+            collaboration: fileState.excalidrawCollaborationWebCoordinator
+        )
+
+        let canvasTarget: ExcalidrawCoordinatorRegistry.CanvasTarget = {
+            switch fileState.currentActiveFile {
+                case .collaborationFile:
+                    .collaboration
+                default:
+                    .normal
+            }
+        }()
+
+        let coordinator: ExcalidrawCanvasView.Coordinator? = switch canvasTarget {
+            case .normal:
+                fileState.excalidrawWebCoordinator
+            case .collaboration:
+                fileState.excalidrawCollaborationWebCoordinator
+        }
+        let ids = coordinator?.selectedElementIDs ?? []
+        let selectedElementIDs = ids.isEmpty ? nil : ids
+
+        let currentFileID: UUID? = {
+            if case .file(let file) = fileState.currentActiveFile {
+                return file.id
+            }
+            return nil
+        }()
+
+        let currentFileData = try await CurrentExcalidrawDataResolver.resolve(
+            fileState: fileState,
+            canvasTarget: canvasTarget
+        )
+
+        return ExcalidrawChatInvocationContext(
+            currentFileData: currentFileData,
+            canvasTarget: canvasTarget,
+            selectedElementIDs: selectedElementIDs,
+            currentFileID: currentFileID,
+            currentModelSupportsImageInput: model.supportsExcalidrawImageInput
+        )
     }
 
     private func retryModel(conversationID: String) async throws -> SupportedModel {

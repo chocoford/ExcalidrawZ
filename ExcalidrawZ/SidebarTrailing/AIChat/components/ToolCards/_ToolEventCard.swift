@@ -69,24 +69,7 @@ struct ToolEventCard<Content: View, Trailing: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            ZStack(alignment: .top) {
-                content(isExpandable && isExpanded)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .textSelection(.enabled)
-                    .padding(.leading, 22)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.top, isExpanded ? 4 : 0)
-            .readHeight($contentHeight)
-            .modifier(ToolEventBodyHeightModifier(height: contentHeight))
-            .animation(hasMeasuredContentHeight ? .smooth : nil, value: contentHeight)
-            .onChange(of: contentHeight) { newValue in
-                guard newValue > 0, !hasMeasuredContentHeight else { return }
-                hasMeasuredContentHeight = true
-            }
-            .clipped()
-            
+            bodyContent
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -97,6 +80,7 @@ struct ToolEventCard<Content: View, Trailing: View>: View {
         }
         .onChange(of: isExpandable) { canExpand in
             guard !canExpand, isExpanded else { return }
+            hasMeasuredContentHeight = true
             withAnimation(.easeInOut(duration: 0.18)) {
                 isExpanded = false
             }
@@ -104,9 +88,35 @@ struct ToolEventCard<Content: View, Trailing: View>: View {
     }
 
     @ViewBuilder
+    private var bodyContent: some View {
+        bodyContentCore
+            .readHeight($contentHeight)
+            .modifier(ToolEventBodyHeightModifier(height: contentHeight))
+            .animation(hasMeasuredContentHeight ? .smooth : nil, value: contentHeight)
+            .onChange(of: contentHeight) { newValue in
+                guard newValue > 0, !hasMeasuredContentHeight else { return }
+                hasMeasuredContentHeight = true
+            }
+            .clipped()
+    }
+
+    private var bodyContentCore: some View {
+        ZStack(alignment: .top) {
+            content(isExpandable && isExpanded)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .textSelection(.enabled)
+                .padding(.leading, 22)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.top, isExpanded ? 4 : 0)
+    }
+
+    @ViewBuilder
     private var header: some View {
         Button {
             guard isExpandable else { return }
+            hasMeasuredContentHeight = true
             withAnimation(.easeInOut(duration: 0.18)) {
                 isExpanded.toggle()
             }
@@ -150,13 +160,6 @@ private struct ToolEventBodyHeightModifier: Animatable, ViewModifier {
 
     func body(content: Content) -> some View {
         content.frame(height: animatableData, alignment: .top)
-    }
-}
-
-private struct ToolEventBodyHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }
 
