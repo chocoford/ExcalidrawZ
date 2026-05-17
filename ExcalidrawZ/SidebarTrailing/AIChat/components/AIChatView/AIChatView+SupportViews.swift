@@ -32,28 +32,26 @@ struct HiddenHistoryIndicator: View {
     let isLoading: Bool
 
     var body: some View {
-        ChatScrollRow {
-            HStack(spacing: 8) {
-                if isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                        .scaleEffect(0.55)
-                        .frame(width: 12, height: 12)
-                } else {
-                    Image(systemSymbol: .arrowUp)
-                        .font(.caption2.weight(.semibold))
-                }
-                Text(
-                    localizable: isLoading
-                    ? .aiChatLoadingMoreText
-                    : .aiChatLoadMoreText(hiddenGroupCount)
-                )
-                .font(.caption2)
+        HStack(spacing: 8) {
+            if isLoading {
+                ProgressView()
+                    .controlSize(.small)
+                    .scaleEffect(0.55)
+                    .frame(width: 12, height: 12)
+            } else {
+                Image(systemSymbol: .arrowUp)
+                    .font(.caption2.weight(.semibold))
             }
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
+            Text(
+                localizable: isLoading
+                ? .aiChatLoadingMoreText
+                : .aiChatLoadMoreText(hiddenGroupCount)
+            )
+            .font(.caption2)
         }
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
     }
 }
 
@@ -93,4 +91,3 @@ struct EditSessionBanner: View {
         .padding(.vertical, 7)
     }
 }
-

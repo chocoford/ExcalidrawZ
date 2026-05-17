@@ -194,7 +194,14 @@ extension AIChatView {
         let transientError = currentTransientError
         let displayMessages = messagesForCurrentEditSession(messages)
         let allGroups = groupMessages(displayMessages)
-        let visibleGroups = visibleMessageGroups(from: allGroups)
+        let visibleGroups = messageWindow.visibleGroups(
+            from: allGroups,
+            scopeID: messageListSwitchID
+        )
+        let hiddenGroupCount = messageWindow.hiddenGroupCount(
+            in: allGroups,
+            scopeID: messageListSwitchID
+        )
         let visibleTransientError: AIChatState.TransientError? = {
             guard let transientError else { return nil }
             guard !containsErrorMessage(in: allGroups, matching: transientError.message) else {
@@ -231,7 +238,7 @@ extension AIChatView {
         )
         let suppressedUserActionMessageID = fileState.aiChatSession?.userMessageID
         let scrollRows = chatScrollRows(
-            allGroups: allGroups,
+            hiddenGroupCount: hiddenGroupCount,
             visibleGroups: visibleGroups,
             activeRoundID: activeRoundID,
             transientError: visibleTransientError,
@@ -257,7 +264,7 @@ extension AIChatView {
                     )
                 },
                 onReachTop: {
-                    loadMoreMessageGroupsIfNeeded(totalGroupCount: allGroups.count)
+                    loadMoreMessageGroups(from: allGroups)
                 },
                 onScrollAnimationComplete: { token in
                     handleScrollAnimationComplete(token: token)
@@ -295,29 +302,18 @@ extension AIChatView {
             requestScrollToBottomIfNeeded(bottomID)
         }
         .onChange(of: bottomID) { _ in
-            guard !isRunActive else { return }
             requestScrollToBottomIfNeeded(bottomID)
         }
         .onChange(of: isRunActive) { nowRunning in
             if nowRunning {
-                resetVisibleMessageWindowIfNeeded()
-                // Just kicked off a new round (user sent / regenerate).
-                // Force-pin and request an explicit scroll-to-bottom:
-                // the host's growth-driven follow can race against
-                // `isRunning` reaching the Coordinator (the user-
-                // message frame may land before SwiftUI has propagated
-                // the new streaming state through `updateNSView`), so
-                // without this nudge the user's message + the loading
-                // dots can appear without the viewport tracking them.
+                // A run begins after the user's message is already inserted;
+                // keep the new tail visible even if the user was previously mid-list.
                 isPinnedToBottom = true
                 requestScrollToBottom(animated: true)
                 return
             }
-            // Tail window: the per-round reveal pipeline (place →
-            // scroll → wipe in) needs the scroll host's growth-driven
-            // follow to stay armed past the stream end so pending
-            // placeheld rows can keep pinning the viewport while they
-            // fade in.
+            // After the final token/tool result, reveal tasks may still be
+            // placing rows. Keep tail-following armed briefly for that cleanup.
             streamScrollFollowTail = true
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(600))
@@ -327,20 +323,19 @@ extension AIChatView {
         .task(id: revertRequirementRefreshKey(groups: visibleGroups)) {
             await refreshRevertRequiredUserMessageIDs(groups: visibleGroups)
         }
-        .onChange(of: fileState.aiChatConversationID) { _ in
-            resetVisibleMessageWindow()
+        .task(id: messageWindowReconcileKey(scopeID: messageListSwitchID, groups: allGroups)) {
+            reconcileMessageWindow(groups: allGroups)
         }
     }
 
     func chatScrollRows(
-        allGroups: [MessageGroup],
+        hiddenGroupCount: Int,
         visibleGroups: [MessageGroup],
         activeRoundID: String?,
         transientError: AIChatState.TransientError?,
         streamingMessageIDs: Set<String>,
         isGenerationCancelled: Bool
     ) -> [ChatScrollRowModel] {
-        let hiddenGroupCount = max(0, allGroups.count - visibleGroups.count)
         var rows: [ChatScrollRowModel] = []
 
         if hiddenGroupCount > 0 {
@@ -349,7 +344,7 @@ extension AIChatView {
                     id: "hidden-history",
                     kind: .hiddenHistory(
                         hiddenGroupCount: hiddenGroupCount,
-                        isLoading: isLoadingOlderMessages
+                        isLoading: messageWindow.isLoadingMore
                     )
                 )
             )
@@ -718,7 +713,7 @@ extension AIChatView {
         return content.content ?? ""
     }
 
-    /// Bridge from `NativeChatScrollView`'s scroll-animation-complete
+    /// Bridge from the active chat scroll host's scroll-animation-complete
     /// callback into our continuation map. The reveal controller awaits
     /// the matching token before fading the next message in.
     ///
@@ -740,51 +735,28 @@ extension AIChatView {
         }
     }
 
-    func visibleMessageGroups(from groups: [MessageGroup]) -> [MessageGroup] {
-        guard groups.count > visibleMessageGroupLimit else { return groups }
-        return Array(groups.suffix(visibleMessageGroupLimit))
+    func messageWindowReconcileKey(
+        scopeID: String,
+        groups: [MessageGroup]
+    ) -> String {
+        [
+            scopeID,
+            groups.map(\.id).joined(separator: "|")
+        ].joined(separator: "::")
     }
 
-    func loadMoreMessageGroupsIfNeeded(totalGroupCount: Int) {
-        guard !suppressOlderMessageLoading else { return }
-        guard visibleMessageGroupLimit < totalGroupCount else { return }
-        guard loadOlderMessagesTask == nil else { return }
-        isLoadingOlderMessages = true
-        loadOlderMessagesTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(500))
-            loadOlderMessageGroupsNow(totalGroupCount: totalGroupCount)
-            try? await Task.sleep(for: .milliseconds(120))
-            isLoadingOlderMessages = false
-            loadOlderMessagesTask = nil
+    func reconcileMessageWindow(groups: [MessageGroup]) {
+        messageWindow.reconcile(groups: groups, scopeID: messageListSwitchID)
+    }
+
+    func loadMoreMessageGroups(from groups: [MessageGroup]) {
+        guard messageWindow.hiddenGroupCount(in: groups, scopeID: messageListSwitchID) > 0 else {
+            return
         }
-    }
-
-    func loadOlderMessageGroupsNow(totalGroupCount: Int) {
-        guard visibleMessageGroupLimit < totalGroupCount else { return }
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
-            visibleMessageGroupLimit = min(
-                totalGroupCount,
-                visibleMessageGroupLimit + messageGroupLoadIncrement
-            )
-        }
-    }
-
-    func resetVisibleMessageWindowIfNeeded() {
-        guard visibleMessageGroupLimit != initialVisibleMessageGroupLimit else { return }
-        resetVisibleMessageWindow()
-    }
-
-    func resetVisibleMessageWindow() {
-        suppressOlderMessageLoadingTemporarily()
-        loadOlderMessagesTask?.cancel()
-        loadOlderMessagesTask = nil
-        isLoadingOlderMessages = false
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            visibleMessageGroupLimit = initialVisibleMessageGroupLimit
+            messageWindow.loadMore(groups: groups, scopeID: messageListSwitchID)
         }
     }
 
@@ -797,7 +769,7 @@ extension AIChatView {
                 isMessageListInitiallySettled = false
                 isPinnedToBottom = true
                 lastBottomID = nil
-                resetVisibleMessageWindow()
+                messageWindow.reset(scopeID: messageListSwitchID)
             }
 
             requestScrollToBottom(animated: false)
@@ -809,16 +781,6 @@ extension AIChatView {
             requestScrollToBottom(animated: false)
             isMessageListInitiallySettled = true
             messageListSettleTask = nil
-        }
-    }
-
-    func suppressOlderMessageLoadingTemporarily() {
-        suppressOlderMessageLoadingTask?.cancel()
-        suppressOlderMessageLoading = true
-        suppressOlderMessageLoadingTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(ChatScrollAnimation.scrollDuration + 0.4))
-            suppressOlderMessageLoading = false
-            suppressOlderMessageLoadingTask = nil
         }
     }
 
@@ -834,19 +796,12 @@ extension AIChatView {
         return Array(messages[..<index])
     }
 
-    /// Async scroll-to-bottom: queues a token-driven scroll request and
-    /// resumes when the underlying `NativeChatScrollView` reports the
-    /// scroll animation has finished (or a safety timer fires).
-    /// `AssistantRoundView` awaits this between "place" and "wipe in"
-    /// so the reveal animation runs at the final viewport position.
     func scrollToBottomAsync(animated: Bool) async {
         let token = scrollToBottomRequest.token + 1
         await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
-            // Store the continuation BEFORE triggering the scroll so a
-            // synchronous completion callback (e.g. already at bottom)
-            // can find it.
+            // Store before publishing the token so a synchronous host callback
+            // cannot miss the continuation.
             scrollCompletionContinuations[token] = cont
-            suppressOlderMessageLoadingTemporarily()
             if animated {
                 isAutoScrollingToBottom = true
             }
@@ -854,14 +809,12 @@ extension AIChatView {
                 token: token,
                 animated: animated
             )
-            // Safety net: if onScrollAnimationComplete never fires (host
-            // not yet wired up, view about to disappear, etc.), drain the
-            // continuation after the expected duration so the controller
-            // doesn't deadlock.
             Task { @MainActor in
                 try? await Task.sleep(
                     for: .seconds(ChatScrollAnimation.scrollDuration + 0.5)
                 )
+                // Safety net for disappearing/unmounted hosts; reveal must not
+                // deadlock if no completion callback arrives.
                 if let pending = scrollCompletionContinuations.removeValue(forKey: token) {
                     if animated { isAutoScrollingToBottom = false }
                     pending.resume()

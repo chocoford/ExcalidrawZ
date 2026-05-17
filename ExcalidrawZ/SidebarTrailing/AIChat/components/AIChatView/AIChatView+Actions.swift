@@ -364,22 +364,21 @@ extension AIChatView {
     func requestScrollToBottomIfNeeded(_ newBottomID: String?) {
         guard let newBottomID else { return }
         guard newBottomID != lastBottomID else { return }
+        // First observation wires the current tail identity only. It can happen
+        // while mounting existing history, so it must not animate the viewport.
         let wasFirstObservation = (lastBottomID == nil)
         lastBottomID = newBottomID
         guard isPinnedToBottom else { return }
-        // First observation (`.onAppear` with existing history) is initial
-        // positioning, not a "scroll" — the scroll host's first-measurement
-        // path snaps without visible animation. Subsequent changes (new
-        // round, newly committed message) are real content events; animate.
         guard !wasFirstObservation else { return }
         requestScrollToBottom(animated: true)
     }
 
     func requestScrollToBottom(animated: Bool) {
-        suppressOlderMessageLoadingTemporarily()
         if animated {
             isAutoScrollingToBottom = true
             Task { @MainActor in
+                // Plain scroll requests do not await a continuation, so reset
+                // the transient "auto-scrolling" UI flag after the host settles.
                 try? await Task.sleep(for: .seconds(ChatScrollAnimation.scrollDuration + 0.12))
                 isAutoScrollingToBottom = false
             }

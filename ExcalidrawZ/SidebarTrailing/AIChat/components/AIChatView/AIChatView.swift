@@ -44,11 +44,7 @@ struct AIChatView: View {
     /// after the smooth scroll has actually reached the new bottom.
     @State var scrollCompletionContinuations: [Int: CheckedContinuation<Void, Never>] = [:]
     @State var revertRequiredUserMessageIDs: Set<String> = []
-    @State var visibleMessageGroupLimit: Int = 20
-    @State var isLoadingOlderMessages: Bool = false
-    @State var loadOlderMessagesTask: Task<Void, Never>?
-    @State var suppressOlderMessageLoading: Bool = false
-    @State var suppressOlderMessageLoadingTask: Task<Void, Never>?
+    @State var messageWindow = ChatMessageWindowState(pageSize: 20)
     /// Confirmation dialog for the "Clear chat" toolbar action — destructive,
     /// so we route through a confirmationDialog rather than firing on tap.
     @State var isConfirmingClear: Bool = false
@@ -63,9 +59,6 @@ struct AIChatView: View {
     #if DEBUG
     @ObservedObject var aiChatRenderDebug = AIChatRenderDebug.state
     #endif
-
-    let initialVisibleMessageGroupLimit = 20
-    let messageGroupLoadIncrement = 20
 
     /// Show the welcome cover when no conversations exist anywhere yet AND
     /// the user hasn't already dismissed it. We treat `nil` (cache not

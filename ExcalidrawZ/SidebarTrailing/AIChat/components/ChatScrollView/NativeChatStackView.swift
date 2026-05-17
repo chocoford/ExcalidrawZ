@@ -42,8 +42,12 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
         var scrollToBottomRequest: Binding<ScrollToBottomRequest>
         var onReachTop: (() -> Void)?
         var onScrollAnimationComplete: ((Int) -> Void)?
+        var isStreaming: Bool
         var lastSeenToken: Int
         var lastClipWidth: CGFloat = 0
+        var lastDocumentHeight: CGFloat = 0
+        var isDocumentHeightCheckScheduled = false
+        var isProgrammaticScrollPendingToBottom = false
         var didNotifyReachTop = false
         var hostingViewsByID: [String: NSHostingView<AnyView>] = [:]
         var renderKeysByID: [String: String] = [:]
@@ -53,17 +57,21 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
         let pinThreshold: CGFloat = 8
         let topLoadThreshold: CGFloat = 80
         let topLoadResetThreshold: CGFloat = 180
+        let mountedAt = Date()
+        let initialSettlingDuration: TimeInterval = 0.8
 
         init(
             rowContent: @escaping (ChatScrollRowModel) -> RowContent,
             isPinnedToBottom: Binding<Bool>,
             scrollToBottomRequest: Binding<ScrollToBottomRequest>,
+            isStreaming: Bool,
             onReachTop: (() -> Void)?,
             onScrollAnimationComplete: ((Int) -> Void)?
         ) {
             self.rowContent = rowContent
             self.isPinnedToBottom = isPinnedToBottom
             self.scrollToBottomRequest = scrollToBottomRequest
+            self.isStreaming = isStreaming
             self.onReachTop = onReachTop
             self.onScrollAnimationComplete = onScrollAnimationComplete
             self.lastSeenToken = scrollToBottomRequest.wrappedValue.token
@@ -102,6 +110,7 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
             }
 
             stackView.needsLayout = true
+            scheduleDocumentHeightCheck()
         }
 
         func reconfigureAllRows(in stackView: FlippedChatStackView) {
@@ -109,6 +118,7 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
                 updateHostingView(for: row, in: stackView, force: true)
             }
             stackView.needsLayout = true
+            scheduleDocumentHeightCheck()
         }
 
         private func rebuildRows(
@@ -219,12 +229,69 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
             notifyReachTopIfNeeded()
         }
 
+        @objc func stackViewFrameDidChange(_ note: Notification) {
+            scheduleDocumentHeightCheck()
+        }
+
         func syncWidthIfNeeded() {
             guard let scrollView, let stackView else { return }
             let width = scrollView.contentView.bounds.width
             guard abs(width - lastClipWidth) > 0.5 else { return }
             lastClipWidth = width
             reconfigureAllRows(in: stackView)
+        }
+
+        func scheduleDocumentHeightCheck() {
+            guard !isDocumentHeightCheckScheduled else { return }
+            isDocumentHeightCheckScheduled = true
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                isDocumentHeightCheckScheduled = false
+                noteDocumentHeightChange()
+            }
+        }
+
+        private func noteDocumentHeightChange() {
+            // Measure after AppKit has had a run loop to apply stack/hosting
+            // layout. This keeps row mutation separate from scroll correction.
+            guard let scrollView, let stackView else { return }
+            scrollView.layoutSubtreeIfNeeded()
+            stackView.layoutSubtreeIfNeeded()
+
+            let newHeight = stackView.frame.height
+            guard newHeight.isFinite else { return }
+            let oldHeight = lastDocumentHeight
+            let didGrow = newHeight > oldHeight + 0.5
+            let withinInitialSettling =
+                Date().timeIntervalSince(mountedAt) < initialSettlingDuration
+
+            defer {
+                lastDocumentHeight = newHeight
+                updatePinnedBinding()
+            }
+
+            if oldHeight == 0 {
+                // First real layout pass: default chat state is pinned, so snap
+                // once without animation instead of showing historical top.
+                if isPinnedToBottom.wrappedValue {
+                    scrollToBottom(animated: false)
+                }
+                return
+            }
+
+            guard didGrow else { return }
+
+            if withinInitialSettling,
+               isPinnedToBottom.wrappedValue {
+                // Early async layout passes can still grow content. While the
+                // chat is mounting, preserve the intended initial bottom state.
+                scrollToBottom(animated: false)
+            } else if (isStreaming && isPinnedToBottom.wrappedValue) ||
+                        isProgrammaticScrollPendingToBottom {
+                // Live output should stay glued to the bottom. Ordinary
+                // non-streaming growth, such as expanding old cards, is ignored.
+                scrollToBottom(animated: true)
+            }
         }
 
         private func notifyReachTopIfNeeded() {
@@ -273,15 +340,21 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
             )
             let tokenAtStart = lastSeenToken
             if animated {
+                isProgrammaticScrollPendingToBottom = true
                 NSAnimationContext.runAnimationGroup { ctx in
                     ctx.duration = ChatScrollAnimation.scrollDuration
                     scrollView.contentView.animator().setBoundsOrigin(target)
                 } completionHandler: { [weak self] in
+                    if self?.lastSeenToken == tokenAtStart {
+                        self?.isProgrammaticScrollPendingToBottom = false
+                    }
+                    self?.updatePinnedBinding()
                     self?.onScrollAnimationComplete?(tokenAtStart)
                 }
             } else {
                 scrollView.contentView.setBoundsOrigin(target)
                 DispatchQueue.main.async { [weak self] in
+                    self?.updatePinnedBinding()
                     self?.onScrollAnimationComplete?(tokenAtStart)
                 }
             }
@@ -294,6 +367,7 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
             rowContent: rowContent,
             isPinnedToBottom: $isPinnedToBottom,
             scrollToBottomRequest: $scrollToBottomRequest,
+            isStreaming: isStreaming,
             onReachTop: onReachTop,
             onScrollAnimationComplete: onScrollAnimationComplete
         )
@@ -327,6 +401,7 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
         stackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
         stackView.detachesHiddenViews = false
         stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.postsFrameChangedNotifications = true
         stackView.wantsLayer = true
         stackView.layer?.masksToBounds = false
 
@@ -348,6 +423,12 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
             name: NSView.boundsDidChangeNotification,
             object: scrollView.contentView
         )
+        NotificationCenter.default.addObserver(
+            context.coordinator,
+            selector: #selector(Coordinator.stackViewFrameDidChange(_:)),
+            name: NSView.frameDidChangeNotification,
+            object: stackView
+        )
 
         return scrollView
     }
@@ -358,6 +439,7 @@ struct NativeChatStackView<RowContent: View>: NSViewRepresentable {
         context.coordinator.rowContent = rowContent
         context.coordinator.isPinnedToBottom = $isPinnedToBottom
         context.coordinator.scrollToBottomRequest = $scrollToBottomRequest
+        context.coordinator.isStreaming = isStreaming
         context.coordinator.onReachTop = onReachTop
         context.coordinator.onScrollAnimationComplete = onScrollAnimationComplete
 
