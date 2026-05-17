@@ -62,6 +62,7 @@ struct AssistantRoundView: View {
     /// check alone would pre-mark them revealed — which is the bug where
     /// the next message's tool card showed up unanimated.
     let activeRoundID: String?
+    let usesExternalLoadingSlot: Bool
     let onRegenerate: ((String) -> Void)?
 
     /// Messages whose `chatTopDownReveal` should render at progress 1.
@@ -108,6 +109,7 @@ struct AssistantRoundView: View {
         activeRoundID: String?,
         streamingMessageIDs: Set<String>,
         isRoundCancelled: Bool = false,
+        usesExternalLoadingSlot: Bool = false,
         onRegenerate: ((String) -> Void)? = nil
     ) {
         self.roundID = roundID
@@ -115,6 +117,7 @@ struct AssistantRoundView: View {
         self.activeRoundID = activeRoundID
         self.streamingMessageIDs = streamingMessageIDs
         self.isRoundCancelled = isRoundCancelled
+        self.usesExternalLoadingSlot = usesExternalLoadingSlot
         self.onRegenerate = onRegenerate
 
         // The round-level "is this round being streamed" gate (not a
@@ -144,7 +147,7 @@ struct AssistantRoundView: View {
         VStack(alignment: .leading, spacing: 10) {
             messagesContent
 
-            if showsLoadingRow {
+            if !usesExternalLoadingSlot, showsLoadingRow {
                 LoadingMessageRow()
                     .transition(.opacity)
             }
@@ -571,6 +574,7 @@ extension AssistantRoundView: Equatable {
             && lhs.streamingMessageIDs == rhs.streamingMessageIDs
             && lhs.isRoundCancelled == rhs.isRoundCancelled
             && lhs.activeRoundID == rhs.activeRoundID
+            && lhs.usesExternalLoadingSlot == rhs.usesExternalLoadingSlot
     }
 }
 

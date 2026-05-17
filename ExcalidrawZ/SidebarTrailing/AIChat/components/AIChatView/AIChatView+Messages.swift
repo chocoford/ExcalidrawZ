@@ -194,14 +194,19 @@ extension AIChatView {
         let transientError = currentTransientError
         let displayMessages = messagesForCurrentEditSession(messages)
         let allGroups = groupMessages(displayMessages)
-        let visibleGroups = messageWindow.visibleGroups(
-            from: allGroups,
-            scopeID: messageListSwitchID
-        )
-        let hiddenGroupCount = messageWindow.hiddenGroupCount(
-            in: allGroups,
-            scopeID: messageListSwitchID
-        )
+        let scrollConfiguration = ChatScrollConfiguration.automatic
+        let visibleGroups = scrollConfiguration.usesMessageWindowing
+            ? messageWindow.visibleGroups(
+                from: allGroups,
+                scopeID: messageListSwitchID
+            )
+            : allGroups
+        let hiddenGroupCount = scrollConfiguration.usesMessageWindowing
+            ? messageWindow.hiddenGroupCount(
+                in: allGroups,
+                scopeID: messageListSwitchID
+            )
+            : 0
         let visibleTransientError: AIChatState.TransientError? = {
             guard let transientError else { return nil }
             guard !containsErrorMessage(in: allGroups, matching: transientError.message) else {
@@ -237,13 +242,22 @@ extension AIChatView {
             conversationID: fileState.aiChatConversationID
         )
         let suppressedUserActionMessageID = fileState.aiChatSession?.userMessageID
+        let loadingSlot = assistantLoadingSlot(
+            visibleGroups: visibleGroups,
+            activeRoundID: activeRoundID,
+            streamingMessageIDs: streamingMessageIDs,
+            isRunActive: isRunActive,
+            isGenerationCancelled: isGenerationCancelled
+        )
         let scrollRows = chatScrollRows(
             hiddenGroupCount: hiddenGroupCount,
             visibleGroups: visibleGroups,
+            assistantLoadingSlot: loadingSlot,
             activeRoundID: activeRoundID,
             transientError: visibleTransientError,
             streamingMessageIDs: streamingMessageIDs,
-            isGenerationCancelled: isGenerationCancelled
+            isGenerationCancelled: isGenerationCancelled,
+            assistantRoundRowMode: scrollConfiguration.assistantRoundRowMode
         )
         let isScrollStreaming = !isGenerationCancelled
             && (isRunActive || streamScrollFollowTail)
@@ -254,6 +268,7 @@ extension AIChatView {
                 isPinnedToBottom: $isPinnedToBottom,
                 scrollToBottomRequest: $scrollToBottomRequest,
                 isStreaming: isScrollStreaming,
+                configuration: scrollConfiguration,
                 rowRenderKey: { row in
                     chatScrollRowRenderKey(
                         row,
@@ -264,6 +279,7 @@ extension AIChatView {
                     )
                 },
                 onReachTop: {
+                    guard scrollConfiguration.usesMessageWindowing else { return }
                     loadMoreMessageGroups(from: allGroups)
                 },
                 onScrollAnimationComplete: { token in
@@ -324,6 +340,7 @@ extension AIChatView {
             await refreshRevertRequiredUserMessageIDs(groups: visibleGroups)
         }
         .task(id: messageWindowReconcileKey(scopeID: messageListSwitchID, groups: allGroups)) {
+            guard scrollConfiguration.usesMessageWindowing else { return }
             reconcileMessageWindow(groups: allGroups)
         }
     }
@@ -331,10 +348,12 @@ extension AIChatView {
     func chatScrollRows(
         hiddenGroupCount: Int,
         visibleGroups: [MessageGroup],
+        assistantLoadingSlot: ChatAssistantLoadingSlot,
         activeRoundID: String?,
         transientError: AIChatState.TransientError?,
         streamingMessageIDs: Set<String>,
-        isGenerationCancelled: Bool
+        isGenerationCancelled: Bool,
+        assistantRoundRowMode: ChatScrollAssistantRoundRowMode
     ) -> [ChatScrollRowModel] {
         var rows: [ChatScrollRowModel] = []
 
@@ -351,7 +370,12 @@ extension AIChatView {
         }
 
         for group in visibleGroups {
-            if case .assistantRound(let roundID, let messages) = group,
+            if case .loading = group {
+                continue
+            }
+
+            if assistantRoundRowMode == .splitSettledRows,
+               case .assistantRound(let roundID, let messages) = group,
                roundID != activeRoundID {
                 let items = AssistantRoundTableRows.items(
                     in: messages,
@@ -388,6 +412,15 @@ extension AIChatView {
             }
         }
 
+        rows.append(
+            ChatScrollRowModel(
+                id: assistantLoadingSlot.id,
+                kind: .assistantLoadingSlot(
+                    isVisible: assistantLoadingSlot.isVisible
+                )
+            )
+        )
+
         if let transientError {
             rows.append(
                 ChatScrollRowModel(
@@ -401,6 +434,61 @@ extension AIChatView {
         }
 
         return rows
+    }
+
+    func assistantLoadingSlot(
+        visibleGroups: [MessageGroup],
+        activeRoundID: String?,
+        streamingMessageIDs: Set<String>,
+        isRunActive: Bool,
+        isGenerationCancelled: Bool
+    ) -> ChatAssistantLoadingSlot {
+        let hasTimelineLoading = visibleGroups.contains { group in
+            if case .loading = group { return true }
+            return false
+        }
+        let hasActiveRoundInflight = activeRoundHasInflightMessage(
+            visibleGroups: visibleGroups,
+            activeRoundID: activeRoundID,
+            streamingMessageIDs: streamingMessageIDs
+        )
+        let isWaitingForFirstAssistant = isRunActive && activeRoundID == nil
+        let isReserved = hasTimelineLoading
+            || hasActiveRoundInflight
+            || isRunActive
+            || streamScrollFollowTail
+
+        return ChatAssistantLoadingSlot(
+            id: "assistant-loading-slot:\(messageListSwitchID)",
+            isVisible: !isGenerationCancelled
+                && isReserved
+                && (
+                    hasTimelineLoading
+                    || hasActiveRoundInflight
+                    || isWaitingForFirstAssistant
+                )
+        )
+    }
+
+    func activeRoundHasInflightMessage(
+        visibleGroups: [MessageGroup],
+        activeRoundID: String?,
+        streamingMessageIDs: Set<String>
+    ) -> Bool {
+        guard let activeRoundID else { return false }
+        for group in visibleGroups {
+            guard case .assistantRound(let id, let messages) = group,
+                  id == activeRoundID
+            else {
+                continue
+            }
+            return messages.contains { message in
+                guard case .content(let content) = message else { return false }
+                guard content.role == .assistant else { return false }
+                return streamingMessageIDs.contains(content.id)
+            }
+        }
+        return false
     }
 
     func chatScrollRowRenderKey(
@@ -422,6 +510,9 @@ extension AIChatView {
                     isGenerationCancelled: isGenerationCancelled,
                     suppressedUserActionMessageID: suppressedUserActionMessageID
                 )
+
+            case .assistantLoadingSlot(let isVisible):
+                return "assistantLoadingSlot:visible:\(isVisible ? "1" : "0")"
 
             case .assistantItem(let item):
                 return item.signature
@@ -506,6 +597,8 @@ extension AIChatView {
                         suppressedUserActionMessageID: suppressedUserActionMessageID
                     )
                 }
+            case .assistantLoadingSlot(let isVisible):
+                LoadingMessageSlot(isVisible: isVisible)
             case .assistantItem(let item):
                 ChatScrollRow {
                     AssistantRoundTableItemView(
@@ -567,6 +660,7 @@ extension AIChatView {
                     activeRoundID: activeRoundID,
                     streamingMessageIDs: streamingMessageIDs,
                     isRoundCancelled: isGenerationCancelled,
+                    usesExternalLoadingSlot: true,
                     onRegenerate: regenerateMessage
                 )
                 .equatable()

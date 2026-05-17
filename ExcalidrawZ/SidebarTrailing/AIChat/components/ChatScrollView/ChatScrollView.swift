@@ -17,14 +17,6 @@ enum ChatScrollAnimation {
     static let scrollDuration: Double = 0.6
 }
 
-enum ChatScrollBackend {
-    case automatic
-    case swiftUI
-    case nativeSingleHost
-    case nativeTable
-    case nativeStack
-}
-
 struct ChatScrollView<RowContent: View>: View {
     @Binding var isPinnedToBottom: Bool
     @Binding var scrollToBottomRequest: ScrollToBottomRequest
@@ -32,7 +24,7 @@ struct ChatScrollView<RowContent: View>: View {
     private let rows: [ChatScrollRowModel]
     private let rowRenderKey: (ChatScrollRowModel) -> String
     private let isStreaming: Bool
-    private let backend: ChatScrollBackend
+    private let configuration: ChatScrollConfiguration
     private let onReachTop: (() -> Void)?
     private let onScrollAnimationComplete: ((Int) -> Void)?
     private let rowContent: (ChatScrollRowModel) -> RowContent
@@ -42,7 +34,7 @@ struct ChatScrollView<RowContent: View>: View {
         isPinnedToBottom: Binding<Bool>,
         scrollToBottomRequest: Binding<ScrollToBottomRequest>,
         isStreaming: Bool = false,
-        backend: ChatScrollBackend = .automatic,
+        configuration: ChatScrollConfiguration = .automatic,
         rowRenderKey: @escaping (ChatScrollRowModel) -> String = { $0.id },
         onReachTop: (() -> Void)? = nil,
         onScrollAnimationComplete: ((Int) -> Void)? = nil,
@@ -53,16 +45,15 @@ struct ChatScrollView<RowContent: View>: View {
         _isPinnedToBottom = isPinnedToBottom
         _scrollToBottomRequest = scrollToBottomRequest
         self.isStreaming = isStreaming
-        self.backend = backend
+        self.configuration = configuration
         self.onReachTop = onReachTop
         self.onScrollAnimationComplete = onScrollAnimationComplete
         self.rowContent = rowContent
     }
 
     var body: some View {
-        switch resolvedBackend {
-            case .automatic,
-                    .swiftUI:
+        switch configuration.backend {
+            case .swiftUI:
                 SwiftUIChatScrollView(
                     isPinnedToBottom: $isPinnedToBottom,
                     scrollToBottomRequest: $scrollToBottomRequest,
@@ -117,20 +108,6 @@ struct ChatScrollView<RowContent: View>: View {
                     rowsContent
                 }
         }
-    }
-
-    private var resolvedBackend: ChatScrollBackend {
-        guard backend == .automatic else { return backend }
-
-#if os(macOS)
-#if DEBUG
-        return AIChatRenderDebug.useStackMessageListHost ? .nativeStack : .nativeTable
-#else
-        return .nativeStack
-#endif
-#else
-        return .swiftUI
-#endif
     }
 
     private var contentRevision: String {

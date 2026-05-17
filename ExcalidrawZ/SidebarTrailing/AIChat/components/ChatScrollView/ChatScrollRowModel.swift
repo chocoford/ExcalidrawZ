@@ -9,6 +9,7 @@ struct ChatScrollRowModel: Identifiable {
     enum Kind {
         case hiddenHistory(hiddenGroupCount: Int, isLoading: Bool)
         case group(MessageGroup)
+        case assistantLoadingSlot(isVisible: Bool)
         case assistantItem(AssistantRoundTableItem)
         case assistantAction(AssistantRoundTableAction)
         case transientError(id: UUID, message: String)
@@ -16,6 +17,11 @@ struct ChatScrollRowModel: Identifiable {
 
     let id: String
     let kind: Kind
+}
+
+struct ChatAssistantLoadingSlot {
+    let id: String
+    let isVisible: Bool
 }
 
 struct NativeChatRowSnapshot: Identifiable {
