@@ -77,35 +77,7 @@ struct NavigateCanvasTool: Tool {
     }
 
     var inputSchema: ToolInputSchema {
-        .parameters(ToolParameters(
-            properties: [
-                "action": ParameterProperty(
-                    type: "string",
-                    description: "One of: get_camera, set_camera, scroll_to_center, scroll_to_element, zoom_to_fit, zoom_to_fit_elements, zoom_to."
-                ),
-                "elementId": ParameterProperty(
-                    type: "string",
-                    description: "Target element ID for scroll_to_element."
-                ),
-                "elementIds": ParameterProperty(
-                    type: "array",
-                    description: "Target element IDs for zoom_to_fit_elements."
-                ),
-                "camera": ParameterProperty(
-                    type: "object",
-                    description: "Camera patch for set_camera."
-                ),
-                "zoom": ParameterProperty(
-                    type: "number",
-                    description: "Target zoom scale for zoom_to."
-                ),
-                "options": ParameterProperty(
-                    type: "object",
-                    description: "Animation and fitting options for navigation actions."
-                )
-            ],
-            required: ["action"]
-        ))
+        .bundleResource(name: "NavigateCanvasToolSchema")
     }
 
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {

@@ -148,6 +148,9 @@ struct AIChatView: View {
         .background {
             debugPublishProbe
         }
+        .task {
+            await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiChatAppear)
+        }
     }
 
     @ViewBuilder

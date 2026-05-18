@@ -15,6 +15,8 @@ enum ExcalidrawAITransactionSource: String, Codable, Equatable, Sendable {
 enum ExcalidrawAITransactionRequestKind: String, Codable, Equatable, Sendable {
     case createConversation
     case sendMessage
+    case regenerateMessage
+    case resumeGeneration
 }
 
 struct ExcalidrawAITransactionMetadata: Codable, Equatable, Sendable {

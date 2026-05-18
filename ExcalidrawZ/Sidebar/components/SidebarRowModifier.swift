@@ -40,6 +40,13 @@ struct ExcalidrawZSidebarRowModifier: ViewModifier {
             }
         }
         .background(rowBackground)
+        .padding(.vertical, {
+            if #available(macOS 26.0, iOS 26.0, *) {
+                1
+            } else {
+                0
+            }
+        }())
         .overlay {
             if isMultiSelected {
                 if #available(macOS 26.0, iOS 26.0, *) {

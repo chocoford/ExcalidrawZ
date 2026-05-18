@@ -49,7 +49,7 @@ struct AdjustElementsTool: Tool {
 
         let payload: ToolInput
         do {
-            payload = try JSONDecoder().decode(ToolInput.self, from: data)
+            payload = try ToolInput.decodeLeniently(from: data)
         } catch let error as ToolInput.ValidationError {
             throw ToolError.invalidInput(error.message)
         } catch {
@@ -404,6 +404,20 @@ struct ToolInput: Decodable {
         case ops
     }
 
+    static func decodeLeniently(from data: Data) throws -> ToolInput {
+        let decoder = JSONDecoder()
+        do {
+            return try decoder.decode(ToolInput.self, from: data)
+        } catch let error as ValidationError {
+            throw error
+        } catch {
+            if let stringifiedInput = try? decoder.decode(String.self, from: data) {
+                return try decodeStringifiedToolInput(stringifiedInput)
+            }
+            throw error
+        }
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         version = try container.decodeIfPresent(String.self, forKey: .version)
@@ -411,18 +425,62 @@ struct ToolInput: Decodable {
 
         do {
             ops = try container.decode([Operation].self, forKey: .ops)
-        } catch DecodingError.typeMismatch {
+        } catch {
+            if let stringifiedOps = try? container.decode(String.self, forKey: .ops) {
+                ops = try Self.decodeStringifiedOps(stringifiedOps)
+                return
+            }
+
+            switch error {
+            case DecodingError.typeMismatch(_, _):
+                throw ValidationError(
+                    message: "Invalid adjust_elements input: `ops` must be a JSON array, not a string or object. " +
+                    "Put `approvalReason` at the top level next to `ops`."
+                )
+            case DecodingError.valueNotFound(_, _):
+                throw ValidationError(message: "Invalid adjust_elements input: `ops` is required and must be a JSON array.")
+            case DecodingError.keyNotFound(_, _):
+                throw ValidationError(message: "Invalid adjust_elements input: missing required top-level `ops` array.")
+            default:
+                throw ValidationError(
+                    message: "Invalid adjust_elements input: one or more entries in `ops` do not match the supported operation schema."
+                )
+            }
+        }
+    }
+
+    private static func decodeStringifiedToolInput(_ value: String) throws -> ToolInput {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let data = trimmed.data(using: .utf8) else {
             throw ValidationError(
-                message: "Invalid adjust_elements input: `ops` must be a JSON array, not a string or object. " +
-                "Put `approvalReason` at the top level next to `ops`."
+                message: "Invalid adjust_elements input: stringified tool input was empty. Pass a JSON object."
             )
-        } catch DecodingError.valueNotFound {
-            throw ValidationError(message: "Invalid adjust_elements input: `ops` is required and must be a JSON array.")
-        } catch DecodingError.keyNotFound {
-            throw ValidationError(message: "Invalid adjust_elements input: missing required top-level `ops` array.")
+        }
+
+        do {
+            return try JSONDecoder().decode(ToolInput.self, from: data)
+        } catch let error as ValidationError {
+            throw error
         } catch {
             throw ValidationError(
-                message: "Invalid adjust_elements input: one or more entries in `ops` do not match the supported operation schema."
+                message: "Invalid adjust_elements input: tool input was provided as a JSON string, but the string did not contain a valid input object. Pass a JSON object."
+            )
+        }
+    }
+
+    private static func decodeStringifiedOps(_ value: String) throws -> [Operation] {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let data = trimmed.data(using: .utf8) else {
+            throw ValidationError(
+                message: "Invalid adjust_elements input: stringified `ops` was empty. Pass `ops` as a JSON array."
+            )
+        }
+
+        do {
+            return try JSONDecoder().decode([Operation].self, from: data)
+        } catch {
+            throw ValidationError(
+                message: "Invalid adjust_elements input: `ops` was provided as a JSON string, but the string did not contain a valid operation array. Pass `ops` as a JSON array."
             )
         }
     }

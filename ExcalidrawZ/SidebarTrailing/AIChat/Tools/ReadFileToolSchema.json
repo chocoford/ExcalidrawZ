@@ -1,0 +1,56 @@
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Case-insensitive search across id, type, text, originalText, frame name, link, and file id."
+    },
+    "ids": {
+      "type": "array",
+      "description": "Exact element ids to return.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "types": {
+      "type": "array",
+      "description": "Element types to include, e.g. text, rectangle, ellipse, diamond, line, arrow, freedraw, image, frame.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "selected_only": {
+      "type": "boolean",
+      "description": "Return only the user's currently selected elements."
+    },
+    "frame_id": {
+      "type": "string",
+      "description": "Return elements inside a specific frame."
+    },
+    "group_id": {
+      "type": "string",
+      "description": "Return elements in a specific group."
+    },
+    "offset": {
+      "type": "number",
+      "description": "Zero-based offset into the filtered result set. Defaults to 0."
+    },
+    "limit": {
+      "type": "number",
+      "description": "Maximum elements to return. Defaults to 60, hard-capped at 120. Use pagination for more."
+    },
+    "include_files": {
+      "type": "boolean",
+      "description": "Include resource file metadata. Defaults to false."
+    },
+    "include_deleted": {
+      "type": "boolean",
+      "description": "Include deleted elements. Defaults to false."
+    },
+    "max_points": {
+      "type": "number",
+      "description": "Maximum points per linear/freeDraw element. Defaults to 20."
+    }
+  },
+  "required": []
+}

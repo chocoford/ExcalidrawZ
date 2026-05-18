@@ -226,6 +226,9 @@ struct AIChatIslandView: View {
         .onAppear {
             updateGenerationTicker(hasActiveGeneration: hasActiveGeneration)
         }
+        .task {
+            await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiChatAppear)
+        }
         .onChange(of: hasActiveGeneration) { active in
             updateGenerationTicker(hasActiveGeneration: active)
         }

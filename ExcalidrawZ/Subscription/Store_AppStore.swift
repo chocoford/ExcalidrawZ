@@ -24,7 +24,7 @@ public enum StoreError: Error {
     case failedVerification
 }
 
-enum StoreKitEntitlementRefreshReason: String {
+enum StoreKitEntitlementRefreshReason: String, Sendable {
     case appLaunch
     case transactionUpdate
     case purchase
@@ -286,7 +286,23 @@ class Store: ObservableObject {
         lastEntitlementRefreshAt = now
         logger.info("[Store] refresh entitlements reason=\(reason.rawValue) force=\(force)")
 
+        let previousPlanIDs = purchasedPlans.map(\.id)
+        let previousMembershipIDs = purchasedMemberships.map(\.id)
+        let previousExpirationDate = activePlanExpirationDate
+
         await loadCustomerProductStatus(reason: reason)
+
+#if APP_STORE
+        let entitlementChanged =
+            previousPlanIDs != purchasedPlans.map(\.id) ||
+            previousMembershipIDs != purchasedMemberships.map(\.id) ||
+            previousExpirationDate != activePlanExpirationDate
+        await LLMCreditsRefreshCoordinator.shared.handleStoreKitEntitlementRefresh(
+            reason: reason,
+            force: force,
+            entitlementChanged: entitlementChanged
+        )
+#endif
 
         isRefreshingEntitlements = false
 

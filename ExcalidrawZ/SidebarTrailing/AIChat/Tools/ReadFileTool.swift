@@ -31,55 +31,7 @@ struct ReadFileTool: Tool {
     }
     
     var inputSchema: ToolInputSchema {
-        .parameters(ToolParameters(
-            properties: [
-                "query": ParameterProperty(
-                    type: "string",
-                    description: "Case-insensitive search across id, type, text, originalText, frame name, link, and file id."
-                ),
-                "ids": ParameterProperty(
-                    type: "array",
-                    description: "Exact element ids to return."
-                ),
-                "types": ParameterProperty(
-                    type: "array",
-                    description: "Element types to include, e.g. text, rectangle, ellipse, diamond, line, arrow, freedraw, image, frame."
-                ),
-                "selected_only": ParameterProperty(
-                    type: "boolean",
-                    description: "Return only the user's currently selected elements."
-                ),
-                "frame_id": ParameterProperty(
-                    type: "string",
-                    description: "Return elements inside a specific frame."
-                ),
-                "group_id": ParameterProperty(
-                    type: "string",
-                    description: "Return elements in a specific group."
-                ),
-                "offset": ParameterProperty(
-                    type: "number",
-                    description: "Zero-based offset into the filtered result set. Defaults to 0."
-                ),
-                "limit": ParameterProperty(
-                    type: "number",
-                    description: "Maximum elements to return. Defaults to 60, hard-capped at 120. Use pagination for more."
-                ),
-                "include_files": ParameterProperty(
-                    type: "boolean",
-                    description: "Include resource file metadata. Defaults to false."
-                ),
-                "include_deleted": ParameterProperty(
-                    type: "boolean",
-                    description: "Include deleted elements. Defaults to false."
-                ),
-                "max_points": ParameterProperty(
-                    type: "number",
-                    description: "Maximum points per linear/freeDraw element. Defaults to 20."
-                )
-            ],
-            required: []
-        ))
+        .bundleResource(name: "ReadFileToolSchema")
     }
     
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {

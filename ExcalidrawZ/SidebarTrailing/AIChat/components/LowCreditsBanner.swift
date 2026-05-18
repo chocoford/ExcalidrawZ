@@ -25,10 +25,10 @@ import LLMCore
 struct LowCreditsBannerView: View {
     @EnvironmentObject private var llmState: LLMStateObject
 
-    /// Show only while `creditsInfo.balance < threshold`. Default 100 — at
+    /// Show only while `creditsInfo.balance < threshold`. Default 50 — at
     /// that point the user has a few exchanges of runway, enough time to
     /// react to the hint before hitting `LLMError.insufficientCredits`.
-    var threshold: Double = 100
+    var threshold: Double = 50
 
     /// Extra space added below the content *inside* the orange background.
     /// Set to a positive value when the caller stacks the banner above a
@@ -37,7 +37,7 @@ struct LowCreditsBannerView: View {
     /// Default 0 → clean self-contained card.
     var peekBottom: CGFloat = 0
     
-    public init(threshold: Double = 100, peekBottom: CGFloat = 0) {
+    public init(threshold: Double = 50, peekBottom: CGFloat = 0) {
         self.threshold = threshold
         self.peekBottom = peekBottom
     }

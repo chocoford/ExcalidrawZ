@@ -27,6 +27,10 @@ struct AISettingsView: View {
     @State var allTransactionCount: Int = 0
     @State var isLoadingAllTransactions: Bool = false
     @State var allTransactionLoadError: Error?
+    @State var aiUserInfo: AuthUserInfo?
+    @State var isLoadingAIUserInfo: Bool = false
+    @State var aiUserInfoLoadError: String?
+    @State var didCopyAIAccountID: Bool = false
 
     /// Model list for the Default Model picker, sourced from the agent's
     /// `allowedModels`. Loaded lazily on first appearance so opening
@@ -47,6 +51,8 @@ struct AISettingsView: View {
                 .task { await loadInitialTransactions() }
                 .task { await loadAllTransactionsIfNeeded() }
                 .task { await loadAvailableModelsIfNeeded() }
+                .task { await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiSettingsAppear) }
+                .task { await loadAIAccountInfoIfNeeded() }
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
@@ -57,6 +63,8 @@ struct AISettingsView: View {
                 .task { await loadInitialTransactions() }
                 .task { await loadAllTransactionsIfNeeded() }
                 .task { await loadAvailableModelsIfNeeded() }
+                .task { await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiSettingsAppear) }
+                .task { await loadAIAccountInfoIfNeeded() }
             }
         }
         .task {

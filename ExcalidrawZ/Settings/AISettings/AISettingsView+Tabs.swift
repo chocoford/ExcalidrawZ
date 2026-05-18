@@ -75,6 +75,13 @@ extension AISettingsView {
                     settingsHeader
                         .textCase(nil)
                 }
+
+                Section {
+                    aiAccountRows
+                } header: {
+                    aiAccountHeader
+                        .textCase(nil)
+                }
         }
     }
 }

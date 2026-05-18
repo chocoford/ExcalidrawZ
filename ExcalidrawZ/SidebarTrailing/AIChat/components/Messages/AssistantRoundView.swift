@@ -400,7 +400,7 @@ struct AssistantRoundView: View {
         let settled = !isActiveGeneratingRound
             && !hasInflightInRound
             && allRevealed
-            && hasTerminalActionableAssistantContent
+            && lastActionableAssistantContent != nil
         guard settled else {
             actionBarTask?.cancel()
             actionBarTask = nil
@@ -521,13 +521,6 @@ struct AssistantRoundView: View {
             return nil
         }
         return content
-    }
-
-    private var hasTerminalActionableAssistantContent: Bool {
-        guard let content = lastActionableAssistantContent else { return false }
-        if isRoundCancelled { return true }
-        if Self.hasFinalAnswerToolCall(in: content) { return true }
-        return Self.nonFinalToolCalls(in: content).isEmpty
     }
 
     private static func nonFinalToolCalls(in content: ChatMessageContent) -> [ToolCall] {

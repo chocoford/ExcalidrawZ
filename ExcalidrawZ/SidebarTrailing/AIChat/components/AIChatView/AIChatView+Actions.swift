@@ -226,11 +226,20 @@ extension AIChatView {
                     model: model
                 )
                 let context = try await makeInvocationContext(model: model)
+                let metadata = await makeTransactionMetadata(
+                    conversationID: id,
+                    userMessageID: retryContent?.id ?? messageID,
+                    requestKind: .regenerateMessage,
+                    model: model,
+                    context: context,
+                    attachmentCount: retryContent?.files?.count ?? 0
+                )
                 try await llmState.regenerateMessage(
                     in: id,
                     fromMessageID: messageID,
                     model: model,
                     stream: true,
+                    metadata: metadata,
                     context: context
                 )
             } catch {
@@ -267,10 +276,19 @@ extension AIChatView {
                     model: model
                 )
                 let context = try await makeInvocationContext(model: model)
+                let metadata = await makeTransactionMetadata(
+                    conversationID: id,
+                    userMessageID: retryContent?.id ?? "",
+                    requestKind: .resumeGeneration,
+                    model: model,
+                    context: context,
+                    attachmentCount: retryContent?.files?.count ?? 0
+                )
                 try await llmState.resumeGeneration(
                     in: id,
                     model: model,
                     stream: true,
+                    metadata: metadata,
                     context: context
                 )
             } catch {
@@ -334,6 +352,61 @@ extension AIChatView {
             currentFileID: currentFileID,
             currentModelSupportsImageInput: model.supportsExcalidrawImageInput
         )
+    }
+
+    private func makeTransactionMetadata(
+        conversationID: String,
+        userMessageID: String,
+        requestKind: ExcalidrawAITransactionRequestKind,
+        model: SupportedModel,
+        context: ExcalidrawChatInvocationContext,
+        attachmentCount: Int
+    ) async -> ExcalidrawAITransactionMetadata {
+        let fileContext = await MainActor.run {
+            transactionFileContext(for: fileState.currentActiveFile)
+        }
+
+        return ExcalidrawAITransactionMetadata(
+            schemaVersion: 1,
+            source: .aiChatSidebar,
+            conversationID: conversationID,
+            userMessageID: userMessageID,
+            requestKind: requestKind,
+            agentID: ExcalidrawAgentConfig.agentID,
+            model: model.rawValue,
+            canvasTarget: context.canvasTarget.rawValue,
+            fileID: fileContext.id,
+            fileName: fileContext.name,
+            fileKind: fileContext.kind,
+            selectedElementCount: context.selectedElementIDs?.count ?? 0,
+            attachmentCount: attachmentCount,
+            hasCurrentFileData: context.currentFileData != nil,
+            isNewConversation: false
+        )
+    }
+
+    @MainActor
+    private func transactionFileContext(
+        for activeFile: FileState.ActiveFile?
+    ) -> (id: String?, name: String?, kind: String?) {
+        guard let activeFile else {
+            return (nil, nil, nil)
+        }
+
+        switch activeFile {
+            case .file(let file):
+                let scope = activeFile.aiConversationFileScope
+                return (scope.id, file.name, scope.kind.rawValue)
+            case .localFile:
+                let scope = activeFile.aiConversationFileScope
+                return (scope.id, activeFile.name, scope.kind.rawValue)
+            case .temporaryFile:
+                let scope = activeFile.aiConversationFileScope
+                return (scope.id, activeFile.name, scope.kind.rawValue)
+            case .collaborationFile(let file):
+                let scope = activeFile.aiConversationFileScope
+                return (scope.id, file.name, scope.kind.rawValue)
+        }
     }
 
     private func retryModel(

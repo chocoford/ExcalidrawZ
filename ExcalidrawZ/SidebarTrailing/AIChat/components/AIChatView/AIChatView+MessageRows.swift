@@ -55,8 +55,7 @@ extension AIChatView {
                 if let action = AssistantRoundTableRows.action(
                     roundID: roundID,
                     messages: messages,
-                    items: items,
-                    isRoundCancelled: isGenerationCancelled
+                    items: items
                 ) {
                     rows.append(
                         ChatScrollRowModel(

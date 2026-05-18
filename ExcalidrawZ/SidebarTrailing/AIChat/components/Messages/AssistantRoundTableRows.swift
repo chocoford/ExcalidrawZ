@@ -273,13 +273,9 @@ enum AssistantRoundTableRows {
     static func action(
         roundID: String,
         messages: [ChatMessage],
-        items: [AssistantRoundTableItem],
-        isRoundCancelled: Bool
+        items: [AssistantRoundTableItem]
     ) -> AssistantRoundTableAction? {
         guard let content = lastActionableAssistantContent(in: items) else { return nil }
-        guard hasTerminalActionableAssistantContent(content, isRoundCancelled: isRoundCancelled) else {
-            return nil
-        }
         let copyText = items
             .compactMap { item -> String? in
                 guard case .assistantContent(let content) = item.kind else { return nil }
@@ -324,15 +320,6 @@ enum AssistantRoundTableRows {
             return content
         }
         return nil
-    }
-
-    private static func hasTerminalActionableAssistantContent(
-        _ content: ChatMessageContent,
-        isRoundCancelled: Bool
-    ) -> Bool {
-        if isRoundCancelled { return true }
-        if hasFinalAnswerToolCall(in: content) { return true }
-        return nonFinalToolCalls(in: content).isEmpty
     }
 
     private static func nonFinalToolCalls(in content: ChatMessageContent) -> [ToolCall] {

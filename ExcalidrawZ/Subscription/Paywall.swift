@@ -224,7 +224,7 @@ struct Paywall: View {
     @available(macOS 14.0, iOS 17.0, *)
     @MainActor @ViewBuilder
     private func modernView() -> some View {
-        SubscriptionStoreView(groupID: "914DA4EE")
+        SubscriptionStoreView(groupID: "21660497")
     }
     
     @MainActor @ViewBuilder
@@ -263,6 +263,9 @@ struct Paywall: View {
         }
         .onAppear {
             isPresented = true
+        }
+        .task {
+            await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .paywallAppear)
         }
         .onDisappear {
             isPresented = false

@@ -42,7 +42,7 @@ extension LLMClient {
         authProvider: .appStore(
             bundleID: "com.chocoford.excalidraw",
             ascAppID: 6754812067,
-            subscriptionGroupID: "914DA4EE"
+            subscriptionGroupID: "21660497"
         ),
         uploadProvider: .none,
         uploadPolicy: .automatic
@@ -346,7 +346,7 @@ struct ExcalidrawZApp: App {
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
                 .environmentObject(appPrefernece)
                 .environmentObject(store)
-                .environmentObject(llmState)
+                .llmProvider(state: llmState, client: .shared)
 #if !APP_STORE
                 .environmentObject(updateChecker)
 #endif
