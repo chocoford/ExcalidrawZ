@@ -15,6 +15,8 @@
 		3917164E2FC3EF2C00568AE9 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3917164D2FC3EF2C00568AE9 /* ChocofordEssentials */; };
 		391716502FC3EF2C00568AE9 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3917164F2FC3EF2C00568AE9 /* ChocofordUI */; };
 		391716552FC3EF3F00568AE9 /* LLMKit in Frameworks */ = {isa = PBXBuildFile; productRef = 391716542FC3EF3F00568AE9 /* LLMKit */; };
+		3917165C2FC3FA5000568AE9 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3917165B2FC3FA5000568AE9 /* ChocofordUI */; };
+		3917165E2FC3FA5300568AE9 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3917165D2FC3FA5300568AE9 /* ChocofordEssentials */; };
 		394A7FAF2C515CB700D4918B /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394A7FAE2C515CB700D4918B /* RootView.swift */; };
 		3963A0462C6C7EAA00472AE7 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394A7FAE2C515CB700D4918B /* RootView.swift */; };
 		3963A0472C6C7EAA00472AE7 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB9729674DF60054A3ED /* Model.xcdatamodeld */; };
@@ -453,7 +455,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				39B142EA2CE9D2A100D3EEDA /* Zlib in Frameworks */,
+				3917165E2FC3FA5300568AE9 /* ChocofordEssentials in Frameworks */,
 				398F14592CF738F70061CCF9 /* SwiftyAlert in Frameworks */,
+				3917165C2FC3FA5000568AE9 /* ChocofordUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -744,6 +748,8 @@
 			packageProductDependencies = (
 				39B142E92CE9D2A100D3EEDA /* Zlib */,
 				398F14582CF738F70061CCF9 /* SwiftyAlert */,
+				3917165B2FC3FA5000568AE9 /* ChocofordUI */,
+				3917165D2FC3FA5300568AE9 /* ChocofordEssentials */,
 			);
 			productName = QuickLookPreviewExtension;
 			productReference = 3987A5072CB54B200054D7D5 /* QuickLookPreviewExtension.appex */;
@@ -1952,6 +1958,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 391716462FC3EF0100568AE9 /* XCRemoteSwiftPackageReference "LLMKit" */;
 			productName = LLMKit;
+		};
+		3917165B2FC3FA5000568AE9 /* ChocofordUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3917164C2FC3EF2C00568AE9 /* XCRemoteSwiftPackageReference "ChocofordKit" */;
+			productName = ChocofordUI;
+		};
+		3917165D2FC3FA5300568AE9 /* ChocofordEssentials */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3917164C2FC3EF2C00568AE9 /* XCRemoteSwiftPackageReference "ChocofordKit" */;
+			productName = ChocofordEssentials;
 		};
 		3929AB782CA5E4B800C7CCE8 /* ChocofordEssentials */ = {
 			isa = XCSwiftPackageProductDependency;
