@@ -229,7 +229,7 @@ struct AIChatIslandView: View {
         .task {
             await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiChatAppear)
         }
-        .onChange(of: hasActiveGeneration) { active in
+        .watch(value: hasActiveGeneration) { _, active in
             updateGenerationTicker(hasActiveGeneration: active)
         }
         // Real-time tool-call surfacing. The streaming message accumulates
@@ -238,7 +238,7 @@ struct AIChatIslandView: View {
         // the model fires the call, instead of lingering until the message
         // lands in `conversation.messages`. We also guard against beating
         // a same-named display already on screen (no-op write).
-        .onChange(of: liveToolCallName) { newName in
+        .watch(value: liveToolCallName) { _, newName in
             guard let newName else { return }
             let label = toolCallDisplay(newName)
             guard displayedReplyText != label else { return }
@@ -249,7 +249,7 @@ struct AIChatIslandView: View {
         // Each new committed assistant message drives the ticker. We dedupe
         // against `lastSeenAssistantMessageID` so unrelated re-renders don't
         // re-process the same message and double-fire the timing chain.
-        .onChange(of: latestAssistantMessageID) { newID in
+        .watch(value: latestAssistantMessageID) { _, newID in
             guard let newID, newID != lastSeenAssistantMessageID else { return }
             lastSeenAssistantMessageID = newID
             handleNewAssistantMessage()
@@ -696,7 +696,7 @@ struct ReplyTickerView: View {
                 hueRotation = 360
             }
         }
-        .onChange(of: text) { newText in
+        .watch(value: text) { _, newText in
             handleTextChange(newText)
         }
         .onDisappear {

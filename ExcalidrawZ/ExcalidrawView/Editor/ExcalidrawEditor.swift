@@ -155,6 +155,7 @@ struct ExcalidrawEditor: View {
         // means bottom-center of the actual canvas the user is looking at.
         .overlay(alignment: .bottom) {
             if layoutState.isAIChatIslandMode,
+               !AIChatAvailability.isUnavailableInCurrentBuild,
                !fileState.currentActiveFileIsInTrash {
                 AIChatIslandView(canvasSize: editorContentSize)
                     .padding(.bottom, 24)

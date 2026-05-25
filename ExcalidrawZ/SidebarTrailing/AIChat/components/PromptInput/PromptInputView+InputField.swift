@@ -211,68 +211,84 @@ private struct PromptDraftInputField: View {
                 AttachmentThumbnailStrip(pastedImages: pastedImagesBinding)
             }
 
-            TextArea(
+            PromptDraftTextArea(
                 text: textBinding,
-                placeholder: Text(localizable: .aiChatInputPlaceholder)
+                focus: focus,
+                onSubmit: submit,
+                onPaste: handlePaste
             )
-            .keyDownHandler(
-                TextFieldKeyDownEventHandler(triggers: [(36, nil)]) { event in
-                    guard let event else { return nil }
-                    if event.keyCode == 36, !event.modifierFlags.contains(.shift) {
-                        submit()
-                        return nil           // 消费 plain enter
-                    }
-                    return event             // shift+enter 透传，系统自动插入 \n 并移动光标
-                }
-            )
-            .onPaste { item in
-                handlePaste(item)
-            }
-            .focused(focus)
         }
         .onAppear {
             publishSummary()
         }
-        .onChange(of: draftState.text) { _ in
+        .watch(value: draftState.text) {
             publishSummary()
         }
-        .onChange(of: draftState.images) { _ in
+        .watch(value: draftState.images) {
             publishSummary()
         }
-        .onChange(of: sendRequestToken) { _ in
+        .watch(value: sendRequestToken) {
             submit()
         }
-        .onChange(of: aiChatState.draftRequest?.token) { _ in
-            guard let req = aiChatState.draftRequest else { return }
-            guard req.draftKey == nil || req.draftKey == draftKey else { return }
-            guard draftState.shouldHandleDraftRequest(token: req.token) else { return }
-            if req.draftKey == nil {
-                draftState.text = req.text
-                draftState.images = PastedImageHelpers.pendingImages(from: req.files)
-                publishSummary()
-            }
-            focus.wrappedValue = true
+        .watch(value: aiChatState.draftRequest?.token) {
+            handleDraftRequest(aiChatState.draftRequest)
         }
-        .onChange(of: aiChatState.draftImageAppendRequest?.token) { _ in
-            guard let req = aiChatState.draftImageAppendRequest else { return }
-            guard req.draftKey == nil || req.draftKey == draftKey else { return }
-            guard draftState.shouldHandleDraftImageAppendRequest(token: req.token) else { return }
-            if req.draftKey == nil {
-                draftState.images.append(contentsOf: req.images)
-                publishSummary()
-            }
+        .watch(value: aiChatState.draftImageAppendRequest?.token) {
+            handleDraftImageAppendRequest(aiChatState.draftImageAppendRequest)
         }
-        .onChange(of: aiChatState.editCancelRequest?.token) { _ in
-            guard let req = aiChatState.editCancelRequest else { return }
-            guard req.draftKey == nil || req.draftKey == draftKey else { return }
-            guard draftState.shouldHandleEditCancel(token: req.token) else { return }
-            if req.draftKey == nil {
-                draftState.text = ""
-                draftState.images = []
-                publishSummary()
-            }
-            focus.wrappedValue = false
+        .watch(value: aiChatState.editCancelRequest?.token) {
+            handleEditCancelRequest(aiChatState.editCancelRequest)
         }
+    }
+
+    private func handleDraftRequest(_ req: AIChatState.DraftRequest?) {
+        guard let req else { return }
+        let requestDraftKey: String? = req.draftKey
+        guard targetsThisDraft(requestDraftKey) else { return }
+        guard draftState.shouldHandleDraftRequest(token: req.token) else { return }
+
+        if isGlobalDraftRequest(requestDraftKey) {
+            draftState.text = req.text
+            draftState.images = PastedImageHelpers.pendingImages(from: req.files)
+            publishSummary()
+        }
+        focus.wrappedValue = true
+    }
+
+    private func handleDraftImageAppendRequest(_ req: AIChatState.DraftImageAppendRequest?) {
+        guard let req else { return }
+        let requestDraftKey: String? = req.draftKey
+        guard targetsThisDraft(requestDraftKey) else { return }
+        guard draftState.shouldHandleDraftImageAppendRequest(token: req.token) else { return }
+
+        if isGlobalDraftRequest(requestDraftKey) {
+            let imagesToAppend: [PendingPastedImage] = req.images
+            draftState.images += imagesToAppend
+            publishSummary()
+        }
+    }
+
+    private func handleEditCancelRequest(_ req: AIChatState.EditCancelRequest?) {
+        guard let req else { return }
+        let requestDraftKey: String? = req.draftKey
+        guard targetsThisDraft(requestDraftKey) else { return }
+        guard draftState.shouldHandleEditCancel(token: req.token) else { return }
+
+        if isGlobalDraftRequest(requestDraftKey) {
+            draftState.text = ""
+            draftState.images = []
+            publishSummary()
+        }
+        focus.wrappedValue = false
+    }
+
+    private func targetsThisDraft(_ requestDraftKey: String?) -> Bool {
+        guard let requestDraftKey else { return true }
+        return requestDraftKey == draftKey
+    }
+
+    private func isGlobalDraftRequest(_ requestDraftKey: String?) -> Bool {
+        requestDraftKey == nil
     }
 
     private func publishSummary() {
@@ -300,6 +316,45 @@ private struct PromptDraftInputField: View {
                 publishSummary()
                 return .action {}
         }
+    }
+}
+
+private struct PromptDraftTextArea: View {
+    let text: Binding<String>
+    let focus: FocusState<Bool>.Binding
+    let onSubmit: () -> Void
+    let onPaste: (TextAreaPasteItem) -> TextAreaInsertion?
+
+    var body: some View {
+        TextArea(
+            text: text,
+            placeholder: Text(localizable: .aiChatInputPlaceholder)
+        )
+        .onPaste { item in
+            onPaste(item)
+        }
+        .promptInputSubmitOnReturn(onSubmit)
+        .focused(focus)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func promptInputSubmitOnReturn(_ submit: @escaping () -> Void) -> some View {
+#if os(macOS)
+        self.keyDownHandler(
+            TextFieldKeyDownEventHandler(triggers: [(36, nil)]) { event in
+                guard let event else { return nil }
+                if event.keyCode == 36, !event.modifierFlags.contains(.shift) {
+                    submit()
+                    return nil
+                }
+                return event
+            }
+        )
+#else
+        self
+#endif
     }
 }
 

@@ -618,7 +618,7 @@ struct CopyButton: View {
         } label: {
             ZStack {
                 if #available(macOS 15.0, *) {
-                    Image(systemSymbol: copied ? .checkmark : .documentOnDocument)
+                    Image(systemSymbol: copied ? .checkmark : .docOnDoc)
                         .contentTransition(.symbolEffect(.replace))
                 } else {
                     Image(systemSymbol: copied ? .checkmark : .docOnDoc)

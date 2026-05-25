@@ -16,6 +16,9 @@ struct AIChatWelcomeView: View {
     
     /// Caller dismisses by flipping its own state — we just notify.
     var onGetStarted: () -> Void
+    private let buttonTitle: String
+    private let buttonCaption: String
+    private let buttonURL: URL?
     
     @State private var hasAnimatedIn = false
     @State private var isBackgroundPresented = false
@@ -26,6 +29,18 @@ struct AIChatWelcomeView: View {
     
     
     @State private var isDismissing = false
+
+    init(
+        buttonTitle: String = String(localizable: .aiChatWelcomeButtonGetStarted),
+        buttonCaption: String = String(localizable: .aiChatWelcomeGetStartedCaption),
+        buttonURL: URL? = nil,
+        onGetStarted: @escaping () -> Void
+    ) {
+        self.buttonTitle = buttonTitle
+        self.buttonCaption = buttonCaption
+        self.buttonURL = buttonURL
+        self.onGetStarted = onGetStarted
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -323,31 +338,67 @@ struct AIChatWelcomeView: View {
     @ViewBuilder
     private var getStartedButton: some View {
         VStack(spacing: 8) {
-            Button {
-                Task {
-                    await dismissAndStart()
+            if let buttonURL {
+                Link(destination: buttonURL) {
+                    getStartedButtonLabel
                 }
-            } label: {
-                HStack(spacing: 6) {
-                    Text(localizable: .aiChatWelcomeButtonGetStarted)
-                        .fontWeight(.semibold)
-                    Image(systemSymbol: .arrowRight)
-                        .font(.callout.weight(.semibold))
+                .modernButtonStyle(style: .glassProminent, size: .extraLarge, shape: .modern)
+                .keyboardShortcut(.defaultAction)
+                .disabled(isDismissing)
+            } else {
+                Button {
+                    Task {
+                        await dismissAndStart()
+                    }
+                } label: {
+                    getStartedButtonLabel
                 }
-                .frame(maxWidth: .infinity)
+                .modernButtonStyle(style: .glassProminent, size: .extraLarge, shape: .modern)
+                .keyboardShortcut(.defaultAction)
+                .disabled(isDismissing)
             }
-             .modernButtonStyle(style: .glassProminent, size: .extraLarge, shape: .modern)
-            .keyboardShortcut(.defaultAction)
-            .disabled(isDismissing)
             
-            Text(localizable: .aiChatWelcomeGetStartedCaption)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
+            getStartedCaption
         }
         .offset(y: ctaOffset)
         .opacity(ctaOpacity)
         .blur(radius: isDismissing ? 4 : 0)
+    }
+
+    @ViewBuilder
+    private var getStartedCaption: some View {
+        if buttonURL != nil {
+            Text(buttonCaption)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .background {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color.yellow.opacity(0.16))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(Color.orange.opacity(0.55), lineWidth: 1)
+                        }
+                }
+        } else {
+            Text(buttonCaption)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+        }
+    }
+
+    private var getStartedButtonLabel: some View {
+        HStack(spacing: 6) {
+            Text(buttonTitle)
+                .fontWeight(.semibold)
+            Image(systemSymbol: .arrowRight)
+                .font(.callout.weight(.semibold))
+        }
+        .frame(maxWidth: .infinity)
     }
     
     @ViewBuilder

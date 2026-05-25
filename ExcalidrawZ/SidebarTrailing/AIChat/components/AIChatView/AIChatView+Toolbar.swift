@@ -17,7 +17,7 @@ extension AIChatView {
                 } label: {
                     Label(.localizable(.aiChatButtonIslandMode), systemSymbol: .menubarDockRectangle)
                 }
-                .disabled(fileState.currentActiveFileIsInTrash)
+                .disabled(fileState.currentActiveFileIsInTrash || shouldBlockAIForNonAppStoreMac)
                 .help(String(localizable: .aiChatButtonIslandModeHelp))
             }
             
@@ -26,15 +26,19 @@ extension AIChatView {
                 Spacer()
             }
             
+#if os(macOS)
             if #available(macOS 26.0, *) {
                 // Not working...
                 ToolbarSpacer(.fixed)
             }
+#endif
             
+#if os(macOS)
             InspectorHeaderToolbar(
                 title: String(localizable: .aiChatTitle),
                 isInspectorPresented: layoutState.isInspectorPresented
             )
+#endif
             
             ToolbarItemGroup(placement: .automatic) {
                 Menu {
@@ -55,7 +59,8 @@ extension AIChatView {
                         Label(.localizable(.aiChatButtonShowWelcome), systemSymbol: .sparkles)
                     }
                     
-                    if #available(macOS 14.0, iOS 17.0, *) {
+#if os(macOS)
+                    if #available(macOS 14.0, *) {
                         OpenSettingsMenuItem(deepLinkTo: .ai)
                     } else {
                         // Pre-`openSettings` env fallback — NSApp.sendAction
@@ -67,6 +72,13 @@ extension AIChatView {
                             Label(.localizable(.generalButtonSettings), systemSymbol: .gearshape)
                         }
                     }
+#else
+                    Button {
+                        SettingsRouter.shared.requestOpen(.ai)
+                    } label: {
+                        Label(.localizable(.generalButtonSettings), systemSymbol: .gearshape)
+                    }
+#endif
                     
 #if DEBUG
                     Divider()

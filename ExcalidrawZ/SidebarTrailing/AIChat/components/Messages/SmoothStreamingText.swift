@@ -41,7 +41,7 @@ struct SmoothStreamingText: View {
             .onAppear {
                 flusher.bootstrap(target)
             }
-            .onChange(of: target) { newValue in
+            .watch(value: target) { _, newValue in
                 flusher.ingest(newValue)
             }
             .onChange(of: isStreaming, debounce: 1) { newValue in

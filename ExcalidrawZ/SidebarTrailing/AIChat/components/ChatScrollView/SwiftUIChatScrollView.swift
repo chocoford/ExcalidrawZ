@@ -5,6 +5,8 @@
 
 import SwiftUI
 
+import ChocofordUI
+
 /// SwiftUI-native chat scroll view backed by `ScrollView` + `LazyVStack`.
 ///
 /// "Pinned to bottom" is observed directly: a 1pt anchor at the bottom of the
@@ -102,10 +104,10 @@ private struct ChatScrollContainer<Content: View>: View {
                 }
                 .padding(.horizontal, 10)
             }
-            .onChange(of: scrollToBottomRequest.token) { _ in
+            .watch(value: scrollToBottomRequest.token) {
                 scrollToBottom(proxy, animated: scrollToBottomRequest.animated)
             }
-            .onChange(of: isStreaming) { nowStreaming in
+            .watch(value: isStreaming) { _, nowStreaming in
                 guard !nowStreaming else { return }
                 followTail = true
                 Task { @MainActor in

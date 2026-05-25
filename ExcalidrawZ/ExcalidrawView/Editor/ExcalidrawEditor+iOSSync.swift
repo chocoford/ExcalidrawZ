@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+import ChocofordUI
+
 
 #if os(iOS)
 /// ViewModifier that handles auto-sync for iCloud-synced files in read-only mode (iOS only)
@@ -25,21 +27,21 @@ private struct IOSAutoSyncModifier: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .onChange(of: activeFile) { file in
+            .watch(value: activeFile) { file in
                 if file == nil {
                     stopAutoSync()
                 } else {
                     startAutoSyncIfNeeded(file: file)
                 }
             }
-            .onChange(of: toolState.inDragMode) { inDragMode in
+            .watch(value: toolState.inDragMode) { inDragMode in
                 if inDragMode {
                     startAutoSyncIfNeeded(file: activeFile)
                 } else {
                     stopAutoSync()
                 }
             }
-            .onChange(of: scenePhase) { scenePhase in
+            .watch(value: scenePhase) { scenePhase in
                 if scenePhase == .background {
                     stopAutoSync()
                 } else if scenePhase == .active {

@@ -7,12 +7,13 @@ import ChocofordUI
 import SFSafeSymbols
 import SwiftUI
 
-/// Menu item that opens Settings via `@Environment(\.openSettings)` (macOS 14+
-/// / iOS 17+) and writes the deep-link target into `SettingsRouter` first.
+/// Menu item that opens Settings via `@Environment(\.openSettings)` (macOS 14+)
+/// and writes the deep-link target into `SettingsRouter` first.
 /// Lives in its own struct because the `openSettings` env value is gated to
 /// macOS 14 — declaring it as a property on `AIChatView` (deployment target
 /// is older) would compile-error.
-@available(macOS 14.0, iOS 17.0, *)
+#if os(macOS)
+@available(macOS 14.0, *)
 struct OpenSettingsMenuItem: View {
     let deepLinkTo: SettingsView.Route
     @Environment(\.openSettings) private var openSettings
@@ -26,6 +27,7 @@ struct OpenSettingsMenuItem: View {
         }
     }
 }
+#endif
 
 struct HiddenHistoryIndicator: View {
     let hiddenGroupCount: Int

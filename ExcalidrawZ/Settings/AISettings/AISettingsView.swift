@@ -70,7 +70,7 @@ struct AISettingsView: View {
         .task {
             consumePendingAISettingsRoute()
         }
-        .onChange(of: router.pendingAISettingsRoute) { _ in
+        .watch(value: router.pendingAISettingsRoute) {
             consumePendingAISettingsRoute()
         }
     }

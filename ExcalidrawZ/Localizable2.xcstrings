@@ -7472,6 +7472,28 @@
         }
       }
     },
+    "aiChatUnavailableNonAppStoreButtonTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install App Store Version"
+          }
+        }
+      }
+    },
+    "aiChatUnavailableNonAppStoreMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI is available only in the App Store version for now. Payments outside App Store In-App Purchase are not supported yet."
+          }
+        }
+      }
+    },
     "aiChatWelcomeButtonGetStarted": {
       "extractionState": "manual",
       "localizations": {

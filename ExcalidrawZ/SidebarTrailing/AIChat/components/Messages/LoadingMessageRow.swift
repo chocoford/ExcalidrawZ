@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+import ChocofordUI
+
 /// Placeholder shown while an assistant turn is in flight but hasn't produced
 /// any meaningful content yet. Three dots fade in sequentially to signal
 /// "still working" without dominating the row.
@@ -74,7 +76,7 @@ struct LoadingMessageSlot: View {
         .frame(height: measuredHeight * expansion, alignment: .top)
         .frame(maxWidth: .infinity, alignment: .leading)
         .clipped()
-        .onChange(of: isVisible) { visible in
+        .watch(value: isVisible) { _, visible in
             updateVisibility(visible)
         }
         .onDisappear {

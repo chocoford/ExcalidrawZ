@@ -114,12 +114,23 @@ struct AIChatView: View {
         let balance = llmState.creditsInfo?.balance ?? 0
         return balance.formatted(.number.precision(.fractionLength(2)))
     }
+
+    var shouldBlockAIForNonAppStoreMac: Bool {
+        AIChatAvailability.isUnavailableInCurrentBuild
+    }
     
     var body: some View {
         let _ = AIChatRenderDebug.hit("AIChatView.body")
 
         ZStack {
-            if shouldShowWelcome {
+            if shouldBlockAIForNonAppStoreMac {
+                AIChatWelcomeView(
+                    buttonTitle: String(localizable: .aiChatUnavailableNonAppStoreButtonTitle),
+                    buttonCaption: String(localizable: .aiChatUnavailableNonAppStoreMessage),
+                    buttonURL: AppStoreVersion.appURL
+                ) {}
+                .transition(.opacity)
+            } else if shouldShowWelcome {
                 AIChatWelcomeView {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         hasDismissedWelcome = true
@@ -149,6 +160,7 @@ struct AIChatView: View {
             debugPublishProbe
         }
         .task {
+            guard !shouldBlockAIForNonAppStoreMac else { return }
             await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiChatAppear)
         }
     }
@@ -194,7 +206,7 @@ struct AIChatView: View {
             }
             .opacity(isMessageListInitiallySettled || shouldShowConversationLoadingPlaceholder ? 1 : 0)
             .animation(.easeOut(duration: 0.12), value: isMessageListInitiallySettled)
-            .onChange(of: fileState.isAIChatConversationLoading) { isLoading in
+            .watch(value: fileState.isAIChatConversationLoading) { _, isLoading in
                 if isLoading {
                     isHoldingConversationLoadingPlaceholder = true
                 } else if isMessageListInitiallySettled {
@@ -273,7 +285,7 @@ struct AIChatView: View {
         // they need to answer is offscreen. Re-pin to bottom whenever
         // the card appears so the trailing message + the approval card
         // are both in view together.
-        .onChange(of: shouldShowApprovalCard) { showing in
+        .watch(value: shouldShowApprovalCard) { _, showing in
             guard showing else { return }
             isPinnedToBottom = true
             requestScrollToBottom(animated: true)

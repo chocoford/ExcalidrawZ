@@ -91,7 +91,7 @@ struct CompactSummaryRow: View {
         }
         .padding(12)
         .background {
-            if #available(macOS 26.0, *) {
+            if #available(macOS 26.0, iOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(.clear)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))

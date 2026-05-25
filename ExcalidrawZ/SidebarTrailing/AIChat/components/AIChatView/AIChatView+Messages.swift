@@ -40,9 +40,6 @@ extension AIChatView {
         let isRunActive = fileState.aiChatConversationID.map {
             llmState.isRunning(conversationID: $0)
         } ?? false
-        let generationCancelToken = fileState.aiChatConversationID.map {
-            aiChatState.generationCancelToken(for: $0)
-        } ?? 0
         let isGenerationCancelled = fileState.aiChatConversationID.map {
             aiChatState.isGenerationCancelled(conversationID: $0)
         } ?? false
@@ -140,10 +137,10 @@ extension AIChatView {
         .onAppear {
             requestScrollToBottomIfNeeded(bottomID)
         }
-        .onChange(of: bottomID) { _ in
+        .watch(value: bottomID) {
             requestScrollToBottomIfNeeded(bottomID)
         }
-        .onChange(of: isRunActive) { nowRunning in
+        .watch(value: isRunActive) { _, nowRunning in
             if nowRunning {
                 // A run begins after the user's message is already inserted;
                 // keep the new tail visible even if the user was previously mid-list.

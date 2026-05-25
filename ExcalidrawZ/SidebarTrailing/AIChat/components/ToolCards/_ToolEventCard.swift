@@ -27,6 +27,7 @@
 import SwiftUI
 import SFSafeSymbols
 import Shimmer
+import ChocofordUI
 
 struct ToolEventCard<Content: View, Trailing: View>: View {
     let icon: SFSymbol
@@ -78,7 +79,7 @@ struct ToolEventCard<Content: View, Trailing: View>: View {
             RoundedRectangle(cornerRadius: 24)
                 .fill(accent.opacity(0.1))
         }
-        .onChange(of: isExpandable) { canExpand in
+        .watch(value: isExpandable) { _, canExpand in
             guard !canExpand, isExpanded else { return }
             hasMeasuredContentHeight = true
             withAnimation(.easeInOut(duration: 0.18)) {
@@ -93,7 +94,7 @@ struct ToolEventCard<Content: View, Trailing: View>: View {
             .readHeight($contentHeight)
             .modifier(ToolEventBodyHeightModifier(height: contentHeight))
             .animation(hasMeasuredContentHeight ? .smooth : nil, value: contentHeight)
-            .onChange(of: contentHeight) { newValue in
+            .watch(value: contentHeight) { _, newValue in
                 guard newValue > 0, !hasMeasuredContentHeight else { return }
                 hasMeasuredContentHeight = true
             }

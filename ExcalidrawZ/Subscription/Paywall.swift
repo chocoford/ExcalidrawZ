@@ -738,20 +738,29 @@ struct Paywall: View {
     
     @MainActor @ViewBuilder
     private func aiUsageSettingsButton() -> some View {
-        if #available(macOS 14.0, iOS 17.0, *) {
+#if os(macOS)
+        if #available(macOS 14.0, *) {
             OpenAIUsageSettingsButton {
                 dismiss()
             }
         } else {
-            Button {
-                dismiss()
-                SettingsRouter.shared.requestOpenAIUsage()
-            } label: {
-                Label(String(localizable: .aiChatUsageTitle), systemImage: "gearshape")
-            }
-            .labelStyle(.titleAndIcon)
-            .buttonStyle(.borderless)
+            fallbackAIUsageSettingsButton
         }
+#else
+        fallbackAIUsageSettingsButton
+#endif
+    }
+
+    @MainActor
+    private var fallbackAIUsageSettingsButton: some View {
+        Button {
+            dismiss()
+            SettingsRouter.shared.requestOpenAIUsage()
+        } label: {
+            Label(String(localizable: .aiChatUsageTitle), systemImage: "gearshape")
+        }
+        .labelStyle(.titleAndIcon)
+        .buttonStyle(.borderless)
     }
     
     private func product(for item: SubscriptionItem, billingPeriod: BillingPeriod) -> Product? {
@@ -954,7 +963,8 @@ private struct PaywallAuroraBackground: View {
     }
 }
 
-@available(macOS 14.0, iOS 17.0, *)
+#if os(macOS)
+@available(macOS 14.0, *)
 private struct OpenAIUsageSettingsButton: View {
     let onOpen: () -> Void
     @Environment(\.openSettings) private var openSettings
@@ -972,6 +982,7 @@ private struct OpenAIUsageSettingsButton: View {
         .buttonStyle(.accessoryBar)
     }
 }
+#endif
 
 
 #Preview {

@@ -365,7 +365,8 @@ struct PromptInputView<Background: View, Header: View>: View {
             if !AIChatRenderDebug.useMinimalPromptInput,
                !AIChatRenderDebug.hidePromptActionBar {
                 HStack {
-                    if #available(macOS 14.0, iOS 17.0, *) {
+#if os(macOS)
+                    if #available(macOS 14.0, *) {
                         actionBarLeading()
                             .buttonBorderShape(.roundedRectangle(radius: 6))
                             .buttonStyle(.accessoryBar)
@@ -373,6 +374,10 @@ struct PromptInputView<Background: View, Header: View>: View {
                         actionBarLeading()
                             .buttonStyle(.plain)
                     }
+#else
+                    actionBarLeading()
+                        .buttonStyle(.plain)
+#endif
 
                     Spacer()
 
