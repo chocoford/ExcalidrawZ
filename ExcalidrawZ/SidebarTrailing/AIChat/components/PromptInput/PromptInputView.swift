@@ -102,10 +102,6 @@ struct PromptInputView<Background: View, Header: View>: View {
     /// Cancelling this task propagates Swift cooperative cancellation through
     /// `llmState.sendMessage`'s stream consumer, which terminates the request.
     @State var currentTask: Task<Void, Never>?
-    /// Draft text/images are stored in a reference object, but this parent
-    /// keeps it as plain `@State` so object publishes do not invalidate the
-    /// whole prompt view. Only `PromptDraftInputField` observes it.
-    @State var promptDraftState = AIChatPromptDraftState()
     @State var draftHasContent: Bool = false
     @State var draftHasImages: Bool = false
     @State var draftSendRequestToken: Int = 0
@@ -307,6 +303,17 @@ struct PromptInputView<Background: View, Header: View>: View {
     /// PromptInputView can't reach the chat list above it.
     var isCompactingContext: Bool {
         aiChatState.isCompacting(conversationID: conversationID)
+    }
+
+    var promptDraftKey: String {
+        aiChatState.promptDraftKey(
+            conversationID: conversationID,
+            fileScope: fileState.currentActiveFile?.aiConversationFileScope
+        )
+    }
+
+    var promptDraftState: AIChatPromptDraftState {
+        aiChatState.promptDraftState(forKey: promptDraftKey)
     }
 
     var body: some View {

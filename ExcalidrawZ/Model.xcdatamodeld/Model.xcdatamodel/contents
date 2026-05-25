@@ -28,6 +28,17 @@
         <attribute name="usageRemains" optional="YES" attributeType="Double" usesScalarValueType="YES"/>
         <relationship name="conversation" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="AIConversation" inverseName="messages" inverseEntity="AIConversation"/>
     </entity>
+    <entity name="AIMessageCheckpointLink" representedClassName="AIMessageCheckpointLink" syncable="YES" codeGenerationType="class">
+        <attribute name="checkpointID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="checkpointKind" optional="YES" attributeType="String"/>
+        <attribute name="conversationID" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="fileScopeID" optional="YES" attributeType="String"/>
+        <attribute name="fileScopeKind" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="messageID" optional="YES" attributeType="String"/>
+        <attribute name="role" optional="YES" attributeType="String"/>
+    </entity>
     <entity name="CollaborationFile" representedClassName="CollaborationFile" syncable="YES" codeGenerationType="class">
         <attribute name="content" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
@@ -64,7 +75,6 @@
         <attribute name="filePath" optional="YES" attributeType="String"/>
         <attribute name="historyDescription" optional="YES" attributeType="String"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="messageID" optional="YES" attributeType="String"/>
         <attribute name="source" optional="YES" attributeType="String"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="collaborationFile" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CollaborationFile" inverseName="checkpoints" inverseEntity="CollaborationFile"/>
@@ -105,7 +115,6 @@
         <attribute name="content" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="historyDescription" optional="YES" attributeType="String"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="messageID" optional="YES" attributeType="String"/>
         <attribute name="source" optional="YES" attributeType="String"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="url" optional="YES" attributeType="URI"/>
@@ -139,6 +148,7 @@
         <memberEntity name="CollaborationFile"/>
         <memberEntity name="AIConversation"/>
         <memberEntity name="AIConversationMessage"/>
+        <memberEntity name="AIMessageCheckpointLink"/>
     </configuration>
     <configuration name="Local">
         <memberEntity name="LocalFileCheckpoint"/>

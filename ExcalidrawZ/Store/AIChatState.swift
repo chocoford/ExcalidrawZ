@@ -59,6 +59,28 @@ final class AIChatPromptDraftState: ObservableObject {
     var hasImages: Bool {
         !images.isEmpty
     }
+
+    private var handledDraftRequestToken: Int?
+    private var handledDraftImageAppendRequestToken: Int?
+    private var handledEditCancelToken: Int?
+
+    func shouldHandleDraftRequest(token: Int) -> Bool {
+        guard handledDraftRequestToken != token else { return false }
+        handledDraftRequestToken = token
+        return true
+    }
+
+    func shouldHandleDraftImageAppendRequest(token: Int) -> Bool {
+        guard handledDraftImageAppendRequestToken != token else { return false }
+        handledDraftImageAppendRequestToken = token
+        return true
+    }
+
+    func shouldHandleEditCancel(token: Int) -> Bool {
+        guard handledEditCancelToken != token else { return false }
+        handledEditCancelToken = token
+        return true
+    }
 }
 
 @MainActor
@@ -80,13 +102,14 @@ final class AIChatState: ObservableObject {
     @Published var draftRequest: DraftRequest?
     @Published var draftImageAppendRequest: DraftImageAppendRequest?
     @Published var editSession: EditSession?
-    @Published var editCancelToken: Int = 0
+    @Published var editCancelRequest: EditCancelRequest?
     @Published var transientError: TransientError?
     @Published private var cancelledGenerationTokens: [String: Int] = [:]
 
     struct DraftRequest: Equatable {
         let text: String
         let files: [ChatMessageContent.File]
+        let draftKey: String?
         let token: Int
 
         static func == (lhs: DraftRequest, rhs: DraftRequest) -> Bool {
@@ -96,9 +119,19 @@ final class AIChatState: ObservableObject {
 
     struct DraftImageAppendRequest: Equatable {
         let images: [PendingPastedImage]
+        let draftKey: String?
         let token: Int
 
         static func == (lhs: DraftImageAppendRequest, rhs: DraftImageAppendRequest) -> Bool {
+            lhs.token == rhs.token
+        }
+    }
+
+    struct EditCancelRequest: Equatable {
+        let draftKey: String?
+        let token: Int
+
+        static func == (lhs: EditCancelRequest, rhs: EditCancelRequest) -> Bool {
             lhs.token == rhs.token
         }
     }
@@ -143,20 +176,74 @@ final class AIChatState: ObservableObject {
 
     private var draftTokenSeed: Int = 0
     private var draftImageAppendTokenSeed: Int = 0
+    private var editCancelTokenSeed: Int = 0
+    private var promptDraftStates: [String: AIChatPromptDraftState] = [:]
+
+    func promptDraftState(
+        conversationID: String?,
+        fileScope: AIConversationFileScope?
+    ) -> AIChatPromptDraftState {
+        let key = promptDraftKey(conversationID: conversationID, fileScope: fileScope)
+        return promptDraftState(forKey: key)
+    }
+
+    func promptDraftState(forKey key: String) -> AIChatPromptDraftState {
+        if let existing = promptDraftStates[key] {
+            return existing
+        }
+        let state = AIChatPromptDraftState()
+        promptDraftStates[key] = state
+        return state
+    }
+
+    func promptDraftKey(
+        conversationID: String?,
+        fileScope: AIConversationFileScope?
+    ) -> String {
+        if let conversationID, !conversationID.isEmpty {
+            return "conversation:\(conversationID)"
+        }
+        if let fileScope {
+            return "file:\(fileScope.kind.rawValue):\(fileScope.id)"
+        }
+        return "unscoped"
+    }
 
     /// Push a new draft text into the input box. Increments the internal
     /// token so SwiftUI sees a fresh value even if `text` is identical
     /// to the previous request.
-    func requestDraft(_ text: String, files: [ChatMessageContent.File] = []) {
+    func requestDraft(
+        _ text: String,
+        files: [ChatMessageContent.File] = [],
+        draftKey: String? = nil
+    ) {
+        if let draftKey {
+            let state = promptDraftState(forKey: draftKey)
+            state.text = text
+            state.images = PastedImageHelpers.pendingImages(from: files)
+        }
         draftTokenSeed += 1
-        draftRequest = DraftRequest(text: text, files: files, token: draftTokenSeed)
+        draftRequest = DraftRequest(
+            text: text,
+            files: files,
+            draftKey: draftKey,
+            token: draftTokenSeed
+        )
     }
 
-    func requestAppendDraftImages(_ images: [PendingPastedImage]) {
+    func requestAppendDraftImages(
+        _ images: [PendingPastedImage],
+        draftKey: String? = nil
+    ) {
         guard !images.isEmpty else { return }
+        if let draftKey {
+            promptDraftState(forKey: draftKey).images.append(contentsOf: images)
+            return
+        }
         draftImageAppendTokenSeed += 1
         draftImageAppendRequest = DraftImageAppendRequest(
             images: images,
+            draftKey: draftKey,
             token: draftImageAppendTokenSeed
         )
     }
@@ -173,16 +260,32 @@ final class AIChatState: ObservableObject {
             userMessageID: userMessageID,
             mode: mode
         )
-        requestDraft(text, files: files)
+        requestDraft(
+            text,
+            files: files,
+            draftKey: promptDraftKey(conversationID: conversationID, fileScope: nil)
+        )
     }
 
     func finishEditing() {
         editSession = nil
     }
 
-    func cancelEditing() {
+    func cancelEditing(conversationID: String? = nil) {
+        let draftKey = conversationID.map {
+            promptDraftKey(conversationID: $0, fileScope: nil)
+        }
+        if let draftKey {
+            let state = promptDraftState(forKey: draftKey)
+            state.text = ""
+            state.images = []
+        }
         editSession = nil
-        editCancelToken += 1
+        editCancelTokenSeed += 1
+        editCancelRequest = EditCancelRequest(
+            draftKey: draftKey,
+            token: editCancelTokenSeed
+        )
     }
 
     func presentTransientError(

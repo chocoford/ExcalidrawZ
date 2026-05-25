@@ -116,14 +116,12 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
         .padding(.vertical, 8)
     }
     
-    /// Capsule badge for AI-authored checkpoints. We collapse `.aiPre` /
-    /// `.aiPost` into one user-facing "AI" label — the pre/post split is
-    /// internal infrastructure for revert (only `.aiPost` actually
-    /// reaches this UI; `.aiPre` rows are filtered out by
-    /// `FileCheckpointListView`).
+    /// Capsule badge for AI-authored result checkpoints. `.aiPre` is
+    /// visible in history as the revert anchor, but should read like a
+    /// normal checkpoint rather than an AI-produced result.
     @ViewBuilder
     private var sourceBadge: some View {
-        if checkpoint.isAIGenerated {
+        if checkpoint.checkpointSource == .aiPost {
             BadgeLabel(
                 text: "AI",
                 icon: .sparkles,

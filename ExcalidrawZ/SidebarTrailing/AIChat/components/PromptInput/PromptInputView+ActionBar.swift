@@ -106,7 +106,7 @@ extension PromptInputView {
             guard let image = imageFromFileURL(url) else { continue }
             images.append(PendingPastedImage(id: UUID(), image: image))
         }
-        aiChatState.requestAppendDraftImages(images)
+        aiChatState.requestAppendDraftImages(images, draftKey: promptDraftKey)
     }
 
     @MainActor @ViewBuilder

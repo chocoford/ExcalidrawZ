@@ -227,7 +227,11 @@ struct AIChatView: View {
                         if let editSession = activeEditSession {
                             EditSessionBanner(
                                 mode: editSession.mode,
-                                onCancel: { aiChatState.cancelEditing() }
+                                onCancel: {
+                                    aiChatState.cancelEditing(
+                                        conversationID: editSession.conversationID
+                                    )
+                                }
                             )
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                         }

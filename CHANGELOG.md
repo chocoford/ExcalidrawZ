@@ -1,3 +1,19 @@
+## 2.0.0
+
+#### Features
+
+- Added AI Chat for ExcalidrawZ. You can now ask AI to understand the current canvas, edit drawings, create diagrams, adjust layouts, navigate large canvases, and use library items.
+- Added image-aware AI prompts. Paste or attach images when asking AI for help, and ExcalidrawZ will choose an image-capable model when needed.
+- Added prompt revision and AI revert support, so you can revise previous AI requests or revert AI-made canvas changes.
+- Added AI account and usage information in Settings, including credits, recent credit activity, account identity, and model preferences.
+- Added refreshed AI plans and credits with Starter, Pro, and Max tiers. Max plans unlock Extra High models.
+
+#### Bug fixed
+
+- Fixed cases where opening a file could briefly show an empty canvas.
+- Fixed cases where AI-generated drawings could fail to save or reopen correctly.
+- Fixed prompt draft loss when switching between AI chat surfaces; text and pasted images now stay in memory per conversation/file.
+
 ## 1.7.4
 
 #### Features

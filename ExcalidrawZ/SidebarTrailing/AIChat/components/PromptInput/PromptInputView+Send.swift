@@ -114,7 +114,11 @@ extension PromptInputView {
             } catch {
                 await MainActor.run {
                     currentTask = nil
-                    aiChatState.requestDraft(prompt, files: files)
+                    aiChatState.requestDraft(
+                        prompt,
+                        files: files,
+                        draftKey: promptDraftKey
+                    )
                     alertToast.presentAIChatError(error)
                 }
             }

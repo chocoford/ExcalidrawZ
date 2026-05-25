@@ -74,6 +74,7 @@ extension PromptInputView {
     @MainActor @ViewBuilder
     var debugMinimalInputBox: some View {
         PromptDraftInputField(
+            draftKey: promptDraftKey,
             draftState: promptDraftState,
             showsAttachments: false,
             sendRequestToken: draftSendRequestToken,
@@ -86,6 +87,7 @@ extension PromptInputView {
                 updateDraftSummary(hasContent: hasContent, hasImages: hasImages)
             }
         )
+        .id(ObjectIdentifier(promptDraftState))
         .padding(8)
         .background { style.background }
     }
@@ -98,6 +100,7 @@ extension PromptInputView {
             header
 
             PromptDraftInputField(
+                draftKey: promptDraftKey,
                 draftState: promptDraftState,
                 showsAttachments: true,
                 sendRequestToken: draftSendRequestToken,
@@ -110,6 +113,7 @@ extension PromptInputView {
                     updateDraftSummary(hasContent: hasContent, hasImages: hasImages)
                 }
             )
+            .id(ObjectIdentifier(promptDraftState))
         }
         .background { style.background }
     }
@@ -175,6 +179,7 @@ enum PromptImagePasteResult {
 @MainActor
 private struct PromptDraftInputField: View {
     @EnvironmentObject private var aiChatState: AIChatState
+    let draftKey: String
     @ObservedObject var draftState: AIChatPromptDraftState
 
     let showsAttachments: Bool
@@ -239,20 +244,33 @@ private struct PromptDraftInputField: View {
         }
         .onChange(of: aiChatState.draftRequest?.token) { _ in
             guard let req = aiChatState.draftRequest else { return }
-            draftState.text = req.text
-            draftState.images = PastedImageHelpers.pendingImages(from: req.files)
-            publishSummary()
+            guard req.draftKey == nil || req.draftKey == draftKey else { return }
+            guard draftState.shouldHandleDraftRequest(token: req.token) else { return }
+            if req.draftKey == nil {
+                draftState.text = req.text
+                draftState.images = PastedImageHelpers.pendingImages(from: req.files)
+                publishSummary()
+            }
             focus.wrappedValue = true
         }
         .onChange(of: aiChatState.draftImageAppendRequest?.token) { _ in
             guard let req = aiChatState.draftImageAppendRequest else { return }
-            draftState.images.append(contentsOf: req.images)
-            publishSummary()
+            guard req.draftKey == nil || req.draftKey == draftKey else { return }
+            guard draftState.shouldHandleDraftImageAppendRequest(token: req.token) else { return }
+            if req.draftKey == nil {
+                draftState.images.append(contentsOf: req.images)
+                publishSummary()
+            }
         }
-        .onChange(of: aiChatState.editCancelToken) { _ in
-            draftState.text = ""
-            draftState.images = []
-            publishSummary()
+        .onChange(of: aiChatState.editCancelRequest?.token) { _ in
+            guard let req = aiChatState.editCancelRequest else { return }
+            guard req.draftKey == nil || req.draftKey == draftKey else { return }
+            guard draftState.shouldHandleEditCancel(token: req.token) else { return }
+            if req.draftKey == nil {
+                draftState.text = ""
+                draftState.images = []
+                publishSummary()
+            }
             focus.wrappedValue = false
         }
     }

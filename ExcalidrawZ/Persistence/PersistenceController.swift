@@ -37,6 +37,7 @@ class PersistenceController {
     lazy var collaborationFileRepository = CollaborationFileRepository()
     lazy var localFolderRepository = LocalFolderRepository()
     lazy var aiConversationRepository = AIConversationRepository()
+    lazy var aiMessageCheckpointLinkRepository = AIMessageCheckpointLinkRepository()
     lazy var aiChatAttachmentRepository = AIChatAttachmentRepository()
     
     /// Init function
@@ -347,4 +348,3 @@ extension PersistenceController {
     }
 }
 #endif
-

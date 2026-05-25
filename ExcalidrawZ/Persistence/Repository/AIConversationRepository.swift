@@ -523,6 +523,12 @@ actor AIConversationRepository {
         let context = PersistenceController.shared.newTaskContext()
 
         try await context.perform {
+            let linkFetch = NSFetchRequest<AIMessageCheckpointLink>(entityName: "AIMessageCheckpointLink")
+            linkFetch.predicate = NSPredicate(format: "messageID IN %@", messageIDs)
+            for link in try context.fetch(linkFetch) {
+                context.delete(link)
+            }
+
             let fetchRequest = NSFetchRequest<AIConversationMessage>(entityName: "AIConversationMessage")
             fetchRequest.predicate = NSPredicate(format: "messageID IN %@", messageIDs)
 
@@ -574,6 +580,15 @@ actor AIConversationRepository {
             }
 
             var blobs: [Data] = []
+            let conversationIDs = conversations.compactMap(\.conversationID)
+            if !conversationIDs.isEmpty {
+                let linkFetch = NSFetchRequest<AIMessageCheckpointLink>(entityName: "AIMessageCheckpointLink")
+                linkFetch.predicate = NSPredicate(format: "conversationID IN %@", conversationIDs)
+                for link in try context.fetch(linkFetch) {
+                    context.delete(link)
+                }
+            }
+
             for conversation in conversations {
                 let messages = conversation.messages as? Set<AIConversationMessage> ?? []
                 blobs.append(contentsOf: messages.compactMap(\.filesData))

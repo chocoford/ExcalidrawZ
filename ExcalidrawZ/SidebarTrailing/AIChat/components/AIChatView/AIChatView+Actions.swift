@@ -58,7 +58,10 @@ extension AIChatView {
         Task {
             do {
                 llmState.cancelGeneration(conversationID: conversationID)
-                try await restoreFileForRevert(userMessageID: content.id)
+                try await restoreFileForRevert(
+                    conversationID: conversationID,
+                    userMessageID: content.id
+                )
                 try await llmState.truncateConversation(
                     in: conversationID,
                     fromMessageID: content.id,
@@ -66,7 +69,14 @@ extension AIChatView {
                 )
                 await MainActor.run {
                     aiChatState.finishEditing()
-                    aiChatState.requestDraft(content.content ?? "", files: content.files ?? [])
+                    aiChatState.requestDraft(
+                        content.content ?? "",
+                        files: content.files ?? [],
+                        draftKey: aiChatState.promptDraftKey(
+                            conversationID: conversationID,
+                            fileScope: nil
+                        )
+                    )
                     isPinnedToBottom = true
                     requestScrollToBottom(animated: true)
                 }
@@ -79,25 +89,39 @@ extension AIChatView {
     }
 
     @MainActor
-    func restoreFileForRevert(userMessageID: String) async throws {
+    func restoreFileForRevert(
+        conversationID: String,
+        userMessageID: String
+    ) async throws {
         guard case .file(let file) = fileState.currentActiveFile else {
             throw AIChatEditError.unsupportedFile
         }
 
         let fileObjectID = file.objectID
         let context = PersistenceController.shared.newTaskContext()
+        let link = try await PersistenceController.shared.aiMessageCheckpointLinkRepository.fetchLink(
+            conversationID: conversationID,
+            messageID: userMessageID,
+            role: .revertAnchor
+        )
 
         let checkpointObjectID: NSManagedObjectID? = try await context.perform {
             guard let file = try context.existingObject(with: fileObjectID) as? File else { return nil }
-            let fetch = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
-            fetch.predicate = NSPredicate(
-                format: "file == %@ AND messageID == %@ AND source == %@",
-                file,
-                userMessageID,
-                FileCheckpointSource.aiPre.rawValue
-            )
-            fetch.fetchLimit = 1
-            return try context.fetch(fetch).first?.objectID
+
+            if let link,
+               link.checkpointKind == .file {
+                let linkedFetch = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
+                linkedFetch.predicate = NSPredicate(
+                    format: "file == %@ AND id == %@",
+                    file,
+                    link.checkpointID as CVarArg
+                )
+                linkedFetch.fetchLimit = 1
+                if let linkedCheckpoint = try context.fetch(linkedFetch).first {
+                    return linkedCheckpoint.objectID
+                }
+            }
+            return nil
         }
 
         guard let checkpointObjectID else {
@@ -139,29 +163,39 @@ extension AIChatView {
     func refreshRevertRequiredUserMessageIDs(groups: [MessageGroup]) async {
         let assistantMessageIDs = Array(Set(assistantMessageIDs(in: groups)))
         guard !assistantMessageIDs.isEmpty,
-              case .file(let file) = fileState.currentActiveFile
+              case .file = fileState.currentActiveFile
         else {
             revertRequiredUserMessageIDs = []
             return
         }
-        let fileObjectID = file.objectID
-        let context = PersistenceController.shared.newTaskContext()
-        let aiPostMessageIDs: Set<String> = await context.perform {
-            guard let file = try? context.existingObject(with: fileObjectID) as? File else { return [] }
-            let fetch = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
-            fetch.predicate = NSPredicate(
-                format: "file == %@ AND source == %@ AND messageID IN %@",
-                file,
-                FileCheckpointSource.aiPost.rawValue,
-                assistantMessageIDs
-            )
-            guard let checkpoints = try? context.fetch(fetch) else { return [] }
-            return Set(checkpoints.compactMap(\.messageID))
+        let conversationID = conversation?.id ?? fileState.aiChatConversationID
+        guard let conversationID else {
+            revertRequiredUserMessageIDs = []
+            return
         }
-        revertRequiredUserMessageIDs = userMessageIDsBeforeAnyAIPost(
+        let linkedAIPostMessageIDs: Set<String> = (try? await PersistenceController.shared.aiMessageCheckpointLinkRepository.fetchLinkedMessageIDs(
+            conversationID: conversationID,
+            role: .resultSnapshot,
+            messageIDs: assistantMessageIDs
+        )) ?? []
+
+        let candidates = userMessageIDsBeforeAnyAIPost(
             groups: groups,
-            aiPostMessageIDs: aiPostMessageIDs
+            aiPostMessageIDs: linkedAIPostMessageIDs
         )
+        guard !candidates.isEmpty else {
+            revertRequiredUserMessageIDs = []
+            return
+        }
+
+        let candidateIDs = Array(candidates)
+        let linkedAnchorIDs: Set<String> = (try? await PersistenceController.shared.aiMessageCheckpointLinkRepository.fetchLinkedMessageIDs(
+            conversationID: conversationID,
+            role: .revertAnchor,
+            messageIDs: candidateIDs
+        )) ?? []
+
+        revertRequiredUserMessageIDs = candidates.intersection(linkedAnchorIDs)
     }
 
     func assistantMessageIDs(in groups: [MessageGroup]) -> [String] {
@@ -505,7 +539,14 @@ extension AIChatView {
         if hasUserMessage {
             resumeGeneration(modelOverride: error.retryModel)
         } else {
-            aiChatState.requestDraft(error.retryPrompt, files: error.retryFiles)
+            aiChatState.requestDraft(
+                error.retryPrompt,
+                files: error.retryFiles,
+                draftKey: aiChatState.promptDraftKey(
+                    conversationID: error.conversationID,
+                    fileScope: nil
+                )
+            )
         }
     }
     

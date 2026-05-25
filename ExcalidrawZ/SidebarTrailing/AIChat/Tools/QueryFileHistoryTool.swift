@@ -3,9 +3,9 @@
 //  ExcalidrawZ
 //
 //  Lists checkpoint history for a given file. Each entry surfaces the
-//  AI-history fields (`source`, `messageID`, `historyDescription`) so
-//  the AI / UI can present "revert to this point" affordances and
-//  understand which checkpoints were AI-generated vs user edits.
+//  AI-history fields (`source`, `historyDescription`) so the AI / UI can
+//  present "revert to this point" affordances and understand which
+//  checkpoints were AI-generated vs user edits.
 //
 //  Scope: database `File` entities. Local files (LocalFileCheckpoint)
 //  are URL-keyed and would need a separate tool surface — punt until
@@ -24,10 +24,9 @@ struct QueryFileHistoryTool: Tool {
     var description: String {
         """
         List the checkpoint history of a drawing file. Each entry returns \
-        checkpoint id, source ("user" / "ai_pre" / "ai_post"), the chat \
-        message id it's anchored to (if any), an optional description, \
-        and the timestamp. Use this to find a checkpoint id for \
-        `restore_file_history`. Get file ids from `list_all_files`.
+        checkpoint id, source ("user" / "ai_pre" / "ai_post"), an optional \
+        description, and the timestamp. Use this to find a checkpoint id \
+        for `restore_file_history`. Get file ids from `list_all_files`.
         """
     }
 
@@ -91,7 +90,6 @@ struct QueryFileHistoryTool: Tool {
                 CheckpointEntry(
                     id: cp.id?.uuidString ?? "",
                     source: cp.checkpointSource.rawValue,
-                    messageID: cp.messageID,
                     description: cp.historyDescription,
                     updatedAt: cp.updatedAt.map(ISO8601DateFormatter.shared.string(from:)),
                     contentSize: cp.content?.count ?? 0
@@ -155,7 +153,6 @@ struct QueryFileHistoryTool: Tool {
     private struct CheckpointEntry: Encodable {
         let id: String
         let source: String
-        let messageID: String?
         let description: String?
         let updatedAt: String?
         let contentSize: Int
@@ -163,7 +160,6 @@ struct QueryFileHistoryTool: Tool {
         enum CodingKeys: String, CodingKey {
             case id
             case source
-            case messageID = "message_id"
             case description
             case updatedAt = "updated_at"
             case contentSize = "content_size"

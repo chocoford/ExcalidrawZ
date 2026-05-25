@@ -368,9 +368,10 @@ final class FileState: ObservableObject {
     ///    explicitly asked for "一刀切" — no per-edit history during AI
     ///    runs (whether the edit was user-driven or AI-tool-driven).
     /// 2. `beginAIChatSession` records an `.aiPre` snapshot before the
-    ///    user message hits the LLM, anchored to the user message id.
-    ///    `endAIChatSession(success: true, ...)` records the matching
-    ///    `.aiPost` snapshot anchored to the assistant final-answer id.
+    ///    user message hits the LLM and links it to that message through
+    ///    `AIMessageCheckpointLink`. `endAIChatSession(success: true, ...)`
+    ///    records the matching `.aiPost` snapshot and links it to the
+    ///    assistant final-answer id.
     ///
     /// One session per (FileState, conversationID) — each user message
     /// inside the same conversation re-enters begin/end with a fresh
@@ -382,9 +383,7 @@ final class FileState: ObservableObject {
         /// checks (the conversation could in theory change mid-session
         /// if the user navigates between files).
         let conversationID: String
-        /// User chat message id that triggered the session — same id is
-        /// stamped on the `.aiPre` checkpoint row, so UI can locate
-        /// "the snapshot anchored to this message".
+        /// User chat message id that triggered the session.
         let userMessageID: String
         /// `ActiveFile` snapshot at session begin. Optional because the
         /// user can fire off an AI message with no file open (e.g. asking
@@ -393,6 +392,11 @@ final class FileState: ObservableObject {
         /// session so the suppression flag prevents stray history while
         /// the AI runs.
         let anchorFile: ActiveFile?
+        /// Exact `.aiPre` checkpoint created for this session, if any.
+        /// Used to delete only this eager checkpoint when a read-only
+        /// round can safely rebind to an earlier checkpoint.
+        var preCheckpointID: UUID? = nil
+        var preCheckpointKind: AIMessageCheckpointKind? = nil
     }
 
     /// Files that is currently under collaboration.

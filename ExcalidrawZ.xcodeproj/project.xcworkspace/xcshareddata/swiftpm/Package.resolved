@@ -1,5 +1,5 @@
 {
-  "originHash" : "bfc755d285009f08e84e8d787bb30dfb93e4a1f18350c7397dace4bbc2230ed5",
+  "originHash" : "5ad5841187e639f9362808f317e7f91b7616e96b77e11a879989e4a9f41bb0a1",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "862808b2070cd908cb04f9aafe7de83d35f81b05",
         "version" : "0.6.7"
+      }
+    },
+    {
+      "identity" : "chocofordkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/chocoford/ChocofordKit.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "d0b7e6b90eac918cbcecd29b9d2c01d499411afc"
       }
     },
     {
@@ -47,6 +56,24 @@
       }
     },
     {
+      "identity" : "llmcore",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/chocoford/LLMCore.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "a7b77fe11b339b1b84b2530b7660eaec5b7eaf1a"
+      }
+    },
+    {
+      "identity" : "llmkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/chocoford/LLMKit.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "2a76190635fc1a90b6dcf0bd0527b9cee70988e3"
+      }
+    },
+    {
       "identity" : "mathjaxswift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/colinc86/MathJaxSwift.git",
@@ -70,7 +97,7 @@
       "location" : "https://github.com/MacPaw/OpenAI.git",
       "state" : {
         "branch" : "main",
-        "revision" : "397a601acc6592f0005155a46dc1c5068e92a76d"
+        "revision" : "c9342438e70e6c9a93d09220a8855459deaba00a"
       }
     },
     {
@@ -159,8 +186,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-openapi-runtime",
       "state" : {
-        "revision" : "f039fa6d6338aab5164f3d1be16281524c9a8f89",
-        "version" : "1.11.0"
+        "revision" : "3d3a8457661daf7fb260ceeb9f0e24e5204ba5fb",
+        "version" : "1.12.0"
       }
     },
     {

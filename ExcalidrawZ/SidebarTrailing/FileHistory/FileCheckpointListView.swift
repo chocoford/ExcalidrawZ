@@ -64,33 +64,21 @@ struct FileCheckpointListView<Checkpoint: FileCheckpointRepresentable>: View {
     init(file: File) where Checkpoint == FileCheckpoint {
         self._fileCheckpoints = FetchRequest(
             sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)],
-            predicate: NSPredicate(
-                format: "file == %@ AND (source == nil OR source != %@)",
-                file,
-                FileCheckpointSource.aiPre.rawValue
-            )
+            predicate: NSPredicate(format: "file == %@", file)
         )
     }
 
     init(file: CollaborationFile) where Checkpoint == FileCheckpoint {
         self._fileCheckpoints = FetchRequest(
             sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)],
-            predicate: NSPredicate(
-                format: "collaborationFile == %@ AND (source == nil OR source != %@)",
-                file,
-                FileCheckpointSource.aiPre.rawValue
-            )
+            predicate: NSPredicate(format: "collaborationFile == %@", file)
         )
     }
 
     init(localFile: URL) where Checkpoint == LocalFileCheckpoint {
         self._fileCheckpoints = FetchRequest(
             sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)],
-            predicate: NSPredicate(
-                format: "url == %@ AND (source == nil OR source != %@)",
-                localFile as NSURL,
-                FileCheckpointSource.aiPre.rawValue
-            )
+            predicate: NSPredicate(format: "url == %@", localFile as NSURL)
         )
     }
     
@@ -164,4 +152,3 @@ struct FileCheckpointListView<Checkpoint: FileCheckpointRepresentable>: View {
 #endif
 
 }
-

@@ -8,7 +8,6 @@
 //
 //  Schema-level fields (auto-generated on both Core Data entities):
 //    - `source`              — raw string, one of `FileCheckpointSource.rawValue` or nil (legacy)
-//    - `messageID`           — chat message id this checkpoint anchors to (nil for plain user edits)
 //    - `historyDescription`  — git-style summary, AI fills in for ai_post, user can edit later
 //
 
@@ -21,12 +20,12 @@ enum FileCheckpointSource: String {
     case user = "user"
 
     /// Snapshot taken right *before* a user message hits the AI. The state
-    /// you'd want to revert to if the AI's changes turn out wrong. Anchored
-    /// to the user `messageID`.
+    /// you'd want to revert to if the AI's changes turn out wrong. Message
+    /// ownership is recorded in `AIMessageCheckpointLink`.
     case aiPre = "ai_pre"
 
     /// Snapshot taken right *after* an AI turn finishes successfully.
-    /// Anchored to the assistant's final-answer `messageID`.
+    /// Message ownership is recorded in `AIMessageCheckpointLink`.
     case aiPost = "ai_post"
 }
 

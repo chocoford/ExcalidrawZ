@@ -14,11 +14,10 @@ protocol FileCheckpointRepresentable: Equatable, Identifiable, NSManagedObject {
     var filename: String? { get }
     var content: Data? { get }
 
-    // New AI-history fields. Both Core Data entities now auto-generate
-    // these via the schema; the protocol surface lets call sites treat
-    // the two checkpoint types uniformly.
+    // AI-history fields. Both Core Data entities auto-generate these
+    // via the schema; message/checkpoint ownership lives in
+    // AIMessageCheckpointLink instead of on checkpoint rows.
     var source: String? { get set }
-    var messageID: String? { get set }
     var historyDescription: String? { get set }
 }
 

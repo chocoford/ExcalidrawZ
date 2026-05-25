@@ -174,8 +174,8 @@ actor FileRepository {
     ///   path now ignores AI-tagged rows so it can't accidentally overwrite
     ///   an `ai_pre` / `ai_post` snapshot.
     /// - `.explicit(...)` — force-create a checkpoint with explicit
-    ///   source / messageID / description fields. Used by the AI session
-    ///   begin/end hooks.
+    ///   source / description fields. Used by the AI session begin/end
+    ///   hooks. Message ownership is stored in `AIMessageCheckpointLink`.
     func updateElements(
         fileObjectID: NSManagedObjectID,
         fileData: Data,
@@ -229,11 +229,10 @@ actor FileRepository {
         case .userEdit(let newCheckpoint):
             if newCheckpoint {
                 self.logger.info("Creating new user checkpoint for file")
-                try await createCheckpoint(
+                _ = try await createCheckpoint(
                     fileObjectID: fileObjectID,
                     content: contentData,
                     source: .user,
-                    messageID: nil,
                     description: nil
                 )
             } else {
@@ -243,13 +242,12 @@ actor FileRepository {
                 )
             }
 
-        case .explicit(let source, let messageID, let description):
+        case .explicit(let source, let description):
             self.logger.info("Creating explicit \(source.rawValue) checkpoint for file")
-            try await createCheckpoint(
+            _ = try await createCheckpoint(
                 fileObjectID: fileObjectID,
                 content: contentData,
                 source: source,
-                messageID: messageID,
                 description: description
             )
         }
@@ -266,14 +264,12 @@ actor FileRepository {
         fileObjectID: NSManagedObjectID,
         content: Data,
         source: FileCheckpointSource,
-        messageID: String?,
         description: String?
-    ) async throws {
-        try await createCheckpoint(
+    ) async throws -> UUID {
+        return try await createCheckpoint(
             fileObjectID: fileObjectID,
             content: content,
             source: source,
-            messageID: messageID,
             description: description
         )
     }
@@ -314,24 +310,24 @@ actor FileRepository {
     }
 
     /// Create a new checkpoint for the file with explicit metadata.
-    /// Source/messageID/description default to user-edit semantics when
-    /// the call site is the historical user-edit path.
+    /// Source/description default to user-edit semantics when the call
+    /// site is the historical user-edit path.
     private func createCheckpoint(
         fileObjectID: NSManagedObjectID,
         content: Data,
         source: FileCheckpointSource,
-        messageID: String?,
         description: String?
-    ) async throws {
+    ) async throws -> UUID {
         let context = PersistenceController.shared.newTaskContext()
 
-        let checkpointObjectID = try await context.perform {
+        let (checkpointID, checkpointObjectID) = try await context.perform {
             guard let file = context.object(with: fileObjectID) as? File else {
                 throw AppError.fileError(.notFound)
             }
 
             let checkpoint = FileCheckpoint(context: context)
-            checkpoint.id = UUID()
+            let checkpointID = UUID()
+            checkpoint.id = checkpointID
             checkpoint.content = content
             checkpoint.filename = file.name
             checkpoint.updatedAt = .now
@@ -340,7 +336,6 @@ actor FileRepository {
             // can match either nil-as-legacy or explicit "user" uniformly
             // via OR clauses.
             checkpoint.source = source.rawValue
-            checkpoint.messageID = messageID
             checkpoint.historyDescription = description
             file.addToCheckpoints(checkpoint)
 
@@ -352,11 +347,12 @@ actor FileRepository {
                 file.removeFromCheckpoints(checkpoints.last!)
             }
 
-            return checkpoint.objectID
+            return (checkpointID, checkpoint.objectID)
         }
 
         // Save checkpoint to storage using CheckpointRepository
         try await PersistenceController.shared.checkpointRepository.saveCheckpointToStorage(checkpointObjectID: checkpointObjectID)
+        return checkpointID
     }
 
     /// Update the latest **user-source** checkpoint for the file. AI-tagged
@@ -411,11 +407,10 @@ actor FileRepository {
         } else {
             // Latest checkpoint(s) are all AI rows — start a new user
             // checkpoint instead of clobbering them.
-            try await createCheckpoint(
+            _ = try await createCheckpoint(
                 fileObjectID: fileObjectID,
                 content: content,
                 source: .user,
-                messageID: nil,
                 description: nil
             )
         }

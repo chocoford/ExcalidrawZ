@@ -23,7 +23,6 @@ enum CheckpointWriteOptions {
     case userEdit(newCheckpoint: Bool)
     case explicit(
         source: FileCheckpointSource,
-        messageID: String?,
         description: String?
     )
 }

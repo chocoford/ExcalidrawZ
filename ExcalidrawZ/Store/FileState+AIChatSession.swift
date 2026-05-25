@@ -7,13 +7,14 @@
 //
 //  - `beginAIChatSession` runs right before a user message hits the LLM:
 //    snapshots the current active file's content as a `.aiPre` checkpoint
-//    anchored to the user message id, then sets `aiChatSession` so all
-//    subsequent `updateFile` / `updateLocalFile` calls within the run
-//    suppress checkpoint writes.
+//    and links it to the user message id, then sets `aiChatSession` so
+//    all subsequent `updateFile` / `updateLocalFile` calls within the
+//    run suppress checkpoint writes.
 //
 //  - `endAIChatSession(success:)` runs from the LLM completion handler:
-//    on success, snapshots the post-AI state as `.aiPost` anchored to the
-//    assistant final-answer message id; clears `aiChatSession` either way.
+//    on success, snapshots the post-AI state as `.aiPost` and links it
+//    to the assistant final-answer message id; clears `aiChatSession`
+//    either way.
 //
 //  We require the caller to supply the user / assistant message ids
 //  explicitly — they live in LLMKit's conversation state and FileState
@@ -54,12 +55,26 @@ extension FileState {
         // suppression flag would dangle and silently swallow later
         // checkpoints until something else clears it.
         do {
-            try await snapshot(
+            if let checkpoint = try await snapshot(
                 file: active,
                 source: .aiPre,
-                messageID: userMessageID,
                 description: nil
-            )
+            ) {
+                if var session = self.aiChatSession,
+                   session.conversationID == conversationID,
+                   session.userMessageID == userMessageID {
+                    session.preCheckpointID = checkpoint.id
+                    session.preCheckpointKind = checkpoint.kind
+                    self.aiChatSession = session
+                }
+                try await recordCheckpointLink(
+                    file: active,
+                    checkpoint: checkpoint,
+                    conversationID: conversationID,
+                    messageID: userMessageID,
+                    role: .revertAnchor
+                )
+            }
         } catch {
             self.aiChatSession = nil
             throw error
@@ -69,16 +84,16 @@ extension FileState {
     /// Closes the session. Three branches:
     ///
     /// 1. **success && canvasModified** — write `.aiPost` snapshot
-    ///    anchored to the assistant final-answer message id. The
+    ///    linked to the assistant final-answer message id. The
     ///    `.aiPre` written at session start stays as the matching
     ///    "before" snapshot of the round.
     ///
     /// 2. **success && !canvasModified** — the AI's reply didn't run
     ///    any canvas-mutating tools, so the round produced nothing
-    ///    visually different from the pre-state. The `.aiPre` we
-    ///    eagerly recorded would just be a duplicate of the user's
-    ///    last on-disk state with no `.aiPost` to pair with it. Drop
-    ///    the `.aiPre` row to keep history clean.
+    ///    visually different from the pre-state. If an earlier
+    ///    checkpoint exists, rebind this user message's revert anchor
+    ///    to it and drop the duplicate `.aiPre`; otherwise keep the
+    ///    `.aiPre` so revert still has a concrete target.
     ///
     /// 3. **!success** — failure / cancel. The canvas may be in a
     ///    half-modified state (a tool ran partway). Keep the `.aiPre`
@@ -112,26 +127,47 @@ extension FileState {
         if canvasModified {
             guard let target, let assistantMessageID else { return }
             do {
-                try await snapshot(
+                if let checkpoint = try await snapshot(
                     file: target,
                     source: .aiPost,
-                    messageID: assistantMessageID,
                     description: description
-                )
+                ) {
+                    try await recordCheckpointLink(
+                        file: target,
+                        checkpoint: checkpoint,
+                        conversationID: session.conversationID,
+                        messageID: assistantMessageID,
+                        role: .resultSnapshot
+                    )
+                }
             } catch {
                 logger.error("Failed to record .aiPost checkpoint: \(error)")
             }
         } else {
-            // Read-only round — clean up the `.aiPre` row so it
-            // doesn't show up in history with no matching `.aiPost`.
-            // Best-effort: log on failure but don't throw, the
-            // session is already winding down.
+            // Read-only round — clean up the `.aiPre` row only after
+            // rebinding this user message to an existing checkpoint.
+            // If no replacement exists, keep the `.aiPre` as the only
+            // available revert anchor.
             guard let target else { return }
             do {
-                try await deleteAiPreCheckpoint(
+                if let replacement = try await latestReusableCheckpoint(
                     file: target,
-                    messageID: session.userMessageID
-                )
+                    excludingCheckpointID: session.preCheckpointID
+                ) {
+                    try await recordCheckpointLink(
+                        file: target,
+                        checkpoint: replacement,
+                        conversationID: session.conversationID,
+                        messageID: session.userMessageID,
+                        role: .revertAnchor
+                    )
+                    if let preCheckpoint = recordedPreCheckpoint(from: session) {
+                        try await deleteCheckpoint(
+                            preCheckpoint,
+                            file: target
+                        )
+                    }
+                }
             } catch {
                 logger.error("Failed to clean up unused .aiPre checkpoint: \(error)")
             }
@@ -140,15 +176,30 @@ extension FileState {
 
     // MARK: - Internal snapshot
 
+    private struct RecordedAICheckpoint {
+        let id: UUID
+        let kind: AIMessageCheckpointKind
+    }
+
+    private func recordedPreCheckpoint(
+        from session: AIChatSessionState
+    ) -> RecordedAICheckpoint? {
+        guard let id = session.preCheckpointID,
+              let kind = session.preCheckpointKind
+        else {
+            return nil
+        }
+        return RecordedAICheckpoint(id: id, kind: kind)
+    }
+
     /// Force-write a checkpoint of the file's current on-disk content
     /// with explicit metadata. Bypasses the user-edit "first creates,
     /// subsequent updates" semantics — every call creates a fresh row.
     private func snapshot(
         file: ActiveFile,
         source: FileCheckpointSource,
-        messageID: String?,
         description: String?
-    ) async throws {
+    ) async throws -> RecordedAICheckpoint? {
         switch file {
             case .file(let f):
                 let content = try await f.loadContent()
@@ -161,21 +212,21 @@ extension FileState {
                     return s.contains("\"elements\":[{") ? "true" : "false"
                 }()
                 print("[aiDiag] snapshot source=\(source.rawValue) file=\(f.name ?? "?") content.bytes=\(content.count) hasElements=\(elementsHint)")
-                try await PersistenceController.shared.fileRepository.recordCheckpoint(
+                let checkpointID = try await PersistenceController.shared.fileRepository.recordCheckpoint(
                     fileObjectID: f.objectID,
                     content: content,
                     source: source,
-                    messageID: messageID,
                     description: description
                 )
+                return RecordedAICheckpoint(id: checkpointID, kind: .file)
 
             case .localFile(let url):
-                try await snapshotLocalFile(
+                let checkpointID = try await snapshotLocalFile(
                     url: url,
                     source: source,
-                    messageID: messageID,
                     description: description
                 )
+                return RecordedAICheckpoint(id: checkpointID, kind: .local)
 
             case .temporaryFile, .collaborationFile:
                 // Temporary files don't have history at all; collaboration
@@ -183,51 +234,91 @@ extension FileState {
                 // out of scope for this iteration). Skip silently — the
                 // suppression flag still kicks in for the duration of the
                 // session, which is the safe default.
-                return
+                return nil
         }
     }
 
-    /// Find and delete the `.aiPre` checkpoint anchored to this
-    /// `userMessageID` for the given file. Used when the round
-    /// finishes without any canvas-mutating tool calls — the eagerly-
-    /// recorded `.aiPre` has nothing to pair with and would just clutter
-    /// the file's history list. No-op if no matching row exists.
-    private func deleteAiPreCheckpoint(
+    private func recordCheckpointLink(
         file: ActiveFile,
-        messageID: String
+        checkpoint: RecordedAICheckpoint,
+        conversationID: String,
+        messageID: String,
+        role: AIMessageCheckpointLinkRole
     ) async throws {
+        try await PersistenceController.shared.aiMessageCheckpointLinkRepository.upsertLink(
+            conversationID: conversationID,
+            messageID: messageID,
+            role: role,
+            checkpointID: checkpoint.id,
+            checkpointKind: checkpoint.kind,
+            fileScope: file.aiConversationFileScope
+        )
+    }
+
+    /// For a successful read-only round, keep the user message revertable
+    /// by pointing it at an existing checkpoint before deleting the
+    /// duplicate `.aiPre`. If there is no previous checkpoint, keep the
+    /// `.aiPre` and its link.
+    private func latestReusableCheckpoint(
+        file: ActiveFile,
+        excludingCheckpointID checkpointID: UUID?
+    ) async throws -> RecordedAICheckpoint? {
         switch file {
             case .file(let f):
-                try await deleteAiPreFileCheckpoint(
+                return try await latestReusableFileCheckpoint(
                     fileObjectID: f.objectID,
-                    messageID: messageID
+                    excludingCheckpointID: checkpointID
                 )
 
             case .localFile(let url):
-                try await deleteAiPreLocalCheckpoint(
+                return try await latestReusableLocalCheckpoint(
                     url: url,
-                    messageID: messageID
+                    excludingCheckpointID: checkpointID
                 )
 
             case .temporaryFile, .collaborationFile:
-                // We never write `.aiPre` for these in `snapshot(...)`,
-                // so there's nothing to delete.
+                return nil
+        }
+    }
+
+    /// Delete the exact checkpoint previously created for this session.
+    private func deleteCheckpoint(
+        _ checkpoint: RecordedAICheckpoint,
+        file: ActiveFile
+    ) async throws {
+        switch (file, checkpoint.kind) {
+            case (.file(let f), .file):
+                try await deleteFileCheckpoint(
+                    fileObjectID: f.objectID,
+                    checkpointID: checkpoint.id
+                )
+
+            case (.localFile(let url), .local):
+                try await deleteLocalCheckpoint(
+                    url: url,
+                    checkpointID: checkpoint.id
+                )
+
+            case (.temporaryFile, _), (.collaborationFile, _), (.file, .local), (.localFile, .file):
                 return
         }
     }
 
-    private func deleteAiPreFileCheckpoint(
+    private func deleteFileCheckpoint(
         fileObjectID: NSManagedObjectID,
-        messageID: String
+        checkpointID: UUID
     ) async throws {
         let context = PersistenceController.shared.container.newBackgroundContext()
         let checkpointObjectID: NSManagedObjectID? = try await context.perform {
+            guard let file = try context.existingObject(with: fileObjectID) as? File else {
+                return nil
+            }
+
             let request: NSFetchRequest<FileCheckpoint> = FileCheckpoint.fetchRequest()
             request.predicate = NSPredicate(
-                format: "file == %@ AND source == %@ AND messageID == %@",
-                fileObjectID,
-                FileCheckpointSource.aiPre.rawValue,
-                messageID
+                format: "file == %@ AND id == %@",
+                file,
+                checkpointID as CVarArg
             )
             request.fetchLimit = 1
             return try context.fetch(request).first?.objectID
@@ -237,24 +328,83 @@ extension FileState {
             .deleteCheckpoint(checkpointObjectID: checkpointObjectID)
     }
 
-    private func deleteAiPreLocalCheckpoint(
+    private func latestReusableFileCheckpoint(
+        fileObjectID: NSManagedObjectID,
+        excludingCheckpointID checkpointID: UUID?
+    ) async throws -> RecordedAICheckpoint? {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        return try await context.perform {
+            guard let file = try context.existingObject(with: fileObjectID) as? File else {
+                return nil
+            }
+
+            let request: NSFetchRequest<FileCheckpoint> = FileCheckpoint.fetchRequest()
+            if let checkpointID {
+                request.predicate = NSPredicate(
+                    format: "file == %@ AND id != %@",
+                    file,
+                    checkpointID as CVarArg
+                )
+            } else {
+                request.predicate = NSPredicate(format: "file == %@", file)
+            }
+            request.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
+            request.fetchLimit = 1
+
+            guard let checkpoint = try context.fetch(request).first,
+                  let id = checkpoint.id
+            else {
+                return nil
+            }
+            return RecordedAICheckpoint(id: id, kind: .file)
+        }
+    }
+
+    private func deleteLocalCheckpoint(
         url: URL,
-        messageID: String
+        checkpointID: UUID
     ) async throws {
         let context = PersistenceController.shared.container.newBackgroundContext()
         try await context.perform {
             let request: NSFetchRequest<LocalFileCheckpoint> = LocalFileCheckpoint.fetchRequest()
             request.predicate = NSPredicate(
-                format: "url == %@ AND source == %@ AND messageID == %@",
+                format: "url == %@ AND id == %@",
                 url as CVarArg,
-                FileCheckpointSource.aiPre.rawValue,
-                messageID
+                checkpointID as CVarArg
             )
             request.fetchLimit = 1
             if let row = try context.fetch(request).first {
                 context.delete(row)
                 try context.save()
             }
+        }
+    }
+
+    private func latestReusableLocalCheckpoint(
+        url: URL,
+        excludingCheckpointID checkpointID: UUID?
+    ) async throws -> RecordedAICheckpoint? {
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        return try await context.perform {
+            let request: NSFetchRequest<LocalFileCheckpoint> = LocalFileCheckpoint.fetchRequest()
+            if let checkpointID {
+                request.predicate = NSPredicate(
+                    format: "url == %@ AND id != %@",
+                    url as CVarArg,
+                    checkpointID as CVarArg
+                )
+            } else {
+                request.predicate = NSPredicate(format: "url == %@", url as CVarArg)
+            }
+            request.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
+            request.fetchLimit = 1
+
+            guard let checkpoint = try context.fetch(request).first,
+                  let id = checkpoint.id
+            else {
+                return nil
+            }
+            return RecordedAICheckpoint(id: id, kind: .local)
         }
     }
 
@@ -266,9 +416,8 @@ extension FileState {
     private func snapshotLocalFile(
         url: URL,
         source: FileCheckpointSource,
-        messageID: String?,
         description: String?
-    ) async throws {
+    ) async throws -> UUID {
         let didStart = url.startAccessingSecurityScopedResource()
         defer {
             if didStart { url.stopAccessingSecurityScopedResource() }
@@ -277,17 +426,18 @@ extension FileState {
         let data = try Data(contentsOf: url)
 
         let context = PersistenceController.shared.container.newBackgroundContext()
-        try await context.perform {
+        return try await context.perform {
             let checkpoint = LocalFileCheckpoint(context: context)
-            checkpoint.id = UUID()
+            let checkpointID = UUID()
+            checkpoint.id = checkpointID
             checkpoint.url = url
             checkpoint.content = data
             checkpoint.updatedAt = .now
             checkpoint.source = source.rawValue
-            checkpoint.messageID = messageID
             checkpoint.historyDescription = description
             context.insert(checkpoint)
             try context.save()
+            return checkpointID
         }
     }
 }
