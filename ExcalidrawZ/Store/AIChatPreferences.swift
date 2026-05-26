@@ -26,7 +26,7 @@ import LLMCore
 @MainActor
 final class AIChatPreferences: ObservableObject {
     static let shared = AIChatPreferences()
-    static let isAIEnabledDefaultsKey = "AIChat.isEnabled"
+    nonisolated static let isAIEnabledDefaultsKey = "AIChat.isEnabled"
 
     /// Master switch for AI features. When off, AI chat surfaces show
     /// an opt-in screen and no AI network refresh should be triggered.
