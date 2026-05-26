@@ -28,8 +28,11 @@ extension ExcalidrawCore {
             return
         }
 
-        let js = "window.excalidrawZHelper?.applyUserSettings(\(jsonString)); 0;"
-        _ = try await self.webView.evaluateJavaScript(js)
+        _ = try await self.webView.callAsyncJavaScript(
+            "window.excalidrawZHelper?.applyUserSettings(\(jsonString));",
+            arguments: [:],
+            contentWorld: .page
+        )
         self.logger.info("User settings applied successfully: \(jsonString)")
     }
     
@@ -40,8 +43,11 @@ extension ExcalidrawCore {
     /// / never-used domain) — the JS side returns `null` in that case.
     @MainActor
     func fetchCurrentUserSettings() async throws -> UserDrawingSettings {
-        let js = "window.excalidrawZHelper?.getUserSettings()"
-        let result = try await self.webView.evaluateJavaScript(js)
+        let result = try await self.webView.callAsyncJavaScript(
+            "return window.excalidrawZHelper?.getUserSettings();",
+            arguments: [:],
+            contentWorld: .page
+        )
         guard let settingsDict = result as? [String: Any] else {
             return UserDrawingSettings()
         }

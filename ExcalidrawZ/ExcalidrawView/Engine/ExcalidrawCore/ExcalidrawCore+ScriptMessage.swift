@@ -26,7 +26,14 @@ extension ExcalidrawCore: WKScriptMessageHandler {
         didReceive message: WKScriptMessage
     ) {
         do {
-            let data = try JSONSerialization.data(withJSONObject: message.body)
+            let sanitization = sanitizeScriptMessageBody(message.body)
+#if DEBUG
+            if !sanitization.nonFiniteNumberPaths.isEmpty {
+                logger.warning("[WKScriptMessageHandler] Replaced non-finite numbers in \(scriptMessageEventName(message.body)): \(sanitization.nonFiniteNumberPaths.prefix(12).joined(separator: ", "))")
+            }
+#endif
+            let sanitizedBody = sanitization.value
+            let data = try JSONSerialization.data(withJSONObject: sanitizedBody)
             let message = try JSONDecoder().decode(ExcalidrawZMessage.self, from: data)
             
             switch message {
@@ -35,8 +42,8 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                         self.isDocumentLoaded = true
                     }
                     logger.info("onload")
-                case .saveFileDone(let message):
-                    onSaveFileDone(message.data)
+                case .legacyNoop:
+                    break
                 case .stateChanged(let message):
                     onStateChanged(message.data)
                 case .blobData(let message):
@@ -82,10 +89,45 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                 case .didPenDown:
                     self.parent?.toolState.inPenMode = true
                     NotificationCenter.default.post(name: .didPencilConnected, object: nil)
-                case .didSelectElements:
-                    break
+                case .didSelectElements(let message):
+                    DispatchQueue.main.async {
+                        self.updateSelectedElementIDs(message.data.map(\.id))
+                    }
                 case .didUnselectAllElements:
+                    DispatchQueue.main.async {
+                        self.clearSelectedElementIDs()
+                    }
+                case .onElementsChanged:
                     break
+                case .onCameraChanged(let message):
+                    DispatchQueue.main.async {
+                        self.updateCameraState(message.data)
+                    }
+                case .onAICameraSessionStarted(let message):
+                    DispatchQueue.main.async {
+                        self.updateAICameraSession(message.data)
+                        self.aiCameraEventSink?.aiCameraSessionDidStart(message.data)
+                    }
+                case .onAICameraSessionUpdated(let message):
+                    DispatchQueue.main.async {
+                        self.updateAICameraSession(message.data)
+                        self.aiCameraEventSink?.aiCameraSessionDidUpdate(message.data)
+                    }
+                case .onAICameraSessionInterrupted(let message):
+                    DispatchQueue.main.async {
+                        self.updateAICameraSession(message.data)
+                        self.aiCameraEventSink?.aiCameraSessionDidInterrupt(message.data)
+                    }
+                case .onAICameraSessionSettled(let message):
+                    DispatchQueue.main.async {
+                        self.updateAICameraSession(message.data)
+                        self.aiCameraEventSink?.aiCameraSessionDidSettle(message.data)
+                    }
+                case .onAICameraSessionEnded(let message):
+                    DispatchQueue.main.async {
+                        self.updateAICameraSession(message.data)
+                        self.aiCameraEventSink?.aiCameraSessionDidEnd(message.data)
+                    }
                     
                 // Collab
                 case .didOpenLiveCollaboration(let message):
@@ -133,56 +175,70 @@ extension ExcalidrawCore: WKScriptMessageHandler {
             self.publishError(error)
         }
     }
+
+    private func sanitizeScriptMessageBody(_ value: Any) -> SanitizedScriptMessageBody {
+        sanitizeScriptMessageValue(value, path: "$")
+    }
+
+    private func scriptMessageEventName(_ value: Any) -> String {
+        guard let dictionary = value as? [String: Any],
+              let event = dictionary["event"] as? String else {
+            return "unknown event"
+        }
+        return event
+    }
+
+    private func sanitizeScriptMessageValue(_ value: Any, path: String) -> SanitizedScriptMessageBody {
+        switch value {
+            case let dictionary as [String: Any]:
+                var paths: [String] = []
+                var sanitized: [String: Any] = [:]
+                for (key, child) in dictionary {
+                    let result = sanitizeScriptMessageValue(child, path: "\(path).\(key)")
+                    paths.append(contentsOf: result.nonFiniteNumberPaths)
+                    sanitized[key] = result.value
+                }
+                return SanitizedScriptMessageBody(value: sanitized, nonFiniteNumberPaths: paths)
+            case let array as [Any]:
+                var paths: [String] = []
+                let sanitized = array.enumerated().map { index, child in
+                    let result = sanitizeScriptMessageValue(child, path: "\(path)[\(index)]")
+                    paths.append(contentsOf: result.nonFiniteNumberPaths)
+                    return result.value
+                }
+                return SanitizedScriptMessageBody(value: sanitized, nonFiniteNumberPaths: paths)
+            case let number as NSNumber:
+                if CFGetTypeID(number) == CFBooleanGetTypeID() {
+                    return SanitizedScriptMessageBody(value: number, nonFiniteNumberPaths: [])
+                }
+                let double = number.doubleValue
+                return double.isFinite
+                    ? SanitizedScriptMessageBody(value: number, nonFiniteNumberPaths: [])
+                    : SanitizedScriptMessageBody(value: NSNull(), nonFiniteNumberPaths: [path])
+            case let double as Double:
+                return double.isFinite
+                    ? SanitizedScriptMessageBody(value: double, nonFiniteNumberPaths: [])
+                    : SanitizedScriptMessageBody(value: NSNull(), nonFiniteNumberPaths: [path])
+            case let float as Float:
+                return float.isFinite
+                    ? SanitizedScriptMessageBody(value: float, nonFiniteNumberPaths: [])
+                    : SanitizedScriptMessageBody(value: NSNull(), nonFiniteNumberPaths: [path])
+            default:
+                return SanitizedScriptMessageBody(value: value, nonFiniteNumberPaths: [])
+        }
+    }
+
+    private struct SanitizedScriptMessageBody {
+        var value: Any
+        var nonFiniteNumberPaths: [String]
+    }
 }
 
 extension ExcalidrawCore {
-    func onSaveFileDone(_ data: String) {
-        print("onSaveFileDone")
-    }
-    
     func onStateChanged(_ data: StateChangedMessageData) {
-        guard !(self.isLoading) else { return }
-        let type = self.parent?.type
-        let currentFileID = self.parent?.file?.id
-        let onError = self.publishError
+        let documentSyncController = documentSyncController
         Task {
-            do {
-                guard await self.webActor.loadedFileID == currentFileID || type == .collaboration else {
-                    return
-                }
-
-                let elements = data.data.elements
-                switch self.parent?.savingType {
-                    case .excalidrawPNG, .png:
-                        let data = try await self.exportElementsToPNGData(
-                            elements: elements ?? [],
-                            embedScene: true,
-                            colorScheme: .light
-                        )
-                        await MainActor.run {
-                            self.parent?.file?.content = data
-                        }
-                    case .excalidrawSVG, .svg:
-                        let data = try await self.exportElementsToSVGData(
-                            elements: elements ?? [],
-                            embedScene: true,
-                            colorScheme: .light
-                        )
-                        await MainActor.run {
-                            self.parent?.file?.content = data
-                        }
-                    default:
-                        await MainActor.run {
-                            do {
-                                try self.parent?.file?.update(data: data.data)
-                            } catch {
-                                onError(error)
-                            }
-                        }
-                }
-            } catch {
-                onError(error)
-            }
+            await documentSyncController.save(data)
         }
     }
     
@@ -414,7 +470,6 @@ extension ExcalidrawCore {
         case onload
 
         case onStateChanged
-        case saveFileDone
         case blobData
         case copy
         case onFocus
@@ -427,6 +482,13 @@ extension ExcalidrawCore {
         case didPenDown
         case didSelectElements
         case didUnselectAllElements
+        case onElementsChanged
+        case onCameraChanged
+        case onAICameraSessionStarted
+        case onAICameraSessionUpdated
+        case onAICameraSessionInterrupted
+        case onAICameraSessionSettled
+        case onAICameraSessionEnded
 
         // Collab
         case didOpenLiveCollaboration
@@ -447,8 +509,8 @@ extension ExcalidrawCore {
     
     enum ExcalidrawZMessage: Codable {
         case onload
+        case legacyNoop(String)
         case stateChanged(StateChangedMessage)
-        case saveFileDone(SaveFileDoneMessage)
         case blobData(BlobDataMessage)
         case onCopy(CopyMessage)
         case onFocus
@@ -461,6 +523,13 @@ extension ExcalidrawCore {
         case didPenDown
         case didSelectElements(DidSelectElementsMessage)
         case didUnselectAllElements
+        case onElementsChanged(ElementsChangedMessage)
+        case onCameraChanged(CameraChangedMessage)
+        case onAICameraSessionStarted(AICameraSessionMessage)
+        case onAICameraSessionUpdated(AICameraSessionMessage)
+        case onAICameraSessionInterrupted(AICameraSessionMessage)
+        case onAICameraSessionSettled(AICameraSessionMessage)
+        case onAICameraSessionEnded(AICameraSessionMessage)
 
         // Collab
         case didOpenLiveCollaboration(DidOpenLiveCollaborationMessage)
@@ -482,17 +551,34 @@ extension ExcalidrawCore {
             case eventType = "event"
         }
 
+        private static let legacyNoopEventNames: Set<String> = [
+            "blobData",
+            "getAllMedias",
+            "getElementsBlob",
+            "getElementsSVG",
+            "saveFileDone",
+        ]
+
         public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            let eventType = try container.decode(ExcalidrawZEventType.self, forKey: .eventType)
+            let eventName = try container.decode(String.self, forKey: .eventType)
+            if Self.legacyNoopEventNames.contains(eventName) {
+                self = .legacyNoop(eventName)
+                return
+            }
+            guard let eventType = ExcalidrawZEventType(rawValue: eventName) else {
+                throw DecodingError.dataCorruptedError(
+                    forKey: .eventType,
+                    in: container,
+                    debugDescription: "Unknown ExcalidrawZ event: \(eventName)"
+                )
+            }
 
             switch eventType {
                 case .onload:
                     self = .onload
                 case .onStateChanged:
                     self = .stateChanged(try StateChangedMessage(from: decoder))
-                case .saveFileDone:
-                    self = .saveFileDone(try SaveFileDoneMessage(from: decoder))
                 case .blobData:
                     self = .blobData(try BlobDataMessage(from: decoder))
                 case .copy:
@@ -517,6 +603,20 @@ extension ExcalidrawCore {
                     self = .didSelectElements(try DidSelectElementsMessage(from: decoder))
                 case .didUnselectAllElements:
                     self = .didUnselectAllElements
+                case .onElementsChanged:
+                    self = .onElementsChanged(try ElementsChangedMessage(from: decoder))
+                case .onCameraChanged:
+                    self = .onCameraChanged(try CameraChangedMessage(from: decoder))
+                case .onAICameraSessionStarted:
+                    self = .onAICameraSessionStarted(try AICameraSessionMessage(from: decoder))
+                case .onAICameraSessionUpdated:
+                    self = .onAICameraSessionUpdated(try AICameraSessionMessage(from: decoder))
+                case .onAICameraSessionInterrupted:
+                    self = .onAICameraSessionInterrupted(try AICameraSessionMessage(from: decoder))
+                case .onAICameraSessionSettled:
+                    self = .onAICameraSessionSettled(try AICameraSessionMessage(from: decoder))
+                case .onAICameraSessionEnded:
+                    self = .onAICameraSessionEnded(try AICameraSessionMessage(from: decoder))
                     
                 // Collab
                 case .didOpenLiveCollaboration:
@@ -552,6 +652,14 @@ extension ExcalidrawCore {
     struct StateChangedMessage: AnyExcalidrawZMessage {
         var event: String
         var data: StateChangedMessageData
+    }
+    struct CameraChangedMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: CameraState
+    }
+    struct AICameraSessionMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: AICameraSessionInfo
     }
     struct StateChangedMessageData: Codable {
         var state: ExcalidrawState?
@@ -626,11 +734,6 @@ extension ExcalidrawCore {
         var dataString: String
         var elements: [ExcalidrawElement]?
         var files: [String : ExcalidrawFile.ResourceFile]
-    }
-
-    struct SaveFileDoneMessage: AnyExcalidrawZMessage {
-        var event: String
-        var data: String //SaveFileDoneMessageData
     }
 
     struct BlobDataMessage: AnyExcalidrawZMessage {
@@ -710,6 +813,15 @@ extension ExcalidrawCore {
     struct DidSelectElementsMessage: AnyExcalidrawZMessage {
         var event: String
         var data: [ExcalidrawElement]
+    }
+
+    struct ElementsChangedMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: ElementsChangedMessageData
+    }
+
+    struct ElementsChangedMessageData: Codable {
+        var count: Int
     }
 
     struct OnDropPDFMessage: AnyExcalidrawZMessage {

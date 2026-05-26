@@ -28,12 +28,13 @@ actor LocalStorageManager {
         case collaborationFiles = "CollaborationFiles"
         case mediaItems = "MediaItems"
         case checkpoints = "Checkpoints"
-        
+        case aiChatAttachments = "AIChatAttachments"
+
         var path: String { rawValue }
     }
-    
+
     // MARK: - Helper Extensions
-    
+
     /// Extension to map FileStorageContentType to StorageDirectory
     private func directory(for type: FileStorageContentType) -> StorageDirectory {
         switch type {
@@ -41,6 +42,7 @@ actor LocalStorageManager {
             case .collaborationFile: return .collaborationFiles
             case .checkpoint: return .checkpoints
             case .mediaItem: return .mediaItems
+            case .aiChatAttachment: return .aiChatAttachments
         }
     }
     
@@ -103,32 +105,50 @@ actor LocalStorageManager {
         updatedAt: Date? = nil
     ) throws -> SaveResult {
         let directory = try ensureDirectoryExists(for: directory(for: type))
-        
+
         let filename: String
         switch type {
             case .mediaItem(let ext):
                 // Use the provided extension for media items
                 filename = "\(fileID).\(ext)"
+            case .aiChatAttachment(let ext):
+                // AI chat attachments embed the conversation id as a leading
+                // path component inside fileID (e.g. "<convID>/<uuid>"), so
+                // every conversation gets its own subfolder. Pre-existing
+                // intermediate-directory creation below makes that work.
+                filename = "\(fileID).\(ext)"
             default:
                 filename = "\(fileID).\(type.fileExtension)"
         }
-        
+
         let fileURL = directory.appendingPathComponent(filename)
         let relativePath = "\(self.directory(for: type).path)/\(filename)"
+
+        // Some content types (currently `.aiChatAttachment`) put a slash
+        // inside `fileID` to namespace by parent (conversation id, etc.).
+        // The flat-directory cases never embed slashes so this is a no-op
+        // for them. Cheaper than gating on the type at every call site.
+        let parentDir = fileURL.deletingLastPathComponent()
+        if parentDir != directory {
+            try FileManager.default.createDirectory(
+                at: parentDir,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+        }
         
         // Check if file exists and content is identical
         if FileManager.default.fileExists(at: fileURL) {
             do {
                 let existingContent = try Data(contentsOf: fileURL)
                 if existingContent == content {
-                    logger.info("Content unchanged, skipping write: \(filename)")
                     do {
                         try FileManager.default.setAttributes(
                             [.modificationDate: updatedAt ?? Date()],
                             ofItemAtPath: fileURL.filePath
                         )
                     } catch {
-                        logger.info("Update \(type.fileExtension)'s modified_at failed.")
+                        logger.warning("Failed to update \(type.fileExtension) modification date: \(error.localizedDescription)")
                     }
                     return SaveResult(relativePath: relativePath, wasModified: false)
                 }
@@ -149,10 +169,9 @@ actor LocalStorageManager {
                     ofItemAtPath: fileURL.filePath
                 )
             } catch {
-                logger.info("Update \(type.fileExtension)'s modified_at failed.")
+                logger.warning("Failed to update \(type.fileExtension) modification date: \(error.localizedDescription)")
             }
-            
-            logger.debug("Saved \(type.fileExtension) to local storage: \(fileURL)")
+
             return SaveResult(relativePath: relativePath, wasModified: true)
         } catch {
             logger.error("Failed to save file: \(error.localizedDescription)")
@@ -176,7 +195,6 @@ actor LocalStorageManager {
         
         do {
             let data = try Data(contentsOf: fileURL)
-            logger.info("Loaded content from local storage: \(relativePath)")
             return data
         } catch {
             logger.error("Failed to load file: \(error.localizedDescription)")
@@ -194,13 +212,11 @@ actor LocalStorageManager {
         let fileURL = baseURL.appendingPathComponent(relativePath)
         
         guard FileManager.default.fileExists(at: fileURL) else {
-            logger.warning("File already deleted or not found: \(relativePath)")
             return
         }
         
         do {
             try FileManager.default.removeItem(at: fileURL)
-            logger.info("Deleted file from local storage: \(relativePath)")
         } catch {
             logger.error("Failed to delete file: \(error.localizedDescription)")
             throw FileStorageError.deleteFailed(error.localizedDescription)
@@ -275,7 +291,6 @@ actor LocalStorageManager {
                 ofItemAtPath: fileURL.filePath
             )
 
-            logger.debug("Saved media item to local storage: \(filename)")
             return relativePath
         } catch {
             throw FileStorageError.writeFailed(error.localizedDescription)

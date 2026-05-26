@@ -9,7 +9,7 @@ import SwiftUI
 
 extension HomeTipItemView {
     static let whatsNew = HomeTipItemView(
-        title: .localizable(.tipsWhatsNewOverviewTitle),
+        title: String(localizable: .tipsWhatsNewOverviewTitle),
         message: "ExcalidrawZ \( Bundle.main.infoDictionary!["CFBundleShortVersionString"] as? String ?? "")",
         image: Image("AppIcon-macOS")
     ) {

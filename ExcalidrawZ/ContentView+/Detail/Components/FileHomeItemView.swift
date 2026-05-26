@@ -37,9 +37,10 @@ struct FileHomeItemView: View {
 #endif
     
     @EnvironmentObject var fileState: FileState
-    @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
+    @EnvironmentObject private var fileHomeItemTransitionItemState: FileHomeItemTransitionItemState
     
     var file: FileState.ActiveFile
+    var selectionSiblings: [FileState.ActiveFile]?
     var canMultiSelect: Bool
     var fileID: String { file.id }
     var filename: String { file.name ?? String(localizable: .generalUntitled) }
@@ -48,18 +49,25 @@ struct FileHomeItemView: View {
 
     init(
         file: FileState.ActiveFile,
+        selectionSiblings: [FileState.ActiveFile]? = nil,
         canMultiSelect: Bool = true
     ) {
         self.file = file
+        self.selectionSiblings = selectionSiblings
         self.canMultiSelect = canMultiSelect
     }
 
     init<Label: View>(
         file: FileState.ActiveFile,
+        selectionSiblings: [FileState.ActiveFile]? = nil,
         canMultiSelect: Bool = true,
         @ViewBuilder customLabel: () -> Label
     ) {
-        self.init(file: file, canMultiSelect: canMultiSelect)
+        self.init(
+            file: file,
+            selectionSiblings: selectionSiblings,
+            canMultiSelect: canMultiSelect
+        )
         self.customLabel = AnyView(customLabel())
     }
     
@@ -161,7 +169,7 @@ struct FileHomeItemView: View {
             .modifier(
                 FileHomeItemSelectModifier(
                     file: file,
-                    sortField: fileState.sortField,
+                    selectionSiblings: selectionSiblings,
                     canMultiSelect: canMultiSelect,
                     style: config.style
                 )
@@ -170,7 +178,7 @@ struct FileHomeItemView: View {
                 isHovered = $0
             }
             .modifier(FileHomeItemDragModifier(file: file))
-            .opacity(fileHomeItemTransitionState.shouldHideItem == fileID ? 0 : 1)
+            .opacity(fileHomeItemTransitionItemState.shouldHideItem == fileID ? 0 : 1)
             .animation(.smooth(duration: 0.2), value: isHovered)
         }
     }
@@ -220,6 +228,7 @@ private struct FileHomeItemContentView: View {
 
     @EnvironmentObject private var layoutState: LayoutState
     @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var fileHomeItemTransitionItemState: FileHomeItemTransitionItemState
 
     var style: FileHomeItemStyle
     var file: FileState.ActiveFile
@@ -302,7 +311,9 @@ private struct FileHomeItemContentView: View {
         .background {
             Color.clear
                 .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
-                    [fileID+"SOURCE": value]
+                    fileHomeItemTransitionItemState.sourceFileID == fileID
+                    ? [fileID+"SOURCE": value]
+                    : [:]
                 }
         }
         .overlay {

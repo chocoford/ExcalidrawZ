@@ -1,5 +1,44 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24299" systemVersion="25B78" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24512" systemVersion="25C56" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="AIConversation" representedClassName="AIConversation" syncable="YES" codeGenerationType="class">
+        <attribute name="conversationID" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="fileScopeID" optional="YES" attributeType="String"/>
+        <attribute name="fileScopeKind" optional="YES" attributeType="String"/>
+        <attribute name="lastChatAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="title" optional="YES" attributeType="String"/>
+        <attribute name="toolsData" optional="YES" attributeType="Binary"/>
+        <attribute name="type" optional="YES" attributeType="String"/>
+        <relationship name="messages" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="AIConversationMessage" inverseName="conversation" inverseEntity="AIConversationMessage"/>
+    </entity>
+    <entity name="AIConversationMessage" representedClassName="AIConversationMessage" syncable="YES" codeGenerationType="class">
+        <attribute name="content" optional="YES" attributeType="String"/>
+        <attribute name="filesData" optional="YES" attributeType="Binary"/>
+        <attribute name="isCompactedOut" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="isCompactSummary" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="messageID" optional="YES" attributeType="String"/>
+        <attribute name="messageType" optional="YES" attributeType="String"/>
+        <attribute name="role" optional="YES" attributeType="String"/>
+        <attribute name="stepNumber" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="stepType" optional="YES" attributeType="String"/>
+        <attribute name="timeStamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="toolCallId" optional="YES" attributeType="String"/>
+        <attribute name="toolCallsData" optional="YES" attributeType="Binary"/>
+        <attribute name="usageConsumed" optional="YES" attributeType="Double" usesScalarValueType="YES"/>
+        <attribute name="usageRemains" optional="YES" attributeType="Double" usesScalarValueType="YES"/>
+        <relationship name="conversation" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="AIConversation" inverseName="messages" inverseEntity="AIConversation"/>
+    </entity>
+    <entity name="AIMessageCheckpointLink" representedClassName="AIMessageCheckpointLink" syncable="YES" codeGenerationType="class">
+        <attribute name="checkpointID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="checkpointKind" optional="YES" attributeType="String"/>
+        <attribute name="conversationID" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="fileScopeID" optional="YES" attributeType="String"/>
+        <attribute name="fileScopeKind" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="messageID" optional="YES" attributeType="String"/>
+        <attribute name="role" optional="YES" attributeType="String"/>
+    </entity>
     <entity name="CollaborationFile" representedClassName="CollaborationFile" syncable="YES" codeGenerationType="class">
         <attribute name="content" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
@@ -34,7 +73,9 @@
         <attribute name="content" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="filename" optional="YES" attributeType="String"/>
         <attribute name="filePath" optional="YES" attributeType="String"/>
+        <attribute name="historyDescription" optional="YES" attributeType="String"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="source" optional="YES" attributeType="String"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="collaborationFile" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CollaborationFile" inverseName="checkpoints" inverseEntity="CollaborationFile"/>
         <relationship name="file" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="File" inverseName="checkpoints" inverseEntity="File"/>
@@ -72,6 +113,9 @@
     </entity>
     <entity name="LocalFileCheckpoint" representedClassName="LocalFileCheckpoint" syncable="YES" codeGenerationType="class">
         <attribute name="content" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="historyDescription" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="source" optional="YES" attributeType="String"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="url" optional="YES" attributeType="URI"/>
     </entity>
@@ -102,6 +146,9 @@
         <memberEntity name="LibraryItem"/>
         <memberEntity name="MediaItem"/>
         <memberEntity name="CollaborationFile"/>
+        <memberEntity name="AIConversation"/>
+        <memberEntity name="AIConversationMessage"/>
+        <memberEntity name="AIMessageCheckpointLink"/>
     </configuration>
     <configuration name="Local">
         <memberEntity name="LocalFileCheckpoint"/>

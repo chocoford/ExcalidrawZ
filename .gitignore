@@ -100,6 +100,8 @@ ExcalidrawZ/Resources/excalidraw-lagacy
 ExcalidrawZ/Resources/Videos
 WebPage
 Design
+Marketing/
+*.fcpbundle/
 Resources/*
 Config/Overrides.xcconfig
 Config/Secrets.plist

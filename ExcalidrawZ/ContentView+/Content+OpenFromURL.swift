@@ -179,7 +179,7 @@ struct OpenFromURLModifier: ViewModifier {
                     self.webViewIsLoadingCancellable = fileState.excalidrawWebCoordinator?.$isLoading.sink { isLoading in
                         Task {
                             try? await Task.sleep(nanoseconds: UInt64(1e+9 * 2.3))
-                            try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
+                            _ = try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
                                 imageData: imageSendToNewFile.0,
                                 type: imageSendToNewFile.1 == .png ? "png" : "svg+xml"
                             )
@@ -188,7 +188,7 @@ struct OpenFromURLModifier: ViewModifier {
                     }
                 } else {
                     try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
-                    try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
+                    _ = try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(
                         imageData: imageSendToNewFile.0,
                         type: imageSendToNewFile.1 == .png ? "png" : "svg+xml"
                     )
@@ -399,13 +399,8 @@ struct OpenURLSheetView: View {
                 .animation(.default, value: isPreviewWebViewLoading)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay {
-                    if #available(macOS 13.0, iOS 17.0, *) {
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(.separator)
-                    } else {
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(.secondary)
-                    }
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(.separator)
                 }
                 .background {
                     RoundedRectangle(cornerRadius: 12)

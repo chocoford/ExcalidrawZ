@@ -39,11 +39,9 @@ actor SyncQueue {
                 // All items are high priority, append to end
                 queue.append(event)
             }
-            logger.info("Queued HIGH PRIORITY sync operation: \(event.operation) for \(event.relativePath)")
         } else {
             // Normal priority: Append to end
             queue.append(event)
-            logger.info("Queued sync operation: \(event.operation) for \(event.relativePath)")
         }
         saveQueue()
     }
@@ -102,7 +100,6 @@ actor SyncQueue {
                 let loadedQueue = try decoder.decode([SyncEvent].self, from: data)
                 self.queue = loadedQueue
                 self.isLoaded = true
-                logger.info("Loaded \(loadedQueue.count) queued sync operations")
             } catch {
                 logger.error("Failed to load sync queue: \(error.localizedDescription)")
                 self.queue = []

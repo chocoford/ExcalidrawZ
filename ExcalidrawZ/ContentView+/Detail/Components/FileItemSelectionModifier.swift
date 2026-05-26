@@ -7,6 +7,20 @@
 
 import SwiftUI
 
+private extension FileState.ActiveFile {
+    var fileValue: File? {
+        if case .file(let file) = self { file } else { nil }
+    }
+
+    var localFileURL: URL? {
+        if case .localFile(let url) = self { url } else { nil }
+    }
+
+    var temporaryFileURL: URL? {
+        if case .temporaryFile(let url) = self { url } else { nil }
+    }
+}
+
 struct FileHomeItemSelectModifier: ViewModifier {
 #if os(iOS)
     @Environment(\.editMode) private var editMode
@@ -14,23 +28,48 @@ struct FileHomeItemSelectModifier: ViewModifier {
     @EnvironmentObject var fileState: FileState
     
     var file: FileState.ActiveFile
-    var sortField: ExcalidrawFileSortField
+    var selectionSiblings: [FileState.ActiveFile]?
     var canMultiSelect: Bool
     var style: FileHomeItemStyle
     
     init(
         file: FileState.ActiveFile,
-        sortField: ExcalidrawFileSortField,
+        selectionSiblings: [FileState.ActiveFile]?,
         canMultiSelect: Bool,
         style: FileHomeItemStyle
     ) {
         self.file = file
-        self.sortField = sortField
+        self.selectionSiblings = selectionSiblings
         self.canMultiSelect = canMultiSelect
         self.style = style
     }
-    
-    @StateObject private var localFolderState = LocalFolderState()
+
+    var fileSiblings: [File] {
+        let siblings: [File] = selectionSiblings?.compactMap {
+            if case .file(let file) = $0 { file } else { nil }
+        } ?? []
+        if !siblings.isEmpty { return siblings }
+        if let file = file.fileValue { return [file] }
+        return []
+    }
+
+    var localFileSiblings: [URL] {
+        let siblings: [URL] = selectionSiblings?.compactMap {
+            if case .localFile(let url) = $0 { url } else { nil }
+        } ?? []
+        if !siblings.isEmpty { return siblings }
+        if let url = file.localFileURL { return [url] }
+        return []
+    }
+
+    var temporaryFileSiblings: [URL] {
+        let siblings: [URL] = selectionSiblings?.compactMap {
+            if case .temporaryFile(let url) = $0 { url } else { nil }
+        } ?? []
+        if !siblings.isEmpty { return siblings }
+        if let url = file.temporaryFileURL { return [url] }
+        return []
+    }
     
     var isSelected: Bool {
         switch file {
@@ -53,30 +92,25 @@ struct FileHomeItemSelectModifier: ViewModifier {
                         .modifier(
                             FileSelectionModifier(
                                 file: file,
-                                sortField: sortField,
+                                files: fileSiblings,
                                 canMultiSelect: canMultiSelect
                             )
                         )
                 case .localFile(let url):
-                    LocalFilesProvider.withSibling(
-                        file: url,
-                        sortField: .updatedAt
-                    ) { files, updateFlags in
-                        content
-                            .modifier(
-                                LocalFileSelectionModifier(
-                                    file: url,
-                                    files: files,
-                                    canMultiSelect: canMultiSelect
-                                )
+                    content
+                        .modifier(
+                            LocalFileSelectionModifier(
+                                file: url,
+                                files: localFileSiblings,
+                                canMultiSelect: canMultiSelect
                             )
-                    }
-                    .environmentObject(localFolderState)
+                        )
                 case .temporaryFile(let url):
                     content
                         .modifier(
                             TemporaryFileSelectionModifier(
                                 file: url,
+                                files: temporaryFileSiblings,
                                 canMultiSelect: canMultiSelect
                             )
                         )
@@ -134,43 +168,12 @@ struct FileSelectionModifier: ViewModifier {
     @EnvironmentObject var fileState: FileState
     
     var file: File
+    var files: [File]
     var canMultiSelect: Bool
-    @FetchRequest var files: FetchedResults<File>
     
-    init(file: File, sortField: ExcalidrawFileSortField, canMultiSelect: Bool) {
+    init(file: File, files: [File], canMultiSelect: Bool) {
         self.file = file
-        let group = file.group
-        /// Put the important things first.
-        let sortDescriptors: [SortDescriptor<File>] = {
-            switch sortField {
-                case .updatedAt:
-                    [
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse)
-                    ]
-                case .name:
-                    [
-                        SortDescriptor(\.name, order: .reverse),
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse),
-                    ]
-                case .rank:
-                    [
-                        SortDescriptor(\.rank, order: .forward),
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse),
-                    ]
-            }
-        }()
-        self._files = FetchRequest<File>(
-            sortDescriptors: sortDescriptors,
-            predicate: group?.groupType == .trash
-            ? NSPredicate(format: "inTrash == true")
-            : group != nil
-            ? NSPredicate(format: "inTrash == false AND group == %@", group!)
-            : NSPredicate(format: "inTrash == false"),
-            animation: .default
-        )
+        self.files = files
         self.canMultiSelect = canMultiSelect
     }
  
@@ -293,6 +296,7 @@ struct TemporaryFileSelectionModifier: ViewModifier {
     @EnvironmentObject var fileState: FileState
     
     var file: URL
+    var files: [URL]?
     var canMultiSelect: Bool
     
     func body(content: Content) -> some View {
@@ -307,7 +311,7 @@ struct TemporaryFileSelectionModifier: ViewModifier {
     private func performSelect() {
 #if os(macOS)
             if NSEvent.modifierFlags.contains(.shift), canMultiSelect {
-                let files = fileState.temporaryFiles
+                let files = files ?? fileState.temporaryFiles
                 if fileState.selectedTemporaryFiles.isEmpty {
                     fileState.selectedTemporaryFiles.insert(file)
                 } else {

@@ -12,8 +12,8 @@ import MarkdownUI
 
 extension HomeTipItemView {
     static let share = HomeTipItemView(
-        title: .localizable(.tipsShareOverviewTitle),
-        message: .localizable(.tipsShareOverviewDescription),
+        title: String(localizable: .tipsShareOverviewTitle),
+        message: String(localizable: .tipsShareOverviewDescription),
         icon: .squareAndArrowUp
     ) {
         ShareTipsDetail()
@@ -87,4 +87,3 @@ struct ShareTipsDetail: View {
         }
     }
 }
-

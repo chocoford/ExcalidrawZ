@@ -57,21 +57,21 @@ extension ExcalidrawCore {
             #endif
         }
 
-        let result = try await webView.evaluateJavaScript("""
-            (async () => {
-                const bytes = new Uint8Array(\(buf));
-                await window.excalidrawZHelper.loadPDFViewer(bytes.buffer, {
-                    x: \(x),
-                    y: \(y),
-                    width: \(width),
-                    height: \(height),
-                    totalPages: \(pageCount)
-                });
-            })();
-            0;
-        """)
-
-        return result as? String ?? ""
+        _ = try await webView.callAsyncJavaScript(
+            """
+            const bytes = new Uint8Array(\(buf));
+            await window.excalidrawZHelper.loadPDFViewer(bytes.buffer, {
+                x: \(x),
+                y: \(y),
+                width: \(width),
+                height: \(height),
+                totalPages: \(pageCount)
+            });
+            """,
+            arguments: [:],
+            contentWorld: .page
+        )
+        return ""
     }
 
     /// Load PDF as tiled images on Excalidraw canvas
@@ -171,14 +171,14 @@ extension ExcalidrawCore {
         options += " }"
 
         // Call JavaScript once with all images
-        let result = try await webView.evaluateJavaScript("""
-            (async () => {
-                const pages = \(jsonString);
-                const fileIds = await window.excalidrawZHelper.loadPDFTiles(pages, \(options));
-                return fileIds;
-            })();
-            0;
-        """)
+        let result = try await webView.callAsyncJavaScript(
+            """
+            const pages = \(jsonString);
+            return await window.excalidrawZHelper.loadPDFTiles(pages, \(options));
+            """,
+            arguments: [:],
+            contentWorld: .page
+        )
 
         if let fileIds = result as? [String] {
             return fileIds

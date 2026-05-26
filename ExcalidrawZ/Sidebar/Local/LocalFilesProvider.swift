@@ -215,6 +215,24 @@ struct LocalFilesProvider<Content: View>: View {
             }
         }
         files.removeAll(where: { $0.filePath == path })
+        deleteAIConversations(forLocalFileAtPath: path)
+    }
+
+    private func deleteAIConversations(forLocalFileAtPath path: String) {
+        let url = URL(fileURLWithPath: path)
+        Task.detached {
+            do {
+                try await PersistenceController.shared.aiConversationRepository
+                    .deleteConversations(
+                        forFileScope: AIConversationFileScope(
+                            kind: .localFile,
+                            id: url.absoluteString
+                        )
+                    )
+            } catch {
+                print("Warning: Failed to delete AI conversations for removed local file \(path): \(error)")
+            }
+        }
     }
     
     private func handleItemUpdated(path: String) {

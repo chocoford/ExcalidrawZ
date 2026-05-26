@@ -25,6 +25,7 @@ struct NewFileButton: View {
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var collaborationState: CollaborationState
+    @EnvironmentObject private var localFolderState: LocalFolderState
     
     
     var openWithDelay: Bool
@@ -187,8 +188,10 @@ struct NewFileButton: View {
                                 active: !openWithDelay,
                                 folderURL: scopedURL
                             ) else {
+                                isCreatingFile = false
                                 return
                             }
+                            localFolderState.itemCreatedPublisher.send(url.filePath)
                             
                             if openWithDelay {
                                 DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
@@ -199,6 +202,7 @@ struct NewFileButton: View {
                                 isCreatingFile = false
                             }
                         } catch {
+                            isCreatingFile = false
                             alertToast(error)
                         }
                     }
@@ -282,7 +286,9 @@ struct NewFileButton: View {
                 } else if case .localFolder(let folder) = fileState.currentActiveGroup {
                     try await folder.withSecurityScopedURL { scopedURL in
                         do {
-                            try await fileState.createNewLocalFile(folderURL: scopedURL)
+                            if let url = try await fileState.createNewLocalFile(folderURL: scopedURL) {
+                                localFolderState.itemCreatedPublisher.send(url.filePath)
+                            }
                         } catch {
                             alertToast(error)
                         }
@@ -331,4 +337,3 @@ struct ImportFileButton: View {
 #Preview {
     NewFileButton()
 }
-

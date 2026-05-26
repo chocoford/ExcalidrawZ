@@ -149,11 +149,7 @@ struct MediasSettingsView: View {
                         ZStack {
                             let roundedRectangle = RoundedRectangle(cornerRadius: 8)
                             roundedRectangle.fill(.regularMaterial)
-                            if #available(macOS 13.0, iOS 17.0, *) {
-                                roundedRectangle.stroke(.separator)
-                            } else {
-                                roundedRectangle.stroke(.secondary)
-                            }
+                            roundedRectangle.stroke(.separator)
                         }
                     }
 #if os(macOS)
@@ -180,11 +176,7 @@ struct MediasSettingsView: View {
                 let roundedRectangle = RoundedRectangle(cornerRadius: 8)
                 ZStack {
                     roundedRectangle.fill(.regularMaterial)
-                    if #available(macOS 13.0, iOS 17.0, *) {
-                        roundedRectangle.stroke(.separator)
-                    } else {
-                        roundedRectangle.stroke(.secondary)
-                    }
+                    roundedRectangle.stroke(.separator)
                 }
             }
         }

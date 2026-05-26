@@ -15,11 +15,20 @@ import ChocofordUI
 import ChocofordEssentials
 import SwiftyAlert
 import SFSafeSymbols
+import LLMKit
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject var appPreference: AppPreference
+    /// Pulled from the app-level environment (see `ExcalidrawZApp`).
+    /// Both are needed here because we trigger conversation
+    /// pre-selection on every active-file change (see the
+    /// `.task(id:)` below) — the inspector / island panels then just
+    /// read the already-pinned `aiChatConversationID` instead of
+    /// each having to refresh on appear.
+    @EnvironmentObject private var llmState: LLMStateObject
+    @EnvironmentObject private var aiChatState: AIChatState
     
     @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
     
@@ -49,6 +58,7 @@ struct ContentView: View {
             .modifier(PrintModifier())
             .modifier(WhatsNewSheetViewModifier())
             .modifier(NewRoomModifier())
+            .modifier(StoreKitEntitlementRefreshModifier())
             .modifier(PaywallModifier())
             .modifier(SearchableModifier())
             .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
@@ -66,6 +76,7 @@ struct ContentView: View {
             .modifier(DragStateModifier())
             .modifier(StartupSyncModifier())
             .modifier(CoreDataMigrationModifier())
+            .modifier(ActiveFileSwitchBlockedToastModifier(fileState: fileState))
             .swiftyAlert(logs: true)
             .bindWindow($window)
             .containerSizeClassInjection()
@@ -83,6 +94,29 @@ struct ContentView: View {
                 if newValue == nil, layoutState.isInspectorPresented {
                     layoutState.isInspectorPresented = false
                 }
+            }
+            // Pre-load the chat conversation tied to the active file
+            // *as soon as the file changes*, not lazily when the user
+            // opens the chat panel. The id-based `.task` fires on
+            // first appear and on every subsequent change — empty
+            // ActiveFile keeps the previous selection nil, so the
+            // panel still opens with a clean slate when no file is
+            // loaded. Multi-conversation per file isn't surfaced in
+            // the UI yet (single-thread feel), but the persistence
+            // layer is already file-scoped, so this is just picking
+            // the latest from that file's bin.
+            .task(id: fileState.currentActiveFile?.id) {
+                let activeFileID = fileState.currentActiveFile?.id
+                print("[AIChatDiag] ContentView.task(id:) fired with id=\(activeFileID ?? "nil")")
+                if activeFileID != nil {
+                    try? await Task.sleep(nanoseconds: 350_000_000)
+                    guard !Task.isCancelled,
+                          fileState.currentActiveFile?.id == activeFileID else { return }
+                }
+                await aiChatState.loadConversationForActiveFile(
+                    in: llmState,
+                    fileState: fileState
+                )
             }
             .withContainerSize()
             .task { await prepare() }
@@ -141,6 +175,31 @@ struct ContentView: View {
             Task {
                 try? await fileState.mergeDefaultGroupAndTrashIfNeeded(context: viewContext)
             }
+        }
+    }
+}
+
+private struct ActiveFileSwitchBlockedToastModifier: ViewModifier {
+    @Environment(\.alertToast) private var alertToast
+    @ObservedObject var fileState: FileState
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: fileState.activeFileSwitchBlockedToken) { _ in
+                showToast()
+            }
+    }
+
+    private func showToast() {
+        switch fileState.activeFileSwitchBlockedReason {
+            case .aiGenerationInProgress:
+                alertToast(.init(
+                    displayMode: .hud,
+                    type: .regular,
+                    title: String(localizable: .aiChatActiveFileSwitchBlockedToastTitle)
+                ))
+            case nil:
+                break
         }
     }
 }

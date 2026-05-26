@@ -69,7 +69,10 @@ struct CompactBrowserContentView<HomeGroup: ExcalidrawGroup>: View {
                 }
 
                 ForEach(files) { file in
-                    FileHomeItemView(file: file)
+                    FileHomeItemView(
+                        file: file,
+                        selectionSiblings: files
+                    )
                          .fileHomeItemStyle(.file)
                 }
             }

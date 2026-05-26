@@ -212,6 +212,19 @@ class LocalFileUtils {
                 // Also update checkpoints
                 self.updateCheckpoints(oldURL: file, newURL: newURL)
 
+                do {
+                    try await PersistenceController.shared.aiConversationRepository.rebindConversations(
+                        from: AIConversationFileScope(kind: .localFile, id: file.absoluteString),
+                        to: AIConversationFileScope(kind: .localFile, id: newURL.absoluteString)
+                    )
+                    try await PersistenceController.shared.aiConversationRepository.rebindConversations(
+                        from: AIConversationFileScope(kind: .temporaryFile, id: file.absoluteString),
+                        to: AIConversationFileScope(kind: .localFile, id: newURL.absoluteString)
+                    )
+                } catch {
+                    print("Warning: Failed to rebind AI conversations for moved local file: \(error)")
+                }
+
                 urlMapping[file] = newURL
             }
 

@@ -58,10 +58,13 @@ struct CompactRecentlyView: View {
     private func content() -> some View {
         NavigationStack {
             ScrollView {
+                let activeFiles = files.map { FileState.ActiveFile.file($0) }
+
                 LazyVGrid(columns: columns, spacing: 16) {
-                    ForEach(files) { file in
+                    ForEach(activeFiles) { file in
                         FileHomeItemView(
-                            file: .file(file)
+                            file: file,
+                            selectionSiblings: activeFiles
                         )
                     }
                 }

@@ -132,7 +132,7 @@ struct SwitchAppStoreVersionView: View {
                         }
                         .frame(maxHeight: .infinity, alignment: .top)
                         HStack {
-                            Link(destination: URL(string: "https://apps.apple.com/app/excalidrawz/id6636493997")!) {
+                            Link(destination: AppStoreVersion.appURL) {
                                 Text(.localizable(.generalButtonDownload))
                             }
                             .disabled(!didArchive)

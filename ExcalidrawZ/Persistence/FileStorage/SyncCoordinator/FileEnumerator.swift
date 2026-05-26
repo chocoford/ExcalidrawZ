@@ -285,7 +285,6 @@ struct FileEnumerator {
                 self.logger.error("Failed to fetch MediaItem entities: \(error.localizedDescription)")
             }
 
-            self.logger.info("Found \(expectedFiles.count) expected files from CoreData")
             return expectedFiles
         }
     }

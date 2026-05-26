@@ -34,7 +34,6 @@ struct OrphanCleaner {
         for file in localFiles {
             let validIDs = getValidIDs(for: file.contentType, from: validFileIDs)
             if !validIDs.contains(file.fileID) {
-                logger.info("Removing orphaned local file: \(file.relativePath)")
                 try? await localManager.deleteContent(relativePath: file.relativePath)
                 deletedCount += 1
             }
@@ -44,7 +43,6 @@ struct OrphanCleaner {
         for file in iCloudFiles {
             let validIDs = getValidIDs(for: file.contentType, from: validFileIDs)
             if !validIDs.contains(file.fileID) {
-                logger.info("Removing orphaned iCloud file: \(file.relativePath)")
                 try? await iCloudManager.deleteContent(relativePath: file.relativePath)
                 deletedCount += 1
             }

@@ -10,43 +10,64 @@ import SwiftUI
 extension WhatsNewView {
     @MainActor @ViewBuilder
     func featuresContent() -> some View {
+        // 不能只有一行，不知道为啥一定报错
+        
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewTabbedInspectorTitle),
-            description: .localizable(.whatsNewTabbedInspectorDescription),
-            icon: Image(systemSymbol: .sidebarRight)
-        )
-
+            title: .localizable(.whatsNewAIForExcalidrawZTitle),
+            description: .localizable(.whatsNewAIForExcalidrawZDescription),
+        ) {
+            Image(systemSymbol: .sparkles)
+                .resizable()
+                .foregroundStyle(AIAppearancePalette.foregroundGradient)
+        }
+        
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewCanvasSearchTitle),
-            description: .localizable(.whatsNewCanvasSearchDescription),
-            icon: Image(systemSymbol: .magnifyingglass)
-        )
-
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewCanvasPreferencesTitle),
-            description: .localizable(.whatsNewCanvasPreferencesDescription),
-            icon: Image(systemSymbol: .sliderHorizontal3)
-        )
-
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewLassoToolTitle),
-            description: .localizable(.whatsNewLassoToolDescription),
-            icon: Image(systemSymbol: .selectionPinInOut)
-        )
-
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewLibraryWorkflowOverhaulTitle),
-            description: .localizable(.whatsNewLibraryWorkflowOverhaulDescription),
-            icon: Image(systemSymbol: .book)
-        )
+            title: .localizable(.whatsNewUpdatedSubscriptionPlansTitle),
+            description: .localizable(.whatsNewUpdatedSubscriptionPlansDescription),
+        ) {
+            Image(systemSymbol: .creditcard)
+                .resizable()
+                .symbolRenderingMode(.multicolor)
+        }
     }
     
     
     @MainActor @ViewBuilder
     func allFeaturesList() -> some View {
-        VStack {
+        VStack(spacing: 0) {
             // Navigation Back button
-            if #available(macOS 13.0, iOS 16.0, *) {} else {
+#if os(macOS)
+            if #available(macOS 13.0, *) {
+                HStack {
+                    Button {
+                        if !navigationPath.isEmpty {
+                            navigationPath.removeLast()
+                        }
+                    } label: {
+                        Label(.localizable(.navigationButtonBack), systemSymbol: .chevronLeft)
+                    }
+                    .modernButtonStyle(style: .glass, shape: .circle)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 8)
+            } else {
+                HStack {
+                    Button {
+                        route = nil
+                    } label: {
+                        Label(.localizable(.navigationButtonBack), systemSymbol: .chevronLeft)
+                    }
+                    .modernButtonStyle(style: .glass, shape: .circle)
+
+                    Spacer()
+                }
+                .padding(4)
+            }
+#else
+            if #available(iOS 16.0, *) {} else {
                 HStack {
                     Button {
                         route = nil
@@ -59,14 +80,48 @@ extension WhatsNewView {
                 }
                 .padding(4)
             }
+#endif
             
             // Content
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                LazyVStack(alignment: .leading, spacing: 20) {
                     WhatsNewVersionSection(
                         version: Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
                     ) {
                         featuresContent()
+                    }
+                    
+                    // MARK: - v1.7.4
+                    WhatsNewVersionSection(version: "v1.7.4") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewTabbedInspectorTitle),
+                            description: .localizable(.whatsNewTabbedInspectorDescription),
+                            icon: Image(systemSymbol: .sidebarRight)
+                        )
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewCanvasSearchTitle),
+                            description: .localizable(.whatsNewCanvasSearchDescription),
+                            icon: Image(systemSymbol: .magnifyingglass)
+                        )
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewCanvasPreferencesTitle),
+                            description: .localizable(.whatsNewCanvasPreferencesDescription),
+                            icon: Image(systemSymbol: .sliderHorizontal3)
+                        )
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewLassoToolTitle),
+                            description: .localizable(.whatsNewLassoToolDescription),
+                            icon: Image(systemSymbol: .selectionPinInOut)
+                        )
+                        
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewLibraryWorkflowOverhaulTitle),
+                            description: .localizable(.whatsNewLibraryWorkflowOverhaulDescription),
+                            icon: Image(systemSymbol: .book)
+                        )
                     }
                     
                     // MARK: - v1.7.3
@@ -389,21 +444,38 @@ extension WhatsNewView {
                 }
                 .padding(.top, 20)
                 .padding(.bottom, 40)
+
+#if os(macOS)
+                HStack {
+                    Spacer()
+
+                    changeLogLink()
+                }
+                .padding(.horizontal, 40)
+                .padding(.bottom, 24)
+#endif
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+#if !os(macOS)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Link(destination: URL(string: "https://github.com/chocoford/ExcalidrawZ/blob/main/CHANGELOG.md")!) {
-                    HStack(spacing: 2) {
-                        Text("Change Log")
-                        Image(systemSymbol: .arrowRight)
-                    }
-                }
-                .hoverCursor(.link)
+                changeLogLink()
             }
         }
+#endif
     }
-    
+
+    @MainActor @ViewBuilder
+    private func changeLogLink() -> some View {
+        Link(destination: URL(string: "https://github.com/chocoford/ExcalidrawZ/blob/main/CHANGELOG.md")!) {
+            HStack(spacing: 2) {
+                Text("Change Log")
+                Image(systemSymbol: .arrowRight)
+            }
+        }
+        .hoverCursor(.link)
+    }
 }
 
 struct WhatsNewVersionSection: View {

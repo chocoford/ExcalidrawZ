@@ -79,12 +79,13 @@ actor iCloudDriveFileManager {
         case collaborationFiles = "CollaborationFiles"
         case mediaItems = "MediaItems"
         case checkpoints = "Checkpoints"
-        
+        case aiChatAttachments = "AIChatAttachments"
+
         var path: String {
             return rawValue
         }
     }
-    
+
     // MARK: - Helper Methods
 
     /// Map FileStorageContentType to Directory
@@ -94,6 +95,7 @@ actor iCloudDriveFileManager {
         case .collaborationFile: return .collaborationFiles
         case .checkpoint: return .checkpoints
         case .mediaItem: return .mediaItems
+        case .aiChatAttachment: return .aiChatAttachments
         }
     }
     
@@ -418,6 +420,21 @@ actor iCloudDriveFileManager {
         let filename = "\(fileID).\(type.fileExtension)"
         let iCloudURL = directory.appendingPathComponent(filename)
         let relativePath = "\(dir.path)/\(filename)"
+
+        // Some content types (currently `.aiChatAttachment`) put a slash
+        // inside `fileID` to namespace by parent (e.g. conversation id)
+        // — the resulting `iCloudURL` then nests under a subdirectory
+        // that doesn't exist yet. Mirror the local side and create the
+        // intermediates so `coordinatedWrite` doesn't fail. No-op for
+        // flat-directory types (parent == directory).
+        let parentDir = iCloudURL.deletingLastPathComponent()
+        if parentDir != directory {
+            try FileManager.default.createDirectory(
+                at: parentDir,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+        }
 
         // Upload to iCloud (overwrite if exists)
         try await fileCoordinator.coordinatedWrite(url: iCloudURL, data: localData)

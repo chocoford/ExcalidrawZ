@@ -9,6 +9,7 @@ import SwiftUI
 import Combine
 import CoreData
 
+import ChocofordUI
 import Logging
 
 struct ExcalidrawEditor: View {
@@ -19,6 +20,10 @@ struct ExcalidrawEditor: View {
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var localFolderState: LocalFolderState
     @EnvironmentObject var toolState: ToolState
+    /// Drives the AI chat island overlay — its presentation toggle is global,
+    /// but the *anchor* (bottom-center) is editor-local, hence the overlay
+    /// lives here rather than at the NavigationSplitView level.
+    @EnvironmentObject var layoutState: LayoutState
 
     let logger = Logger(label: "ExcalidrawEditor")
     
@@ -60,63 +65,21 @@ struct ExcalidrawEditor: View {
             return fileState.currentActiveFile == nil ? ExcalidrawFile() : excalidrawFile
         } set: { val in
             guard let val else { return }
-            guard activeFile?.id == val.id else { return }
-            
-            // Block updates while loading new file
-            guard !isLoadingFile else {
-                logger.info("Blocked update during file loading")
-                return
-            }
-            
-            if toolState.inDragMode { return }
-            
-            switch activeFile {
-                case .file(let file):
-                    // Check if there are actual updates
-                    if let currentFile = excalidrawFile, val.elements == currentFile.elements {
-                        logger.info("no updates, ignored.")
-                        return
-                    }
-                    fileState.updateFile(file, with: val)
-                case .localFile(let url):
-                    guard case .localFolder(let folder) = fileState.currentActiveGroup else { return }
-                    Task {
-                        try folder.withSecurityScopedURL { _ in
-                            do {
-                                let oldElements = try ExcalidrawFile(contentsOf: url).elements
-                                if val.elements == oldElements {
-                                    logger.info("no updates, ignored.")
-                                    return
-                                }
-                                try await fileState.updateLocalFile(
-                                    to: url,
-                                    with: val,
-                                    context: viewContext
-                                )
-                            } catch {
-                                alertToast(error)
-                            }
-                        }
-                    }
-                case .temporaryFile(let url):
-                    Task {
-                        do {
-                            let oldElements = try ExcalidrawFile(contentsOf: url).elements
-                            if val.elements == oldElements {
-                                logger.info("no updates, ignored.")
-                                return
-                            }
-                            try await fileState.updateLocalFile(
-                                to: url,
-                                with: val,
-                                context: viewContext
-                            )
-                        } catch {
-                            alertToast(error)
-                        }
-                    }
-                default:
-                    break
+            _ = persistCanvasUpdate(val)
+        }
+    }
+
+    private enum CanvasUpdatePersistenceResult {
+        case accepted
+        case ignoredNoChanges
+        case rejected
+
+        var shouldUpdateEditorState: Bool {
+            switch self {
+                case .accepted, .ignoredNoChanges:
+                    return true
+                case .rejected:
+                    return false
             }
         }
     }
@@ -131,6 +94,11 @@ struct ExcalidrawEditor: View {
     
     
     @State private var canvasLoadingState: ExcalidrawCanvasView.LoadingState = .loading
+
+    /// Live size of the editor's content frame. Fed into `AIChatIslandView`
+    /// so it can clamp its drag offset back inside the editor when the user
+    /// flings it past an edge.
+    @State private var editorContentSize: CGSize = .zero
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -181,6 +149,29 @@ struct ExcalidrawEditor: View {
                 .opacity(isLoadingFile ? 0 : 1)
                 .allowsHitTesting(!isLoadingFile)
         }
+        .readSize($editorContentSize)
+        // AI chat island floats above the editor only — sidebar / inspector /
+        // home content are *not* in this view's frame, so bottom-center here
+        // means bottom-center of the actual canvas the user is looking at.
+        .overlay(alignment: .bottom) {
+            if layoutState.isAIChatIslandMode,
+               !AIChatAvailability.isUnavailableInCurrentBuild,
+               !fileState.currentActiveFileIsInTrash {
+                AIChatIslandView(canvasSize: editorContentSize)
+                    .padding(.bottom, 24)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .animation(.smooth(duration: 0.3), value: layoutState.isAIChatIslandMode)
+        .onAppear {
+            collapseAIChatIslandIfCurrentFileIsTrashed()
+        }
+        .onChange(of: fileState.currentActiveFileIsInTrash) { _ in
+            collapseAIChatIslandIfCurrentFileIsTrashed()
+        }
+        .onChange(of: layoutState.isAIChatIslandMode) { _ in
+            collapseAIChatIslandIfCurrentFileIsTrashed()
+        }
         .allowsHitTesting(interactionEnabled)
         .observeExcalidrawFileStatus(
             for: activeFile,
@@ -214,11 +205,26 @@ struct ExcalidrawEditor: View {
             await loadExcalidrawFile(from: activeFile)
         }
     }
+
+    private func collapseAIChatIslandIfCurrentFileIsTrashed() {
+        guard fileState.currentActiveFileIsInTrash else { return }
+        guard layoutState.isAIChatIslandMode else { return }
+        layoutState.isAIChatIslandMode = false
+    }
     
     private func loadExcalidrawFile(from activeFile: FileState.ActiveFile?) async {
         guard let activeFile else {
             self.excalidrawFile = ExcalidrawFile()
+            fileState.excalidrawWebCoordinator?.documentSyncController.setTargetFileID(nil)
             return
+        }
+
+        switch activeFile {
+            case .file(_), .localFile(_), .temporaryFile(_):
+                fileState.excalidrawWebCoordinator?.documentSyncController
+                    .setTargetFileID(activeFile.id)
+            default:
+                fileState.excalidrawWebCoordinator?.documentSyncController.setTargetFileID(nil)
         }
         
         var canSetLoading = true
@@ -247,14 +253,17 @@ struct ExcalidrawEditor: View {
             switch activeFile {
                 case .file(let file):
                     let content = try await file.loadContent()
+                    let parsedFile = try? ExcalidrawFile(data: content, id: activeFile.id)
                     await MainActor.run {
-                        self.excalidrawFile = try? ExcalidrawFile(data: content, id: activeFile.id)
+                        guard self.activeFile?.id == activeFile.id else { return }
+                        self.excalidrawFile = parsedFile
                     }
                     
                 case .localFile(let url):
                     let data = try await FileSyncCoordinator.shared.openFile(url)
                     let file = try ExcalidrawFile(data: data, id: activeFile.id)
                     await MainActor.run {
+                        guard self.activeFile?.id == activeFile.id else { return }
                         self.excalidrawFile = file
                     }
 
@@ -262,6 +271,7 @@ struct ExcalidrawEditor: View {
                     let data = try await FileSyncCoordinator.shared.openFile(url)
                     let file = try ExcalidrawFile(data: data, id: activeFile.id)
                     await MainActor.run {
+                        guard self.activeFile?.id == activeFile.id else { return }
                         self.excalidrawFile = file
                     }
 
@@ -271,6 +281,7 @@ struct ExcalidrawEditor: View {
                     }
             }
         } catch {
+            fileState.excalidrawWebCoordinator?.documentSyncController.setTargetFileID(nil)
             alertToast(error)
             await MainActor.run {
                 self.excalidrawFile = nil
@@ -392,6 +403,8 @@ struct ExcalidrawEditor: View {
             return
         }
 
+        guard persistCanvasUpdate(file).shouldUpdateEditorState else { return }
+
         // Content changed, update tracking
         lastReceivedFileContent = currentContent
         lastEditTime = Date()
@@ -401,10 +414,70 @@ struct ExcalidrawEditor: View {
         cloudSyncTask?.cancel()
         cloudSyncTask = nil
 
-        // Apply local edits
-        localFileBinding.wrappedValue = file
-
         // Keep in-memory file in sync so exports read the latest elements.
         excalidrawFile = file
+    }
+
+    private func persistCanvasUpdate(_ file: ExcalidrawFile) -> CanvasUpdatePersistenceResult {
+        guard activeFile?.id == file.id else { return .rejected }
+
+        // Block updates while loading new file.
+        guard !isLoadingFile else {
+            logger.info("Blocked update during file loading")
+            return .rejected
+        }
+
+        switch activeFile {
+            case .file(let activeFile):
+                if let currentFile = excalidrawFile, file.elements == currentFile.elements {
+                    logger.info("no updates, ignored.")
+                    return .ignoredNoChanges
+                }
+                return fileState.updateFile(activeFile, with: file) ? .accepted : .rejected
+
+            case .localFile(let url):
+                guard case .localFolder(let folder) = fileState.currentActiveGroup else { return .rejected }
+                Task {
+                    try folder.withSecurityScopedURL { _ in
+                        do {
+                            let oldElements = try ExcalidrawFile(contentsOf: url).elements
+                            if file.elements == oldElements {
+                                logger.info("no updates, ignored.")
+                                return
+                            }
+                            try await fileState.updateLocalFile(
+                                to: url,
+                                with: file,
+                                context: viewContext
+                            )
+                        } catch {
+                            alertToast(error)
+                        }
+                    }
+                }
+                return .accepted
+
+            case .temporaryFile(let url):
+                Task {
+                    do {
+                        let oldElements = try ExcalidrawFile(contentsOf: url).elements
+                        if file.elements == oldElements {
+                            logger.info("no updates, ignored.")
+                            return
+                        }
+                        try await fileState.updateLocalFile(
+                            to: url,
+                            with: file,
+                            context: viewContext
+                        )
+                    } catch {
+                        alertToast(error)
+                    }
+                }
+                return .accepted
+
+            default:
+                return .rejected
+        }
     }
 }

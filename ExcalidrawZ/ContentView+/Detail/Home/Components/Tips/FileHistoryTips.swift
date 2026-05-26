@@ -11,8 +11,8 @@ import MarkdownUI
 
 extension HomeTipItemView {
     static let fileHistory = HomeTipItemView(
-        title: .localizable(.tipsFileHistoryOverviewTitle),
-        message: .localizable(.tipsFileHistoryOverviewDescription),
+        title: String(localizable: .tipsFileHistoryOverviewTitle),
+        message: String(localizable: .tipsFileHistoryOverviewDescription),
         icon: {
             if #available(macOS 15.0, iOS 18.0, *) {
                 .clockArrowTriangleheadCounterclockwiseRotate90

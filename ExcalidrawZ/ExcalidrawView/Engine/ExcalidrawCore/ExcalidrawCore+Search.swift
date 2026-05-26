@@ -48,8 +48,11 @@ extension ExcalidrawCore {
             highlightOnCanvas: highlightOnCanvas,
             caseSensitive: caseSensitive
         ).jsonStringified()
-        let script = "window.excalidrawZHelper.searchElements(\(queryJSON), \(optsJSON))"
-        let result = try await webView.evaluateJavaScript(script)
+        let result = try await webView.callAsyncJavaScript(
+            "return window.excalidrawZHelper.searchElements(\(queryJSON), \(optsJSON));",
+            arguments: [:],
+            contentWorld: .page
+        )
         guard let array = result as? [Any] else { return [] }
         let data = try JSONSerialization.data(withJSONObject: array)
         return try JSONDecoder().decode([SearchResult].self, from: data)
@@ -58,7 +61,11 @@ extension ExcalidrawCore {
     @MainActor
     func clearCanvasHighlights() async throws {
         guard !self.isLoading else { return }
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.clearCanvasHighlights(); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.clearCanvasHighlights();",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
 
     /// Pan + select the matched element (the JS side defaults the element to ~50% of viewport).
@@ -66,7 +73,11 @@ extension ExcalidrawCore {
     func focusSearchResult(elementId: String) async throws {
         guard !self.isLoading else { return }
         let elementIdJSON = try elementId.jsonStringified()
-        try await webView.evaluateJavaScript("window.excalidrawZHelper.focusSearchResult(\(elementIdJSON)); 0;")
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.focusSearchResult(\(elementIdJSON));",
+            arguments: [:],
+            contentWorld: .page
+        )
     }
 }
 

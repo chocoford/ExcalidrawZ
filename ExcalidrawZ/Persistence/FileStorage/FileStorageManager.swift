@@ -81,7 +81,9 @@ private actor FailureTracker {
         }
 
         let record = failures[fileID]!
-        logger.warning("File load failed [\(record.count)x]: \(fileID)")
+        if record.count == 1 || record.count == 3 || record.count.isMultiple(of: 10) {
+            logger.warning("File load failed [\(record.count)x]: \(fileID)")
+        }
         return record.count
     }
 
@@ -96,9 +98,7 @@ private actor FailureTracker {
 
     /// Reset failure record for a file (called after successful load)
     func reset(fileID: String) {
-        if failures.removeValue(forKey: fileID) != nil {
-            logger.info("Reset failure record for: \(fileID)")
-        }
+        failures.removeValue(forKey: fileID)
     }
 }
 
@@ -164,7 +164,6 @@ actor FileStorageManager {
         // Get initial file count
         Task {
             lastKnownFileCount = await getCurrentFileCount()
-            logger.info("Initial File count: \(lastKnownFileCount)")
         }
 
         // Listen for remote changes from CloudKit
@@ -178,14 +177,11 @@ actor FileStorageManager {
                 await handleRemoteChange(notification)
             }
         }
-        logger.info("Started listening for CoreData remote changes")
     }
 
     /// Handle remote change notification
     /// Debounced to avoid excessive DiffScans
     private func handleRemoteChange(_ notification: Notification) async {
-        logger.debug("Received remote change notification")
-
         // Debounce: cancel previous task
         diffScanDebounceTask?.cancel()
 
@@ -194,7 +190,6 @@ actor FileStorageManager {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
 
             guard !Task.isCancelled else {
-                logger.debug("DiffScan debounce task cancelled")
                 return
             }
 
@@ -210,8 +205,6 @@ actor FileStorageManager {
                 } catch {
                     logger.error("DiffScan failed after remote change: \(error.localizedDescription)")
                 }
-            } else {
-                logger.debug("Remote change detected but File count unchanged (\(currentCount)), skipping DiffScan")
             }
         }
     }
@@ -253,8 +246,6 @@ actor FileStorageManager {
             Task {
                 await syncCoordinator?.queueUpload(fileID: fileID, relativePath: saveResult.relativePath)
             }
-        } else {
-            logger.debug("Content unchanged, skipping iCloud sync queue for: \(fileID)")
         }
 
         return saveResult.relativePath
@@ -331,6 +322,26 @@ actor FileStorageManager {
     /// - Returns: File metadata (size and modification date)
     func getFileMetadata(relativePath: String) async throws -> FileMetadata {
         return try await localManager.getFileMetadata(relativePath: relativePath)
+    }
+
+    /// Resolve a relative path to its absolute file URL in local storage.
+    /// Useful for callers (e.g. AI chat attachment repository) that want to
+    /// hand a `URL` to UI layers (`AsyncImage`, `Image(contentsOf:)`)
+    /// without first reading the file's bytes through `loadContent`. The
+    /// URL is returned regardless of whether the file currently exists —
+    /// iCloud sync may populate it later, and SwiftUI image views will
+    /// automatically retry once the file lands.
+    func getFileURL(relativePath: String) async throws -> URL {
+        return try await localManager.getFileURL(relativePath: relativePath)
+    }
+
+    /// The absolute root of the managed local-storage tree. Exposed for
+    /// callers that need to enumerate files outside the per-relative-path
+    /// API (e.g. the AI chat attachment GC sweep, which walks an entire
+    /// subdirectory looking for orphans). Returns nil if Application
+    /// Support couldn't be located.
+    func getStorageURL() async -> URL? {
+        return await localManager.getStorageURL()
     }
     
     // MARK: - Media Item Operations (Public API)
@@ -456,7 +467,6 @@ actor FileStorageManager {
     /// - Returns: True if iCloud has a newer version
     func checkForICloudUpdate(relativePath: String, fileID: String) async throws -> Bool {
         guard let syncCoordinator = syncCoordinator else {
-            logger.warning("checkForICloudUpdate called before sync enabled, returning false")
             return false
         }
         return try await syncCoordinator.checkForICloudUpdate(relativePath: relativePath)

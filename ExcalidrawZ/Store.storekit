@@ -106,56 +106,53 @@
     }
   ],
   "settings" : {
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_disableDialogs" : false,
     "_failTransactionsEnabled" : false,
     "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
     "_storefront" : "USA",
     "_storeKitErrors" : [
       {
-        "current" : null,
         "enabled" : false,
         "name" : "Load Products"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "Purchase"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "Verification"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "App Store Sync"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "Subscription Status"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "App Transaction"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "Manage Subscriptions Sheet"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "Refund Request Sheet"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "Offer Code Redeem Sheet"
       }
-    ]
+    ],
+    "_timeRate" : 0
   },
   "subscriptionGroups" : [
     {
@@ -176,7 +173,9 @@
           "familyShareable" : false,
           "groupNumber" : 2,
           "internalID" : "3C6D700D",
-          "introductoryOffer" : null,
+          "introductoryOffers" : [
+
+          ],
           "localizations" : [
             {
               "description" : "",
@@ -204,7 +203,9 @@
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "A760CDB1",
-          "introductoryOffer" : null,
+          "introductoryOffers" : [
+
+          ],
           "localizations" : [
             {
               "description" : "",
@@ -237,15 +238,77 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "0.99",
+          "displayPrice" : "9.99",
           "familyShareable" : false,
-          "groupNumber" : 2,
-          "internalID" : "CD6E119A",
-          "introductoryOffer" : null,
+          "groupNumber" : 3,
+          "internalID" : "35A4E550",
+          "introductoryOffers" : [
+
+          ],
           "localizations" : [
             {
-              "description" : "Unlock essential premium features ideal for regular collaborators at a minimal price. Helping cover the operational costs.",
-              "displayName" : "Starter",
+              "description" : "Experience limitless collaboration and advanced features. Designed for professionals and teams with extensive collaborative needs.",
+              "displayName" : "Pro",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plan.pro",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pro",
+          "subscriptionGroupID" : "914DA4EE",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "29.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "F6385868",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "",
+              "displayName" : "",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plan.max_3x",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Max 3x",
+          "subscriptionGroupID" : "914DA4EE",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "2.99",
+          "familyShareable" : false,
+          "groupNumber" : 4,
+          "internalID" : "CCFD0062",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "",
+              "displayName" : "",
               "locale" : "en_US"
             }
           ],
@@ -265,21 +328,143 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "2.99",
+          "displayPrice" : "99.99",
           "familyShareable" : false,
-          "groupNumber" : 1,
-          "internalID" : "35A4E550",
-          "introductoryOffer" : null,
+          "groupNumber" : 3,
+          "internalID" : "F69ABEEE",
+          "introductoryOffers" : [
+
+          ],
           "localizations" : [
             {
-              "description" : "Experience limitless collaboration and advanced features. Designed for professionals and teams with extensive collaborative needs.",
-              "displayName" : "Pro",
+              "description" : "",
+              "displayName" : "",
               "locale" : "en_US"
             }
           ],
-          "productID" : "plan.pro",
+          "productID" : "plan.pro_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Pro Yearly",
+          "subscriptionGroupID" : "914DA4EE",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "299.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "D3A7E51B",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "",
+              "displayName" : "",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plan.max_3x_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Max 3x Yearly",
+          "subscriptionGroupID" : "914DA4EE",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "99.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6D6C1241",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "",
+              "displayName" : "",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plan.max_10x",
           "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Pro",
+          "referenceName" : "Max 10x",
+          "subscriptionGroupID" : "914DA4EE",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "999.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "A1313708",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "",
+              "displayName" : "",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plan.max_10x_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Max 10x Yearly",
+          "subscriptionGroupID" : "914DA4EE",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "29.99",
+          "familyShareable" : false,
+          "groupNumber" : 4,
+          "internalID" : "148B5731",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "",
+              "displayName" : "",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plan.starter_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Starter Yearly",
           "subscriptionGroupID" : "914DA4EE",
           "type" : "RecurringSubscription",
           "winbackOffers" : [
@@ -290,7 +475,7 @@
     }
   ],
   "version" : {
-    "major" : 4,
+    "major" : 5,
     "minor" : 0
   }
 }

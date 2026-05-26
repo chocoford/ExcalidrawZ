@@ -31,7 +31,8 @@ struct CompactSearchFilesView: View {
                         LazyVGrid(columns: columns, spacing: 16) {
                             ForEach(files) { file in
                                 FileHomeItemView(
-                                    file: file
+                                    file: file,
+                                    selectionSiblings: files
                                 )
                             }
                         }

@@ -29,7 +29,7 @@ struct TestView: View {
             8.0,
         ]
     }
-        
+    
     @State private var scrollPosition: ScrollPosition = .init(idType: Int.self)
     var currentIndex: Int {
         scrollPosition.viewID(type: Int.self) ?? -1
@@ -58,7 +58,7 @@ struct TestView: View {
             .contentMargins(.horizontal, 30, for: .scrollContent)
             .scrollClipDisabled()
             .scrollTargetBehavior(.viewAligned)
-         
+            
             Text(currentIndex.formatted())
         }
     }

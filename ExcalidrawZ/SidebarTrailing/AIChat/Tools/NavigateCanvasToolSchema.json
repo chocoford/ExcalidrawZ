@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string",
+      "description": "One of: get_camera, set_camera, scroll_to_center, scroll_to_element, zoom_to_fit, zoom_to_fit_elements, zoom_to.",
+      "enum": [
+        "get_camera",
+        "set_camera",
+        "scroll_to_center",
+        "scroll_to_element",
+        "zoom_to_fit",
+        "zoom_to_fit_elements",
+        "zoom_to"
+      ]
+    },
+    "elementId": {
+      "type": "string",
+      "description": "Target element ID for scroll_to_element."
+    },
+    "elementIds": {
+      "type": "array",
+      "description": "Target element IDs for zoom_to_fit_elements.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "camera": {
+      "type": "object",
+      "description": "Camera patch for set_camera."
+    },
+    "zoom": {
+      "type": "number",
+      "description": "Target zoom scale for zoom_to."
+    },
+    "options": {
+      "type": "object",
+      "description": "Animation and fitting options for navigation actions."
+    }
+  },
+  "required": [
+    "action"
+  ]
+}

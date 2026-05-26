@@ -21,6 +21,7 @@ final class FileState: ObservableObject {
     
     var currentGroupPublisherCancellables: [AnyCancellable] = []
     var currentFilePublisherCancellables: [AnyCancellable] = []
+    private var isRestoringActiveGroupAfterBlockedSwitch = false
     
     enum ActiveGroup: Identifiable, Equatable {
         case group(Group)
@@ -44,20 +45,10 @@ final class FileState: ObservableObject {
     
     @Published var currentActiveGroup: ActiveGroup? {
         didSet {
-            currentGroupPublisherCancellables.forEach {$0.cancel()}
-            guard let currentActiveGroup else { return }
-            if case .group(let group) = currentActiveGroup {
-                currentGroupPublisherCancellables = [
-                    group.publisher(for: \.name).sink { [weak self] _ in
-                        DispatchQueue.main.async {
-                            self?.objectWillChange.send()
-                        }
-                    }
-                ]
+            if shouldRestoreActiveGroupAfterBlockedSwitch(from: oldValue) {
+                return
             }
-            DispatchQueue.main.async {
-                self.resetSelections()
-            }
+            resetCurrentGroupChangesListener()
         }
     }
     
@@ -79,6 +70,27 @@ final class FileState: ObservableObject {
                 case .collaborationFile(let collaborationFile):
                     // collaborationFile.objectID.description
                     collaborationFile.id?.uuidString ?? UUID().uuidString
+            }
+        }
+
+        var aiConversationFileScope: AIConversationFileScope {
+            switch self {
+                case .file(let file):
+                    AIConversationFileScope(
+                        kind: .libraryFile,
+                        id: file.id?.uuidString ?? file.objectID.uriRepresentation().absoluteString
+                    )
+                case .localFile(let url):
+                    AIConversationFileScope(kind: .localFile, id: url.absoluteString)
+                case .temporaryFile(let url):
+                    AIConversationFileScope(kind: .temporaryFile, id: url.absoluteString)
+                case .collaborationFile(let file):
+                    AIConversationFileScope(
+                        kind: .collaborationFile,
+                        id: file.id?.uuidString
+                            ?? file.roomID
+                            ?? file.objectID.uriRepresentation().absoluteString
+                    )
             }
         }
         
@@ -109,6 +121,15 @@ final class FileState: ObservableObject {
                     (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? nil
                 case .collaborationFile(let file):
                     file.updatedAt
+            }
+        }
+
+        var isInTrash: Bool {
+            switch self {
+                case .file(let file):
+                    file.inTrash
+                case .localFile, .temporaryFile, .collaborationFile:
+                    false
             }
         }
         
@@ -150,6 +171,13 @@ final class FileState: ObservableObject {
         }
         
         set {
+            let previousConversationScope = currentActiveFile?.aiConversationFileScope
+            let nextConversationScope = newValue?.aiConversationFileScope
+            if previousConversationScope != nextConversationScope {
+                aiChatConversationID = nil
+                isAIChatConversationLoading = nextConversationScope != nil
+            }
+
             if let currentActiveFileID = self.currentActiveFile?.id {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     NotificationCenter.default.post(
@@ -179,7 +207,12 @@ final class FileState: ObservableObject {
             if let newValue {
                 didUpdateFileState[newValue] = false
             }
+            resetCurrentFileChangesListener()
         }
+    }
+
+    var currentActiveFileIsInTrash: Bool {
+        currentActiveFile?.isInTrash == true
     }
     
     /// Set active file with automatic iCloud download handling
@@ -194,6 +227,12 @@ final class FileState: ObservableObject {
     /// - Throws: FileAccessError if download fails
     @MainActor
     func setActiveFile(_ file: ActiveFile?) {
+        if aiChatSession != nil, currentActiveFile != file {
+            activeFileSwitchBlockedReason = .aiGenerationInProgress
+            activeFileSwitchBlockedToken += 1
+            return
+        }
+
         guard let file else {
             self.currentActiveFile = nil
             return
@@ -301,6 +340,65 @@ final class FileState: ObservableObject {
         return false
     }
     
+    // MARK: - AI Chat
+
+    enum ActiveFileSwitchBlockedReason: Equatable {
+        case aiGenerationInProgress
+    }
+
+    @Published var activeFileSwitchBlockedReason: ActiveFileSwitchBlockedReason?
+    @Published var activeFileSwitchBlockedToken: Int = 0
+
+    /// The currently active AI chat conversation id.
+    ///
+    /// Stored on `FileState` because conversations are conceptually scoped to
+    /// the file the user is working on — each file will eventually own a set
+    /// of persisted conversations (Core Data), with this property pointing at
+    /// the one currently visible. For now we only track a single in-memory id;
+    /// the AIChatView/AIChatIslandView read and write through here so the
+    /// inspector and the floating island stay in sync across presentation
+    /// toggles.
+    @Published var aiChatConversationID: String? = nil
+    @Published var isAIChatConversationLoading: Bool = false
+
+    /// Active AI chat session, if any. While this is non-nil:
+    ///
+    /// 1. `updateFile` / `updateLocalFile` switch to checkpoint policy
+    ///    `.suppress` — content saves, no history rows created. The user
+    ///    explicitly asked for "一刀切" — no per-edit history during AI
+    ///    runs (whether the edit was user-driven or AI-tool-driven).
+    /// 2. `beginAIChatSession` records an `.aiPre` snapshot before the
+    ///    user message hits the LLM and links it to that message through
+    ///    `AIMessageCheckpointLink`. `endAIChatSession(success: true, ...)`
+    ///    records the matching `.aiPost` snapshot and links it to the
+    ///    assistant final-answer id.
+    ///
+    /// One session per (FileState, conversationID) — each user message
+    /// inside the same conversation re-enters begin/end with a fresh
+    /// (pre, post) pair anchored to that message round.
+    @Published var aiChatSession: AIChatSessionState?
+
+    struct AIChatSessionState: Equatable {
+        /// Conversation id this session belongs to. Surfaced for sanity
+        /// checks (the conversation could in theory change mid-session
+        /// if the user navigates between files).
+        let conversationID: String
+        /// User chat message id that triggered the session.
+        let userMessageID: String
+        /// `ActiveFile` snapshot at session begin. Optional because the
+        /// user can fire off an AI message with no file open (e.g. asking
+        /// the AI to *create* a new file). When `nil`, no `.aiPre` row
+        /// gets written — there's nothing to snapshot. We still open the
+        /// session so the suppression flag prevents stray history while
+        /// the AI runs.
+        let anchorFile: ActiveFile?
+        /// Exact `.aiPre` checkpoint created for this session, if any.
+        /// Used to delete only this eager checkpoint when a read-only
+        /// round can safely rebind to an earlier checkpoint.
+        var preCheckpointID: UUID? = nil
+        var preCheckpointKind: AIMessageCheckpointKind? = nil
+    }
+
     /// Files that is currently under collaboration.
     @Published var collaboratingFiles: [CollaborationFile] = []
     @Published var collaboratingFilesState: [CollaborationFile : ExcalidrawCanvasView.LoadingState] = [:]
@@ -432,9 +530,18 @@ final class FileState: ObservableObject {
         }
     }
     
-    func updateFile(_ file: File, with excalidrawFile: ExcalidrawFile) {
-        guard !shouldIgnoreUpdate, !file.inTrash else { return }
-        let didUpdateFile = didUpdateFileState[.file(file)] ?? false
+    @discardableResult
+    func updateFile(_ file: File, with excalidrawFile: ExcalidrawFile) -> Bool {
+        // DIAG: third checkpoint in the update chain — confirms what flags
+        // are in play when a Swift-side save would be issued, and whether
+        // `shouldIgnoreUpdate` / `inTrash` are silently dropping updates.
+        let didUpdateFlag = didUpdateFileState[.file(file)] ?? false
+        print("[aiDiag] updateFile elements=\(excalidrawFile.elements.count) shouldIgnore=\(shouldIgnoreUpdate) aiSession=\(aiChatSession != nil) didUpdateFile=\(didUpdateFlag) inTrash=\(file.inTrash)")
+        guard !shouldIgnoreUpdate, !file.inTrash else {
+            print("[aiDiag] updateFile → DROPPED by guard")
+            return false
+        }
+        let didUpdateFile = didUpdateFlag
         let id = file.objectID
         self.didUpdateFileState[.file(file)] = true
         Task.detached {
@@ -447,11 +554,20 @@ final class FileState: ObservableObject {
                     fileObjectID: id
                 )
                 
-                // Step 2: Update file elements through repository
+                // Step 2: Update file elements through repository.
+                // Checkpoint policy: suppress entirely while an AI chat
+                // session is active (so AI-driven mutations don't pollute
+                // user history); otherwise fall back to historical
+                // user-edit semantics.
+                let checkpointPolicy: CheckpointWriteOptions = await MainActor.run {
+                    self.aiChatSession != nil
+                        ? .suppress
+                        : .userEdit(newCheckpoint: !didUpdateFile)
+                }
                 try await PersistenceController.shared.fileRepository.updateElements(
                     fileObjectID: id,
                     fileData: content,
-                    newCheckpoint: !didUpdateFile
+                    checkpoint: checkpointPolicy
                 )
                 self.logger.info("updateFile done...")
                 await MainActor.run {
@@ -462,6 +578,7 @@ final class FileState: ObservableObject {
                 print(error)
             }
         }
+        return true
     }
     
     @discardableResult
@@ -504,30 +621,54 @@ final class FileState: ObservableObject {
         // Use FileCoordinator for safe atomic write
         guard let data = excalidrawFile.content else { return }
         try await FileCoordinator.shared.coordinatedWrite(url: url, data: data)
+
+        // Skip checkpoint writes entirely while an AI chat session is
+        // active — file content still saves, history doesn't. Mirrors the
+        // database-file path's `.suppress` policy.
+        let suppressCheckpoint = await MainActor.run { self.aiChatSession != nil }
+        if suppressCheckpoint {
+            await MainActor.run { self.didUpdateFile = true }
+            return
+        }
+
         try await context.perform {
+            // Match user-source rows or legacy (nil source) — AI-tagged
+            // rows are immutable snapshots.
             let fetchRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
-            fetchRequest.predicate = NSPredicate(format: "url = %@", url as NSURL)
+            fetchRequest.predicate = NSPredicate(
+                format: "url = %@ AND (source == nil OR source == %@)",
+                url as NSURL,
+                FileCheckpointSource.user.rawValue
+            )
             fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \LocalFileCheckpoint.updatedAt, ascending: false)]
             let localFileCheckpoints = try context.fetch(fetchRequest)
-            
+
             if didUpdateFile, let firstCheckpoint = localFileCheckpoints.first {
                 firstCheckpoint.updatedAt = Date()
                 firstCheckpoint.content = excalidrawFile.content
+                // Backfill on legacy rows so future predicates needn't OR-nil.
+                if firstCheckpoint.source == nil {
+                    firstCheckpoint.source = FileCheckpointSource.user.rawValue
+                }
             } else {
                 let localFileCheckpoint = LocalFileCheckpoint(context: context)
+                localFileCheckpoint.id = UUID()
                 localFileCheckpoint.url = url
                 localFileCheckpoint.updatedAt = Date()
                 localFileCheckpoint.content = excalidrawFile.content
-                
+                localFileCheckpoint.source = FileCheckpointSource.user.rawValue
+
                 context.insert(localFileCheckpoint)
-                
+
+                // Cap retention at 50 *user* rows — AI rows live outside
+                // this budget so a long AI conversation doesn't push out
+                // a user's normal edit history.
                 if localFileCheckpoints.count > 50, let last = localFileCheckpoints.last {
                     context.delete(last)
                 }
             }
-            
         }
-        
+
         await MainActor.run {
             self.didUpdateFile = true
         }
@@ -1041,6 +1182,40 @@ final class FileState: ObservableObject {
         }
     }
     
+    /// Restores the previous group/space while an AI round is active.
+    /// File switching is already blocked in `setActiveFile`; this catches
+    /// direct space changes such as Home, Collaboration, temporary, and
+    /// local-folder navigation.
+    private func shouldRestoreActiveGroupAfterBlockedSwitch(from oldValue: ActiveGroup?) -> Bool {
+        guard !isRestoringActiveGroupAfterBlockedSwitch else { return false }
+        guard aiChatSession != nil else { return false }
+        guard oldValue != currentActiveGroup else { return false }
+
+        activeFileSwitchBlockedReason = .aiGenerationInProgress
+        activeFileSwitchBlockedToken += 1
+        isRestoringActiveGroupAfterBlockedSwitch = true
+        currentActiveGroup = oldValue
+        isRestoringActiveGroupAfterBlockedSwitch = false
+        return true
+    }
+
+    private func resetCurrentGroupChangesListener() {
+        currentGroupPublisherCancellables.forEach {$0.cancel()}
+        currentGroupPublisherCancellables = []
+        if case .group(let group) = currentActiveGroup {
+            currentGroupPublisherCancellables = [
+                group.publisher(for: \.name).sink { [weak self] _ in
+                    DispatchQueue.main.async {
+                        self?.objectWillChange.send()
+                    }
+                }
+            ]
+        }
+        DispatchQueue.main.async {
+            self.resetSelections()
+        }
+    }
+
     /// Reset the current file changes listener.
     /// Everytime the current file changes, the listeners will send a `objectWillChange` event.
     private func resetCurrentFileChangesListener() {
@@ -1054,6 +1229,11 @@ final class FileState: ObservableObject {
                     }
                 },
                 currentFile.publisher(for: \.updatedAt).sink { [weak self] _ in
+                    DispatchQueue.main.async {
+                        self?.objectWillChange.send()
+                    }
+                },
+                currentFile.publisher(for: \.inTrash).sink { [weak self] _ in
                     DispatchQueue.main.async {
                         self?.objectWillChange.send()
                     }

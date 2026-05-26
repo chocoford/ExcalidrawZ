@@ -106,7 +106,10 @@ struct ExcalidrawCanvasView: View {
             .onReceive(
                 NotificationCenter.default.publisher(for: .forceReloadExcalidrawFile)
             ) { _ in
-                Task { await excalidrawCore.loadFile(from: file, force: true) }
+                let targetFile = file
+                Task {
+                    _ = await excalidrawCore.documentSyncController.load(targetFile, force: true)
+                }
             }
             .onReceive(
                 NotificationCenter.default.publisher(for: .captureCurrentDrawingSettings)
@@ -245,22 +248,37 @@ struct ExcalidrawCanvasView: View {
     // MARK: - Event Handlers
     
     private func handleFileChange(_ newFile: ExcalidrawFile?) {
-        guard !excalidrawCore.webView.isLoading else { return }
-
         if type == .collaboration {
             if newFile?.roomID?.isEmpty == false {
                 // has roomID
             }
-        } else if let newFile {
-            // Switching files within the same WebView session doesn't toggle the
-            // WebView-level `isLoading`, so the sync hooked to that signal won't
-            // fire. Now that `loadFile` properly awaits Excalidraw's scene
-            // application, we can chain the re-sync directly.
-            Task {
-                await excalidrawCore.loadFile(from: newFile)
-                if type == .normal {
-                    await syncCanvasPrefsFromWeb()
-                    await MainActor.run { syncCanvasDrawingSettingsFromFile() }
+            return
+        }
+
+        guard let newFile else {
+            excalidrawCore.documentSyncController.resetFileLoadState()
+            return
+        }
+
+        // Only reload the scene when switching to a different file.
+        //
+        // Commit the loaded file id only after the JS side reports that this file
+        // is loaded. If the first open races WebView readiness, keeping this nil
+        // lets the ready callback or the retry loop re-attempt the load.
+        // Switching files within the same WebView session doesn't toggle the
+        // WebView-level `isLoading`, so the sync hooked to that signal won't
+        // fire. Now that `loadFile` properly awaits Excalidraw's scene
+        // application, we can chain the re-sync directly.
+        Task {
+            let outcome = await excalidrawCore.documentSyncController.load(newFile)
+            if outcome.didLoad, type == .normal {
+                let isStillCurrent = await MainActor.run {
+                    file?.id == newFile.id
+                }
+                guard isStillCurrent else { return }
+                await syncCanvasPrefsFromWeb()
+                await MainActor.run {
+                    syncCanvasDrawingSettingsFromFile()
                 }
             }
         }
@@ -327,5 +345,3 @@ struct ExcalidrawCanvasView: View {
         }
     }
 }
-
-

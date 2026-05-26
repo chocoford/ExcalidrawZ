@@ -184,8 +184,6 @@ actor SyncCoordinator {
     
     /// Handle iCloud status changes
     private func handleICloudStatusChange(_ status: ICloudAvailabilityStatus) async {
-        logger.info("iCloud status changed: \(String(describing: status))")
-        
         let wasAvailable = lastKnownICloudAvailability ?? false
         let isNowAvailable = status.isAvailable
         
@@ -221,7 +219,9 @@ actor SyncCoordinator {
         
         isSyncing = true
         
-        logger.info("Processing \(initialCount) queued sync operations")
+        if initialCount > 1 {
+            logger.info("Processing \(initialCount) queued sync operations")
+        }
         
         var processedCount = 0
         var failedCount = 0
@@ -233,7 +233,6 @@ actor SyncCoordinator {
         // This allows high-priority tasks added during processing to be processed immediately
         while let event = await syncQueue.dequeueFirst() {
             processedCount += 1
-            logger.info("Processing operation \(processedCount): \(event.operation) for \(event.relativePath)")
             
             // Mark as syncing
             let syncOp: FileSyncStatus.QueuedOperation = switch event.operation {
@@ -273,7 +272,9 @@ actor SyncCoordinator {
             }
         }
         
-        logger.info("Completed processing: \(processedCount) total, \(failedCount) failed and re-queued")
+        if initialCount > 1 || failedCount > 0 {
+            logger.info("Completed processing: \(processedCount) total, \(failedCount) failed and re-queued")
+        }
         
         // Release the lock before checking for more work
         isSyncing = false
@@ -357,14 +358,12 @@ actor SyncCoordinator {
         }
         
         // Save to local storage
-        let saveResult = try await localManager.saveContent(
+        _ = try await localManager.saveContent(
             iCloudData,
             fileID: event.fileID,
             type: contentType,
             updatedAt: iCloudModifiedAt
         )
-        
-        logger.info("Downloaded from iCloud: \(saveResult)")
     }
     
     // MARK: - DiffScan
@@ -390,16 +389,13 @@ actor SyncCoordinator {
         
         // Step 1: Get all files that should exist from CoreData
         let expectedFiles = await fileEnumerator.enumerateExpectedFiles()
-        logger.info("Expected \(expectedFiles.count) files from CoreData")
         
         // Step 2: Enumerate actual files in local and iCloud
         let localFiles = try await fileEnumerator.enumerateLocalFiles()
-        logger.info("Found \(localFiles.count) local files")
         
         var iCloudFiles: [SyncFileState] = []
         if status.isAvailable {
             iCloudFiles = try await fileEnumerator.enumerateICloudFiles()
-            logger.info("Found \(iCloudFiles.count) iCloud files")
         } else {
             logger.warning("iCloud unavailable, skipping cloud comparison")
         }
@@ -431,7 +427,6 @@ actor SyncCoordinator {
 
                         if timeDifference < -tolerance {
                             // Cloud is newer, download it
-                            logger.info("Cloud file not downloaded but newer: \(compositeKey), local<\(local.modifiedAt)> cloud<\(cloud.modifiedAt)>, downloading")
                             syncOperations.append(SyncEvent(
                                 fileID: cloud.fileID,
                                 relativePath: cloud.relativePath,
@@ -441,7 +436,6 @@ actor SyncCoordinator {
                             ))
                         } else if timeDifference > tolerance {
                             // Local is newer, upload to ensure cloud has latest
-                            logger.info("Cloud file not downloaded and older: \(compositeKey), local<\(local.modifiedAt)> cloud<\(cloud.modifiedAt)>, uploading")
                             syncOperations.append(SyncEvent(
                                 fileID: local.fileID,
                                 relativePath: local.relativePath,
@@ -449,9 +443,6 @@ actor SyncCoordinator {
                                 timestamp: Date(),
                                 priority: .normal  // DiffScan: background priority
                             ))
-                        } else {
-                            // Within tolerance, in sync - skip download
-                            logger.debug("Cloud file not downloaded but in sync: \(compositeKey), skipping")
                         }
                         continue
                     }
@@ -461,7 +452,6 @@ actor SyncCoordinator {
                     let timeDifference = local.modifiedAt.timeIntervalSince(cloud.modifiedAt)
                     
                     if timeDifference > tolerance {
-                        logger.info("Local newer: \(compositeKey), local<\(local.modifiedAt)> cloud<\(cloud.modifiedAt)>")
                         syncOperations.append(SyncEvent(
                             fileID: local.fileID,
                             relativePath: local.relativePath,
@@ -470,7 +460,6 @@ actor SyncCoordinator {
                             priority: .normal  // DiffScan: background priority
                         ))
                     } else if timeDifference < -tolerance {
-                        logger.info("Cloud newer: \(compositeKey), local<\(local.modifiedAt)> cloud<\(cloud.modifiedAt)>")
                         syncOperations.append(SyncEvent(
                             fileID: cloud.fileID,
                             relativePath: cloud.relativePath,
@@ -484,7 +473,6 @@ actor SyncCoordinator {
                 case (let local?, nil):
                     // File exists locally but not in iCloud
                     if status.isAvailable {
-                        logger.info("Local only: \(local.relativePath), uploading to cloud")
                         syncOperations.append(SyncEvent(
                             fileID: local.fileID,
                             relativePath: local.relativePath,
@@ -496,7 +484,6 @@ actor SyncCoordinator {
                     
                 case (nil, let cloud?):
                     // File exists in iCloud but not locally
-                    logger.info("Cloud only: \(cloud.relativePath), downloading from cloud")
                     syncOperations.append(SyncEvent(
                         fileID: cloud.fileID,
                         relativePath: cloud.relativePath,
@@ -537,7 +524,7 @@ actor SyncCoordinator {
         // Step 5: Schedule orphan cleanup (delayed to avoid first-sync data loss)
         scheduleOrphanCleanup()
         
-        logger.info("DiffScan complete: found \(syncOperations.count) sync operations")
+        logger.info("DiffScan complete: expected=\(expectedFiles.count), local=\(localFiles.count), iCloud=\(iCloudFiles.count), operations=\(syncOperations.count)")
 
         // Queue all sync operations without auto-processing
         for operation in syncOperations {
@@ -563,7 +550,6 @@ actor SyncCoordinator {
 
         let status = await iCloudManager.checkICloudAvailability()
         guard status.isAvailable else {
-            logger.info("Skipping orphan cleanup: iCloud unavailable, rescheduling")
             scheduleOrphanCleanup()
             return
         }
@@ -686,11 +672,7 @@ actor SyncCoordinator {
         let timeDifference = iCloudModifiedAt.timeIntervalSince(localModifiedAt)
         let tolerance: TimeInterval = 2.0  // 2 seconds tolerance for filesystem precision
         let hasNewerVersion = timeDifference > tolerance
-        
-        if hasNewerVersion {
-            logger.info("iCloud has newer version: \(relativePath), local: \(localModifiedAt), iCloud: \(iCloudModifiedAt), diff: \(String(format: "%.2f", timeDifference))s")
-        }
-        
+
         return hasNewerVersion
     }
     
@@ -698,8 +680,6 @@ actor SyncCoordinator {
     func loadContentWithSync(relativePath: String, fileID: String) async throws -> Data {
         // Check if iCloud has newer version
         if try await checkForICloudUpdate(relativePath: relativePath) {
-            logger.info("iCloud has newer version, downloading: \(relativePath)")
-            
             // Download from iCloud
             let downloadEvent = SyncEvent(
                 fileID: fileID,
