@@ -35,6 +35,8 @@ struct ReadFileTool: Tool {
     }
     
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
+        try AIChatToolExecutionGate.ensureAIEnabled()
+
         let params = try parseInput(input)
         guard let context else { throw ToolError.executionFailed("Missing ReadFileContext") }
         let readFileContext = try context.resolve(ReadFileContext.self)

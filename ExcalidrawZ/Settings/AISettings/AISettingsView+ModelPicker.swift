@@ -16,6 +16,11 @@ extension AISettingsView {
     /// model rotation does not rewrite the user's preferred capability tier.
     @MainActor @ViewBuilder
     var defaultModelPicker: some View {
+        Toggle(isOn: aiEnabledBinding) {
+            Text(localizable: .settingsAIEnableFeatureTitle)
+        }
+        .help(.localizable(.settingsAIEnableFeatureHelp))
+
         let visibleModels = availableModels.filter { canShowModelInPicker($0) }
         let selectableModels = visibleModels.filter { canSelectModel($0) }
         let visibleTiers = ExcalidrawModelTier.pickerOrder.filter { tier in
@@ -51,6 +56,7 @@ extension AISettingsView {
             }
         }
         .help(.localizable(.settingsAIDefaultModelHelp))
+        .disabled(!prefs.isAIEnabled)
     }
 
     @MainActor
@@ -94,12 +100,15 @@ extension AISettingsView {
     }
 
     func loadAvailableModelsIfNeeded() async {
+        guard AIChatAvailability.canUseAI else { return }
         guard availableModels.isEmpty else { return }
         do {
+            guard AIChatAvailability.canUseAI else { throw CancellationError() }
             let config = try await LLMClient.shared.getDomainAgentConfig(agentID: agentID)
             await MainActor.run {
                 self.availableModels = config.allowedModels
             }
+        } catch is CancellationError {
         } catch {
             // Silently keep the picker showing just the current selection.
             // The user can still change it later when network recovers.

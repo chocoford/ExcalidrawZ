@@ -68,6 +68,8 @@ struct ListLibraryItemsTool: Tool {
     var approvalRequirement: ApprovalRequirement { .always }
 
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
+        try AIChatToolExecutionGate.ensureAIEnabled()
+
         let params = try parseInput(input)
 
         let ctx = PersistenceController.shared.newTaskContext()

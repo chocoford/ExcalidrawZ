@@ -26,6 +26,16 @@ actor LLMCreditsRefreshCoordinator {
     private var isSyncingSubscription = false
 
     func refreshCredits(reason: Reason, force: Bool = false) async {
+        guard AIChatAvailability.isAvailable else {
+            logger.debug("[Credits] refresh skipped reason=\(reason.rawValue) aiAvailable=false")
+            return
+        }
+
+        guard UserDefaults.standard.object(forKey: AIChatPreferences.isAIEnabledDefaultsKey) as? Bool ?? false else {
+            logger.debug("[Credits] refresh skipped reason=\(reason.rawValue) aiDisabled=true")
+            return
+        }
+
         let now = Date()
         if !force {
             let elapsed = now.timeIntervalSince(lastCreditsRefreshAt)
@@ -54,6 +64,16 @@ actor LLMCreditsRefreshCoordinator {
 
 #if APP_STORE
     func syncSubscriptionState(reason: Reason, force: Bool = false) async {
+        guard AIChatAvailability.isAvailable else {
+            logger.debug("[Credits] subscription sync skipped reason=\(reason.rawValue) aiAvailable=false")
+            return
+        }
+
+        guard UserDefaults.standard.object(forKey: AIChatPreferences.isAIEnabledDefaultsKey) as? Bool ?? false else {
+            logger.debug("[Credits] subscription sync skipped reason=\(reason.rawValue) aiDisabled=true")
+            return
+        }
+
         let now = Date()
         if !force {
             let elapsed = now.timeIntervalSince(lastSubscriptionSyncAt)

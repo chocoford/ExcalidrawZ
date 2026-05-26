@@ -39,6 +39,7 @@ extension PromptInputView {
         prompt trimmedText: String,
         pastedImages: [PendingPastedImage]
     ) -> Bool {
+        guard AIChatAvailability.canUseAI else { return false }
         let files = PastedImageHelpers.buildFiles(from: pastedImages)
         guard !trimmedText.isEmpty || !files.isEmpty else { return false }
         let model = modelForSend(files: files)
@@ -158,6 +159,7 @@ extension PromptInputView {
     /// Task in `currentTask` so the stop button can cancel it; on completion
     /// (success or failure) it clears the slot and drains the queue.
     func startSend(prompt: String, files: [ChatMessageContent.File] = []) {
+        guard AIChatAvailability.canUseAI else { return }
         let newConversationID = UUID().uuidString
         let conversationIDForSession: String = self.conversationID ?? newConversationID
         aiChatState.clearGenerationCancellation(for: conversationIDForSession)
@@ -182,6 +184,7 @@ extension PromptInputView {
             var attemptedModel: SupportedModel?
 
             do {
+                guard AIChatAvailability.canUseAI else { throw CancellationError() }
                 await MainActor.run {
                     aiChatState.clearTransientError(for: conversationIDForSession)
                 }
@@ -219,6 +222,7 @@ extension PromptInputView {
                 // server-blessed default (or the user's picker selection) rather
                 // than the hard-coded fallback.
                 await loadAgentConfigIfNeeded()
+                guard AIChatAvailability.canUseAI else { throw CancellationError() }
                 let model = await MainActor.run { modelForSend(files: files) }
                 attemptedModel = model
                 let isNewConversation = self.conversation == nil
@@ -228,6 +232,7 @@ extension PromptInputView {
                         model: model
                     )
                 }
+                guard AIChatAvailability.canUseAI else { throw CancellationError() }
                 let context = try await ExcalidrawChatInvocationContext(
                     currentFileData: currentFileData,
                     canvasTarget: canvasTarget,
@@ -246,6 +251,7 @@ extension PromptInputView {
                     hasCurrentFileData: context.currentFileData != nil,
                     isNewConversation: isNewConversation
                 )
+                guard AIChatAvailability.canUseAI else { throw CancellationError() }
 
                 // Open the AI chat session: snapshots the current active
                 // file as `.aiPre` (anchored to this user message) and
@@ -507,6 +513,8 @@ extension PromptInputView {
             aiChatState.markGenerationCancelled(conversationID: id)
         }
         currentTask?.cancel()
+        compactTask?.cancel()
+        compactTask = nil
         withAnimation(.easeInOut(duration: 0.2)) {
             pendingQueue.removeAll()
         }
@@ -526,20 +534,25 @@ extension PromptInputView {
     /// timeline (no keep-recent knob), so after this returns the
     /// chat shows just the summary card and any subsequent messages.
     func compactCurrentContext() {
-        guard let id = conversationID, !isCompactingContext else { return }
+        guard AIChatAvailability.canUseAI,
+              let id = conversationID,
+              !isCompactingContext else { return }
         aiChatState.markCompacting(conversationID: id)
-        Task {
+        compactTask = Task {
             do {
+                guard AIChatAvailability.canUseAI else { throw CancellationError() }
                 try await llmState.compactConversation(
                     id,
                     summaryModel: .gpt4oMini
                 )
+            } catch is CancellationError {
             } catch {
                 await MainActor.run {
                     alertToast.presentAIChatError(error)
                 }
             }
             await MainActor.run {
+                compactTask = nil
                 aiChatState.unmarkCompacting(conversationID: id)
                 // Drain even on failure: the user's pending message is
                 // already in the queue, dropping it silently would be
@@ -556,6 +569,12 @@ extension PromptInputView {
     /// serially across both kinds of in-flight work.
     func drainQueueIfNeeded() {
         guard !pendingQueue.isEmpty else { return }
+        guard AIChatAvailability.canUseAI else {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                pendingQueue.removeAll()
+            }
+            return
+        }
         let next: PendingQueueMessage = withAnimation(.easeInOut(duration: 0.2)) {
             pendingQueue.removeFirst()
         }

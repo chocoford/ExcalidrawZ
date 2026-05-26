@@ -22,6 +22,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
     @EnvironmentObject var toolState: ToolState
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var llmState: LLMStateObject
+    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
 
     @State private var isCollaboratorPopoverPresented = false
     
@@ -145,7 +146,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                 applePencilToggle()
 #endif
                 ShareToolbarButton()
-            } else {
+            } else if aiChatPreferences.isAIEnabled && AIChatAvailability.isAvailable {
                 Button {
                     store.togglePaywall(reason: .manaully)
                 } label: {

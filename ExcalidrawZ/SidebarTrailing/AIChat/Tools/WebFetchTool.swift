@@ -30,6 +30,8 @@ struct WebFetchTool: Tool {
     }
 
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
+        try AIChatToolExecutionGate.ensureAIEnabled()
+
         guard let inputData = input.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: inputData) as? [String: Any],
               let urlString = json["url"] as? String,

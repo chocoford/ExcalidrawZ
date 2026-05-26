@@ -17,7 +17,7 @@ extension AIChatView {
                 } label: {
                     Label(.localizable(.aiChatButtonIslandMode), systemSymbol: .menubarDockRectangle)
                 }
-                .disabled(fileState.currentActiveFileIsInTrash || shouldBlockAIForNonAppStoreMac)
+                .disabled(fileState.currentActiveFileIsInTrash || !isAIAvailable || !prefs.isAIEnabled)
                 .help(String(localizable: .aiChatButtonIslandModeHelp))
             }
             

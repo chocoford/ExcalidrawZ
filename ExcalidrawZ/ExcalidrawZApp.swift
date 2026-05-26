@@ -150,8 +150,10 @@ struct ExcalidrawZApp: App {
             streamPublishStrategy: .throttled(0.33)
         ))
 
-        Task {
-             await LLMClient.shared.restore()
+        if AIChatPreferences.shared.isAIEnabled {
+            Task {
+                await LLMServiceActivationCoordinator.shared.restoreIfAIEnabled(reason: .appLaunch)
+            }
         }
 
         // AI chat attachment GC. Kicked off in the background after a

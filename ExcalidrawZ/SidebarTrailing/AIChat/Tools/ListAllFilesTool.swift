@@ -51,6 +51,8 @@ struct ListAllFilesTool: Tool {
     var approvalRequirement: ApprovalRequirement { .always }
 
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
+        try AIChatToolExecutionGate.ensureAIEnabled()
+
         let params = parseInput(input)
         let limit = min(max(params.limit, 1), 200)
 

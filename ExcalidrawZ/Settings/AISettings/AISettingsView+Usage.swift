@@ -14,7 +14,7 @@ extension AISettingsView {
     @MainActor @ViewBuilder
     var usageHeader: some View {
         VStack(alignment: .leading, spacing: 22) {
-            HStack(alignment: .top, spacing: 22) {
+            settingsTabHeader {
                 HStack(alignment: .center, spacing: 16) {
                     usageGauge
 
@@ -33,20 +33,14 @@ extension AISettingsView {
                             .lineLimit(2)
                     }
                 }
-
-                Spacer(minLength: 0)
-
-                VStack(alignment: .trailing, spacing: 12) {
-                    tabPicker
-
-                    Button {
-                        store.togglePaywall(reason: .aiInsufficientCredits)
-                    } label: {
-                        Label(.localizable(.generalButtonUpgrade), systemSymbol: .sparkles)
-                    }
-                    .modernButtonStyle(style: .glassProminent, size: .regular, shape: .modern)
-                    .disabled(isHighestAIPlan)
+            } accessory: {
+                Button {
+                    store.togglePaywall(reason: .aiInsufficientCredits)
+                } label: {
+                    Label(.localizable(.generalButtonUpgrade), systemSymbol: .sparkles)
                 }
+                .modernButtonStyle(style: .glassProminent, size: .regular, shape: .modern)
+                .disabled(isHighestAIPlan)
             }
 
             dailyUsageChart
@@ -100,7 +94,7 @@ extension AISettingsView {
     @MainActor @ViewBuilder
     var settingsHeader: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top) {
+            settingsTabHeader {
                 VStack(alignment: .leading, spacing: 6) {
                     Label(.localizable(.settingsAITitle), systemSymbol: .sliderHorizontal3)
                         .font(.title2.weight(.semibold))
@@ -110,10 +104,6 @@ extension AISettingsView {
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
-
-                Spacer(minLength: 0)
-
-                tabPicker
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

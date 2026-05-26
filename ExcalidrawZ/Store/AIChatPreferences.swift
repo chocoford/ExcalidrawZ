@@ -3,6 +3,9 @@
 //  ExcalidrawZ
 //
 //  Single source of truth for AI-chat user preferences:
+//   - `isAIEnabled`: master switch for all AI-facing UI and network
+//     activity. Defaults to off so users explicitly opt in before any
+//     AI request or account/credits refresh is made.
 //   - `defaultTier`: the model tier used when a conversation has no
 //     explicit pick yet. Mutated from the Settings tab's picker.
 //   - `conversationTierOverrides`: per-conversation tier assignments.
@@ -23,6 +26,20 @@ import LLMCore
 @MainActor
 final class AIChatPreferences: ObservableObject {
     static let shared = AIChatPreferences()
+    static let isAIEnabledDefaultsKey = "AIChat.isEnabled"
+
+    /// Master switch for AI features. When off, AI chat surfaces show
+    /// an opt-in screen and no AI network refresh should be triggered.
+    @Published var isAIEnabled: Bool {
+        didSet {
+            saveIsAIEnabled()
+            guard oldValue != isAIEnabled else { return }
+            let isAIEnabled = isAIEnabled
+            Task {
+                await LLMServiceActivationCoordinator.shared.handleAIEnabledChanged(isAIEnabled)
+            }
+        }
+    }
 
     /// Tier used for a fresh conversation that has no explicit pick yet,
     /// and as the fallback shown in the picker when no conversation is
@@ -46,6 +63,8 @@ final class AIChatPreferences: ObservableObject {
 
     private init() {
         let defaults = UserDefaults.standard
+        self.isAIEnabled = defaults.object(forKey: Self.isAIEnabledDefaultsKey) as? Bool ?? false
+
         if let raw = defaults.string(forKey: defaultTierKey),
            let tier = ExcalidrawModelTier(rawValue: raw) {
             self.defaultTier = tier
@@ -88,6 +107,10 @@ final class AIChatPreferences: ObservableObject {
             conversationTierOverrides.removeValue(forKey: conversationID)
             saveTierOverrides()
         }
+    }
+
+    private func saveIsAIEnabled() {
+        UserDefaults.standard.set(isAIEnabled, forKey: Self.isAIEnabledDefaultsKey)
     }
 
     private func saveDefaultTier() {

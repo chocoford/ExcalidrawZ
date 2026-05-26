@@ -245,20 +245,24 @@ extension AIChatView {
     }
 
     func regenerateMessage(messageID: String) {
+        guard AIChatAvailability.canUseAI else { return }
         guard let id = fileState.aiChatConversationID else { return }
         let retryContent = retryUserContent(forSourceMessageID: messageID)
 
         aiChatState.clearTransientError(for: id)
         aiChatState.clearGenerationCancellation(for: id)
-        Task {
+        aiActionTask?.cancel()
+        aiActionTask = Task {
             var attemptedModel: SupportedModel?
             do {
+                guard AIChatAvailability.canUseAI else { throw CancellationError() }
                 let model = try await retryModel(conversationID: id)
                 attemptedModel = model
                 try await refreshConversationToolsIfNeeded(
                     conversationID: id,
                     model: model
                 )
+                guard AIChatAvailability.canUseAI else { throw CancellationError() }
                 let context = try await makeInvocationContext(model: model)
                 let metadata = await makeTransactionMetadata(
                     conversationID: id,
@@ -268,6 +272,7 @@ extension AIChatView {
                     context: context,
                     attachmentCount: retryContent?.files?.count ?? 0
                 )
+                guard AIChatAvailability.canUseAI else { throw CancellationError() }
                 try await llmState.regenerateMessage(
                     in: id,
                     fromMessageID: messageID,
@@ -292,14 +297,17 @@ extension AIChatView {
     }
 
     func resumeGeneration(modelOverride: SupportedModel? = nil) {
+        guard AIChatAvailability.canUseAI else { return }
         guard let id = fileState.aiChatConversationID else { return }
         let retryContent = lastUserContent()
 
         aiChatState.clearTransientError(for: id)
         aiChatState.clearGenerationCancellation(for: id)
-        Task {
+        aiActionTask?.cancel()
+        aiActionTask = Task {
             var attemptedModel: SupportedModel?
             do {
+                guard AIChatAvailability.canUseAI else { throw CancellationError() }
                 let model = try await retryModel(
                     conversationID: id,
                     preferredModel: modelOverride
@@ -309,6 +317,7 @@ extension AIChatView {
                     conversationID: id,
                     model: model
                 )
+                guard AIChatAvailability.canUseAI else { throw CancellationError() }
                 let context = try await makeInvocationContext(model: model)
                 let metadata = await makeTransactionMetadata(
                     conversationID: id,
@@ -318,6 +327,7 @@ extension AIChatView {
                     context: context,
                     attachmentCount: retryContent?.files?.count ?? 0
                 )
+                guard AIChatAvailability.canUseAI else { throw CancellationError() }
                 try await llmState.resumeGeneration(
                     in: id,
                     model: model,
@@ -447,6 +457,7 @@ extension AIChatView {
         conversationID: String,
         preferredModel: SupportedModel? = nil
     ) async throws -> SupportedModel {
+        guard AIChatAvailability.canUseAI else { throw CancellationError() }
         let agentConfig = try await LLMClient.shared.getDomainAgentConfig(agentID: "excalidraw-canvas")
         return try await MainActor.run {
             let requiresImageInput = conversation?.messages.contains { message in
@@ -523,6 +534,7 @@ extension AIChatView {
     }
 
     func retryTransientError(_ error: AIChatState.TransientError) {
+        guard AIChatAvailability.canUseAI else { return }
         guard let id = fileState.aiChatConversationID,
               id == error.conversationID
         else {
@@ -548,6 +560,19 @@ extension AIChatView {
                 )
             )
         }
+    }
+
+    @MainActor
+    func cancelAIWorkForDisabledAI() {
+        if let id = fileState.aiChatConversationID {
+            llmState.cancelGeneration(conversationID: id)
+            aiChatState.markGenerationCancelled(conversationID: id)
+            aiChatState.unmarkCompacting(conversationID: id)
+        }
+        aiActionTask?.cancel()
+        aiActionTask = nil
+        aiChatState.pendingQueue.removeAll()
+        aiChatState.cancelEditing(conversationID: fileState.aiChatConversationID)
     }
     
     func requestScrollToBottomIfNeeded(_ newBottomID: String?) {

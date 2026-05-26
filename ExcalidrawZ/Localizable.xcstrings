@@ -7587,19 +7587,19 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "تثبيت نسخة المتجر"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "App Store-Version installieren"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "Instalar la versión de App Store"
           }
         },
         "fr": {
@@ -7617,7 +7617,7 @@
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "Installa la versione App Store"
           }
         },
         "ja": {
@@ -7629,49 +7629,49 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "앱스토어 버전 설치"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "Installeer App Store Versie"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "Zainstaluj wersję z App Store"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "Instalar versão da App Store"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "Установить версию из App Store"
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "ติดตั้งเวอร์ชันใน App Store"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "App Store Versiyonunu Yükle"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "Cài đặt phiên bản App Store"
           }
         },
         "zh-Hans": {
@@ -7700,19 +7700,19 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "الذكاء الاصطناعي متوفر فقط في نسخة متجر التطبيقات حتى الآن. الدفعات خارج عملية الشراء داخل التطبيق غير مدعومة بعد."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "AI ist derzeit nur in der App Store-Version verfügbar. Zahlungen außerhalb der In-App-Käufe im App Store werden noch nicht unterstützt."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "La IA está disponible solo en la versión de App Store por ahora. Los pagos fuera de la compra dentro de la App Store no son compatibles todavía."
           }
         },
         "fr": {
@@ -7730,7 +7730,7 @@
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "L'AI è disponibile solo nella versione App Store per ora. I pagamenti al di fuori dell'acquisto in-app dell'App Store non sono ancora supportati."
           }
         },
         "ja": {
@@ -7742,49 +7742,49 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "AI는 현재 앱스토어 버전에서만 사용 가능합니다. 앱스토어 내 구매 외 결제는 지원되지 않습니다."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "AI is momenteel alleen beschikbaar in de App Store-versie. Betalingen buiten de In-App Aankoop van de App Store worden nog niet ondersteund."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "AI jest dostępne tylko w wersji z App Store. Płatności poza zakupami w aplikacji App Store nie są jeszcze obsługiwane."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "A IA está disponível apenas na versão da App Store por enquanto. Pagamentos fora da Compra In-App da App Store ainda não são suportados."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "Искусственный интеллект сейчас доступен только в версии из App Store. Платежи вне встроенных покупок в App Store пока не поддерживаются."
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "AI มีให้บริการเฉพาะในเวอร์ชัน App Store ในตอนนี้ การชำระเงินนอก App Store ในการซื้อภายในแอปยังไม่รองรับ"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "Şu an için AI yalnızca App Store versiyonunda mevcuttur. App Store içi satın alımlar dışında ödeme desteklenmiyor."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": ""
+            "value": "AI chỉ có sẵn trong phiên bản App Store hiện tại. Các khoản thanh toán ngoài In-App Purchase của App Store chưa được hỗ trợ."
           }
         },
         "zh-Hans": {
@@ -7797,6 +7797,1701 @@
           "stringUnit": {
             "state": "translated",
             "value": "目前AI僅在App Store版本中可用。尚不支持App Store內購之外的支付方式。"
+          }
+        }
+      }
+    },
+    "aiChatDisabledButtonEnable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable AI Features"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تفعيل ميزات الذكاء الاصطناعي"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-Funktionen aktivieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Habilitar funciones de IA"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activer les fonctionnalités AI"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI सुविधाएँ सक्षम करें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abilita le funzionalità AI"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI機能を有効にする"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 기능 활성화"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schakel AI-functies in"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz funkcje AI"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ativar recursos de IA"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включить функции ИИ"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิดใช้งานฟีเจอร์ AI"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Özelliklerini Etkinleştir"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật tính năng AI"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用AI功能"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用 AI 功能"
+          }
+        }
+      }
+    },
+    "aiChatDisabledMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI features are off. ExcalidrawZ will not send AI requests or refresh AI account data until you enable them."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ميزاته الذكاء الاصطناعي غير مفعلة. لن تقوم ExcalidrawZ بإرسال طلبات الذكاء الاصطناعي أو تحديث بيانات حساب الذكاء الاصطناعي إلا بعد تفعيلها."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-Funktionen sind deaktiviert. ExcalidrawZ wird keine AI-Anfragen senden oder AI-Kontodaten aktualisieren, bis Sie sie aktivieren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las funciones de IA están desactivadas. ExcalidrawZ no enviará solicitudes de IA ni actualizará los datos de la cuenta de IA hasta que las habilites."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les fonctionnalités AI sont désactivées. ExcalidrawZ n'enverra pas de demandes AI ni ne mettra à jour les données de compte AI tant que vous ne les aurez pas activées."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI सुविधाएँ बंद हैं। ExcalidrawZ AI अनुरोध नहीं भेजेगा या AI खाता डेटा को ताज़ा नहीं करेगा जब तक कि आप उन्हें सक्षम न करें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le funzionalità AI sono disattivate. ExcalidrawZ non invierà richieste AI né aggiornerà i dati dell'account AI finché non le abiliti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI機能はオフです。ExcalidrawZはAIリクエストを送信したり、AIアカウントデータを更新したりすることはありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 기능이 꺼져 있습니다. ExcalidrawZ는 AI 요청을 전송하거나 AI 계정 데이터를 새로 고치지 않습니다. 기능을 활성화하십시오."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-functies zijn uitgeschakeld. ExcalidrawZ zal geen AI-aanvragen versturen of AI-accountgegevens vernieuwen totdat je ze inschakelt."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Funkcje AI są wyłączone. ExcalidrawZ nie będzie wysyłać zapytań do AI ani odświeżać danych konta AI, dopóki ich nie włączysz."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os recursos de IA estão desligados. O ExcalidrawZ não enviará solicitações de IA nem atualizará os dados da conta de IA até que você os ative."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Функции ИИ отключены. ExcalidrawZ не будет отправлять запросы ИИ или обновлять данные учетной записи ИИ, пока вы не включите их."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ฟีเจอร์ AI ปิดอยู่ ExcalidrawZ จะไม่ส่งคำขอ AI หรือรีเฟรชข้อมูลบัญชี AI จนกว่าคุณจะเปิดใช้งาน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI özellikleri kapalı. ExcalidrawZ, AI isteklerini göndermeyecek veya AI hesap verilerini yenilemeyecek, ta ki onları etkinleştirin."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các tính năng AI đã tắt. ExcalidrawZ sẽ không gửi yêu cầu AI hoặc làm mới dữ liệu tài khoản AI cho đến khi bạn bật chúng."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI功能已关闭。ExcalidrawZ不会发送AI请求或刷新AI帐户数据，直到您启用它们。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 功能已關閉。ExcalidrawZ 將不會發送 AI 請求或更新 AI 帳戶數據，直到您啟用它們。"
+          }
+        }
+      }
+    },
+    "aiChatEnableConfirmationButtonEnable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable AI"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تفعيل الذكاء الاصطناعي"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI aktivieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Habilitar IA"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activer l'AI"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI सक्षम करें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abilita AI"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AIを有効にする"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 활성화"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schakel AI in"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz AI"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ativar IA"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включить ИИ"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิดใช้งาน AI"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI’yi Etkinleştir"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật AI"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用AI"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用 AI"
+          }
+        }
+      }
+    },
+    "aiChatEnableConfirmationMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI is a cloud feature. When you use it, your prompt, relevant canvas content, tool results, and attached images may be sent to ExcalidrawZ AI services and third-party model providers such as OpenAI, Anthropic, and Google, depending on the selected model."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الذكاء الاصطناعي ميزة سحابية. عند استخدامه، قد يتم إرسال طلبك، ومحتوى اللوحة المعني، ونتائج الأدوات، والصور المرفقة إلى خدمات الذكاء الاصطناعي الخاصة بـ ExcalidrawZ ومقدمي نماذج طرف ثالث مثل OpenAI وAnthropic وGoogle، اعتمادًا على النموذج المختار."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI ist ein Cloud-Feature. Wenn Sie es verwenden, können Ihr Prompt, relevante Canvas-Inhalte, Tool-Ergebnisse und angehängte Bilder an die ExcalidrawZ AI-Dienste und Drittanbieter wie OpenAI, Anthropic und Google, je nach ausgewähltem Modell, gesendet werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La IA es una función en la nube. Cuando la uses, tu solicitud, el contenido relevante del lienzo, los resultados de las herramientas y las imágenes adjuntas pueden ser enviados a los servicios de IA de ExcalidrawZ y a proveedores de modelos de terceros como OpenAI, Anthropic y Google, dependiendo del modelo seleccionado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'AI est une fonctionnalité cloud. Lorsque vous l'utilisez, votre prompt, le contenu pertinent du canvas, les résultats des outils et les images jointes peuvent être envoyés aux services AI d'ExcalidrawZ et aux fournisseurs de modèles tiers tels qu'OpenAI, Anthropic et Google, en fonction du modèle sélectionné."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI एक क्लाउड सुविधा है। जब आप इसका उपयोग करते हैं, तो आपका प्रॉम्प्ट, संबंधित कैनवास सामग्री, उपकरण परिणाम, और अटैच की गई छवियाँ ExcalidrawZ AI सेवाओं और तृतीय पक्ष मॉडल प्रदाताओं जैसे OpenAI, Anthropic, और Google को भेजी जा सकती हैं, जो चयनित मॉडल पर निर्भर करती हैं।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'AI è una funzionalità cloud. Quando la usi, il tuo prompt, il contenuto pertinente della tela, i risultati degli strumenti e le immagini allegate possono essere inviati ai servizi AI di ExcalidrawZ e ai fornitori di modelli di terze parti come OpenAI, Anthropic e Google, a seconda del modello selezionato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AIはクラウド機能です。使用する際、プロンプト、関連するキャンバスの内容、ツールの結果、添付画像が選択したモデルに応じてExcalidrawZ AIサービスおよびOpenAI、Anthropic、Googleなどのサードパーティモデルプロバイダーに送信される可能性があります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI는 클라우드 기능입니다. 사용하는 동안 귀하의 프롬프트, 관련 캔버스 콘텐츠, 도구 결과 및 첨부된 이미지는 선택된 모델에 따라 ExcalidrawZ AI 서비스 및 OpenAI, Anthropic, Google과 같은 제3자 모델 제공업체에 전송될 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI is een cloudfunctie. Wanneer je het gebruikt, kunnen je prompt, relevante canvasinhoud, toolresultaten en bijgevoegde afbeeldingen naar ExcalidrawZ AI-diensten en externe modelproviders zoals OpenAI, Anthropic en Google worden gestuurd, afhankelijk van het geselecteerde model."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI jest funkcją w chmurze. Kiedy z niej korzystasz, twój prompt, istotna zawartość kanwy, wyniki narzędzi i załączone obrazy mogą być wysyłane do usług AI ExcalidrawZ oraz zewnętrznych dostawców modeli, takich jak OpenAI, Anthropic i Google, w zależności od wybranego modelu."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A IA é um recurso em nuvem. Quando você a usa, seu prompt, conteúdo relevante do canvas, resultados de ferramentas e imagens anexadas podem ser enviados para os serviços de IA do ExcalidrawZ e fornecedores de modelos de terceiros, como OpenAI, Anthropic e Google, dependendo do modelo selecionado."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ИИ — это облачная функция. Когда вы используете ее, ваш запрос, соответствующее содержимое холста, результаты инструментов и прикрепленные изображения могут быть отправлены в службы ExcalidrawZ AI и сторонним поставщикам моделей, таким как OpenAI, Anthropic и Google, в зависимости от выбранной модели."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI เป็นฟีเจอร์คลาวด์ เมื่อคุณใช้ฟีเจอร์นี้ คำสั่งที่คุณส่ง ข้อมูลแคนวาสที่เกี่ยวข้อง ผลลัพธ์จากเครื่องมือ และภาพที่แนบมาจะถูกส่งไปยังบริการ AI ของ ExcalidrawZ และผู้ให้บริการโมเดลบุคคลที่สาม เช่น OpenAI, Anthropic และ Google ขึ้นอยู่กับโมเดลที่เลือก"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI, bir bulut özelliğidir. Kullanırken, isteğiniz, ilgili tuval içeriği, araç sonuçları ve ekli görseller ExcalidrawZ AI hizmetlerine ve OpenAI, Anthropic ve Google gibi üçüncü taraf model sağlayıcılarına, seçilen modele bağlı olarak gönderilebilir."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI là một tính năng đám mây. Khi bạn sử dụng nó, yêu cầu của bạn, nội dung canvas liên quan, kết quả công cụ và các hình ảnh đính kèm có thể được gửi đến dịch vụ AI của ExcalidrawZ và các nhà cung cấp mô hình bên thứ ba như OpenAI, Anthropic và Google, tùy thuộc vào mô hình đã chọn."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI是一个云功能。当您使用它时，您的提示、相关画布内容、工具结果和附加图片可能会根据所选模型发送到ExcalidrawZ AI服务和第三方模型提供者，如OpenAI、Anthropic和Google。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 是一項雲端功能。當您使用它時，您的提示、相關的畫布內容、工具結果和附加圖像可能會根據選擇的模型，發送到 ExcalidrawZ AI 服務及第三方模型提供商，例如 OpenAI、Anthropic 和 Google。"
+          }
+        }
+      }
+    },
+    "aiChatEnableConfirmationTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable AI features?"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هل تريد تفعيل ميزات الذكاء الاصطناعي؟"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-Funktionen aktivieren?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Habilitar funciones de IA?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activer les fonctionnalités AI ?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI सुविधाएँ सक्षम करें?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abilitare le funzionalità AI?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI機能を有効にしますか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 기능을 활성화하시겠습니까?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-functies inschakelen?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włączyć funkcje AI?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ativar recursos de IA?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включить функции ИИ?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ต้องการเปิดใช้งานฟีเจอร์ AI หรือไม่?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI özelliklerini etkinleştirmek istiyor musunuz?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Có bật tính năng AI không?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用AI功能？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要啟用 AI 功能嗎？"
+          }
+        }
+      }
+    },
+    "aiChatEnableConsentAgreement": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I understand and agree to the Privacy Policy and Terms of Use."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أفهم وأوافق على سياسة الخصوصية وشروط الاستخدام."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich verstehe und stimme der Datenschutzerklärung und den Nutzungsbedingungen zu."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entiendo y acepto la Política de Privacidad y los Términos de Uso."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je comprends et j'accepte la politique de confidentialité et les conditions d'utilisation."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मैं समझता हूँ और गोपनीयता नीति और उपयोग की शर्तों से सहमति देता हूँ।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprendo e accetto l'informativa sulla privacy e i termini di utilizzo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プライバシーポリシーと利用規約に同意します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "저는 개인정보 보호정책 및 이용 약관에 동의하고 이해합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik begrijp en ga akkoord met het Privacybeleid en de Gebruiksvoorwaarden."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozumiem i zgadzam się z Polityką prywatności oraz Warunkami korzystania."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eu entendo e concordo com a Política de Privacidade e os Termos de Uso."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Я понимаю и согласен с Политикой конфиденциальности и Условиями использования."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ฉันเข้าใจและยอมรับนโยบายความเป็นส่วนตัวและข้อกำหนดการใช้งาน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizlilik Politikası ve Kullanım Şartları’nı anlıyorum ve kabul ediyorum."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tôi hiểu và đồng ý với Chính sách Bảo mật và Điều khoản Sử dụng."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我理解并同意隐私政策和使用条款。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我理解並同意隱私政策和使用條款。"
+          }
+        }
+      }
+    },
+    "aiChatEnableConsentCloudMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI requests are processed by ExcalidrawZ AI services. They are not handled entirely on this device."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تتم معالجة طلبات الذكاء الاصطناعي بواسطة خدمات الذكاء الاصطناعي لـ ExcalidrawZ. لا تتم معالجتها بالكامل على هذا الجهاز."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-Anfragen werden von den ExcalidrawZ AI-Diensten verarbeitet. Sie werden nicht vollständig auf diesem Gerät verarbeitet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las solicitudes de IA son procesadas por los servicios de IA de ExcalidrawZ. No se manejan completamente en este dispositivo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les demandes AI sont traitées par les services AI d'ExcalidrawZ. Elles ne sont pas gérées entièrement sur cet appareil."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI अनुरोध ExcalidrawZ AI सेवाओं द्वारा संसाधित किए जाते हैं। इन्हें पूरी तरह से इस डिवाइस पर नहीं संभाला जाता है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le richieste AI sono elaborate dai servizi AI di ExcalidrawZ. Non vengono gestite interamente su questo dispositivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AIリクエストはExcalidrawZ AIサービスによって処理されます。これらはこのデバイス上では完全には処理されません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 요청은 ExcalidrawZ AI 서비스에 의해 처리됩니다. 이 장치에서 완전히 처리되지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-aanvragen worden verwerkt door de ExcalidrawZ AI-diensten. Ze worden niet volledig op dit apparaat verwerkt."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapytania AI są przetwarzane przez usługi AI ExcalidrawZ. Nie są one obsługiwane w całości na tym urządzeniu."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As solicitações de IA são processadas pelos serviços de IA do ExcalidrawZ. Elas não são tratadas inteiramente neste dispositivo."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запросы ИИ обрабатываются службами ExcalidrawZ AI. Они не обрабатываются полностью на этом устройстве."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คำขอ AI จะถูกประมวลผลโดยบริการ AI ของ ExcalidrawZ ซึ่งจะไม่ดำเนินการทั้งหมดในอุปกรณ์นี้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI istekleri ExcalidrawZ AI hizmetleri tarafından işlenir. Tamamen bu cihazda işlenmez."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các yêu cầu AI được xử lý bởi dịch vụ AI của ExcalidrawZ. Chúng không được xử lý hoàn toàn trên thiết bị này."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI请求由ExcalidrawZ AI服务处理。它们并不完全在此设备上处理。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 請求由 ExcalidrawZ AI 服務處理，並非完全在此設備上處理。"
+          }
+        }
+      }
+    },
+    "aiChatEnableConsentCloudTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI is a cloud feature"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الذكاء الاصطناعي ميزة سحابية"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI ist ein Cloud-Feature"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La IA es una función en la nube"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'AI est une fonctionnalité cloud"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI एक क्लाउड सुविधा है"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'AI è una funzionalità cloud"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AIはクラウド機能です"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI는 클라우드 기능입니다"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI is een cloudfunctie"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI jest funkcją w chmurze"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A IA é um recurso em nuvem"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ИИ — это облачная функция"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI เป็นฟีเจอร์คลาวด์"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI bir bulut özelliğidir"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI là một tính năng đám mây"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI是一个云功能"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 是一項雲端功能"
+          }
+        }
+      }
+    },
+    "aiChatEnableConsentDataMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your prompt, relevant canvas content, tool calls and results, attached files or images, and account or credit metadata may be sent when needed to answer your request."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قد يتم إرسال طلبك ومحتوى القماش ذات الصلة واستدعاءات الأدوات والنتائج والملفات أو الصور المرفقة وبيانات الحساب أو الائتمان عند الحاجة للرد على طلبك."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ihr Eingabetext, relevante Canvas-Inhalte, Toolaufrufe und Ergebnisse, angehängte Dateien oder Bilder sowie Konten- oder Kreditmetadaten können bei Bedarf gesendet werden, um Ihre Anfrage zu beantworten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Su solicitud, el contenido relevante del lienzo, las llamadas a herramientas y los resultados, los archivos o imágenes adjuntos, y los metadatos de la cuenta o crédito pueden enviarse cuando sea necesario para responder a su solicitud."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre prompt, le contenu pertinent du canvas, les appels et résultats des outils, les fichiers ou images joints, et les métadonnées de compte ou de crédit peuvent être envoyés si nécessaire pour répondre à votre demande."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपका प्रॉम्प्ट, संबंधित कैनवास सामग्री, उपकरण कॉल और परिणाम, अटैच की गई फ़ाइलें या छवियाँ, और खाता या क्रेडिट मेटाडेटा आपकी अनुरोध का उत्तर देने के लिए आवश्यक होने पर भेजी जा सकती हैं।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo prompt, contenuto pertinente della canvas, chiamate agli strumenti e risultati, file o immagini allegati, e metadati dell'account o del credito possono essere inviati quando necessario per rispondere alla tua richiesta."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プロンプト、関連するキャンバスの内容、ツールの呼び出しと結果、添付ファイルまたは画像、アカウントまたはクレジットのメタデータは、リクエストに応えるために必要に応じて送信される可能性があります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "귀하의 프롬프트, 관련 캔버스 콘텐츠, 도구 호출 및 결과, 첨부된 파일 또는 이미지, 계정 또는 크레딧 메타데이터는 귀하의 요청에 답하기 위해 필요할 때 전송될 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uw prompt, relevante canvasinhoud, tooloproepen en resultaten, bijgevoegde bestanden of afbeeldingen, en account- of kredietmetadata kunnen worden verzonden wanneer dat nodig is om uw verzoek te beantwoorden."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja sugestia, odpowiednie treści z płótna, wywołania narzędzi i wyniki, załączone pliki lub obrazy oraz dane metadane konta lub kredytów mogą być wysyłane, gdy jest to konieczne, aby odpowiedzieć na Twoje żądanie."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu prompt, conteúdo relevante da tela, chamadas de ferramentas e resultados, arquivos ou imagens anexados e dados de conta ou créditos podem ser enviados quando necessário para responder à sua solicitação."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш запрос, соответствующее содержимое холста, вызовы инструментов и результаты, прикрепленные файлы или изображения, а также метаданные учетной записи или кредита могут быть отправлены при необходимости для ответа на ваш запрос."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ข้อความเสนอของคุณ, เนื้อหาภาพที่เกี่ยวข้อง, การเรียกเครื่องมือและผลลัพธ์, ไฟล์หรือภาพที่แนบมาทั้งหมด และข้อมูลเมตาของบัญชีหรือเครดิตอาจถูกส่งเมื่อจำเป็นเพื่อตอบคำขอของคุณ."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Girdiğiniz, ilgili tuval içeriği, araç çağrıları ve sonuçlar, ekli dosyalar veya görseller ve hesap veya kredi meta verileri, talebinizi yanıtlamak için gerektiğinde gönderilebilir."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội dung canvas liên quan đến yêu cầu của bạn, công cụ gọi và kết quả, tệp đính kèm hoặc hình ảnh, và siêu dữ liệu tài khoản hoặc tín dụng có thể được gửi khi cần thiết để trả lời yêu cầu của bạn."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的提示、相关画布内容、工具调用和结果、附加文件或图片以及帐户或信用元数据可能会在需要时发送，以回答您的请求。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為了回應您的請求，您的提示、相關的畫布內容、工具調用及結果、附加的檔案或圖像，以及帳戶或信用資料可能會在需要時發送。"
+          }
+        }
+      }
+    },
+    "aiChatEnableConsentDataTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relevant data may be sent"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قد يتم إرسال بيانات ذات صلة"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relevante Daten können gesendet werden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se pueden enviar datos relevantes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Des données pertinentes peuvent être envoyées"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "संबंधित डेटा भेजा जा सकता है"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I dati pertinenti possono essere inviati"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "関連データが送信される可能性があります"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "관련 데이터가 전송될 수 있습니다"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relevante gegevens kunnen worden verzonden"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mogą być wysyłane odpowiednie dane"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dados relevantes podem ser enviados"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Могут быть отправлены соответствующие данные"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ข้อมูลที่เกี่ยวข้องอาจถูกส่ง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlgili veriler gönderilebilir"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu liên quan có thể được gửi"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "相关数据可能会被发送"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可能會發送相關數據"
+          }
+        }
+      }
+    },
+    "aiChatEnableConsentProviderMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Depending on the selected model, requests may be routed to third-party model providers such as OpenAI, Anthropic, or Google."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اعتمادًا على النموذج المحدد، قد يتم توجيه الطلبات إلى مقدمي نماذج من طرف ثالث مثل OpenAI أو Anthropic أو Google."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je nach ausgewähltem Modell können Anfragen an Drittanbieter-Modellanbieter wie OpenAI, Anthropic oder Google weitergeleitet werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Según el modelo seleccionado, las solicitudes pueden ser dirigidas a proveedores de modelos de terceros como OpenAI, Anthropic o Google."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En fonction du modèle sélectionné, les requêtes peuvent être acheminées vers des fournisseurs de modèles tiers tels qu'OpenAI, Anthropic ou Google."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "चुने गए मॉडल के आधार पर, अनुरोध तीसरे पक्ष के मॉडल प्रदाताओं जैसे OpenAI, Anthropic या Google को प्रेषित किए जा सकते हैं।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A seconda del modello selezionato, le richieste possono essere instradate a fornitori di modelli di terze parti come OpenAI, Anthropic o Google."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選択したモデルによっては、リクエストがOpenAI、Anthropic、Googleなどのサードパーティモデルプロバイダーにルーティングされる場合があります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택한 모델에 따라 요청은 OpenAI, Anthropic 또는 Google과 같은 제3자 모델 제공업체로 라우팅될 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afhankelijk van het geselecteerde model kunnen verzoeken worden doorgestuurd naar externe modelproviders zoals OpenAI, Anthropic of Google."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W zależności od wybranego modelu, żądania mogą być kierowane do dostawców modeli zewnętrznych, takich jak OpenAI, Anthropic lub Google."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dependendo do modelo selecionado, as solicitações podem ser direcionadas a provedores de modelos de terceiros, como OpenAI, Anthropic ou Google."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В зависимости от выбранной модели, запросы могут быть направлены к поставщикам моделей третьих сторон, таким как OpenAI, Anthropic или Google."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ขึ้นอยู่กับโมเดลที่เลือก, คำขออาจถูกส่งไปยังผู้ให้บริการโมเดลบุคคลที่สามเช่น OpenAI, Anthropic, หรือ Google."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçilen modele bağlı olarak, talepler OpenAI, Anthropic veya Google gibi üçüncü parti model sağlayıcılarına yönlendirilebilir."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tùy thuộc vào mô hình đã chọn, các yêu cầu có thể được chuyển tới các nhà cung cấp mô hình bên thứ ba như OpenAI, Anthropic hoặc Google."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "根据所选模型，请求可能会被转发到第三方模型提供商，例如 OpenAI、Anthropic 或 Google。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "根據所選擇的模型，請求可能會被路由到第三方模型提供者，例如 OpenAI、Anthropic 或 Google。"
+          }
+        }
+      }
+    },
+    "aiChatEnableConsentProviderTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model providers may receive requests"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قد تستقبل مقدمو النماذج الطلبات"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modellanbieter können Anfragen erhalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los proveedores de modelos pueden recibir solicitudes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les fournisseurs de modèles peuvent recevoir des requêtes"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मॉडल प्रदाताओं को अनुरोध मिल सकते हैं"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I fornitori di modelli possono ricevere richieste"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "モデルプロバイダーがリクエストを受信する可能性があります"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "모델 제공업체는 요청을 받을 수 있습니다"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelproviders kunnen verzoeken ontvangen"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostawcy modeli mogą otrzymywać żądania"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provedores de modelo podem receber solicitações"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поставщики моделей могут получать запросы"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ผู้ให้บริการโมเดลอาจรับคำขอ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model sağlayıcıları talepleri alabilir"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các nhà cung cấp mô hình có thể nhận yêu cầu"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型提供商可能会接收到请求"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型提供者可能會接收請求"
+          }
+        }
+      }
+    },
+    "aiChatEnableConsentSensitiveMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avoid entering passwords, API keys, payment details, health information, or other private content that you do not want processed by cloud AI services."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تجنب إدخال كلمات المرور أو مفاتيح API أو تفاصيل الدفع أو معلومات الصحة أو محتوى خاص آخر لا تريد معالجته بواسطة خدمات AI السحابية."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vermeiden Sie die Eingabe von Passwörtern, API-Schlüsseln, Zahlungsdaten, Gesundheitsinformationen oder anderen privaten Inhalten, die Sie nicht von Cloud-AI-Diensten verarbeitet haben möchten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evite ingresar contraseñas, claves de API, detalles de pago, información de salud u otro contenido privado que no desee que sea procesado por servicios de IA en la nube."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Évitez de saisir des mots de passe, des clés API, des détails de paiement, des informations de santé ou d'autres contenus privés que vous ne souhaitez pas traiter par des services d'IA cloud."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पासवर्ड, एपीआई कुंजी, भुगतान विवरण, स्वास्थ्य जानकारी, या अन्य निजी सामग्री दर्ज करने से बचें जिसे आप क्लाउड एआई सेवाओं द्वारा प्रोसेस करना नहीं चाहते।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evita di inserire password, chiavi API, dettagli di pagamento, informazioni sanitarie o altri contenuti privati che non desideri vengano elaborati dai servizi AI cloud."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クラウドAIサービスによって処理されることを望まないパスワード、APIキー、支払い詳細、健康情報、またはその他のプライベートな内容を入力しないでください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "비밀번호, API 키, 결제 세부정보, 건강 정보 또는 클라우드 AI 서비스에 의해 처리되기 원하지 않는 기타 개인적인 콘텐츠는 입력하지 마십시오."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vermijd het invoeren van wachtwoorden, API-sleutels, betalingsgegevens, gezondheidsinformatie of andere privé-inhoud die u niet wilt dat door cloud-AI-diensten wordt verwerkt."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unikaj wprowadzania haseł, kluczy API, danych płatności, informacji o zdrowiu lub innych prywatnych treści, których przetwarzania przez usługi AI w chmurze nie chcesz."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evite inserir senhas, chaves de API, detalhes de pagamento, informações de saúde ou outro conteúdo privado que você não deseja que seja processado por serviços de IA em nuvem."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Избегайте ввода паролей, API-ключей, платежных данных, информации о здоровье или другого личного контента, который вы не хотите, чтобы обрабатывали облачные AI-сервисы."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หลีกเลี่ยงการป้อนรหัสผ่าน, คีย์ API, รายละเอียดการชำระเงิน, ข้อมูลสุขภาพ หรือเนื้อหาส่วนตัวอื่นที่คุณไม่ต้องการให้บริการ AI ในคลาวด์ประมวลผล."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulut AI hizmetleri tarafından işlenmesini istemediğiniz şifreler, API anahtarları, ödeme bilgileri, sağlık bilgileri veya diğer özel içerikleri girmemeye özen gösterin."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tránh nhập mật khẩu, khóa API, chi tiết thanh toán, thông tin sức khỏe hoặc nội dung riêng tư khác mà bạn không muốn được xử lý bởi dịch vụ AI đám mây."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "避免输入密码、API 密钥、付款详情、健康信息或其他您不希望被云 AI 服务处理的私人内容。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請避免輸入密碼、API 金鑰、支付詳情、健康信息或其他您不希望被雲端 AI 服務處理的私人內容。"
+          }
+        }
+      }
+    },
+    "aiChatEnableConsentSensitiveTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avoid sensitive data"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تجنب البيانات الحساسة"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vermeiden Sie sensible Daten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evitar datos sensibles"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Évitez les données sensibles"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "संवेदनशील डेटा से बचें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evita dati sensibili"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "機密データを避ける"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "민감한 데이터 피하기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vermijd gevoelige gegevens"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unikaj danych wrażliwych"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evite dados sensíveis"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Избегайте чувствительных данных"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หลีกเลี่ยงข้อมูลที่ละเอียดอ่อน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Özel verilerden kaçının"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tránh dữ liệu nhạy cảm"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "避免敏感数据"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "避免敏感數據"
+          }
+        }
+      }
+    },
+    "aiChatEnableConsentSubtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please review how AI works in ExcalidrawZ before enabling it. You can turn AI off again in Settings at any time."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرجى مراجعة كيفية عمل الذكاء الاصطناعي في ExcalidrawZ قبل تفعيله. يمكنك إيقاف تشغيل الذكاء الاصطناعي مرة أخرى في الإعدادات في أي وقت."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitte überprüfen Sie, wie KI in ExcalidrawZ funktioniert, bevor Sie sie aktivieren. Sie können die KI jederzeit in den Einstellungen wieder deaktivieren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por favor, revise cómo funciona la IA en ExcalidrawZ antes de habilitarla. Puede desactivar la IA en la Configuración en cualquier momento."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veuillez examiner comment fonctionne l'IA dans ExcalidrawZ avant de l'activer. Vous pouvez désactiver l'IA à tout moment dans les paramètres."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कृपया इसे सक्षम करने से पहले ExcalidrawZ में एआई कैसे काम करता है, इसकी समीक्षा करें। आप किसी भी समय सेटिंग्स में फिर से एआई बंद कर सकते हैं।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si prega di rivedere come funziona l'AI in ExcalidrawZ prima di abilitarla. Puoi disattivare l'AI in qualsiasi momento nelle Impostazioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有効にする前に、ExcalidrawZのAIの動作を確認してください。設定でいつでもAIを無効にできます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 기능을 활성화하기 전에 ExcalidrawZ에서 AI가 어떻게 작동하는지 검토해 주십시오. 언제든지 설정에서 AI를 다시 끌 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekijk hoe AI werkt in ExcalidrawZ voordat u het inschakelt. U kunt AI op elk moment weer uitschakelen in Instellingen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proszę zapoznać się z tym, jak działa AI w ExcalidrawZ, przed włączeniem go. Możesz wyłączyć AI w Ustawieniach w dowolnym momencie."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por favor, revise como a IA funciona no ExcalidrawZ antes de ativá-la. Você pode desativar a IA novamente em Configurações a qualquer momento."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пожалуйста, ознакомьтесь с тем, как работает AI в ExcalidrawZ, перед его включением. Вы можете отключить AI в любой момент в настройках."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กรุณาทบทวนว่า AI ทำงานอย่างไรใน ExcalidrawZ ก่อนที่จะเปิดใช้งาน คุณสามารถปิด AI ได้อีกครั้งในการตั้งค่าได้ตลอดเวลา."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI etkinleştirilmeden önce ExcalidrawZ'de AI'nin nasıl çalıştığını gözden geçirmenizi rica ederiz. AI'yi tekrar kapatmak için istediğiniz zaman Ayarlar'dan kapatabilirsiniz."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vui lòng xem xét cách AI hoạt động trong ExcalidrawZ trước khi bật nó lên. Bạn có thể tắt AI bất cứ lúc nào trong Cài đặt."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在启用 AI 之前，请查看 ExcalidrawZ 中 AI 的工作原理。您可以随时在设置中关闭 AI。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在開啟 AI 功能之前，請查看 ExcalidrawZ 中 AI 的運作方式。您可以隨時在設置中關閉 AI 功能。"
           }
         }
       }
@@ -52787,6 +54482,119 @@
         }
       }
     },
+    "paywallAICloudDisclosure": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI requests are processed by ExcalidrawZ cloud AI services and may be routed to third-party model providers."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتم معالجة طلبات الذكاء الاصطناعي بواسطة خدمات AI السحابية لـ ExcalidrawZ وقد يتم توجيهها إلى مقدمي نماذج من طرف ثالث."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-Anfragen werden von den ExcalidrawZ Cloud-AI-Diensten verarbeitet und können an Drittanbieter-Modellanbieter weitergeleitet werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las solicitudes de IA son procesadas por los servicios de IA en la nube de ExcalidrawZ y pueden ser dirigidas a proveedores de modelos de terceros."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les requêtes d'IA sont traitées par les services d'IA cloud d'ExcalidrawZ et peuvent être acheminées vers des fournisseurs de modèles tiers."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "एआई अनुरोध ExcalidrawZ क्लाउड एआई सेवाओं द्वारा प्रोसेस किए जाते हैं और तीसरे पक्ष के मॉडल प्रदाताओं को प्रेषित किए जा सकते हैं।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le richieste AI vengono elaborate dai servizi AI cloud di ExcalidrawZ e possono essere instradate a fornitori di modelli di terze parti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AIリクエストはExcalidrawZのクラウドAIサービスによって処理され、サードパーティモデルプロバイダーにルーティングされる場合があります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 요청은 ExcalidrawZ 클라우드 AI 서비스에 의해 처리되며 제3자 모델 제공업체로 라우팅될 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-verzoeken worden verwerkt door de cloud-AI-diensten van ExcalidrawZ en kunnen worden doorgestuurd naar externe modelproviders."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żądania AI są przetwarzane przez usługi AI w chmurze ExcalidrawZ i mogą być kierowane do zewnętrznych dostawców modeli."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As solicitações de IA são processadas pelos serviços de IA em nuvem do ExcalidrawZ e podem ser direcionadas a provedores de modelos de terceiros."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запросы AI обрабатываются облачными AI-сервисами ExcalidrawZ и могут быть направлены к поставщикам моделей третьих сторон."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คำขอ AI ถูกประมวลผลโดยบริการ AI ในคลาวด์ของ ExcalidrawZ และอาจถูกส่งไปยังผู้ให้บริการโมเดลบุคคลที่สาม."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI talepleri ExcalidrawZ bulut AI hizmetleri tarafından işlenir ve üçüncü parti model sağlayıcılarına yönlendirilebilir."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các yêu cầu AI được xử lý bởi dịch vụ AI đám mây ExcalidrawZ và có thể được chuyển tới các nhà cung cấp mô hình bên thứ ba."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 请求由 ExcalidrawZ 云 AI 服务处理，并可能被转发到第三方模型提供商。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 請求由 ExcalidrawZ 雲端 AI 服務處理，並可能被路由到第三方模型提供者。"
+          }
+        }
+      }
+    },
     "paywallTitle": {
       "extractionState": "manual",
       "localizations": {
@@ -54930,6 +56738,2153 @@
           "stringUnit": {
             "state": "translated",
             "value": "選擇 AI 聊天在開始或重新生成對話時使用的預設。"
+          }
+        }
+      }
+    },
+    "settingsAIEnableFeatureHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When off, ExcalidrawZ will not send AI requests or refresh AI account and credits data."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عند إيقاف التشغيل، لن يقوم ExcalidrawZ بإرسال طلبات الذكاء الاصطناعي أو تحديث بيانات حساب الذكاء الاصطناعي والرصيد."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenn deaktiviert wird, sendet ExcalidrawZ keine AI-Anfragen oder aktualisiert keine Daten zu AI-Konten und -Guthaben."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuando está desactivado, ExcalidrawZ no enviará solicitudes de IA ni actualizará los datos de cuenta y créditos de IA."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorsque désactivé, ExcalidrawZ n'enverra pas de requêtes d'IA et ne mettra pas à jour les données de compte et de crédits d'IA."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "बंद होने पर, ExcalidrawZ एआई अनुरोध नहीं भेजेगा या एआई खाता और क्रेडिट डेटा को रीफ्रेश नहीं करेगा।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quando disattivato, ExcalidrawZ non invierà richieste AI né aggiornerà i dati dell'account AI e dei crediti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無効にすると、ExcalidrawZはAIリクエストを送信せず、AIアカウントとクレジットデータを更新しません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "꺼짐 상태에서는 ExcalidrawZ가 AI 요청을 전송하거나 AI 계정 및 크레딧 데이터를 새로 고치지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wanneer uitgeschakeld, zal ExcalidrawZ geen AI-verzoeken verzenden of AI-account- en kredietgegevens vernieuwen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy jest wyłączona, ExcalidrawZ nie będzie wysyłać żądań AI ani aktualizować danych konta i kredytów AI."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quando desativado, o ExcalidrawZ não enviará solicitações de IA ou atualizará os dados da conta e créditos de IA."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Когда отключено, ExcalidrawZ не будет отправлять запросы AI или обновлять данные учетной записи и кредита AI."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เมื่อปิด ExcalidrawZ จะไม่ส่งคำขอ AI หรือรีเฟรชข้อมูลบัญชีและเครดิต AI."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapalı olduğunda, ExcalidrawZ AI talepleri göndermeyecek veya AI hesap ve kredi verilerini güncellemeyecek."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi tắt, ExcalidrawZ sẽ không gửi các yêu cầu AI hoặc làm mới dữ liệu tài khoản và tín dụng AI."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭时，ExcalidrawZ 将不会发送 AI 请求或刷新 AI 账户及积分数据。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當關閉時，ExcalidrawZ 將不會發送 AI 請求或更新 AI 帳戶和信用數據。"
+          }
+        }
+      }
+    },
+    "settingsAIEnableFeatureTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable AI features"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تفعيل ميزات الذكاء الاصطناعي"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-Funktionen aktivieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Habilitar funciones de IA"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activer les fonctionnalités d'IA"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "एआई सुविधाएँ सक्षम करें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abilita funzionalità AI"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI機能を有効にする"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 기능 활성화"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-functies inschakelen"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz funkcje AI"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ativar recursos de IA"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включить функции AI"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิดใช้งานฟีเจอร์ AI"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI özelliklerini etkinleştir"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật các tính năng AI"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用 AI 功能"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用 AI 功能"
+          }
+        }
+      }
+    },
+    "settingsAIInformationCloudMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI chat is provided through ExcalidrawZ cloud AI services. Requests are processed online rather than entirely on this device."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الدردشة الذكية مقدمة من خلال خدمات الذكاء الصناعي السحابية ExcalidrawZ. تتم معالجة الطلبات عبر الإنترنت بدلاً من أن تتم بالكامل على هذا الجهاز."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der AI-Chat wird über die ExcalidrawZ Cloud-AI-Dienste bereitgestellt. Anfragen werden online und nicht vollständig auf diesem Gerät verarbeitet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El chat de IA se proporciona a través de los servicios de IA en la nube de ExcalidrawZ. Las solicitudes se procesan en línea en lugar de completamente en este dispositivo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le chat IA est fourni par les services d'IA cloud d'ExcalidrawZ. Les requêtes sont traitées en ligne plutôt que entièrement sur cet appareil."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "एआई चैट ExcalidrawZ क्लाउड एआई सेवाओं के माध्यम से प्रदान की जाती है। अनुरोध ऑनलाइन प्रोसेस किए जाते हैं न कि पूरी तरह से इस डिवाइस पर।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La chat AI è fornita tramite i servizi cloud AI di ExcalidrawZ. Le richieste vengono elaborate online piuttosto che interamente su questo dispositivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AIチャットはExcalidrawZのクラウドAIサービスを通じて提供されます。リクエストはこのデバイスで完全に処理されるのではなく、オンラインで処理されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 채팅은 ExcalidrawZ 클라우드 AI 서비스를 통해 제공됩니다. 요청은 이 기기에서 전적으로 처리되지 않고 온라인에서 처리됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-chat wordt geleverd via de ExcalidrawZ cloud AI-diensten. Verzoeken worden online verwerkt in plaats van volledig op dit apparaat."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czaty AI są udostępniane przez usługi chmurowe AI ExcalidrawZ. Żądania są przetwarzane online, a nie całkowicie na tym urządzeniu."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O chat de IA é fornecido através dos serviços de IA em nuvem do ExcalidrawZ. As solicitações são processadas online em vez de completamente neste dispositivo."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чат с ИИ предоставляется через облачные ИИ-сервисы ExcalidrawZ. Запросы обрабатываются онлайн, а не полностью на этом устройстве."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การแชท AI ถูกจัดเตรียมผ่านบริการคลาวด์ AI ของ ExcalidrawZ คำขอจะถูกประมวลผลออนไลน์แทนที่จะใช้ทั้งหมดบนอุปกรณ์นี้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI sohbeti ExcalidrawZ bulut AI hizmetleri aracılığıyla sağlanır. Talepler çevrimiçi olarak işlenir, tamamen bu cihazda değil."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat AI được cung cấp thông qua dịch vụ AI đám mây ExcalidrawZ. Các yêu cầu được xử lý trực tuyến thay vì hoàn toàn trên thiết bị này."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 聊天通过 ExcalidrawZ 云 AI 服务提供。请求在线处理，而不是完全在此设备上处理。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 聊天功能通過 ExcalidrawZ 雲端 AI 服務提供。請求是在網上處理，而不是完全在此設備上進行。"
+          }
+        }
+      }
+    },
+    "settingsAIInformationCloudTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud AI service"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خدمة الذكاء الصناعي السحابية"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud-AI-Dienst"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servicio de IA en la nube"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Service d'IA cloud"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "क्लाउड एआई सेवा"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servizio AI cloud"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クラウドAIサービス"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "클라우드 AI 서비스"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud AI-dienst"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usługa AI w chmurze"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serviço de IA em nuvem"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Облачный ИИ-сервис"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บริการ AI คลาวด์"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulut AI hizmeti"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dịch vụ AI đám mây"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "云 AI 服务"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "雲端 AI 服務"
+          }
+        }
+      }
+    },
+    "settingsAIInformationDataMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you use AI, your prompt, relevant canvas content, tool calls and results, selected model, and attached images may be sent as needed to answer your request."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عند استخدام الذكاء الصناعي، قد يتم إرسال نص الطلب الخاص بك، ومحتوى اللوحة المعني، واستدعاءات الأدوات والنتائج، والطراز المحدد، والصور المرفقة حسب الحاجة للإجابة على طلبك."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenn Sie AI verwenden, können Ihre Eingabeaufforderung, relevante Canvas-Inhalte, Tool-Aufrufe und Ergebnisse, das ausgewählte Modell und angehängte Bilder nach Bedarf gesendet werden, um Ihre Anfrage zu beantworten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuando uses IA, tu solicitud, contenido relevante del lienzo, llamadas a herramientas y resultados, modelo seleccionado e imágenes adjuntas pueden ser enviados según sea necesario para responder a tu solicitud."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorsque vous utilisez l'IA, votre prompt, le contenu pertinent du canvas, les appels d'outils et les résultats, le modèle sélectionné et les images jointes peuvent être envoyés si nécessaire pour répondre à votre demande."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जब आप एआई का उपयोग करते हैं, तो आपका प्रांप्ट, प्रासंगिक कैनवास सामग्री, टूल कॉल और परिणाम, चयनित मॉडल और संलग्न चित्र आपकी अनुरोध का उत्तर देने के लिए आवश्यकतानुसार भेजे जा सकते हैं।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quando utilizzi l'AI, il tuo prompt, il contenuto pertinente della tela, le chiamate agli strumenti e i risultati, il modello selezionato e le immagini allegate possono essere inviati, se necessario, per rispondere alla tua richiesta."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AIを使用する際には、プロンプト、関連するキャンバス内容、ツールコールと結果、選択されたモデル、および必要に応じて添付画像があなたのリクエストに応えるために送信されることがあります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI를 사용할 때 귀하의 프롬프트, 관련 캔버스 콘텐츠, 도구 호출 및 결과, 선택된 모델, 첨부된 이미지가 요청에 답하기 위해 필요에 따라 전송될 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wanneer je AI gebruikt, kunnen je prompt, relevante canvasinhoud, gereedschapoproepen en resultaten, geselecteerd model en bijgevoegde beelden indien nodig worden verzonden om je verzoek te beantwoorden."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiedy korzystasz z AI, twoje zapytanie, odpowiednie treści płótna, wywołania narzędzi i wyniki, wybrany model oraz dołączone obrazy mogą być przesyłane w miarę potrzeby, aby odpowiedzieć na twoje żądanie."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quando você usa IA, seu prompt, conteúdo relevante da tela, chamadas de ferramenta e resultados, modelo selecionado e imagens anexadas podem ser enviados conforme necessário para responder à sua solicitação."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Когда вы используете ИИ, ваш запрос, соответствующее содержимое холста, вызовы инструментов и результаты, выбранная модель и прикрепленные изображения могут быть отправлены по мере необходимости для ответа на ваш запрос."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เมื่อคุณใช้ AI ข้อความที่คุณส่ง เนื้อหาของผืนผ้าใบที่เกี่ยวข้อง การเรียกใช้เครื่องมือและผลลัพธ์ โมเดลที่เลือก และภาพที่แนบอาจถูกส่งตามที่จำเป็นเพื่อตอบสนองต่อคำขอของคุณ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI'yi kullandığınızda, talebinizi yanıtlamak için gerekli olabilecek isteminiz, ilgili kanvas içeriği, araç çağrıları ve sonuçlar, seçilen model ve ekli resimler gönderilebilir."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi bạn sử dụng AI, câu lệnh của bạn, nội dung canvas liên quan, các cuộc gọi công cụ và kết quả, mô hình được chọn và hình ảnh đính kèm có thể được gửi khi cần để trả lời yêu cầu của bạn."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在使用AI时，您的提示、相关画布内容、工具调用和结果、选定的模型以及附件图片可能会根据需要发送，以回答您的请求。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當您使用 AI 時，您的提示、相關畫布內容、工具調用和結果、選定的模型及附加圖像可能會根據需要發送以回答您的請求。"
+          }
+        }
+      }
+    },
+    "settingsAIInformationDataTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What can be sent"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ما الذي يمكن إرساله"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was gesendet werden kann"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qué se puede enviar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce qui peut être envoyé"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "क्या भेजा जा सकता है"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa può essere inviato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "送信される内容"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전송될 수 있는 내용"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wat kan worden verzonden"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co może być przesyłane"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O que pode ser enviado"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Что может быть отправлено"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สิ่งที่สามารถถูกส่ง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gönderilebilecekler"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Những gì có thể được gửi"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可以发送的内容"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可以發送的內容"
+          }
+        }
+      }
+    },
+    "settingsAIInformationFilesMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your files are not uploaded wholesale. AI only receives content involved in the request, such as the active canvas data or specific results returned by tools."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يتم تحميل ملفاتك بالكامل. يتلقى الذكاء الصناعي فقط المحتوى المتعلق بالطلب، مثل بيانات اللوحة النشطة أو نتائج محددة تم إرجاعها بواسطة الأدوات."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ihre Dateien werden nicht im Ganzen hochgeladen. AI erhält nur Inhalte, die für die Anfrage relevant sind, wie z. B. die aktiven Canvas-Daten oder spezifische Ergebnisse von Tools."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus archivos no se cargan en su totalidad. La IA solo recibe el contenido involucrado en la solicitud, como los datos del lienzo activo o resultados específicos devueltos por las herramientas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vos fichiers ne sont pas téléchargés en entier. L'IA ne reçoit que le contenu impliqué dans la demande, tel que les données de canvas actives ou les résultats spécifiques retournés par les outils."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपकी फ़ाइलें समग्र रूप से अपलोड नहीं की जाती हैं। एआई केवल अनुरोध में शामिल सामग्री प्राप्त करता है, जैसे सक्रिय कैनवास डेटा या टूल द्वारा लौटाए गए विशिष्ट परिणाम।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I tuoi file non vengono caricati in blocco. L'AI riceve solo il contenuto coinvolto nella richiesta, come i dati della tela attiva o risultati specifici restituiti dagli strumenti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファイルは一括でアップロードされません。AIは、アクティブなキャンバスデータやツールによって返された特定の結果など、リクエストに関係するコンテンツのみを受け取ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "귀하의 파일은 일괄적으로 업로드되지 않습니다. AI는 요청에 관련된 콘텐츠, 즉 활성 캔버스 데이터나 도구에서 반환된 특정 결과만 수신합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je bestanden worden niet in bulk geüpload. AI ontvangt alleen inhoud die betrokken is bij het verzoek, zoals de actieve canvasgegevens of specifieke resultaten die door tools zijn teruggegeven."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje pliki nie są przesyłane hurtowo. AI otrzymuje tylko treści związane z żądaniem, takie jak dane aktywnego płótna lub konkretne wyniki zwracane przez narzędzia."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seus arquivos não são carregados integralmente. A IA recebe apenas o conteúdo envolvido na solicitação, como os dados da tela ativa ou resultados específicos retornados pelas ferramentas."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваши файлы не загружаются в полном объеме. ИИ получает только содержимое, относящееся к запросу, такое как данные активного холста или конкретные результаты, возвращенные инструментами."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไฟล์ของคุณจะไม่ได้ถูกอัปโหลดทั้งหมด AI จะได้รับเฉพาะเนื้อหาที่เกี่ยวข้องกับคำขอ เช่น ข้อมูลผืนผ้าใบที่ใช้งานอยู่หรือผลลัพธ์เฉพาะที่ส่งกลับโดยเครื่องมือ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyalarınız topluca yüklenmez. AI, yalnızca istekte bulunan aktif kanvas verileri veya araçlar tarafından döndürülen belirli sonuçlar gibi taleple ilgili içeriği alır."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các tệp của bạn không được tải lên toàn bộ. AI chỉ nhận nội dung liên quan đến yêu cầu, chẳng hạn như dữ liệu canvas đang hoạt động hoặc các kết quả cụ thể được trả về bởi các công cụ."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的文件不会被全部上传。AI仅接收与请求相关的内容，例如活动画布数据或工具返回的特定结果。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的文件不會整體上傳。 AI 僅接收與請求相關的內容，例如活動畫布數據或工具返回的特定結果。"
+          }
+        }
+      }
+    },
+    "settingsAIInformationFilesTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File access"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الوصول إلى الملفات"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dateizugriff"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acceso a archivos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accès aux fichiers"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "फ़ाइल पहुँच"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesso ai file"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファイルへのアクセス"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "파일 접근"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bestandstoegang"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostęp do plików"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acesso a arquivos"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступ к файлам"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การเข้าถึงไฟล์"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya erişimi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Truy cập tệp"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件访问"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件訪問"
+          }
+        }
+      }
+    },
+    "settingsAIInformationControlsMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can turn AI features off at any time. When off, ExcalidrawZ will not send AI requests or refresh AI account and credits data."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكنك إيقاف ميزات الذكاء الصناعي في أي وقت. عند إيقافها، لن يقوم ExcalidrawZ بإرسال طلبات الذكاء الصناعي أو تحديث بيانات حساب الذكاء الصناعي ونقاط الائتمان."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sie können AI-Funktionen jederzeit deaktivieren. Wenn sie deaktiviert sind, sendet ExcalidrawZ keine AI-Anfragen oder aktualisiert keine AI-Konto- und Guthabendaten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puedes desactivar las funciones de IA en cualquier momento. Cuando están desactivadas, ExcalidrawZ no enviará solicitudes de IA ni actualizará datos de cuenta y créditos de IA."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous pouvez désactiver les fonctionnalités de l'IA à tout moment. Lorsque désactivé, ExcalidrawZ ne fera pas de demandes à l'IA ni ne rafraîchira les données du compte et des crédits de l'IA."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आप किसी भी समय एआई सुविधाओं को बंद कर सकते हैं। जब यह बंद है, ExcalidrawZ एआई अनुरोध नहीं भेजेगा और एआई खाते और क्रेडिट डेटा को ताज़ा नहीं करेगा।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puoi disattivare le funzionalità AI in qualsiasi momento. Quando è disattivato, ExcalidrawZ non invierà richieste AI né aggiornerà i dati dell'account e del credito AI."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI機能はいつでもオフにできます。オフにすると、ExcalidrawZはAIリクエストを送信せず、AIアカウントやクレジットデータを更新しません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "언제든지 AI 기능을 끌 수 있습니다. 기능이 꺼지면 ExcalidrawZ는 AI 요청을 전송하거나 AI 계정 및 크레딧 데이터를 새로 고치지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je kunt AI-functies op elk moment uitschakelen. Wanneer deze zijn uitgeschakeld, zal ExcalidrawZ geen AI-verzoeken verzenden of de AI-account en kredietgegevens verversen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Możesz wyłączyć funkcje AI w dowolnym momencie. Gdy są wyłączone, ExcalidrawZ nie będzie wysyłać żądań AI ani odświeżać danych o koncie AI i kredytach."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você pode desligar os recursos de IA a qualquer momento. Quando desligado, o ExcalidrawZ não enviará solicitações de IA ou atualizará os dados da conta e dos créditos de IA."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы можете отключить функции ИИ в любое время. Когда они выключены, ExcalidrawZ не будет отправлять запросы на ИИ и обновлять данные аккаунта и кредитов ИИ."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คุณสามารถปิดฟีเจอร์ AI ได้ตลอดเวลา เมื่อติดปิด ExcalidrawZ จะไม่ส่งคำขอ AI หรือรีเฟรชข้อมูลบัญชีและเครดิต AI"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI özelliklerini her an kapatabilirsiniz. Kapatıldığında, ExcalidrawZ AI isteklerini göndermeyecek veya AI hesabı ve kredi verilerini güncellemeyecek."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn có thể tắt các tính năng AI bất cứ lúc nào. Khi tắt, ExcalidrawZ sẽ không gửi yêu cầu AI hoặc làm mới dữ liệu tài khoản và tín dụng AI."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您可以随时关闭AI功能。当关闭时，ExcalidrawZ将不会发送AI请求或刷新AI账户和信用数据。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您隨時可以關閉 AI 功能。 關閉後，ExcalidrawZ 將不會發送 AI 請求或刷新 AI 帳戶和信用數據。"
+          }
+        }
+      }
+    },
+    "settingsAIInformationControlsTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User controls"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحكم المستخدم"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Benutzereinstellungen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controles del usuario"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contrôles utilisateur"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "उपयोगकर्ता नियंत्रण"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controlli utente"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ユーザーコントロール"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "사용자 제어"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebruikerscontroles"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrole użytkownika"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controles do usuário"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Управление пользователем"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การควบคุมของผู้ใช้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanıcı kontrolü"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm soát của người dùng"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用户控制"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用戶控制"
+          }
+        }
+      }
+    },
+    "settingsAIInformationLocalModelsMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local providers such as Ollama are not supported yet."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "موفرو النماذج المحلية مثل Ollama غير مدعومين بعد."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale Anbieter wie Ollama werden derzeit noch nicht unterstützt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los proveedores locales como Ollama aún no son compatibles."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les fournisseurs locaux tels qu'Ollama ne sont pas encore pris en charge."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "स्थानीय प्रदाता जैसे ओलामा पहले से समर्थित नहीं हैं।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I fornitori locali come Ollama non sono ancora supportati."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ollamaなどのローカルプロバイダーはまだサポートされていません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ollama와 같은 로컬 제공자는 아직 지원되지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale aanbieders zoals Ollama worden nog niet ondersteund."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokalni dostawcy, tacy jak Ollama, nie są jeszcze obsługiwani."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fornecedores locais como a Ollama ainda não são suportados."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Локальные провайдеры, такие как Ollama, пока не поддерживаются."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ผู้ให้บริการภายในเช่น Ollama ยังไม่ได้รับการสนับสนุน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ollama gibi yerel sağlayıcılar henüz desteklenmiyor."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các nhà cung cấp địa phương như Ollama hiện chưa được hỗ trợ."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地提供商如Ollama尚不支持。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地提供商如 Ollama 尚未得到支持。"
+          }
+        }
+      }
+    },
+    "settingsAIInformationLocalModelsTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local AI models"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نماذج الذكاء الصناعي المحلية"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale AI-Modelle"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelos de IA locales"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modèles d'IA locaux"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "स्थानीय एआई मॉडल"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelli AI locali"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ローカルAIモデル"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "로컬 AI 모델"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale AI-modellen"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokalne modele AI"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelos de IA locais"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Локальные ИИ-модели"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "โมเดล AI ภายใน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yerel AI modelleri"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mô hình AI địa phương"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地AI模型"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地 AI 模型"
+          }
+        }
+      }
+    },
+    "settingsAIInformationPoliciesMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review the current Privacy Policy and Terms of Use for details about AI data processing, service providers, subscriptions, and usage terms."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "راجع سياسة الخصوصية الحالية وشروط الاستخدام لمزيد من التفاصيل حول معالجة بيانات الذكاء الاصطناعي، ومقدمي الخدمات، والاشتراكات، وشروط الاستخدام."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Überprüfen Sie die aktuelle Datenschutzrichtlinie und die Nutzungsbedingungen für Details zur Verarbeitung von AI-Daten, Dienstanbietern, Abonnements und Nutzungsbedingungen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revise la Política de Privacidad y los Términos de Uso actuales para obtener detalles sobre el procesamiento de datos de IA, proveedores de servicios, suscripciones y términos de uso."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veuillez consulter la Politique de confidentialité et les Conditions d'utilisation actuelles pour des détails sur le traitement des données par l'IA, les fournisseurs de services, les abonnements, et les conditions d'utilisation."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "एआई डेटा प्रोसेसिंग, सेवा प्रदाताओं, सब्सक्रिप्शन, और उपयोग के शर्तों के विवरण के लिए वर्तमान गोपनीयता नीति और उपयोग की शर्तों की समीक्षा करें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisione dell'attuale Informativa sulla Privacy e dei Termini di Utilizzo per dettagli sul trattamento dei dati AI, fornitori di servizi, abbonamenti e termini di utilizzo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AIデータ処理、サービスプロバイダー、サブスクリプション、および利用規約に関する詳細については、現在のプライバシーポリシーおよび利用規約を確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 개인정보 보호정책 및 이용약관을 검토하여 AI 데이터 처리, 서비스 제공자, 구독 및 이용 약관에 대한 세부정보를 확인하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekijk het huidige Privacybeleid en de Gebruiksvoorwaarden voor details over de verwerking van AI-gegevens, dienstverlener, abonnementen en gebruiksvoorwaarden."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przejrzyj aktualną Politykę Prywatności oraz Warunki Użytkowania, aby uzyskać szczegóły dotyczące przetwarzania danych AI, dostawców usług, subskrypcji i warunków użytkowania."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revise a Política de Privacidade e os Termos de Uso atuais para detalhes sobre processamento de dados de IA, fornecedores de serviços, assinaturas e termos de uso."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просмотрите текущую Политику конфиденциальности и Условия использования для получения информации о обработке данных ИИ, поставщиках услуг, подписках и условиях использования."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ตรวจสอบนโยบายความเป็นส่วนตัวและข้อกำหนดในการใช้บริการปัจจุบันสำหรับรายละเอียดเกี่ยวกับการประมวลผลข้อมูล AI ผู้ให้บริการ บริการสมัครสมาชิก และข้อกำหนดการใช้งาน。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI veri işleme, hizmet sağlayıcılar, abonelikler ve kullanım şartları hakkında ayrıntılar için mevcut Gizlilik Politikasını ve Kullanım Şartlarını gözden geçirin."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem lại Chính sách Quyền riêng tư và Điều khoản Sử dụng hiện tại để biết thông tin về quy trình xử lý dữ liệu AI, nhà cung cấp dịch vụ, đăng ký và các điều kiện sử dụng."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看当前的隐私政策和使用条款，以获取有关AI数据处理、服务提供商、订阅和使用条款的详细信息。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看當前的隱私政策和使用條款，以了解有關 AI 數據處理、服務提供商、訂閱和使用條款的詳細信息。"
+          }
+        }
+      }
+    },
+    "settingsAIInformationPoliciesTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Policies"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السياسات"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Richtlinien"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Políticas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Politiques"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नीतियाँ"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Politiche"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ポリシー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정책"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beleid"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Polityki"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Políticas"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Политики"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "นโยบาย"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Politikalar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chính sách"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "政策"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "政策"
+          }
+        }
+      }
+    },
+    "settingsAIInformationProvidersMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Depending on the selected model, requests may be routed to third-party model providers such as OpenAI, Anthropic, or Google."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اعتمادًا على النموذج المحدد، قد يتم توجيه الطلبات إلى مقدمي نماذج الطرف الثالث مثل OpenAI أو Anthropic أو Google."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je nach ausgewähltem Modell können Anfragen an Drittanbieter von Modellen wie OpenAI, Anthropic oder Google weitergeleitet werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dependiendo del modelo seleccionado, las solicitudes pueden dirigirse a proveedores de modelos de terceros como OpenAI, Anthropic o Google."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En fonction du modèle sélectionné, les demandes peuvent être redirigées vers des fournisseurs de modèles tiers tels qu'OpenAI, Anthropic ou Google."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "चुने गए मॉडल के आधार पर, अनुरोधों को OpenAI, Anthropic, या Google जैसे तीसरे पक्ष के मॉडल प्रदाताओं के पास भेजा जा सकता है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A seconda del modello selezionato, le richieste possono essere indirizzate a fornitori di modelli di terze parti come OpenAI, Anthropic o Google."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選択したモデルに応じて、リクエストはOpenAI、Anthropic、Googleなどのサードパーティモデルプロバイダーにルーティングされる場合があります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택한 모델에 따라 요청이 OpenAI, Anthropic 또는 Google과 같은 제3자 모델 제공자로 라우팅될 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afhankelijk van het geselecteerde model kunnen verzoeken worden doorgestuurd naar externe modelproviders zoals OpenAI, Anthropic of Google."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W zależności od wybranego modelu, żądania mogą być kierowane do zewnętrznych dostawców modeli, takich jak OpenAI, Anthropic lub Google."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dependendo do modelo selecionado, as solicitações podem ser direcionadas a fornecedores de modelos de terceiros, como OpenAI, Anthropic ou Google."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В зависимости от выбранной модели запросы могут направляться к сторонним поставщикам моделей, таким как OpenAI, Anthropic или Google."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ขึ้นอยู่กับโมเดลที่เลือก คำขออาจถูกส่งต่อไปยังผู้ให้บริการโมเดลของบุคคลที่สาม เช่น OpenAI, Anthropic หรือ Google。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçilen modele bağlı olarak, talepler OpenAI, Anthropic veya Google gibi üçüncü parti model sağlayıcılarına yönlendirilebilir."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tùy thuộc vào mô hình đã chọn, các yêu cầu có thể được chuyển đến các nhà cung cấp mô hình bên thứ ba như OpenAI, Anthropic hoặc Google."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "根据所选模型，请求可能会被路由到第三方模型提供商，如 OpenAI、Anthropic 或 Google。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "根據所選模型，請求可能會路由到第三方模型提供者，如 OpenAI、Anthropic 或 Google。"
+          }
+        }
+      }
+    },
+    "settingsAIInformationProvidersTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model providers"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مقدمو النماذج"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modellanbieter"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proveedores de modelos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fournisseurs de modèles"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मॉडल प्रदाता"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fornitori di modelli"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "モデルプロバイダー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "모델 제공자"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelproviders"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostawcy modeli"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fornecedores de modelos"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поставщики моделей"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ผู้ให้บริการโมเดล"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model sağlayıcıları"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhà cung cấp mô hình"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型提供商"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型提供者"
+          }
+        }
+      }
+    },
+    "settingsAIInformationSubtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Service details, data handling, controls, and policy links for ExcalidrawZ AI."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تفاصيل الخدمة، ومعالجة البيانات، والتحكمات، وروابط السياسات للذكاء الاصطناعي ExcalidrawZ."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dienstdetails, Datenverarbeitung, Kontrollen und Richtlinienlinks für ExcalidrawZ AI."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detalles del servicio, manejo de datos, controles y enlaces a políticas para ExcalidrawZ AI."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Détails du service, gestion des données, contrôles et liens vers les politiques pour ExcalidrawZ AI."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI के लिए सेवा विवरण, डेटा हैंडलिंग, नियंत्रण, और नीति लिंक।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dettagli del servizio, gestione dei dati, controlli e link alle politiche per ExcalidrawZ AI."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI のサービス詳細、データ処理、コントロール、およびポリシーリンク。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI에 대한 서비스 세부정보, 데이터 처리, 제어 및 정책 링크."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servicedetails, gegevensverwerking, controles en beleidslinks voor ExcalidrawZ AI."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szczegóły usługi, przetwarzanie danych, kontrola i linki do polityki dla ExcalidrawZ AI."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detalhes do serviço, manipulação de dados, controles e links da política para o ExcalidrawZ AI."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подробности об услуге, обработка данных, управления и ссылки на политику для ExcalidrawZ AI."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รายละเอียดบริการ การจัดการข้อมูล การควบคุม และลิงก์นโยบายสำหรับ ExcalidrawZ AI。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI için hizmet ayrıntıları, veri işleme, kontrol seçenekleri ve politika bağlantıları."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chi tiết dịch vụ, xử lý dữ liệu, kiểm soát và liên kết chính sách cho ExcalidrawZ AI."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI 的服务细节、数据处理、控制和政策链接。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI 的服務細節、數據處理、控制和政策連結。"
+          }
+        }
+      }
+    },
+    "settingsAIInformationTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Data & Privacy"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "البيانات والخصوصية للذكاء الاصطناعي"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-Daten & Datenschutz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datos de IA y Privacidad"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Données et confidentialité de l'IA"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI डेटा और गोपनीयता"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dati AI e Privacy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AIデータとプライバシー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 데이터 및 개인 정보 보호"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-gegevens en Privacy"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dane AI i prywatność"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dados de IA e Privacidade"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Данные ИИ и конфиденциальность"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ข้อมูล AI & ความเป็นส่วนตัว"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Veri ve Gizlilik"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu AI & Quyền riêng tư"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 数据与隐私"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 數據與隱私"
+          }
+        }
+      }
+    },
+    "settingsAITabInformation": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Info"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "معلومات"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Info"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Información"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Info"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जानकारी"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Info"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "情報"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정보"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informatie"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informacje"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informações"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Информация"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ข้อมูล"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilgi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông tin"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "信息"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資訊"
           }
         }
       }

@@ -8,6 +8,35 @@
 import SwiftUI
 
 extension AISettingsView {
+    @MainActor @ViewBuilder
+    func settingsTabHeader<Leading: View, Accessory: View>(
+        @ViewBuilder leading: () -> Leading,
+        @ViewBuilder accessory: () -> Accessory
+    ) -> some View {
+        HStack(alignment: .top, spacing: 22) {
+            leading()
+
+            Spacer(minLength: 0)
+
+            if prefs.isAIEnabled {
+                VStack(alignment: .trailing, spacing: 12) {
+                    tabPicker
+                    accessory()
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @MainActor @ViewBuilder
+    func settingsTabHeader<Leading: View>(
+        @ViewBuilder leading: () -> Leading
+    ) -> some View {
+        settingsTabHeader(leading: leading) {
+            EmptyView()
+        }
+    }
+
     @ViewBuilder
     var tabPicker: some View {
         SwiftUI.Group {
@@ -56,6 +85,15 @@ extension AISettingsView {
 
     @MainActor @ViewBuilder
     var selectedTabContent: some View {
+        if !prefs.isAIEnabled {
+            informationSection
+        } else {
+            selectedEnabledTabContent
+        }
+    }
+
+    @MainActor @ViewBuilder
+    var selectedEnabledTabContent: some View {
         switch selectedTab {
             case .usage:
                 Section {
@@ -82,6 +120,18 @@ extension AISettingsView {
                     aiAccountHeader
                         .textCase(nil)
                 }
+            case .information:
+                informationSection
+        }
+    }
+
+    @MainActor @ViewBuilder
+    var informationSection: some View {
+        Section {
+            aiInformationRows
+        } header: {
+            informationHeader
+                .textCase(nil)
         }
     }
 }

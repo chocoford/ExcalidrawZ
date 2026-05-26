@@ -265,6 +265,7 @@ struct Paywall: View {
             isPresented = true
         }
         .task {
+            guard AIChatPreferences.shared.isAIEnabled else { return }
             await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .paywallAppear)
         }
         .onDisappear {
@@ -331,30 +332,39 @@ struct Paywall: View {
                         )
                         .keyboardShortcut(.cancelAction)
                     }
-                    
-                    HStack {
-                        Spacer()
+
+                    VStack(alignment: .trailing, spacing: 4) {
+                        HStack {
+                            Spacer()
 #if APP_STORE
-                        restorePurchasesButton()
+                            restorePurchasesButton()
 #endif
-                        privacyPolicyButton()
-                        
-                        Button {
-                            route = .donation
-                        } label: {
-                            HStack {
-                                Text(.localizable(.paywallButtonDonation))
-                                Image(systemSymbol: .chevronRight2)
+                            privacyPolicyButton()
+
+                            Button {
+                                route = .donation
+                            } label: {
+                                HStack {
+                                    Text(.localizable(.paywallButtonDonation))
+                                    Image(systemSymbol: .chevronRight2)
+                                }
+                                .foregroundStyle(.primary)
+                                .shimmering(
+                                    animation: Animation.linear(duration: 1).delay(2).repeatForever(autoreverses: false),
+                                    gradient: Gradient(colors: [.white, .white.opacity(0.3), .white])
+                                )
                             }
-                            .foregroundStyle(.primary)
-                            .shimmering(
-                                animation: Animation.linear(duration: 1).delay(2).repeatForever(autoreverses: false),
-                                gradient: Gradient(colors: [.white, .white.opacity(0.3), .white])
-                            )
+                            .buttonStyle(.borderless)
                         }
-                        .buttonStyle(.borderless)
+                        .font(.footnote)
+
+                        Text(localizable: .paywallAICloudDisclosure)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .font(.footnote)
                     }
-                    .font(.footnote)
                 }
                 .frame(width: 390)
             }
@@ -723,13 +733,15 @@ struct Paywall: View {
     
     @MainActor @ViewBuilder
     private func privacyPolicyButton() -> some View {
-        HStack {
-            if let privacyPolicy = URL(string: "https://excalidrawz.chocoford.com/privacy/") {
-                Link(.localizable(.generalButtonPrivacyPolicy), destination: privacyPolicy)
-            }
-            Text("·")
-            if let termsOfUse = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/") {
-                Link(.localizable(.generalButtonTermsOfUse), destination: termsOfUse)
+        VStack(spacing: 3) {
+            HStack {
+                if let privacyPolicy = URL(string: "https://excalidrawz.chocoford.com/privacy/") {
+                    Link(.localizable(.generalButtonPrivacyPolicy), destination: privacyPolicy)
+                }
+                Text("·")
+                if let termsOfUse = URL(string: "https://excalidrawz.chocoford.com/terms/") {
+                    Link(.localizable(.generalButtonTermsOfUse), destination: termsOfUse)
+                }
             }
         }
         .foregroundStyle(.secondary)

@@ -38,6 +38,8 @@ struct ReadCanvasImageTool: Tool {
     }
 
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
+        try AIChatToolExecutionGate.ensureAIEnabled()
+
         guard let context else {
             throw ToolError.executionFailed("Missing ReadCanvasImageContext")
         }

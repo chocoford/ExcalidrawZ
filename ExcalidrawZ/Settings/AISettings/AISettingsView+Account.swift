@@ -92,19 +92,23 @@ extension AISettingsView {
 
     @MainActor
     func loadAIAccountInfoIfNeeded() async {
+        guard AIChatAvailability.canUseAI else { return }
         guard aiUserInfo == nil, !isLoadingAIUserInfo else { return }
         await reloadAIAccountInfo()
     }
 
     @MainActor
     func reloadAIAccountInfo() async {
+        guard AIChatAvailability.canUseAI else { return }
         guard !isLoadingAIUserInfo else { return }
         isLoadingAIUserInfo = true
         defer { isLoadingAIUserInfo = false }
 
         do {
+            guard AIChatAvailability.canUseAI else { throw CancellationError() }
             aiUserInfo = try await LLMClient.shared.getUserInfo()
             aiUserInfoLoadError = nil
+        } catch is CancellationError {
         } catch {
             aiUserInfoLoadError = String(describing: error)
         }

@@ -26,6 +26,10 @@ struct ApprovalPromptView: View {
     var body: some View {
         if let request = llmState.pendingApprovalRequest {
             ApprovalCard(request: request) { decision in
+                guard AIChatAvailability.canUseAI else {
+                    llmState.respondToApproval(.deny(reason: nil))
+                    return
+                }
                 llmState.respondToApproval(decision)
             }
             .transition(.opacity)
