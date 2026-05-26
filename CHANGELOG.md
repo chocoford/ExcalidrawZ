@@ -1,3 +1,9 @@
+## 2.0.2
+
+#### Optimizations
+
+- Updated the non-App Store update feed to use the new ExcalidrawZ website for future releases.
+
 ## 2.0.1
 
 #### Optimizations
