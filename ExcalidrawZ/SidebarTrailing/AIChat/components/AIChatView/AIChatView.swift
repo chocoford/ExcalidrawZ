@@ -18,6 +18,7 @@ struct AIChatView: View {
     @EnvironmentObject var llmState: LLMStateObject
     @EnvironmentObject var aiChatState: AIChatState
     @Environment(\.alertToast) var alertToast
+    @ObservedObject var prefs = AIChatPreferences.shared
     
     /// Conversation id lives on `FileState` (chats are scoped to the current
     /// file). We bridge it to a `Binding` for `PromptInputView`'s API and so
@@ -46,6 +47,7 @@ struct AIChatView: View {
     @State var scrollCompletionContinuations: [Int: CheckedContinuation<Void, Never>] = [:]
     @State var revertRequiredUserMessageIDs: Set<String> = []
     @State var messageWindow = ChatMessageWindowState(pageSize: 20)
+    @State var aiActionTask: Task<Void, Never>?
     /// Confirmation dialog for the "Clear chat" toolbar action — destructive,
     /// so we route through a confirmationDialog rather than firing on tap.
     @State var isConfirmingClear: Bool = false
@@ -115,20 +117,41 @@ struct AIChatView: View {
         return balance.formatted(.number.precision(.fractionLength(2)))
     }
 
-    var shouldBlockAIForNonAppStoreMac: Bool {
-        AIChatAvailability.isUnavailableInCurrentBuild
+    var isAIAvailable: Bool {
+        AIChatAvailability.isAvailable
+    }
+
+    var shouldBlockAIForPreference: Bool {
+        !prefs.isAIEnabled
     }
     
     var body: some View {
         let _ = AIChatRenderDebug.hit("AIChatView.body")
 
         ZStack {
-            if shouldBlockAIForNonAppStoreMac {
+            if !isAIAvailable {
                 AIChatWelcomeView(
                     buttonTitle: String(localizable: .aiChatUnavailableNonAppStoreButtonTitle),
                     buttonCaption: String(localizable: .aiChatUnavailableNonAppStoreMessage),
                     buttonURL: AppStoreVersion.appURL
                 ) {}
+                .transition(.opacity)
+            } else if shouldBlockAIForPreference {
+                AIChatWelcomeView(
+                    buttonTitle: String(localizable: .aiChatDisabledButtonEnable),
+                    buttonCaption: String(localizable: .aiChatDisabledMessage),
+                    requiresEnableConfirmation: true
+                ) {
+                    prefs.isAIEnabled = true
+                    Task {
+                        await LLMServiceActivationCoordinator.shared.restoreIfAIEnabled(reason: .aiChatEnable)
+                        await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiChatAppear, force: true)
+                    }
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        hasDismissedWelcome = true
+                        isShowingWelcomeManually = false
+                    }
+                }
                 .transition(.opacity)
             } else if shouldShowWelcome {
                 AIChatWelcomeView {
@@ -160,8 +183,12 @@ struct AIChatView: View {
             debugPublishProbe
         }
         .task {
-            guard !shouldBlockAIForNonAppStoreMac else { return }
+            guard isAIAvailable, prefs.isAIEnabled else { return }
             await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiChatAppear)
+        }
+        .onChange(of: prefs.isAIEnabled) { isEnabled in
+            guard !isEnabled else { return }
+            cancelAIWorkForDisabledAI()
         }
     }
 

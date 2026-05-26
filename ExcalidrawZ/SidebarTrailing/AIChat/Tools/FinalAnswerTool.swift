@@ -31,6 +31,8 @@ struct FinalAnswerTool: Tool {
     }
 
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
+        try AIChatToolExecutionGate.ensureAIEnabled()
+
         guard let data = input.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw ToolError.invalidInput("Invalid input format. Expected: {\"answer\": \"...\"}")

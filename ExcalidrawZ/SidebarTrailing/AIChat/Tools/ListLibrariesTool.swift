@@ -44,6 +44,8 @@ struct ListLibrariesTool: Tool {
     var approvalRequirement: ApprovalRequirement { .always }
 
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
+        try AIChatToolExecutionGate.ensureAIEnabled()
+
         let limit = parseLimit(input)
 
         let ctx = PersistenceController.shared.newTaskContext()

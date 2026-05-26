@@ -29,6 +29,7 @@ struct ContentView: View {
     /// each having to refresh on appear.
     @EnvironmentObject private var llmState: LLMStateObject
     @EnvironmentObject private var aiChatState: AIChatState
+    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
     
     @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
     
@@ -94,6 +95,10 @@ struct ContentView: View {
                 if newValue == nil, layoutState.isInspectorPresented {
                     layoutState.isInspectorPresented = false
                 }
+            }
+            .onChange(of: aiChatPreferences.isAIEnabled) { isEnabled in
+                guard !isEnabled else { return }
+                cancelActiveAIGenerationForDisabledAI()
             }
             // Pre-load the chat conversation tied to the active file
             // *as soon as the file changes*, not lazily when the user
@@ -164,6 +169,17 @@ struct ContentView: View {
     private func handleToggleInspector(_ notification: Notification) {
         guard window?.isKeyWindow == true else { return }
         layoutState.toggleInspector()
+    }
+
+    @MainActor
+    private func cancelActiveAIGenerationForDisabledAI() {
+        if let conversationID = fileState.aiChatConversationID {
+            llmState.cancelGeneration(conversationID: conversationID)
+            aiChatState.markGenerationCancelled(conversationID: conversationID)
+            aiChatState.unmarkCompacting(conversationID: conversationID)
+        }
+        aiChatState.pendingQueue.removeAll()
+        aiChatState.cancelEditing(conversationID: fileState.aiChatConversationID)
     }
     
     // Check if it is first launch by checking the files count.

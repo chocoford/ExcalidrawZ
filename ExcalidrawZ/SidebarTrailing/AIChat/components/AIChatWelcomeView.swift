@@ -19,6 +19,7 @@ struct AIChatWelcomeView: View {
     private let buttonTitle: String
     private let buttonCaption: String
     private let buttonURL: URL?
+    private let requiresEnableConfirmation: Bool
     
     @State private var hasAnimatedIn = false
     @State private var isBackgroundPresented = false
@@ -29,16 +30,19 @@ struct AIChatWelcomeView: View {
     
     
     @State private var isDismissing = false
+    @State private var isConfirmingEnable = false
 
     init(
         buttonTitle: String = String(localizable: .aiChatWelcomeButtonGetStarted),
         buttonCaption: String = String(localizable: .aiChatWelcomeGetStartedCaption),
         buttonURL: URL? = nil,
+        requiresEnableConfirmation: Bool = false,
         onGetStarted: @escaping () -> Void
     ) {
         self.buttonTitle = buttonTitle
         self.buttonCaption = buttonCaption
         self.buttonURL = buttonURL
+        self.requiresEnableConfirmation = requiresEnableConfirmation
         self.onGetStarted = onGetStarted
     }
     
@@ -94,6 +98,13 @@ struct AIChatWelcomeView: View {
             try? await Task.sleep(for: milliseconds(110))
             withAnimation(.smooth(duration: scaled(0.55))) {
                 isFeatureListPresented = true
+            }
+        }
+        .sheet(isPresented: $isConfirmingEnable) {
+            AIEnableConsentSheet {
+                Task {
+                    await dismissAndStart()
+                }
             }
         }
     }
@@ -215,46 +226,7 @@ struct AIChatWelcomeView: View {
     
     @ViewBuilder
     private var heroIcon: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.accentColor.opacity(0.36),
-                            Color.purple.opacity(0.24),
-                            Color.pink.opacity(0.16)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 82, height: 82)
-                .blur(radius: 22)
-                .opacity(isHeroIconPresented ? 1 : 0)
-            
-            ZStack {
-                Circle()
-                    .fill(.regularMaterial)
-                
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.68),
-                                Color.white.opacity(0.08)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 0.8
-                    )
-                
-                Image(systemSymbol: .sparkles)
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(AIAppearancePalette.foregroundGradient)
-            }
-            .frame(width: 64, height: 64)
-        }
+        AIIdentityIcon(size: 64)
         .rotation3DEffect(
             .degrees(heroIconRotation),
             axis: (x: 0, y: 1, z: 0),
@@ -262,7 +234,6 @@ struct AIChatWelcomeView: View {
         )
         .scaleEffect(heroIconScale)
         .opacity(heroIconOpacity)
-        .shadow(color: .accentColor.opacity(0.12), radius: 30, y: 18)
     }
     
     @ViewBuilder
@@ -347,8 +318,12 @@ struct AIChatWelcomeView: View {
                 .disabled(isDismissing)
             } else {
                 Button {
-                    Task {
-                        await dismissAndStart()
+                    if requiresEnableConfirmation {
+                        isConfirmingEnable = true
+                    } else {
+                        Task {
+                            await dismissAndStart()
+                        }
                     }
                 } label: {
                     getStartedButtonLabel

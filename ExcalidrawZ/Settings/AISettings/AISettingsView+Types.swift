@@ -22,6 +22,7 @@ extension AISettingsView {
     enum SettingsTab: String, CaseIterable, Identifiable {
         case usage
         case settings
+        case information
 
         var id: Self { self }
 
@@ -29,6 +30,7 @@ extension AISettingsView {
             switch self {
                 case .usage: String(localizable: .settingsAITabUsage)
                 case .settings: String(localizable: .settingsAITabSettings)
+                case .information: String(localizable: .settingsAITabInformation)
             }
         }
 
@@ -42,6 +44,8 @@ extension AISettingsView {
                     }
                 case .settings:
                     .sliderHorizontal3
+                case .information:
+                    .infoCircle
             }
         }
     }

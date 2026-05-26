@@ -102,6 +102,7 @@ struct PromptInputView<Background: View, Header: View>: View {
     /// Cancelling this task propagates Swift cooperative cancellation through
     /// `llmState.sendMessage`'s stream consumer, which terminates the request.
     @State var currentTask: Task<Void, Never>?
+    @State var compactTask: Task<Void, Never>?
     @State var draftHasContent: Bool = false
     @State var draftHasImages: Bool = false
     @State var draftSendRequestToken: Int = 0
@@ -329,6 +330,10 @@ struct PromptInputView<Background: View, Header: View>: View {
         }
         .task {
             await loadAgentConfigIfNeeded()
+        }
+        .onChange(of: prefs.isAIEnabled) { isEnabled in
+            guard !isEnabled else { return }
+            cancelCurrentGeneration()
         }
     }
 

@@ -24,6 +24,7 @@ struct ExcalidrawEditor: View {
     /// but the *anchor* (bottom-center) is editor-local, hence the overlay
     /// lives here rather than at the NavigationSplitView level.
     @EnvironmentObject var layoutState: LayoutState
+    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
 
     let logger = Logger(label: "ExcalidrawEditor")
     
@@ -155,7 +156,8 @@ struct ExcalidrawEditor: View {
         // means bottom-center of the actual canvas the user is looking at.
         .overlay(alignment: .bottom) {
             if layoutState.isAIChatIslandMode,
-               !AIChatAvailability.isUnavailableInCurrentBuild,
+               AIChatAvailability.isAvailable,
+               aiChatPreferences.isAIEnabled,
                !fileState.currentActiveFileIsInTrash {
                 AIChatIslandView(canvasSize: editorContentSize)
                     .padding(.bottom, 24)

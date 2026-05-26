@@ -43,6 +43,8 @@ struct AdjustElementsTool: Tool {
     }
 
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
+        try AIChatToolExecutionGate.ensureAIEnabled()
+
         guard let data = input.data(using: .utf8) else {
             throw ToolError.invalidInput("Invalid input format. Expected JSON string.")
         }

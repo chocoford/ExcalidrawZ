@@ -1,3 +1,17 @@
+## 2.0.2
+
+#### Optimizations
+
+- Updated the non-App Store update feed to use the new ExcalidrawZ website for future releases.
+
+## 2.0.1
+
+#### Optimizations
+
+- AI features are now disabled by default and require an explicit opt-in before ExcalidrawZ sends AI requests or refreshes AI account and credits data.
+- Added clearer AI privacy information in Settings, including cloud processing, what data may be sent, third-party model providers, user controls, and links to Privacy Policy and Terms of Use.
+- Added an AI enable consent sheet that explains cloud AI usage and requires confirmation before turning AI features on.
+
 ## 2.0.0
 
 #### Features

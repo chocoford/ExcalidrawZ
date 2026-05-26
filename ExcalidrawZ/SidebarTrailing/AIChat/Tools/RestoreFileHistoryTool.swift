@@ -64,6 +64,8 @@ struct RestoreFileHistoryTool: Tool {
     var approvalRequirement: ApprovalRequirement { .always }
 
     func execute(_ input: String, context: (any ChatInvocationContext)?) async throws -> ToolResult {
+        try AIChatToolExecutionGate.ensureAIEnabled()
+
         let params = try parseInput(input)
 
         let coreData = PersistenceController.shared

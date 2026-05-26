@@ -31,6 +31,7 @@ struct AISettingsView: View {
     @State var isLoadingAIUserInfo: Bool = false
     @State var aiUserInfoLoadError: String?
     @State var didCopyAIAccountID: Bool = false
+    @State var isPresentingAIEnableConsent: Bool = false
 
     /// Model list for the Default Model picker, sourced from the agent's
     /// `allowedModels`. Loaded lazily on first appearance so opening
@@ -48,11 +49,7 @@ struct AISettingsView: View {
                     selectedTabContent
                 }
                 .formStyle(.grouped)
-                .task { await loadInitialTransactions() }
-                .task { await loadAllTransactionsIfNeeded() }
-                .task { await loadAvailableModelsIfNeeded() }
-                .task { await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiSettingsAppear) }
-                .task { await loadAIAccountInfoIfNeeded() }
+                .task { await loadAISettingsDataIfEnabled() }
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
@@ -60,11 +57,7 @@ struct AISettingsView: View {
                     }
                     .padding()
                 }
-                .task { await loadInitialTransactions() }
-                .task { await loadAllTransactionsIfNeeded() }
-                .task { await loadAvailableModelsIfNeeded() }
-                .task { await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiSettingsAppear) }
-                .task { await loadAIAccountInfoIfNeeded() }
+                .task { await loadAISettingsDataIfEnabled() }
             }
         }
         .task {
@@ -72,6 +65,17 @@ struct AISettingsView: View {
         }
         .watch(value: router.pendingAISettingsRoute) {
             consumePendingAISettingsRoute()
+        }
+        .watch(value: prefs.isAIEnabled) { _, isEnabled in
+            guard isEnabled else { return }
+            Task {
+                await loadAISettingsDataIfEnabled()
+            }
+        }
+        .sheet(isPresented: $isPresentingAIEnableConsent) {
+            AIEnableConsentSheet {
+                prefs.isAIEnabled = true
+            }
         }
     }
 
@@ -85,5 +89,32 @@ struct AISettingsView: View {
                 selectedTab = .settings
         }
         router.pendingAISettingsRoute = nil
+    }
+
+    @MainActor
+    private func loadAISettingsDataIfEnabled() async {
+        guard AIChatAvailability.canUseAI else { return }
+        await LLMServiceActivationCoordinator.shared.restoreIfAIEnabled(reason: .aiSettingsAppear)
+        await loadInitialTransactions()
+        await loadAllTransactionsIfNeeded()
+        await loadAvailableModelsIfNeeded()
+        await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiSettingsAppear)
+        await loadAIAccountInfoIfNeeded()
+    }
+
+    @MainActor
+    var aiEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { prefs.isAIEnabled },
+            set: { isEnabled in
+                if isEnabled {
+                    if !prefs.isAIEnabled {
+                        isPresentingAIEnableConsent = true
+                    }
+                } else {
+                    prefs.isAIEnabled = false
+                }
+            }
+        )
     }
 }

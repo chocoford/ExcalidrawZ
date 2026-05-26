@@ -109,7 +109,7 @@ struct AboutView: View {
                         .hoverCursor(.link)
                 }
                 Text("·")
-                if let termsOfUse = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/") {
+                if let termsOfUse = URL(string: "https://excalidrawz.chocoford.com/terms/") {
                     Link(.localizable(.generalButtonTermsOfUse), destination: termsOfUse)
                         .hoverCursor(.link)
                 }
@@ -152,4 +152,3 @@ SOFTWARE.
 #Preview {
     AboutView()
 }
-

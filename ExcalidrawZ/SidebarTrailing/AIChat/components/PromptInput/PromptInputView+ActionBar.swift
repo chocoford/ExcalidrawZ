@@ -173,12 +173,14 @@ extension PromptInputView {
     }
 
     func loadAgentConfigIfNeeded() async {
+        guard AIChatAvailability.canUseAI else { return }
         guard agentConfig == nil else { return }
         do {
             let config = try await LLMClient.shared.getDomainAgentConfig(agentID: agentID)
             await MainActor.run {
                 self.agentConfig = config
             }
+        } catch is CancellationError {
         } catch {
             alertToast(
                 .init(
