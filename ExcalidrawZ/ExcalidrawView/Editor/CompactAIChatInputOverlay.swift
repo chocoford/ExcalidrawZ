@@ -38,7 +38,6 @@ struct CompactAIChatInputOverlay: View {
         isCompactIOS &&
         layoutState.isCompactAIChatToolbarPresented &&
         layoutState.isCompactAIChatInputEditing &&
-        llmState.pendingApprovalRequest == nil &&
         AIChatAvailability.isAvailable &&
         aiChatPreferences.isAIEnabled &&
         !fileState.currentActiveFileIsInTrash
@@ -67,7 +66,11 @@ struct CompactAIChatInputOverlay: View {
                     }
                 }
             )
-            .disabled(fileState.isAIChatConversationLoading || fileState.currentActiveFileIsInTrash)
+            .disabled(
+                llmState.pendingApprovalRequest != nil ||
+                fileState.isAIChatConversationLoading ||
+                fileState.currentActiveFileIsInTrash
+            )
             .padding(.horizontal, CompactAIChatOverlayMetrics.horizontalPadding)
             .padding(.bottom, bottomPadding)
             .transition(.move(edge: .bottom).combined(with: .opacity))

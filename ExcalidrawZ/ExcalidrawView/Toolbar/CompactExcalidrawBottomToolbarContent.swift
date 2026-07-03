@@ -33,7 +33,6 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
                 if toolState.inDragMode {
                     if layoutState.isCompactAIChatToolbarPresented,
                        canPresentCompactAIChatToolbarInput {
-                        // AI Chat
                         if compactAIChatIsReplying {
                             compactAIChatToolbarFullscreenButton
                                 .transition(.opacity.combined(with: .scale(scale: 0.92)))
@@ -478,7 +477,7 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
             if !toolState.inDragMode {
                 toolState.setActivedTool(.hand)
             }
-            layoutState.enterCompactAIChatInputEditing()
+            layoutState.enterCompactAIChatToolbar()
         } else if layoutState.isAIChatIslandMode {
             layoutState.isAIChatIslandMode = false
         } else {
@@ -589,6 +588,10 @@ struct CompactExcalidrawBottomToolbarStateModifier: ViewModifier {
         )
     }
 
+    private var shouldShowCompactAIChatToolbarInput: Bool {
+        layoutState.isCompactAIChatToolbarPresented && canPresentCompactAIChatToolbarInput
+    }
+
     func body(content: Content) -> some View {
         content
             .watch(value: toolState.activatedTool) { newValue in
@@ -610,6 +613,10 @@ struct CompactExcalidrawBottomToolbarStateModifier: ViewModifier {
                 guard !canPresent else { return }
                 layoutState.exitCompactAIChatToolbar()
             }
+            .watch(value: shouldShowCompactAIChatToolbarInput) { shouldShowInput in
+                guard shouldShowInput else { return }
+                enterCompactAIChatInputEditingIfNeeded()
+            }
             .watch(value: layoutState.isCompactAIChatToolbarPresented) { isPresented in
                 guard isPresented else { return }
                 guard canPresentCompactAIChatToolbarInput else {
@@ -619,7 +626,17 @@ struct CompactExcalidrawBottomToolbarStateModifier: ViewModifier {
                 if !toolState.inDragMode {
                     toolState.setActivedTool(.hand)
                 }
+                enterCompactAIChatInputEditingIfNeeded()
             }
+    }
+
+    private func enterCompactAIChatInputEditingIfNeeded() {
+        guard shouldShowCompactAIChatToolbarInput,
+              !layoutState.isCompactAIChatInputEditing
+        else {
+            return
+        }
+        layoutState.enterCompactAIChatInputEditing()
     }
 
     private func syncActiveTool(_ newValue: ExcalidrawTool?) {
