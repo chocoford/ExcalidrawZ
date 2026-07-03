@@ -12,6 +12,7 @@ import LLMCore
 
 struct AISettingsView: View {
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
+    @Environment(\.dismiss) var dismiss
     @EnvironmentObject var llmState: LLMStateObject
     @EnvironmentObject var store: Store
     @ObservedObject var prefs = AIChatPreferences.shared
@@ -66,6 +67,21 @@ struct AISettingsView: View {
 
     var canRunMCPServer: Bool {
         ExcalidrawZMCPServerController.isAvailable
+    }
+
+    @MainActor
+    func presentPaywall(reason: Store.ReachPaywallReason) {
+#if os(iOS)
+        if usesCompactSettingsLayout {
+            dismiss()
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 350_000_000)
+                store.togglePaywall(reason: reason)
+            }
+            return
+        }
+#endif
+        store.togglePaywall(reason: reason)
     }
     
     var body: some View {

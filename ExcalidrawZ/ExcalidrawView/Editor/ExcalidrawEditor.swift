@@ -18,6 +18,10 @@ import UIKit
 import ChocofordUI
 import Logging
 
+enum EditorRoute: Hashable {
+    case aiChat
+}
+
 struct ExcalidrawEditor: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
@@ -241,22 +245,7 @@ struct ExcalidrawEditor: View {
 //#endif
 #if os(iOS)
         .overlay(alignment: .bottom) {
-            CompactAIChatInputOverlay()
-        }
-        .overlay(alignment: .bottom) {
-            CompactAIChatGeneratingOverlay()
-        }
-        .overlay(alignment: .bottom) {
-            CompactAIChatProposalOverlay()
-        }
-        .overlay(alignment: .bottom) {
-            CompactAIChatDraftAttachmentsOverlay()
-        }
-        .navigationDestination(isPresented: $layoutState.isCompactAIChatFullChatPresented) {
-            AIChatView()
-                .background(.background)
-                .navigationTitle(String(localizable: .aiChatTitle))
-                .navigationBarTitleDisplayMode(.inline)
+            CompactAIChatEditorOverlays()
         }
 #endif
         .background {

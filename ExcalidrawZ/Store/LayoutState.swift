@@ -103,6 +103,7 @@ final class LayoutState: ObservableObject {
     /// all compact AI entry points push the same `AIChatView` destination
     /// instead of each overlay carrying its own navigation state.
     @Published var isCompactAIChatFullChatPresented: Bool = false
+    @Published var editorRouteRequest: EditorRoute?
 
     /// Persistent drag offset of the island (relative to its default top-right
     /// anchor). Lives here — not in the island view's @State — so the position
@@ -165,7 +166,7 @@ final class LayoutState: ObservableObject {
     }
 
     func presentCompactAIChatFullChat() {
-        isCompactAIChatFullChatPresented = true
+        editorRouteRequest = .aiChat
     }
 
     /// Triggered by clicking a specific tab button.

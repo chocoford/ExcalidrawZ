@@ -18,7 +18,7 @@ extension AISettingsView {
                 usageSummary
             } accessory: {
                 Button {
-                    store.togglePaywall(reason: .aiInsufficientCredits)
+                    presentPaywall(reason: .aiInsufficientCredits)
                 } label: {
                     Label(.localizable(.generalButtonUpgrade), systemSymbol: .sparkles)
                 }

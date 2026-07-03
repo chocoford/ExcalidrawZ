@@ -23,9 +23,18 @@ struct ApprovalPromptView: View {
     @EnvironmentObject private var llmState: LLMStateObject
     @EnvironmentObject private var aiChatState: AIChatState
 
+    private let autofocusDenyReason: Bool
+
+    init(autofocusDenyReason: Bool = true) {
+        self.autofocusDenyReason = autofocusDenyReason
+    }
+
     var body: some View {
         if let request = llmState.pendingApprovalRequest {
-            ApprovalCard(request: request) { decision in
+            ApprovalCard(
+                request: request,
+                autofocusDenyReason: autofocusDenyReason
+            ) { decision in
                 guard AIChatAvailability.canUseAI else {
                     llmState.respondToApproval(.deny(reason: nil))
                     return
@@ -41,6 +50,7 @@ struct ApprovalPromptView: View {
 
 private struct ApprovalCard: View {
     let request: ToolApprovalRequest
+    let autofocusDenyReason: Bool
     let onDecide: (ToolApprovalDecision) -> Void
 
     /// Details panel collapsed by default — the reason line is usually
@@ -150,6 +160,7 @@ private struct ApprovalCard: View {
                     submitDenyReason()
                 }
                 .onAppear {
+                    guard autofocusDenyReason else { return }
                     Task { @MainActor in
                         try? await Task.sleep(nanoseconds: UInt64(1e+9))
                         isFocused = true

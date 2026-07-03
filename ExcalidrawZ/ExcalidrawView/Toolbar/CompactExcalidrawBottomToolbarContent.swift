@@ -35,6 +35,8 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
                        canPresentCompactAIChatToolbarInput {
                         // AI Chat
                         if compactAIChatIsReplying {
+                            compactAIChatToolbarFullscreenButton
+                                .transition(.opacity.combined(with: .scale(scale: 0.92)))
                             Spacer(minLength: 0)
                         } else if layoutState.isCompactAIChatInputEditing {
                             Spacer(minLength: 0)
@@ -252,6 +254,19 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
     }
 
     @ViewBuilder
+    private var compactAIChatToolbarFullscreenButton: some View {
+        NavigationLink(value: EditorRoute.aiChat) {
+            Image(systemSymbol: .rectangleExpandVertical)
+                .font(.system(size: 16, weight: .medium))
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .foregroundStyle(Color.primary)
+        .help(.localizable(.aiChatButtonFullscreen))
+        .accessibilityLabel(Text(localizable: .aiChatButtonFullscreen))
+    }
+
+    @ViewBuilder
     private var compactAIChatToolbarCloseButton: some View {
         Button {
             if compactAIChatShowsStopButton {
@@ -422,7 +437,9 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
     }
 
     private var compactAIChatIsReplying: Bool {
-        compactAIChatIsGenerating || layoutState.isCompactAIChatReplyTickerVisible
+        compactAIChatIsGenerating ||
+            layoutState.isCompactAIChatReplyTickerVisible ||
+            layoutState.isCompactAIChatReplyStartPending
     }
 
     private var compactAIChatShowsStopButton: Bool {

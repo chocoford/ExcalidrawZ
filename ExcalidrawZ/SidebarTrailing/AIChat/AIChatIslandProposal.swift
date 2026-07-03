@@ -83,6 +83,7 @@ struct AIChatIslandProposalModifier: ViewModifier {
             ) { proposal in
                 proposalCard(proposal)
             }
+            .ignoredWhenCollapsed()
 
             content
         }

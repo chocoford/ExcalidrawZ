@@ -550,7 +550,7 @@ extension AISettingsView {
            !store.canUseOptimizedMCPServices {
             mcpServerController.setServiceMode(.basic)
             mcpServiceModePickerID = UUID()
-            store.togglePaywall(reason: .optimizedMCPServices)
+            presentPaywall(reason: .optimizedMCPServices)
             return
         }
 

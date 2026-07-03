@@ -151,6 +151,7 @@ struct AIChatIslandView: View {
                         islandHeader(payload)
                     }
                 }
+                .ignoredWhenCollapsed()
 
                 islandBody()
             }
@@ -215,7 +216,7 @@ struct AIChatIslandView: View {
                 }
                 .frame(height: 36, alignment: .bottom)
             }
-            
+
             if !payload.pendingQueue.isEmpty {
                 PendingQueueView(
                     messages: payload.pendingQueue,
@@ -229,7 +230,7 @@ struct AIChatIslandView: View {
         }
         .frame(width: islandWidth)
     }
-    
+
     @ViewBuilder
     private func islandBody() -> some View {
 #if os(iOS)
@@ -439,7 +440,7 @@ struct AIChatIslandView: View {
     ) -> some View {
         islandBackground(shape: shape, fallbackShape: shape)
     }
-    
+
     @ViewBuilder
     private func islandBackground<S1: Shape, S2: Shape>(
         shape: S1,
@@ -636,12 +637,12 @@ struct AIChatReplyTickerHost<Content: View>: View {
                 lastSeenAssistantMessageID = newID
                 handleNewAssistantMessage()
             }
+            .watch(value: displayedReplyText) { _, text in
+                onReplyTextChange(text)
+            }
             .onAppear {
                 resetTickerTrackingForCurrentConversation()
                 onReplyTextChange(displayedReplyText)
-            }
-            .watch(value: displayedReplyText) { _, text in
-                onReplyTextChange(text)
             }
             .onDisappear {
                 autoHideTask?.cancel()

@@ -39,7 +39,7 @@ extension LLMClient {
         authProvider: .xcode(bundleID: "com.chocoford.excalidraw-Debug"),
         uploadProvider: .none,
         uploadPolicy: .automatic,
-        baseURL: URL(string: "http://192.168.31.133:8080")!
+        baseURL: URL(string: "http://192.168.31.134:8080")!
     )
 #else
     static let shared = LLMClient(
