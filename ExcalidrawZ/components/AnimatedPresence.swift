@@ -485,6 +485,8 @@ struct AnimatedPresence<Value: Equatable, Content: View>: View {
         value: Value?,
         animation: Animation? = .easeInOut(duration: 0.22),
         contentTransition: ContentTransition = .identity,
+        removalAnimation: Animation? = nil,
+        removalDelay: Duration? = .milliseconds(240),
         @ViewBuilder content: @escaping (Value) -> Content
     ) {
         self.value = value
@@ -493,8 +495,8 @@ struct AnimatedPresence<Value: Equatable, Content: View>: View {
         self.swiftUIContentTransition = contentTransition
         self.legacyContentTransition = nil
         self.contentTransitionDelay = .milliseconds(140)
-        self.removalAnimation = nil
-        self.removalDelay = nil
+        self.removalAnimation = removalAnimation
+        self.removalDelay = removalDelay
         self.content = content
     }
 
@@ -841,12 +843,12 @@ private struct VisibleHeightLayout: Layout {
 /// 状态机的私有 channel。`fileprivate` 隔离保证不会被组件外的代码读到，
 /// 避免被当成通用 frame measurement API 扩散——issue 176 明确约束了这一点。
 ///
-/// `reduce` 用 `value = nextValue()` 而非 union：只有一个 measurement 源
-/// （单 subview），后续值直接覆盖即可；无需聚合多个候选。
+/// `reduce` 取 max 保持旧版 AnimatedPresence 语义：SwiftUI 在复杂内容树中可能
+/// 同轮推送默认 0 和真实测量值，不能让后到的 0 覆盖掉有效高度。
 private struct AnimatedPresenceHeightKey: PreferenceKey {
     static var defaultValue: CGFloat { 0 }
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
+        value = max(value, nextValue())
     }
 }
 

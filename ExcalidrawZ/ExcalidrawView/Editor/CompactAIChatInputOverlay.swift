@@ -61,6 +61,7 @@ struct CompactAIChatInputOverlay: View {
                 onSuccessfulSubmit: {
                     guard layoutState.isCompactAIChatToolbarPresented else { return }
                     withAnimation(.smooth(duration: 0.18)) {
+                        layoutState.isCompactAIChatInputEditing = false
                         layoutState.isCompactAIChatReplyTickerVisible = true
                         layoutState.isCompactAIChatReplyStartPending = true
                     }
