@@ -9,12 +9,33 @@ import SwiftUI
 import SFSafeSymbols
 
 extension MathInputSheetView {
+#if os(iOS)
+    @ToolbarContentBuilder
+    var compactToolbar: some ToolbarContent {
+        if usesCompactLayout {
+            ToolbarItem(placement: .topBarLeading) {
+                mathToolbarCloseButton
+            }
+
+            ToolbarItem(placement: .principal) {
+                compactWorkspaceSegmentedPicker
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                mathToolbarCommitButton
+            }
+        }
+    }
+#endif
+
     @ViewBuilder
     var header: some View {
+        regularHeader
+    }
+
+    var regularHeader: some View {
         ZStack {
             HStack {
-                mathHeaderCloseButton
-
                 Spacer()
 
 #if os(macOS)
@@ -34,16 +55,41 @@ extension MathInputSheetView {
         } label: {
             Image(systemSymbol: .xmark)
                 .font(.system(size: 16, weight: .semibold))
-                .frame(width: 36, height: 36)
-                .contentShape(Circle())
-                .background {
-                    mathHeaderCircleButtonBackground
-                }
         }
-        .buttonStyle(.plain)
+        .modernButtonStyle(style: .glass, size: .extraLarge, shape: .circle)
         .foregroundStyle(.secondary)
-        .contentShape(Circle())
         .help(String(localizable: .generalButtonCancel))
+    }
+
+    var mathToolbarCloseButton: some View {
+        Button {
+            dismiss()
+        } label: {
+            Image(systemSymbol: .xmark)
+        }
+        .help(String(localizable: .generalButtonCancel))
+    }
+
+    var mathHeaderCommitButton: some View {
+        Button {
+            commitRenderedSVG()
+        } label: {
+            commitButtonLabel
+        }
+        .lineLimit(1)
+        .modernButtonStyle(style: .glassProminent, size: .extraLarge, shape: .capsule)
+        .keyboardShortcut(.defaultAction)
+        .disabled(svgContent == nil)
+    }
+
+    var mathToolbarCommitButton: some View {
+        Button {
+            commitRenderedSVG()
+        } label: {
+            commitButtonLabel
+        }
+        .keyboardShortcut(.defaultAction)
+        .disabled(svgContent == nil)
     }
 
 #if os(macOS)
@@ -55,34 +101,12 @@ extension MathInputSheetView {
         } label: {
             Image(systemSymbol: .sidebarRight)
                 .font(.system(size: 16, weight: .semibold))
-                .frame(width: 36, height: 36)
-                .contentShape(Circle())
-                .background {
-                    mathHeaderCircleButtonBackground
-                }
         }
-        .buttonStyle(.plain)
+        .modernButtonStyle(style: .glass, size: .extraLarge, shape: .circle)
         .foregroundStyle(isInspectorPresented ? Color.accentColor : Color.secondary)
-        .contentShape(Circle())
         .help(String(localizable: .toolbarLatexMathTemplatesHelp))
     }
 #endif
-
-    @ViewBuilder
-    var mathHeaderCircleButtonBackground: some View {
-        if #available(macOS 26.0, iOS 26.0, *) {
-            Circle()
-                .fill(.clear)
-                .glassEffect(.clear, in: Circle())
-        } else {
-            Circle()
-                .fill(.regularMaterial)
-                .overlay {
-                    Circle()
-                        .strokeBorder(Color.primary.opacity(0.10))
-                }
-        }
-    }
 
     var workspaceSegmentedPicker: some View {
         HStack(spacing: 3) {
@@ -96,14 +120,34 @@ extension MathInputSheetView {
         }
         .fixedSize(horizontal: true, vertical: true)
         .watch(value: activeWorkspace) { newValue in
-            if isLatexAIModePresented {
-                cancelLatexAIMode()
-            }
-            if newValue != .equation {
-                templateSearchText = ""
-            }
-            generatePreview(input: newValue == .function ? functionLatexSource : inputText)
+            handleWorkspaceSelectionChanged(newValue)
         }
+    }
+
+    var compactWorkspaceSegmentedPicker: some View {
+        Picker(String(localizable: .toolbarLatexMathFormulaPanelPickerTitle), selection: $activeWorkspace) {
+            ForEach(MathInputWorkspace.visibleCases) { workspace in
+                Text(workspace.pickerTitle)
+                    .tag(workspace)
+            }
+        }
+        .labelsHidden()
+        .pickerStyle(.segmented)
+        .controlSize(.regular)
+        .mathNativeCapsuleSegmentedPicker()
+        .watch(value: activeWorkspace) { newValue in
+            handleWorkspaceSelectionChanged(newValue)
+        }
+    }
+
+    func handleWorkspaceSelectionChanged(_ newValue: MathInputWorkspace) {
+        if isLatexAIModePresented {
+            cancelLatexAIMode()
+        }
+        if newValue != .equation {
+            templateSearchText = ""
+        }
+        generatePreview(input: newValue == .function ? functionLatexSource : inputText)
     }
 
     func workspaceSegmentButton(_ workspace: MathInputWorkspace) -> some View {
@@ -123,14 +167,12 @@ extension MathInputSheetView {
             .lineLimit(1)
             .minimumScaleFactor(0.82)
             .frame(width: 86, height: 30)
-            .background {
-                if isSelected {
-                    workspaceSelectedSegmentBackground
-                }
-            }
-            .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .modernButtonStyle(
+            style: isSelected ? .glassProminent : .glass,
+            size: .small,
+            shape: .capsule
+        )
     }
 
     @ViewBuilder
@@ -142,22 +184,6 @@ extension MathInputSheetView {
         } else {
             Capsule()
                 .fill(.regularMaterial)
-                .overlay {
-                    Capsule()
-                        .strokeBorder(Color.primary.opacity(0.10))
-                }
-        }
-    }
-
-    @ViewBuilder
-    var workspaceSelectedSegmentBackground: some View {
-        if #available(macOS 26.0, iOS 26.0, *) {
-            Capsule()
-                .fill(Color.primary.opacity(0.08))
-                .glassEffect(.clear.interactive(), in: Capsule())
-        } else {
-            Capsule()
-                .fill(Color.primary.opacity(0.10))
                 .overlay {
                     Capsule()
                         .strokeBorder(Color.primary.opacity(0.10))

@@ -6,10 +6,10 @@
 //  main view file so the style lookup table doesn't bloat the input
 //  view's struct definition. Contains:
 //
-//   - `PromptInputStyle<Background>`: the value type carrying chrome
-//     knobs (banner, corner radius, shadow, border, custom backdrop).
-//   - `PromptInputStyle.inspector` / `.island`: the two presets the
-//     app actually instantiates today.
+//   - `PromptInputStyle<Background>`: the value type carrying the input
+//     component's own layout/chrome knobs.
+//   - `PromptInputStyle.regular` / `.compactIOS`: the two prompt-input
+//     shapes the app actually instantiates today.
 //   - `PlatformDefaultPromptBackground`: typed sentinel `View` used
 //     when the caller doesn't supply a custom backdrop, so the style
 //     stays generic without falling back to `AnyView`.
@@ -17,16 +17,14 @@
 
 import SwiftUI
 
-enum PromptInputSurface {
-    case inspector
-    case island
-    case compactIOSIsland
+enum PromptInputLayout {
+    case regular
+    case compactIOS
 }
 
-/// Visual knobs for `PromptInputView`. Lets callers tune the prompt block to
-/// the chrome it's embedded in — the inspector panel wants prominent shadow,
-/// border and the low-credits banner; the floating island shares the same
-/// chassis but trims the chrome.
+/// Visual knobs for `PromptInputView` itself. Chat-level accessories like
+/// low-credits banners, reply tickers, approval cards, and pending queues are
+/// owned by the host surface, not by this input component.
 ///
 /// `Background` is a concrete `View` type rather than `AnyView` so the input
 /// box's `.background { … }` propagates layout proposals normally — type
@@ -34,13 +32,9 @@ enum PromptInputSurface {
 /// default is materialized as a typed sentinel view (`PlatformDefaultPromptBackground`)
 /// so presets that want it don't need a closure.
 struct PromptInputStyle<Background: View> {
-    var surface: PromptInputSurface
+    var layout: PromptInputLayout
 
-    /// Whether the "Only N credits left" hint above the input is visible.
-    /// Hosts with limited vertical space usually turn this off.
-    var showsLowCreditsBanner: Bool
-
-    /// Corner radius for the input field and its border/banner.
+    /// Corner radius for the input field and its border/background.
     var cornerRadius: CGFloat
 
     /// Drop-shadow under the input field. `nil` disables the shadow entirely.
@@ -63,16 +57,14 @@ struct PromptInputStyle<Background: View> {
 
     /// Caller supplies a custom backdrop via `@ViewBuilder`.
     init(
-        surface: PromptInputSurface = .inspector,
-        showsLowCreditsBanner: Bool = true,
+        layout: PromptInputLayout = .regular,
         cornerRadius: CGFloat = 20,
         shadow: ShadowSpec? = ShadowSpec(opacity: 0.2, radius: 4),
         border: BorderSpec? = BorderSpec(lineWidth: 0.5),
         showsGeneratingEffect: Bool = true,
         @ViewBuilder background: () -> Background
     ) {
-        self.surface = surface
-        self.showsLowCreditsBanner = showsLowCreditsBanner
+        self.layout = layout
         self.cornerRadius = cornerRadius
         self.shadow = shadow
         self.border = border
@@ -105,16 +97,14 @@ extension PromptInputStyle where Background == PlatformDefaultPromptBackground {
     /// Most call sites should use this — only reach for the `@ViewBuilder`
     /// init when you actually need a non-default backdrop.
     init(
-        surface: PromptInputSurface = .inspector,
-        showsLowCreditsBanner: Bool = true,
+        layout: PromptInputLayout = .regular,
         cornerRadius: CGFloat = 20,
         shadow: ShadowSpec? = ShadowSpec(opacity: 0.2, radius: 4),
         border: BorderSpec? = BorderSpec(lineWidth: 0.5),
         showsGeneratingEffect: Bool = true
     ) {
         self.init(
-            surface: surface,
-            showsLowCreditsBanner: showsLowCreditsBanner,
+            layout: layout,
             cornerRadius: cornerRadius,
             shadow: shadow,
             border: border,
@@ -125,35 +115,17 @@ extension PromptInputStyle where Background == PlatformDefaultPromptBackground {
         )
     }
 
-    /// Default — used by `AIChatView` inside the inspector. Full chrome,
-    /// shows the credits hint, platform-default background.
-    static var inspector: PromptInputStyle<PlatformDefaultPromptBackground> {
+    /// Default non-compact prompt input. Used by full chat and island surfaces
+    /// on macOS/iPadOS/non-compact iOS.
+    static var regular: PromptInputStyle<PlatformDefaultPromptBackground> {
         PromptInputStyle()
     }
 
-    /// Tuned for `AIChatIslandView`. Same backdrop as the inspector (so the
-    /// glass rim on macOS 26+ gives the text its visual padding), just with
-    /// the credits banner / shadow trimmed because the island provides its
-    /// own outer chrome.
-    ///
-    /// `showsGeneratingEffect: false` — the island already owns its own
-    /// streaming-state glow on the outer chrome; layering the input-box
-    /// rim glow on top makes the whole panel look noisy.
-    static var island: PromptInputStyle<PlatformDefaultPromptBackground> {
+    /// Compact iOS prompt input. The controls collapse into the inline
+    /// capsule/circle layout; accessory content remains owned by the host.
+    static var compactIOS: PromptInputStyle<PlatformDefaultPromptBackground> {
          PromptInputStyle(
-             surface: .island,
-             showsLowCreditsBanner: false,
-             cornerRadius: 24,
-             shadow: .init(color: .clear, radius: 0),
-             border: BorderSpec(lineWidth: 0),
-             showsGeneratingEffect: false
-         )
-    }
-
-    static var compactIOSIsland: PromptInputStyle<PlatformDefaultPromptBackground> {
-         PromptInputStyle(
-             surface: .compactIOSIsland,
-             showsLowCreditsBanner: false,
+             layout: .compactIOS,
              cornerRadius: 24,
              shadow: nil,
              border: nil,

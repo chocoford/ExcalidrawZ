@@ -42,3 +42,39 @@ struct SettingsViewButton: View {
         }
     }
 }
+
+struct SettingsSheetPresentationModifier: ViewModifier {
+#if os(iOS)
+    @ObservedObject private var router = SettingsRouter.shared
+    @State private var isSettingsPresented = false
+#endif
+
+    func body(content: Content) -> some View {
+#if os(iOS)
+        content
+            .watch(value: router.iOSSettingsPresentationRequestID) { requestID in
+                guard requestID > 0 else { return }
+                isSettingsPresented = true
+            }
+            .sheet(isPresented: $isSettingsPresented) {
+                settingsSheetContent
+            }
+#else
+        content
+#endif
+    }
+
+#if os(iOS)
+    @ViewBuilder
+    private var settingsSheetContent: some View {
+        if #available(iOS 16.4, *) {
+            SettingsView()
+                .presentationContentInteraction(.scrolls)
+                .swiftyAlert()
+        } else {
+            SettingsView()
+                .swiftyAlert()
+        }
+    }
+#endif
+}

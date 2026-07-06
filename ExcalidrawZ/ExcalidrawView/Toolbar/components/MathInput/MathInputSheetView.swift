@@ -13,6 +13,7 @@ import ChocofordUI
 
 struct MathInputSheetView: View {
     @Environment(\.dismiss) var dismiss
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @EnvironmentObject private var canvasPreferencesState: CanvasPreferencesState
     @EnvironmentObject var llmState: LLMStateObject
     @ObservedObject var aiChatPreferences = AIChatPreferences.shared
@@ -97,12 +98,16 @@ struct MathInputSheetView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            header
+            if !usesCompactLayout {
+                header
+            }
 
             contentLayout
 
-            Divider()
-            footer
+            if !usesCompactLayout {
+                Divider()
+                footer
+            }
         }
 #if os(macOS)
         .mathInputInspector(isPresented: $isInspectorPresented) {
@@ -112,6 +117,12 @@ struct MathInputSheetView: View {
             }
         }
         .frame(width: 920, height: 680)
+#endif
+#if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            compactToolbar
+        }
 #endif
         .onChange(of: inputText, debounce: 0.2) { newValue in
             guard !isLatexAIModePresented else {
@@ -162,6 +173,14 @@ struct MathInputSheetView: View {
         let color = canvasPreferencesState.viewBackgroundColor
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return color.isEmpty ? "#ffffff" : color
+    }
+
+    var usesCompactLayout: Bool {
+#if os(iOS)
+        horizontalSizeClass == .compact
+#else
+        false
+#endif
     }
 
     @ViewBuilder

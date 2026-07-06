@@ -192,10 +192,10 @@ extension Store {
         case aiInsufficientCredits
         case optimizedMCPServices
 
-        var description: String {
+        var paywallMessage: String? {
             switch self {
                 case .manaully:
-                    "Try now!"
+                    nil
                 case .roomLimit:
                     String(localizable: .paywallReachReasonRoomLimit)
                 case .aiInsufficientCredits:

@@ -174,6 +174,7 @@ struct AIProposalToolResultCard: View {
                 withAnimation(.easeInOut(duration: 0.18)) {
                     applyCount += 1
                 }
+                onDismiss?()
             } catch {
                 alertToast.presentAIChatError(error)
             }

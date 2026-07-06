@@ -21,17 +21,20 @@ struct AIChatIslandProposalModifier: ViewModifier {
     let conversation: Conversation?
     let conversationMessageCount: Int
     let islandWidth: CGFloat?
+    let proposalHorizontalPadding: CGFloat
 
     init(
         conversationID: String?,
         conversation: Conversation?,
         conversationMessageCount: Int,
-        islandWidth: CGFloat?
+        islandWidth: CGFloat?,
+        proposalHorizontalPadding: CGFloat = 0
     ) {
         self.conversationID = conversationID
         self.conversation = conversation
         self.conversationMessageCount = conversationMessageCount
         self.islandWidth = islandWidth
+        self.proposalHorizontalPadding = proposalHorizontalPadding
     }
 
     /// Island mode pins only proposals created while this island is alive.
@@ -186,19 +189,25 @@ struct AIChatIslandProposalModifier: ViewModifier {
             }
         )
         .id(proposal.messageID)
-        .modifier(AIProposalCardWidthModifier(width: islandWidth))
+        .modifier(AIProposalCardWidthModifier(
+            width: islandWidth,
+            horizontalPadding: proposalHorizontalPadding
+        ))
     }
 }
 
 private struct AIProposalCardWidthModifier: ViewModifier {
     let width: CGFloat?
+    let horizontalPadding: CGFloat
 
     @ViewBuilder
     func body(content: Content) -> some View {
         if let width {
             content.frame(width: width)
         } else {
-            content.frame(maxWidth: .infinity)
+            content
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, horizontalPadding)
         }
     }
 }

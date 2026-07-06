@@ -16,6 +16,7 @@ struct SettingsView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
 
     /// App-level deep-link bus — see `SettingsRouter` for the rationale on
     /// why this isn't `LayoutState`.
@@ -43,6 +44,22 @@ struct SettingsView: View {
                 router.pendingRoute = nil
             }
     }
+
+#if os(iOS)
+    private var showsCompactIOSCreditsButton: Bool {
+        containerHorizontalSizeClass == .compact &&
+        aiChatPreferences.isAIEnabled &&
+        AIChatAvailability.isAvailable
+    }
+
+    private func presentPaywallFromCompactIOSSettings() {
+        dismiss()
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            Store.shared.togglePaywall(reason: .manaully)
+        }
+    }
+#endif
     
     @ViewBuilder
     private func content() -> some View {
@@ -141,6 +158,14 @@ struct SettingsView: View {
                         dismiss()
                     } label: {
                         Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
+                    }
+                }
+            }
+
+            if showsCompactIOSCreditsButton {
+                ToolbarItem(placement: .topBarTrailing) {
+                    AICreditsToolbarButton {
+                        presentPaywallFromCompactIOSSettings()
                     }
                 }
             }

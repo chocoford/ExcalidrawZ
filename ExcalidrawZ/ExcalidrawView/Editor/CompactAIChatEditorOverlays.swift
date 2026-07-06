@@ -16,6 +16,8 @@ enum CompactAIChatOverlayMetrics {
     static let toolbarBottomPadding: CGFloat = 12
     static let toolbarControlLength: CGFloat = 80
     static let tickerHeight: CGFloat = 48
+    static let collapsedToolbarAccessoryLift: CGFloat = tickerHeight + 8
+    static let collapsedToolbarAttachmentLeadingOffset: CGFloat = 8
     static let tickerFullscreenButtonLength: CGFloat = 38
     static let tickerAppearDelay: Duration = .milliseconds(140)
     static let tickerCollapseDuration: Duration = .milliseconds(360)
@@ -77,6 +79,9 @@ struct CompactAIChatEditorOverlays: View {
         ZStack(alignment: .bottom) {
             if canShowCompactAIChatControls {
                 CompactAIChatAccessoryStack {
+                    CompactAIChatPendingQueue()
+                        .ignoredWhenCollapsed()
+
                     CompactAIChatApprovalPrompt()
                         .ignoredWhenCollapsed()
 
@@ -104,7 +109,8 @@ struct CompactAIChatEditorOverlays: View {
                     conversationID: fileState.aiChatConversationID,
                     conversation: conversation,
                     conversationMessageCount: conversationMessageCount,
-                    islandWidth: nil
+                    islandWidth: nil,
+                    proposalHorizontalPadding: CompactAIChatOverlayMetrics.horizontalPadding
                 ))
             }
 
@@ -128,6 +134,22 @@ private struct CompactAIChatAccessoryStack<Content: View>: View {
         .padding(.horizontal, CompactAIChatOverlayMetrics.horizontalPadding)
         .padding(.bottom, CompactAIChatOverlayMetrics.toolbarBottomPadding)
         .safeAreaPadding(.bottom)
+    }
+}
+
+private struct CompactAIChatPendingQueue: View {
+    @EnvironmentObject private var aiChatState: AIChatState
+
+    var body: some View {
+        PendingQueueView(
+            messages: aiChatState.pendingQueue,
+            onRemove: { id in
+                withAnimation(.smooth(duration: 0.2)) {
+                    aiChatState.pendingQueue.removeAll { $0.id == id }
+                }
+            }
+        )
+        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 }
 
@@ -161,6 +183,8 @@ private struct CompactAIChatDraftAttachmentBar: View {
                 Spacer(minLength: 0)
                     .allowsHitTesting(false)
             }
+            .padding(.leading, CompactAIChatOverlayMetrics.collapsedToolbarAttachmentLeadingOffset)
+            .padding(.bottom, CompactAIChatOverlayMetrics.collapsedToolbarAccessoryLift)
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .animation(.smooth(duration: 0.18), value: draftState.images.count)
         }
@@ -218,26 +242,9 @@ private struct CompactAIChatDraftAttachmentStrip: View {
                     }
                 }
                 .padding(6)
-                .background {
-                    attachmentStripBackground
-                }
-                .clipShape(Capsule())
-                .contentShape(Capsule())
             }
-            .buttonStyle(.plain)
+            .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
             .help("Attached images")
-        }
-    }
-
-    @ViewBuilder
-    private var attachmentStripBackground: some View {
-        if #available(iOS 26.0, *) {
-            Capsule()
-                .fill(.clear)
-                .glassEffect(.regular, in: Capsule())
-        } else {
-            Capsule()
-                .fill(.regularMaterial)
         }
     }
 }

@@ -235,7 +235,7 @@ struct AIChatIslandView: View {
     private func islandBody() -> some View {
 #if os(iOS)
         if usesCompactIOSLayout {
-            compactIOSIslandBody()
+            compactIslandBody()
         } else {
             desktopIslandBody()
         }
@@ -262,7 +262,7 @@ struct AIChatIslandView: View {
             PromptInputView(
                 conversationID: conversationIDBinding,
                 pendingQueue: $aiChatState.pendingQueue,
-                style: .island
+                style: .regular
             )
             .disabled(fileState.isAIChatConversationLoading || fileState.currentActiveFileIsInTrash)
         }

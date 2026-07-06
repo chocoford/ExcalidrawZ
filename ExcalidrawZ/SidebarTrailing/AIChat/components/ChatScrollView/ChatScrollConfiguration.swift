@@ -29,6 +29,14 @@ struct ChatScrollConfiguration {
         )
     }
 
+    static var compactIOS: ChatScrollConfiguration {
+        ChatScrollConfiguration(
+            backend: .nativeSingleHost,
+            assistantRoundRowMode: .grouped,
+            usesMessageWindowing: false
+        )
+    }
+
     private static var defaultBackend: ChatScrollBackend {
 #if os(macOS)
 #if DEBUG

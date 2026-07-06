@@ -9,22 +9,22 @@ import SwiftUI
 import WebKit
 import SwiftUIIntrospect
 import Logging
-
-#if DEBUG
-class PrinterWebView: WKWebView {
-    init(filename: String) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    public func print(fileURL: URL) async {}
-    
-    func exportPDF(fileURL: URL) async -> URL? { nil }
-    func exportPDFData(fileURL: URL) async throws -> Data { Data() }
-}
-#else
+//
+//#if DEBUG
+//class PrinterWebView: WKWebView {
+//    init(filename: String) {
+//        fatalError("init(coder:) has not been implemented")
+//    }
+//
+//    required init?(coder: NSCoder) {
+//        fatalError("init(coder:) has not been implemented")
+//    }
+//    public func print(fileURL: URL) async {}
+//
+//    func exportPDF(fileURL: URL) async -> URL? { nil }
+//    func exportPDFData(fileURL: URL) async throws -> Data { Data() }
+//}
+//#else
 
 class PrinterWebView: WKWebView {
     let logger = Logger(label: "PrinterWebView")
@@ -223,4 +223,4 @@ extension PrinterWebView: WKNavigationDelegate {
         pdfDataRequest(.failure(error))
     }
 }
-#endif
+//#endif

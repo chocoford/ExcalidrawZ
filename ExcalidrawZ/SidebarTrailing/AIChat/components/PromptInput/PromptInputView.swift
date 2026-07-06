@@ -241,17 +241,17 @@ struct PromptInputView<Background: View, Header: View>: View {
     @State var draftHasContent: Bool = false
     @State var draftHasImages: Bool = false
     @State var draftSendRequestToken: Int = 0
-    @State var iOSIslandDraftFieldHeight: CGFloat = 0
-    @State var iOSIslandTextAreaIsSingleLine: Bool = true
-    @State var iOSIslandTextAreaIsOverflowing: Bool = false
-    @State var isIOSIslandFullscreenInputPresented: Bool = false
+    @State var compactIOSFloatingDraftFieldHeight: CGFloat = 0
+    @State var compactIOSFloatingTextAreaIsSingleLine: Bool = true
+    @State var compactIOSFloatingTextAreaIsOverflowing: Bool = false
+    @State var isCompactIOSFloatingFullscreenInputPresented: Bool = false
 #if os(iOS)
     @EnvironmentObject var layoutState: LayoutState
     @State var iOSSelectedPhotoPickerItems: [PhotosPickerItem] = []
     @State var isIOSPhotoLibraryPickerPresented: Bool = false
     @State var isIOSCameraPickerPresented: Bool = false
 #endif
-    @Namespace var iOSIslandInputNamespace
+    @Namespace var compactIOSFloatingInputNamespace
 #if DEBUG
     @State var debugContextText: String = ""
     @State var debugContextError: String = ""
@@ -464,9 +464,9 @@ struct PromptInputView<Background: View, Header: View>: View {
         aiChatState.promptDraftState(forKey: promptDraftKey)
     }
 
-    var usesCompactIOSIslandInput: Bool {
+    var usesCompactIOSFloatingInput: Bool {
 #if os(iOS)
-        style.surface == .compactIOSIsland
+        style.layout == .compactIOS
 #else
         false
 #endif
@@ -504,8 +504,8 @@ struct PromptInputView<Background: View, Header: View>: View {
     @ViewBuilder
     private var bodyContent: some View {
 #if os(iOS)
-        if usesCompactIOSIslandInput {
-            iOSIslandInputContent
+        if usesCompactIOSFloatingInput {
+            compactIOSFloatingInputContent
         } else {
             regularBodyContent
         }
@@ -517,7 +517,7 @@ struct PromptInputView<Background: View, Header: View>: View {
 #if os(iOS)
     @MainActor
     private func handleCompactIOSInputFocusChanged(_ isFocused: Bool) {
-        guard usesCompactIOSIslandInput else { return }
+        guard usesCompactIOSFloatingInput else { return }
         guard !isFocused else { return }
         guard layoutState.isCompactAIChatToolbarPresented,
               layoutState.isCompactAIChatInputEditing,
@@ -558,15 +558,6 @@ struct PromptInputView<Background: View, Header: View>: View {
         VStack(spacing: 6) {
             if AIChatRenderDebug.useMinimalPromptInput {
                 debugMinimalInputBox
-            } else if style.showsLowCreditsBanner {
-                VStack(spacing: 0) {
-                    LowCreditsBannerView(peekBottom: 18)
-                        .padding(.horizontal, 10)
-                        .font(.caption)
-                        .offset(y: 18)
-
-                    inputBox
-                }
             } else {
                 inputBox
             }
@@ -624,7 +615,7 @@ extension PromptInputView where Header == EmptyView {
 }
 
 extension PromptInputView where Background == PlatformDefaultPromptBackground, Header == EmptyView {
-    /// Style-less convenience init — picks `.inspector` so existing call
+    /// Style-less convenience init — picks `.regular` so existing call
     /// sites keep working without forcing the caller to think about
     /// `Background` at all.
     init(
@@ -634,7 +625,7 @@ extension PromptInputView where Background == PlatformDefaultPromptBackground, H
         self.init(
             conversationID: conversationID,
             pendingQueue: pendingQueue,
-            style: .inspector
+            style: .regular
         )
     }
 }
@@ -645,7 +636,7 @@ extension PromptInputView where Background == PlatformDefaultPromptBackground {
     init(
         conversationID: Binding<String?>,
         pendingQueue: Binding<[PendingQueueMessage]>,
-        style: PromptInputStyle<PlatformDefaultPromptBackground> = .inspector,
+        style: PromptInputStyle<PlatformDefaultPromptBackground> = .regular,
         showsCompactIOSFullChatButton: Bool = true,
         onSuccessfulSubmit: (() -> Void)? = nil,
         @ViewBuilder header: () -> Header

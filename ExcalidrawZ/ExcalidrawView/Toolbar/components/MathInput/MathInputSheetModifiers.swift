@@ -47,6 +47,7 @@ struct MathInputSheetViewModifier: ViewModifier {
                         }
                     }
                 }
+                .mathInputNavigationContainer()
                 .swiftyAlert(logs: true)
                 .task {
                     await syncMathInputCanvasAppearance(
@@ -148,6 +149,7 @@ struct MathImageEditSheetViewModifier: ViewModifier {
                         }
                     }
                 }
+                .mathInputNavigationContainer()
                 .swiftyAlert(logs: true)
                 .task {
                     await syncMathInputCanvasAppearance(
@@ -201,6 +203,19 @@ struct MathImageEditSheetViewModifier: ViewModifier {
         }
         restoredSnapshot = nil
         restoredEditRequest = nil
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func mathInputNavigationContainer() -> some View {
+#if os(iOS)
+        NavigationStack {
+            self
+        }
+#else
+        self
+#endif
     }
 }
 

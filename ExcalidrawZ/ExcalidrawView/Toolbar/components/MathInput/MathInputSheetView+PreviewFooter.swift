@@ -83,6 +83,12 @@ extension MathInputSheetView {
         canvasColorScheme == .dark ? "invert(1) hue-rotate(180deg)" : nil
     }
 
+    func commitRenderedSVG() {
+        guard let svgContent else { return }
+        onCommit(svgContent)
+        dismiss()
+    }
+
     var footer: some View {
         HStack(spacing: 12) {
             Spacer(minLength: 0)
@@ -95,10 +101,7 @@ extension MathInputSheetView {
             }
 
             Button {
-                if let svgContent {
-                    onCommit(svgContent)
-                    dismiss()
-                }
+                commitRenderedSVG()
             } label: {
                 commitButtonLabel
                     .frame(minWidth: 112)

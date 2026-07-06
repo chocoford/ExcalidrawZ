@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import ChocofordUI
 
 /// 行场景中替代 `VStack` 的窄 layout — 当某些 child 可能折叠到 0 高度时，把
 /// **相邻 spacing 也按 presence progress 连续缩放**，使折叠的最后阶段不出现一次
@@ -554,7 +555,7 @@ struct AnimatedPresence<Value: Equatable, Content: View>: View {
         .modifier(AnimatedPresenceClipModifier(isClipped: clipsToVisibleBounds))
         .allowsHitTesting(value != nil && progress > 0.95)
         .onAppear { handleAppearance() }
-        .onChange(of: value) { _, newValue in handleValueChange(newValue) }
+        .watch(value: value) { newValue in handleValueChange(newValue) }
         .onPreferenceChange(AnimatedPresenceHeightKey.self) { measured in
             handleMeasurement(measured)
         }
@@ -668,11 +669,19 @@ struct AnimatedPresence<Value: Equatable, Content: View>: View {
         let collapseAnimation = removalAnimation ?? animation
 
         guard let removalDelay else {
-            withAnimation(collapseAnimation, completionCriteria: .logicallyComplete) {
-                visibleHeight = 0
-                spacingProgress = 0
-            } completion: {
-                clearDisplayValueIfStillCollapsed(token: token)
+            if #available(macOS 14.0, iOS 17.0, *) {
+                withAnimation(collapseAnimation, completionCriteria: .logicallyComplete) {
+                    visibleHeight = 0
+                    spacingProgress = 0
+                } completion: {
+                    clearDisplayValueIfStillCollapsed(token: token)
+                }
+            } else {
+                withAnimation(collapseAnimation) {
+                    visibleHeight = 0
+                    spacingProgress = 0
+                }
+                scheduleDisplayValueRemoval(token: token, delay: .milliseconds(240))
             }
             return
         }
@@ -681,9 +690,13 @@ struct AnimatedPresence<Value: Equatable, Content: View>: View {
             visibleHeight = 0
             spacingProgress = 0
         }
+        scheduleDisplayValueRemoval(token: token, delay: removalDelay)
+    }
 
+    private func scheduleDisplayValueRemoval(token: Int, delay: Duration) {
+        removalTask?.cancel()
         removalTask = Task { @MainActor in
-            try? await Task.sleep(for: removalDelay)
+            try? await Task.sleep(for: delay)
             guard !Task.isCancelled else { return }
             clearDisplayValueIfStillCollapsed(token: token)
         }

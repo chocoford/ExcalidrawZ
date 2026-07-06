@@ -10,7 +10,7 @@ import SwiftUI
 
 extension AIChatIslandView {
     @ViewBuilder
-    func compactIOSIslandBody() -> some View {
+    func compactIslandBody() -> some View {
         VStack(alignment: .leading, spacing: 8) {
             if isCompactingThisConversation {
                 CompactingIndicatorView()
@@ -22,7 +22,7 @@ extension AIChatIslandView {
             PromptInputView(
                 conversationID: conversationIDBinding,
                 pendingQueue: $aiChatState.pendingQueue,
-                style: .compactIOSIsland
+                style: .compactIOS
             )
             .disabled(fileState.isAIChatConversationLoading || fileState.currentActiveFileIsInTrash)
         }

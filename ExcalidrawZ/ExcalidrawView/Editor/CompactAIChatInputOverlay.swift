@@ -55,7 +55,7 @@ struct CompactAIChatInputOverlay: View {
             PromptInputView(
                 conversationID: conversationIDBinding,
                 pendingQueue: $aiChatState.pendingQueue,
-                style: .compactIOSIsland,
+                style: .compactIOS,
                 focusOnAppear: true,
                 dismissKeyboardOnSuccessfulSubmit: true,
                 onSuccessfulSubmit: {
@@ -313,11 +313,7 @@ private struct CompactAIChatReplyTickerCapsule: View {
             .frame(height: CompactAIChatOverlayMetrics.tickerHeight)
             .background {
                 tickerBackground
-                if text == nil, isPending {
-                    tickerGlow
-                }
             }
-            .animation(.smooth(duration: 0.18), value: text != nil)
             .animation(.smooth(duration: 0.18), value: isPending)
     }
 
@@ -331,14 +327,6 @@ private struct CompactAIChatReplyTickerCapsule: View {
             Capsule()
                 .fill(.regularMaterial)
         }
-    }
-
-    @ViewBuilder
-    private var tickerGlow: some View {
-        Capsule()
-            .fill(AIAppearancePalette.thinkingGradient)
-            .blur(radius: 20)
-            .opacity(0.55)
     }
 }
 #endif

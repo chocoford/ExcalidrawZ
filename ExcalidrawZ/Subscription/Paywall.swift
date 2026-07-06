@@ -282,25 +282,17 @@ struct Paywall: View {
     
     @ViewBuilder
     func reasonBadge() -> some View {
-        if let reason = paywallPresentation.reachReason {
-            ZStack {
-                if isPresented {
-                    Text(reason.description)
-                        .foregroundStyle(.red)
-                        .font(.footnote)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 4)
-                        .background {
-                            Capsule().fill(Color.red.opacity(0.5))
-                            Capsule().fill(.ultraThickMaterial)
-                        }
-                        .transition(.scale.animation(.bouncy.delay(0.2)))
-                        .multilineTextAlignment(.center)
+        if let message = paywallPresentation.reachReason?.paywallMessage {
+            Text(message)
+                .foregroundStyle(.red)
+                .font(.footnote)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                .background {
+                    Capsule().fill(Color.red.opacity(0.5))
+                    Capsule().fill(.ultraThickMaterial)
                 }
-            }
-            .animation(.bouncy(duration: 0.3, extraBounce: 0.6), value: isPresented)
-        } else {
-            Color.clear.frame(height: 1)
+                .multilineTextAlignment(.center)
         }
     }
     
@@ -483,8 +475,16 @@ struct Paywall: View {
     @MainActor
     var fallbackAIUsageSettingsButton: some View {
         Button {
+#if os(iOS)
+            dismiss()
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 350_000_000)
+                SettingsRouter.shared.requestOpenAIUsage()
+            }
+#else
             dismiss()
             SettingsRouter.shared.requestOpenAIUsage()
+#endif
         } label: {
             Label(String(localizable: .aiChatUsageTitle), systemImage: "gearshape")
         }
