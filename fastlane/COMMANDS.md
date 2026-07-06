@@ -51,7 +51,7 @@ fastlane upload_ios_release_assets version:2.2.2
 Generate localized Sparkle release notes:
 
 ```sh
-fastlane mac generate_sparkle_release_notes version:2.2.2
+fastlane generate_sparkle_release_notes version:2.2.2
 ```
 
 ## Screenshots

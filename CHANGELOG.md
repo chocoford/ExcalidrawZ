@@ -1,17 +1,13 @@
 ## 2.2.4
 
-#### Optimizations
-
-- Improved the compact iPhone AI quick editor with a cleaner floating input, better attachment placement, and smoother reply ticker behavior.
-- Improved AI Chat on compact iOS so pending requests, approval prompts, proposals, attachments, and low-credit warnings fit together more naturally.
-- Improved AI Chat message scrolling on compact iOS to reduce cases where message rows could disappear while browsing longer conversations.
-- Improved the Math tool on compact iOS with toolbar-based close/insert actions and a native segmented picker.
-- Improved credit and paywall entry points on iPhone, including clearer low-credit controls and smoother navigation from Paywall to AI Usage settings.
-
 #### Bug fixed
 
+- Fixed compatibility with the latest Excalidraw stroke width and pressure settings.
+- Fixed cases where drawings or backups containing newer stroke data could fail to load or back up correctly.
 - Fixed cases where the compact AI quick editor could leave controls misaligned after the keyboard was dismissed.
+- Fixed cases where compact iOS AI Chat message rows could disappear while scrolling longer conversations.
 - Fixed cases where AI proposal cards could remain visible after applying a proposal.
+- Fixed Paywall to AI Usage navigation on compact iOS.
 - Fixed cases where low-credit buttons could hit actor-isolation issues in App Store builds.
 - Fixed compatibility with older OS versions in the animated presence helper used by collapsing UI sections.
 
