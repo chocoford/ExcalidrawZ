@@ -120,6 +120,7 @@ CLAUDE.md
 ExcalidrawZUIPlayground
 ExcalidrawZ/**/*.md
 ExcalidrawZ/SidebarTrailing/AIChat/**/*.json
+ExcalidrawZ/SidebarTrailing/AIChat/Prompts/
 ExcalidrawZ/Utils/MCP/Optimized/Resources/
 scripts/
 !fastlane/scripts/
