@@ -193,7 +193,7 @@ struct ExcalidrawEditor: View {
             .allowsHitTesting(!isLoadingFile)
             .ignoresSafeArea(.container, edges: canvasIgnoredSafeAreaEdges)
 #if os(iOS)
-            .dismissKeyboardOnCanvasTap()
+            .dismissKeyboardOnCanvasTap(isEnabled: layoutState.isCompactAIChatInputEditing)
 #endif
             .background {
 #if os(iOS)
@@ -792,17 +792,22 @@ private struct WindowDragRegion: NSViewRepresentable {
 
 #if os(iOS)
 private extension View {
-    func dismissKeyboardOnCanvasTap() -> some View {
-        simultaneousGesture(
-            TapGesture().onEnded {
-                UIApplication.shared.sendAction(
-                    #selector(UIResponder.resignFirstResponder),
-                    to: nil,
-                    from: nil,
-                    for: nil
-                )
-            }
-        )
+    @ViewBuilder
+    func dismissKeyboardOnCanvasTap(isEnabled: Bool) -> some View {
+        if isEnabled {
+            simultaneousGesture(
+                TapGesture().onEnded {
+                    UIApplication.shared.sendAction(
+                        #selector(UIResponder.resignFirstResponder),
+                        to: nil,
+                        from: nil,
+                        for: nil
+                    )
+                }
+            )
+        } else {
+            self
+        }
     }
 }
 #endif
