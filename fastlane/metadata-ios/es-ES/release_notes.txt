@@ -1,5 +1,1 @@
-Esta actualización corrige un problema importante de compatibilidad de dibujo y se recomienda para todos los usuarios.
-
-- Corregida la compatibilidad con los últimos ajustes de ancho de trazo de Excalidraw.
-- Corregido un problema que podía impedir cargar algunos dibujos o copias de seguridad con datos de trazo más recientes.
-- Mejorado el soporte para presión del lápiz y ajustes de trazo.
+Se ha corregido un problema en los diseños compactos de iOS por el que crear o editar texto en el lienzo podía cerrar inmediatamente el editor de texto e impedir la escritura.

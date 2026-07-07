@@ -1,5 +1,1 @@
-Bản cập nhật này sửa một vấn đề tương thích quan trọng khi vẽ và được khuyến nghị cho mọi người dùng.
-
-- Sửa tương thích với các thiết lập độ rộng nét mới nhất của Excalidraw.
-- Sửa lỗi khiến một số bản vẽ hoặc bản sao lưu có dữ liệu nét mới hơn không tải được.
-- Cải thiện hỗ trợ áp lực bút và thiết lập nét vẽ.
+Sửa lỗi trên bố cục iOS compact khiến trình chỉnh sửa văn bản có thể đóng ngay khi tạo hoặc sửa văn bản trên canvas, làm bạn không thể nhập chữ.

@@ -1,5 +1,1 @@
-Deze update verhelpt een belangrijk compatibiliteitsprobleem met tekenen en wordt aanbevolen voor alle gebruikers.
-
-- Compatibiliteit met de nieuwste Excalidraw-instellingen voor lijndikte opgelost.
-- Een probleem opgelost waarbij sommige tekeningen of back-ups met nieuwere lijngegevens niet konden worden geladen.
-- Ondersteuning voor pendruk en lijninstellingen verbeterd.
+Een probleem opgelost op compacte iOS-lay-outs waarbij het maken of bewerken van tekst op het canvas de teksteditor direct kon sluiten, waardoor tekstinvoer niet mogelijk was.

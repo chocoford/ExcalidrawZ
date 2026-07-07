@@ -1,5 +1,1 @@
-Cette mise à jour corrige un important problème de compatibilité de dessin et est recommandée à tous les utilisateurs.
-
-- Correction de la compatibilité avec les derniers réglages de largeur de trait d'Excalidraw.
-- Correction d'un problème pouvant empêcher le chargement de certains dessins ou sauvegardes contenant de nouvelles données de trait.
-- Amélioration de la prise en charge de la pression du stylet et des réglages de trait.
+Correction d'un problème sur les présentations compactes d'iOS où la création ou la modification de texte sur le canevas pouvait fermer immédiatement l'éditeur de texte et empêcher la saisie.

@@ -1,5 +1,1 @@
-Questo aggiornamento risolve un importante problema di compatibilità del disegno ed è consigliato a tutti gli utenti.
-
-- Risolta la compatibilità con le ultime impostazioni di larghezza tratto di Excalidraw.
-- Risolto un problema che poteva impedire il caricamento di alcuni disegni o backup con dati tratto più recenti.
-- Migliorato il supporto per pressione della penna e impostazioni del tratto.
+Risolto un problema nei layout compatti di iOS per cui la creazione o modifica del testo sulla tela poteva chiudere subito l'editor di testo, impedendo l'inserimento.

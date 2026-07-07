@@ -1,3 +1,9 @@
+## 2.2.5
+
+#### Bug fixed
+
+- Fixed an issue on compact iOS layouts where creating or editing text on the canvas could immediately dismiss the text editor, preventing text input.
+
 ## 2.2.4
 
 #### Bug fixed
