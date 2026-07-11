@@ -204,6 +204,10 @@ struct CompactAIChatReplyTicker: View {
                 .allowsHitTesting(isTickerPresented)
             }
         }
+        .watch(value: isStartPending, initial: true) { _, pending in
+            guard pending else { return }
+            updateReplyTickerVisibility(nil)
+        }
         .watch(value: pendingReplyFailureID) { _, failureID in
             guard failureID != nil else { return }
             dismissPendingReplyTicker()

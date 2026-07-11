@@ -57,8 +57,7 @@ enum ExcalidrawAgentConfig {
         "list_libraries",
         "list_library_items",
         "query_library_item",
-        "add_library_item_to_canvas",
-        "final_answer"
+        "add_library_item_to_canvas"
     ]
 
     static let askToolNames: [String] = [
@@ -75,8 +74,7 @@ enum ExcalidrawAgentConfig {
         "navigate_canvas",
         "list_groups",
         "list_local_folders",
-        "list_local_files",
-        "final_answer"
+        "list_local_files"
     ]
 
     /// Locked or user-disabled file access keeps real ExcalidrawZ files
@@ -92,8 +90,7 @@ enum ExcalidrawAgentConfig {
         "insert_math",
         "calculator",
         "datetime",
-        "adjust_elements",
-        "final_answer"
+        "adjust_elements"
     ]
 
     static func toolNames(supportsImageInput: Bool) -> [String] {

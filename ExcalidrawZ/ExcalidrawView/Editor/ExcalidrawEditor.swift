@@ -792,22 +792,18 @@ private struct WindowDragRegion: NSViewRepresentable {
 
 #if os(iOS)
 private extension View {
-    @ViewBuilder
     func dismissKeyboardOnCanvasTap(isEnabled: Bool) -> some View {
-        if isEnabled {
-            simultaneousGesture(
-                TapGesture().onEnded {
-                    UIApplication.shared.sendAction(
-                        #selector(UIResponder.resignFirstResponder),
-                        to: nil,
-                        from: nil,
-                        for: nil
-                    )
-                }
-            )
-        } else {
-            self
-        }
+        simultaneousGesture(
+            TapGesture().onEnded {
+                guard isEnabled else { return }
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder),
+                    to: nil,
+                    from: nil,
+                    for: nil
+                )
+            }
+        )
     }
 }
 #endif

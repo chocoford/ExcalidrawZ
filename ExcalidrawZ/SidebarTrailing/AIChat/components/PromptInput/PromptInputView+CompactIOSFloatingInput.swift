@@ -18,6 +18,11 @@ extension PromptInputView {
     private var compactIOSFloatingInlineControlSymbolSize: CGFloat { 13 }
     private var compactIOSFloatingPrimaryActionLength: CGFloat { 42 }
     private var compactIOSFloatingPrimaryActionIconLength: CGFloat { 18 }
+    private var compactIOSFloatingPrimaryActionTrailingPadding: CGFloat { 2 }
+    private var compactIOSFloatingInlineActionTrailingPadding: CGFloat {
+        compactIOSFloatingPrimaryActionTrailingPadding
+        + (compactIOSFloatingPrimaryActionLength - compactIOSFloatingCircleControlLength) / 2
+    }
     private var compactIOSFloatingExpandedInputMinHeight: CGFloat { 44 }
     private var compactIOSFloatingInputMaxHeight: CGFloat { 168 }
     private var compactIOSFloatingFullscreenInputMinHeight: CGFloat { 220 }
@@ -30,8 +35,8 @@ extension PromptInputView {
     }
 
     var compactIOSFloatingInputIsExpanded: Bool {
-        return draftHasImages
-        || (draftHasContent && !compactIOSFloatingTextAreaIsSingleLine)
+        return promptDraftState.hasImages
+        || (promptDraftState.hasContent && !compactIOSFloatingTextAreaIsSingleLine)
     }
 
     @ViewBuilder
@@ -72,12 +77,10 @@ extension PromptInputView {
                         isFullscreen: isFullscreen
                     ),
                     maxTextAreaHeight: compactIOSFloatingTextAreaMaxHeight(
-                        isExpanded: inputIsExpanded,
                         isFullscreen: isFullscreen
                     ),
                     showsExpandButton: isExpanded && compactIOSFloatingTextAreaIsOverflowing,
-                    showsCollapseButton: isFullscreen,
-                    tracksInlineHeight: !isFullscreen
+                    showsCollapseButton: isFullscreen
                 )
             }
         }
@@ -92,15 +95,8 @@ extension PromptInputView {
         minHeight: CGFloat,
         maxTextAreaHeight: CGFloat,
         showsExpandButton: Bool,
-        showsCollapseButton: Bool,
-        tracksInlineHeight: Bool
+        showsCollapseButton: Bool
     ) -> some View {
-        let chromeHeight = compactIOSFloatingInputChromeHeight(
-            isExpanded: isExpanded,
-            minHeight: minHeight,
-            tracksInlineHeight: tracksInlineHeight
-        )
-
         PromptDraftInputField(
             draftKey: promptDraftKey,
             draftState: promptDraftState,
@@ -112,7 +108,6 @@ extension PromptInputView {
             onTextAreaSingleLineChanged: { isSingleLine in
                 compactIOSFloatingTextAreaIsSingleLine = isSingleLine
                 if isSingleLine {
-                    compactIOSFloatingDraftFieldHeight = 0
                     compactIOSFloatingTextAreaIsOverflowing = false
                 }
             },
@@ -130,37 +125,35 @@ extension PromptInputView {
         .transaction { transaction in
             transaction.animation = nil
         }
-        .modifier(CompactIOSFloatingDraftHeightReader(
-            isEnabled: tracksInlineHeight,
-            height: $compactIOSFloatingDraftFieldHeight
-        ))
         .frame(
             maxWidth: .infinity,
             minHeight: minHeight,
-            maxHeight: chromeHeight,
             alignment: isExpanded ? .bottom : .center
         )
         .background(alignment: .bottom) {
             compactIOSFloatingTextInputBackground(isExpanded: isExpanded)
-                .frame(height: chromeHeight)
-                .animation(.smooth(duration: 0.18), value: chromeHeight)
         }
         .clipShape(compactIOSFloatingTextInputShape(isExpanded: isExpanded))
         .overlay(alignment: isExpanded ? .bottomTrailing : .trailing) {
             compactIOSFloatingPrimaryActionButton
-                .padding(.trailing, 2)
-                .padding(.bottom, isExpanded ? 8 : 0)
+                .padding(.trailing, compactIOSFloatingPrimaryActionTrailingPadding)
+                .padding(
+                    .bottom,
+                    isExpanded
+                        ? (compactIOSFloatingCircleControlLength - compactIOSFloatingPrimaryActionLength) / 2
+                        : 0
+                )
         }
         .overlay(alignment: .topTrailing) {
             if showsCollapseButton {
                 compactIOSFloatingCollapseFullscreenButton
                     .padding(.top, 6)
-                    .padding(.trailing, 6)
+                    .padding(.trailing, compactIOSFloatingInlineActionTrailingPadding)
                     .transition(.opacity.combined(with: .scale))
             } else if showsExpandButton {
                 compactIOSFloatingExpandFullscreenButton
                     .padding(.top, 6)
-                    .padding(.trailing, 6)
+                    .padding(.trailing, compactIOSFloatingInlineActionTrailingPadding)
                     .transition(.opacity.combined(with: .scale))
             }
         }
@@ -176,24 +169,12 @@ extension PromptInputView {
         return isExpanded ? compactIOSFloatingExpandedInputMinHeight : compactIOSFloatingCircleControlLength
     }
 
-    private func compactIOSFloatingInputChromeHeight(
-        isExpanded: Bool,
-        minHeight: CGFloat,
-        tracksInlineHeight: Bool
-    ) -> CGFloat {
-        guard tracksInlineHeight, compactIOSFloatingDraftFieldHeight > 0 else {
-            return minHeight
-        }
-
-        return max(minHeight, compactIOSFloatingDraftFieldHeight)
-    }
-
-    private func compactIOSFloatingTextAreaMaxHeight(isExpanded: Bool, isFullscreen: Bool = false) -> CGFloat {
+    private func compactIOSFloatingTextAreaMaxHeight(isFullscreen: Bool = false) -> CGFloat {
         if isFullscreen {
             return compactIOSFloatingFullscreenInputMaxHeight
         }
 
-        return isExpanded ? compactIOSFloatingInputMaxHeight : compactIOSFloatingCircleControlLength
+        return compactIOSFloatingInputMaxHeight
     }
 
     private func compactIOSFloatingTextInsets(isExpanded: Bool) -> EdgeInsets {
@@ -227,9 +208,6 @@ extension PromptInputView {
     private var compactIOSFloatingCollapseFullscreenButton: some View {
         Button {
             withAnimation(.smooth(duration: 0.25)) {
-                if compactIOSFloatingTextAreaIsSingleLine {
-                    compactIOSFloatingDraftFieldHeight = 0
-                }
                 isCompactIOSFloatingFullscreenInputPresented = false
             }
             refocusCompactIOSFloatingInput()
@@ -314,6 +292,10 @@ extension PromptInputView {
         ) {
             Image(systemSymbol: .plus)
                 .font(.system(size: 16, weight: .semibold))
+                .frame(
+                    width: compactIOSFloatingInlineControlLabelLength,
+                    height: compactIOSFloatingInlineControlLabelLength
+                )
                 .padding(7)
         }
         .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
@@ -539,8 +521,13 @@ extension PromptInputView {
         } label: {
             Image(systemSymbol: .listBullet)
                 .font(.system(size: 16, weight: .semibold))
+                .frame(
+                    width: compactIOSFloatingInlineControlLabelLength,
+                    height: compactIOSFloatingInlineControlLabelLength
+                )
                 .padding(7)
         }
+        .fixedSize()
         .labelStyle(.iconOnly)
         .menuIndicator(.hidden)
         .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
@@ -570,20 +557,6 @@ extension PromptInputView {
         refocusCompactIOSFloatingInput()
     }
 
-}
-
-private struct CompactIOSFloatingDraftHeightReader: ViewModifier {
-    let isEnabled: Bool
-    @Binding var height: CGFloat
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if isEnabled {
-            content.readHeight($height)
-        } else {
-            content
-        }
-    }
 }
 
 private extension ExcalidrawModelTier {

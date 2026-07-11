@@ -71,14 +71,6 @@ struct AIChatIslandView: View {
         layoutConfiguration.isDraggable
     }
 
-    private var usesCompactIOSLayout: Bool {
-#if os(iOS)
-        containerHorizontalSizeClass == .compact
-#else
-        false
-#endif
-    }
-
     /// Bridges the `FileState`-owned conversation id to `PromptInputView`'s
     /// `Binding<String?>` API. `PromptInputView` mutates this when it creates
     /// a fresh conversation on first send.
@@ -153,7 +145,7 @@ struct AIChatIslandView: View {
                 }
                 .ignoredWhenCollapsed()
 
-                islandBody()
+                islandBody
             }
             .onAppear {
                 renderedIslandHeaderPayload = currentHeaderPayload
@@ -232,20 +224,7 @@ struct AIChatIslandView: View {
     }
 
     @ViewBuilder
-    private func islandBody() -> some View {
-#if os(iOS)
-        if usesCompactIOSLayout {
-            compactIslandBody()
-        } else {
-            desktopIslandBody()
-        }
-#else
-        desktopIslandBody()
-#endif
-    }
-
-    @ViewBuilder
-    private func desktopIslandBody() -> some View {
+    private var islandBody: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
 

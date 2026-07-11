@@ -544,14 +544,14 @@ private struct CompactAIChatToolbarPlaceholderButton: View {
         Button {
             onBeginEditing()
         } label: {
-            Label {
+            HStack(spacing: 6) {
+                Image(systemSymbol: .sparkles)
+
                 Text(displayText)
                     .lineLimit(1)
                     .truncationMode(.tail)
-            } icon: {
-                Image(systemSymbol: .sparkles)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .labelStyle(.titleAndIcon)
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)

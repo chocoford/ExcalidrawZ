@@ -241,7 +241,6 @@ struct PromptInputView<Background: View, Header: View>: View {
     @State var draftHasContent: Bool = false
     @State var draftHasImages: Bool = false
     @State var draftSendRequestToken: Int = 0
-    @State var compactIOSFloatingDraftFieldHeight: CGFloat = 0
     @State var compactIOSFloatingTextAreaIsSingleLine: Bool = true
     @State var compactIOSFloatingTextAreaIsOverflowing: Bool = false
     @State var isCompactIOSFloatingFullscreenInputPresented: Bool = false
