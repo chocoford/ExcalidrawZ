@@ -142,11 +142,11 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
             if toolState.activatedTool == .cursor {
                 if let coordinator = toolState.excalidrawWebCoordinator {
                     CursorModeTrailingButton(coordinator: coordinator) {
-                        toolState.setActivedTool(.hand)
+                        exitCompactEditMode()
                     }
                 } else {
                     Button {
-                        toolState.setActivedTool(.hand)
+                        exitCompactEditMode()
                     } label: {
                         Text(.localizable(.generalButtonDone))
                     }
@@ -158,6 +158,14 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
                     Text(.localizable(.generalButtonCancel))
                 }
             }
+        }
+    }
+
+    private func exitCompactEditMode() {
+        let coordinator = toolState.excalidrawWebCoordinator
+        Task { @MainActor in
+            try? await coordinator?.clearPreviousSelection()
+            toolState.setActivedTool(.hand)
         }
     }
 

@@ -58,6 +58,16 @@ extension ExcalidrawCore {
     }
 
     @MainActor
+    func clearPreviousSelection() async throws {
+        guard !self.isLoading else { return }
+        _ = try await webView.callAsyncJavaScript(
+            "window.excalidrawZHelper.clearPreviousSelection();",
+            arguments: [:],
+            contentWorld: .page
+        )
+    }
+
+    @MainActor
     func toggleToolbarAction(key: Character) async throws {
         guard !self.isLoading else { return }
         let toolbarKey: String
