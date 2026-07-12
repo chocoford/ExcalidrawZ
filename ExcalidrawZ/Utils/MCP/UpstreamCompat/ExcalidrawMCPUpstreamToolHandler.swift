@@ -71,7 +71,7 @@ struct ExcalidrawMCPUpstreamToolHandler {
             parsedElements = try MCPJSONValue.parseJSONArray(from: inputData)
         } catch {
             return ExcalidrawMCPToolResult(
-                text: "Invalid JSON in elements: \(error.localizedDescription).\nEnsure no comments, no trailing commas, and proper quoting.",
+                text: "Invalid JSON in elements. Ensure the value is a JSON array string with no comments or trailing commas.",
                 isError: true
             )
         }
@@ -99,8 +99,8 @@ struct ExcalidrawMCPUpstreamToolHandler {
 
         return ExcalidrawMCPToolResult(
             text: """
-            Diagram displayed! Checkpoint id: "\(published.checkpointID)". If user asks to create a new diagram - simply create a new one from scratch.
-            However, if the user wants to edit something on this diagram "\(published.checkpointID)", use this one as starting checkpoint: simply start from the first element [{"type":"restoreCheckpoint","id":"\(published.checkpointID)"}, ...your new elements...] this will use same diagram state as the user currently sees, including any manual edits captured by the app, allowing you to add elements on top. To remove elements, use: {"type":"delete","ids":","}\(ratioHint)
+            Diagram received by ExcalidrawZ and applied to a file. Checkpoint id: "\(published.checkpointID)".
+            If the user asks to revise this diagram, call create_view again with a restoreCheckpoint pseudo-element using that id.\(ratioHint)
             """,
             structuredContent: .object([
                 "checkpointId": .string(published.checkpointID)
@@ -143,7 +143,10 @@ struct ExcalidrawMCPUpstreamToolHandler {
             throw MCPJSONRPCError.invalidParams("read_checkpoint requires arguments.id.")
         }
         guard let data = await readCheckpointData(id) else {
-            return ExcalidrawMCPToolResult(text: "")
+            return ExcalidrawMCPToolResult(
+                text: ExcalidrawMCPCheckpointNotFoundError(id: id).localizedDescription,
+                isError: true
+            )
         }
 
         let jsonData = try data.mcpJSONData()

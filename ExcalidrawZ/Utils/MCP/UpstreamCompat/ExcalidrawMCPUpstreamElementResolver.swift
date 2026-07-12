@@ -11,7 +11,7 @@ struct ExcalidrawMCPCheckpointNotFoundError: LocalizedError, Sendable {
     let id: String
 
     var errorDescription: String? {
-        "Checkpoint \"\(id)\" not found — it may have expired or never existed.\nPlease recreate the diagram from scratch."
+        "Checkpoint \"\(id)\" not found. Use a checkpointId returned by create_view or save_checkpoint, or recreate the diagram from scratch."
     }
 }
 
@@ -74,7 +74,7 @@ struct ExcalidrawMCPUpstreamElementResolver {
                     viewportUpdate = Self.viewportUpdate(from: element) ?? viewportUpdate
                     continue
                 case ExcalidrawMCPUpstreamContract.PseudoElementType.restoreCheckpoint:
-                    restoreCheckpointID = Self.nonEmptyString(element["id"])
+                    restoreCheckpointID = element["id"]?.stringValue
                 case ExcalidrawMCPUpstreamContract.PseudoElementType.delete:
                     deleteIDs.formUnion(Self.deleteIDs(from: element))
                 default:
@@ -83,9 +83,7 @@ struct ExcalidrawMCPUpstreamElementResolver {
         }
 
         if !deleteIDs.isEmpty {
-            drawElements = drawElements.map {
-                Self.elementHiddenForInlineDelete($0, deleteIDs: deleteIDs)
-            }
+            drawElements = Self.filterDeletedElements(drawElements, deleteIDs: deleteIDs)
         }
 
         return ExtractedElements(
@@ -146,55 +144,20 @@ struct ExcalidrawMCPUpstreamElementResolver {
         return deleteIDs.contains(id ?? "") || deleteIDs.contains(containerID ?? "")
     }
 
-    private static func elementHiddenForInlineDelete(
-        _ element: MCPJSONValue,
-        deleteIDs: Set<String>
-    ) -> MCPJSONValue {
-        guard shouldHideInlineDeletedElement(element, deleteIDs: deleteIDs),
-              var object = element.objectValue
-        else {
-            return element
-        }
-
-        // Upstream uses opacity 1, not 0, because Excalidraw treats 0 as unset.
-        object["opacity"] = .number(1)
-        return .object(object)
-    }
-
     private static func deleteIDs(from element: MCPJSONValue) -> [String] {
         guard element["type"]?.stringValue == ExcalidrawMCPUpstreamContract.PseudoElementType.delete else {
             return []
         }
         if let ids = element["ids"]?.arrayValue {
-            return ids.compactMap(Self.stringLikeValue)
+            return ids.compactMap(\.stringValue)
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
         }
 
-        let raw = Self.stringLikeValue(element["ids"]) ?? Self.stringLikeValue(element["id"]) ?? ""
+        let raw = element["ids"]?.stringValue ?? element["id"]?.stringValue ?? ""
         return raw
             .split(separator: ",")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-    }
-
-    private static func stringLikeValue(_ value: MCPJSONValue?) -> String? {
-        switch value {
-            case .string(let string):
-                return string
-            case .number(let number) where number.isFinite:
-                return number.rounded(.towardZero) == number
-                    ? String(Int(number))
-                    : String(number)
-            default:
-                return nil
-        }
-    }
-
-    private static func nonEmptyString(_ value: MCPJSONValue?) -> String? {
-        guard let string = value?.stringValue, !string.isEmpty else {
-            return nil
-        }
-        return string
     }
 }
