@@ -71,7 +71,7 @@ struct ExcalidrawMCPUpstreamToolHandler {
             parsedElements = try MCPJSONValue.parseJSONArray(from: inputData)
         } catch {
             return ExcalidrawMCPToolResult(
-                text: "Invalid JSON in elements: \(error.localizedDescription).\nEnsure no comments, no trailing commas, and proper quoting.",
+                text: "Invalid JSON in elements: \(error.localizedDescription). Ensure no comments, no trailing commas, and proper quoting.",
                 isError: true
             )
         }
@@ -99,8 +99,14 @@ struct ExcalidrawMCPUpstreamToolHandler {
 
         return ExcalidrawMCPToolResult(
             text: """
-            Diagram displayed! Checkpoint id: "\(published.checkpointID)". If user asks to create a new diagram - simply create a new one from scratch.
-            However, if the user wants to edit something on this diagram "\(published.checkpointID)", use this one as starting checkpoint: simply start from the first element [{"type":"restoreCheckpoint","id":"\(published.checkpointID)"}, ...your new elements...] this will use same diagram state as the user currently sees, including any manual edits captured by the app, allowing you to add elements on top. To remove elements, use: {"type":"delete","ids":","}\(ratioHint)
+            Diagram displayed! Checkpoint id: "\(published.checkpointID)".
+            If user asks to create a new diagram - simply create a new one from scratch.
+            However, if the user wants to edit something on this diagram "\(published.checkpointID)", take these steps:
+            1) read widget context (using read_widget_context tool) to check if user made any manual edits first
+            2) decide whether you want to make new diagram from scratch OR - use this one as starting checkpoint:
+              simply start from the first element [{"type":"restoreCheckpoint","id":"\(published.checkpointID)"}, ...your new elements...]
+              this will use same diagram state as the user currently sees, including any manual edits they made in fullscreen, allowing you to add elements on top.
+              To remove elements, use: {"type":"delete","ids":"<id1>,<id2>"}\(ratioHint)
             """,
             structuredContent: .object([
                 "checkpointId": .string(published.checkpointID)

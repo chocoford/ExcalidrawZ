@@ -11,7 +11,7 @@ struct ExcalidrawMCPCheckpointNotFoundError: LocalizedError, Sendable {
     let id: String
 
     var errorDescription: String? {
-        "Checkpoint \"\(id)\" not found — it may have expired or never existed.\nPlease recreate the diagram from scratch."
+        "Checkpoint \"\(id)\" not found — it may have expired or never existed. Please recreate the diagram from scratch."
     }
 }
 

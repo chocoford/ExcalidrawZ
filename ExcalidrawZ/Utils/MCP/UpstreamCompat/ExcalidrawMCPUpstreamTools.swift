@@ -151,7 +151,7 @@ enum ExcalidrawMCPToolSchemas {
             "elements": .object([
                 "type": .string("string"),
                 "description": .string(
-                    "JSON array string of Excalidraw elements. Must be valid JSON — no comments, no trailing commas. Keep compact.\nCall read_me first for format reference."
+                    "JSON array string of Excalidraw elements. Must be valid JSON — no comments, no trailing commas. Keep compact. Call read_me first for format reference."
                 )
             ])
         ]),
@@ -163,8 +163,7 @@ enum ExcalidrawMCPToolSchemas {
         "type": .string("object"),
         "properties": .object([
             "id": .object([
-                "type": .string("string"),
-                "description": .string("Checkpoint id returned by create_view or save_checkpoint.")
+                "type": .string("string")
             ])
         ]),
         "required": .array([.string("id")]),
@@ -175,12 +174,10 @@ enum ExcalidrawMCPToolSchemas {
         "type": .string("object"),
         "properties": .object([
             "id": .object([
-                "type": .string("string"),
-                "description": .string("Checkpoint id to update.")
+                "type": .string("string")
             ]),
             "data": .object([
-                "type": .string("string"),
-                "description": .string("Serialized checkpoint data JSON.")
+                "type": .string("string")
             ])
         ]),
         "required": .array([
@@ -209,7 +206,11 @@ enum ExcalidrawMCPUpstreamToolCatalog {
         ExcalidrawMCPTool(
             name: ExcalidrawMCPUpstreamContract.ToolName.createView,
             title: "Draw Diagram",
-            description: "Renders a hand-drawn diagram using Excalidraw elements. Elements stream in one by one with draw-on animations. Call read_me first to learn the element format.",
+            description: """
+            Renders a hand-drawn diagram using Excalidraw elements.
+            Elements stream in one by one with draw-on animations.
+            Call read_me first to learn the element format.
+            """,
             inputSchema: ExcalidrawMCPToolSchemas.createView,
             annotations: ["readOnlyHint": .bool(true)]
         ),
