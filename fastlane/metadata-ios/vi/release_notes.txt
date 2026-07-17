@@ -1,1 +1,1 @@
-Sửa lỗi trên bố cục iOS compact khiến trình chỉnh sửa văn bản có thể đóng ngay khi tạo hoặc sửa văn bản trên canvas, làm bạn không thể nhập chữ.
+Sửa lỗi trên bố cục iOS compact khiến vùng chọn đã bỏ có thể xuất hiện lại khi di chuyển hoặc thu phóng canvas sau khi thoát chế độ chỉnh sửa.

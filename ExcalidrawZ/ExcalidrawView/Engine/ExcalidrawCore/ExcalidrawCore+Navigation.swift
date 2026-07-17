@@ -55,11 +55,13 @@ extension ExcalidrawCore: WKNavigationDelegate {
                        let file = self.parent?.file,
                        let content = file.content {
                         // load file content
-                        try await self.webActor.loadFile(
-                            id: file.id,
+                        let outcome = await self.documentSyncController.load(
+                            fileID: file.id,
                             data: content,
-                            force: true
+                            force: true,
+                            validateCurrentParentFile: false
                         )
+                        guard outcome.didLoad else { return }
                         // open collab mode
                         try await self.openCollabMode()
                     }

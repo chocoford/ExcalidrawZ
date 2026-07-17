@@ -71,7 +71,7 @@ final class ExcalidrawDocumentProgrammaticSnapshotCommitter: @unchecked Sendable
         let savingType = await MainActor.run { core.parent?.savingType }
 
         do {
-            let loadedID = await core.webActor.loadedFileID
+            let loadedID = core.documentSyncController.currentLoadedFileID
             guard delegate.snapshotCoordinatorCanApplyStateChanged(
                 currentFileID: currentFileID,
                 webLoadedFileID: loadedID,

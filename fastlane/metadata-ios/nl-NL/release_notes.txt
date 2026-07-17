@@ -1,1 +1,1 @@
-Een probleem opgelost op compacte iOS-lay-outs waarbij het maken of bewerken van tekst op het canvas de teksteditor direct kon sluiten, waardoor tekstinvoer niet mogelijk was.
+Een probleem opgelost op compacte iOS-lay-outs waarbij een opgeheven selectie opnieuw kon verschijnen bij het verschuiven of zoomen van het canvas nadat de bewerkingsmodus was verlaten.

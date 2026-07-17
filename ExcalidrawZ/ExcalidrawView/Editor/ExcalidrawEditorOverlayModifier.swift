@@ -11,6 +11,12 @@ import ChocofordUI
 
 /// Layers loading / empty / recover overlays on top of an `ExcalidrawCanvasView`.
 struct ExcalidrawEditorOverlayModifier: ViewModifier {
+    private struct LoadingOverlayCover {
+        let fileID: String
+        let colorScheme: ColorScheme
+        let image: PlatformImage
+    }
+
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
@@ -27,7 +33,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
     @State private var isSelectFilePlaceholderPresented = false
     @State private var progressPresentationTask: Task<Void, Never>?
     @State private var loadingOverlayDismissTask: Task<Void, Never>?
-    @State private var loadingOverlayCoverImage: PlatformImage?
+    @State private var loadingOverlayCover: LoadingOverlayCover?
 
     func body(content: Content) -> some View {
         ZStack(alignment: .center) {
@@ -58,6 +64,13 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
         }
         .ignoresSafeArea(.container, edges: .bottom)
         .transition(.opacity)
+        .onReceive(
+            NotificationCenter.default.publisher(for: .filePreviewDidUpdate)
+        ) { notification in
+            guard let fileID = notification.object as? String,
+                  fileID == fileState.currentActiveFile?.id else { return }
+            captureLoadingCoverIfAvailable()
+        }
         .onDisappear {
             progressPresentationTask?.cancel()
             progressPresentationTask = nil
@@ -102,7 +115,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
 
     @ViewBuilder
     private var loadingOverlayBackgroundContent: some View {
-        if let image = loadingOverlayCoverImage {
+        if let image = effectiveLoadingOverlayCoverImage {
             Image(platformImage: image)
                 .resizable()
                 .scaledToFill()
@@ -132,11 +145,20 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
                 rect,
                 in: geometry
             ),
-            image: loadingOverlayCoverImage
+            image: effectiveLoadingOverlayCoverImage
         )
 #else
         return rect
 #endif
+    }
+
+    private var effectiveLoadingOverlayCoverImage: PlatformImage? {
+        if let loadingOverlayCover,
+           loadingOverlayCover.fileID == fileState.currentActiveFile?.id,
+           loadingOverlayCover.colorScheme == colorScheme {
+            return loadingOverlayCover.image
+        }
+        return loadingCoverImage
     }
 
     private var loadingCoverImage: PlatformImage? {
@@ -174,18 +196,18 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
                     guard !Task.isCancelled else { return }
                     isProgressViewPresented = false
                     isLoadingOverlayPresented = false
-                    loadingOverlayCoverImage = nil
+                    loadingOverlayCover = nil
                     loadingOverlayDismissTask = nil
                 }
             } else {
                 isLoadingOverlayPresented = false
-                loadingOverlayCoverImage = nil
+                loadingOverlayCover = nil
             }
             return
         }
 
         if !isLoadingOverlayPresented {
-            loadingOverlayCoverImage = loadingCoverImage
+            captureLoadingCoverIfAvailable()
         }
         isLoadingOverlayPresented = true
         progressPresentationTask = Task { @MainActor in
@@ -194,6 +216,17 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
             isProgressViewPresented = true
             progressPresentationTask = nil
         }
+    }
+
+    private func captureLoadingCoverIfAvailable() {
+        guard loadingState == .loading,
+              let fileID = fileState.currentActiveFile?.id,
+              let image = loadingCoverImage else { return }
+        loadingOverlayCover = LoadingOverlayCover(
+            fileID: fileID,
+            colorScheme: colorScheme,
+            image: image
+        )
     }
 
     @ViewBuilder

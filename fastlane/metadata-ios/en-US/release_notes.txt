@@ -1,1 +1,1 @@
-Fixed an issue on compact iOS layouts where creating or editing text on the canvas could immediately dismiss the text editor, preventing text input.
+Fixed an issue on compact iOS layouts where a cleared canvas selection could reappear after leaving Edit mode and panning or zooming the canvas.

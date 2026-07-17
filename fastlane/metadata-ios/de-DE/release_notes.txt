@@ -1,1 +1,1 @@
-Ein Problem auf kompakten iOS-Layouts wurde behoben, bei dem sich der Texteditor beim Erstellen oder Bearbeiten von Text auf der Zeichenfläche sofort schließen konnte und dadurch keine Texteingabe möglich war.
+Ein Problem auf kompakten iOS-Layouts wurde behoben, bei dem eine aufgehobene Auswahl nach dem Verlassen des Bearbeitungsmodus beim Verschieben oder Zoomen der Zeichenfläche erneut erscheinen konnte.

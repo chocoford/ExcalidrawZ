@@ -73,7 +73,6 @@ struct ExcalidrawCanvasView: View {
     
     @StateObject private var excalidrawCore = ExcalidrawCore()
     @State private var hasSetupCore = false
-    @State private var loadingFileID: String?
     @State private var pendingErrorEvent: IdentifiableError?
     
     // MARK: - Computed Properties
@@ -239,16 +238,17 @@ struct ExcalidrawCanvasView: View {
     
     private func listenToLoadingState() async {
         for await isLoading in excalidrawCore.$isLoading.values {
+            let hasPendingFileLoad = excalidrawCore.documentSyncController.hasPendingFileLoad
             await MainActor.run {
-                loadingState = (isLoading || loadingFileID != nil) ? .loading : .loaded
+                loadingState = (isLoading || hasPendingFileLoad) ? .loading : .loaded
             }
 
-            if !isLoading, loadingFileID == nil, type == .normal {
+            if !isLoading, !hasPendingFileLoad, type == .normal {
                 await applyLoadedFilePresentationSettings()
             }
 
 #if os(iOS)
-            if !isLoading, loadingFileID == nil {
+            if !isLoading, !hasPendingFileLoad {
                 await applyPencilInteractionModeAfterLoadIfNeeded()
                 await enterCompactDragModeAfterLoadIfNeeded()
             }
@@ -343,7 +343,6 @@ struct ExcalidrawCanvasView: View {
         }
 
         guard let newFile else {
-            loadingFileID = nil
             excalidrawCore.documentSyncController.resetFileLoadState()
             return
         }
@@ -361,20 +360,13 @@ struct ExcalidrawCanvasView: View {
         // WebView-level `isLoading`, so the sync hooked to that signal won't
         // fire. Now that `loadFile` properly awaits Excalidraw's scene
         // application, we can chain the re-sync directly.
-        loadingFileID = newFile.id
         loadingState = .loading
         Task {
             let outcome = await excalidrawCore.documentSyncController.load(newFile)
             let isStillCurrent = await MainActor.run {
                 file?.id == newFile.id
             }
-            guard isStillCurrent else { return }
-
-            await MainActor.run {
-                if loadingFileID == newFile.id {
-                    loadingFileID = nil
-                }
-            }
+            guard isStillCurrent, outcome.shouldFinishPresentation else { return }
 
             if outcome.didLoad {
                 await applyLoadedFilePresentationSettings()

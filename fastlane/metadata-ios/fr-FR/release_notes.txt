@@ -1,1 +1,1 @@
-Correction d'un problème sur les présentations compactes d'iOS où la création ou la modification de texte sur le canevas pouvait fermer immédiatement l'éditeur de texte et empêcher la saisie.
+Correction d'un problème sur les présentations compactes d'iOS où une sélection annulée pouvait réapparaître lors du déplacement ou du zoom du canevas après avoir quitté le mode d'édition.

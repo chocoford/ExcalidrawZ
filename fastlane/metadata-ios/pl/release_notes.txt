@@ -1,1 +1,1 @@
-Naprawiono problem w kompaktowych układach iOS, przez który tworzenie lub edytowanie tekstu na płótnie mogło natychmiast zamykać edytor tekstu i uniemożliwiać wpisywanie.
+Naprawiono problem w kompaktowych układach iOS, przez który anulowane zaznaczenie mogło pojawić się ponownie podczas przesuwania lub powiększania płótna po wyjściu z trybu edycji.

@@ -1,1 +1,1 @@
-Se ha corregido un problema en los diseños compactos de iOS por el que crear o editar texto en el lienzo podía cerrar inmediatamente el editor de texto e impedir la escritura.
+Se ha corregido un problema en los diseños compactos de iOS por el que una selección anulada podía volver a aparecer al desplazar o ampliar el lienzo después de salir del modo de edición.

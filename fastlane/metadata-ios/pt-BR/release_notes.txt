@@ -1,1 +1,1 @@
-Corrigido um problema em layouts compactos do iOS em que criar ou editar texto na tela podia fechar imediatamente o editor de texto, impedindo a digitação.
+Corrigido um problema em layouts compactos do iOS em que uma seleção desfeita podia reaparecer ao mover ou ampliar a tela após sair do modo de edição.

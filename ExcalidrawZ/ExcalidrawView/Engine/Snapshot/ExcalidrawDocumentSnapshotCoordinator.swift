@@ -214,7 +214,7 @@ final class ExcalidrawDocumentSnapshotCoordinator: @unchecked Sendable {
         let savingType = await MainActor.run { core.parent?.savingType }
 
         do {
-            let loadedID = await core.webActor.loadedFileID
+            let loadedID = core.documentSyncController.currentLoadedFileID
             guard delegate.snapshotCoordinatorCanApplyStateChanged(
                 currentFileID: currentFileID,
                 webLoadedFileID: loadedID,
@@ -306,7 +306,7 @@ final class ExcalidrawDocumentSnapshotCoordinator: @unchecked Sendable {
         guard let delegate,
               let core = delegate.snapshotCoordinatorCore else { return }
         do {
-            let loadedID = await core.webActor.loadedFileID
+            let loadedID = core.documentSyncController.currentLoadedFileID
             guard loadedID == expectedFileID else {
                 core.logger.debug(
                     "Skipped background dirty canvas snapshot \(reason): loaded file mismatch expected=\(expectedFileID) loaded=\(loadedID ?? "nil")"

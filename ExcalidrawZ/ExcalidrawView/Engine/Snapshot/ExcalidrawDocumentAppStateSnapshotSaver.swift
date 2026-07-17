@@ -128,7 +128,7 @@ final class ExcalidrawDocumentAppStateSnapshotSaver: @unchecked Sendable {
                 return false
             }
 
-            let loadedID = await core.webActor.loadedFileID
+            let loadedID = core.documentSyncController.currentLoadedFileID
             guard loadedID == expectedFileID else {
                 core.logger.debug(
                     "Skipped forced appState-only canvas update \(reason): loaded file mismatch expected=\(expectedFileID) loaded=\(loadedID ?? "nil")"
@@ -184,7 +184,7 @@ final class ExcalidrawDocumentAppStateSnapshotSaver: @unchecked Sendable {
         }
 
         do {
-            let loadedID = await core.webActor.loadedFileID
+            let loadedID = core.documentSyncController.currentLoadedFileID
             guard loadedID == expectedFileID else {
                 core.logger.debug(
                     "Skipped forced background appState-only canvas update \(reason): loaded file mismatch expected=\(expectedFileID) loaded=\(loadedID ?? "nil")"

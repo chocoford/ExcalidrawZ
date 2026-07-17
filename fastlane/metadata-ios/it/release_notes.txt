@@ -1,1 +1,1 @@
-Risolto un problema nei layout compatti di iOS per cui la creazione o modifica del testo sulla tela poteva chiudere subito l'editor di testo, impedendo l'inserimento.
+Risolto un problema nei layout compatti di iOS per cui una selezione annullata poteva ricomparire spostando o ingrandendo la tela dopo essere usciti dalla modalità di modifica.

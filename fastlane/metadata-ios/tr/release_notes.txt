@@ -1,1 +1,1 @@
-iOS kompakt yerleşimlerinde tuvalde metin oluştururken veya düzenlerken metin düzenleyicinin hemen kapanıp metin girişini engelleyebildiği bir sorun düzeltildi.
+iOS kompakt yerleşimlerinde düzenleme modundan çıktıktan sonra tuvali kaydırırken veya yakınlaştırırken kaldırılmış bir seçimin yeniden görünebilmesine neden olan sorun düzeltildi.
