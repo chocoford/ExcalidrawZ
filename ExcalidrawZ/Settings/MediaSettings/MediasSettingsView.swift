@@ -10,18 +10,17 @@ import CoreData
 import ChocofordUI
 
 struct MediasSettingsView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-    @Environment(\.alertToast) private var alertToast
     @FetchRequest(sortDescriptors: [SortDescriptor(\MediaItem.createdAt, order: .reverse)])
     private var medias: FetchedResults<MediaItem>
 
     @State private var selectedMediaID: NSManagedObjectID?
-    @State private var isCleaningOrphans = false
-    @State private var isCleanupAlertPresented = false
-    @State private var cleanupResult: CleanupResult?
+    @State private var isCleanupSheetPresented = false
 
     var body: some View {
         content()
+            .sheet(isPresented: $isCleanupSheetPresented) {
+                MediaCleanupSheet()
+            }
     }
 
     @ViewBuilder
@@ -131,48 +130,51 @@ struct MediasSettingsView: View {
 
     @ViewBuilder
     private func galleryView() -> some View {
-        if medias.isEmpty {
-            VStack(spacing: 10) {
-                Image(systemSymbol: .photoOnRectangle)
-                    .font(.system(size: 36))
-                    .foregroundStyle(.secondary)
-                Text(localizable: .settingsMediasDescription)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 360)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding()
-        } else {
-            ScrollView {
-                LazyVGrid(columns: gridColumns, spacing: 8) {
-                    ForEach(medias, id: \.objectID) { item in
+        ZStack {
+            if medias.isEmpty {
+                VStack(spacing: 10) {
+                    Image(systemSymbol: .photoOnRectangle)
+                        .font(.system(size: 36))
+                        .foregroundStyle(.secondary)
+                    Text(localizable: .settingsMediasDescription)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 360)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding()
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: gridColumns, spacing: 8) {
+                        ForEach(medias, id: \.objectID) { item in
 #if os(iOS)
-                    NavigationLink(value: MediaRoute.mediaItem(item.objectID)) {
-                        MediaItemGridCell(item: item, isSelected: false)
-                    }
-                    .buttonStyle(.plain)
+                            NavigationLink(value: MediaRoute.mediaItem(item.objectID)) {
+                                MediaItemGridCell(item: item, isSelected: false)
+                            }
+                            .buttonStyle(.plain)
 #elseif os(macOS)
-                        Button {
-                            selectedMediaID = selectedMediaID == item.objectID ? nil : item.objectID
-                        } label: {
-                            MediaItemGridCell(
-                                item: item,
-                                isSelected: selectedMediaID == item.objectID
-                            )
-                        }
-                        .buttonStyle(.plain)
+                            Button {
+                                selectedMediaID = selectedMediaID == item.objectID ? nil : item.objectID
+                            } label: {
+                                MediaItemGridCell(
+                                    item: item,
+                                    isSelected: selectedMediaID == item.objectID
+                                )
+                            }
+                            .buttonStyle(.plain)
 #endif
+                        }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 72)
                 }
-                .padding(16)
-
-                HStack {
-                    Spacer(minLength: 0)
-                    cleanupOrphanMediasButton()
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+            }
+        }
+        .overlay(alignment: .bottomLeading) {
+            if !medias.isEmpty {
+                cleanupMediaButton()
+                    .padding(16)
             }
         }
     }
@@ -186,89 +188,15 @@ struct MediasSettingsView: View {
     }
 
     @ViewBuilder
-    private func cleanupOrphanMediasButton() -> some View {
+    private func cleanupMediaButton() -> some View {
         Button {
-            isCleanupAlertPresented = true
+            isCleanupSheetPresented = true
         } label: {
             Label(.localizable(.settingsMediaFilesButtonCleanUp), systemSymbol: .trash)
         }
         .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
-        .disabled(isCleaningOrphans || medias.isEmpty)
         .help(.localizable(.settingsMediaFilesButtonHelpCleanUp))
-        .confirmationDialog(
-            String(localizable: .settingsMediaFilesCleanUpConfirmationDialogTitle),
-            isPresented: $isCleanupAlertPresented
-        ) {
-            Button(.localizable(.settingsMediaFilesButtonCleanUp), role: .destructive) {
-                Task {
-                    await cleanupOrphanMedias()
-                }
-            }
-            Button(.localizable(.generalButtonCancel), role: .cancel) {}
-        } message: {
-            Text(localizable: .settingsMediaFilesCleanUpConfirmationDialogMessage)
-        }
     }
-
-    private func cleanupOrphanMedias() async {
-        isCleaningOrphans = true
-        defer { isCleaningOrphans = false }
-
-        do {
-            let result = try await performCleanupOrphanMedias(context: viewContext)
-            await MainActor.run {
-                self.cleanupResult = result
-                alertToast(
-                    .init(
-                        displayMode: .hud,
-                        type: .complete(.green),
-                        title: String(localizable: .generalSuccess),
-                        subTitle: String(localizable: .settingsMediaFilesCleanUpSuccessMessage(result.deletedCount)),
-                    )
-                )
-            }
-        } catch {
-            await MainActor.run {
-                alertToast(error)
-            }
-        }
-    }
-
-    /// Checkpoint media shares its parent file relationship, so retaining media
-    /// owned by either file type also retains checkpoint resources.
-    private func performCleanupOrphanMedias(context: NSManagedObjectContext) async throws -> CleanupResult {
-        return try await context.perform {
-            let fetchRequest: NSFetchRequest<MediaItem> = MediaItem.fetchRequest()
-            let allMediaItems = try context.fetch(fetchRequest)
-
-            var deletedCount = 0
-            var recoveredSpace: Int64 = 0
-
-            for mediaItem in allMediaItems {
-                let hasLibraryFile = mediaItem.file?.isDeleted == false
-                let hasCollaborationFile = mediaItem.collaborationFile?.isDeleted == false
-                guard !hasLibraryFile, !hasCollaborationFile else { continue }
-
-                if let dataURL = mediaItem.dataURL,
-                   let decodedDataURL = decodeDataURL(dataURL) {
-                    recoveredSpace += Int64(decodedDataURL.data.count)
-                }
-                context.delete(mediaItem)
-                deletedCount += 1
-            }
-
-            if deletedCount > 0 {
-                try context.save()
-            }
-
-            return CleanupResult(deletedCount: deletedCount, recoveredSpace: recoveredSpace)
-        }
-    }
-}
-
-struct CleanupResult {
-    let deletedCount: Int
-    let recoveredSpace: Int64
 }
 
 #Preview {

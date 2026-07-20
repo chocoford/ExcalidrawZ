@@ -15,7 +15,7 @@ import UIKit
 #endif
 
 struct MediaItemDetailView: View {
-    var item: MediaItem
+    @ObservedObject var item: MediaItem
 
     var body: some View {
         MediaItemDetailContent(item: item)
@@ -27,10 +27,14 @@ struct MediaItemDetailView: View {
 }
 
 struct MediaItemDetailContent: View {
-    var item: MediaItem
+    @ObservedObject var item: MediaItem
+
+    @Environment(\.alertToast) private var alertToast
 
     @State private var data: Data?
     @State private var isLoading = false
+    @State private var isDeleteReferencedFileConfirmationPresented = false
+    @State private var isDeletingReferencedFile = false
 
     var body: some View {
         ScrollView {
@@ -53,6 +57,10 @@ struct MediaItemDetailContent: View {
                         }
                     }
 
+                referencedFromSection
+
+                Divider()
+
                 VStack(alignment: .leading, spacing: 12) {
                     mediaInfoRow(title: "ID", value: item.id ?? String(localizable: .generalUnknown))
                     Divider()
@@ -65,13 +73,6 @@ struct MediaItemDetailContent: View {
                         title: String(localizable: .mediasInfoLabelFileSize),
                         value: data?.count.formatted(.byteCount(style: .file)) ?? String(localizable: .generalUnknown)
                     )
-                    Divider()
-                    mediaInfoRow(
-                        title: String(localizable: .mediasInfoLabelReferencedFrom),
-                        value: item.file?.name
-                            ?? item.collaborationFile?.name
-                            ?? String(localizable: .generalUnknown)
-                    )
                     if let mimeType = item.mimeType, !mimeType.isEmpty {
                         Divider()
                         mediaInfoRow(title: "MIME", value: mimeType)
@@ -83,6 +84,19 @@ struct MediaItemDetailContent: View {
         }
         .task(id: item.objectID) {
             await loadData()
+        }
+        .confirmationDialog(
+            String(localizable: .sidebarFileRowDeletePermanentlyAlertTitle(referencedFileName)),
+            isPresented: $isDeleteReferencedFileConfirmationPresented,
+            titleVisibility: .visible
+        ) {
+            Button(role: .destructive) {
+                deleteReferencedFile()
+            } label: {
+                Text(.localizable(.sidebarFileRowDeletePermanentlyAlertButtonConfirm))
+            }
+        } message: {
+            Text(.localizable(.generalCannotUndoMessage))
         }
     }
 
@@ -109,6 +123,162 @@ struct MediaItemDetailContent: View {
                 .font(.body)
                 .lineLimit(2)
                 .textSelection(.enabled)
+        }
+    }
+
+    private var referencedFromSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(localizable: .mediasInfoLabelReferencedFrom)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            HStack(alignment: .center, spacing: 10) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(referencedFileName)
+                        .font(.body)
+                        .lineLimit(2)
+                        .textSelection(.enabled)
+
+                    referencedFileStatusLabel
+                }
+
+                Spacer(minLength: 0)
+
+#if os(macOS)
+                if referencedFileObjectID != nil {
+                    Button {
+                        openReferencedFile()
+                    } label: {
+                        Image(systemSymbol: .arrowRightCircleFill)
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(isDeletingReferencedFile)
+                    .help(.localizable(.generalButtonOpen))
+                }
+
+                if referencedFileDeletionTarget != nil {
+                    Button {
+                        isDeleteReferencedFileConfirmationPresented = true
+                    } label: {
+                        if isDeletingReferencedFile {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Image(systemSymbol: .trash)
+                        }
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(.red)
+                    .disabled(isDeletingReferencedFile)
+                    .help(.localizable(.sidebarFileRowContextMenuDeletePermanently))
+                }
+#endif
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var referencedFileStatusLabel: some View {
+        if let isInTrash = referencedFileIsInTrash {
+            Label {
+                Text(
+                    localizable: isInTrash
+                        ? .settingsMediaReferenceStatusInTrash
+                        : .settingsMediaReferenceStatusAvailable
+                )
+            } icon: {
+                Image(systemSymbol: isInTrash ? .trash : .checkmarkCircleFill)
+            }
+            .font(.caption)
+            .foregroundStyle(isInTrash ? .orange : .green)
+        } else {
+            Label {
+                Text(localizable: .settingsMediaReferenceStatusSourceUnavailable)
+            } icon: {
+                Image(systemSymbol: .questionmarkCircle)
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    private var referencedFileName: String {
+        item.file?.name
+            ?? item.collaborationFile?.name
+            ?? String(localizable: .generalUnknown)
+    }
+
+    private var referencedFileObjectID: NSManagedObjectID? {
+        item.file?.objectID ?? item.collaborationFile?.objectID
+    }
+
+    private var referencedFileIsInTrash: Bool? {
+        if let file = item.file {
+            return file.inTrash
+        }
+        if let file = item.collaborationFile {
+            return file.inTrash
+        }
+        return nil
+    }
+
+    private enum ReferencedFileDeletionTarget {
+        case file(NSManagedObjectID)
+        case collaborationFile(NSManagedObjectID)
+    }
+
+    private var referencedFileDeletionTarget: ReferencedFileDeletionTarget? {
+        if let file = item.file, file.inTrash {
+            return .file(file.objectID)
+        }
+        if let file = item.collaborationFile, file.inTrash {
+            return .collaborationFile(file.objectID)
+        }
+        return nil
+    }
+
+#if os(macOS)
+    private func openReferencedFile() {
+        guard let referencedFileObjectID,
+              let url = try? entityURL(for: referencedFileObjectID) else {
+            return
+        }
+
+        Task { @MainActor in
+            guard ContentWindowActivationCoordinator.shared.activateLastWindow() else {
+                NSWorkspace.shared.open(url)
+                return
+            }
+            NotificationCenter.default.post(.shouldOpenExternalURL(url: url))
+        }
+    }
+#endif
+
+    private func deleteReferencedFile() {
+        guard let target = referencedFileDeletionTarget else { return }
+
+        isDeletingReferencedFile = true
+        Task { @MainActor in
+            do {
+                switch target {
+                case .file(let objectID):
+                    try await PersistenceController.shared.fileRepository.delete(
+                        fileObjectID: objectID,
+                        forcePermanently: true,
+                        save: true
+                    )
+                case .collaborationFile(let objectID):
+                    try await PersistenceController.shared.collaborationFileRepository.delete(
+                        collaborationFileObjectID: objectID,
+                        save: true
+                    )
+                }
+                isDeletingReferencedFile = false
+            } catch {
+                isDeletingReferencedFile = false
+                alertToast(error)
+            }
         }
     }
 

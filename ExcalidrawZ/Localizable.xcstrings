@@ -96747,6 +96747,420 @@
         }
       }
     },
+    "settingsMediaCleanupDeleteConfirmationMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected files and their history will be permanently deleted. Selected media used only by file history will also remove the affected checkpoints. Media still used by other files will be kept. This cannot be undone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所选文件及其历史记录将被永久删除。若所选媒体仅被文件历史引用，相关检查点也会被删除。仍被其他文件使用的媒体会予以保留。此操作无法撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所選檔案及其歷史記錄將被永久刪除。若所選媒體僅被檔案歷史參考，相關檢查點也會被刪除。仍被其他檔案使用的媒體會予以保留。此操作無法復原。"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupDeleteConfirmationTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permanently Delete Selected Items?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "永久删除所选项目？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "永久刪除所選項目？"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupFilesDeletedMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permanently deleted %d files and cleaned up media no longer in use."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已永久删除 %d 个文件，并清理不再使用的媒体。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已永久刪除 %d 個檔案，並清理不再使用的媒體。"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupHistoryOnlyDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These items are no longer used by the current file, but are still required by file history. Cleaning them also deletes every checkpoint that references them."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这些媒体已不再被当前文件使用，但文件历史仍需要它们。清理时也会删除所有引用它们的检查点。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這些媒體已不再被目前檔案使用，但檔案歷史仍需要它們。清理時也會刪除所有參考它們的檢查點。"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupHistoryConfirmationMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You selected %1$d media items used by %2$d checkpoints. Continuing will permanently delete those checkpoints and the selected media. This cannot be undone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你选择了 %1$d 个仅被 %2$d 个检查点引用的媒体项。继续操作将永久删除这些检查点及所选媒体，且无法撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你選擇了 %1$d 個僅被 %2$d 個檢查點參考的媒體項目。繼續操作將永久刪除這些檢查點及所選媒體，且無法復原。"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupHistoryOnlyTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Used Only by File History"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅被文件历史引用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "僅被檔案歷史參考"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupMediaCount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d media items"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 个媒体项"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 個媒體項目"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupNothingToClean": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Media Can Be Cleaned Up"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有可清理的媒体"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有可清理的媒體"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupOrphanedDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These items are not referenced by a current file or any checkpoint and can be removed safely."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这些媒体未被当前文件或任何检查点引用，可以安全删除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這些媒體未被目前檔案或任何檢查點參考，可以安全刪除。"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupOrphanedTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orphaned Media"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "孤立媒体"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "孤立媒體"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupScanning": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking media references and file history…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在检查媒体引用和文件历史…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在檢查媒體參考和檔案歷史…"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupSelectedCount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d selected"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择 %d 项"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已選擇 %d 項"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupSkippedCount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d media items could not be evaluated and were left unchanged."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有 %d 个媒体项无法检查，已保持不变。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有 %d 個媒體項目無法檢查，已保持不變。"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupSuccessMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted %1$d media items and %2$d checkpoints."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已删除 %1$d 个媒体项和 %2$d 个检查点。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已刪除 %1$d 個媒體項目和 %2$d 個檢查點。"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review Media Cleanup"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查媒体清理"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查媒體清理"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupTrashedFilesDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file is in Trash. Selecting it permanently deletes the file, its history, and media no longer used anywhere else."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此文件位于废纸篓。选择后会永久删除该文件及其历史记录，并清理未被其他内容使用的媒体。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此檔案位於垃圾桶。選取後會永久刪除該檔案及其歷史記錄，並清理未被其他內容使用的媒體。"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupTrashedFilesConfirmationMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d selected files, their history, and media no longer used anywhere else will be permanently deleted. This cannot be undone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将永久删除所选的 %d 个文件、对应历史记录，以及未被其他内容使用的媒体。此操作无法撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將永久刪除所選的 %d 個檔案、對應歷史記錄，以及未被其他內容使用的媒體。此操作無法復原。"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupTrashedFilesTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media from Files in Trash"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "废纸篓文件中的媒体"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "垃圾桶檔案中的媒體"
+          }
+        }
+      }
+    },
     "settingsMediaFilesButtonCleanUp": {
       "extractionState": "manual",
       "localizations": {
@@ -97308,6 +97722,121 @@
           "stringUnit": {
             "state": "translated",
             "value": "已移除 %d 個孤立的媒體項目。"
+          }
+        }
+      }
+    },
+    "settingsMediaReferenceStatusAvailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正常"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正常"
+          }
+        }
+      }
+    },
+    "settingsMediaReferenceStatusInTrash": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Trash"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "位于废纸篓"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "位於垃圾桶"
+          }
+        }
+      }
+    },
+    "settingsMediaReferenceStatusSourceUnavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source File Unavailable"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "来源文件不可用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "來源檔案不可用"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupUnverifiedDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These items may still be referenced by content that could not be read. They were left unchanged to protect your files and history."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这些媒体可能仍被无法读取的内容引用。为保护文件和历史记录，它们不会被删除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這些媒體可能仍被無法讀取的內容參考。為保護檔案和歷史記錄，它們不會被刪除。"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupUnverifiedTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to Verify"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法验证"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法驗證"
           }
         }
       }

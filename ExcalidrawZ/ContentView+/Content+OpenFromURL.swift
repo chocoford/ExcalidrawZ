@@ -14,6 +14,39 @@ import Combine
 
 import ChocofordUI
 
+#if os(macOS)
+import AppKit
+
+@MainActor
+final class ContentWindowActivationCoordinator {
+    static let shared = ContentWindowActivationCoordinator()
+
+    private weak var lastKeyWindow: NSWindow?
+
+    private init() {}
+
+    func register(_ window: NSWindow) {
+        lastKeyWindow = window
+    }
+
+    @discardableResult
+    func activateLastWindow() -> Bool {
+        guard let window = lastKeyWindow else { return false }
+
+        if window.isMiniaturized {
+            window.deminiaturize(nil)
+        }
+        if #available(macOS 14.0, *) {
+            NSApp.activate()
+        } else {
+            NSApp.activate(ignoringOtherApps: true)
+        }
+        window.makeKeyAndOrderFront(nil)
+        return true
+    }
+}
+#endif
+
 struct OpenFromURLModifier: ViewModifier {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.openURL) private var openURL
@@ -28,14 +61,31 @@ struct OpenFromURLModifier: ViewModifier {
     @State private var isCommandKeyDown = false
 
     @State private var webViewIsLoadingCancellable: AnyCancellable?
+
+#if os(macOS)
+    @State private var window: NSWindow?
+#endif
     
     func body(content: Content) -> some View {
         content
+#if os(macOS)
+            .bindWindow($window)
+            .onWindowEvent(.didBecomeKey) { window in
+                ContentWindowActivationCoordinator.shared.register(window)
+            }
+            .task(id: window?.windowNumber) {
+                guard let window, window.isKeyWindow else { return }
+                ContentWindowActivationCoordinator.shared.register(window)
+            }
+#endif
             .onOpenURL { url in
                 onOpenURL(url)
             }
             .onReceive(NotificationCenter.default.publisher(for: .shouldOpenExternalURL)) { notification in
                 guard let url = notification.object as? URL else { return }
+#if os(macOS)
+                guard window?.isKeyWindow == true else { return }
+#endif
                 if url.scheme == "excalidrawz" || url.isFileURL && url.pathExtension == "excalidraw" {
                     self.onOpenURL(url)
                 } else {
@@ -275,6 +325,8 @@ struct OpenFromURLModifier: ViewModifier {
             }
             if let file = object as? File {
                 fileState.setActiveFile(.file(file))
+            } else if let file = object as? CollaborationFile {
+                fileState.setActiveFile(.collaborationFile(file))
             } else if let group = object as? Group {
                 fileState.expandToGroup(group.objectID)
                 fileState.currentActiveGroup = .group(group)

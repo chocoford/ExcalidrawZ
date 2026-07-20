@@ -429,10 +429,13 @@ actor CollaborationFileRepository {
         let context = PersistenceController.shared.newTaskContext()
 
         // Extract file info before deletion
-        let (filePath, fileID, fileScopeID, checkpointPaths): (String?, UUID?, String?, [(String, UUID)]) = try await context.perform {
+        let (filePath, fileID, fileScopeID, checkpointPaths, mediaObjectURIs): (String?, UUID?, String?, [(String, UUID)], [URL]) = try await context.perform {
             guard let collaborationFile = context.object(with: collaborationFileObjectID) as? CollaborationFile else {
-                return (nil, nil, nil, [])
+                return (nil, nil, nil, [], [])
             }
+
+            let mediaObjectURIs = ((collaborationFile.medias?.allObjects as? [MediaItem]) ?? [])
+                .map { $0.objectID.uriRepresentation() }
 
             // Collect checkpoint info before deletion
             let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
@@ -463,7 +466,7 @@ actor CollaborationFileRepository {
                 try context.save()
             }
 
-            return (path, id, scopeID, checkpointInfo)
+            return (path, id, scopeID, checkpointInfo, mediaObjectURIs)
         }
 
         // Delete physical files from storage (local + iCloud)
@@ -499,6 +502,17 @@ actor CollaborationFileRepository {
             } catch {
                 logger.warning("Failed to delete AI conversations for collaboration file \(fileScopeID): \(error)")
             }
+        }
+
+        do {
+            let deletedMediaCount = try await MediaCleanupCoordinator.shared.cleanOrphanedMedia(
+                withObjectURIs: mediaObjectURIs
+            )
+            if deletedMediaCount > 0 {
+                logger.debug("Deleted \(deletedMediaCount) unreferenced media item(s) after collaboration file deletion")
+            }
+        } catch {
+            logger.warning("Failed to clean media after collaboration file deletion: \(error)")
         }
     }
 }
