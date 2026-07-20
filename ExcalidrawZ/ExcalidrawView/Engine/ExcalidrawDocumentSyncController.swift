@@ -76,6 +76,12 @@ private struct DocumentLoadStateMachine {
 /// to `ExcalidrawDocumentSnapshotCoordinator`, then routed back through this
 /// controller's persistence bridge when a full snapshot must be applied.
 final class ExcalidrawDocumentSyncController: @unchecked Sendable {
+    enum LoadEvent: Sendable {
+        case started(fileID: String)
+        case finished(fileID: String, succeeded: Bool)
+        case reset
+    }
+
     enum LoadOutcome {
         case skipped
         case loaded(LoadFileResult)
@@ -89,14 +95,6 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
             return false
         }
 
-        var shouldFinishPresentation: Bool {
-            switch self {
-                case .loaded, .failed:
-                    true
-                case .skipped, .superseded:
-                    false
-            }
-        }
     }
 
     private enum StateChangeSuppressionReason {
@@ -114,11 +112,18 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
     private let lock = NSLock()
     private weak var core: ExcalidrawCore?
     private let snapshotCoordinator = ExcalidrawDocumentSnapshotCoordinator()
+    let loadEvents: AsyncStream<LoadEvent>
+    private let loadEventContinuation: AsyncStream<LoadEvent>.Continuation
     private var loadState = DocumentLoadStateMachine()
     /// Temporary guards used to ignore `stateChanged` events produced by file
     /// loading itself rather than by user or tool edits.
     private var stateChangeSuppressions: [UUID: StateChangeSuppression] = [:]
     init() {
+        var continuation: AsyncStream<LoadEvent>.Continuation?
+        self.loadEvents = AsyncStream(bufferingPolicy: .bufferingNewest(1)) {
+            continuation = $0
+        }
+        self.loadEventContinuation = continuation!
         snapshotCoordinator.attach(delegate: self)
     }
 
@@ -633,6 +638,7 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
             startedAt: Date()
         )
         lock.unlock()
+        loadEventContinuation.yield(.started(fileID: fileID))
         return (request, token)
     }
 
@@ -657,6 +663,11 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         lock.lock()
         let didCommit = loadState.confirm(request)
         lock.unlock()
+        if didCommit {
+            loadEventContinuation.yield(
+                .finished(fileID: request.fileID, succeeded: true)
+            )
+        }
         return didCommit
     }
 
@@ -667,6 +678,11 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         lock.lock()
         let wasCurrent = loadState.fail(request)
         lock.unlock()
+        if wasCurrent {
+            loadEventContinuation.yield(
+                .finished(fileID: request.fileID, succeeded: false)
+            )
+        }
         return wasCurrent ? outcome : .superseded
     }
 
@@ -676,6 +692,7 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         loadState.reset()
         stateChangeSuppressions.removeAll()
         lock.unlock()
+        loadEventContinuation.yield(.reset)
     }
 
     private func receivedStateChangedRejectionReason(isCoreLoading: Bool) -> String? {

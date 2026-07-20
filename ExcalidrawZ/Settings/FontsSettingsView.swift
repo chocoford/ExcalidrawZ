@@ -38,12 +38,25 @@ struct MultiFontPickerView: View {
     @State private var showPicker = false
     @State private var tempFont: String = NSFontManager.shared.availableFontFamilies.first ?? ""
 
-    @State private var addedFonts: Set<String> = []
     @State private var selectedFonts: Set<String> = []
     
     @State private var selectStartFont: String?
     
     @State private var keyboardMonitor: Any?
+
+    private var addedFonts: Set<String> {
+        guard let fonts = try? JSONDecoder().decode([String].self, from: addedFontsData) else {
+            return []
+        }
+        return Set(fonts)
+    }
+
+    private var addedFontsBinding: Binding<Set<String>> {
+        Binding(
+            get: { addedFonts },
+            set: persistAddedFonts
+        )
+    }
 
     var body: some View {
         Section {
@@ -122,9 +135,10 @@ struct MultiFontPickerView: View {
                 Spacer()
                 SwiftUI.Group {
                     Button {
-                        for selected in selectedFonts {
-                            addedFonts.remove(selected)
-                        }
+                        var fonts = addedFonts
+                        fonts.subtract(selectedFonts)
+                        persistAddedFonts(fonts)
+                        selectedFonts.removeAll()
                     } label: {
                         Image(systemSymbol: .minus)
                     }
@@ -140,13 +154,7 @@ struct MultiFontPickerView: View {
             }
         }
         .sheet(isPresented: $showPicker) {
-            FontSelectorView(selections: $addedFonts)
-        }
-        .watch(value: addedFonts) { newValue in
-            addedFontsData = (try? JSONEncoder().encode(newValue)) ?? Data()
-        }
-        .watch(value: addedFontsData) { newValue in
-            addedFonts = (try? JSONDecoder().decode(Set<String>.self, from: newValue)) ?? []
+            FontSelectorView(selections: addedFontsBinding)
         }
         .onAppear {
             // Backspace to remove selected font
@@ -166,9 +174,15 @@ struct MultiFontPickerView: View {
     }
 
     private func remove(_ font: String) {
-        addedFonts.remove(font)
+        var fonts = addedFonts
+        fonts.remove(font)
+        persistAddedFonts(fonts)
         selectedFonts.remove(font)
+    }
 
+    private func persistAddedFonts(_ fonts: Set<String>) {
+        guard let data = try? JSONEncoder().encode(fonts.sorted()) else { return }
+        addedFontsData = data
     }
 }
 

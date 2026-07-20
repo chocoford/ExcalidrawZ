@@ -209,6 +209,7 @@ extension SVGPreviewWebView {
                 return false;
             }
             document.body.appendChild(svg);
+            svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
             svg.style.display = "block";
             svg.style.width = "100%";
             svg.style.height = "100%";
@@ -279,6 +280,12 @@ extension SVGPreviewWebView {
         <body>
             <div id="svg-preview-background"></div>
             \(svg)
+            <script>
+                document.querySelector("svg")?.setAttribute(
+                    "preserveAspectRatio",
+                    "xMidYMid meet"
+                );
+            </script>
         </body>
         </html>
         """

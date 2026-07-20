@@ -15,8 +15,7 @@ struct MediasSettingsView: View {
     @FetchRequest(sortDescriptors: [SortDescriptor(\MediaItem.createdAt, order: .reverse)])
     private var medias: FetchedResults<MediaItem>
 
-    @State private var selection: MediaItem?
-    @State private var loadedData: Data?
+    @State private var selectedMediaID: NSManagedObjectID?
     @State private var isCleaningOrphans = false
     @State private var isCleanupAlertPresented = false
     @State private var cleanupResult: CleanupResult?
@@ -30,178 +29,159 @@ struct MediasSettingsView: View {
 #if os(iOS)
         NavigationStack {
             galleryView()
+                .navigationTitle(.localizable(.settingsMediasName))
                 .navigationDestination(for: MediaRoute.self) { route in
                     MediaSettingsDestinationView(route: route)
                 }
         }
 #elseif os(macOS)
         regularContent()
+            .navigationTitle(.localizable(.settingsMediasName))
 #endif
     }
 
+#if os(macOS)
     @ViewBuilder
     private func regularContent() -> some View {
-        HStack(spacing: 0) {
-            mediaList()
-                .frame(width: 200)
-
-            Divider()
-
-            detailView()
-                .padding()
-                .frame(maxWidth: .infinity)
-                .task(id: selection?.objectID) {
-                    if let selection = selection {
-                        loadedData = try? await selection.loadData()
-                    } else {
-                        loadedData = nil
+        if #available(macOS 14.0, *) {
+            galleryView()
+                .inspector(isPresented: isMediaInspectorPresented) {
+                    if let selectedMedia {
+                        detailPanelContent(item: selectedMedia)
+                            .inspectorColumnWidth(min: 280, ideal: 320, max: 380)
                     }
                 }
+        } else {
+            floatingDetailContent()
         }
     }
 
-    @ViewBuilder
-    private func mediaList() -> some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    ForEach(medias, id: \.objectID) { item in
-                        Button {
-                            selection = item
-                        } label: {
-                            Text(item.id ?? String(localizable: .generalUnknown))
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                        }
-                        .buttonStyle(
-                            .excalidrawSidebarRow(
-                                isSelected: selection == item,
-                                isMultiSelected: false
-                            )
-                        )
-                    }
-                }
-                .padding(10)
-                .frame(minHeight: 400, alignment: .top)
-                .background {
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            selection = nil
-                        }
+    private var isMediaInspectorPresented: Binding<Bool> {
+        Binding {
+            selectedMedia != nil
+        } set: { isPresented in
+            if !isPresented {
+                selectedMediaID = nil
+            }
+        }
+    }
+
+    private func floatingDetailContent() -> some View {
+        ZStack(alignment: .trailing) {
+            galleryView()
+
+            if let selectedMedia {
+                floatingDetailPanel(item: selectedMedia)
+                    .frame(width: 320)
+                    .padding(10)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                    .zIndex(1)
+            }
+        }
+        .animation(.smooth(duration: 0.25), value: selectedMediaID)
+    }
+
+    private var selectedMedia: MediaItem? {
+        guard let selectedMediaID else { return nil }
+        return medias.first { $0.objectID == selectedMediaID }
+    }
+
+    private func floatingDetailPanel(item: MediaItem) -> some View {
+        detailPanelContent(item: item)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background {
+                let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+                if #available(macOS 26.0, *) {
+                    shape
+                        .fill(.background)
+                        .glassEffect(.regular, in: shape)
+                        .shadow(radius: 4)
+                } else {
+                    shape
+                        .fill(.regularMaterial)
+                        .shadow(radius: 4)
                 }
             }
+    }
 
-            Divider()
+    private func detailPanelContent(item: MediaItem) -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Text(item.file?.name ?? item.collaborationFile?.name ?? String(localizable: .settingsMediasName))
+                    .font(.headline)
+                    .lineLimit(1)
 
-            HStack {
-                Spacer()
-                cleanupOrphanMediasButton()
-                    .buttonStyle(.borderless)
+                Spacer(minLength: 0)
+
+                Button {
+                    selectedMediaID = nil
+                } label: {
+                    Image(systemSymbol: .xmark)
+                }
+                .modernButtonStyle(style: .glass, size: .small, shape: .circle)
             }
             .padding(12)
+
+            Divider()
+
+            MediaItemDetailContent(item: item)
         }
     }
-
-    @ViewBuilder
-    private func detailView() -> some View {
-        ZStack {
-            if let item = selection,
-               let imageData = loadedData {
-                VStack {
-                    DataImage(data: imageData, thumbnailSize: nil)
-                        .scaledToFit()
-                        .frame(maxHeight: .infinity)
-                        .contextMenu {
-                            Button {
-#if canImport(AppKit)
-                                NSPasteboard.general.clearContents()
-                                NSPasteboard.general.setData(imageData, forType: .png)
-#elseif canImport(UIKit)
-                                if let image = UIImage(data: imageData) {
-                                    UIPasteboard.general.setObjects([image])
-                                }
 #endif
-                            } label: {
-                                Text(localizable: .generalButtonCopy)
-                            }
-                        }
-
-                    VStack(alignment: .leading) {
-                        Text(item.id ?? String(localizable: .generalUntitled))
-                            .font(.headline)
-                        HStack {
-                            VStack(alignment: .trailing) {
-                                Text("\(String(localizable: .mediasInfoLabelCreatedAt)):")
-                                Text("\(String(localizable: .mediasInfoLabelFileSize)):")
-                                Text("\(String(localizable: .mediasInfoLabelReferencedFrom)):")
-                            }
-                            VStack(alignment: .leading) {
-                                Text((item.createdAt ?? .distantPast).formatted())
-                                Text(imageData.count.formatted(.byteCount(style: .file)))
-                                Text(item.file?.name ?? String(localizable: .generalUnknown))
-                            }
-                            .foregroundStyle(.secondary)
-                        }
-                    }
-                    .lineLimit(1)
-                    .padding(20)
-                    .frame(maxWidth: .infinity)
-                    .background {
-                        ZStack {
-                            let roundedRectangle = RoundedRectangle(cornerRadius: 8)
-                            roundedRectangle.fill(.regularMaterial)
-                            roundedRectangle.stroke(.separator)
-                        }
-                    }
-#if os(macOS)
-                    .padding(.horizontal, 100)
-#elseif os(iOS)
-                    .padding(.horizontal, 20)
-#endif
-                }
-            } else {
-                placeholderView()
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func placeholderView() -> some View {
-        VStack {
-            Text(.localizable(.settingsMediasName)).font(.largeTitle)
-            VStack(alignment: .leading) {
-                Text(.localizable(.settingsMediasDescription))
-            }
-            .padding()
-            .background {
-                let roundedRectangle = RoundedRectangle(cornerRadius: 8)
-                ZStack {
-                    roundedRectangle.fill(.regularMaterial)
-                    roundedRectangle.stroke(.separator)
-                }
-            }
-        }
-        .frame(maxWidth: 400)
-    }
 
     @ViewBuilder
     private func galleryView() -> some View {
-        ScrollView {
-            LazyVGrid(columns: [.init(.adaptive(minimum: 120, maximum: 300))]) {
-                ForEach(medias, id: \.objectID) { item in
+        if medias.isEmpty {
+            VStack(spacing: 10) {
+                Image(systemSymbol: .photoOnRectangle)
+                    .font(.system(size: 36))
+                    .foregroundStyle(.secondary)
+                Text(localizable: .settingsMediasDescription)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 360)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding()
+        } else {
+            ScrollView {
+                LazyVGrid(columns: gridColumns, spacing: 8) {
+                    ForEach(medias, id: \.objectID) { item in
+#if os(iOS)
                     NavigationLink(value: MediaRoute.mediaItem(item.objectID)) {
-                        MediaItemImageView(item: item)
-                            .aspectRatio(1, contentMode: .fill)
+                        MediaItemGridCell(item: item, isSelected: false)
                     }
                     .buttonStyle(.plain)
+#elseif os(macOS)
+                        Button {
+                            selectedMediaID = selectedMediaID == item.objectID ? nil : item.objectID
+                        } label: {
+                            MediaItemGridCell(
+                                item: item,
+                                isSelected: selectedMediaID == item.objectID
+                            )
+                        }
+                        .buttonStyle(.plain)
+#endif
+                    }
                 }
+                .padding(16)
+
+                HStack {
+                    Spacer(minLength: 0)
+                    cleanupOrphanMediasButton()
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
             }
         }
-#if os(iOS)
-        .toolbar {
-            cleanupOrphanMediasButton()
-        }
+    }
+
+    private var gridColumns: [GridItem] {
+#if os(macOS)
+        [GridItem(.adaptive(minimum: 150, maximum: 220), spacing: 8)]
+#else
+        [GridItem(.adaptive(minimum: 120, maximum: 200), spacing: 8)]
 #endif
     }
 
@@ -211,9 +191,9 @@ struct MediasSettingsView: View {
             isCleanupAlertPresented = true
         } label: {
             Label(.localizable(.settingsMediaFilesButtonCleanUp), systemSymbol: .trash)
-                .labelStyle(.iconOnly)
         }
-        .disabled(isCleaningOrphans)
+        .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
+        .disabled(isCleaningOrphans || medias.isEmpty)
         .help(.localizable(.settingsMediaFilesButtonHelpCleanUp))
         .confirmationDialog(
             String(localizable: .settingsMediaFilesCleanUpConfirmationDialogTitle),
@@ -254,7 +234,8 @@ struct MediasSettingsView: View {
         }
     }
 
-    /// Find and delete MediaItems that are no longer referenced by any File or FileCheckpoint.
+    /// Checkpoint media shares its parent file relationship, so retaining media
+    /// owned by either file type also retains checkpoint resources.
     private func performCleanupOrphanMedias(context: NSManagedObjectContext) async throws -> CleanupResult {
         return try await context.perform {
             let fetchRequest: NSFetchRequest<MediaItem> = MediaItem.fetchRequest()
@@ -264,27 +245,16 @@ struct MediasSettingsView: View {
             var recoveredSpace: Int64 = 0
 
             for mediaItem in allMediaItems {
-                // Check if the referenced file exists.
-                if let file = mediaItem.file {
-                    // File reference exists, check if file is deleted.
-                    if file.isDeleted {
-                        // File is deleted, this media is orphaned.
-                        if let dataURL = mediaItem.dataURL,
-                           let decodedDataURL = decodeDataURL(dataURL) {
-                            recoveredSpace += Int64(decodedDataURL.data.count)
-                        }
-                        context.delete(mediaItem)
-                        deletedCount += 1
-                    }
-                } else {
-                    // No file reference, this media is orphaned.
-                    if let dataURL = mediaItem.dataURL,
-                       let decodedDataURL = decodeDataURL(dataURL) {
-                        recoveredSpace += Int64(decodedDataURL.data.count)
-                    }
-                    context.delete(mediaItem)
-                    deletedCount += 1
+                let hasLibraryFile = mediaItem.file?.isDeleted == false
+                let hasCollaborationFile = mediaItem.collaborationFile?.isDeleted == false
+                guard !hasLibraryFile, !hasCollaborationFile else { continue }
+
+                if let dataURL = mediaItem.dataURL,
+                   let decodedDataURL = decodeDataURL(dataURL) {
+                    recoveredSpace += Int64(decodedDataURL.data.count)
                 }
+                context.delete(mediaItem)
+                deletedCount += 1
             }
 
             if deletedCount > 0 {

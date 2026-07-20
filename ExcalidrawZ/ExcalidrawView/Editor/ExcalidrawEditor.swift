@@ -78,9 +78,6 @@ struct ExcalidrawEditor: View {
     
     var localFileBinding: Binding<ExcalidrawFile?> {
         Binding<ExcalidrawFile?> {
-            if fileState.currentActiveFile == nil {
-                return excalidrawFile ?? ExcalidrawFile()
-            }
             return excalidrawFile
         } set: { val in
             guard let val else { return }
@@ -428,8 +425,8 @@ struct ExcalidrawEditor: View {
     private func loadExcalidrawFile(from activeFile: FileState.ActiveFile?) async {
         guard let activeFile else {
             cancelFileLoadRevealGuard()
-            self.excalidrawFile = ExcalidrawFile()
-            fileState.excalidrawWebCoordinator?.documentSyncController.setTargetFileID(nil)
+            self.excalidrawFile = nil
+            fileState.excalidrawWebCoordinator?.documentSyncController.resetFileLoadState()
             return
         }
 
@@ -440,7 +437,7 @@ struct ExcalidrawEditor: View {
                 beginFileLoadRevealGuard(fileID: activeFile.id)
             default:
                 cancelFileLoadRevealGuard()
-                fileState.excalidrawWebCoordinator?.documentSyncController.setTargetFileID(nil)
+                fileState.excalidrawWebCoordinator?.documentSyncController.resetFileLoadState()
         }
         
         do {

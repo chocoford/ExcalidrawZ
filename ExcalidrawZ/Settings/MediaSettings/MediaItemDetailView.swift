@@ -17,6 +17,18 @@ import UIKit
 struct MediaItemDetailView: View {
     var item: MediaItem
 
+    var body: some View {
+        MediaItemDetailContent(item: item)
+            .navigationTitle(item.file?.name ?? item.collaborationFile?.name ?? String(localizable: .settingsMediasName))
+#if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+#endif
+    }
+}
+
+struct MediaItemDetailContent: View {
+    var item: MediaItem
+
     @State private var data: Data?
     @State private var isLoading = false
 
@@ -25,12 +37,12 @@ struct MediaItemDetailView: View {
             VStack(spacing: 20) {
                 preview
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: 260)
+                    .aspectRatio(4.0 / 3.0, contentMode: .fit)
                     .background {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .fill(Color.secondary.opacity(0.08))
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .contextMenu {
                         if let data {
                             Button {
@@ -43,35 +55,32 @@ struct MediaItemDetailView: View {
 
                 VStack(alignment: .leading, spacing: 12) {
                     mediaInfoRow(title: "ID", value: item.id ?? String(localizable: .generalUnknown))
+                    Divider()
                     mediaInfoRow(
                         title: String(localizable: .mediasInfoLabelCreatedAt),
-                        value: (item.createdAt ?? .distantPast).formatted()
+                        value: item.createdAt?.formatted() ?? String(localizable: .generalUnknown)
                     )
+                    Divider()
                     mediaInfoRow(
                         title: String(localizable: .mediasInfoLabelFileSize),
                         value: data?.count.formatted(.byteCount(style: .file)) ?? String(localizable: .generalUnknown)
                     )
+                    Divider()
                     mediaInfoRow(
                         title: String(localizable: .mediasInfoLabelReferencedFrom),
-                        value: item.file?.name ?? String(localizable: .generalUnknown)
+                        value: item.file?.name
+                            ?? item.collaborationFile?.name
+                            ?? String(localizable: .generalUnknown)
                     )
                     if let mimeType = item.mimeType, !mimeType.isEmpty {
+                        Divider()
                         mediaInfoRow(title: "MIME", value: mimeType)
                     }
                 }
-                .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.secondary.opacity(0.08))
-                }
             }
             .padding()
         }
-        .navigationTitle(item.id ?? String(localizable: .settingsMediasName))
-#if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-#endif
         .task(id: item.objectID) {
             await loadData()
         }
