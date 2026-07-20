@@ -51,11 +51,20 @@ struct ExcalidrawHomeView: View {
     private let folderNavigationCleanupDelay: TimeInterval = 0.5
     
     var body: some View {
-        homeLayer
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background {
-                editorLayer
-            }
+        ZStack {
+            homeLayer
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .allowsHitTesting(fileHomeItemTransitionState.canShowItemContainerView)
+                .accessibilityHidden(!fileHomeItemTransitionState.canShowItemContainerView)
+                .zIndex(fileHomeItemTransitionState.canShowItemContainerView ? 1 : 0)
+
+            editorLayer
+                .allowsHitTesting(
+                    !disableInteration &&
+                    !fileHomeItemTransitionState.canShowItemContainerView
+                )
+                .zIndex(fileHomeItemTransitionState.canShowItemContainerView ? 0 : 1)
+        }
             .overlay(alignment: .bottomTrailing) {
                 if fileHomeItemTransitionState.canShowItemContainerView {
                     SyncStatusPopover()
@@ -76,6 +85,11 @@ struct ExcalidrawHomeView: View {
             .watch(value: fileState.currentActiveGroup, initial: true) { _, newValue in
                 handleActiveGroupChanged(newValue)
             }
+            .watch(value: fileHomeItemTransitionState.canShowItemContainerView) { isVisible in
+                guard !isVisible, fileState.currentActiveFile != nil else { return }
+                initCurrentGroups()
+                updateLastHomeType()
+            }
     }
 
     private var editorLayer: some View {
@@ -94,9 +108,8 @@ struct ExcalidrawHomeView: View {
 
             Color.clear
             
-            if fileHomeItemTransitionState.canShowItemContainerView {
-                switch lastHomeType {
-                    case .home:
+            switch lastHomeType {
+                case .home:
                         // Home View
                         HomeView()
                             .background {
@@ -114,7 +127,7 @@ struct ExcalidrawHomeView: View {
                                 : 0
                             )
                         
-                    case .fileHome:
+                case .fileHome:
                         // File Home View
                         ZStack {
                             ForEach(Array(renderedGroups.enumerated()), id: \.element) { i, group in
@@ -156,7 +169,7 @@ struct ExcalidrawHomeView: View {
                                 removal: .move(edge: .trailing)
                             )
                         )
-                    case .localFileHome:
+                case .localFileHome:
                         ZStack {
                             LocalFoldersProvider { _ in
                                 ForEach(Array(renderedFolders.enumerated()), id: \.element) { i, folder in
@@ -199,7 +212,7 @@ struct ExcalidrawHomeView: View {
                                 removal: .move(edge: .trailing)
                             )
                         )
-                    case .temporaryFileHome:
+                case .temporaryFileHome:
                         TemporaryFilesHomeView()
                             .opacity(
                                 fileHomeItemTransitionState.canShowItemContainerView ||
@@ -207,7 +220,7 @@ struct ExcalidrawHomeView: View {
                                 ? 1
                                 : 0
                             )
-                    case .collaborationFileHome:
+                case .collaborationFileHome:
                         CollaborationHome()
                             .opacity(
                                 fileHomeItemTransitionState.canShowItemContainerView ||
@@ -215,7 +228,6 @@ struct ExcalidrawHomeView: View {
                                 ? 1
                                 : 0
                             )
-                }
             }
         }
     }
@@ -340,6 +352,10 @@ struct ExcalidrawHomeView: View {
 
         if fileState.currentActiveFile == nil {
             updateLastHomeType(animated: true)
+        } else if !fileHomeItemTransitionState.canShowItemContainerView {
+            // Once opening has completed, keep the hidden Home aligned with
+            // the active file without replacing the hero transition source.
+            updateLastHomeType()
         }
     }
 

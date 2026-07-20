@@ -53,6 +53,7 @@ struct TemporaryFilesHomeView: View {
                         file: file,
                         selectionSiblings: activeFiles
                     )
+                    .id(file.id)
                 }
                 
             }
