@@ -421,7 +421,10 @@ struct MediaCleanupSheet: View {
                         .font(.headline)
 
                     ForEach(checkpoints(for: candidate), id: \.objectID) { checkpoint in
-                        FileCheckpointRowView(checkpoint: checkpoint)
+                        FileCheckpointRowView(
+                            checkpoint: checkpoint,
+                            presentsDetail: false
+                        )
                     }
                 }
             }
