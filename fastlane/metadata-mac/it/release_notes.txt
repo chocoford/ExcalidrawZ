@@ -1,5 +1,6 @@
-Questo aggiornamento risolve un importante problema di compatibilità del disegno ed è consigliato a tutti gli utenti.
+Questo aggiornamento migliora la gestione dei file multimediali, i font personalizzati e l’affidabilità nell’apertura dei file.
 
-- Risolta la compatibilità con le ultime impostazioni di larghezza tratto di Excalidraw.
-- Risolto un problema che poteva impedire il caricamento di alcuni disegni o backup con dati tratto più recenti.
-- Migliorato il supporto per pressione della penna e impostazioni del tratto.
+- File multimediali è stato riprogettato con una galleria più veloce, riferimenti dettagliati e una pulizia guidata dei contenuti inutilizzati o usati solo nella cronologia.
+- Risolto il problema per cui i font personalizzati scomparivano cambiando sezione o i nuovi font sostituivano quelli già aggiunti.
+- Migliorati l’apertura e il cambio dei file e le transizioni per tornare alla schermata Home.
+- Aggiunte indicazioni più chiare e un’azione per riprovare quando non è possibile caricare un disegno.

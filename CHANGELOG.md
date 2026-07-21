@@ -1,3 +1,23 @@
+## 2.2.10
+
+#### Features
+
+- Redesigned Media Files as a responsive image gallery with faster thumbnails and a dedicated detail inspector.
+- Added an interactive media cleanup workflow that identifies orphaned media, items used only by File History, and media attached to files in Trash. Destructive cleanup actions show the affected media, files, and checkpoints before confirmation.
+
+#### Optimizations
+
+- Improved file opening and switching so interrupted or overlapping loads resolve more reliably, with clearer recovery and a retry action when a drawing cannot be loaded.
+- Improved Home and File Home transitions by keeping the destination state synchronized and preparing off-screen file cards before returning from the editor.
+- Improved Media Files references so related drawings can be opened directly and unavailable or trashed source files are clearly identified.
+
+#### Bug fixed
+
+- Fixed custom fonts disappearing from Settings after changing tabs or replacing fonts that had already been added.
+- Fixed interrupted file transitions that could leave Home visible while a drawing was already active.
+- Fixed permanently deleted files and collaboration files leaving unreferenced media behind.
+- Fixed Media Cleanup checkpoint rows opening an unrelated checkpoint detail popover.
+
 ## 2.2.5
 
 #### Bug fixed

@@ -1,5 +1,6 @@
-Ta aktualizacja naprawia ważny problem ze zgodnością rysowania i jest zalecana wszystkim użytkownikom.
+Ta aktualizacja ulepsza zarządzanie multimediami, niestandardowe czcionki i niezawodność otwierania plików.
 
-- Naprawiono zgodność z najnowszymi ustawieniami szerokości kreski Excalidraw.
-- Naprawiono problem, przez który niektóre rysunki lub kopie zapasowe z nowszymi danymi kreski mogły się nie wczytywać.
-- Ulepszono obsługę nacisku pióra i ustawień kreski.
+- Przeprojektowano Pliki multimedialne: szybsza galeria, szczegółowe odwołania i prowadzona funkcja czyszczenia nieużywanych multimediów lub używanych tylko w historii pliku.
+- Naprawiono znikanie niestandardowych czcionek po zmianie sekcji oraz zastępowanie wcześniej dodanych czcionek.
+- Ulepszono otwieranie i przełączanie plików oraz przejścia z powrotem do ekranu głównego.
+- Dodano jaśniejsze informacje i możliwość ponowienia próby, gdy rysunku nie można wczytać.

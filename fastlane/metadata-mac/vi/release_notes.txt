@@ -1,5 +1,6 @@
-Bản cập nhật này sửa một vấn đề tương thích quan trọng khi vẽ và được khuyến nghị cho mọi người dùng.
+Bản cập nhật này cải thiện việc quản lý tệp phương tiện, phông chữ tùy chỉnh và độ tin cậy khi mở tệp.
 
-- Sửa tương thích với các thiết lập độ rộng nét mới nhất của Excalidraw.
-- Sửa lỗi khiến một số bản vẽ hoặc bản sao lưu có dữ liệu nét mới hơn không tải được.
-- Cải thiện hỗ trợ áp lực bút và thiết lập nét vẽ.
+- Thiết kế lại Tệp phương tiện với thư viện nhanh hơn, thông tin tham chiếu chi tiết và quy trình dọn dẹp có hướng dẫn cho nội dung không dùng hoặc chỉ được dùng trong lịch sử tệp.
+- Sửa lỗi phông chữ tùy chỉnh biến mất khi chuyển mục Cài đặt hoặc phông chữ mới thay thế các phông đã thêm.
+- Cải thiện thao tác mở, chuyển đổi tệp và hiệu ứng trở về Trang chủ.
+- Thêm hướng dẫn rõ ràng hơn và thao tác thử lại khi không thể tải bản vẽ.

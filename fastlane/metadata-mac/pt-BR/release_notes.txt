@@ -1,5 +1,6 @@
-Esta atualização corrige um problema importante de compatibilidade de desenho e é recomendada para todos os usuários.
+Esta atualização melhora o gerenciamento de mídia, as fontes personalizadas e a confiabilidade ao abrir arquivos.
 
-- Corrigida a compatibilidade com as configurações mais recentes de largura de traço do Excalidraw.
-- Corrigido um problema em que alguns desenhos ou backups com dados de traço mais recentes podiam não carregar.
-- Melhorado o suporte para pressão da caneta e configurações de traço.
+- A área Arquivos de mídia foi reformulada com uma galeria mais rápida, referências detalhadas e limpeza guiada para mídias não usadas ou usadas apenas no histórico.
+- Corrigido o desaparecimento de fontes personalizadas ao trocar de seção e a substituição de fontes já adicionadas.
+- Melhorias ao abrir e alternar arquivos e nas transições de volta para o Início.
+- Orientações mais claras e uma ação para tentar novamente quando um desenho não puder ser carregado.
