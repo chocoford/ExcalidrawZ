@@ -40,6 +40,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
             content
                 .opacity(isLoadingOverlayPresented ? 0 : 1)
                 .opacity(hasFile ? 1 : 0)
+                .allowsHitTesting(!isLoadingOverlayPresented)
                 .watch(value: loadingState, initial: true) { _, newVal in
                     updateProgressPresentation(for: newVal)
                 }
@@ -55,7 +56,9 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
             if isLoadingOverlayPresented {
                 loadingOverlayBackground
 
-                if isProgressViewPresented {
+                if case .error(let error) = loadingState {
+                    loadingErrorView(error)
+                } else if isProgressViewPresented {
                     loadingIndicatorView
                 }
             } else if case .file(let file) = fileState.currentActiveFile, file.inTrash {
@@ -89,6 +92,43 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
+        .background {
+            if #available(macOS 26.0, iOS 26.0, *) {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.clear)
+                    .glassEffect(.clear, in: .rect(cornerRadius: 16))
+            } else {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.regularMaterial)
+            }
+        }
+    }
+
+    private func loadingErrorView(_ error: Error) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.title2)
+                .foregroundStyle(.orange)
+
+            Text(error.localizedDescription)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+
+            Button {
+                NotificationCenter.default.post(
+                    name: .forceReloadExcalidrawFile,
+                    object: nil
+                )
+            } label: {
+                Label(.localizable(.generalButtonRetry), systemSymbol: .arrowClockwise)
+            }
+            .modernButtonStyle(style: .glassProminent, shape: .capsule)
+        }
+        .frame(maxWidth: 320)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
         .background {
             if #available(macOS 26.0, iOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -189,6 +229,15 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
         loadingOverlayDismissTask?.cancel()
         loadingOverlayDismissTask = nil
 
+        if case .error = loadingState {
+            if !isLoadingOverlayPresented {
+                captureLoadingCoverIfAvailable()
+            }
+            isProgressViewPresented = false
+            isLoadingOverlayPresented = true
+            return
+        }
+
         guard loadingState == .loading else {
             if isProgressViewPresented {
                 loadingOverlayDismissTask = Task { @MainActor in
@@ -219,7 +268,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
     }
 
     private func captureLoadingCoverIfAvailable() {
-        guard loadingState == .loading,
+        guard loadingState == .loading || loadingState.isError,
               let fileID = fileState.currentActiveFile?.id,
               let image = loadingCoverImage else { return }
         loadingOverlayCover = LoadingOverlayCover(

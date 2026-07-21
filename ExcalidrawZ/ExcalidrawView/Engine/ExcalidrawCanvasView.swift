@@ -36,6 +36,11 @@ struct ExcalidrawCanvasView: View {
         case loading
         case loaded
         case error(Error)
+
+        var isError: Bool {
+            if case .error = self { return true }
+            return false
+        }
         
         static func == (lhs: LoadingState, rhs: LoadingState) -> Bool {
             if case .idle = lhs, case .idle = rhs {
@@ -245,13 +250,19 @@ struct ExcalidrawCanvasView: View {
             }
 
             let hasPendingFileLoad = excalidrawCore.documentSyncController.hasPendingFileLoad
-            await MainActor.run {
-                loadingState = (isLoading || hasPendingFileLoad) ? .loading : .loaded
+            let preservesDocumentLoadError = await MainActor.run {
+                !isLoading && !hasPendingFileLoad && loadingState.isError
+            }
+            if !preservesDocumentLoadError {
+                await MainActor.run {
+                    loadingState = (isLoading || hasPendingFileLoad) ? .loading : .loaded
+                }
             }
 
             if !isLoading,
                previousIsLoading != false,
                !hasPendingFileLoad,
+               !preservesDocumentLoadError,
                type == .normal {
                 await MainActor.run {
                     handleFileChange(file)
@@ -281,26 +292,30 @@ struct ExcalidrawCanvasView: View {
                         loadingState = .loading
                     }
 
-                case .finished(let fileID, let succeeded):
+                case .finished(let fileID, let completion):
                     let isCurrent = await MainActor.run { file?.id == fileID }
                     guard isCurrent else { continue }
 
-                    if succeeded {
-                        await applyLoadedFilePresentationSettings()
-                    }
-
-                    await MainActor.run {
-                        loadingState = .loaded
-                        if succeeded {
-                            onDocumentLoadFinished(fileID)
-                        }
-                    }
+                    switch completion {
+                        case .succeeded:
+                            await applyLoadedFilePresentationSettings()
+                            await MainActor.run {
+                                loadingState = .loaded
+                                onDocumentLoadFinished(fileID)
+                            }
 
 #if os(iOS)
-                    if succeeded {
-                        await enterCompactDragModeAfterLoadIfNeeded()
-                    }
+                            await enterCompactDragModeAfterLoadIfNeeded()
 #endif
+
+                        case .failed(let error):
+                            await MainActor.run {
+                                loadingState = .error(error)
+                            }
+
+                        case .superseded:
+                            break
+                    }
 
                 case .reset:
                     let isCoreLoading = await MainActor.run { excalidrawCore.isLoading }

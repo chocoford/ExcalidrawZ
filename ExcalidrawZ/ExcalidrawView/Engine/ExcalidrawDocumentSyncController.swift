@@ -76,9 +76,25 @@ private struct DocumentLoadStateMachine {
 /// to `ExcalidrawDocumentSnapshotCoordinator`, then routed back through this
 /// controller's persistence bridge when a full snapshot must be applied.
 final class ExcalidrawDocumentSyncController: @unchecked Sendable {
+    struct LoadFailure: LocalizedError, Sendable {
+        let message: String
+
+        init(_ error: Error?) {
+            self.message = error?.localizedDescription ?? "The file could not be loaded."
+        }
+
+        var errorDescription: String? { message }
+    }
+
+    enum LoadCompletion: Sendable {
+        case succeeded
+        case failed(LoadFailure)
+        case superseded
+    }
+
     enum LoadEvent: Sendable {
         case started(fileID: String)
-        case finished(fileID: String, succeeded: Bool)
+        case finished(fileID: String, completion: LoadCompletion)
         case reset
     }
 
@@ -214,7 +230,11 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         for attempt in 1...maxAttempts {
             let transportRequestID = "\(request.id)-attempt-\(attempt)"
             guard !Task.isCancelled else {
-                return finishCanvasFileLoad(request, outcome: .failed)
+                return finishCanvasFileLoad(
+                    request,
+                    outcome: .failed,
+                    failure: LoadFailure(CancellationError())
+                )
             }
 
             guard isCurrentLoadRequest(request) else {
@@ -273,7 +293,11 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         if let lastError, isCurrentLoadRequest(request) {
             core?.publishError(lastError)
         }
-        return finishCanvasFileLoad(request, outcome: .failed)
+        return finishCanvasFileLoad(
+            request,
+            outcome: .failed,
+            failure: LoadFailure(lastError)
+        )
     }
 
     /// Applies a normal WebView `stateChanged` payload to the native file
@@ -665,7 +689,7 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         lock.unlock()
         if didCommit {
             loadEventContinuation.yield(
-                .finished(fileID: request.fileID, succeeded: true)
+                .finished(fileID: request.fileID, completion: .succeeded)
             )
         }
         return didCommit
@@ -673,14 +697,23 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
 
     private func finishCanvasFileLoad(
         _ request: DocumentLoadStateMachine.Request,
-        outcome: LoadOutcome
+        outcome: LoadOutcome,
+        failure: LoadFailure? = nil
     ) -> LoadOutcome {
         lock.lock()
         let wasCurrent = loadState.fail(request)
         lock.unlock()
         if wasCurrent {
+            let completion: LoadCompletion = switch outcome {
+                case .failed:
+                    .failed(failure ?? LoadFailure(nil))
+                case .superseded:
+                    .superseded
+                case .skipped, .loaded:
+                    .superseded
+            }
             loadEventContinuation.yield(
-                .finished(fileID: request.fileID, succeeded: false)
+                .finished(fileID: request.fileID, completion: completion)
             )
         }
         return wasCurrent ? outcome : .superseded
