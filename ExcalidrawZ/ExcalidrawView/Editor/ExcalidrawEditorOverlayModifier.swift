@@ -31,6 +31,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
     @State private var isLoadingOverlayPresented = false
     @State private var isProgressViewPresented = false
     @State private var isSelectFilePlaceholderPresented = false
+    @State private var selectFilePlaceholderPresentationTask: Task<Void, Never>?
     @State private var progressPresentationTask: Task<Void, Never>?
     @State private var loadingOverlayDismissTask: Task<Void, Never>?
     @State private var loadingOverlayCover: LoadingOverlayCover?
@@ -49,7 +50,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
                 selectFilePlaceholderView()
             }
 
-            if !hasFile {
+            if !hasFile, fileState.currentActiveFile == nil {
                 emptyFilePlaceholderview()
             }
 
@@ -67,6 +68,9 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
         }
         .ignoresSafeArea(.container, edges: .bottom)
         .transition(.opacity)
+        .watch(value: fileState.currentActiveFile == nil, initial: true) { _, isEmpty in
+            updateSelectFilePlaceholderPresentation(isEmpty)
+        }
         .onReceive(
             NotificationCenter.default.publisher(for: .filePreviewDidUpdate)
         ) { notification in
@@ -75,6 +79,8 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
             captureLoadingCoverIfAvailable()
         }
         .onDisappear {
+            selectFilePlaceholderPresentationTask?.cancel()
+            selectFilePlaceholderPresentationTask = nil
             progressPresentationTask?.cancel()
             progressPresentationTask = nil
             loadingOverlayDismissTask?.cancel()
@@ -326,7 +332,8 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
     @ViewBuilder
     private func selectFilePlaceholderView() -> some View {
         ZStack {
-            if isSelectFilePlaceholderPresented {
+            if isSelectFilePlaceholderPresented,
+               fileState.currentActiveFile == nil {
                 if #available(macOS 14.0, iOS 17.0, *) {
                     Rectangle()
                         .fill(.windowBackground)
@@ -336,9 +343,6 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
                 }
                 ProgressView()
             }
-        }
-        .onChange(of: fileState.currentActiveFile == nil, debounce: 0.1) { newValue in
-            isSelectFilePlaceholderPresented = newValue
         }
     }
 
@@ -368,10 +372,25 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
             }
         }
         .animation(.default, value: isSelectFilePlaceholderPresented)
-        .onChange(of: fileState.currentActiveFile == nil, debounce: 0.1) { newValue in
-            isSelectFilePlaceholderPresented = newValue
-        }
         .contentShape(Rectangle())
+    }
+
+    private func updateSelectFilePlaceholderPresentation(_ isEmpty: Bool) {
+        selectFilePlaceholderPresentationTask?.cancel()
+        selectFilePlaceholderPresentationTask = nil
+
+        guard isEmpty else {
+            isSelectFilePlaceholderPresented = false
+            return
+        }
+
+        selectFilePlaceholderPresentationTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            guard !Task.isCancelled,
+                  fileState.currentActiveFile == nil else { return }
+            isSelectFilePlaceholderPresented = true
+            selectFilePlaceholderPresentationTask = nil
+        }
     }
 }
 

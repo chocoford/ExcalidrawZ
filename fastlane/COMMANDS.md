@@ -2,6 +2,18 @@
 
 Concise command reference. For workflow rules and file layout, see `RELEASE.md`.
 
+## Interactive Console
+
+Run from Terminal, or double-click the file in Finder:
+
+```sh
+./ExcalidrawZRelease.command
+```
+
+The console covers metadata uploads, iOS release assets, screenshot generation,
+Sparkle release notes, dry runs, and common status/output-folder tools. The
+commands below remain available for automation and troubleshooting.
+
 ## List Lanes
 
 ```sh
@@ -13,37 +25,37 @@ fastlane lanes
 macOS metadata dry-run:
 
 ```sh
-fastlane upload_metadata platform:mac version:2.2.2 dry_run:true
+fastlane upload_metadata platform:mac version:x.y.z dry_run:true
 ```
 
 macOS metadata upload:
 
 ```sh
-fastlane upload_metadata platform:mac version:2.2.2
+fastlane upload_metadata platform:mac version:x.y.z
 ```
 
 iOS metadata dry-run:
 
 ```sh
-fastlane upload_metadata platform:ios version:2.2.2 dry_run:true
+fastlane upload_metadata platform:ios version:x.y.z dry_run:true
 ```
 
 iOS metadata upload:
 
 ```sh
-fastlane upload_metadata platform:ios version:2.2.2
+fastlane upload_metadata platform:ios version:x.y.z
 ```
 
 iOS metadata and screenshots dry-run:
 
 ```sh
-fastlane upload_ios_release_assets version:2.2.2 dry_run:true
+fastlane upload_ios_release_assets version:x.y.z dry_run:true
 ```
 
 iOS metadata and screenshots upload:
 
 ```sh
-fastlane upload_ios_release_assets version:2.2.2
+fastlane upload_ios_release_assets version:x.y.z
 ```
 
 ## Sparkle
@@ -51,7 +63,7 @@ fastlane upload_ios_release_assets version:2.2.2
 Generate localized Sparkle release notes:
 
 ```sh
-fastlane generate_sparkle_release_notes version:2.2.2
+fastlane mac generate_sparkle_release_notes version:x.y.z
 ```
 
 ## Screenshots

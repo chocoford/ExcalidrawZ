@@ -18,6 +18,9 @@ metadata-mac/<locale>/release_notes.txt
 4. Run the relevant dry-run command from `COMMANDS.md`.
 5. Upload metadata or iOS release assets with the matching version.
 
+Use `./ExcalidrawZRelease.command` from the repository root for the interactive
+workflow. `COMMANDS.md` lists the equivalent direct fastlane commands.
+
 The lanes read the current Xcode marketing version when `version:` is omitted, but passing the version explicitly is clearer during release preparation.
 
 ## Metadata

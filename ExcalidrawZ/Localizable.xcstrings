@@ -136298,6 +136298,232 @@
         }
       }
     },
+    "whatsNewMediaFilesDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تصفّح وسائط رسوماتك في معرض جديد، وتعرّف على مواضع استخدام كل عنصر، ونظّف بأمان الوسائط التي لم تعد بحاجة إليها."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durchsuche Zeichenmedien in einer neuen Galerie, prüfe, wo jedes Element verwendet wird, und entferne nicht mehr benötigte Medien sicher."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse drawing media in a new gallery, inspect where each item is used, and safely clean up media that is no longer needed."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explora los archivos multimedia de tus dibujos en una nueva galería, consulta dónde se usa cada elemento y elimina de forma segura los que ya no necesitas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parcourez les médias de vos dessins dans une nouvelle galerie, vérifiez où chaque élément est utilisé et nettoyez en toute sécurité les médias devenus inutiles."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नई गैलरी में अपनी ड्रॉइंग की मीडिया फ़ाइलें देखें, जानें कि हर आइटम कहाँ उपयोग हुआ है, और जिन मीडिया फ़ाइलों की अब ज़रूरत नहीं है उन्हें सुरक्षित रूप से साफ़ करें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sfoglia i contenuti multimediali dei disegni in una nuova galleria, controlla dove viene usato ogni elemento e rimuovi in sicurezza quelli non più necessari."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しいギャラリーで描画内のメディアを閲覧し、各項目の使用箇所を確認して、不要になったメディアを安全に整理できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새 갤러리에서 드로잉의 미디어를 둘러보고, 각 항목이 사용된 위치를 확인하며, 더 이상 필요하지 않은 미디어를 안전하게 정리할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekijk media uit tekeningen in een nieuwe galerij, controleer waar elk item wordt gebruikt en ruim media die niet meer nodig zijn veilig op."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeglądaj multimedia z rysunków w nowej galerii, sprawdzaj, gdzie używany jest każdy element, i bezpiecznie usuwaj niepotrzebne multimedia."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Navegue pelas mídias dos seus desenhos em uma nova galeria, veja onde cada item é usado e limpe com segurança as mídias que não são mais necessárias."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просматривайте медиа из рисунков в новой галерее, проверяйте, где используется каждый объект, и безопасно удаляйте ненужные материалы."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เรียกดูสื่อในภาพวาดผ่านแกลเลอรีใหม่ ตรวจสอบว่าแต่ละรายการถูกใช้งานที่ไหน และล้างสื่อที่ไม่จำเป็นแล้วได้อย่างปลอดภัย"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çizimlerinizdeki medyaları yeni galeride görüntüleyin, her öğenin nerede kullanıldığını inceleyin ve artık gerekmeyen medyaları güvenle temizleyin."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duyệt nội dung đa phương tiện trong bản vẽ bằng thư viện mới, xem từng mục được sử dụng ở đâu và dọn dẹp an toàn những nội dung không còn cần thiết."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在全新的图库中浏览绘图媒体，查看每个项目的引用位置，并安全清理不再需要的媒体文件。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在全新的圖庫中瀏覽繪圖媒體，查看每個項目的引用位置，並安全清理不再需要的媒體檔案。"
+          }
+        }
+      }
+    },
+    "whatsNewMediaFilesTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ملفات الوسائط"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mediendateien"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media Files"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivos multimedia"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichiers multimédias"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मीडिया फ़ाइलें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File multimediali"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メディアファイル"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "미디어 파일"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mediabestanden"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pliki multimedialne"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arquivos de mídia"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Медиафайлы"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไฟล์สื่อ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medya Dosyaları"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp phương tiện"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "媒体文件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "媒體檔案"
+          }
+        }
+      }
+    },
     "whatsNewPerformanceImprovementsDescription": {
       "extractionState": "manual",
       "localizations": {
