@@ -358,16 +358,18 @@ struct LocalFolderMenuItems: View {
     }
 
     private func moveLocalFolder(to targetFolderID: NSManagedObjectID) {
-        do {
-            try localFolderState.moveLocalFolder(
-                self.folder.objectID,
-                to: targetFolderID,
-                forceRefreshFiles: self.isSelected,
-                context: viewContext
-            )
-            fileState.currentActiveGroup = .localFolder(folder)
-        } catch {
-            alertToast(error)
+        Task {
+            do {
+                try await localFolderState.moveLocalFolder(
+                    self.folder.objectID,
+                    to: targetFolderID,
+                    forceRefreshFiles: self.isSelected,
+                    context: viewContext
+                )
+                fileState.currentActiveGroup = .localFolder(folder)
+            } catch {
+                alertToast(error)
+            }
         }
     }
 

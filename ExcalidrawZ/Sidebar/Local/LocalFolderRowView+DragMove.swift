@@ -328,7 +328,7 @@ struct LocalFolderDropModifier: ViewModifier {
         
         // move folder to this folder
         do {
-            try localFolderState.moveLocalFolder(
+            try await localFolderState.moveLocalFolder(
                 folderID,
                 to: folder.objectID,
                 forceRefreshFiles: true,
@@ -360,6 +360,7 @@ struct LocalFolderDropModifier: ViewModifier {
                     fileState.setActiveFile(.localFile(newURL))
                 }
             }
+            await localFolderState.publishMovedItems(mapping)
             return true
         } catch {
             await MainActor.run {
@@ -417,6 +418,7 @@ struct LocalFolderDropModifier: ViewModifier {
                 to: folderID,
                 context: context
             )
+            await localFolderState.publishMovedItems(mapping)
 
             await MainActor.run {
                 if let newURL = mapping[url],

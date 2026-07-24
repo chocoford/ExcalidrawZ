@@ -89,18 +89,21 @@ struct MoveToGroupMenu<Group: ExcalidrawGroup>: View {
         let filteredChildren = childrenGroups.filter({
             sourceGroup != $0 || allowSubgroups
         })
+        let canMoveToGroup = sourceGroup == nil || (
+            sourceGroup != group && (
+                canMoveToParentGroup || sourceGroup?.getParent() as? Group != group
+            )
+        )
         
-        if childrenGroups.isEmpty {
+        if childrenGroups.isEmpty, canMoveToGroup {
             Button {
                 self.onMove(group.objectID)
             } label: {
                 Text(group.name ?? String(localizable: .generalUnknown))
             }
-        } else if sourceGroup == nil || !filteredChildren.isEmpty || (
-            (canMoveToParentGroup || sourceGroup!.getParent() as? Group != group) && sourceGroup != group
-        ) {
+        } else if canMoveToGroup || !filteredChildren.isEmpty {
             Menu {
-                if sourceGroup == nil || (sourceGroup!.getParent() as? Group != group && sourceGroup != group) {
+                if canMoveToGroup {
                     Button {
                         self.onMove(group.objectID)
                     } label: {
