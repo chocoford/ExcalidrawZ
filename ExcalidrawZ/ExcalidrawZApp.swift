@@ -371,6 +371,15 @@ struct ExcalidrawZApp: App {
                     Text(.localizable(.whatsNewTitle))
                 }
             }
+
+#if DEBUG
+            CommandMenu("Developer") {
+                Button("Annotate Screen (Prototype)") {
+                    ScreenAnnotationController.shared.toggle()
+                }
+                .keyboardShortcut("a", modifiers: [.command, .shift])
+            }
+#endif
         }
 #endif
         
