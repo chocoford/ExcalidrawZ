@@ -60,6 +60,20 @@ fastlane upload_ios_release_assets version:x.y.z
 
 ## Sparkle
 
+Prepare an appcast containing the Sparkle update signature and localized
+release notes before uploading the GitHub release asset:
+
+```sh
+fastlane mac prepare_sparkle_release version:x.y.z
+```
+
+After the matching GitHub release asset is uploaded, regenerate and verify its
+download URL:
+
+```sh
+fastlane mac prepare_sparkle_release version:x.y.z verify_asset:true
+```
+
 Generate localized Sparkle release notes:
 
 ```sh

@@ -331,10 +331,24 @@ screenshots_menu() {
   esac
 }
 
+prepare_sparkle_release() {
+  local verify_asset="$1"
+  local -a args
+
+  read_release_version || return 1
+  args=(mac prepare_sparkle_release "version:$RELEASE_VERSION")
+  if [[ "$verify_asset" == "true" ]]; then
+    args+=("verify_asset:true")
+  fi
+
+  run_fastlane \
+    "Prepare Sparkle release" \
+    "${args[@]}"
+}
+
 generate_sparkle_release_notes() {
   read_release_version || return 1
-  run_fastlane \
-    "Generate Sparkle release notes" \
+  run_fastlane "Generate Sparkle release notes only" \
     mac generate_sparkle_release_notes "version:$RELEASE_VERSION"
 }
 
@@ -342,11 +356,15 @@ sparkle_menu() {
   local choice
 
   choice="$(select_option "Sparkle" \
-    "generate|Generate localized release notes|从 macOS metadata 生成 HTML，并更新已有 appcast item。" \
+    "prepare|Prepare publish files|读取 archives-new 的最终 DMG，生成带 Sparkle 更新签名的 appcast 和本地化 release notes。" \
+    "verify|Prepare and verify GitHub asset|生成发布文件，并确认对应 GitHub Release DMG 已可下载。" \
+    "notes|Generate release notes only|只从 macOS metadata 生成 HTML，并更新已有 appcast item。" \
     "back|Back")"
 
   case "$choice" in
-    generate) generate_sparkle_release_notes ;;
+    prepare) prepare_sparkle_release false ;;
+    verify) prepare_sparkle_release true ;;
+    notes) generate_sparkle_release_notes ;;
     back) return 0 ;;
     *) echo "无效选择"; return 1 ;;
   esac
@@ -408,7 +426,7 @@ print_menu() {
   select_option "ExcalidrawZ Release Console\n目录: $ROOT_DIR\n版本: $(current_version) ($(current_build))" \
     "metadata|App Store Connect|上传 macOS/iOS metadata 和 iOS release assets。" \
     "screenshots|Screenshots|渲染并分割 iPhone/iPad 多语言 App Store 截图。" \
-    "sparkle|Sparkle|生成多语言 Sparkle release notes 并更新 appcast。" \
+    "sparkle|Sparkle|从最终 DMG 准备 appcast、本地化 release notes，并校验 GitHub asset。" \
     "tools|Tools|检查配置、列出 lanes 或打开相关目录。" \
     "quit|Quit|退出 Release Console。"
 }

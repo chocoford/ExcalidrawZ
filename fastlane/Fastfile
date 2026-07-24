@@ -509,6 +509,25 @@ lane :generate_preview_samples do |options|
 end
 
 platform :mac do
+  desc "Prepare localized Sparkle release notes and an appcast containing the Sparkle update signature."
+  lane :prepare_sparkle_release do |options|
+    version = options[:version] || current_project_version
+    verify_asset = options[:verify_asset].to_s == "true"
+    script_path = File.expand_path("scripts/generate_github_appcast.command", __dir__)
+    metadata_path = File.expand_path("metadata-mac", __dir__)
+    command = [
+      script_path,
+      "--version", version,
+      "--metadata-dir", metadata_path
+    ]
+    command << "--skip-github-asset-check" unless verify_asset
+
+    UI.message("Preparing Sparkle release #{version}.")
+    UI.message("GitHub asset verification: #{verify_asset ? 'enabled' : 'skipped'}")
+    sh(command.shelljoin)
+    UI.success("Sparkle publish files are ready in WebPage/public/downloads.")
+  end
+
   desc "Generate localized Sparkle release notes and patch local website appcast."
   lane :generate_sparkle_release_notes do |options|
     version = options[:version] || current_project_version

@@ -66,6 +66,14 @@ Generate only en-US and zh-Hans preview samples for visual checks.
 
 ## Mac
 
+### mac prepare_sparkle_release
+
+```sh
+[bundle exec] fastlane mac prepare_sparkle_release
+```
+
+Prepare localized Sparkle release notes and an appcast containing the Sparkle update signature.
+
 ### mac generate_sparkle_release_notes
 
 ```sh
