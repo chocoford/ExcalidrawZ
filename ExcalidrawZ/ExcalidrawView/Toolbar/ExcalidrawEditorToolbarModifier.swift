@@ -9,7 +9,6 @@ import CoreData
 import SwiftUI
 
 import ChocofordUI
-import LLMKit
 import SFSafeSymbols
 #if os(iOS)
 import UIKit
@@ -26,8 +25,6 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
     @EnvironmentObject var layoutState: LayoutState
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var toolState: ToolState
-    @EnvironmentObject private var store: Store
-    @EnvironmentObject private var llmState: LLMStateObject
     @EnvironmentObject private var lockedContentState: LockedContentStateStore
     @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
 
@@ -334,17 +331,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                 }
 
                 if aiChatPreferences.isAIEnabled && AIChatAvailability.isAvailable {
-                    Button {
-                        store.togglePaywall(reason: .manaully)
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemSymbol: .sparkles)
-                            if let balance = llmState.creditsInfo?.balance, balance > 0 {
-                                Text(balance.formatted(.number.precision(.fractionLength(2))))
-                            }
-                        }
-                        .foregroundStyle(AIAppearancePalette.foregroundGradient)
-                    }
+                    AICreditsToolbarButton()
                 }
             }
         }

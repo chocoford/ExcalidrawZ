@@ -44,13 +44,12 @@ struct AdjustElementsTool: Tool {
     }()
 
     private static let imageSkeletonAttachmentDescription = """
-    Important image insertion rule: if the user attached an image in the current chat turn, \
-    do not invent an Excalidraw fileId and do not ask the user for a fileId. In an `add` \
-    image skeleton, use `source: { "kind": "attachment", "id": "input_image_1" }`; attachment \
-    ids follow user-message image order (`input_image_1`, `input_image_2`, ...). The tool \
-    preprocesses that source into a real Excalidraw `fileId` plus `add.files` entry before \
-    inserting. Inline `dataURL`, raw `base64`, and public HTTPS image `url` sources are also \
-    accepted when real image bytes are available. Do not use local file paths.
+    Important image insertion rule: represent an image attached in the current chat turn with \
+    `source: { "kind": "attachment", "id": "input_image_1" }` in the `add` image skeleton. \
+    Attachment ids follow user-message image order (`input_image_1`, `input_image_2`, ...). \
+    The tool preprocesses that source into a real Excalidraw `fileId` plus `add.files` entry \
+    before inserting. Inline `dataURL`, raw `base64`, and public HTTPS image `url` sources are \
+    also accepted when real image bytes are available.
     """
 
     var inputSchema: ToolInputSchema {
@@ -422,7 +421,7 @@ private struct ToolOutputSurface {
             self.assistantInstruction = "Dry run only. No canvas changes were applied."
         } else if canvasTarget.targetsProposalCanvas {
             self.canvasTarget = "proposal"
-            self.assistantInstruction = "The changes were created on an AI proposal canvas, not in the user's file. Tell the user this is a proposal and that they can Apply it if they want it. Do not say the file or user canvas has been updated unless the user applies it."
+            self.assistantInstruction = "The changes were created on an AI proposal canvas. Tell the user this is a proposal and that they can Apply it if they want it. Describe the file or user canvas as updated after the user applies the proposal."
         } else {
             self.canvasTarget = "user_document"
             self.assistantInstruction = "The changes were applied directly to the user's current Excalidraw file."

@@ -422,10 +422,25 @@ actor MediaItemRepository {
             return (path, id)
         }
 
-        // Delete physical file from storage (local + iCloud)
-        if let relativePath = filePath, let mediaIDString = mediaID {
+        // Delete physical file from storage (local + iCloud). Legacy or
+        // partially migrated records may have lost `id`, but their storage
+        // filename still contains the identifier used by the sync queue.
+        if let relativePath = filePath {
+            let fileName = URL(fileURLWithPath: relativePath)
+                .deletingPathExtension()
+                .lastPathComponent
+            let storageID = if let mediaID, !mediaID.isEmpty {
+                mediaID
+            } else {
+                fileName
+            }
+
+            guard !storageID.isEmpty else { return }
             do {
-                try await FileStorageManager.shared.deleteContent(relativePath: relativePath, fileID: mediaIDString)
+                try await FileStorageManager.shared.deleteContent(
+                    relativePath: relativePath,
+                    fileID: storageID
+                )
             } catch {
                 // Log but don't throw - database record is already deleted
                 logger.warning("Failed to delete media item file from storage: \(error)")

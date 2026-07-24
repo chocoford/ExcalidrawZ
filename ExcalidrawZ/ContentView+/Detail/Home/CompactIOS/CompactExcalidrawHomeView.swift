@@ -13,6 +13,7 @@ import ChocofordUI
 @available(iOS 26.0, *)
 struct CompactExcalidrawHomeView: View {
     @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var layoutState: LayoutState
     @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
     
     var disableInteration: Bool {
@@ -20,18 +21,40 @@ struct CompactExcalidrawHomeView: View {
     }
 
     @State private var searchText = ""
+    @State private var navigationPath: [EditorRoute] = []
 
     
     var body: some View {
         ZStack {
-            NavigationStack {
-                ExcalidrawEditor(
-                    activeFile: fileState.activeFileBinding,
-                    interactionEnabled: !disableInteration
-                )
-                .ignoresSafeArea()
-                .opacity(disableInteration || !fileHomeItemTransitionState.canShowExcalidrawCanvas ? 0 : 1)
-                .modifier(InspectorPresentationModifier())
+            NavigationStack(path: $navigationPath) {
+                ZStack {
+                    ExcalidrawEditor(
+                        activeFile: fileState.activeFileBinding,
+                        interactionEnabled: !disableInteration
+                    )
+                    .ignoresSafeArea()
+                    .opacity(disableInteration || !fileHomeItemTransitionState.canShowExcalidrawCanvas ? 0 : 1)
+                    .modifier(InspectorPresentationModifier())
+                }
+                .navigationDestination(for: EditorRoute.self) { route in
+                    switch route {
+                    case .aiChat:
+                        AIChatView()
+                            .background(.background)
+                            .navigationTitle(String(localizable: .aiChatTitle))
+                            .navigationBarTitleDisplayMode(.inline)
+                    }
+                }
+                .watch(value: layoutState.editorRouteRequest) { _, route in
+                    handleRouteRequest(route)
+                }
+                .watch(value: navigationPath) { _, path in
+                    layoutState.isCompactAIChatFullChatPresented = path.contains(.aiChat)
+                }
+                .watch(value: fileState.currentActiveFile?.id) { _, activeFileID in
+                    guard activeFileID == nil else { return }
+                    navigationPath.removeAll()
+                }
             }
             
             TabView {
@@ -66,6 +89,17 @@ struct CompactExcalidrawHomeView: View {
             .modifier(CompactExcalidrawHomeTabBarAccessoryViewModifier())
         }
 
+    }
+
+    private func handleRouteRequest(_ route: EditorRoute?) {
+        guard let route else { return }
+        pushRoute(route)
+        layoutState.editorRouteRequest = nil
+    }
+
+    private func pushRoute(_ route: EditorRoute) {
+        guard navigationPath.last != route else { return }
+        navigationPath.append(route)
     }
 }
 

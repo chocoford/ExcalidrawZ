@@ -61,7 +61,6 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     self.webView.shouldHandleInput = true
                 case .didSetActiveTool(let message):
                     guard !self.isLoading else { return }
-                    if message.data.type == .lasso { return }
                     if message.data.type == .hand {
                         self.lastTool = .hand
                         self.withActiveToolbarToolState { toolState in

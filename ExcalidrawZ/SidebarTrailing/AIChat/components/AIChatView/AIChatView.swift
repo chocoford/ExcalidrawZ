@@ -20,7 +20,7 @@ struct AIChatView: View {
     @Environment(\.alertToast) var alertToast
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
     @ObservedObject var prefs = AIChatPreferences.shared
-    
+
     /// Conversation id lives on `FileState` (chats are scoped to the current
     /// file). We bridge it to a `Binding` for `PromptInputView`'s API and so
     /// the inspector and the island both write back to the same place.
@@ -30,7 +30,7 @@ struct AIChatView: View {
             set: { fileState.aiChatConversationID = $0 }
         )
     }
-    
+
     @FocusState var isInputFocused: Bool
 
     @State var lastBottomID: String?
@@ -49,8 +49,7 @@ struct AIChatView: View {
     @State var revertRequiredUserMessageIDs: Set<String> = []
     @State var messageWindow = ChatMessageWindowState(pageSize: 20)
     @State var aiActionTask: Task<Void, Never>?
-    @State var regularChatInputOverlayHeight: CGFloat = 0
-    @State var compactChatInputOverlayHeight: CGFloat = 0
+    @State var chatInputControlsHeight: CGFloat = 0
     @StateObject var promptTextAreaProxy = TextAreaProxy()
     /// Confirmation dialog for the "Clear chat" toolbar action — destructive,
     /// so we route through a confirmationDialog rather than firing on tap.
@@ -81,11 +80,11 @@ struct AIChatView: View {
             fileState.aiChatConversationID ?? "nil"
         ].joined(separator: "|")
     }
-    
+
     var conversation: Conversation? {
         llmState.conversations.value?.first { $0.id == fileState.aiChatConversationID }
     }
-    
+
     var streamingState: LLMStreamingStateObject? {
         guard let id = fileState.aiChatConversationID else { return nil }
         return llmState.streamingStore.streamIfExists(for: id)
@@ -121,7 +120,7 @@ struct AIChatView: View {
         AIChatAvailability.isAvailable
     }
 
-    private var isCompactIOS: Bool {
+    var isCompactIOS: Bool {
 #if os(iOS)
         containerHorizontalSizeClass == .compact
 #else
@@ -132,10 +131,10 @@ struct AIChatView: View {
     var promptInputStyle: PromptInputStyle<PlatformDefaultPromptBackground> {
 #if os(iOS)
         if isCompactIOS {
-            return .compactIOSIsland
+            return .compactIOS
         }
 #endif
-        return .inspector
+        return .regular
     }
 
     @MainActor
@@ -149,48 +148,17 @@ struct AIChatView: View {
         !prefs.isAIEnabled
     }
 
+    var shouldShowWelcomeContent: Bool {
+        !isAIAvailable || shouldBlockAIForPreference || shouldShowWelcome
+    }
+
     var body: some View {
         let _ = AIChatRenderDebug.hit("AIChatView.body")
 
         ZStack {
-            if !isAIAvailable {
-                AIChatWelcomeView(
-                    buttonTitle: String(localizable: .aiChatUnavailableNonAppStoreButtonTitle),
-                    buttonCaption: String(localizable: .aiChatUnavailableNonAppStoreMessage),
-                    buttonURL: AppStoreVersion.appURL
-                ) {}
-                .transition(.opacity)
-            } else if shouldBlockAIForPreference {
-                AIChatWelcomeView(
-                    buttonTitle: String(localizable: .aiChatDisabledButtonEnable),
-                    buttonCaption: String(localizable: .aiChatDisabledMessage),
-                    requiresEnableConfirmation: true
-                ) {
-                    prefs.isAIEnabled = true
-                    Task {
-                        await LLMServiceActivationCoordinator.shared.restoreIfAIEnabled(reason: .aiChatEnable)
-                        await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiChatAppear, force: true)
-                    }
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        hasDismissedWelcome = true
-                        isShowingWelcomeManually = false
-                    }
-                    if isCompactIOS,
-                       fileState.currentActiveFile != nil,
-                       !fileState.currentActiveFileIsInTrash {
-                        layoutState.isInspectorPresented = false
-                        layoutState.enterCompactAIChatInputEditing()
-                    }
-                }
-                .transition(.opacity)
-            } else if shouldShowWelcome {
-                AIChatWelcomeView {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        hasDismissedWelcome = true
-                        isShowingWelcomeManually = false
-                    }
-                }
-                .transition(.opacity)
+            if shouldShowWelcomeContent {
+                welcomeContent
+                    .transition(.opacity)
             } else {
                 chatBody
                     .transition(.opacity)
@@ -237,6 +205,52 @@ struct AIChatView: View {
         }
     }
 
+    @ViewBuilder
+    private var welcomeContent: some View {
+        if !isAIAvailable {
+            AIChatWelcomeView(
+                buttonTitle: String(localizable: .aiChatUnavailableNonAppStoreButtonTitle),
+                buttonCaption: String(localizable: .aiChatUnavailableNonAppStoreMessage),
+                buttonURL: AppStoreVersion.appURL
+            ) {}
+        } else if shouldBlockAIForPreference {
+            AIChatWelcomeView(
+                buttonTitle: String(localizable: .aiChatDisabledButtonEnable),
+                buttonCaption: String(localizable: .aiChatDisabledMessage),
+                requiresEnableConfirmation: true
+            ) {
+                enableAIFromWelcome()
+            }
+        } else if shouldShowWelcome {
+            AIChatWelcomeView {
+                dismissWelcome()
+            }
+        }
+    }
+
+    private func dismissWelcome() {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            hasDismissedWelcome = true
+            isShowingWelcomeManually = false
+        }
+    }
+
+    private func enableAIFromWelcome() {
+        prefs.isAIEnabled = true
+        Task {
+            await LLMServiceActivationCoordinator.shared.restoreIfAIEnabled(reason: .aiChatEnable)
+            await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiChatAppear, force: true)
+        }
+        dismissWelcome()
+
+        if isCompactIOS,
+           fileState.currentActiveFile != nil,
+           !fileState.currentActiveFileIsInTrash {
+            layoutState.isInspectorPresented = false
+            layoutState.enterCompactAIChatInputEditing()
+        }
+    }
+
 #if os(iOS)
     @ViewBuilder
     private var aiSettingsSheet: some View {
@@ -253,7 +267,7 @@ struct AIChatView: View {
 
     @ViewBuilder
     private var debugPublishProbe: some View {
-        #if DEBUG
+#if DEBUG
         Color.clear
             .frame(width: 0, height: 0)
             .onReceive(llmState.objectWillChange) { _ in
@@ -267,9 +281,9 @@ struct AIChatView: View {
                     AIChatRenderDebug.hit("publish.streamingState")
                 }
         }
-        #else
+#else
         EmptyView()
-        #endif
+#endif
     }
 
     @ViewBuilder
@@ -277,15 +291,7 @@ struct AIChatView: View {
         let _ = AIChatRenderDebug.hit("AIChatView.chatBody")
 
         ZStack {
-#if os(iOS)
-            if isCompactIOS {
-                compactIOSChatBody
-            } else {
-                regularChatBody
-            }
-#else
             regularChatBody
-#endif
         }
         // The approval card eats vertical space from the chat scroll
         // view. Without an explicit nudge the messages slide up but the
@@ -311,42 +317,18 @@ struct AIChatView: View {
 
             chatInputControls
                 .padding(.bottom, 10)
-                .readHeight($regularChatInputOverlayHeight)
+                .readHeight($chatInputControlsHeight)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .watch(value: regularChatInputOverlayHeight) { oldHeight, newHeight in
+        .watch(value: chatInputControlsHeight) { oldHeight, newHeight in
             guard oldHeight != newHeight,
                   newHeight > 0,
-                  isPinnedToBottom
-            else {
+                  isPinnedToBottom else {
                 return
             }
             requestScrollToBottom(animated: false)
         }
     }
-
-#if os(iOS)
-    @ViewBuilder
-    var compactIOSChatBody: some View {
-        ZStack(alignment: .bottom) {
-            chatMessageStage(bottomContentPadding: compactChatInputOverlayHeight)
-
-            chatInputControls
-                .padding(.bottom, 10)
-                .readHeight($compactChatInputOverlayHeight)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .watch(value: compactChatInputOverlayHeight) { oldHeight, newHeight in
-            guard oldHeight != newHeight,
-                  newHeight > 0,
-                  isPinnedToBottom
-            else {
-                return
-            }
-            requestScrollToBottom(animated: false)
-        }
-    }
-#endif
 
     @ViewBuilder
     func chatMessageStage(bottomContentPadding: CGFloat) -> some View {
@@ -400,33 +382,42 @@ struct AIChatView: View {
                     .transition(.opacity)
             }
 
-            ZStack(alignment: .top) {
-                PromptInputView(
-                    conversationID: conversationID,
-                    pendingQueue: $aiChatState.pendingQueue,
-                    style: promptInputStyle,
-                    showsCompactIOSFullChatButton: false
-                ) {
-                    if let editSession = activeEditSession {
-                        EditSessionBanner(
-                            mode: editSession.mode,
-                            onCancel: {
-                                aiChatState.cancelEditing(
-                                    conversationID: editSession.conversationID
-                                )
-                            }
-                        )
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
+            VStack(spacing: 0) {
+                if !isCompactIOS {
+                    LowCreditsBannerView(peekBottom: 18)
+                        .padding(.horizontal, 10)
+                        .font(.caption)
+                        .offset(y: 18)
                 }
-                .disabled(
-                    llmState.pendingApprovalRequest != nil ||
-                    fileState.isAIChatConversationLoading ||
-                    fileState.currentActiveFileIsInTrash
-                )
-                .textAreaProxy(promptTextAreaProxy)
 
-                ApprovalPromptView()
+                ZStack(alignment: .top) {
+                    PromptInputView(
+                        conversationID: conversationID,
+                        pendingQueue: $aiChatState.pendingQueue,
+                        style: promptInputStyle,
+                        showsCompactIOSFullChatButton: false
+                    ) {
+                        if let editSession = activeEditSession {
+                            EditSessionBanner(
+                                mode: editSession.mode,
+                                onCancel: {
+                                    aiChatState.cancelEditing(
+                                        conversationID: editSession.conversationID
+                                    )
+                                }
+                            )
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                    }
+                    .disabled(
+                        llmState.pendingApprovalRequest != nil ||
+                        fileState.isAIChatConversationLoading ||
+                        fileState.currentActiveFileIsInTrash
+                    )
+                    .textAreaProxy(promptTextAreaProxy)
+
+                    ApprovalPromptView()
+                }
             }
         }
         .padding(.horizontal, 10)
@@ -483,7 +474,7 @@ struct AIChatView: View {
         aiChatState.cancelEditing(conversationID: id)
         Task {
             do {
-                 try await llmState.clearConversation(id)
+                try await llmState.clearConversation(id)
             } catch {
                 await MainActor.run {
                     alertToast.presentAIChatError(error)
@@ -491,7 +482,7 @@ struct AIChatView: View {
             }
         }
     }
-    
+
 
 }
 

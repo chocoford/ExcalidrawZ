@@ -73,6 +73,8 @@ struct LocalFolderFileHomeView: View {
 }
 
 struct FileHomeContainer: View {
+    @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
     
     var content: AnyView
     
@@ -84,10 +86,35 @@ struct FileHomeContainer: View {
     
     @State private var scrollViewHeight: CGFloat = 0
     @State private var contentHeight: CGFloat = 0
+    @State private var activeFileScrollTask: Task<Void, Never>?
+
+    private let activeFilePreparationDelay: Duration = .milliseconds(50)
     
     var config = Config()
     
     var body: some View {
+        ScrollViewReader { proxy in
+            scrollView
+                .watch(value: fileState.currentActiveFile, initial: true) { _, activeFile in
+                    prepareActiveFileForCloseTransition(activeFile, using: proxy)
+                }
+                .watch(
+                    value: fileHomeItemTransitionState.canShowItemContainerView,
+                    initial: true
+                ) { _, isVisible in
+                    guard !isVisible else { return }
+                    prepareActiveFileForCloseTransition(
+                        fileState.currentActiveFile,
+                        using: proxy
+                    )
+                }
+                .onDisappear {
+                    activeFileScrollTask?.cancel()
+                }
+        }
+    }
+
+    private var scrollView: some View {
         ScrollView {
             VStack(spacing: 0) {
                 content
@@ -114,7 +141,6 @@ struct FileHomeContainer: View {
                                 }
                             }
                             .padding(.horizontal, 30)
-                            
                         }
                     }
                     .mask {
@@ -161,6 +187,36 @@ struct FileHomeContainer: View {
             }
         }
         .readHeight($scrollViewHeight)
+    }
+
+    private func prepareActiveFileForCloseTransition(
+        _ activeFile: FileState.ActiveFile?,
+        using proxy: ScrollViewProxy
+    ) {
+        activeFileScrollTask?.cancel()
+        guard let activeFile,
+              !fileHomeItemTransitionState.canShowItemContainerView else {
+            return
+        }
+
+        let targetID = activeFile.id
+        activeFileScrollTask = Task { @MainActor in
+            await Task.yield()
+            try? await Task.sleep(for: activeFilePreparationDelay)
+            guard !Task.isCancelled,
+                  fileState.currentActiveFile?.id == targetID,
+                  !fileHomeItemTransitionState.canShowItemContainerView else {
+                return
+            }
+
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                // No anchor means SwiftUI performs only the scrolling needed
+                // to reveal the item; already-visible cards stay in place.
+                proxy.scrollTo(targetID)
+            }
+        }
     }
     
     
@@ -594,6 +650,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                     file: file,
                     selectionSiblings: files
                 )
+                .id(file.id)
             }
         }
         .animation(.smooth(duration: 0.22), value: files.map(\.id))

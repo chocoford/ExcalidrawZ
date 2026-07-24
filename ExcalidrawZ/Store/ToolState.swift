@@ -73,7 +73,7 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
             case .hand:
                 self = .hand
             case .lasso:
-                return nil
+                self = .cursor
         }
     }
     

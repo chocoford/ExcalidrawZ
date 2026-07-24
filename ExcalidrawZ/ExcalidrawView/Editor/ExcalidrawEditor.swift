@@ -18,6 +18,10 @@ import UIKit
 import ChocofordUI
 import Logging
 
+enum EditorRoute: Hashable {
+    case aiChat
+}
+
 struct ExcalidrawEditor: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
@@ -74,9 +78,6 @@ struct ExcalidrawEditor: View {
     
     var localFileBinding: Binding<ExcalidrawFile?> {
         Binding<ExcalidrawFile?> {
-            if fileState.currentActiveFile == nil {
-                return excalidrawFile ?? ExcalidrawFile()
-            }
             return excalidrawFile
         } set: { val in
             guard let val else { return }
@@ -189,7 +190,7 @@ struct ExcalidrawEditor: View {
             .allowsHitTesting(!isLoadingFile)
             .ignoresSafeArea(.container, edges: canvasIgnoredSafeAreaEdges)
 #if os(iOS)
-            .dismissKeyboardOnCanvasTap()
+            .dismissKeyboardOnCanvasTap(isEnabled: layoutState.isCompactAIChatInputEditing)
 #endif
             .background {
 #if os(iOS)
@@ -241,22 +242,7 @@ struct ExcalidrawEditor: View {
 //#endif
 #if os(iOS)
         .overlay(alignment: .bottom) {
-            CompactAIChatInputOverlay()
-        }
-        .overlay(alignment: .bottom) {
-            CompactAIChatGeneratingOverlay()
-        }
-        .overlay(alignment: .bottom) {
-            CompactAIChatProposalOverlay()
-        }
-        .overlay(alignment: .bottom) {
-            CompactAIChatDraftAttachmentsOverlay()
-        }
-        .navigationDestination(isPresented: $layoutState.isCompactAIChatFullChatPresented) {
-            AIChatView()
-                .background(.background)
-                .navigationTitle(String(localizable: .aiChatTitle))
-                .navigationBarTitleDisplayMode(.inline)
+            CompactAIChatEditorOverlays()
         }
 #endif
         .background {
@@ -439,8 +425,8 @@ struct ExcalidrawEditor: View {
     private func loadExcalidrawFile(from activeFile: FileState.ActiveFile?) async {
         guard let activeFile else {
             cancelFileLoadRevealGuard()
-            self.excalidrawFile = ExcalidrawFile()
-            fileState.excalidrawWebCoordinator?.documentSyncController.setTargetFileID(nil)
+            self.excalidrawFile = nil
+            fileState.excalidrawWebCoordinator?.documentSyncController.resetFileLoadState()
             return
         }
 
@@ -451,7 +437,7 @@ struct ExcalidrawEditor: View {
                 beginFileLoadRevealGuard(fileID: activeFile.id)
             default:
                 cancelFileLoadRevealGuard()
-                fileState.excalidrawWebCoordinator?.documentSyncController.setTargetFileID(nil)
+                fileState.excalidrawWebCoordinator?.documentSyncController.resetFileLoadState()
         }
         
         do {
@@ -803,9 +789,10 @@ private struct WindowDragRegion: NSViewRepresentable {
 
 #if os(iOS)
 private extension View {
-    func dismissKeyboardOnCanvasTap() -> some View {
+    func dismissKeyboardOnCanvasTap(isEnabled: Bool) -> some View {
         simultaneousGesture(
             TapGesture().onEnded {
+                guard isEnabled else { return }
                 UIApplication.shared.sendAction(
                     #selector(UIResponder.resignFirstResponder),
                     to: nil,

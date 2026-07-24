@@ -591,6 +591,7 @@ actor FileRepository {
     private struct FileDeletionSideEffects: Sendable {
         var files: [DeletedFileStorageInfo] = []
         var checkpoints: [DeletedCheckpointStorageInfo] = []
+        var mediaObjectURIs: [URL] = []
         var spotlightFileIDs: [UUID] = []
         var fileScopeIDs: [String] = []
     }
@@ -618,6 +619,11 @@ actor FileRepository {
                 }
 
                 if file.inTrash || forcePermanently {
+                    let mediaItems = (file.medias?.allObjects as? [MediaItem]) ?? []
+                    sideEffects.mediaObjectURIs.append(
+                        contentsOf: mediaItems.map { $0.objectID.uriRepresentation() }
+                    )
+
                     let checkpointsFetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
                     checkpointsFetchRequest.predicate = NSPredicate(format: "file = %@", file)
                     let fileCheckpoints = try context.fetch(checkpointsFetchRequest)
@@ -734,6 +740,17 @@ actor FileRepository {
             } catch {
                 logger.warning("Failed to delete AI conversations for file \(fileScopeID): \(error)")
             }
+        }
+
+        do {
+            let deletedMediaCount = try await MediaCleanupCoordinator.shared.cleanOrphanedMedia(
+                withObjectURIs: sideEffects.mediaObjectURIs
+            )
+            if deletedMediaCount > 0 {
+                logger.debug("Deleted \(deletedMediaCount) unreferenced media item(s) after permanent file deletion")
+            }
+        } catch {
+            logger.warning("Failed to clean media after permanent file deletion: \(error)")
         }
     }
 }

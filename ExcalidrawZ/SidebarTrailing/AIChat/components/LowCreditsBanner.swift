@@ -23,12 +23,19 @@ import LLMKit
 import LLMCore
 
 struct LowCreditsBannerView: View {
+    enum Presentation {
+        case banner
+        case compactCapsule
+    }
+
+    static let defaultThreshold: Double = 50
+
     @EnvironmentObject private var llmState: LLMStateObject
 
     /// Show only while `creditsInfo.balance < threshold`. Default 50 — at
     /// that point the user has a few exchanges of runway, enough time to
     /// react to the hint before hitting `LLMError.insufficientCredits`.
-    var threshold: Double = 50
+    var threshold: Double = Self.defaultThreshold
 
     /// Extra space added below the content *inside* the orange background.
     /// Set to a positive value when the caller stacks the banner above a
@@ -36,10 +43,17 @@ struct LowCreditsBannerView: View {
     /// behind the sibling and the rounded bottom edge stays hidden.
     /// Default 0 → clean self-contained card.
     var peekBottom: CGFloat = 0
-    
-    public init(threshold: Double = 50, peekBottom: CGFloat = 0) {
+
+    var presentation: Presentation = .banner
+
+    init(
+        threshold: Double = Self.defaultThreshold,
+        peekBottom: CGFloat = 0,
+        presentation: Presentation = .banner
+    ) {
         self.threshold = threshold
         self.peekBottom = peekBottom
+        self.presentation = presentation
     }
 
     private var balance: Double? {
@@ -53,9 +67,15 @@ struct LowCreditsBannerView: View {
 
     var body: some View {
         ZStack {
-            if shouldShow, let balance {
-                bannerCard(balance: balance)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            if let balance, shouldShow {
+                switch presentation {
+                    case .banner:
+                        bannerCard(balance: balance)
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    case .compactCapsule:
+                        compactCapsule(balance: balance)
+                            .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                }
             }
         }
         .animation(.easeInOut(duration: 0.25), value: shouldShow)
@@ -64,7 +84,9 @@ struct LowCreditsBannerView: View {
     @ViewBuilder
     private func bannerCard(balance: Double) -> some View {
         Button {
-            Store.shared.togglePaywall(reason: .aiInsufficientCredits)
+            Task { @MainActor in
+                Store.shared.togglePaywall(reason: .aiInsufficientCredits)
+            }
         } label: {
             HStack(spacing: 6) {
                 Image(systemSymbol: .exclamationmarkTriangleFill)
@@ -81,22 +103,65 @@ struct LowCreditsBannerView: View {
             // is applied after this, so it grows with the padding.
             .padding(.bottom, peekBottom)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background {
-                if #available(macOS 26.0, iOS 26.0, *) {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(.clear)
-                        .glassEffect(
-                            .clear.tint(Color.orange.opacity(0.15)).interactive(),
-                            in: RoundedRectangle(cornerRadius: 14)
-                        )
-                } else {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.orange.opacity(0.15))
+        }
+        .tint(.orange)
+        .modernButtonStyle(style: .glass, shape: .roundedRectangle(14))
+    }
+
+    @ViewBuilder
+    private func compactCapsule(balance: Double) -> some View {
+        Button {
+            Task { @MainActor in
+                Store.shared.togglePaywall(reason: .aiInsufficientCredits)
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemSymbol: .exclamationmarkTriangleFill)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.orange)
+
+                Text(localizable: .aiChatButtonCreditsCount(formattedBalance(balance)))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            }
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.secondary)
+        }
+        .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
+    }
+
+    private func formattedBalance(_ balance: Double) -> String {
+        balance.formatted(.number.precision(.fractionLength(2)))
+    }
+}
+
+struct AICreditsToolbarButton: View {
+    @EnvironmentObject private var llmState: LLMStateObject
+
+    private var action: (() -> Void)?
+
+    init(action: (() -> Void)? = nil) {
+        self.action = action
+    }
+
+    var body: some View {
+        Button {
+            if let action {
+                action()
+            } else {
+                Task { @MainActor in
+                    Store.shared.togglePaywall(reason: .manaully)
                 }
             }
-            .contentShape(RoundedRectangle(cornerRadius: 14))
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemSymbol: .sparkles)
+                if let balance = llmState.creditsInfo?.balance, balance > 0 {
+                    Text(balance.formatted(.number.precision(.fractionLength(2))))
+                }
+            }
+            .foregroundStyle(AIAppearancePalette.foregroundGradient)
         }
-        .buttonStyle(.plain)
     }
 }
 

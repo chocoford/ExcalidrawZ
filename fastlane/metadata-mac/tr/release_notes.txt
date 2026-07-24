@@ -1,5 +1,6 @@
-Bu güncelleme önemli bir çizim uyumluluğu sorununu giderir ve tüm kullanıcılara önerilir.
+Bu güncelleme medya yönetimini, özel yazı tiplerini ve dosya açma güvenilirliğini iyileştirir.
 
-- En yeni Excalidraw çizgi kalınlığı ayarlarıyla uyumluluk düzeltildi.
-- Daha yeni çizgi verileri içeren bazı çizimlerin veya yedeklerin yüklenememesine neden olabilen sorun düzeltildi.
-- Kalem basıncı ve çizgi ayarları desteği iyileştirildi.
+- Medya Dosyaları daha hızlı bir galeri, ayrıntılı referanslar ve kullanılmayan ya da yalnızca dosya geçmişinde bulunan medyalar için yönlendirmeli temizleme ile yenilendi.
+- Ayarlar bölümleri arasında geçiş yapınca özel yazı tiplerinin kaybolması veya yeni yazı tiplerinin daha önce eklenenlerin yerini alması düzeltildi.
+- Dosya açma, dosyalar arasında geçiş ve Ana Sayfa’ya dönüş geçişleri iyileştirildi.
+- Bir çizim yüklenemediğinde daha açık kurtarma bilgileri ve yeniden deneme seçeneği eklendi.

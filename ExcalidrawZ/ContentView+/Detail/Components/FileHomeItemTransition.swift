@@ -113,6 +113,12 @@ enum FileHomeCoverTransitionGeometry {
 }
 
 struct FileHomeItemTransitionModifier: ViewModifier {
+    private enum Phase {
+        case idle
+        case opening
+        case dismissing
+    }
+
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject var fileState: FileState
     
@@ -122,6 +128,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
     @State private var show: Bool = true
     @State private var animateFlag: Bool = false
     @State private var transitionRevision: Int = 0
+    @State private var phase: Phase = .idle
     
     @State private var file: FileState.ActiveFile?
     
@@ -207,53 +214,10 @@ struct FileHomeItemTransitionModifier: ViewModifier {
 //                }
                 
                 if oldValue == nil, let newValue { // open
-                    let animationDuration = fileState.consumeActiveFileOpenDurationOverride(for: newValue.id)
-                        ?? openDuration
-                    self.file = newValue
-                    itemState.setSourceFileID(newValue.id)
-                    itemState.setShouldHideItem(nil)
-                    state.canShowItemContainerView = true
-                    self.animateFlag = false
-                    self.show = true
-                    state.canShowExcalidrawCanvas = true
-                    
-                    if #available(macOS 14.0, iOS 17.0, *) {
-                        DispatchQueue.main.async {
-                            guard revision == transitionRevision else { return }
-#if os(iOS)
-                            withAnimation(
-                                .smooth(duration: animationDuration),
-                                completionCriteria: .removed
-                            ) {
-                                self.animateFlag = true
-                            } completion: {
-                                guard revision == transitionRevision else { return }
-                                completeOpenTransition()
-                            }
-#else
-                            withAnimation(.smooth(duration: animationDuration)) {
-                                self.animateFlag = true
-                            } completion: {
-                                guard revision == transitionRevision else { return }
-                                completeOpenTransition()
-                            }
-#endif
-                        }
-                    } else {
-                        DispatchQueue.main.async {
-                            guard revision == transitionRevision else { return }
-                            withAnimation(.smooth(duration: animationDuration)) {
-                                self.animateFlag = true
-                            }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration + 0.15) {
-                                guard revision == transitionRevision else { return }
-                                completeOpenTransition()
-                            }
-                        }
-                    }
+                    beginOpenTransition(for: newValue, revision: revision)
                 } else if oldValue != nil, newValue == nil {
                     // dismiss
-                    
+                    phase = .dismissing
                     self.animateFlag = true
                     itemState.setSourceFileID(oldValue!.id)
                     itemState.setShouldHideItem(oldValue!.id)
@@ -285,11 +249,67 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                             }
                         }
                     }
+                } else if let newValue, phase != .idle {
+                    // A new file was opened before the previous hero transition
+                    // completed. Restart from the new item's source instead of
+                    // leaving the interrupted dismiss state visible.
+                    beginOpenTransition(for: newValue, revision: revision)
                 } else {
                     self.file = newValue
                     itemState.setSourceFileID(nil)
                 }
             }
+    }
+
+    private func beginOpenTransition(
+        for file: FileState.ActiveFile,
+        revision: Int
+    ) {
+        let animationDuration = fileState.consumeActiveFileOpenDurationOverride(for: file.id)
+            ?? openDuration
+        phase = .opening
+        self.file = file
+        itemState.setSourceFileID(file.id)
+        itemState.setShouldHideItem(nil)
+        state.canShowItemContainerView = true
+        animateFlag = false
+        show = true
+        state.canShowExcalidrawCanvas = true
+
+        if #available(macOS 14.0, iOS 17.0, *) {
+            DispatchQueue.main.async {
+                guard revision == transitionRevision else { return }
+#if os(iOS)
+                withAnimation(
+                    .smooth(duration: animationDuration),
+                    completionCriteria: .removed
+                ) {
+                    animateFlag = true
+                } completion: {
+                    guard revision == transitionRevision else { return }
+                    completeOpenTransition()
+                }
+#else
+                withAnimation(.smooth(duration: animationDuration)) {
+                    animateFlag = true
+                } completion: {
+                    guard revision == transitionRevision else { return }
+                    completeOpenTransition()
+                }
+#endif
+            }
+        } else {
+            DispatchQueue.main.async {
+                guard revision == transitionRevision else { return }
+                withAnimation(.smooth(duration: animationDuration)) {
+                    animateFlag = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration + 0.15) {
+                    guard revision == transitionRevision else { return }
+                    completeOpenTransition()
+                }
+            }
+        }
     }
 
     private func completeOpenTransition() {
@@ -300,6 +320,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
             state.canShowExcalidrawCanvas = true
             state.canShowItemContainerView = false
             itemState.setSourceFileID(nil)
+            phase = .idle
         }
     }
 
@@ -311,6 +332,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
             self.show = true
             self.file = nil
             itemState.setSourceFileID(nil)
+            phase = .idle
         }
     }
     

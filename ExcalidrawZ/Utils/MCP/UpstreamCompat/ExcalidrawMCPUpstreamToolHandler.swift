@@ -71,7 +71,7 @@ struct ExcalidrawMCPUpstreamToolHandler {
             parsedElements = try MCPJSONValue.parseJSONArray(from: inputData)
         } catch {
             return ExcalidrawMCPToolResult(
-                text: "Invalid JSON in elements. Ensure the value is a JSON array string with no comments or trailing commas.",
+                text: "Invalid JSON in elements: \(error.localizedDescription). Ensure no comments, no trailing commas, and proper quoting.",
                 isError: true
             )
         }
@@ -99,8 +99,14 @@ struct ExcalidrawMCPUpstreamToolHandler {
 
         return ExcalidrawMCPToolResult(
             text: """
-            Diagram received by ExcalidrawZ and applied to a file. Checkpoint id: "\(published.checkpointID)".
-            If the user asks to revise this diagram, call create_view again with a restoreCheckpoint pseudo-element using that id.\(ratioHint)
+            Diagram displayed! Checkpoint id: "\(published.checkpointID)".
+            If user asks to create a new diagram - simply create a new one from scratch.
+            However, if the user wants to edit something on this diagram "\(published.checkpointID)", take these steps:
+            1) read widget context (using read_widget_context tool) to check if user made any manual edits first
+            2) decide whether you want to make new diagram from scratch OR - use this one as starting checkpoint:
+              simply start from the first element [{"type":"restoreCheckpoint","id":"\(published.checkpointID)"}, ...your new elements...]
+              this will use same diagram state as the user currently sees, including any manual edits they made in fullscreen, allowing you to add elements on top.
+              To remove elements, use: {"type":"delete","ids":"<id1>,<id2>"}\(ratioHint)
             """,
             structuredContent: .object([
                 "checkpointId": .string(published.checkpointID)
@@ -143,10 +149,7 @@ struct ExcalidrawMCPUpstreamToolHandler {
             throw MCPJSONRPCError.invalidParams("read_checkpoint requires arguments.id.")
         }
         guard let data = await readCheckpointData(id) else {
-            return ExcalidrawMCPToolResult(
-                text: ExcalidrawMCPCheckpointNotFoundError(id: id).localizedDescription,
-                isError: true
-            )
+            return ExcalidrawMCPToolResult(text: "")
         }
 
         let jsonData = try data.mcpJSONData()

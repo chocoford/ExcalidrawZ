@@ -1,5 +1,1 @@
-Ta aktualizacja naprawia ważny problem ze zgodnością rysowania i jest zalecana wszystkim użytkownikom.
-
-- Naprawiono zgodność z najnowszymi ustawieniami szerokości kreski Excalidraw.
-- Naprawiono problem, przez który niektóre rysunki lub kopie zapasowe z nowszymi danymi kreski mogły się nie wczytywać.
-- Ulepszono obsługę nacisku pióra i ustawień kreski.
+Naprawiono problem w kompaktowych układach iOS, przez który anulowane zaznaczenie mogło pojawić się ponownie podczas przesuwania lub powiększania płótna po wyjściu z trybu edycji.

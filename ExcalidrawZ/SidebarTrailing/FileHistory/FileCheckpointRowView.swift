@@ -14,6 +14,7 @@ private let fileCheckpointRowLogger = Logger(label: "FileCheckpointRowView")
 
 struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
     var checkpoint: Checkpoint
+    var presentsDetail = true
     
     @State private var file: ExcalidrawFile?
     @State private var fileSize: Int = 0
@@ -40,22 +41,25 @@ struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
     
     @ViewBuilder
     private func content() -> some View {
+        if !presentsDetail {
+            label()
+        } else {
 #if os(iOS)
-        NavigationLink {
-            FileCheckpointDetailView(checkpoint: checkpoint)
-        } label: {
-            label()
-        }
-        .buttonStyle(.plain)
+            NavigationLink {
+                FileCheckpointDetailView(checkpoint: checkpoint)
+            } label: {
+                label()
+            }
+            .buttonStyle(.plain)
 #elseif os(macOS)
-        Popover(arrowEdge: .trailing) {
-            FileCheckpointDetailView(checkpoint: checkpoint)
-        } label: {
-            label()
-        }
-        .buttonStyle(.fileCheckpointRow)
-        
+            Popover(arrowEdge: .trailing) {
+                FileCheckpointDetailView(checkpoint: checkpoint)
+            } label: {
+                label()
+            }
+            .buttonStyle(.fileCheckpointRow)
 #endif
+        }
     }
     
     @ViewBuilder

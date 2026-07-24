@@ -1,5 +1,1 @@
-Bu güncelleme önemli bir çizim uyumluluğu sorununu giderir ve tüm kullanıcılara önerilir.
-
-- En yeni Excalidraw çizgi kalınlığı ayarlarıyla uyumluluk düzeltildi.
-- Daha yeni çizgi verileri içeren bazı çizimlerin veya yedeklerin yüklenememesine neden olabilen sorun düzeltildi.
-- Kalem basıncı ve çizgi ayarları desteği iyileştirildi.
+iOS kompakt yerleşimlerinde düzenleme modundan çıktıktan sonra tuvali kaydırırken veya yakınlaştırırken kaldırılmış bir seçimin yeniden görünebilmesine neden olan sorun düzeltildi.

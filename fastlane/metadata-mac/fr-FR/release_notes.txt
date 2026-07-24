@@ -1,5 +1,6 @@
-Cette mise à jour corrige un important problème de compatibilité de dessin et est recommandée à tous les utilisateurs.
+Cette mise à jour améliore la gestion des médias, les polices personnalisées et la fiabilité de l’ouverture des fichiers.
 
-- Correction de la compatibilité avec les derniers réglages de largeur de trait d'Excalidraw.
-- Correction d'un problème pouvant empêcher le chargement de certains dessins ou sauvegardes contenant de nouvelles données de trait.
-- Amélioration de la prise en charge de la pression du stylet et des réglages de trait.
+- La section Fichiers multimédias propose désormais une galerie plus rapide, des références détaillées et un nettoyage guidé des médias inutilisés ou uniquement présents dans l’historique.
+- Correction de la disparition des polices personnalisées après un changement d’onglet et du remplacement des polices déjà ajoutées.
+- Amélioration de l’ouverture et du changement de fichier, ainsi que des transitions vers l’accueil.
+- Ajout d’indications plus claires et d’une action Réessayer lorsqu’un dessin ne peut pas être chargé.

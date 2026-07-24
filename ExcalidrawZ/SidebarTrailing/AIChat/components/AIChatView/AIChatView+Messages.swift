@@ -20,7 +20,9 @@ extension AIChatView {
         let transientError = currentTransientError
         let displayMessages = messagesForCurrentEditSession(messages)
         let allGroups = groupMessages(displayMessages)
-        let scrollConfiguration = ChatScrollConfiguration.automatic
+        let scrollConfiguration = isCompactIOS
+            ? ChatScrollConfiguration.compactIOS
+            : ChatScrollConfiguration.automatic
         let visibleGroups = scrollConfiguration.usesMessageWindowing
             ? messageWindow.visibleGroups(
                 from: allGroups,

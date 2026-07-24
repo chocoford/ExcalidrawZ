@@ -1,5 +1,6 @@
-Deze update verhelpt een belangrijk compatibiliteitsprobleem met tekenen en wordt aanbevolen voor alle gebruikers.
+Deze update verbetert mediabeheer, aangepaste lettertypen en de betrouwbaarheid bij het openen van bestanden.
 
-- Compatibiliteit met de nieuwste Excalidraw-instellingen voor lijndikte opgelost.
-- Een probleem opgelost waarbij sommige tekeningen of back-ups met nieuwere lijngegevens niet konden worden geladen.
-- Ondersteuning voor pendruk en lijninstellingen verbeterd.
+- Mediabestanden is vernieuwd met een snellere galerij, gedetailleerde verwijzingen en begeleide opschoning voor ongebruikte media of media die alleen in de bestandsgeschiedenis voorkomen.
+- Opgelost dat aangepaste lettertypen verdwenen na het wisselen van instellingen of dat nieuwe lettertypen eerder toegevoegde lettertypen vervingen.
+- Het openen en wisselen van bestanden en de overgang terug naar Home zijn verbeterd.
+- Duidelijker herstel en een actie om opnieuw te proberen wanneer een tekening niet kan worden geladen.

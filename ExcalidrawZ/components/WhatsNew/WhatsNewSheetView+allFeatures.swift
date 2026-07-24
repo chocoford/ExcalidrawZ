@@ -18,10 +18,10 @@ extension WhatsNewView {
     @ViewBuilder
     func featuresContent() -> some View {
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewPerformanceImprovementsTitle),
-            description: .localizable(.whatsNewPerformanceImprovementsDescription),
+            title: .localizable(.whatsNewMediaFilesTitle),
+            description: .localizable(.whatsNewMediaFilesDescription),
         ) {
-            Image(systemSymbol: .timer)
+            Image(systemSymbol: .photoStack)
                 .resizable()
                 .symbolRenderingMode(.hierarchical)
         }
@@ -36,6 +36,16 @@ extension WhatsNewView {
                         version: Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
                     ) {
                         featuresContent()
+                    }
+                    WhatsNewVersionSection(version: "v2.2.1") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewPerformanceImprovementsTitle),
+                            description: .localizable(.whatsNewPerformanceImprovementsDescription),
+                        ) {
+                            Image(systemSymbol: .timer)
+                                .resizable()
+                                .symbolRenderingMode(.hierarchical)
+                        }
                     }
                     WhatsNewVersionSection(version: "v2.2.0") {
                         WhatsNewFeatureRow(

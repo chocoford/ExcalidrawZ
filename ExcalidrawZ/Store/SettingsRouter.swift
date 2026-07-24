@@ -37,6 +37,9 @@ final class SettingsRouter: ObservableObject {
     /// changes. Cleared by `SettingsView` after consumption.
     @Published var pendingRoute: SettingsView.Route?
     @Published var pendingAISettingsRoute: AISettingsRoute?
+#if os(iOS)
+    @Published var iOSSettingsPresentationRequestID = 0
+#endif
 
     private init() {}
 
@@ -47,7 +50,9 @@ final class SettingsRouter: ObservableObject {
     /// macOS 26+ emits when Settings is opened any other way.
     func requestOpen(_ route: SettingsView.Route) {
         pendingRoute = route
-#if os(macOS)
+#if os(iOS)
+        iOSSettingsPresentationRequestID += 1
+#elseif os(macOS)
         // `showSettingsWindow:` on macOS 13+, `showPreferencesWindow:` on
         // older. `sendAction` returns false if no responder handled it; try
         // the legacy selector as a safety net.

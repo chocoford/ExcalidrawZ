@@ -55,6 +55,7 @@ struct LockedFileAccessSheet: View {
     private let recoveryKeyControlHeight: CGFloat = 44
 
     let request: LockedFileAccessRequest
+    let automaticallyRequestsSystemAuthentication: Bool
     var onComplete: ((LockedFileAccessMode) -> Void)?
     var onDelete: (() -> Void)?
 
@@ -72,10 +73,12 @@ struct LockedFileAccessSheet: View {
 
     init(
         request: LockedFileAccessRequest,
+        automaticallyRequestsSystemAuthentication: Bool = false,
         onComplete: ((LockedFileAccessMode) -> Void)? = nil,
         onDelete: (() -> Void)? = nil
     ) {
         self.request = request
+        self.automaticallyRequestsSystemAuthentication = automaticallyRequestsSystemAuthentication
         self.onComplete = onComplete
         self.onDelete = onDelete
     }
@@ -537,7 +540,15 @@ struct LockedFileAccessSheet: View {
         allowsPermanentDeleteAfterFailure = false
         enteredRecoveryKey = ""
 
-        _ = await unlockWithCurrentRecoveryKeyIfPossible()
+        if await unlockWithCurrentRecoveryKeyIfPossible() {
+            return
+        }
+
+        guard automaticallyRequestsSystemAuthentication,
+              systemUnlockAvailability.isAvailable else {
+            return
+        }
+        await unlockWithSystemAuthentication()
     }
 
     private func recoveryKeyForLocking() async throws -> RecoveryKey {

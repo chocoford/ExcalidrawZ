@@ -714,7 +714,7 @@ func exportPDF(image: UIImage, name: String? = nil, to url: URL? = nil) throws -
 #endif
 
 // MARK: - Clipboard
-func copyEntityURLToClipboard(objectID: NSManagedObjectID) throws {
+func entityURL(for objectID: NSManagedObjectID) throws -> URL {
     let uri = objectID.uriRepresentation().absoluteString
     guard let encodedURI = uri.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
           let url = URL(string: "excalidrawz://entity?objectURI=\(encodedURI)") else {
@@ -726,6 +726,12 @@ func copyEntityURLToClipboard(objectID: NSManagedObjectID) throws {
         
         throw InvalidURIError()
     }
+
+    return url
+}
+
+func copyEntityURLToClipboard(objectID: NSManagedObjectID) throws {
+    let url = try entityURL(for: objectID)
     
 #if canImport(AppKit)
     NSPasteboard.general.clearContents()

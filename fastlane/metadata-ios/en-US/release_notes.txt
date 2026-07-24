@@ -1,5 +1,1 @@
-This update fixes an important drawing compatibility issue and is recommended for all users.
-
-- Fixed compatibility with the latest Excalidraw stroke width settings.
-- Fixed an issue where some drawings or backups could fail to load when newer stroke data was present.
-- Improved support for pen pressure and stroke settings.
+Fixed an issue on compact iOS layouts where a cleared canvas selection could reappear after leaving Edit mode and panning or zooming the canvas.

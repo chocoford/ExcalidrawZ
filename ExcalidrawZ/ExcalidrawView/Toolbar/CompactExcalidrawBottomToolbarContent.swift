@@ -33,8 +33,9 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
                 if toolState.inDragMode {
                     if layoutState.isCompactAIChatToolbarPresented,
                        canPresentCompactAIChatToolbarInput {
-                        // AI Chat
                         if compactAIChatIsReplying {
+                            compactAIChatToolbarFullscreenButton
+                                .transition(.opacity.combined(with: .scale(scale: 0.92)))
                             Spacer(minLength: 0)
                         } else if layoutState.isCompactAIChatInputEditing {
                             Spacer(minLength: 0)
@@ -141,11 +142,11 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
             if toolState.activatedTool == .cursor {
                 if let coordinator = toolState.excalidrawWebCoordinator {
                     CursorModeTrailingButton(coordinator: coordinator) {
-                        toolState.setActivedTool(.hand)
+                        exitCompactEditMode()
                     }
                 } else {
                     Button {
-                        toolState.setActivedTool(.hand)
+                        exitCompactEditMode()
                     } label: {
                         Text(.localizable(.generalButtonDone))
                     }
@@ -157,6 +158,14 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
                     Text(.localizable(.generalButtonCancel))
                 }
             }
+        }
+    }
+
+    private func exitCompactEditMode() {
+        let coordinator = toolState.excalidrawWebCoordinator
+        Task { @MainActor in
+            try? await coordinator?.clearPreviousSelection()
+            toolState.setActivedTool(.hand)
         }
     }
 
@@ -249,6 +258,19 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
         CompactAIChatToolbarPlaceholderButton(draftState: compactAIChatDraftState) {
             layoutState.enterCompactAIChatInputEditing()
         }
+    }
+
+    @ViewBuilder
+    private var compactAIChatToolbarFullscreenButton: some View {
+        NavigationLink(value: EditorRoute.aiChat) {
+            Image(systemSymbol: .rectangleExpandVertical)
+                .font(.system(size: 16, weight: .medium))
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .foregroundStyle(Color.primary)
+        .help(.localizable(.aiChatButtonFullscreen))
+        .accessibilityLabel(Text(localizable: .aiChatButtonFullscreen))
     }
 
     @ViewBuilder
@@ -422,7 +444,9 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
     }
 
     private var compactAIChatIsReplying: Bool {
-        compactAIChatIsGenerating || layoutState.isCompactAIChatReplyTickerVisible
+        compactAIChatIsGenerating ||
+            layoutState.isCompactAIChatReplyTickerVisible ||
+            layoutState.isCompactAIChatReplyStartPending
     }
 
     private var compactAIChatShowsStopButton: Bool {
@@ -461,7 +485,7 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
             if !toolState.inDragMode {
                 toolState.setActivedTool(.hand)
             }
-            layoutState.enterCompactAIChatInputEditing()
+            layoutState.enterCompactAIChatToolbar()
         } else if layoutState.isAIChatIslandMode {
             layoutState.isAIChatIslandMode = false
         } else {
@@ -528,14 +552,14 @@ private struct CompactAIChatToolbarPlaceholderButton: View {
         Button {
             onBeginEditing()
         } label: {
-            Label {
+            HStack(spacing: 6) {
+                Image(systemSymbol: .sparkles)
+
                 Text(displayText)
                     .lineLimit(1)
                     .truncationMode(.tail)
-            } icon: {
-                Image(systemSymbol: .sparkles)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .labelStyle(.titleAndIcon)
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
@@ -572,6 +596,10 @@ struct CompactExcalidrawBottomToolbarStateModifier: ViewModifier {
         )
     }
 
+    private var shouldShowCompactAIChatToolbarInput: Bool {
+        layoutState.isCompactAIChatToolbarPresented && canPresentCompactAIChatToolbarInput
+    }
+
     func body(content: Content) -> some View {
         content
             .watch(value: toolState.activatedTool) { newValue in
@@ -593,6 +621,10 @@ struct CompactExcalidrawBottomToolbarStateModifier: ViewModifier {
                 guard !canPresent else { return }
                 layoutState.exitCompactAIChatToolbar()
             }
+            .watch(value: shouldShowCompactAIChatToolbarInput) { shouldShowInput in
+                guard shouldShowInput else { return }
+                enterCompactAIChatInputEditingIfNeeded()
+            }
             .watch(value: layoutState.isCompactAIChatToolbarPresented) { isPresented in
                 guard isPresented else { return }
                 guard canPresentCompactAIChatToolbarInput else {
@@ -602,7 +634,17 @@ struct CompactExcalidrawBottomToolbarStateModifier: ViewModifier {
                 if !toolState.inDragMode {
                     toolState.setActivedTool(.hand)
                 }
+                enterCompactAIChatInputEditingIfNeeded()
             }
+    }
+
+    private func enterCompactAIChatInputEditingIfNeeded() {
+        guard shouldShowCompactAIChatToolbarInput,
+              !layoutState.isCompactAIChatInputEditing
+        else {
+            return
+        }
+        layoutState.enterCompactAIChatInputEditing()
     }
 
     private func syncActiveTool(_ newValue: ExcalidrawTool?) {

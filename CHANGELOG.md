@@ -1,3 +1,42 @@
+## 2.2.8
+
+#### Features
+
+- Redesigned Media Files as a responsive image gallery with faster thumbnails and a dedicated detail inspector.
+- Added an interactive media cleanup workflow that identifies orphaned media, items used only by File History, and media attached to files in Trash. Destructive cleanup actions show the affected media, files, and checkpoints before confirmation.
+
+#### Optimizations
+
+- Improved file opening and switching so interrupted or overlapping loads resolve more reliably, with clearer recovery and a retry action when a drawing cannot be loaded.
+- Improved Home and File Home transitions by keeping the destination state synchronized and preparing off-screen file cards before returning from the editor.
+- Improved Media Files references so related drawings can be opened directly and unavailable or trashed source files are clearly identified.
+
+#### Bug fixed
+
+- Fixed custom fonts disappearing from Settings after changing tabs or replacing fonts that had already been added.
+- Fixed interrupted file transitions that could leave Home visible while a drawing was already active.
+- Fixed permanently deleted files and collaboration files leaving unreferenced media behind.
+- Fixed Media Cleanup checkpoint rows opening an unrelated checkpoint detail popover.
+
+## 2.2.5
+
+#### Bug fixed
+
+- Fixed an issue on compact iOS layouts where creating or editing text on the canvas could immediately dismiss the text editor, preventing text input.
+
+## 2.2.4
+
+#### Bug fixed
+
+- Fixed compatibility with the latest Excalidraw stroke width and pressure settings.
+- Fixed cases where drawings or backups containing newer stroke data could fail to load or back up correctly.
+- Fixed cases where the compact AI quick editor could leave controls misaligned after the keyboard was dismissed.
+- Fixed cases where compact iOS AI Chat message rows could disappear while scrolling longer conversations.
+- Fixed cases where AI proposal cards could remain visible after applying a proposal.
+- Fixed Paywall to AI Usage navigation on compact iOS.
+- Fixed cases where low-credit buttons could hit actor-isolation issues in App Store builds.
+- Fixed compatibility with older OS versions in the animated presence helper used by collapsing UI sections.
+
 ## 2.2.3
 
 #### Bug fixed

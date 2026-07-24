@@ -96747,6 +96747,2040 @@
         }
       }
     },
+    "settingsMediaCleanupDeleteConfirmationMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected files and their history will be permanently deleted. Selected media used only by file history will also remove the affected checkpoints. Media still used by other files will be kept. This cannot be undone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所选文件及其历史记录将被永久删除。若所选媒体仅被文件历史引用，相关检查点也会被删除。仍被其他文件使用的媒体会予以保留。此操作无法撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所選檔案及其歷史記錄將被永久刪除。若所選媒體僅被檔案歷史參考，相關檢查點也會被刪除。仍被其他檔案使用的媒體會予以保留。此操作無法復原。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سيتم حذف الملفات المحددة وتاريخها بشكل دائم. سيتم أيضًا إزالة الوسائط المحددة المستخدمة فقط بواسطة تاريخ الملف النقاط المتأثرة. ستظل الوسائط المستخدمة بواسطة ملفات أخرى محفوظة. لا يمكن التراجع عن ذلك."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausgewählte Dateien und deren Verlauf werden dauerhaft gelöscht. Ausgewählte Mediendateien, die nur im Datei Verlauf verwendet werden, entfernen auch die betroffenen Kontrollpunkte. Medien, die weiterhin von anderen Dateien verwendet werden, bleiben erhalten. Dies kann nicht rückgängig gemacht werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los archivos seleccionados y su historial serán eliminados permanentemente. Los medios seleccionados utilizados solo por el historial de archivos también eliminarán los puntos de control afectados. Los medios que aún son utilizados por otros archivos se conservarán. Esto no se puede deshacer."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les fichiers sélectionnés et leur historique seront définitivement supprimés. Le média sélectionné utilisé uniquement par l'historique des fichiers supprimera également les points de contrôle concernés. Le média encore utilisé par d'autres fichiers sera conservé. Ceci ne peut pas être annulé."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "चुने गए फ़ाइलें और उनका इतिहास स्थायी रूप से हटा दिया जाएगा। फ़ाइल इतिहास द्वारा केवल उपयोग में लाई गई चुनी गई मीडिया भी प्रभावित चेकपॉइंट हटा देगी। अन्य फ़ाइलों द्वारा अभी भी उपयोग की जाने वाली मीडिया रखी जाएगी। इसे पूर्ववत नहीं किया जा सकता है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I file selezionati e la loro cronologia verranno eliminati definitivamente. I media selezionati utilizzati solo dalla cronologia dei file rimuoveranno anche i checkpoint interessati. I media ancora utilizzati da altri file verranno mantenuti. Questa operazione non può essere annullata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選択したファイルとその履歴は永久に削除されます。ファイル履歴のみで使用されている選択メディアも影響を受けたチェックポイントを削除します。他のファイルでまだ使用されているメディアは保持されます。これは元に戻せません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택한 파일과 해당 이력은 영구적으로 삭제됩니다. 파일 이력에서만 사용되는 선택된 미디어도 영향을 받는 체크포인트와 함께 삭제됩니다. 다른 파일에서 여전히 사용되는 미디어는 유지됩니다. 이는 되돌릴 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geselecteerde bestanden en hun geschiedenis worden permanent verwijderd. Geselecteerde media die alleen door de bestandsgeschiedenis worden gebruikt, zullen ook de aangetaste checkpoints verwijderen. Media die nog door andere bestanden worden gebruikt, blijven behouden. Dit kan niet ongedaan gemaakt worden."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybrane pliki i ich historia zostaną trwale usunięte. Wybrane media używane tylko przez historię plików również usuną dotknięte punkty kontrolne. Media nadal używane przez inne pliki zostaną zachowane. Tego nie można cofnąć."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os arquivos selecionados e seu histórico serão excluídos permanentemente. A mídia selecionada usada apenas pelo histórico de arquivos também removerá os pontos de verificação afetados. A mídia ainda utilizada por outros arquivos será mantida. Isso não pode ser desfeito."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбранные файлы и их история будут навсегда удалены. Выбранные медиа, используемые только историей файлов, также удалят затронутые контрольные точки. Медиа, все еще используемые другими файлами, будут сохранены. Это действие нельзя отменить."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไฟล์ที่เลือกและประวัติของมันจะถูกลบอย่างถาวร ไฟล์มีเดียที่เลือกซึ่งใช้โดยประวัติไฟล์เท่านั้นจะลบจุดตรวจที่ได้รับผลกระทบออกด้วย มีเดียที่ยังคงใช้งานโดยไฟล์อื่นจะถูกเก็บไว้ ซึ่งไม่สามารถทำการย้อนกลับได้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçilen dosyalar ve geçmişleri kalıcı olarak silinecektir. Sadece dosya geçmişi tarafından kullanılan seçilen medyalar da etkilenen kontrol noktalarını kaldıracaktır. Diğer dosyalar tarafından hâlâ kullanılan medya korunacaktır. Bu geri alınamaz."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các tệp đã chọn và lịch sử của chúng sẽ bị xóa vĩnh viễn. Các phương tiện đã chọn chỉ được sử dụng bởi lịch sử tệp cũng sẽ xóa các điểm kiểm tra bị ảnh hưởng. Các phương tiện vẫn được sử dụng bởi các tệp khác sẽ được giữ lại. Điều này không thể được khôi phục."
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupDeleteConfirmationTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permanently Delete Selected Items?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "永久删除所选项目？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "永久刪除所選項目？"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حذف العناصر المحددة بشكل دائم؟"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausgewählte Elemente dauerhaft löschen?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar permanentemente los elementos seleccionados?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer Définitivement les Éléments Sélectionnés ?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "चुने गए आइटम स्थायी रूप से हटाएं?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminare Permanentemente gli Elementi Selezionati?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選択したアイテムを永久に削除しますか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택 항목 영구 삭제?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geselecteerde items permanent verwijderen?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trwale usunąć wybrane elementy?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excluir Permanentemente Itens Selecionados?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Навсегда удалить выбранные элементы?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลบรายการที่เลือกอย่างถาวร?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçilen Öğeleri Kalıcı Olarak Silmek İstiyor Musunuz?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa Vĩnh Viễn Các Mục Đã Chọn?"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupFilesDeletedMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permanently deleted %d files and cleaned up media no longer in use."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已永久删除 %d 个文件，并清理不再使用的媒体。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已永久刪除 %d 個檔案，並清理不再使用的媒體。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم حذف %d ملفًا بشكل دائم وتم تنظيف الوسائط التي لم تعد مستخدمة."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d Dateien dauerhaft gelöscht und nicht mehr verwendete Medien bereinigt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se eliminaron permanentemente %d archivos y se limpiaron los medios que ya no se utilizan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d fichiers ont été supprimés définitivement et le média non utilisé a été nettoyé."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d फ़ाइलें स्थायी रूप से हटा दी गई हैं और अब उपयोग में नहीं रही मीडिया को साफ किया गया है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminati permanentemente %d file e puliti i media non più in uso."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d ファイルを永久に削除し、使用されていないメディアをクリーンアップしました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영구적으로 삭제된 %d 파일과 더 이상 사용되지 않는 미디어를 정리했습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permanent %d bestanden verwijderd en media die niet meer in gebruik is, schoongemaakt."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trwale usunięto %d plików i oczyszczono media, które nie są już w użyciu."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excluídos permanentemente %d arquivos e limpados mídia que não está mais em uso."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Навсегда удалено %d файлов и очищены медиа, более не используемые."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลบไฟล์ %d ไฟล์อย่างถาวรและทำความสะอาดมีเดียที่ไม่ใช้งานอีกต่อไป"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d dosya kalıcı olarak silindi ve kullanılmayan medya temizlendi."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xóa vĩnh viễn %d tệp và dọn dẹp các phương tiện không còn được sử dụng."
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupHistoryOnlyDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These items are no longer used by the current file, but are still required by file history. Cleaning them also deletes every checkpoint that references them."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这些媒体已不再被当前文件使用，但文件历史仍需要它们。清理时也会删除所有引用它们的检查点。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這些媒體已不再被目前檔案使用，但檔案歷史仍需要它們。清理時也會刪除所有參考它們的檢查點。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تعد هذه العناصر مستخدمة بواسطة الملف الحالي، ولكنها لا تزال مطلوبة لتاريخ الملف. تنظيفها سيؤدي أيضًا إلى حذف كل نقطة فحص تشير إليها."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Elemente werden von der aktuellen Datei nicht mehr verwendet, sind jedoch weiterhin für den Datei Verlauf erforderlich. Das Löschen dieser Elemente entfernt auch jeden Kontrollpunkt, der sich auf sie bezieht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estos elementos ya no son utilizados por el archivo actual, pero todavía son necesarios para el historial de archivos. Limpiarlos también elimina cada punto de control que los hace referencia."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ces éléments ne sont plus utilisés par le fichier actuel, mais sont toujours nécessaires pour l'historique des fichiers. Les nettoyer supprime également chaque point de contrôle qui les référence."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ये आइटम वर्तमान फ़ाइल द्वारा अब उपयोग में नहीं हैं, लेकिन फ़ाइल इतिहास द्वारा अभी भी आवश्यक हैं। इन्हें साफ करने से उन सभी चेकपॉइंट्स को भी हटा दिया जाएगा जो उन पर संदर्भित हैं।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questi elementi non sono più utilizzati dal file attuale, ma sono ancora richiesti dalla cronologia dei file. Pulirli elimina anche ogni checkpoint che li riferisce."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "これらのアイテムは現在のファイルで使用されていませんが、ファイルの履歴にはまだ必要です。それらをクリーンアップすると、それらを参照するすべてのチェックポイントも削除されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 항목은 현재 파일에서 더 이상 사용되지 않지만 파일 이력에는 여전히 필요합니다. 이를 정리하면 이를 참조하는 모든 체크포인트도 삭제됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze items worden niet meer gebruikt door het huidige bestand, maar zijn nog steeds vereist door de bestandsgeschiedenis. Het schoonmaken hiervan verwijdert ook elke checkpoint die naar hen verwijst."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te elementy nie są już używane przez bieżący plik, ale są nadal wymagane przez historię plików. Ich usunięcie również usuwa każdy punkt kontrolny, który się do nich odnosi."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estes itens não são mais usados pelo arquivo atual, mas ainda são necessários pelo histórico de arquivos. Limpá-los também exclui todos os pontos de verificação que os referenciam."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Эти элементы больше не используются текущим файлом, но все еще необходимы для истории файлов. Их очистка также удаляет каждую контрольную точку, которая ссылается на них."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รายการเหล่านี้ไม่ได้ถูกใช้งานโดยไฟล์ปัจจุบัน แต่ยังคงจำเป็นต่อประวัติไฟล์ การทำความสะอาดพวกเขาจะลบจุดตรวจทั้งหมดที่อ้างถึงพวกเขา"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu öğeler mevcut dosya tarafından artık kullanılmıyor, ancak dosya geçmişi için hâlâ gereklidir. Bunları temizlemek, onlara atıfta bulunan her kontrol noktasını da siler."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các mục này không còn được sử dụng bởi tệp hiện tại, nhưng vẫn cần thiết cho lịch sử tệp. Dọn dẹp chúng cũng sẽ xóa mọi điểm kiểm tra tham chiếu đến chúng."
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupHistoryConfirmationMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You selected %1$d media items used by %2$d checkpoints. Continuing will permanently delete those checkpoints and the selected media. This cannot be undone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你选择了 %1$d 个仅被 %2$d 个检查点引用的媒体项。继续操作将永久删除这些检查点及所选媒体，且无法撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你選擇了 %1$d 個僅被 %2$d 個檢查點參考的媒體項目。繼續操作將永久刪除這些檢查點及所選媒體，且無法復原。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لقد قمت باختيار %1$d عنصر وسائط مستخدم بواسطة %2$d نقاط فحص. سيؤدي الاستمرار إلى حذف تلك النقاط المحددة والوسائط بشكل دائم. لا يمكن التراجع عن ذلك."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sie haben %1$d Mediendateien ausgewählt, die von %2$d Kontrollpunkten verwendet werden. Das Fortfahren löscht dauerhaft diese Kontrollpunkte und die ausgewählten Medien. Dies kann nicht rückgängig gemacht werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seleccionaste %1$d elementos multimedia usados por %2$d puntos de control. Continuar eliminará permanentemente esos puntos de control y los medios seleccionados. Esto no se puede deshacer."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous avez sélectionné %1$d éléments multimédias utilisés par %2$d points de contrôle. Continuer supprimera définitivement ces points de contrôle et le média sélectionné. Ceci ne peut pas être annulé."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपने %1$d मीडिया आइटम का चयन किया है जो %2$d चेकपॉइंट द्वारा उपयोग में है। आगे बढ़ने पर उन चेकपॉइंट्स और चुनी गई मीडिया को स्थायी रूप से हटा दिया जाएगा। इसे पूर्ववत नहीं किया जा सकता है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hai selezionato %1$d elementi multimediali utilizzati da %2$d checkpoint. Continuare comporterà l'eliminazione permanente di quei checkpoint e dei media selezionati. Questa operazione non può essere annullata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "あなたは %1$d のメディアアイテムを %2$d のチェックポイントで選択しました。続行すると、それらのチェックポイントと選択したメディアが永久に削除されます。これは元に戻せません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "당신은 %1$d 개의 미디어 항목이 %2$d 개의 체크포인트에 사용되고 있음을 선택했습니다. 계속 진행하면 해당 체크포인트와 선택된 미디어가 영구적으로 삭제됩니다. 이는 되돌릴 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "U heeft %1$d media-items geselecteerd die door %2$d checkpoints worden gebruikt. Voortzetten zal die checkpoints en de geselecteerde media permanent verwijderen. Dit kan niet ongedaan gemaakt worden."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybrałeś %1$d elementów multimedialnych używanych przez %2$d punktów kontrolnych. Kontynuowanie spowoduje trwałe usunięcie tych punktów kontrolnych i wybranych mediów. Tego nie można cofnąć."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você selecionou %1$d itens de mídia usados por %2$d pontos de verificação. Continuar irá excluir permanentemente esses pontos de verificação e a mídia selecionada. Isso não pode ser desfeito."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы выбрали %1$d медиа-элементов, используемых %2$d контрольными точками. Продолжение приведет к навсегда удалению этих контрольных точек и выбранных медиа. Это действие нельзя отменить."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คุณเลือกมีเดีย %1$d รายการที่ใช้โดยจุดตรวจ %2$d จุด การดำเนินการต่อจะลบจุดตรวจเหล่านั้นและมีเดียที่เลือกอย่างถาวร ซึ่งไม่สามารถทำการย้อนกลับได้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d medya öğesi ve %2$d kontrol noktası seçtiniz. Devam etmek, bu kontrol noktalarını ve seçilen medyayı kalıcı olarak silecektir. Bu geri alınamaz."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn đã chọn %1$d mục phương tiện được sử dụng bởi %2$d điểm kiểm tra. Tiếp tục sẽ xóa vĩnh viễn các điểm kiểm tra đó và các phương tiện đã chọn. Điều này không thể được khôi phục."
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupHistoryOnlyTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Used Only by File History"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅被文件历史引用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "僅被檔案歷史參考"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مستخدم فقط بواسطة تاريخ الملف"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur vom Datei Verlauf verwendet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilizados Solo por el Historial de Archivos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilisé Uniquement par l'Historique du Fichier"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "केवल फ़ाइल इतिहास द्वारा उपयोग में"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilizzati Solo dalla Cronologia dei File"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファイルの履歴のみで使用"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "파일 이력에서만 사용"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alleen gebruikt door bestandsgeschiedenis"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Używane tylko przez historię plików"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usado Apenas pelo Histórico de Arquivos"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Используется только историей файлов"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ใช้โดยเฉพาะประวัติไฟล์"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sadece Dosya Geçmişi Tarafından Kullanılan"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ Được Sử Dụng Bởi Lịch Sử Tệp"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupMediaCount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d media items"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 个媒体项"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 個媒體項目"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d عناصر وسائط"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d Mediendateien"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d elementos multimedia"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d éléments multimédias"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d मीडिया आइटम"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d elementi multimediali"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d メディアアイテム"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 개의 미디어 항목"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d media-items"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d elementów multimedialnych"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d itens de mídia"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d медиа-элементов"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d รายการมีเดีย"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d medya öğesi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d mục phương tiện"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupNothingToClean": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Media Can Be Cleaned Up"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有可清理的媒体"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有可清理的媒體"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكن تنظيف أي وسائط"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Medien können bereinigt werden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pueden limpiar medios"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun Média à Nettoyer"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "क्लीन अप करने के लिए कोई मीडिया नहीं है"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun Media Può Essere Pulito"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クリーンアップできるメディアはありません"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정리할 미디어가 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen media kan worden schoongemaakt"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można wyczyścić żadnych mediów"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhuma Mídia Pode Ser Limpada"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нет медиа для очистки"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่มีมีเดียที่จะทำความสะอาด"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temizlenecek Medya Yok"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không Có Phương Tiện Nào Có Thể Dọn Dẹp"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupOrphanedDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These items are not referenced by a current file or any checkpoint and can be removed safely."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这些媒体未被当前文件或任何检查点引用，可以安全删除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這些媒體未被目前檔案或任何檢查點參考，可以安全刪除。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه العناصر غير مرجعة بواسطة ملف حالي أو أي نقطة فحص ويمكن إزالتها بأمان."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Elemente werden von einer aktuellen Datei oder einem Kontrollpunkt nicht referenziert und können sicher entfernt werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estos elementos no son referenciados por un archivo actual ni por ningún punto de control y se pueden eliminar de manera segura."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ces éléments ne sont référencés par aucun fichier actuel ni aucun point de contrôle et peuvent être supprimés en toute sécurité."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ये आइटम किसी वर्तमान फ़ाइल या किसी चेकपॉइंट द्वारा संदर्भित नहीं हैं और इन्हें सुरक्षित रूप से हटाया जा सकता है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questi elementi non sono riferiti da un file attuale o da un checkpoint e possono essere rimossi in sicurezza."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "これらのアイテムは現在のファイルやチェックポイントで参照されておらず、安全に削除できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 항목은 현재 파일이나 어떤 체크포인트에서도 참조되지 않으며 안전하게 제거할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze items worden niet vermeld door een huidig bestand of enige checkpoint en kunnen veilig verwijderd worden."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te elementy nie są odniesione przez bieżący plik ani żaden punkt kontrolny i mogą być bezpiecznie usunięte."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estes itens não são referenciados por um arquivo atual ou qualquer ponto de verificação e podem ser removidos com segurança."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Эти элементы не ссылаются на текущий файл или какую-либо контрольную точку и могут быть безопасно удалены."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รายการเหล่านี้ไม่ได้ถูกอ้างอิงโดยไฟล์ปัจจุบันหรือจุดตรวจใดๆ และสามารถลบออกได้อย่างปลอดภัย"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu öğeler, mevcut bir dosya veya herhangi bir kontrol noktası tarafından referans alınmamaktadır ve güvenli bir şekilde kaldırılabilir."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các mục này không được tham chiếu bởi tệp hiện tại hoặc bất kỳ điểm kiểm tra nào và có thể được xóa một cách an toàn."
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupOrphanedTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orphaned Media"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "孤立媒体"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "孤立媒體"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وسائط يتيمة"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwaiste Medien"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medios Huérfanos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Média Orphelin"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अवांछित मीडिया"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media Orfani"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "孤立したメディア"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "고아 미디어"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weesmedia"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Osierocone media"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mídia Órfã"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зависшие медиа"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "มีเดียกำพร้า"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yalnızca Medya"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phương Tiện Bị Mồ Côi"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupScanning": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking media references and file history…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在检查媒体引用和文件历史…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在檢查媒體參考和檔案歷史…"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ التحقق من مراجع الوسائط وسجل الملفات…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Überprüfe Medienreferenzen und Datei Verlauf…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificando referencias de medios y el historial de archivos…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérification des références médias et de l'historique des fichiers…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मीडिया संदर्भों और फ़ाइल इतिहास की जाँच कर रहा हूँ..."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controllo delle riferimenti ai media e della cronologia file…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メディア参照とファイル履歴をチェックしています…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "미디어 참조 및 파일 기록 검사 중…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mediareferenties en bestandsgeschiedenis controleren…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzanie odniesień do mediów i historii plików…"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificando referências de mídia e histórico de arquivos…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка медиа-ссылок и истории файлов…"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กำลังตรวจสอบการอ้างอิงสื่อและประวัติไฟล์…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medya referansları ve dosya geçmişi kontrol ediliyor…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang kiểm tra các tham chiếu media và lịch sử tệp…"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupSelectedCount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d selected"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择 %d 项"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已選擇 %d 項"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d محدد"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d ausgewählt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d seleccionados"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d sélectionné(s)"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d चयनित"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d selezionati"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d件選択済み"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 선택됨"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d geselecteerd"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d wybrane"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d selecionados"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d выбрано"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d ที่เลือก"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d seçildi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d đã chọn"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupSkippedCount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d media items could not be evaluated and were left unchanged."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有 %d 个媒体项无法检查，已保持不变。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有 %d 個媒體項目無法檢查，已保持不變。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d عنصر وسائط لم يمكن تقييمه وتم تركه بدون تغيير."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d Medienobjekte konnten nicht bewertet werden und wurden unverändert gelassen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d elementos multimedia no se pudieron evaluar y quedaron sin cambios."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d éléments multimédias n'ont pas pu être évalués et ont été laissés inchangés."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d मीडिया आइटम का मूल्यांकन नहीं किया जा सका और उन्हें अपरिवर्तित छोड़ दिया गया।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d elementi multimediali non sono stati valutati e sono stati lasciati invariati."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d件のメディアイテムが評価できず、変更されずに残りました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 미디어 항목이 평가되지 않아 변경되지 않았습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d media-items konden niet worden geëvalueerd en zijn onveranderd gelaten."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d elementów mediów nie mogło zostać ocenionych i pozostało niezmienionych."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d itens de mídia não puderam ser avaliados e foram deixados inalterados."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d медиа-элементов не удалось оценить и они остались без изменений."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d รายการสื่อไม่สามารถประเมินได้และถูกทิ้งไว้โดยไม่เปลี่ยนแปลง."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d medya öğesi değerlendirilemedi ve değiştirilmeden bırakıldı."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d mục media không thể được đánh giá và đã được giữ nguyên."
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupSuccessMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted %1$d media items and %2$d checkpoints."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已删除 %1$d 个媒体项和 %2$d 个检查点。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已刪除 %1$d 個媒體項目和 %2$d 個檢查點。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم حذف %1$d عنصر وسائط و %2$d نقطة تفتيش."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d Medienobjekte und %2$d Prüfpunkte wurden gelöscht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se eliminaron %1$d elementos multimedia y %2$d puntos de control."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimé %1$d éléments multimédias et %2$d points de contrôle."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d मीडिया आइटम और %2$d चेकपॉइंट हटाए गए।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminati %1$d elementi multimediali e %2$d punti di controllo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d件のメディアイテムと%2$d件のチェックポイントを削除しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d 미디어 항목과 %2$d 체크포인트를 삭제했습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d media-items en %2$d controlepunten verwijderd."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunięto %1$d elementów mediów i %2$d punktów kontrolnych."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excluídos %1$d itens de mídia e %2$d pontos de verificação."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалено %1$d медиа-элементов и %2$d контрольных точек."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลบ %1$d รายการสื่อและ %2$d จุดตรวจสอบ."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d medya öğesi ve %2$d kontrol noktası silindi."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xóa %1$d mục media và %2$d điểm kiểm tra."
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review Media Cleanup"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查媒体清理"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查媒體清理"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مراجعة تنظيف الوسائط"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medienbereinigung überprüfen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisión de limpieza de medios"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifier le nettoyage des médias"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मीडिया क्लीनअप की समीक्षा करें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rivedi la Pulizia dei Media"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メディアクリーンアップの確認"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "미디어 정리 검토"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mediaopruiming Controleren"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przegląd czyszczenia mediów"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisar Limpeza de Mídia"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обзор очистки медиа"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ตรวจสอบการทำความสะอาดสื่อ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medya Temizleme İncelemesi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem lại việc dọn dẹp media"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupTrashedFilesDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file is in Trash. Selecting it permanently deletes the file, its history, and media no longer used anywhere else."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此文件位于废纸篓。选择后会永久删除该文件及其历史记录，并清理未被其他内容使用的媒体。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此檔案位於垃圾桶。選取後會永久刪除該檔案及其歷史記錄，並清理未被其他內容使用的媒體。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا الملف في سلة المحذوفات. تحديده يحذف الملف بشكل دائم، وتاريخه، والوسائط التي لم تعد مستخدمة في أي مكان آخر."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Datei befindet sich im Papierkorb. Wenn Sie sie auswählen, wird die Datei, ihr Verlauf und Medien, die anderswo nicht mehr verwendet werden, dauerhaft gelöscht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este archivo está en la Papelera. Al seleccionarlo, se elimina permanentemente el archivo, su historial y los medios que ya no se utilizan en ningún otro lugar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce fichier est dans la Corbeille. Sa sélection supprimera définitivement le fichier, son historique et les médias qui ne sont plus utilisés ailleurs."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "यह फ़ाइल कचरे में है। इसे चुनने से फ़ाइल, इसका इतिहास, और अन्यत्र उपयोग नहीं की जाने वाली मीडिया स्थायी रूप से हटा दी जाएगी।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo file si trova nel Cestino. Selezionarlo eliminerà definitivamente il file, la sua cronologia e i media non più utilizzati altrove."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このファイルはゴミ箱にあります。このファイルを選択すると、ファイル、その履歴、および他で使用されていないメディアは永久に削除されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 파일은 휴지통에 있습니다. 선택하면 파일, 그 기록 및 더 이상 사용되지 않는 미디어가 영구적으로 삭제됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit bestand bevindt zich in de Prullenbak. Het selecteren ervan verwijdert het bestand permanent, evenals de geschiedenis en media die nergens anders meer gebruikt worden."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten plik znajduje się w Koszu. Wybranie go trwale usuwa plik, jego historię oraz media już nieużywane nigdzie indziej."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este arquivo está na Lixeira. Selecioná-lo exclui permanentemente o arquivo, seu histórico e mídias que não são mais usadas em nenhum outro lugar."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот файл находится в Корзине. Если вы выберете его, файл, его история и медиа, больше нигде не используемые, будут удалены окончательно."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไฟล์นี้อยู่ในถังขยะ การเลือกไฟล์นี้จะลบไฟล์อย่างถาวร ประวัติ และสื่อที่ไม่ถูกใช้งานที่ไหนอีก."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu dosya Çöp Kutusunda. Seçmeniz, dosyayı, geçmişini ve başka yerde kullanılmayan medya dosyalarını kalıcı olarak siler."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp này đang ở thùng rác. Việc chọn nó sẽ xóa vĩnh viễn tệp, lịch sử của nó và các media không còn được sử dụng ở nơi khác."
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupTrashedFilesConfirmationMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d selected files, their history, and media no longer used anywhere else will be permanently deleted. This cannot be undone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将永久删除所选的 %d 个文件、对应历史记录，以及未被其他内容使用的媒体。此操作无法撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將永久刪除所選的 %d 個檔案、對應歷史記錄，以及未被其他內容使用的媒體。此操作無法復原。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سيتم حذف %d ملف محدد، وتاريخه، والوسائط التي لم تعد مستخدمة في أي مكان آخر بشكل دائم. لا يمكن التراجع عن ذلك."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d ausgewählte Dateien, deren Verlauf und Medien, die anderswo nicht mehr verwendet werden, werden dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se eliminarán permanentemente %d archivos seleccionados, su historial y los medios que ya no se utilizan en ningún otro lugar. Esto no se puede deshacer."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d fichiers sélectionnés, leur historique et les médias qui ne sont plus utilisés ailleurs seront supprimés définitivement. Cela ne peut pas être annulé."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d चयनित फ़ाइलें, उनका इतिहास, और अन्यत्र उपयोग नहीं की जाने वाली मीडिया स्थायी रूप से हटाई जाएंगी। यह पूर्ववत नहीं किया जा सकता।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d file selezionati, la loro cronologia e i media non più utilizzati altrove saranno eliminati permanentemente. Questa azione non può essere annullata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d件の選択ファイル、その履歴、および他で使用されていないメディアは永久に削除されます。この操作は元に戻せません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 선택된 파일과 그 기록, 그리고 더 이상 사용되지 않는 미디어가 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d geselecteerde bestanden, hun geschiedenis en media die nergens anders meer gebruikt worden, worden permanent verwijderd. Dit kan niet ongedaan gemaakt worden."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d wybrane pliki, ich historia oraz media już nieużywane nigdzie indziej zostaną trwale usunięte. Nie można tego cofnąć."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d arquivos selecionados, seu histórico e mídias que não são mais usadas em nenhum outro lugar serão excluídos permanentemente. Isso não pode ser desfeito."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d выбранных файлов, их история и медиа, больше нигде не используемые, будут удалены окончательно. Это действие нельзя будет отменить."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไฟล์ที่เลือก %d ไฟล์ ประวัติของพวกมัน และสื่อที่ไม่ถูกใช้งานที่ไหนอีกจะถูกลบอย่างถาวร ซึ่งไม่สามารถย้อนกลับได้."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d seçilen dosya, geçmişleri ve başka yerde kullanılmayan medya kalıcı olarak silinecek. Bu işlem geri alınamaz."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d tệp đã chọn, lịch sử của chúng và các media không còn được sử dụng ở nơi khác sẽ bị xóa vĩnh viễn. Điều này không thể hoàn tác."
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupTrashedFilesTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media from Files in Trash"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "废纸篓文件中的媒体"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "垃圾桶檔案中的媒體"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وسائط من الملفات في سلة المحذوفات"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medien aus Dateien im Papierkorb"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medios de archivos en la Papelera"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Médias provenant de fichiers dans la Corbeille"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कचरे में फ़ाइलों से मीडिया"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media dai File nel Cestino"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ゴミ箱のファイルからのメディア"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "휴지통에 있는 파일의 미디어"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media van Bestanden in de Prullenbak"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media z plików w Koszu"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mídia de Arquivos na Lixeira"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Медиа из файлов в Корзине"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สื่อจากไฟล์ในถังขยะ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çöp Kutusundaki Dosyalardan Medya"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media từ tệp trong thùng rác"
+          }
+        }
+      }
+    },
     "settingsMediaFilesButtonCleanUp": {
       "extractionState": "manual",
       "localizations": {
@@ -97312,115 +99346,680 @@
         }
       }
     },
+    "settingsMediaReferenceStatusAvailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正常"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正常"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "متاح"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verfügbar"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disponible"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disponible"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "उपलब्ध"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disponibile"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用可能"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "사용 가능"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beschikbaar"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostępne"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disponível"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступно"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "มีอยู่"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevcut"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Có sẵn"
+          }
+        }
+      }
+    },
+    "settingsMediaReferenceStatusInTrash": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Trash"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "位于废纸篓"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "位於垃圾桶"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "في سلة المحذوفات"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im Papierkorb"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En la Papelera"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dans la Corbeille"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कचरे में"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nel Cestino"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ゴミ箱に入っています"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "휴지통에 있음"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Prullenbak"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W Koszu"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na Lixeira"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В корзине"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "อยู่ในถังขยะ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çöp Kutusunda"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trong thùng rác"
+          }
+        }
+      }
+    },
+    "settingsMediaReferenceStatusSourceUnavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source File Unavailable"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "来源文件不可用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "來源檔案不可用"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ملف المصدر غير متوفر"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quelldatei nicht verfügbar"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivo fuente no disponible"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichier source indisponible"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "स्रोत फ़ाइल उपलब्ध नहीं है"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File Sorgente Non Disponibile"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ソースファイルが利用できません"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "소스 파일을 사용할 수 없음"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bronbestand niet beschikbaar"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plik źródłowy niedostępny"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arquivo Fonte Indisponível"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Исходный файл недоступен"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไฟล์ต้นทางไม่สามารถใช้งานได้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaynak Dosya Mevcut Değil"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp nguồn không khả dụng"
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupUnverifiedDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These items may still be referenced by content that could not be read. They were left unchanged to protect your files and history."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这些媒体可能仍被无法读取的内容引用。为保护文件和历史记录，它们不会被删除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這些媒體可能仍被無法讀取的內容參考。為保護檔案和歷史記錄，它們不會被刪除。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قد لا تزال هذه العناصر مرجعية من محتوى لا يمكن قراءته. تم تركها بدون تغيير لحماية ملفاتك وتاريخك."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Elemente können möglicherweise weiterhin von Inhalten referenziert werden, die nicht gelesen werden konnten. Sie wurden unverändert gelassen, um Ihre Dateien und Ihre Historie zu schützen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estos elementos pueden seguir siendo referenciados por contenido que no se pudo leer. Se dejaron sin cambios para proteger sus archivos e historial."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ces éléments peuvent encore être référencés par un contenu qui n'a pas pu être lu. Ils ont été laissés inchangés pour protéger vos fichiers et votre historique."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ये आइटम्स अभी भी उन सामग्री द्वारा संदर्भित हो सकते हैं जिन्हें पढ़ा नहीं जा सका। आपके फ़ाइलों और इतिहास की सुरक्षा के लिए इन्हें बिना किसी परिवर्तन के छोड़ दिया गया है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questi elementi potrebbero essere ancora referenziati da contenuti che non sono stati letti. Sono rimasti invariati per proteggere i tuoi file e la tua cronologia."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "これらのアイテムは、読み取れなかったコンテンツによってまだ参照されている可能性があります。ファイルと履歴を保護するために変更されることはありませんでした。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 항목들은 읽을 수 없는 콘텐츠에 의해 여전히 참조될 수 있습니다. 귀하의 파일과 기록을 보호하기 위해 변경되지 않은 상태로 남겨두었습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze items kunnen nog steeds worden verwezen naar inhoud die niet gelezen kon worden. Ze zijn onveranderd gelaten om uw bestanden en geschiedenis te beschermen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te elementy mogą być nadal używane przez treści, których nie można było odczytać. Pozostawiono je bez zmian, aby chronić Twoje pliki i historię."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esses itens podem ainda estar referenciados por conteúdo que não pôde ser lido. Eles foram deixados inalterados para proteger seus arquivos e histórico."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Эти элементы могут все еще использоваться в контенте, который не удалось прочитать. Они оставлены без изменений, чтобы защитить ваши файлы и историю."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รายการเหล่านี้อาจยังถูกอ้างอิงโดยเนื้อหาที่ไม่สามารถอ่านได้ จึงไม่ถูกเปลี่ยนแปลงเพื่อปกป้องไฟล์และประวัติของคุณ."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu öğeler, okunamayan içerik tarafından hala referans veriliyor olabilir. Dosyalarınızı ve geçmişinizi korumak için değişmeden bırakılmıştır."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Những mục này có thể vẫn được tham chiếu bởi nội dung không thể đọc. Chúng được giữ nguyên để bảo vệ các tập tin và lịch sử của bạn."
+          }
+        }
+      }
+    },
+    "settingsMediaCleanupUnverifiedTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to Verify"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法验证"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法驗證"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "غير قادر على التحقق"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Überprüfung unmöglich"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo verificar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de vérifier"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सत्यापित करने में असमर्थ"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile verificare"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "検証できません"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "확인할 수 없음"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niet te verifiëren"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można zweryfikować"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incapaz de Verificar"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось проверить"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่สามารถตรวจสอบได้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrulanamıyor"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể xác minh"
+          }
+        }
+      }
+    },
     "settingsMediasDescription": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تحتوي هذه القسم على جميع ملفات الوسائط المستخدمة في مستندات إكسيكاليدراو، والمخصصة لأغراض العرض فقط."
+            "value": "ستظهر هنا ملفات الوسائط المستخدمة في رسوماتك."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dieser Abschnitt enthält alle Mediendateien, die von Ihren Excalidraw-Dokumenten verwendet werden, und dient nur zu Anzeigezwecken."
+            "value": "In deinen Zeichnungen verwendete Mediendateien werden hier angezeigt."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This section contains all the media files used by your Excalidraw documents, intended for display purposes only."
+            "value": "Media files used in your drawings will appear here."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esta sección contiene todos los archivos multimedia utilizados por tus documentos de Excalidraw, destinados solo para fines de visualización."
+            "value": "Los archivos multimedia utilizados en tus dibujos aparecerán aquí."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cette section contient tous les fichiers multimédias utilisés par vos documents Excalidraw, destinés à des fins d'affichage uniquement."
+            "value": "Les fichiers multimédias utilisés dans vos dessins apparaîtront ici."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "यह अनुभाग आपके Excalidraw दस्तावेज़ों द्वारा उपयोग की जाने वाली सभी मीडिया फ़ाइलों को शामिल करता है, जो केवल प्रदर्शन उद्देश्यों के लिए है।"
+            "value": "आपके चित्रों में उपयोग की गई मीडिया फ़ाइलें यहाँ दिखाई देंगी।"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Questa sezione contiene tutti i file multimediali utilizzati dai tuoi documenti Excalidraw, destinati solo a scopi di visualizzazione."
+            "value": "I file multimediali usati nei tuoi disegni verranno visualizzati qui."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このセクションには、Excalidraw文書で使用されるすべてのメディアファイルが含まれており、表示目的のみで使用されます。"
+            "value": "描画で使用されているメディアファイルがここに表示されます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 섹션에는 Excalidraw 문서에서 사용되는 모든 미디어 파일이 포함되어 있으며, 표시 목적으로만 사용됩니다."
+            "value": "그림에서 사용한 미디어 파일이 여기에 표시됩니다."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Deze sectie bevat alle media-bestanden die door uw Excalidraw-documenten worden gebruikt, uitsluitend bedoeld voor weergave."
+            "value": "Mediabestanden die in je tekeningen worden gebruikt, verschijnen hier."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ta sekcja zawiera wszystkie pliki multimedialne używane w dokumentach Excalidraw, przeznaczone wyłącznie do celów wyświetlania."
+            "value": "Pliki multimedialne używane w rysunkach pojawią się tutaj."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esta seção contém todos os arquivos de mídia utilizados pelos seus documentos do Excalidraw, destinados apenas para fins de exibição."
+            "value": "Os arquivos de mídia usados nos seus desenhos aparecerão aqui."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Этот раздел содержит все медиафайлы, используемые вашими документами Excalidraw, предназначенные только для отображения."
+            "value": "Здесь появятся медиафайлы, используемые в ваших рисунках."
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "ส่วนนี้ประกอบด้วยไฟล์สื่อทั้งหมดที่ใช้ในเอกสาร Excalidraw ของคุณ ซึ่งมีวัตถุประสงค์เพื่อการแสดงผลเท่านั้น"
+            "value": "ไฟล์สื่อที่ใช้ในภาพวาดของคุณจะแสดงที่นี่"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bu bölüm, yalnızca görüntüleme amaçları için Excalidraw belgelerinizde kullanılan tüm medya dosyalarını içerir."
+            "value": "Çizimlerinizde kullanılan medya dosyaları burada görünür."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Phần này chứa tất cả các tệp phương tiện được sử dụng bởi tài liệu Excalidraw của bạn, chỉ dành cho mục đích hiển thị."
+            "value": "Các tệp phương tiện được dùng trong bản vẽ sẽ xuất hiện tại đây."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "本部分包含所有您在 Excalidraw 文档中使用的媒体文件，仅供展示使用。"
+            "value": "绘图中使用的媒体文件会显示在这里。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "此部分包含您 Excalidraw 文檔所使用的所有媒體文件，僅供顯示用途。"
+            "value": "繪圖中使用的媒體檔案會顯示在這裡。"
           }
         }
       }
@@ -133695,6 +136294,232 @@
           "stringUnit": {
             "state": "translated",
             "value": "從剪貼板新建畫作"
+          }
+        }
+      }
+    },
+    "whatsNewMediaFilesDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تصفّح وسائط رسوماتك في معرض جديد، وتعرّف على مواضع استخدام كل عنصر، ونظّف بأمان الوسائط التي لم تعد بحاجة إليها."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durchsuche Zeichenmedien in einer neuen Galerie, prüfe, wo jedes Element verwendet wird, und entferne nicht mehr benötigte Medien sicher."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse drawing media in a new gallery, inspect where each item is used, and safely clean up media that is no longer needed."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explora los archivos multimedia de tus dibujos en una nueva galería, consulta dónde se usa cada elemento y elimina de forma segura los que ya no necesitas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parcourez les médias de vos dessins dans une nouvelle galerie, vérifiez où chaque élément est utilisé et nettoyez en toute sécurité les médias devenus inutiles."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नई गैलरी में अपनी ड्रॉइंग की मीडिया फ़ाइलें देखें, जानें कि हर आइटम कहाँ उपयोग हुआ है, और जिन मीडिया फ़ाइलों की अब ज़रूरत नहीं है उन्हें सुरक्षित रूप से साफ़ करें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sfoglia i contenuti multimediali dei disegni in una nuova galleria, controlla dove viene usato ogni elemento e rimuovi in sicurezza quelli non più necessari."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しいギャラリーで描画内のメディアを閲覧し、各項目の使用箇所を確認して、不要になったメディアを安全に整理できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새 갤러리에서 드로잉의 미디어를 둘러보고, 각 항목이 사용된 위치를 확인하며, 더 이상 필요하지 않은 미디어를 안전하게 정리할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekijk media uit tekeningen in een nieuwe galerij, controleer waar elk item wordt gebruikt en ruim media die niet meer nodig zijn veilig op."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeglądaj multimedia z rysunków w nowej galerii, sprawdzaj, gdzie używany jest każdy element, i bezpiecznie usuwaj niepotrzebne multimedia."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Navegue pelas mídias dos seus desenhos em uma nova galeria, veja onde cada item é usado e limpe com segurança as mídias que não são mais necessárias."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просматривайте медиа из рисунков в новой галерее, проверяйте, где используется каждый объект, и безопасно удаляйте ненужные материалы."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เรียกดูสื่อในภาพวาดผ่านแกลเลอรีใหม่ ตรวจสอบว่าแต่ละรายการถูกใช้งานที่ไหน และล้างสื่อที่ไม่จำเป็นแล้วได้อย่างปลอดภัย"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çizimlerinizdeki medyaları yeni galeride görüntüleyin, her öğenin nerede kullanıldığını inceleyin ve artık gerekmeyen medyaları güvenle temizleyin."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duyệt nội dung đa phương tiện trong bản vẽ bằng thư viện mới, xem từng mục được sử dụng ở đâu và dọn dẹp an toàn những nội dung không còn cần thiết."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在全新的图库中浏览绘图媒体，查看每个项目的引用位置，并安全清理不再需要的媒体文件。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在全新的圖庫中瀏覽繪圖媒體，查看每個項目的引用位置，並安全清理不再需要的媒體檔案。"
+          }
+        }
+      }
+    },
+    "whatsNewMediaFilesTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ملفات الوسائط"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mediendateien"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media Files"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivos multimedia"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichiers multimédias"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मीडिया फ़ाइलें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File multimediali"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メディアファイル"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "미디어 파일"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mediabestanden"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pliki multimedialne"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arquivos de mídia"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Медиафайлы"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไฟล์สื่อ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medya Dosyaları"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp phương tiện"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "媒体文件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "媒體檔案"
           }
         }
       }

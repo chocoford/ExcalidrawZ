@@ -1,5 +1,6 @@
-Esta actualización corrige un problema importante de compatibilidad de dibujo y se recomienda para todos los usuarios.
+Esta actualización mejora la gestión de archivos multimedia, las fuentes personalizadas y la fiabilidad al abrir archivos.
 
-- Corregida la compatibilidad con los últimos ajustes de ancho de trazo de Excalidraw.
-- Corregido un problema que podía impedir cargar algunos dibujos o copias de seguridad con datos de trazo más recientes.
-- Mejorado el soporte para presión del lápiz y ajustes de trazo.
+- Se ha rediseñado Archivos multimedia con una galería más rápida, referencias detalladas y una limpieza guiada para contenido sin usar o utilizado solo en el historial.
+- Se ha corregido la desaparición de fuentes personalizadas al cambiar de sección y que las nuevas fuentes reemplazaran a las ya añadidas.
+- Se han mejorado la apertura y el cambio de archivos, así como las transiciones de vuelta a Inicio.
+- Se han añadido indicaciones más claras y una acción para reintentar cuando no se puede cargar un dibujo.

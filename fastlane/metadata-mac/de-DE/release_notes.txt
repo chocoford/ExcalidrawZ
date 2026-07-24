@@ -1,5 +1,6 @@
-Dieses Update behebt ein wichtiges Kompatibilitätsproblem beim Zeichnen und wird allen Benutzern empfohlen.
+Dieses Update verbessert die Medienverwaltung, benutzerdefinierte Schriften und die Zuverlässigkeit beim Öffnen von Dateien.
 
-- Kompatibilität mit den neuesten Excalidraw-Einstellungen für Strichbreiten behoben.
-- Ein Problem behoben, durch das einige Zeichnungen oder Backups mit neueren Strichdaten nicht geladen werden konnten.
-- Unterstützung für Druckempfindlichkeit und Stricheinstellungen verbessert.
+- „Mediendateien“ wurde mit einer schnelleren Galerie, detaillierten Verweisen und einer geführten Bereinigung für ungenutzte oder nur im Dateiverlauf verwendete Medien neu gestaltet.
+- Benutzerdefinierte Schriften verschwinden nicht mehr beim Wechseln der Einstellungen und neu hinzugefügte Schriften ersetzen keine vorhandenen mehr.
+- Öffnen und Wechseln von Dateien sowie Übergänge zurück zur Startseite wurden verbessert.
+- Wenn eine Zeichnung nicht geladen werden kann, gibt es klarere Hinweise und eine Aktion zum erneuten Versuchen.

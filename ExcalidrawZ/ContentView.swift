@@ -64,6 +64,7 @@ struct ContentView: View {
             .modifier(NewRoomModifier())
             .modifier(StoreKitEntitlementRefreshModifier())
             .modifier(PaywallModifier())
+            .modifier(SettingsSheetPresentationModifier())
             .modifier(SearchableModifier())
             .modifier(OpenFromURLModifier())
             .modifier(UserActivityHandlerModifier())

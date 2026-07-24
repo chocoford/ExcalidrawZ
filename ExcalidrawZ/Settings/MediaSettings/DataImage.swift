@@ -31,8 +31,9 @@ struct DataImage: View {
     var body: some View {
         ZStack {
             if let svgContent {
-                SVGPreviewView(svg: svgContent)
+                FittedSVGPreviewView(svg: svgContent, padding: 0)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .allowsHitTesting(false)
             } else if let platformImage {
 #if canImport(AppKit)
                 Image(nsImage: platformImage)

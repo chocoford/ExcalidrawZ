@@ -8,6 +8,61 @@
 import Foundation
 import UniformTypeIdentifiers
 
+private struct DocumentLoadStateMachine {
+    struct Request: Equatable, Sendable {
+        let id: String
+        let generation: UInt64
+        let fileID: String
+    }
+
+    private(set) var confirmedFileID: String?
+    private(set) var currentRequest: Request?
+    private var generation: UInt64 = 0
+
+    mutating func begin(fileID: String, force: Bool) -> Request? {
+        if !force {
+            if currentRequest?.fileID == fileID {
+                return nil
+            }
+            if currentRequest == nil, confirmedFileID == fileID {
+                return nil
+            }
+        }
+
+        generation &+= 1
+        let request = Request(
+            id: "native-\(generation)-\(UUID().uuidString)",
+            generation: generation,
+            fileID: fileID
+        )
+        currentRequest = request
+        return request
+    }
+
+    func isCurrent(_ request: Request) -> Bool {
+        currentRequest == request
+    }
+
+    mutating func confirm(_ request: Request) -> Bool {
+        guard isCurrent(request) else { return false }
+        confirmedFileID = request.fileID
+        currentRequest = nil
+        return true
+    }
+
+    mutating func fail(_ request: Request) -> Bool {
+        guard isCurrent(request) else { return false }
+        currentRequest = nil
+        return true
+    }
+
+    mutating func reset() {
+        generation &+= 1
+        confirmedFileID = nil
+        currentRequest = nil
+    }
+}
+
 /// Owns the synchronization boundary between the native `ExcalidrawCanvasView`
 /// binding and the embedded Excalidraw WebView.
 ///
@@ -21,9 +76,32 @@ import UniformTypeIdentifiers
 /// to `ExcalidrawDocumentSnapshotCoordinator`, then routed back through this
 /// controller's persistence bridge when a full snapshot must be applied.
 final class ExcalidrawDocumentSyncController: @unchecked Sendable {
+    struct LoadFailure: LocalizedError, Sendable {
+        let message: String
+
+        init(_ error: Error?) {
+            self.message = error?.localizedDescription ?? "The file could not be loaded."
+        }
+
+        var errorDescription: String? { message }
+    }
+
+    enum LoadCompletion: Sendable {
+        case succeeded
+        case failed(LoadFailure)
+        case superseded
+    }
+
+    enum LoadEvent: Sendable {
+        case started(fileID: String)
+        case finished(fileID: String, completion: LoadCompletion)
+        case reset
+    }
+
     enum LoadOutcome {
         case skipped
-        case loaded(LoadFileResult?)
+        case loaded(LoadFileResult)
+        case superseded
         case failed
 
         var didLoad: Bool {
@@ -32,6 +110,7 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
             }
             return false
         }
+
     }
 
     private enum StateChangeSuppressionReason {
@@ -49,22 +128,33 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
     private let lock = NSLock()
     private weak var core: ExcalidrawCore?
     private let snapshotCoordinator = ExcalidrawDocumentSnapshotCoordinator()
-    /// Last file id that the WebView confirmed as loaded.
-    private var loadedFileID: String?
-    /// File id currently being loaded by a host-driven request.
-    private var pendingFileLoadID: String?
+    let loadEvents: AsyncStream<LoadEvent>
+    private let loadEventContinuation: AsyncStream<LoadEvent>.Continuation
+    private var loadState = DocumentLoadStateMachine()
     /// Temporary guards used to ignore `stateChanged` events produced by file
     /// loading itself rather than by user or tool edits.
     private var stateChangeSuppressions: [UUID: StateChangeSuppression] = [:]
     init() {
+        var continuation: AsyncStream<LoadEvent>.Continuation?
+        self.loadEvents = AsyncStream(bufferingPolicy: .bufferingNewest(1)) {
+            continuation = $0
+        }
+        self.loadEventContinuation = continuation!
         snapshotCoordinator.attach(delegate: self)
     }
 
     var currentLoadedFileID: String? {
         lock.lock()
-        let fileID = loadedFileID
+        let fileID = loadState.confirmedFileID
         lock.unlock()
         return fileID
+    }
+
+    var hasPendingFileLoad: Bool {
+        lock.lock()
+        let hasPendingLoad = loadState.currentRequest != nil
+        lock.unlock()
+        return hasPendingLoad
     }
 
     func attach(core: ExcalidrawCore) {
@@ -81,7 +171,7 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
             suppression.reason != .preparingFileLoad
         }
 
-        if let fileID, loadedFileID != fileID {
+        if let fileID, loadState.confirmedFileID != fileID {
             stateChangeSuppressions[UUID()] = .init(
                 fileID: fileID,
                 reason: .preparingFileLoad,
@@ -119,12 +209,10 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
     ) async -> LoadOutcome {
         snapshotCoordinator.cancelPendingSnapshotCommits()
 
-        let canvasToken: UUID
-        if force {
-            canvasToken = beginForcedCanvasFileLoad(fileID: fileID)
-        } else if let token = beginCanvasFileLoadIfNeeded(fileID: fileID) {
-            canvasToken = token
-        } else {
+        guard let (request, canvasToken) = beginCanvasFileLoad(
+            fileID: fileID,
+            force: force
+        ) else {
             return .skipped
         }
 
@@ -138,10 +226,19 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         )
 
         let maxAttempts = 2
+        var lastError: Error?
         for attempt in 1...maxAttempts {
+            let transportRequestID = "\(request.id)-attempt-\(attempt)"
             guard !Task.isCancelled else {
-                finishCanvasFileLoad(fileID: fileID)
-                return .failed
+                return finishCanvasFileLoad(
+                    request,
+                    outcome: .failed,
+                    failure: LoadFailure(CancellationError())
+                )
+            }
+
+            guard isCurrentLoadRequest(request) else {
+                return .superseded
             }
 
             if validateCurrentParentFile {
@@ -149,27 +246,39 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
                     core?.parent?.file?.id == fileID
                 }
                 guard isStillCurrent else {
-                    finishCanvasFileLoad(fileID: fileID)
-                    return .failed
+                    return finishCanvasFileLoad(request, outcome: .superseded)
                 }
             }
 
-            let result = await loadPreparedFile(fileID: fileID, data: dataForLoad, force: force)
+            let result: LoadFileResult?
+            do {
+                result = try await loadPreparedFile(
+                    request: request,
+                    transportRequestID: transportRequestID,
+                    data: dataForLoad
+                )
+            } catch {
+                lastError = error
+                result = nil
+            }
+
+            guard isCurrentLoadRequest(request) else {
+                return .superseded
+            }
 
             if validateCurrentParentFile {
                 let isStillCurrent = await MainActor.run {
                     core?.parent?.file?.id == fileID
                 }
                 guard isStillCurrent else {
-                    finishCanvasFileLoad(fileID: fileID)
-                    return .failed
+                    return finishCanvasFileLoad(request, outcome: .superseded)
                 }
             }
 
-            let loadedID = await core?.webActor.loadedFileID
-
-            if loadedID == fileID {
-                commitLoadedFile(fileID: fileID)
+            if let result,
+               result.fileId == request.fileID,
+               result.requestId == transportRequestID,
+               commitLoadedFile(request) {
                 return .loaded(result)
             }
 
@@ -178,10 +287,17 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
             }
         }
 
-        let loadedID = await core?.webActor.loadedFileID
-        core?.logger.warning("Failed to load file \(fileID) into Excalidraw after retries. loadedID=\(loadedID ?? "nil")")
-        finishCanvasFileLoad(fileID: fileID)
-        return .failed
+        core?.logger.warning(
+            "Failed to load file \(fileID) into Excalidraw after retries requestID=\(request.id)"
+        )
+        if let lastError, isCurrentLoadRequest(request) {
+            core?.publishError(lastError)
+        }
+        return finishCanvasFileLoad(
+            request,
+            outcome: .failed,
+            failure: LoadFailure(lastError)
+        )
     }
 
     /// Applies a normal WebView `stateChanged` payload to the native file
@@ -217,7 +333,7 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         guard let fileData = data.fileData else { return }
 
         do {
-            let loadedID = await core.webActor.loadedFileID
+            let loadedID = currentLoadedFileID
             guard self.canApplyStateChanged(
                 currentFileID: currentFileID,
                 webLoadedFileID: loadedID,
@@ -494,46 +610,51 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
     }
 
     private func loadPreparedFile(
-        fileID: String,
-        data: Data,
-        force: Bool
-    ) async -> LoadFileResult? {
+        request: DocumentLoadStateMachine.Request,
+        transportRequestID: String,
+        data: Data
+    ) async throws -> LoadFileResult? {
         guard let core else { return nil }
 
-        let suppressionToken = beginCoreFileLoad(fileID: fileID)
+        let suppressionToken = beginCoreFileLoad(fileID: request.fileID)
         defer {
             endStateChangeSuppression(suppressionToken)
         }
 
-        guard await core.waitUntilReadyForFileLoad(fileID: fileID) else {
-            logFileLoad(core.logger, "File load skipped: core not ready id=\(fileID)", level: .warning)
+        guard await core.waitUntilReadyForFileLoad(fileID: request.fileID) else {
+            logFileLoad(
+                core.logger,
+                "File load skipped: core not ready id=\(request.fileID)",
+                level: .warning
+            )
             return nil
         }
 
-        do {
-            let result = try await core.webActor.loadFile(id: fileID, data: data, force: force)
-            let loadedID = await core.webActor.loadedFileID
-            if loadedID == fileID {
-                commitLoadedFile(fileID: fileID)
-            }
-            return result
-        } catch {
-            core.publishError(error)
-            return nil
-        }
+        guard isCurrentLoadRequest(request) else { return nil }
+
+        return try await core.webActor.loadFile(
+            id: request.fileID,
+            requestID: transportRequestID,
+            data: data
+        )
     }
 
-    private func beginCanvasFileLoadIfNeeded(fileID: String) -> UUID? {
+    private func beginCanvasFileLoad(
+        fileID: String,
+        force: Bool
+    ) -> (DocumentLoadStateMachine.Request, UUID)? {
         lock.lock()
         pruneExpiredStateChangeSuppressions()
         clearStateChangeSuppressions(reason: .preparingFileLoad, fileID: fileID)
+        stateChangeSuppressions = stateChangeSuppressions.filter { _, suppression in
+            suppression.reason != .canvasFileLoad && suppression.reason != .coreFileLoad
+        }
 
-        guard loadedFileID != fileID, pendingFileLoadID != fileID else {
+        guard let request = loadState.begin(fileID: fileID, force: force) else {
             lock.unlock()
             return nil
         }
 
-        pendingFileLoadID = fileID
         let token = UUID()
         stateChangeSuppressions[token] = .init(
             fileID: fileID,
@@ -541,22 +662,8 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
             startedAt: Date()
         )
         lock.unlock()
-        return token
-    }
-
-    private func beginForcedCanvasFileLoad(fileID: String) -> UUID {
-        lock.lock()
-        pruneExpiredStateChangeSuppressions()
-        clearStateChangeSuppressions(reason: .preparingFileLoad, fileID: fileID)
-        pendingFileLoadID = fileID
-        let token = UUID()
-        stateChangeSuppressions[token] = .init(
-            fileID: fileID,
-            reason: .canvasFileLoad,
-            startedAt: Date()
-        )
-        lock.unlock()
-        return token
+        loadEventContinuation.yield(.started(fileID: fileID))
+        return (request, token)
     }
 
     private func beginCoreFileLoad(fileID: String) -> UUID {
@@ -569,37 +676,68 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         lock.unlock()
     }
 
-    private func commitLoadedFile(fileID: String) {
+    private func isCurrentLoadRequest(_ request: DocumentLoadStateMachine.Request) -> Bool {
         lock.lock()
-        loadedFileID = fileID
-        if pendingFileLoadID == fileID {
-            pendingFileLoadID = nil
-        }
+        let isCurrent = loadState.isCurrent(request)
         lock.unlock()
+        return isCurrent
     }
 
-    private func finishCanvasFileLoad(fileID: String) {
+    private func commitLoadedFile(_ request: DocumentLoadStateMachine.Request) -> Bool {
         lock.lock()
-        if pendingFileLoadID == fileID {
-            pendingFileLoadID = nil
-        }
+        let didCommit = loadState.confirm(request)
         lock.unlock()
+        if didCommit {
+            loadEventContinuation.yield(
+                .finished(fileID: request.fileID, completion: .succeeded)
+            )
+        }
+        return didCommit
+    }
+
+    private func finishCanvasFileLoad(
+        _ request: DocumentLoadStateMachine.Request,
+        outcome: LoadOutcome,
+        failure: LoadFailure? = nil
+    ) -> LoadOutcome {
+        lock.lock()
+        let wasCurrent = loadState.fail(request)
+        lock.unlock()
+        if wasCurrent {
+            let completion: LoadCompletion = switch outcome {
+                case .failed:
+                    .failed(failure ?? LoadFailure(nil))
+                case .superseded:
+                    .superseded
+                case .skipped, .loaded:
+                    .superseded
+            }
+            loadEventContinuation.yield(
+                .finished(fileID: request.fileID, completion: completion)
+            )
+        }
+        return wasCurrent ? outcome : .superseded
     }
 
     func resetFileLoadState() {
         snapshotCoordinator.reset()
         lock.lock()
-        loadedFileID = nil
-        pendingFileLoadID = nil
+        loadState.reset()
         stateChangeSuppressions.removeAll()
         lock.unlock()
+        loadEventContinuation.yield(.reset)
     }
 
     private func receivedStateChangedRejectionReason(isCoreLoading: Bool) -> String? {
         lock.lock()
         pruneExpiredStateChangeSuppressions()
         let suppression = latestStateChangeSuppression()
+        let pendingFileID = loadState.currentRequest?.fileID
         lock.unlock()
+
+        if let pendingFileID {
+            return "document load pending id=\(pendingFileID)"
+        }
 
         if let suppression {
             return "suppressed during file load id=\(suppression.fileID)"

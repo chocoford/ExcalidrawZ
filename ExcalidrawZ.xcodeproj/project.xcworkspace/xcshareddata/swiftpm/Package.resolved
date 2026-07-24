@@ -1,5 +1,5 @@
 {
-  "originHash" : "7298fb82f631bdc0397433ef69623962890b608e1f115ec2a827e5335b9b6ad9",
+  "originHash" : "55f823d3ea73498a121b786cb5e5ccc5758f0f6f12c043154e4dafa3a38ed403",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -25,7 +25,7 @@
       "location" : "https://github.com/chocoford/ChocofordKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "8e7809f89c995b877e628e5b2550874b551f287f"
+        "revision" : "239706fbf2b6407ad9d3e755edd9185bcff368e9"
       }
     },
     {
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swhitty/FlyingFox.git",
       "state" : {
-        "revision" : "de38230104cf63ef4843cb569ba11c13f8165685",
-        "version" : "0.26.2"
+        "revision" : "d06fd45653bcab9803af31d66440f552c9dd9c93",
+        "version" : "0.27.0"
       }
     },
     {
@@ -61,7 +61,7 @@
       "location" : "https://github.com/chocoford/LLMCore.git",
       "state" : {
         "branch" : "main",
-        "revision" : "86310f0cb1df3d06f581a92286005504ffb6fff4"
+        "revision" : "b2dc30680b24904a30cd2a0ee423537cbada4031"
       }
     },
     {
@@ -88,7 +88,7 @@
       "location" : "https://github.com/MacPaw/OpenAI.git",
       "state" : {
         "branch" : "main",
-        "revision" : "35ff1a5a95182c3c809209334d3076eb08134411"
+        "revision" : "4ea7b3906e4c24bbc4870aab2888a98d30dff386"
       }
     },
     {
@@ -123,8 +123,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle.git",
       "state" : {
-        "revision" : "d46d456107feacc80711b21847b82b07bd9fb46e",
-        "version" : "2.9.3"
+        "revision" : "b6496a74a087257ef5e6da1c5b29a447a60f5bd7",
+        "version" : "2.9.4"
       }
     },
     {

@@ -53,6 +53,34 @@ extension MediaItem {
         throw MediaItemError.dataNotAvailable
     }
 
+    /// Load the local representation without checking iCloud freshness.
+    /// Suitable for best-effort thumbnails where scrolling must not start a
+    /// sync check for every visible item.
+    func loadLocallyCachedData() async throws -> Data {
+        guard let context = managedObjectContext else {
+            throw MediaItemError.dataNotAvailable
+        }
+
+        let mediaObjectID = objectID
+        let (filePath, dataURL): (String?, String?) = await context.perform {
+            guard let mediaItem = context.object(with: mediaObjectID) as? MediaItem else {
+                return (nil, nil)
+            }
+            return (mediaItem.filePath, mediaItem.dataURL)
+        }
+
+        if let filePath,
+           let data = try? await FileStorageManager.shared.loadContent(relativePath: filePath) {
+            return data
+        }
+        if let dataURL,
+           let decodedDataURL = decodeDataURL(dataURL) {
+            return decodedDataURL.data
+        }
+
+        throw MediaItemError.dataNotAvailable
+    }
+
     /// Load media data URL from storage (local/iCloud)
     /// Automatically checks iCloud for newer versions before returning
     /// Falls back to CoreData dataURL if storage is unavailable
