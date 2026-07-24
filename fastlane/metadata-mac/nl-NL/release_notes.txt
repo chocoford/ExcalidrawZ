@@ -1,6 +1,5 @@
-Deze update verbetert mediabeheer, aangepaste lettertypen en de betrouwbaarheid bij het openen van bestanden.
+Deze update verbetert het verplaatsen van bestanden en mappen in gekoppelde mappen.
 
-- Mediabestanden is vernieuwd met een snellere galerij, gedetailleerde verwijzingen en begeleide opschoning voor ongebruikte media of media die alleen in de bestandsgeschiedenis voorkomen.
-- Opgelost dat aangepaste lettertypen verdwenen na het wisselen van instellingen of dat nieuwe lettertypen eerder toegevoegde lettertypen vervingen.
-- Het openen en wisselen van bestanden en de overgang terug naar Home zijn verbeterd.
-- Duidelijker herstel en een actie om opnieuw te proberen wanneer een tekening niet kan worden geladen.
+- Machtigingsfouten en onvolledige verplaatsingen tussen de hoofdmap en submappen zijn opgelost.
+- Verplaatste bestanden worden direct bijgewerkt in de navigatiekolom, zonder niet-beschikbare vermeldingen achter te laten.
+- ‘Verplaats naar’ is nu beschikbaar vanuit Home en bevat ook de hoofdmap van de gekoppelde map als bestemming.

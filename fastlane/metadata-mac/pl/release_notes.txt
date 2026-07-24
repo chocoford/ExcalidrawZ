@@ -1,6 +1,5 @@
-Ta aktualizacja ulepsza zarządzanie multimediami, niestandardowe czcionki i niezawodność otwierania plików.
+Ta aktualizacja usprawnia przenoszenie plików i folderów w połączonych folderach.
 
-- Przeprojektowano Pliki multimedialne: szybsza galeria, szczegółowe odwołania i prowadzona funkcja czyszczenia nieużywanych multimediów lub używanych tylko w historii pliku.
-- Naprawiono znikanie niestandardowych czcionek po zmianie sekcji oraz zastępowanie wcześniej dodanych czcionek.
-- Ulepszono otwieranie i przełączanie plików oraz przejścia z powrotem do ekranu głównego.
-- Dodano jaśniejsze informacje i możliwość ponowienia próby, gdy rysunku nie można wczytać.
+- Naprawiono błędy uprawnień i niepełne przenoszenie między folderem głównym a podfolderami.
+- Przeniesione pliki są natychmiast aktualizowane na pasku bocznym i nie pozostawiają niedostępnych wpisów.
+- Opcja „Przenieś do” jest teraz dostępna na ekranie głównym i pozwala wybrać folder główny połączonego folderu.

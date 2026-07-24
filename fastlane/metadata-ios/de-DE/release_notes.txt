@@ -1,1 +1,5 @@
-Ein Problem auf kompakten iOS-Layouts wurde behoben, bei dem eine aufgehobene Auswahl nach dem Verlassen des Bearbeitungsmodus beim Verschieben oder Zoomen der Zeichenfläche erneut erscheinen konnte.
+Dieses Update verbessert das Verschieben von Dateien und Ordnern in verknüpften Ordnern.
+
+- Berechtigungsfehler und unvollständige Verschiebevorgänge zwischen dem Stammordner und Unterordnern wurden behoben.
+- Verschobene Dateien werden sofort in der Seitenleiste aktualisiert, ohne nicht verfügbare Einträge zu hinterlassen.
+- „Verschieben nach“ ist jetzt auf der Startseite verfügbar und bietet auch den Stamm des verknüpften Ordners als Ziel an.

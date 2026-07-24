@@ -1,1 +1,5 @@
-Naprawiono problem w kompaktowych układach iOS, przez który anulowane zaznaczenie mogło pojawić się ponownie podczas przesuwania lub powiększania płótna po wyjściu z trybu edycji.
+Ta aktualizacja usprawnia przenoszenie plików i folderów w połączonych folderach.
+
+- Naprawiono błędy uprawnień i niepełne przenoszenie między folderem głównym a podfolderami.
+- Przeniesione pliki są natychmiast aktualizowane na pasku bocznym i nie pozostawiają niedostępnych wpisów.
+- Opcja „Przenieś do” jest teraz dostępna na ekranie głównym i pozwala wybrać folder główny połączonego folderu.

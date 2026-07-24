@@ -1,6 +1,5 @@
-Esta atualização melhora o gerenciamento de mídia, as fontes personalizadas e a confiabilidade ao abrir arquivos.
+Esta atualização melhora a movimentação de arquivos e pastas nas Pastas Vinculadas.
 
-- A área Arquivos de mídia foi reformulada com uma galeria mais rápida, referências detalhadas e limpeza guiada para mídias não usadas ou usadas apenas no histórico.
-- Corrigido o desaparecimento de fontes personalizadas ao trocar de seção e a substituição de fontes já adicionadas.
-- Melhorias ao abrir e alternar arquivos e nas transições de volta para o Início.
-- Orientações mais claras e uma ação para tentar novamente quando um desenho não puder ser carregado.
+- Corrigidos erros de permissão e movimentações incompletas entre a pasta raiz e as subpastas.
+- Os arquivos movidos agora são atualizados imediatamente na barra lateral, sem deixar itens indisponíveis.
+- “Mover para” agora está disponível na tela Início e inclui a raiz da Pasta Vinculada como destino.

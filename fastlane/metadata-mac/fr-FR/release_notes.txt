@@ -1,6 +1,5 @@
-Cette mise à jour améliore la gestion des médias, les polices personnalisées et la fiabilité de l’ouverture des fichiers.
+Cette mise à jour améliore le déplacement des fichiers et dossiers dans les dossiers liés.
 
-- La section Fichiers multimédias propose désormais une galerie plus rapide, des références détaillées et un nettoyage guidé des médias inutilisés ou uniquement présents dans l’historique.
-- Correction de la disparition des polices personnalisées après un changement d’onglet et du remplacement des polices déjà ajoutées.
-- Amélioration de l’ouverture et du changement de fichier, ainsi que des transitions vers l’accueil.
-- Ajout d’indications plus claires et d’une action Réessayer lorsqu’un dessin ne peut pas être chargé.
+- Correction des erreurs d’autorisation et des déplacements incomplets entre la racine et les sous-dossiers.
+- Les fichiers déplacés sont désormais actualisés immédiatement dans la barre latérale, sans laisser d’entrées indisponibles.
+- « Déplacer vers » est maintenant disponible depuis l’accueil et permet de choisir la racine du dossier lié.

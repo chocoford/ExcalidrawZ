@@ -1,1 +1,5 @@
-Corrigido um problema em layouts compactos do iOS em que uma seleção desfeita podia reaparecer ao mover ou ampliar a tela após sair do modo de edição.
+Esta atualização melhora a movimentação de arquivos e pastas nas Pastas Vinculadas.
+
+- Corrigidos erros de permissão e movimentações incompletas entre a pasta raiz e as subpastas.
+- Os arquivos movidos agora são atualizados imediatamente na barra lateral, sem deixar itens indisponíveis.
+- “Mover para” agora está disponível na tela Início e inclui a raiz da Pasta Vinculada como destino.

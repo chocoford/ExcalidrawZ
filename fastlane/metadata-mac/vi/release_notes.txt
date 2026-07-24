@@ -1,6 +1,5 @@
-Bản cập nhật này cải thiện việc quản lý tệp phương tiện, phông chữ tùy chỉnh và độ tin cậy khi mở tệp.
+Bản cập nhật này cải thiện việc di chuyển tệp và thư mục trong Thư mục được liên kết.
 
-- Thiết kế lại Tệp phương tiện với thư viện nhanh hơn, thông tin tham chiếu chi tiết và quy trình dọn dẹp có hướng dẫn cho nội dung không dùng hoặc chỉ được dùng trong lịch sử tệp.
-- Sửa lỗi phông chữ tùy chỉnh biến mất khi chuyển mục Cài đặt hoặc phông chữ mới thay thế các phông đã thêm.
-- Cải thiện thao tác mở, chuyển đổi tệp và hiệu ứng trở về Trang chủ.
-- Thêm hướng dẫn rõ ràng hơn và thao tác thử lại khi không thể tải bản vẽ.
+- Sửa lỗi quyền truy cập và thao tác di chuyển không hoàn tất giữa thư mục gốc và thư mục con.
+- Tệp đã di chuyển được cập nhật ngay trong thanh bên mà không để lại mục không thể mở.
+- “Di chuyển đến” hiện dùng được từ Trang chủ và cho phép chọn thư mục gốc của Thư mục được liên kết.

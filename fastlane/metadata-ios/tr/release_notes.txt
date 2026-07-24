@@ -1,1 +1,5 @@
-iOS kompakt yerleşimlerinde düzenleme modundan çıktıktan sonra tuvali kaydırırken veya yakınlaştırırken kaldırılmış bir seçimin yeniden görünebilmesine neden olan sorun düzeltildi.
+Bu güncelleme, Bağlı Klasörlerde dosya ve klasör taşımayı iyileştirir.
+
+- Kök klasör ile alt klasörler arasındaki izin hataları ve tamamlanmayan taşıma işlemleri düzeltildi.
+- Taşınan dosyalar artık kenar çubuğunda hemen güncellenir ve kullanılamayan eski girdiler bırakmaz.
+- “Şuraya Taşı” artık Ana Sayfa’dan kullanılabilir ve Bağlı Klasörün kökünü hedef olarak sunar.

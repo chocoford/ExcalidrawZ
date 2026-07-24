@@ -1,6 +1,5 @@
-Questo aggiornamento migliora la gestione dei file multimediali, i font personalizzati e l’affidabilità nell’apertura dei file.
+Questo aggiornamento migliora lo spostamento di file e cartelle nelle cartelle collegate.
 
-- File multimediali è stato riprogettato con una galleria più veloce, riferimenti dettagliati e una pulizia guidata dei contenuti inutilizzati o usati solo nella cronologia.
-- Risolto il problema per cui i font personalizzati scomparivano cambiando sezione o i nuovi font sostituivano quelli già aggiunti.
-- Migliorati l’apertura e il cambio dei file e le transizioni per tornare alla schermata Home.
-- Aggiunte indicazioni più chiare e un’azione per riprovare quando non è possibile caricare un disegno.
+- Risolti gli errori di autorizzazione e gli spostamenti incompleti tra la cartella principale e le sottocartelle.
+- I file spostati vengono aggiornati subito nella barra laterale senza lasciare voci non disponibili.
+- “Sposta in” è ora disponibile dalla schermata Home e include la cartella principale collegata tra le destinazioni.

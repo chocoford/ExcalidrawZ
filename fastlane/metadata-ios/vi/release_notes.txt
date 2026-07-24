@@ -1,1 +1,5 @@
-Sửa lỗi trên bố cục iOS compact khiến vùng chọn đã bỏ có thể xuất hiện lại khi di chuyển hoặc thu phóng canvas sau khi thoát chế độ chỉnh sửa.
+Bản cập nhật này cải thiện việc di chuyển tệp và thư mục trong Thư mục được liên kết.
+
+- Sửa lỗi quyền truy cập và thao tác di chuyển không hoàn tất giữa thư mục gốc và thư mục con.
+- Tệp đã di chuyển được cập nhật ngay trong thanh bên mà không để lại mục không thể mở.
+- “Di chuyển đến” hiện dùng được từ Trang chủ và cho phép chọn thư mục gốc của Thư mục được liên kết.

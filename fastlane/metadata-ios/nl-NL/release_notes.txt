@@ -1,1 +1,5 @@
-Een probleem opgelost op compacte iOS-lay-outs waarbij een opgeheven selectie opnieuw kon verschijnen bij het verschuiven of zoomen van het canvas nadat de bewerkingsmodus was verlaten.
+Deze update verbetert het verplaatsen van bestanden en mappen in gekoppelde mappen.
+
+- Machtigingsfouten en onvolledige verplaatsingen tussen de hoofdmap en submappen zijn opgelost.
+- Verplaatste bestanden worden direct bijgewerkt in de navigatiekolom, zonder niet-beschikbare vermeldingen achter te laten.
+- ‘Verplaats naar’ is nu beschikbaar vanuit Home en bevat ook de hoofdmap van de gekoppelde map als bestemming.

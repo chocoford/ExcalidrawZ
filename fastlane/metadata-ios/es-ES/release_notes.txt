@@ -1,1 +1,5 @@
-Se ha corregido un problema en los diseños compactos de iOS por el que una selección anulada podía volver a aparecer al desplazar o ampliar el lienzo después de salir del modo de edición.
+Esta actualización mejora el movimiento de archivos y carpetas en las carpetas enlazadas.
+
+- Se han corregido errores de permisos y movimientos incompletos entre la raíz y las subcarpetas.
+- Los archivos movidos se actualizan inmediatamente en la barra lateral sin dejar entradas no disponibles.
+- «Mover a» ya está disponible desde Inicio e incluye la raíz de la carpeta enlazada como destino.

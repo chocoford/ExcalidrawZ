@@ -1,1 +1,5 @@
-Risolto un problema nei layout compatti di iOS per cui una selezione annullata poteva ricomparire spostando o ingrandendo la tela dopo essere usciti dalla modalità di modifica.
+Questo aggiornamento migliora lo spostamento di file e cartelle nelle cartelle collegate.
+
+- Risolti gli errori di autorizzazione e gli spostamenti incompleti tra la cartella principale e le sottocartelle.
+- I file spostati vengono aggiornati subito nella barra laterale senza lasciare voci non disponibili.
+- “Sposta in” è ora disponibile dalla schermata Home e include la cartella principale collegata tra le destinazioni.

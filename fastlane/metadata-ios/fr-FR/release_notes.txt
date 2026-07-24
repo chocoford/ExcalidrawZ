@@ -1,1 +1,5 @@
-Correction d'un problème sur les présentations compactes d'iOS où une sélection annulée pouvait réapparaître lors du déplacement ou du zoom du canevas après avoir quitté le mode d'édition.
+Cette mise à jour améliore le déplacement des fichiers et dossiers dans les dossiers liés.
+
+- Correction des erreurs d’autorisation et des déplacements incomplets entre la racine et les sous-dossiers.
+- Les fichiers déplacés sont désormais actualisés immédiatement dans la barre latérale, sans laisser d’entrées indisponibles.
+- « Déplacer vers » est maintenant disponible depuis l’accueil et permet de choisir la racine du dossier lié.

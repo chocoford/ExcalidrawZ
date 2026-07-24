@@ -1,3 +1,12 @@
+## 2.2.9
+
+#### Bug fixed
+
+- Fixed permission errors and incomplete moves when moving drawings or folders between levels of a Linked Folder.
+- Fixed moved local files remaining as unavailable entries in the Sidebar until a later refresh.
+- Fixed the Move to menu being unavailable from Home and missing the Linked Folder root as a destination.
+- Fixed active local drawings losing their folder context after being moved.
+
 ## 2.2.8
 
 #### Features
