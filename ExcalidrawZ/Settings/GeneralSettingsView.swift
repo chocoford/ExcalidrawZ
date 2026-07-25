@@ -7,6 +7,9 @@
 
 import SwiftUI
 import ChocofordUI
+#if os(macOS)
+import KeyboardShortcuts
+#endif
 #if os(macOS) && !APP_STORE
 import Sparkle
 #endif
@@ -67,6 +70,16 @@ struct GeneralSettingsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+
+#if os(macOS)
+        Section {
+            KeyboardShortcuts.Recorder(for: .toggleScreenAnnotation) {
+                Text(localizable: .screenAnnotationTitle)
+            }
+        } header: {
+            Text(localizable: .settingsKeyboardShortcutsTitle)
+        }
+#endif
         
         // Folder structure UI
         Section {

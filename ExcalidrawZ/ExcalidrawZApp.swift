@@ -9,6 +9,7 @@ import Foundation
 import SwiftUI
 import Logging
 #if os(macOS)
+import KeyboardShortcuts
 import ServiceManagement
 #endif
 
@@ -88,6 +89,7 @@ struct ExcalidrawZApp: App {
         FeatureDiscoveryTips.configureIfAvailable()
 #if os(macOS)
         _ = ExcalidrawZMCPServerController.shared
+        _ = ScreenAnnotationController.shared
 #endif
 
         // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
@@ -372,14 +374,14 @@ struct ExcalidrawZApp: App {
                 }
             }
 
-#if DEBUG
-            CommandMenu("Developer") {
-                Button("Annotate Screen (Prototype)") {
+            CommandMenu("Tools") {
+                Button {
                     ScreenAnnotationController.shared.toggle()
+                } label: {
+                    Text(.localizable(.screenAnnotationTitle))
                 }
-                .keyboardShortcut("a", modifiers: [.command, .shift])
+                .globalKeyboardShortcut(.toggleScreenAnnotation)
             }
-#endif
         }
 #endif
         

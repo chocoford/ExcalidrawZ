@@ -72449,6 +72449,29 @@
         }
       }
     },
+    "screenAnnotationTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screen Annotation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "屏幕注释"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "螢幕註解"
+          }
+        }
+      }
+    },
     "searchButtonTitle": {
       "extractionState": "manual",
       "localizations": {
@@ -96065,6 +96088,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "字型"
+          }
+        }
+      }
+    },
+    "settingsKeyboardShortcutsTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyboard Shortcuts"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "键盘快捷键"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鍵盤快速鍵"
           }
         }
       }

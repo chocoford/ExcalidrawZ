@@ -73,15 +73,17 @@ class ExcalidrawWebView: WKWebView {
 
     override func keyDown(with event: NSEvent) {
         if shouldHandleInput,
-           let char = event.characters {
+           let char = event.characters,
+           char.count == 1,
+           let character = char.first {
             if let num = Int(char), num >= 0, num <= 9 {
                 self.toolbarActionHandler(.number(num))
-            } else if ExcalidrawTool.allCases.compactMap({$0.keyEquivalent}).contains(where: {$0 == Character(char)}), !char.isEmpty {
-                self.toolbarActionHandler(.char(Character(char)))
-            } else if Character(char) == Character(" ") {
+            } else if ExcalidrawTool.allCases.compactMap({ $0.keyEquivalent }).contains(character) {
+                self.toolbarActionHandler(.char(character))
+            } else if character == " " {
                 // TODO: migrate to excalidrawZHelper
                 self.toolbarActionHandler(.space)
-            } else if Character(char) == Character("q") {
+            } else if character == "q" {
                 // TODO: migrate to excalidrawZHelper
                 self.toolbarActionHandler(.char("q"))
             } else {

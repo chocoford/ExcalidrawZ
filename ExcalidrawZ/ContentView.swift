@@ -84,6 +84,15 @@ struct ContentView: View {
             .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
             .swiftyAlert(logs: true)
             .bindWindow($window)
+#if os(macOS)
+            .task(id: window?.windowNumber) {
+                guard let window else { return }
+                ScreenAnnotationController.shared.register(
+                    fileState: fileState,
+                    for: window
+                )
+            }
+#endif
             .containerSizeClassInjection()
             .onReceive(NotificationCenter.default.publisher(for: .didOpenFromUrls)) { notification in
                 handleOpenFromURLs(notification)

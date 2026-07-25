@@ -146,7 +146,8 @@ final class AppPreference: ObservableObject {
     // User Drawing Settings
     @AppStorage("useCustomDrawingSettings") var useCustomDrawingSettings = false
     @AppStorage("customDrawingSettingsData") private var customDrawingSettingsData: Data = Data()
-    @AppStorage("toolbarToolOrderData") private var toolbarToolOrderData: Data = Data()
+    @AppStorage(ExcalidrawToolbarToolOrder.storageKey)
+    private var toolbarToolOrderData: Data = Data()
     private var cachedToolbarToolOrderData: Data?
     private var cachedToolbarToolOrder: ExcalidrawToolbarToolOrder?
 

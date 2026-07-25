@@ -1,5 +1,5 @@
 {
-  "originHash" : "55f823d3ea73498a121b786cb5e5ccc5758f0f6f12c043154e4dafa3a38ed403",
+  "originHash" : "e4ea21f312683711c909774877c110969d7c0e1e473ba6cd1ecebf6a430b1ae1",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -44,6 +44,15 @@
       "state" : {
         "revision" : "70bbea4b108221fcabfce8dbced8502831c0ae04",
         "version" : "2.1.0"
+      }
+    },
+    {
+      "identity" : "keyboardshortcuts",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/sindresorhus/KeyboardShortcuts.git",
+      "state" : {
+        "revision" : "49c3fc04ea827f816df67843bfcc57286b47ff06",
+        "version" : "3.0.1"
       }
     },
     {
