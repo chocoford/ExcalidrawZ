@@ -50,15 +50,17 @@ struct ScreenAnnotationSaveControls: View {
                         "Excalidraw File",
                         selection: fileDestinationBinding
                     ) {
-                        Label("New File", systemImage: "doc.badge.plus")
-                            .tag(Optional(ScreenAnnotationSaveDestination.newFile))
-
-                        if configuration.fileDestination != .newFile {
+                        ForEach(
+                            configuration.fileDestinationOptions,
+                            id: \.self
+                        ) { destination in
                             Label(
-                                configuration.fileDestination.title,
-                                systemImage: "doc.richtext"
+                                destination.title,
+                                systemImage: destination == .newFile
+                                    ? "doc.badge.plus"
+                                    : "doc.richtext"
                             )
-                            .tag(Optional(configuration.fileDestination))
+                            .tag(Optional(destination))
                         }
                     }
                     .pickerStyle(.inline)
@@ -89,16 +91,6 @@ struct ScreenAnnotationSaveControls: View {
                 }
 
                 Button {
-                    configuration.selectDestination(.downloads)
-                } label: {
-                    destinationLabel(
-                        title: "Downloads",
-                        systemImage: "arrow.down.circle",
-                        isSelected: configuration.destination == .downloads
-                    )
-                }
-
-                Button {
                     configuration.selectDestination(.customLocation)
                 } label: {
                     destinationLabel(
@@ -117,7 +109,7 @@ struct ScreenAnnotationSaveControls: View {
             }
             .pickerStyle(.inline)
         } label: {
-            Image(systemName: "ellipsis")
+            Text("Options")
         }
         .help("Save destination: \(configuration.title)")
         .buttonStyle(.borderless)
@@ -139,12 +131,10 @@ struct ScreenAnnotationSaveControls: View {
         systemImage: String,
         isSelected: Bool
     ) -> some View {
-        HStack {
-            Label(title, systemImage: systemImage)
-            if isSelected {
-                Image(systemName: "checkmark")
-            }
-        }
+        Label(
+            title,
+            systemImage: isSelected ? "checkmark" : systemImage
+        )
     }
 }
 #endif

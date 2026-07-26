@@ -1,15 +1,24 @@
 #if os(macOS)
 import AppKit
-import CoreData
 import Logging
 
 @MainActor
 final class ScreenAnnotationSaveCoordinator {
-    let configuration = ScreenAnnotationSaveConfiguration()
+    let configuration: ScreenAnnotationSaveConfiguration
 
     private let logger = Logger(label: "ScreenAnnotationSaveCoordinator")
+    private let taskManager = ScreenAnnotationSaveTaskManager.shared
+    private let persistence: ScreenAnnotationSavePersistence
 
-    func save(
+    init() {
+        let configuration = ScreenAnnotationSaveConfiguration()
+        self.configuration = configuration
+        self.persistence = ScreenAnnotationSavePersistence(
+            configuration: configuration
+        )
+    }
+
+    func submit(
         destination: ScreenAnnotationSaveDestination,
         format: ScreenAnnotationSaveFormat,
         region: CGRect?,
@@ -17,304 +26,165 @@ final class ScreenAnnotationSaveCoordinator {
         screen: NSScreen,
         fileState: FileState?,
         annotationWindow: NSWindow?,
-        captureFinished: @MainActor @escaping () -> Void
-    ) async -> Bool {
-        var didFinishCapture = false
-        defer {
-            if !didFinishCapture {
-                captureFinished()
-            }
-        }
+        completion: @MainActor @escaping (Bool) -> Void
+    ) {
+        let saveID = UUID().uuidString
+        let submittedAt = Date()
+        logger.debug(
+            "Preparing screen annotation save id=\(saveID) destination=\(destination.title) format=\(format.rawValue)"
+        )
 
-        do {
-            let captured: NSImage
-            if format == .raw,
-               let frozenBackgroundImage = session.frozenBackgroundImage {
-                captured = frozenBackgroundImage
-            } else {
-                guard let image = try await ScreenAnnotationCaptureService.capture(
-                    screen,
-                    excludingWindowNumber: format == .raw
-                        ? annotationWindow?.windowNumber
-                        : nil
-                ) else {
-                    throw ScreenAnnotationSaveService.SaveError.imageUnavailable
-                }
-                captured = image
+        Task { @MainActor [weak self, weak session] in
+            guard let self, let session else {
+                completion(false)
+                return
             }
-            didFinishCapture = true
-            captureFinished()
 
-            let image = try ScreenAnnotationSaveService.croppedImage(
-                captured,
-                to: region
-            )
-            if format == .raw {
-                return try await saveRawCapture(
-                    image,
-                    fullCaptureSize: captured.size,
-                    region: region,
+            do {
+                let preparedSave = try await prepareSave(
                     destination: destination,
+                    format: format,
+                    region: region,
                     session: session,
                     fileState: fileState,
-                    annotationWindow: annotationWindow
+                    screen: screen,
+                    annotationWindow: annotationWindow,
+                    saveID: saveID
                 )
-            }
+                let preparationDuration = Self.milliseconds(from: submittedAt)
+                logger.info(
+                    "Prepared screen annotation save id=\(saveID) durationMs=\(preparationDuration)"
+                )
 
-            return try saveBitmapCapture(
-                image,
-                format: format,
-                destination: destination,
-                annotationWindow: annotationWindow
-            )
-        } catch {
-            logger.error("Failed to save screen annotation: \(error)")
-            session.report(error)
-            return false
+                let queuedSave: PreparedScreenAnnotationSave
+                if destination == .customLocation {
+                    completion(true)
+                    await Self.waitForNextMainRunLoop()
+                    guard let selectedURL = ScreenAnnotationSaveService
+                        .chooseCustomLocation(format: format) else {
+                        logger.debug(
+                            "Cancelled custom screen annotation save id=\(saveID)"
+                        )
+                        return
+                    }
+                    queuedSave = preparedSave.withCustomLocationURL(selectedURL)
+                } else {
+                    queuedSave = preparedSave
+                }
+
+                let persistence = persistence
+                taskManager.submit(id: saveID) {
+                    try await persistence.persist(
+                        queuedSave,
+                        saveID: saveID
+                    )
+                }
+                if destination != .customLocation {
+                    completion(true)
+                }
+            } catch {
+                let preparationDuration = Self.milliseconds(from: submittedAt)
+                logger.error(
+                    "Failed to prepare screen annotation save id=\(saveID) durationMs=\(preparationDuration) error=\(error)"
+                )
+                session.report(error)
+                completion(false)
+            }
         }
     }
 
-    private func saveRawCapture(
-        _ image: NSImage,
-        fullCaptureSize: CGSize,
-        region: CGRect?,
+    private func prepareSave(
         destination: ScreenAnnotationSaveDestination,
+        format: ScreenAnnotationSaveFormat,
+        region: CGRect?,
         session: ScreenAnnotationSession,
         fileState: FileState?,
-        annotationWindow: NSWindow?
-    ) async throws -> Bool {
-        let backgroundImageData = try ScreenAnnotationSaveService.imageData(
-            from: image,
-            format: .png
+        screen: NSScreen,
+        annotationWindow: NSWindow?,
+        saveID: String
+    ) async throws -> PreparedScreenAnnotationSave {
+        let captureStartedAt = Date()
+        let captured: NSImage
+        if format == .raw,
+           let frozenBackgroundImage = session.frozenBackgroundImage {
+            captured = frozenBackgroundImage
+            logger.debug(
+                "Reused frozen background id=\(saveID) durationMs=0"
+            )
+        } else {
+            if format != .raw {
+                try await session.deselectElementsForCapture()
+            }
+            guard let image = try await ScreenAnnotationCaptureService.capture(
+                screen,
+                excludingWindowNumber: format == .raw
+                    ? annotationWindow?.windowNumber
+                    : nil
+            ) else {
+                throw ScreenAnnotationSaveService.SaveError.imageUnavailable
+            }
+            captured = image
+            logger.debug(
+                "Captured screen annotation id=\(saveID) durationMs=\(Self.milliseconds(from: captureStartedAt))"
+            )
+        }
+
+        let cropStartedAt = Date()
+        let image = try ScreenAnnotationSaveService.croppedImage(
+            captured,
+            to: region
         )
-        let viewportRect = CGRect(origin: .zero, size: fullCaptureSize)
+        logger.debug(
+            "Prepared capture region id=\(saveID) durationMs=\(Self.milliseconds(from: cropStartedAt))"
+        )
+
+        guard format == .raw || destination.isExcalidrawFile else {
+            return .bitmap(
+                image: image,
+                format: format,
+                destination: destination,
+                customLocationURL: nil
+            )
+        }
+
+        let documentStartedAt = Date()
+        let documentImageFormat: ScreenAnnotationSaveFormat = format == .raw
+            ? .png
+            : format
+        let documentImageData = try ScreenAnnotationSaveService.imageData(
+            from: image,
+            format: documentImageFormat
+        )
+        let viewportRect = CGRect(origin: .zero, size: captured.size)
         let selectionRect = region?.intersection(viewportRect)
-        var document = try await session.makeRawAnnotationDocument(
-            backgroundImageData: backgroundImageData,
+        var document = try await session.makeAnnotationDocument(
+            imageData: documentImageData,
+            imageFormat: documentImageFormat,
+            mode: format == .raw ? .raw : .bitmap,
             viewportRect: viewportRect,
             selectionRect: selectionRect
         )
         document.name = "Screen Annotations"
-        return try await saveRawDocument(
-            document,
-            to: destination,
+        logger.debug(
+            "Built raw annotation document id=\(saveID) durationMs=\(Self.milliseconds(from: documentStartedAt))"
+        )
+        return .document(
+            document: document,
+            destination: destination,
             fileState: fileState,
-            annotationWindow: annotationWindow
+            customLocationURL: nil
         )
     }
 
-    private func saveBitmapCapture(
-        _ image: NSImage,
-        format: ScreenAnnotationSaveFormat,
-        destination: ScreenAnnotationSaveDestination,
-        annotationWindow: NSWindow?
-    ) throws -> Bool {
-        let data = try ScreenAnnotationSaveService.imageData(
-            from: image,
-            format: format
-        )
-
-        switch destination {
-            case .clipboard:
-                ScreenAnnotationSaveService.copyToClipboard(
-                    data,
-                    format: format
-                )
-            case .downloads:
-                try ScreenAnnotationSaveService.saveToDownloads(
-                    data,
-                    format: format
-                )
-            case .customLocation:
-                return try ScreenAnnotationSaveService.saveToCustomLocation(
-                    data,
-                    format: format,
-                    above: annotationWindow
-                ) != nil
-            case .newFile, .libraryFile, .localFile:
-                throw ScreenAnnotationSaveError.invalidDestinationFormat
-        }
-        return true
+    private static func milliseconds(from start: Date) -> Int {
+        Int((Date().timeIntervalSince(start) * 1_000).rounded())
     }
 
-    private func saveRawDocument(
-        _ document: ExcalidrawFile,
-        to destination: ScreenAnnotationSaveDestination,
-        fileState: FileState?,
-        annotationWindow: NSWindow?
-    ) async throws -> Bool {
-        guard let documentData = document.content else {
-            throw ScreenAnnotationSaveService.SaveError
-                .annotationDocumentUnavailable
-        }
-
-        switch destination {
-            case .newFile:
-                try await createAnnotationFile(
-                    document,
-                    fileState: fileState
-                )
-            case .libraryFile(let objectID, _):
-                try await insertRawDocument(
-                    document,
-                    into: .libraryFile(objectID),
-                    fileState: fileState
-                )
-            case .localFile(let url):
-                try await insertRawDocument(
-                    document,
-                    into: .localFile(url),
-                    fileState: fileState
-                )
-            case .clipboard:
-                ScreenAnnotationSaveService.copyToClipboard(
-                    documentData,
-                    format: .raw
-                )
-            case .downloads:
-                try ScreenAnnotationSaveService.saveToDownloads(
-                    documentData,
-                    format: .raw
-                )
-            case .customLocation:
-                return try ScreenAnnotationSaveService.saveToCustomLocation(
-                    documentData,
-                    format: .raw,
-                    above: annotationWindow
-                ) != nil
-        }
-        return true
-    }
-
-    private func createAnnotationFile(
-        _ document: ExcalidrawFile,
-        fileState: FileState?
-    ) async throws {
-        guard let fileState else {
-            throw ScreenAnnotationSaveError.fileStateUnavailable
-        }
-
-        let context = PersistenceController.shared.container.viewContext
-        guard let defaultGroup = try PersistenceController.shared
-            .getDefaultGroup(context: context) else {
-            throw ScreenAnnotationSaveError.defaultGroupUnavailable
-        }
-
-        let result = try await PersistenceController.shared.fileRepository
-            .createFileFromExcalidraw(
-                document,
-                groupObjectID: defaultGroup.objectID
-            )
-        guard let file = context.object(
-            with: result.fileObjectID
-        ) as? File else {
-            throw ScreenAnnotationSaveError.targetFileUnavailable
-        }
-
-        let activeFile = FileState.ActiveFile.file(file)
-        let destination = ScreenAnnotationSaveDestination.libraryFile(
-            objectID: result.fileObjectID,
-            name: document.name ?? "Screen Annotations"
-        )
-        configuration.selectFileDestination(destination)
-        fileState.currentActiveGroup = .group(defaultGroup)
-        fileState.setActiveFile(activeFile)
-    }
-
-    private func insertRawDocument(
-        _ document: ExcalidrawFile,
-        into target: ScreenAnnotationFileTarget,
-        fileState: FileState?
-    ) async throws {
-        let coordinator = try await openCanvas(
-            for: target,
-            fileState: fileState
-        )
-        try await ScreenAnnotationDocumentBridge.insert(
-            document,
-            into: coordinator.webView
-        )
-        coordinator.documentSyncController.scheduleProgrammaticMutationCommit(
-            reason: "insertRawScreenAnnotation"
-        )
-    }
-
-    private func openCanvas(
-        for target: ScreenAnnotationFileTarget,
-        fileState: FileState?
-    ) async throws -> ExcalidrawCanvasView.Coordinator {
-        guard let fileState else {
-            throw ScreenAnnotationSaveError.fileStateUnavailable
-        }
-
-        let activeFile: FileState.ActiveFile
-        switch target {
-            case .libraryFile(let objectID):
-                let context = PersistenceController.shared.container.viewContext
-                guard let object = try? context.existingObject(
-                    with: objectID
-                ),
-                      let file = object as? File else {
-                    throw ScreenAnnotationSaveError.targetFileUnavailable
-                }
-                if let group = file.group {
-                    fileState.currentActiveGroup = .group(group)
-                }
-                activeFile = .file(file)
-            case .localFile(let url):
-                activeFile = .localFile(url)
-        }
-
-        guard await fileState.requestActiveFileChange(activeFile) else {
-            throw ScreenAnnotationSaveError.targetFileUnavailable
-        }
-        return try await waitForCanvas(
-            fileID: activeFile.id,
-            fileState: fileState
-        )
-    }
-
-    private func waitForCanvas(
-        fileID: String,
-        fileState: FileState
-    ) async throws -> ExcalidrawCanvasView.Coordinator {
-        let deadline = Date().addingTimeInterval(8)
-        while Date() < deadline {
-            if let coordinator = fileState.excalidrawWebCoordinator,
-               coordinator.documentSyncController.currentLoadedFileID
-                == fileID {
-                return coordinator
+    private static func waitForNextMainRunLoop() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async {
+                continuation.resume()
             }
-            try await Task.sleep(nanoseconds: 80_000_000)
-        }
-        throw ScreenAnnotationSaveError.canvasLoadTimedOut
-    }
-}
-
-private enum ScreenAnnotationFileTarget {
-    case libraryFile(NSManagedObjectID)
-    case localFile(URL)
-}
-
-private enum ScreenAnnotationSaveError: LocalizedError {
-    case fileStateUnavailable
-    case targetFileUnavailable
-    case defaultGroupUnavailable
-    case canvasLoadTimedOut
-    case invalidDestinationFormat
-
-    var errorDescription: String? {
-        switch self {
-            case .fileStateUnavailable:
-                "No ExcalidrawZ window is available."
-            case .targetFileUnavailable:
-                "The selected Excalidraw file is unavailable."
-            case .defaultGroupUnavailable:
-                "The default Excalidraw group is unavailable."
-            case .canvasLoadTimedOut:
-                "The selected Excalidraw file did not finish loading."
-            case .invalidDestinationFormat:
-                "Excalidraw file destinations require Raw format."
         }
     }
 }

@@ -92,58 +92,23 @@ enum ScreenAnnotationSaveService {
         )
     }
 
-    @discardableResult
-    static func saveToDownloads(
-        _ data: Data,
+    static func chooseCustomLocation(
         format: ScreenAnnotationSaveFormat
-    ) throws -> URL {
-        let downloads = FileManager.default.urls(
-            for: .downloadsDirectory,
-            in: .userDomainMask
-        )[0]
-        let url = uniqueURL(in: downloads, format: format)
-        try data.write(to: url, options: .atomic)
-        return url
-    }
-
-    @discardableResult
-    static func saveToCustomLocation(
-        _ data: Data,
-        format: ScreenAnnotationSaveFormat,
-        above annotationWindow: NSWindow?
-    ) throws -> URL? {
+    ) -> URL? {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [format.contentType]
         panel.canCreateDirectories = true
         panel.nameFieldStringValue = defaultFilename(format: format)
-        if let annotationWindow {
-            panel.level = NSWindow.Level(
-                rawValue: annotationWindow.level.rawValue + 1
-            )
-        }
 
-        guard panel.runModal() == .OK, let url = panel.url else {
-            return nil
-        }
-        try data.write(to: url, options: .atomic)
-        return url
+        NSApp.activate(ignoringOtherApps: true)
+        panel.level = .modalPanel
+        panel.orderFrontRegardless()
+        panel.makeKey()
+        return panel.runModal() == .OK ? panel.url : nil
     }
 
-    private static func uniqueURL(
-        in directory: URL,
-        format: ScreenAnnotationSaveFormat
-    ) -> URL {
-        let base = defaultFilename(format: format)
-        var candidate = directory.appendingPathComponent(base)
-        var suffix = 2
-        while FileManager.default.fileExists(atPath: candidate.path) {
-            let stem = (base as NSString).deletingPathExtension
-            candidate = directory.appendingPathComponent(
-                "\(stem) \(suffix).\(format.fileExtension)"
-            )
-            suffix += 1
-        }
-        return candidate
+    static func save(_ data: Data, to url: URL) throws {
+        try data.write(to: url, options: .atomic)
     }
 
     private static func defaultFilename(

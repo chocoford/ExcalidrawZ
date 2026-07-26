@@ -2,11 +2,12 @@
 import AppKit
 import Combine
 import Foundation
+import Logging
 import WebKit
 
 @MainActor
 final class ScreenAnnotationSession: ObservableObject {
-    @Published private(set) var selectedTool: ExcalidrawTool = .arrow
+    @Published private(set) var selectedTool: ExcalidrawTool = .laser
     @Published private(set) var isToolLocked = false
     @Published private(set) var isReady = false
     @Published private(set) var errorMessage: String?
@@ -25,6 +26,8 @@ final class ScreenAnnotationSession: ObservableObject {
 
     private weak var webView: WKWebView?
     private var isPreparingCanvas = false
+    private var canvasPreparationTask: Task<Void, Never>?
+    private var canvasPreparationID = UUID()
     private let toolbarTools: [ExcalidrawTool]
     private var selectedElementIDs: [String] = []
     private var boundTextElementIDs: [String] = []
@@ -39,6 +42,8 @@ final class ScreenAnnotationSession: ObservableObject {
     private var boundTextResolvedSelectionIDs: [String]?
     private var propertyUpdateTask: Task<Void, Never>?
     private var propertyUpdateID = UUID()
+    private let logger = Logger(label: "ScreenAnnotationSession")
+    private let sessionID = UUID().uuidString
 
     init(
         frozenBackgroundImage: NSImage? = nil,
@@ -57,55 +62,95 @@ final class ScreenAnnotationSession: ObservableObject {
         }
     }
 
+    func detach(webView: WKWebView) {
+        guard self.webView === webView else { return }
+
+        canvasPreparationID = UUID()
+        canvasPreparationTask?.cancel()
+        canvasPreparationTask = nil
+        selectionSettleTask?.cancel()
+        selectionBoundsResolutionTask?.cancel()
+        boundTextResolutionTask?.cancel()
+        cancelPropertyUpdate()
+        self.webView = nil
+        isPreparingCanvas = false
+        isReady = false
+    }
+
     func prepareCanvas() {
         guard !isReady, !isPreparingCanvas, let webView else { return }
+        let preparationID = UUID()
+        canvasPreparationID = preparationID
         isPreparingCanvas = true
+        logger.debug(
+            "Preparing screen annotation canvas session=\(sessionID) url=\(webView.url?.absoluteString ?? "nil")"
+        )
 
-        Task {
+        canvasPreparationTask = Task { @MainActor [weak self, weak webView] in
+            guard let self, let webView else { return }
+            defer {
+                if self.canvasPreparationID == preparationID {
+                    self.canvasPreparationTask = nil
+                    self.isPreparingCanvas = false
+                }
+            }
             do {
-                _ = try await webView.callAsyncJavaScript(
+                let result = try await webView.callAsyncJavaScript(
                     """
                     const helper = window.excalidrawZHelper;
-                    const api = helper?._api;
-                    if (!api || typeof helper.setCanvasTransparent !== "function") {
-                      throw new Error("Screen annotation API is not ready.");
-                    }
-
-                    const transparency = helper.setCanvasTransparent(true);
-                    if (!transparency?.applied) {
-                      throw new Error("Canvas transparency was not applied.");
-                    }
-
-                    api.updateScene({
-                      appState: {
-                        gridModeEnabled: false,
-                        zenModeEnabled: true,
-                        viewModeEnabled: false,
-                        showWelcomeScreen: false,
-                        scrollX: 0,
-                        scrollY: 0,
-                        zoom: { value: 1 },
-                        currentItemStrokeColor: "#ff3b30",
-                      },
-                    });
-                    api.setActiveTool({ type: "arrow" });
+                    const result = await helper.prepareCanvas(options);
                     helper.startCameraTracking?.();
                     await new Promise(resolve => {
                       requestAnimationFrame(() => requestAnimationFrame(resolve));
                     });
-                    return transparency;
+                    return result;
                     """,
-                    arguments: [:],
+                    arguments: [
+                        "options": [
+                            "reset": true,
+                            "clearHistory": true,
+                            "transparent": true,
+                            "activeTool": "laser",
+                            "appState": [
+                                "gridModeEnabled": false,
+                                "zenModeEnabled": true,
+                                "viewModeEnabled": false,
+                                "showWelcomeScreen": false,
+                                "scrollX": 0,
+                                "scrollY": 0,
+                                "zoom": ["value": 1],
+                                "currentItemStrokeColor": "#ff3b30",
+                            ],
+                        ],
+                    ],
                     contentWorld: .page
                 )
-                isPreparingCanvas = false
+                guard let result = result as? [String: Any],
+                      result["reset"] as? Bool == true,
+                      result["historyCleared"] as? Bool == true,
+                      result["transparent"] as? Bool == true,
+                      result["activeTool"] as? String == "laser" else {
+                    throw ScreenAnnotationCanvasPreparationError
+                        .invalidAcknowledgement
+                }
+                self.logger.debug(
+                    "Prepared screen annotation canvas session=\(self.sessionID) reset=\(result["reset"] ?? "nil") historyCleared=\(result["historyCleared"] ?? "nil") transparent=\(result["transparent"] ?? "nil") activeTool=\(result["activeTool"] ?? "nil") appliedAppStateKeys=\(result["appliedAppStateKeys"] ?? [])"
+                )
+                guard !Task.isCancelled,
+                      self.canvasPreparationID == preparationID,
+                      self.webView === webView else {
+                    return
+                }
                 webView.alphaValue = 1
-                isReady = true
-                errorMessage = nil
+                self.isReady = true
+                self.errorMessage = nil
                 webView.window?.makeFirstResponder(webView)
             } catch {
-                isPreparingCanvas = false
-                report(error)
+                guard !Task.isCancelled,
+                      self.canvasPreparationID == preparationID else {
+                    return
+                }
+                self.report(error)
             }
         }
     }
@@ -114,8 +159,10 @@ final class ScreenAnnotationSession: ObservableObject {
         errorMessage = error.localizedDescription
     }
 
-    func makeRawAnnotationDocument(
-        backgroundImageData: Data,
+    func makeAnnotationDocument(
+        imageData: Data,
+        imageFormat: ScreenAnnotationSaveFormat,
+        mode: ScreenAnnotationDocumentBridge.Mode,
         viewportRect: CGRect,
         selectionRect: CGRect?
     ) async throws -> ExcalidrawFile {
@@ -124,11 +171,28 @@ final class ScreenAnnotationSession: ObservableObject {
                 .annotationDocumentUnavailable
         }
 
-        return try await ScreenAnnotationDocumentBridge.makeRawDocument(
+        return try await ScreenAnnotationDocumentBridge.makeDocument(
             in: webView,
-            backgroundImageData: backgroundImageData,
+            imageData: imageData,
+            imageFormat: imageFormat,
+            mode: mode,
             viewportRect: viewportRect,
             selectionRect: selectionRect
+        )
+    }
+
+    func deselectElementsForCapture() async throws {
+        guard let webView else { return }
+
+        _ = try await webView.callAsyncJavaScript(
+            """
+            window.excalidrawZHelper?.setSelectedElementIds([]);
+            await new Promise(resolve => {
+              requestAnimationFrame(() => requestAnimationFrame(resolve));
+            });
+            """,
+            arguments: [:],
+            contentWorld: .page
         )
     }
 
@@ -568,6 +632,14 @@ final class ScreenAnnotationSession: ObservableObject {
                 report(error)
             }
         }
+    }
+}
+
+private enum ScreenAnnotationCanvasPreparationError: LocalizedError {
+    case invalidAcknowledgement
+
+    var errorDescription: String? {
+        "Excalidraw did not confirm the prepared canvas state."
     }
 }
 

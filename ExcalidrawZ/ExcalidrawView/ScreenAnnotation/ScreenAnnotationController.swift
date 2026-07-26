@@ -17,9 +17,11 @@ final class ScreenAnnotationController {
     private var windowController: NSWindowController?
     private var captureTask: Task<Void, Never>?
     private var shortcutTask: Task<Void, Never>?
+    private weak var activeSession: ScreenAnnotationSession?
     private var registeredWindows: [
         ObjectIdentifier: RegisteredWindowContext
     ] = [:]
+    private let webRuntime = ScreenAnnotationWebRuntime()
     private let saveCoordinator = ScreenAnnotationSaveCoordinator()
 
     private init() {
@@ -56,6 +58,11 @@ final class ScreenAnnotationController {
         captureTask?.cancel()
         captureTask = nil
 
+        let sessionToUnbind = activeSession
+        if let sessionToUnbind {
+            webRuntime.unbind(sessionToUnbind)
+        }
+        activeSession = nil
         windowController?.close()
         windowController = nil
     }
@@ -80,11 +87,13 @@ final class ScreenAnnotationController {
         let session = ScreenAnnotationSession(
             toolbarTools: tools
         )
+        activeSession = session
         let toolbarPlacement = ScreenAnnotationToolbarPlacementStore
             .placement(for: screen)
         let rootView = ScreenAnnotationView(
             session: session,
             saveConfiguration: saveCoordinator.configuration,
+            webRuntime: webRuntime,
             tools: tools,
             initialToolbarPlacement: toolbarPlacement,
             onToolbarPlacementChange: { placement in
@@ -101,9 +110,12 @@ final class ScreenAnnotationController {
                 destination,
                 format,
                 region,
-                captureFinished in
-                guard let self, let session else { return false }
-                return await self.saveCoordinator.save(
+                completion in
+                guard let self, let session else {
+                    completion(false)
+                    return
+                }
+                self.saveCoordinator.submit(
                     destination: destination,
                     format: format,
                     region: region,
@@ -111,7 +123,7 @@ final class ScreenAnnotationController {
                     screen: screen,
                     fileState: fileState,
                     annotationWindow: self.windowController?.window,
-                    captureFinished: captureFinished
+                    completion: completion
                 )
             },
             onClose: { [weak self] in
@@ -124,7 +136,12 @@ final class ScreenAnnotationController {
         )
         .environmentObject(ItemDragState())
 
-        let panel = ScreenAnnotationPanel(screen: screen)
+        let panel = ScreenAnnotationPanel(
+            screen: screen,
+            onCommandEscape: { [weak self] in
+                self?.dismiss()
+            }
+        )
         let hostingView = NSHostingView(rootView: rootView)
         hostingView.wantsLayer = true
         hostingView.layer?.backgroundColor = NSColor.clear.cgColor
@@ -219,44 +236,5 @@ private final class RegisteredWindowContext {
         self.window = window
         self.fileState = fileState
     }
-}
-
-private final class ScreenAnnotationPanel: NSPanel {
-    init(screen: NSScreen) {
-        super.init(
-            contentRect: screen.frame,
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
-
-        backgroundColor = .clear
-        isOpaque = false
-        hasShadow = false
-        collectionBehavior = [.canJoinAllSpaces, .stationary]
-        if #available(macOS 26.0, *) {
-            collectionBehavior.insert(.canJoinAllApplications)
-        } else {
-            collectionBehavior.insert(.fullScreenAuxiliary)
-        }
-        animationBehavior = .none
-        acceptsMouseMovedEvents = true
-        isFloatingPanel = true
-        hidesOnDeactivate = false
-        isReleasedWhenClosed = false
-        isMovable = false
-
-        // isFloatingPanel resets the level, so shielding must be assigned last.
-        level = NSWindow.Level(rawValue: Int(CGShieldingWindowLevel()))
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override var canBecomeKey: Bool { true }
-
-    override var canBecomeMain: Bool { false }
 }
 #endif

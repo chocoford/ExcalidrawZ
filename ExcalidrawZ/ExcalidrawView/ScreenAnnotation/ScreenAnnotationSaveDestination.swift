@@ -8,7 +8,6 @@ import UniformTypeIdentifiers
 enum ScreenAnnotationSaveDestination: Hashable {
     case newFile
     case clipboard
-    case downloads
     case customLocation
     case libraryFile(objectID: NSManagedObjectID, name: String)
     case localFile(url: URL)
@@ -19,8 +18,6 @@ enum ScreenAnnotationSaveDestination: Hashable {
                 "New Excalidraw File"
             case .clipboard:
                 "Clipboard"
-            case .downloads:
-                "Downloads"
             case .customLocation:
                 "Custom Location"
             case .libraryFile(_, let name):
@@ -34,7 +31,7 @@ enum ScreenAnnotationSaveDestination: Hashable {
         switch self {
             case .newFile, .libraryFile, .localFile:
                 true
-            case .clipboard, .downloads, .customLocation:
+            case .clipboard, .customLocation:
                 false
         }
     }
@@ -110,9 +107,27 @@ enum ScreenAnnotationSaveFormat: String, CaseIterable, Hashable {
 
 @MainActor
 final class ScreenAnnotationSaveConfiguration: ObservableObject {
+    private struct RecentFileReference: Codable, Hashable {
+        enum Kind: String, Codable {
+            case library
+            case local
+        }
+
+        let kind: Kind
+        let identifier: String
+    }
+
+    private static let recentFileDestinationsKey =
+        "ScreenAnnotationRecentFileDestinations"
+    private static let recentFileDestinationLimit = 5
+
     @Published private(set) var destination: ScreenAnnotationSaveDestination
     @Published private(set) var fileDestination: ScreenAnnotationSaveDestination
+    @Published private(set) var recentFileDestinations:
+        [ScreenAnnotationSaveDestination] = []
     @Published var format: ScreenAnnotationSaveFormat
+
+    private var recentFileReferences: [RecentFileReference] = []
 
     init(
         destination: ScreenAnnotationSaveDestination = .newFile,
@@ -123,6 +138,10 @@ final class ScreenAnnotationSaveConfiguration: ObservableObject {
             ? destination
             : .newFile
         self.format = format
+        recentFileReferences = Self.loadRecentFileReferences()
+        recentFileDestinations = Self.resolveDestinations(
+            from: recentFileReferences
+        )
     }
 
     var title: String {
@@ -130,16 +149,23 @@ final class ScreenAnnotationSaveConfiguration: ObservableObject {
     }
 
     var availableFormats: [ScreenAnnotationSaveFormat] {
-        destination.isExcalidrawFile
-            ? [.raw]
-            : ScreenAnnotationSaveFormat.allCases
+        ScreenAnnotationSaveFormat.allCases
+    }
+
+    var fileDestinationOptions: [ScreenAnnotationSaveDestination] {
+        var destinations: [ScreenAnnotationSaveDestination] = [.newFile]
+        if fileDestination != .newFile,
+           !recentFileDestinations.contains(fileDestination) {
+            destinations.append(fileDestination)
+        }
+        destinations.append(contentsOf: recentFileDestinations)
+        return destinations
     }
 
     func selectDestination(_ destination: ScreenAnnotationSaveDestination) {
         self.destination = destination
         if destination.isExcalidrawFile {
             fileDestination = destination
-            format = .raw
         }
     }
 
@@ -149,7 +175,106 @@ final class ScreenAnnotationSaveConfiguration: ObservableObject {
         guard destination.isExcalidrawFile else { return }
         fileDestination = destination
         self.destination = destination
-        format = .raw
+    }
+
+    func recordSuccessfulSave(
+        to destination: ScreenAnnotationSaveDestination
+    ) {
+        guard let reference = Self.reference(for: destination) else {
+            return
+        }
+
+        recentFileReferences.removeAll { $0 == reference }
+        recentFileReferences.insert(reference, at: 0)
+        recentFileReferences = Array(
+            recentFileReferences.prefix(Self.recentFileDestinationLimit)
+        )
+        Self.saveRecentFileReferences(recentFileReferences)
+        recentFileDestinations = Self.resolveDestinations(
+            from: recentFileReferences
+        )
+    }
+
+    private static func reference(
+        for destination: ScreenAnnotationSaveDestination
+    ) -> RecentFileReference? {
+        switch destination {
+            case .libraryFile(let objectID, _):
+                return RecentFileReference(
+                    kind: .library,
+                    identifier: objectID.uriRepresentation().absoluteString
+                )
+            case .localFile(let url):
+                return RecentFileReference(
+                    kind: .local,
+                    identifier: url.standardizedFileURL.absoluteString
+                )
+            case .newFile, .clipboard, .customLocation:
+                return nil
+        }
+    }
+
+    private static func loadRecentFileReferences() -> [RecentFileReference] {
+        guard let data = UserDefaults.standard.data(
+            forKey: recentFileDestinationsKey
+        ) else {
+            return []
+        }
+        return (try? JSONDecoder().decode(
+            [RecentFileReference].self,
+            from: data
+        )) ?? []
+    }
+
+    private static func saveRecentFileReferences(
+        _ references: [RecentFileReference]
+    ) {
+        guard let data = try? JSONEncoder().encode(references) else {
+            return
+        }
+        UserDefaults.standard.set(
+            data,
+            forKey: recentFileDestinationsKey
+        )
+    }
+
+    private static func resolveDestinations(
+        from references: [RecentFileReference]
+    ) -> [ScreenAnnotationSaveDestination] {
+        let persistence = PersistenceController.shared
+        let context = persistence.container.viewContext
+
+        return references.compactMap { reference in
+            switch reference.kind {
+                case .library:
+                    guard let url = URL(string: reference.identifier),
+                          let objectID = persistence.container
+                            .persistentStoreCoordinator
+                            .managedObjectID(
+                                forURIRepresentation: url
+                            ),
+                          let object = try? context.existingObject(
+                            with: objectID
+                          ),
+                          let file = object as? File,
+                          !file.inTrash else {
+                        return nil
+                    }
+                    return .libraryFile(
+                        objectID: objectID,
+                        name: file.name
+                            ?? String(localizable: .generalUnknown)
+                    )
+
+                case .local:
+                    guard let url = URL(string: reference.identifier),
+                          FileManager.default.fileExists(atPath: url.path)
+                    else {
+                        return nil
+                    }
+                    return .localFile(url: url)
+            }
+        }
     }
 }
 #endif

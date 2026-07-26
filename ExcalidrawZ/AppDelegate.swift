@@ -35,21 +35,14 @@ final class ApplicationTerminationCanvasFlushCoordinator {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    private static let lastWindowCloseTerminationDelay: UInt64 = 2_000_000_000
-
     let logger = Logger(label: "AppDelegate")
     private var isHandlingApplicationTermination = false
-    private var didPrepareLastWindowCloseTermination = false
     
     func applicationWillTerminate(_ notification: Notification) {
         PersistenceController.shared.save()
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        if didPrepareLastWindowCloseTermination {
-            return .terminateNow
-        }
-
         guard !isHandlingApplicationTermination else {
             return .terminateCancel
         }
@@ -66,28 +59,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        Task { @MainActor in
-            await terminateAfterLastWindowClosedIfNeeded()
-        }
         return false
     }
 
     @MainActor
-    private func terminateAfterLastWindowClosedIfNeeded() async {
-        await backupFilesBeforeTermination()
-        try? await Task.sleep(nanoseconds: Self.lastWindowCloseTerminationDelay)
-
-        guard NSApp.visibleMainWindows.isEmpty else { return }
-
-        await prepareForApplicationTermination()
-        didPrepareLastWindowCloseTermination = true
-        NSApp.terminate(nil)
-    }
-
-    @MainActor
     private func prepareForApplicationTermination() async {
+        await ScreenAnnotationSaveTaskManager.shared.waitUntilIdle()
+        await OffscreenExcalidrawEditor.waitForPendingOperations()
         await ApplicationTerminationCanvasFlushCoordinator.shared.flushPendingCanvasSnapshot()
         PersistenceController.shared.save()
+        await backupFilesBeforeTermination()
     }
 
     @MainActor

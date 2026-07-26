@@ -89,7 +89,6 @@ struct ExcalidrawZApp: App {
         FeatureDiscoveryTips.configureIfAvailable()
 #if os(macOS)
         _ = ExcalidrawZMCPServerController.shared
-        _ = ScreenAnnotationController.shared
 #endif
 
         // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
@@ -264,6 +263,11 @@ struct ExcalidrawZApp: App {
                 .llmProvider(state: llmState, client: .shared)
                 .lockedContentAutoRelock(lockedContentState: lockedContentState)
                 .onAppear {
+#if os(macOS)
+                    // Initialize after the SwiftUI scene to avoid shortcut event
+                    // monitoring affecting the initial accent color environment.
+                    _ = ScreenAnnotationController.shared
+#endif
 #if os(macOS) && !APP_STORE
                     updateChecker.assignUpdater(updater: updaterController.updater)
 #endif

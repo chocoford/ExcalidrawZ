@@ -5,18 +5,25 @@ import WebKit
 
 @MainActor
 enum ScreenAnnotationDocumentBridge {
-    static func makeRawDocument(
+    enum Mode: String {
+        case raw
+        case bitmap
+    }
+
+    static func makeDocument(
         in webView: WKWebView,
-        backgroundImageData: Data,
+        imageData: Data,
+        imageFormat: ScreenAnnotationSaveFormat,
+        mode: Mode,
         viewportRect: CGRect,
         selectionRect: CGRect?
     ) async throws -> ExcalidrawFile {
-        guard let bitmap = NSBitmapImageRep(data: backgroundImageData) else {
+        guard let bitmap = NSBitmapImageRep(data: imageData) else {
             throw ScreenAnnotationSaveService.SaveError.imageUnavailable
         }
 
         let dataURL =
-            "data:image/png;base64,\(backgroundImageData.base64EncodedString())"
+            "data:\(imageFormat.mimeType);base64,\(imageData.base64EncodedString())"
         let rawDocument = try await webView.callAsyncJavaScript(
             """
             const helper = window.excalidrawZHelper;
@@ -27,10 +34,10 @@ enum ScreenAnnotationDocumentBridge {
             }
 
             const options = {
-              mode: "raw",
+              mode,
               image: {
                 dataURL,
-                mimeType: "image/png",
+                mimeType,
                 width: imagePixelWidth,
                 height: imagePixelHeight,
                 created,
@@ -55,7 +62,9 @@ enum ScreenAnnotationDocumentBridge {
             );
             """,
             arguments: [
+                "mode": mode.rawValue,
                 "dataURL": dataURL,
+                "mimeType": imageFormat.mimeType,
                 "imagePixelWidth": bitmap.pixelsWide,
                 "imagePixelHeight": bitmap.pixelsHigh,
                 "created": Int(Date().timeIntervalSince1970 * 1_000),

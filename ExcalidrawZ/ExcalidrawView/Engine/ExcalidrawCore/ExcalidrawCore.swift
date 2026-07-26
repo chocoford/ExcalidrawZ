@@ -274,8 +274,10 @@ extension ExcalidrawCore {
         while true {
             let coreLoading = self.isLoading || self.isNavigating || !self.isDocumentLoaded
             let webLoading = await self.webView.isLoading
+            let initialMediaLoading = parent != nil
+                && !hasInjectIndexedDBData
 
-            if !coreLoading && !webLoading {
+            if !coreLoading && !webLoading && !initialMediaLoading {
                 return true
             }
 
@@ -284,12 +286,22 @@ extension ExcalidrawCore {
             }
 
             if Date() >= deadline {
-                logger.warning("Timed out waiting to load file \(fileID). coreLoading=\(coreLoading) webLoading=\(webLoading)")
+                if !coreLoading && !webLoading && initialMediaLoading {
+                    logger.warning(
+                        "Timed out waiting for initial media injection before loading file \(fileID); continuing with available media"
+                    )
+                    return true
+                }
+                logger.warning(
+                    "Timed out waiting to load file \(fileID). coreLoading=\(coreLoading) webLoading=\(webLoading) initialMediaLoading=\(initialMediaLoading)"
+                )
                 return false
             }
 
             if !didLogWait {
-                logger.info("Waiting for Excalidraw readiness before loading file \(fileID)")
+                logger.info(
+                    "Waiting for Excalidraw readiness before loading file \(fileID), initialMediaLoading=\(initialMediaLoading)"
+                )
                 didLogWait = true
             }
             try? await Task.sleep(nanoseconds: 100_000_000)

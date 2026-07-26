@@ -85,6 +85,24 @@ actor ExcalidrawViewportStateStore {
         return try Self.contentDataByRemovingViewport(from: data)
     }
 
+    /// Preserves the source document's viewport while accepting all other
+    /// appState changes from an editor running at a different offscreen size.
+    func contentData(
+        _ data: Data,
+        preservingViewportFrom sourceData: Data
+    ) throws -> Data {
+        let dataWithoutViewport = try Self.contentDataByRemovingViewport(
+            from: data
+        )
+        guard let viewport = try Self.viewport(fromContentData: sourceData) else {
+            return dataWithoutViewport
+        }
+        return try Self.contentDataByApplyingViewport(
+            viewport,
+            to: dataWithoutViewport
+        )
+    }
+
     func appStateBySeparatingViewport(
         _ appState: ExcalidrawCore.JSONValue,
         fileID: String
