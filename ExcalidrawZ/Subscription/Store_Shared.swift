@@ -43,9 +43,15 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
     private static func planFeatures(
         mcpFeature: String?,
         collaborationRoomsCount: String,
+        includesPresentation: Bool = false,
         aiCredits: Int? = nil
     ) -> [String] {
         var features = commonPlanFeatures
+        if includesPresentation {
+            features.append(
+                String(localizable: .paywallPlanGeneralFeaturesPresentation)
+            )
+        }
         if ExcalidrawZMCPServerController.isAvailable,
            let mcpFeature {
             features.append(mcpFeature)
@@ -86,7 +92,8 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
         description: String(localizable: .paywallPlanStarterDescription),
         features: Self.planFeatures(
             mcpFeature: String(localizable: .paywallPlanGeneralFeaturesOptimizedMCPServices),
-            collaborationRoomsCount: String(localizable: .paywallPlanGeneralFeaturesUnlimitedValue)
+            collaborationRoomsCount: String(localizable: .paywallPlanGeneralFeaturesUnlimitedValue),
+            includesPresentation: true
         ),
         fallbackDisplayPrice: "$2.99",
         fallbackDisplayPeriod: "a month",
@@ -102,6 +109,7 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
         features: Self.planFeatures(
             mcpFeature: String(localizable: .paywallPlanGeneralFeaturesOptimizedMCPServices),
             collaborationRoomsCount: String(localizable: .paywallPlanGeneralFeaturesUnlimitedValue),
+            includesPresentation: true,
             aiCredits: 500
         ),
         fallbackDisplayPrice: "$9.99",
@@ -117,6 +125,7 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
         features: Self.planFeatures(
             mcpFeature: String(localizable: .paywallPlanGeneralFeaturesOptimizedMCPServices),
             collaborationRoomsCount: String(localizable: .paywallPlanGeneralFeaturesUnlimitedValue),
+            includesPresentation: true,
             aiCredits: 1800
         ),
         fallbackDisplayPrice: "$29.99",
@@ -132,6 +141,7 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
         features: Self.planFeatures(
             mcpFeature: String(localizable: .paywallPlanGeneralFeaturesOptimizedMCPServices),
             collaborationRoomsCount: String(localizable: .paywallPlanGeneralFeaturesUnlimitedValue),
+            includesPresentation: true,
             aiCredits: 5400
         ),
         fallbackDisplayPrice: "$99.99",
@@ -182,6 +192,11 @@ extension Store {
         return activeSubscriptionItem >= .starter
     }
 
+    var canUsePresentation: Bool {
+        guard let activeSubscriptionItem else { return false }
+        return activeSubscriptionItem >= .starter
+    }
+
     enum ReachPaywallReason {
         case manaully
         
@@ -191,6 +206,7 @@ extension Store {
         /// leaving the canvas.
         case aiInsufficientCredits
         case optimizedMCPServices
+        case presentation
 
         var paywallMessage: String? {
             switch self {
@@ -203,6 +219,8 @@ extension Store {
                     "Your AI credits have run out. Upgrade to keep chatting."
                 case .optimizedMCPServices:
                     String(localizable: .paywallReachReasonOptimizedMCPServices)
+                case .presentation:
+                    String(localizable: .paywallReachReasonPresentation)
             }
         }
     }

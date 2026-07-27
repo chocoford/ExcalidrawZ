@@ -96,10 +96,7 @@ struct Paywall: View {
     }
     
     var baseFeatureLines: [Feature] {
-        var features: [Feature] = [
-            .completeCanvasWorkspace,
-            .cloudReadyLibrary
-        ]
+        var features: [Feature] = [.completeCanvasWorkspace]
         if ExcalidrawZMCPServerController.isAvailable {
             features.append(mcpServicesFeature(for: currentSubscriptionItemForComparison))
         }
@@ -587,10 +584,7 @@ struct Paywall: View {
     }
 
     func planComparisonFeatureLines(for plan: SubscriptionItem, maxCredits: Int? = nil) -> [Feature] {
-        var features: [Feature] = [
-            .completeCanvasWorkspace,
-            .cloudReadyLibrary
-        ]
+        var features: [Feature] = [.completeCanvasWorkspace]
         if ExcalidrawZMCPServerController.isAvailable {
             features.append(mcpServicesFeature(for: plan))
         }
@@ -599,7 +593,8 @@ struct Paywall: View {
     
     var starterFeatureLines: [Feature] {
         [
-            .unlimitedCollaborationTools
+            .unlimitedCollaborationTools,
+            .presentation
         ]
     }
     

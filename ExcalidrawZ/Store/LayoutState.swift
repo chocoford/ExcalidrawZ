@@ -12,6 +12,7 @@ final class LayoutState: ObservableObject {
         case aiChat
         case library
         case history
+        case presentation
         case preference
         case search
 #if DEBUG

@@ -222,10 +222,7 @@ final class ScreenAnnotationWebRuntime: NSObject {
     """
 }
 
-extension ScreenAnnotationWebRuntime:
-    @preconcurrency WKNavigationDelegate,
-    @preconcurrency WKScriptMessageHandler
-{
+extension ScreenAnnotationWebRuntime: WKNavigationDelegate, WKScriptMessageHandler {
     func webView(
         _ webView: WKWebView,
         didFail navigation: WKNavigation!,

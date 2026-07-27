@@ -46,6 +46,8 @@ struct InspectorPresentationModifier: ViewModifier {
     @EnvironmentObject private var lockedContentState: LockedContentStateStore
 
     @AppStorage(FloatingInspectorMetrics.widthStorageKey) private var floatingInspectorWidth = FloatingInspectorMetrics.defaultWidth
+    @ObservedObject private var presentationController = ExcalidrawPresentationController.shared
+    @StateObject private var presentationModel = ExcalidrawPresentationModel()
     @State private var librariesToImport: [ExcalidrawLibrary] = []
 
     var shouldUseFloatingInspector: Bool {
@@ -125,6 +127,14 @@ struct InspectorPresentationModifier: ViewModifier {
         // is the actual frame the user perceives as "the canvas", and bottom-
         // center should be the canvas's bottom-center, not the whole window's.
         .modifier(ExcalidrawLibraryImporter(items: $librariesToImport))
+#if os(iOS)
+        .fullScreenCover(item: $presentationController.session) { session in
+            ExcalidrawPresentationView(
+                session: session,
+                onDismiss: presentationController.dismiss
+            )
+        }
+#endif
         .watch(value: lockedContentState.activeFileLockState) { lockState in
             guard lockState == .locked,
                   layoutState.isInspectorPresented else { return }
@@ -152,6 +162,8 @@ struct InspectorPresentationModifier: ViewModifier {
                 LibraryView(librariesToImport: $librariesToImport)
             case .history:
                 FileHistoryInspectorContent()
+            case .presentation:
+                PresentationInspectorContent(model: presentationModel)
             case .preference:
                 CanvasSettingsInspectorContent()
             case .search:
@@ -167,7 +179,7 @@ struct InspectorPresentationModifier: ViewModifier {
     private func compactInspectorContent() -> some View {
         if isCompactIOS {
             switch layoutState.activeInspectorTab {
-                case .preference, .search:
+                case .preference, .search, .presentation:
                     CompactInspectorNavigationSheet(
                         title: inspectorTitle,
                         onDismiss: {
@@ -195,6 +207,8 @@ struct InspectorPresentationModifier: ViewModifier {
                 String(localizable: .librariesTitle)
             case .history:
                 String(localizable: .checkpoints)
+            case .presentation:
+                String(localizable: .presentationTitle)
             case .preference:
                 String(localizable: .canvasPreferencesTitle)
             case .search:
@@ -306,7 +320,7 @@ struct InspectorPresentationModifier: ViewModifier {
 
     private var shouldUseFloatingNavigationInspectorContent: Bool {
         switch layoutState.activeInspectorTab {
-            case .aiChat, .library:
+            case .aiChat, .library, .presentation:
                 true
             case .history:
                 !isCompactIOS

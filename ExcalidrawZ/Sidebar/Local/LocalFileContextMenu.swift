@@ -484,7 +484,7 @@ struct LocalFileRowMenuItems: View {
                         fileState.setActiveFile(.localFile(newURL))
                     }
                 }
-                await localFolderState.publishMovedItems(mapping)
+                localFolderState.publishMovedItems(mapping)
             } catch {
                 await MainActor.run {
                     alertToast(error)

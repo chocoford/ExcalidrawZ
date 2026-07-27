@@ -95,7 +95,9 @@ struct BackupFoldersView: View {
         }
     }
 
-    private static func loadFolderContent(from folder: URL) throws -> [BackupFolderItem] {
+    private nonisolated static func loadFolderContent(
+        from folder: URL
+    ) throws -> [BackupFolderItem] {
         try FileManager.default.contentsOfDirectory(
             at: folder,
             includingPropertiesForKeys: [.nameKey, .isDirectoryKey],

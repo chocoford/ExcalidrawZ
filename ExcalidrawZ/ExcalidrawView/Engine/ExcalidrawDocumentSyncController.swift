@@ -157,6 +157,19 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         return hasPendingLoad
     }
 
+    func waitUntilFileIsLoaded(
+        _ fileID: String,
+        timeout: TimeInterval
+    ) async throws -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while currentLoadedFileID != fileID {
+            try Task.checkCancellation()
+            guard Date() < deadline else { return false }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        return true
+    }
+
     func attach(core: ExcalidrawCore) {
         self.core = core
     }
@@ -321,6 +334,9 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         let onError = core.publishError
 
         if let metadata = data.metadata, data.fileData == nil {
+            if metadata.shouldPullContentSnapshot {
+                await core.noteAcceptedContentChange()
+            }
             await snapshotCoordinator.handleStateChangedMetadata(
                 metadata,
                 currentFileID: currentFileID,
@@ -342,6 +358,7 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
                 return
             }
 
+            await core.noteAcceptedContentChange()
             try await applyCanvasFileData(
                 fileData,
                 currentFileID: currentFileID,

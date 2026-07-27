@@ -49,13 +49,6 @@ extension Paywall {
             subtitle: String(localizable: .paywallFeatureDrawMessage)
         )
 
-        static let cloudReadyLibrary = Feature(
-            id: "cloud-ready-library",
-            symbol: .icloud,
-            title: String(localizable: .paywallFeatureSyncTitle),
-            subtitle: String(localizable: .paywallFeatureSyncMessage)
-        )
-
         static let basicMCPServices = Feature(
             id: "basic-mcp-services",
             symbol: .serverRack,
@@ -75,6 +68,13 @@ extension Paywall {
             symbol: .person2Wave2,
             title: String(localizable: .paywallFeatureStarterCollaborationTitle),
             subtitle: String(localizable: .paywallFeatureStarterCollaborationMessage)
+        )
+
+        static let presentation = Feature(
+            id: "presentation",
+            symbol: .rectangleStack,
+            title: String(localizable: .paywallFeaturePresentationTitle),
+            subtitle: String(localizable: .paywallFeaturePresentationMessage)
         )
 
         static let proAICredits = Feature(

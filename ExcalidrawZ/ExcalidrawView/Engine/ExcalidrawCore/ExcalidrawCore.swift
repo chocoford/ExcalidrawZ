@@ -44,6 +44,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     @Published private(set) var isLoading: Bool = false
     @Published private(set) var cameraState = CameraState()
     @Published private(set) var selectedElementIDs: [String] = []
+    @Published private(set) var contentChangeToken = 0
     
     var downloadCache: [String : Data] = [:]
     var downloads: [URLRequest : URL] = [:]
@@ -59,6 +60,11 @@ class ExcalidrawCore: NSObject, ObservableObject {
     private var lastVersion: Int = 0
 
     var hasInjectIndexedDBData = false
+
+    @MainActor
+    func noteAcceptedContentChange() {
+        contentChangeToken &+= 1
+    }
 
     // Track loaded MediaItem IDs for re-injection detection
     private var loadedMediaItemIDs: Set<String> = []
