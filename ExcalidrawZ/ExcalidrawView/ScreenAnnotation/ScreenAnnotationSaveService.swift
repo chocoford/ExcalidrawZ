@@ -61,7 +61,8 @@ enum ScreenAnnotationSaveService {
 
     static func imageData(
         from image: NSImage,
-        format: ScreenAnnotationSaveFormat
+        format: ScreenAnnotationSaveFormat,
+        jpegCompressionFactor: Double = 0.92
     ) throws -> Data {
         guard let cgImage = image.cgImage(
             forProposedRect: nil,
@@ -74,11 +75,98 @@ enum ScreenAnnotationSaveService {
         representation.size = image.size
         guard let data = representation.representation(
             using: format.bitmapFileType,
-            properties: format.bitmapProperties
+            properties: format.bitmapProperties(
+                jpegCompressionFactor: jpegCompressionFactor
+            )
         ) else {
             throw SaveError.imageEncodingFailed(format)
         }
         return data
+    }
+
+    static func optimizedImage(
+        _ image: NSImage,
+        quality: ScreenAnnotationImageQuality
+    ) throws -> NSImage {
+        guard quality != .original else {
+            return image
+        }
+        guard let sourceImage = image.cgImage(
+            forProposedRect: nil,
+            context: nil,
+            hints: nil
+        ) else {
+            throw SaveError.imageUnavailable
+        }
+
+        let sourceSize = CGSize(
+            width: CGFloat(sourceImage.width),
+            height: CGFloat(sourceImage.height)
+        )
+        var scale: CGFloat = 1
+
+        if let maximumPixelsPerPoint = quality.maximumPixelsPerPoint {
+            let logicalSize = image.size
+            let sourcePixelsPerPoint = max(
+                sourceSize.width / max(logicalSize.width, 1),
+                sourceSize.height / max(logicalSize.height, 1)
+            )
+            scale = min(
+                scale,
+                maximumPixelsPerPoint / max(sourcePixelsPerPoint, 1)
+            )
+        }
+
+        if let maximumLongEdge = quality.maximumLongEdge {
+            scale = min(
+                scale,
+                maximumLongEdge / max(sourceSize.width, sourceSize.height)
+            )
+        }
+
+        guard scale < 0.999 else {
+            return image
+        }
+
+        let targetWidth = max(
+            1,
+            Int((sourceSize.width * scale).rounded())
+        )
+        let targetHeight = max(
+            1,
+            Int((sourceSize.height * scale).rounded())
+        )
+        guard let context = CGContext(
+            data: nil,
+            width: targetWidth,
+            height: targetHeight,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: sourceImage.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            throw SaveError.imageUnavailable
+        }
+
+        context.interpolationQuality = .high
+        context.draw(
+            sourceImage,
+            in: CGRect(
+                x: 0,
+                y: 0,
+                width: targetWidth,
+                height: targetHeight
+            )
+        )
+        guard let resizedImage = context.makeImage() else {
+            throw SaveError.imageUnavailable
+        }
+
+        let representation = NSBitmapImageRep(cgImage: resizedImage)
+        representation.size = image.size
+        let output = NSImage(size: image.size)
+        output.addRepresentation(representation)
+        return output
     }
 
     static func copyToClipboard(

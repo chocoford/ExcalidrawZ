@@ -108,6 +108,17 @@ struct ScreenAnnotationSaveControls: View {
                 }
             }
             .pickerStyle(.inline)
+
+            Picker(
+                "Image Quality",
+                selection: $configuration.imageQuality
+            ) {
+                ForEach(ScreenAnnotationImageQuality.allCases, id: \.self) {
+                    Text($0.title)
+                        .tag($0)
+                }
+            }
+            .pickerStyle(.inline)
         } label: {
             Text("Options")
         }

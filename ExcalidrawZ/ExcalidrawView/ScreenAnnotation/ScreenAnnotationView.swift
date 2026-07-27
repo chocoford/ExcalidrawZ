@@ -14,6 +14,7 @@ struct ScreenAnnotationView: View {
     let onSave: (
         ScreenAnnotationSaveDestination,
         ScreenAnnotationSaveFormat,
+        ScreenAnnotationImageQuality,
         CGRect?,
         @MainActor @escaping (Bool) -> Void
     ) -> Void
@@ -21,6 +22,9 @@ struct ScreenAnnotationView: View {
 
     @State private var isToolbarPresented = false
     @State private var isPropertiesPanelPresented = false
+    @State private var isPropertiesPopoverPresented = false
+    @State private var retainedSelectionViewportBounds: CGRect?
+    @State private var retainedSelectionContext: ElementPropertiesContext?
     @State private var propertiesPanelSize = CGSize(width: 300, height: 52)
     @State private var isFilePickerPresented = false
     @State private var captureScope = ScreenAnnotationCaptureScope.fullScreen
@@ -29,6 +33,8 @@ struct ScreenAnnotationView: View {
     @State private var isSaving = false
 
     private let propertiesPanelEdgePadding: CGFloat = 12
+    private let propertiesPanelSelectionSpacing: CGFloat = 40
+    private let propertiesPanelDismissalDelay: UInt64 = 200_000_000
 
     var body: some View {
         GeometryReader { proxy in
@@ -41,6 +47,13 @@ struct ScreenAnnotationView: View {
                 )
                     .opacity(session.isReady ? 1 : 0)
 
+                if isPropertiesPopoverPresented {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {}
+                        .zIndex(10)
+                }
+
                 if isPropertiesPanelPresented, !isCaptureChromeHidden {
                     propertiesPanel
                         .readSize($propertiesPanelSize)
@@ -50,6 +63,7 @@ struct ScreenAnnotationView: View {
                         .transition(
                             .opacity.combined(with: .offset(y: 8))
                         )
+                        .zIndex(20)
                 }
 
                 if isToolbarPresented,
@@ -63,8 +77,7 @@ struct ScreenAnnotationView: View {
                         containerSize: proxy.size,
                         initialPlacement: initialToolbarPlacement,
                         isSaving: isSaving,
-                        canSave: captureScope == .fullScreen
-                            || captureRegion != nil,
+                        canSave: canSave,
                         onPlacementChange: onToolbarPlacementChange,
                         onToggleFreeze: onToggleFreeze,
                         onSave: {
@@ -96,10 +109,6 @@ struct ScreenAnnotationView: View {
                 }
             }
             .coordinateSpace(name: ScreenAnnotationToolbar.coordinateSpaceName)
-            .animation(
-                .easeOut(duration: 0.18),
-                value: isPropertiesPanelPresented
-            )
         }
         .ignoresSafeArea()
         .animation(.easeOut(duration: 0.18), value: session.isReady)
@@ -121,6 +130,20 @@ struct ScreenAnnotationView: View {
         }
         .task(id: shouldShowPropertiesPanel) {
             guard shouldShowPropertiesPanel else {
+                let needsPopoverDismissal = isPropertiesPopoverPresented
+                isPropertiesPopoverPresented = false
+
+                if needsPopoverDismissal {
+                    do {
+                        try await Task.sleep(
+                            nanoseconds: propertiesPanelDismissalDelay
+                        )
+                    } catch {
+                        return
+                    }
+                }
+
+                guard !shouldShowPropertiesPanel else { return }
                 isPropertiesPanelPresented = false
                 return
             }
@@ -134,6 +157,16 @@ struct ScreenAnnotationView: View {
 
             withAnimation(.easeOut(duration: 0.18)) {
                 isPropertiesPanelPresented = true
+            }
+        }
+        .task(id: session.selectionViewportBounds) {
+            if let selectionViewportBounds = session.selectionViewportBounds {
+                retainedSelectionViewportBounds = selectionViewportBounds
+            }
+        }
+        .task(id: session.selectionContext) {
+            if let selectionContext = session.selectionContext {
+                retainedSelectionContext = selectionContext
             }
         }
         .sheet(isPresented: $isFilePickerPresented) {
@@ -159,7 +192,10 @@ struct ScreenAnnotationView: View {
     private var propertiesPanel: some View {
         ElementPropertiesPanel(
             properties: $session.selectedElementProperties,
-            context: session.selectionContext ?? .mixed,
+            isPopoverPresented: $isPropertiesPopoverPresented,
+            context: session.selectionContext
+                ?? retainedSelectionContext
+                ?? .mixed,
             onChange: session.applySelectedElementProperties
         )
     }
@@ -172,8 +208,15 @@ struct ScreenAnnotationView: View {
             && !session.isSelectionBoundsResolving
     }
 
+    private var canSave: Bool {
+        !session.isClearingCanvas
+            && (captureScope == .fullScreen || captureRegion != nil)
+    }
+
     private func propertiesPanelCenter(in containerSize: CGSize) -> CGPoint {
-        guard let selection = session.selectionViewportBounds else {
+        guard let selection = session.selectionViewportBounds
+            ?? retainedSelectionViewportBounds
+        else {
             return CGPoint(
                 x: containerSize.width - propertiesPanelEdgePadding
                     - propertiesPanelSize.width / 2,
@@ -183,7 +226,6 @@ struct ScreenAnnotationView: View {
 
         let halfWidth = propertiesPanelSize.width / 2
         let halfHeight = propertiesPanelSize.height / 2
-        let spacing: CGFloat = 12
         let x = min(
             max(
                 selection.midX,
@@ -191,8 +233,12 @@ struct ScreenAnnotationView: View {
             ),
             containerSize.width - propertiesPanelEdgePadding - halfWidth
         )
-        let topY = selection.minY - spacing - halfHeight
-        let bottomY = selection.maxY + spacing + halfHeight
+        let topY = selection.minY
+            - propertiesPanelSelectionSpacing
+            - halfHeight
+        let bottomY = selection.maxY
+            + propertiesPanelSelectionSpacing
+            + halfHeight
         let y = topY - halfHeight >= propertiesPanelEdgePadding
             ? topY
             : min(
@@ -226,6 +272,7 @@ struct ScreenAnnotationView: View {
             onSave(
                 saveConfiguration.destination,
                 saveConfiguration.format,
+                saveConfiguration.imageQuality,
                 region,
                 { didSubmit in
                     isSaving = false

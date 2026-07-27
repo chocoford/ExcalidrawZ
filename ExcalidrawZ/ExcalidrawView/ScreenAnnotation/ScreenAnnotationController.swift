@@ -82,7 +82,7 @@ final class ScreenAnnotationController {
             storedData: toolbarOrderData
         )
         let tools = toolbarToolOrder.tools.filter {
-            ![.frame, .webEmbed, .magicFrame].contains($0)
+            ![.image, .frame, .webEmbed, .magicFrame].contains($0)
         }
         let session = ScreenAnnotationSession(
             toolbarTools: tools
@@ -109,6 +109,7 @@ final class ScreenAnnotationController {
                 [weak self, weak session]
                 destination,
                 format,
+                imageQuality,
                 region,
                 completion in
                 guard let self, let session else {
@@ -118,6 +119,7 @@ final class ScreenAnnotationController {
                 self.saveCoordinator.submit(
                     destination: destination,
                     format: format,
+                    imageQuality: imageQuality,
                     region: region,
                     session: session,
                     screen: screen,

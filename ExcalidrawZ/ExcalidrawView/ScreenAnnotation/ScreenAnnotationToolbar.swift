@@ -59,16 +59,19 @@ struct ScreenAnnotationToolbar: View {
                 Button {
                     session.toggleToolLock()
                 } label: {
-                    let image = Image(
-                        systemName: session.isToolLocked
-                            ? "lock.fill"
-                            : "lock.open"
-                    )
-                    if #available(macOS 14.0, *) {
-                        image.contentTransition(.symbolEffect(.replace))
-                    } else {
-                        image
+                    ZStack {
+                        let image = Image(
+                            systemName: session.isToolLocked
+                                ? "lock.fill"
+                                : "lock.open"
+                        )
+                        if #available(macOS 14.0, *) {
+                            image.contentTransition(.symbolEffect(.replace))
+                        } else {
+                            image
+                        }
                     }
+                    .frame(width: 20, height: 20)
                 }
                 .help(String(localizable: .toolbarButtonLockToolHelp))
                 .modernButtonStyle(
@@ -96,8 +99,7 @@ struct ScreenAnnotationToolbar: View {
 
             HStack(spacing: 8) {
                 closeButton
-                undoButton
-                redoButton
+                clearButton
                 freezeButton
                 saveStatus
 
@@ -134,23 +136,25 @@ struct ScreenAnnotationToolbar: View {
         .help("Exit screen annotation")
     }
 
-    private var undoButton: some View {
+    private var clearButton: some View {
         Button {
-            session.undo()
+            session.clearCanvas()
         } label: {
-            Image(systemName: "arrow.uturn.backward")
+            ZStack {
+                if session.isClearingCanvas {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: "rectangle.dashed")
+                        .font(.system(size: 16))
+                    Image(systemName: "trash")
+                        .font(.system(size: 7, weight: .bold))
+                }
+            }
+            .frame(width: 20, height: 20)
         }
-        .help("Undo")
-        .modernButtonStyle(style: .glass, size: .large, shape: .circle)
-    }
-
-    private var redoButton: some View {
-        Button {
-            session.redo()
-        } label: {
-            Image(systemName: "arrow.uturn.forward")
-        }
-        .help("Redo")
+        .help("Clear annotations")
+        .disabled(isSaving || session.isClearingCanvas)
         .modernButtonStyle(style: .glass, size: .large, shape: .circle)
     }
 
@@ -194,8 +198,8 @@ struct ScreenAnnotationToolbar: View {
 
             Text(
                 isSaving
-                    ? "Saving \(saveConfiguration.format.title)"
-                    : "Save to \(saveConfiguration.title) as \(saveConfiguration.format.title)"
+                    ? "Saving \(saveConfiguration.format.title) (\(saveConfiguration.imageQuality.title))"
+                    : "Save to \(saveConfiguration.title) as \(saveConfiguration.format.title) (\(saveConfiguration.imageQuality.title))"
             )
             .font(.callout)
             .lineLimit(1)

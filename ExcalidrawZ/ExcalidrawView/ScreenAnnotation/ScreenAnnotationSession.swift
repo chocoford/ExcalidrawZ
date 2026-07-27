@@ -13,6 +13,7 @@ final class ScreenAnnotationSession: ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var frozenBackgroundImage: NSImage?
     @Published private(set) var isCapturingBackground = false
+    @Published private(set) var isClearingCanvas = false
     @Published private(set) var selectionViewportBounds: CGRect?
     @Published private(set) var selectionContext: ElementPropertiesContext?
     @Published private(set) var isCanvasInteractionActive = false
@@ -28,6 +29,8 @@ final class ScreenAnnotationSession: ObservableObject {
     private var isPreparingCanvas = false
     private var canvasPreparationTask: Task<Void, Never>?
     private var canvasPreparationID = UUID()
+    private var canvasClearTask: Task<Void, Never>?
+    private var canvasClearID = UUID()
     private let toolbarTools: [ExcalidrawTool]
     private var selectedElementIDs: [String] = []
     private var boundTextElementIDs: [String] = []
@@ -68,12 +71,16 @@ final class ScreenAnnotationSession: ObservableObject {
         canvasPreparationID = UUID()
         canvasPreparationTask?.cancel()
         canvasPreparationTask = nil
+        canvasClearID = UUID()
+        canvasClearTask?.cancel()
+        canvasClearTask = nil
         selectionSettleTask?.cancel()
         selectionBoundsResolutionTask?.cancel()
         boundTextResolutionTask?.cancel()
         cancelPropertyUpdate()
         self.webView = nil
         isPreparingCanvas = false
+        isClearingCanvas = false
         isReady = false
     }
 
@@ -150,6 +157,67 @@ final class ScreenAnnotationSession: ObservableObject {
                       self.canvasPreparationID == preparationID else {
                     return
                 }
+                self.report(error)
+            }
+        }
+    }
+
+    func clearCanvas() {
+        guard isReady,
+              !isClearingCanvas,
+              let webView else {
+            return
+        }
+
+        let clearID = UUID()
+        canvasClearID = clearID
+        isClearingCanvas = true
+        canvasClearTask = Task { @MainActor [weak self, weak webView] in
+            guard let self, let webView else { return }
+            defer {
+                if self.canvasClearID == clearID {
+                    self.canvasClearTask = nil
+                    self.isClearingCanvas = false
+                }
+            }
+
+            do {
+                let result = try await webView.callAsyncJavaScript(
+                    """
+                    const helper = window.excalidrawZHelper;
+                    if (typeof helper?.clearCanvas !== "function") {
+                      throw new Error("Canvas clear API is unavailable.");
+                    }
+                    return await helper.clearCanvas({
+                      clearHistory: true,
+                    });
+                    """,
+                    arguments: [:],
+                    contentWorld: .page
+                )
+                guard let result = result as? [String: Any],
+                      result["cleared"] as? Bool == true,
+                      result["historyCleared"] as? Bool == true else {
+                    throw ScreenAnnotationCanvasClearError
+                        .invalidAcknowledgement
+                }
+                guard !Task.isCancelled,
+                      self.canvasClearID == clearID,
+                      self.webView === webView else {
+                    return
+                }
+
+                self.clearSelectedElements()
+                self.errorMessage = nil
+                webView.window?.makeFirstResponder(webView)
+            } catch {
+                guard !Task.isCancelled,
+                      self.canvasClearID == clearID else {
+                    return
+                }
+                self.logger.error(
+                    "Failed to clear screen annotation canvas session=\(self.sessionID) error=\(error)"
+                )
                 self.report(error)
             }
         }
@@ -640,6 +708,14 @@ private enum ScreenAnnotationCanvasPreparationError: LocalizedError {
 
     var errorDescription: String? {
         "Excalidraw did not confirm the prepared canvas state."
+    }
+}
+
+private enum ScreenAnnotationCanvasClearError: LocalizedError {
+    case invalidAcknowledgement
+
+    var errorDescription: String? {
+        "Excalidraw did not confirm that the canvas was cleared."
     }
 }
 

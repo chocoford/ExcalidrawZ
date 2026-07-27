@@ -21,6 +21,7 @@ final class ScreenAnnotationSaveCoordinator {
     func submit(
         destination: ScreenAnnotationSaveDestination,
         format: ScreenAnnotationSaveFormat,
+        imageQuality: ScreenAnnotationImageQuality,
         region: CGRect?,
         session: ScreenAnnotationSession,
         screen: NSScreen,
@@ -31,7 +32,7 @@ final class ScreenAnnotationSaveCoordinator {
         let saveID = UUID().uuidString
         let submittedAt = Date()
         logger.debug(
-            "Preparing screen annotation save id=\(saveID) destination=\(destination.title) format=\(format.rawValue)"
+            "Preparing screen annotation save id=\(saveID) destination=\(destination.title) format=\(format.rawValue) quality=\(imageQuality.rawValue)"
         )
 
         Task { @MainActor [weak self, weak session] in
@@ -44,6 +45,7 @@ final class ScreenAnnotationSaveCoordinator {
                 let preparedSave = try await prepareSave(
                     destination: destination,
                     format: format,
+                    imageQuality: imageQuality,
                     region: region,
                     session: session,
                     fileState: fileState,
@@ -96,6 +98,7 @@ final class ScreenAnnotationSaveCoordinator {
     private func prepareSave(
         destination: ScreenAnnotationSaveDestination,
         format: ScreenAnnotationSaveFormat,
+        imageQuality: ScreenAnnotationImageQuality,
         region: CGRect?,
         session: ScreenAnnotationSession,
         fileState: FileState?,
@@ -130,9 +133,13 @@ final class ScreenAnnotationSaveCoordinator {
         }
 
         let cropStartedAt = Date()
-        let image = try ScreenAnnotationSaveService.croppedImage(
+        let croppedImage = try ScreenAnnotationSaveService.croppedImage(
             captured,
             to: region
+        )
+        let image = try ScreenAnnotationSaveService.optimizedImage(
+            croppedImage,
+            quality: imageQuality
         )
         logger.debug(
             "Prepared capture region id=\(saveID) durationMs=\(Self.milliseconds(from: cropStartedAt))"
@@ -142,6 +149,7 @@ final class ScreenAnnotationSaveCoordinator {
             return .bitmap(
                 image: image,
                 format: format,
+                imageQuality: imageQuality,
                 destination: destination,
                 customLocationURL: nil
             )
@@ -149,11 +157,12 @@ final class ScreenAnnotationSaveCoordinator {
 
         let documentStartedAt = Date()
         let documentImageFormat: ScreenAnnotationSaveFormat = format == .raw
-            ? .png
+            ? imageQuality.rawImageFormat
             : format
         let documentImageData = try ScreenAnnotationSaveService.imageData(
             from: image,
-            format: documentImageFormat
+            format: documentImageFormat,
+            jpegCompressionFactor: imageQuality.jpegCompressionFactor
         )
         let viewportRect = CGRect(origin: .zero, size: captured.size)
         let selectionRect = region?.intersection(viewportRect)

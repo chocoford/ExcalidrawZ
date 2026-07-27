@@ -13,6 +13,7 @@ enum PreparedScreenAnnotationSave {
     case bitmap(
         image: NSImage,
         format: ScreenAnnotationSaveFormat,
+        imageQuality: ScreenAnnotationImageQuality,
         destination: ScreenAnnotationSaveDestination,
         customLocationURL: URL?
     )
@@ -26,10 +27,17 @@ enum PreparedScreenAnnotationSave {
                     fileState: fileState,
                     customLocationURL: url
                 )
-            case .bitmap(let image, let format, let destination, _):
+            case .bitmap(
+                let image,
+                let format,
+                let imageQuality,
+                let destination,
+                _
+            ):
                 return .bitmap(
                     image: image,
                     format: format,
+                    imageQuality: imageQuality,
                     destination: destination,
                     customLocationURL: url
                 )
@@ -67,6 +75,7 @@ final class ScreenAnnotationSavePersistence {
             case .bitmap(
                 let image,
                 let format,
+                let imageQuality,
                 let destination,
                 let customLocationURL
             ):
@@ -74,6 +83,7 @@ final class ScreenAnnotationSavePersistence {
                 try saveBitmapCapture(
                     image,
                     format: format,
+                    imageQuality: imageQuality,
                     destination: destination,
                     customLocationURL: customLocationURL
                 )
@@ -86,12 +96,14 @@ final class ScreenAnnotationSavePersistence {
     private func saveBitmapCapture(
         _ image: NSImage,
         format: ScreenAnnotationSaveFormat,
+        imageQuality: ScreenAnnotationImageQuality,
         destination: ScreenAnnotationSaveDestination,
         customLocationURL: URL?
     ) throws {
         let data = try ScreenAnnotationSaveService.imageData(
             from: image,
-            format: format
+            format: format,
+            jpegCompressionFactor: imageQuality.jpegCompressionFactor
         )
 
         switch destination {

@@ -17,6 +17,7 @@ struct ElementPropertiesPanel: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @Binding var properties: ElementProperties
+    @Binding var isPopoverPresented: Bool
     let context: ElementPropertiesContext
     let onChange: () -> Void
 
@@ -26,7 +27,7 @@ struct ElementPropertiesPanel: View {
         HStack(spacing: 4) {
             ForEach(availableControls) { control in
                 Button {
-                    presentedControl = control
+                    setPresentedControl(control)
                 } label: {
                     controlLabel(control)
                         .frame(width: 20, height: 20)
@@ -52,7 +53,15 @@ struct ElementPropertiesPanel: View {
         }
         .shadow(color: .black.opacity(0.16), radius: 16, y: 7)
         .watch(value: context) { _, _ in
-            presentedControl = nil
+            setPresentedControl(nil)
+        }
+        .watch(value: isPopoverPresented) { _, isPresented in
+            if !isPresented, presentedControl != nil {
+                presentedControl = nil
+            }
+        }
+        .onDisappear {
+            isPopoverPresented = false
         }
     }
 
@@ -465,8 +474,13 @@ struct ElementPropertiesPanel: View {
         Binding {
             presentedControl == control
         } set: { isPresented in
-            presentedControl = isPresented ? control : nil
+            setPresentedControl(isPresented ? control : nil)
         }
+    }
+
+    private func setPresentedControl(_ control: Control?) {
+        presentedControl = control
+        isPopoverPresented = control != nil
     }
 
     private func displayColor(_ hex: String) -> Color {
