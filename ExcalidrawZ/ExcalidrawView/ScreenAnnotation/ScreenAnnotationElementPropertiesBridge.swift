@@ -49,11 +49,37 @@ enum ScreenAnnotationElementPropertiesBridge {
               helper?.getElementsByIds?.(boundTextIds) ?? [];
             const elements = [...selectedElements, ...boundTextElements];
             const boundTextIdSet = new Set(boundTextIds);
+            const currentItemUpdates = {};
             const strokeWidths = {
               thin: { regular: 1, freedraw: 0.5 },
               medium: { regular: 2, freedraw: 1 },
               bold: { regular: 4, freedraw: 2 },
             };
+
+            const currentItemPropertyKeys = {
+              strokeColor: "currentItemStrokeColor",
+              backgroundColor: "currentItemBackgroundColor",
+              fillStyle: "currentItemFillStyle",
+              strokeWidthKey: "currentItemStrokeWidthKey",
+              strokeVariability: "currentItemStrokeVariability",
+              strokeStyle: "currentItemStrokeStyle",
+              roughness: "currentItemRoughness",
+              opacity: "currentItemOpacity",
+              fontFamily: "currentItemFontFamily",
+              fontSize: "currentItemFontSize",
+              textAlign: "currentItemTextAlign",
+              roundness: "currentItemRoundness",
+              arrowType: "currentItemArrowType",
+              startArrowhead: "currentItemStartArrowhead",
+              endArrowhead: "currentItemEndArrowhead",
+            };
+            for (const [propertyKey, appStateKey] of Object.entries(
+              currentItemPropertyKeys
+            )) {
+              if (has(propertyKey)) {
+                currentItemUpdates[appStateKey] = properties[propertyKey];
+              }
+            }
 
             const patches = elements.map((element) => {
               const updates = {};
@@ -133,6 +159,18 @@ enum ScreenAnnotationElementPropertiesBridge {
             if (patches.length > 0) {
               helper?.updateElements?.(patches, {
                 captureUpdate: "IMMEDIATELY",
+              });
+            }
+            if (Object.keys(currentItemUpdates).length > 0) {
+              const api = helper?._api;
+              if (typeof api?.updateScene !== "function") {
+                throw new Error(
+                  "Excalidraw API for current item properties is unavailable."
+                );
+              }
+              api.updateScene({
+                appState: currentItemUpdates,
+                captureUpdate: "NEVER",
               });
             }
             """,
