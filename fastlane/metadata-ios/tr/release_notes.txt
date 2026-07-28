@@ -1,5 +1,5 @@
-Bu güncelleme, Bağlı Klasörlerde dosya ve klasör taşımayı iyileştirir.
+Kanvas Sunumları artık burada.
 
-- Kök klasör ile alt klasörler arasındaki izin hataları ve tamamlanmayan taşıma işlemleri düzeltildi.
-- Taşınan dosyalar artık kenar çubuğunda hemen güncellenir ve kullanılamayan eski girdiler bırakmaz.
-- “Şuraya Taşı” artık Ana Sayfa’dan kullanılabilir ve Bağlı Klasörün kökünü hedef olarak sunar.
+- Kanvas çerçevelerini slaytlara dönüştürün ve doğrudan çiziminizden sunun.
+- Slaytları sürükleyerek yeniden sıralayın ve özel süreli solma, kayma veya yakınlaştırma geçişlerini seçin.
+- Sunum sırası ve geçiş ayarları her çizim için kaydedilir ve çerçeveler değiştikçe yenilenir.

@@ -1,5 +1,6 @@
-Bản cập nhật này cải thiện việc di chuyển tệp và thư mục trong Thư mục được liên kết.
+Giới thiệu Chú thích màn hình và Trình bày canvas.
 
-- Sửa lỗi quyền truy cập và thao tác di chuyển không hoàn tất giữa thư mục gốc và thư mục con.
-- Tệp đã di chuyển được cập nhật ngay trong thanh bên mà không để lại mục không thể mở.
-- “Di chuyển đến” hiện dùng được từ Trang chủ và cho phép chọn thư mục gốc của Thư mục được liên kết.
+- Vẽ trên bất kỳ màn hình Mac nào bằng các công cụ Excalidraw, sử dụng nền trực tiếp hoặc đóng băng và di chuyển thanh công cụ giữa các màn hình.
+- Lưu toàn màn hình hoặc vùng đã chọn dưới dạng nội dung Excalidraw có thể chỉnh sửa, PNG/JPEG hoặc vào bảng nhớ tạm, với các mức chất lượng và đích tệp gần đây.
+- Biến các khung canvas thành trang trình bày, sắp xếp lại, chọn hiệu ứng mờ dần, trượt hoặc thu phóng và trình bày toàn màn hình.
+- Cải thiện lưu trong nền, duy trì kiểu chú thích và độ ổn định của trình bày.

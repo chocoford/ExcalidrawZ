@@ -1,5 +1,6 @@
-Esta atualização melhora a movimentação de arquivos e pastas nas Pastas Vinculadas.
+Apresentamos Anotação de Tela e Apresentações em Canvas.
 
-- Corrigidos erros de permissão e movimentações incompletas entre a pasta raiz e as subpastas.
-- Os arquivos movidos agora são atualizados imediatamente na barra lateral, sem deixar itens indisponíveis.
-- “Mover para” agora está disponível na tela Início e inclui a raiz da Pasta Vinculada como destino.
+- Desenhe sobre qualquer tela do Mac com as ferramentas do Excalidraw, usando um fundo ao vivo ou congelado e uma barra de ferramentas que pode ser movida entre monitores.
+- Salve a tela inteira ou uma área selecionada como conteúdo editável do Excalidraw, PNG/JPEG ou na área de transferência, com predefinições de qualidade e destinos recentes.
+- Transforme quadros do canvas em slides, reorganize-os, escolha transições de fade, deslizamento ou zoom e apresente em tela cheia.
+- Melhoramos o salvamento em segundo plano, a continuidade dos estilos e a confiabilidade das apresentações.

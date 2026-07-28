@@ -1,5 +1,6 @@
-Dieses Update verbessert das Verschieben von Dateien und Ordnern in verknüpften Ordnern.
+Neu: Bildschirmannotation und Canvas-Präsentationen.
 
-- Berechtigungsfehler und unvollständige Verschiebevorgänge zwischen dem Stammordner und Unterordnern wurden behoben.
-- Verschobene Dateien werden sofort in der Seitenleiste aktualisiert, ohne nicht verfügbare Einträge zu hinterlassen.
-- „Verschieben nach“ ist jetzt auf der Startseite verfügbar und bietet auch den Stamm des verknüpften Ordners als Ziel an.
+- Zeichne mit Excalidraw-Werkzeugen direkt auf jedem Mac-Bildschirm, wahlweise über einem Live- oder Standbild, und verschiebe die Werkzeugleiste zwischen Displays.
+- Speichere den gesamten Bildschirm oder einen ausgewählten Bereich als bearbeitbaren Excalidraw-Inhalt, PNG/JPEG oder in der Zwischenablage – mit Qualitätsvorgaben und zuletzt verwendeten Zieldateien.
+- Verwandle Canvas-Rahmen in Folien, ordne sie neu, wähle Überblend-, Schiebe- oder Zoomübergänge und präsentiere im Vollbild.
+- Hintergrundspeicherung, Übernahme von Annotationsstilen und Zuverlässigkeit von Präsentationen wurden verbessert.

@@ -1,5 +1,5 @@
-Deze update verbetert het verplaatsen van bestanden en mappen in gekoppelde mappen.
+Nieuw: Canvaspresentaties.
 
-- Machtigingsfouten en onvolledige verplaatsingen tussen de hoofdmap en submappen zijn opgelost.
-- Verplaatste bestanden worden direct bijgewerkt in de navigatiekolom, zonder niet-beschikbare vermeldingen achter te laten.
-- ‘Verplaats naar’ is nu beschikbaar vanuit Home en bevat ook de hoofdmap van de gekoppelde map als bestemming.
+- Zet canvasframes om in dia’s en presenteer rechtstreeks vanuit je tekening.
+- Sleep om dia’s opnieuw te ordenen en kies fade-, schuif- of zoomovergangen met een aangepaste duur.
+- Volgorde en overgangen worden per tekening bewaard en vernieuwd wanneer frames veranderen.

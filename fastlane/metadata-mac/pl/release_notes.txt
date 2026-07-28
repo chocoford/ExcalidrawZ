@@ -1,5 +1,6 @@
-Ta aktualizacja usprawnia przenoszenie plików i folderów w połączonych folderach.
+Nowość: Adnotacja ekranu i prezentacje na kanwie.
 
-- Naprawiono błędy uprawnień i niepełne przenoszenie między folderem głównym a podfolderami.
-- Przeniesione pliki są natychmiast aktualizowane na pasku bocznym i nie pozostawiają niedostępnych wpisów.
-- Opcja „Przenieś do” jest teraz dostępna na ekranie głównym i pozwala wybrać folder główny połączonego folderu.
+- Rysuj narzędziami Excalidraw po dowolnym ekranie Maca, korzystając z obrazu na żywo lub zatrzymanego i przenosząc pasek narzędzi między ekranami.
+- Zapisuj cały ekran lub wybrany obszar jako edytowalną zawartość Excalidraw, PNG/JPEG albo do schowka, z ustawieniami jakości i ostatnimi plikami docelowymi.
+- Zamieniaj ramki kanwy w slajdy, zmieniaj ich kolejność, wybieraj przejścia zanikania, przesuwania lub powiększania i prezentuj na pełnym ekranie.
+- Ulepszono zapisywanie w tle, zachowywanie stylu adnotacji i niezawodność prezentacji.

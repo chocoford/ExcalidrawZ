@@ -1,5 +1,5 @@
-Esta actualización mejora el movimiento de archivos y carpetas en las carpetas enlazadas.
+Presentamos las Presentaciones de lienzo.
 
-- Se han corregido errores de permisos y movimientos incompletos entre la raíz y las subcarpetas.
-- Los archivos movidos se actualizan inmediatamente en la barra lateral sin dejar entradas no disponibles.
-- «Mover a» ya está disponible desde Inicio e incluye la raíz de la carpeta enlazada como destino.
+- Convierte los marcos del lienzo en diapositivas y presenta directamente desde tu dibujo.
+- Arrastra para reordenar las diapositivas y elige transiciones de fundido, deslizamiento o zoom con una duración personalizada.
+- El orden y las transiciones se guardan para cada dibujo y se actualizan al cambiar los marcos.

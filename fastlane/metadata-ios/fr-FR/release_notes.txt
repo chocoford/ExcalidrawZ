@@ -1,5 +1,5 @@
-Cette mise à jour améliore le déplacement des fichiers et dossiers dans les dossiers liés.
+Découvrez les présentations de canevas.
 
-- Correction des erreurs d’autorisation et des déplacements incomplets entre la racine et les sous-dossiers.
-- Les fichiers déplacés sont désormais actualisés immédiatement dans la barre latérale, sans laisser d’entrées indisponibles.
-- « Déplacer vers » est maintenant disponible depuis l’accueil et permet de choisir la racine du dossier lié.
+- Transformez les cadres du canevas en diapositives et présentez directement depuis votre dessin.
+- Faites glisser les diapositives pour les réorganiser et choisissez des transitions en fondu, glissées ou zoomées avec une durée personnalisée.
+- L’ordre et les transitions sont enregistrés pour chaque dessin et se mettent à jour avec les cadres.

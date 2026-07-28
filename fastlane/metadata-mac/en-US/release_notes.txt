@@ -1,5 +1,6 @@
-This update improves moving files and folders in Linked Folders.
+Introducing Screen Annotation and Canvas Presentations.
 
-- Fixed permission errors and incomplete moves between a Linked Folder and its subfolders.
-- Moved files now update immediately in the Sidebar instead of leaving unavailable entries behind.
-- Move to is now available from Home and includes the Linked Folder root as a destination.
+- Draw over any Mac screen with Excalidraw tools, using a live or frozen background and a movable toolbar across displays.
+- Save the full screen or a selected region as editable Excalidraw content, PNG/JPEG, or to the clipboard, with quality presets and recent file destinations.
+- Turn canvas frames into slides, reorder them, choose fade, slide, or zoom transitions, and present full screen.
+- Improved background saving, annotation style continuity, and presentation reliability.

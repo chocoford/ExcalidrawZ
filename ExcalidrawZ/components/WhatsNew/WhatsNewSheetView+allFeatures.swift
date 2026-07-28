@@ -18,13 +18,24 @@ extension WhatsNewView {
     @ViewBuilder
     func featuresContent() -> some View {
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewMediaFilesTitle),
-            description: .localizable(.whatsNewMediaFilesDescription),
+            title: .localizable(.paywallFeaturePresentationTitle),
+            description: .localizable(.presentationWelcomeMessage),
         ) {
-            Image(systemSymbol: .photoStack)
+            Image(systemName: "rectangle.stack.badge.play")
                 .resizable()
                 .symbolRenderingMode(.hierarchical)
         }
+
+#if os(macOS)
+        WhatsNewFeatureRow(
+            title: .localizable(.screenAnnotationTitle),
+            description: .localizable(.whatsNewScreenAnnotationDescription),
+        ) {
+            Image(systemName: "macwindow.and.pointer.arrow")
+                .resizable()
+                .symbolRenderingMode(.hierarchical)
+        }
+#endif
     }
 
     @ViewBuilder
@@ -36,6 +47,16 @@ extension WhatsNewView {
                         version: Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
                     ) {
                         featuresContent()
+                    }
+                    WhatsNewVersionSection(version: "v2.2.8") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewMediaFilesTitle),
+                            description: .localizable(.whatsNewMediaFilesDescription),
+                        ) {
+                            Image(systemSymbol: .photoStack)
+                                .resizable()
+                                .symbolRenderingMode(.hierarchical)
+                        }
                     }
                     WhatsNewVersionSection(version: "v2.2.1") {
                         WhatsNewFeatureRow(

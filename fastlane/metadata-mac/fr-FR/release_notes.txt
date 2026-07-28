@@ -1,5 +1,6 @@
-Cette mise à jour améliore le déplacement des fichiers et dossiers dans les dossiers liés.
+Découvrez l’annotation d’écran et les présentations de canevas.
 
-- Correction des erreurs d’autorisation et des déplacements incomplets entre la racine et les sous-dossiers.
-- Les fichiers déplacés sont désormais actualisés immédiatement dans la barre latérale, sans laisser d’entrées indisponibles.
-- « Déplacer vers » est maintenant disponible depuis l’accueil et permet de choisir la racine du dossier lié.
+- Dessinez sur n’importe quel écran de votre Mac avec les outils Excalidraw, sur un arrière-plan en direct ou figé, et déplacez la barre d’outils entre vos écrans.
+- Enregistrez l’écran entier ou une zone sélectionnée comme contenu Excalidraw modifiable, en PNG/JPEG ou dans le presse-papiers, avec des préréglages de qualité et des destinations récentes.
+- Transformez les cadres du canevas en diapositives, réorganisez-les, choisissez des transitions en fondu, glissées ou zoomées, puis présentez en plein écran.
+- Amélioration de l’enregistrement en arrière-plan, de la continuité des styles et de la fiabilité des présentations.

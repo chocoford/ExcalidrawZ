@@ -1,5 +1,6 @@
-Esta actualización mejora el movimiento de archivos y carpetas en las carpetas enlazadas.
+Presentamos Anotación en Pantalla y Presentaciones de lienzo.
 
-- Se han corregido errores de permisos y movimientos incompletos entre la raíz y las subcarpetas.
-- Los archivos movidos se actualizan inmediatamente en la barra lateral sin dejar entradas no disponibles.
-- «Mover a» ya está disponible desde Inicio e incluye la raíz de la carpeta enlazada como destino.
+- Dibuja sobre cualquier pantalla del Mac con las herramientas de Excalidraw, usando un fondo en vivo o congelado y una barra de herramientas que puedes mover entre pantallas.
+- Guarda la pantalla completa o un área seleccionada como contenido editable de Excalidraw, PNG/JPEG o en el portapapeles, con ajustes de calidad y destinos recientes.
+- Convierte los marcos del lienzo en diapositivas, reordénalos, elige transiciones de fundido, deslizamiento o zoom y presenta a pantalla completa.
+- Se ha mejorado el guardado en segundo plano, la continuidad de estilos y la fiabilidad de las presentaciones.

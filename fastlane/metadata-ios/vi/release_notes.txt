@@ -1,5 +1,5 @@
-Bản cập nhật này cải thiện việc di chuyển tệp và thư mục trong Thư mục được liên kết.
+Giới thiệu Trình bày canvas.
 
-- Sửa lỗi quyền truy cập và thao tác di chuyển không hoàn tất giữa thư mục gốc và thư mục con.
-- Tệp đã di chuyển được cập nhật ngay trong thanh bên mà không để lại mục không thể mở.
-- “Di chuyển đến” hiện dùng được từ Trang chủ và cho phép chọn thư mục gốc của Thư mục được liên kết.
+- Biến các khung canvas thành trang trình bày và bắt đầu trình bày trực tiếp từ bản vẽ.
+- Kéo để sắp xếp lại các trang và chọn hiệu ứng mờ dần, trượt hoặc thu phóng với thời lượng tùy chỉnh.
+- Thứ tự và hiệu ứng chuyển tiếp được lưu riêng cho từng bản vẽ và làm mới khi các khung thay đổi.

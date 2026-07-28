@@ -1,5 +1,6 @@
-Questo aggiornamento migliora lo spostamento di file e cartelle nelle cartelle collegate.
+Arrivano Annotazione dello Schermo e Presentazioni della tela.
 
-- Risolti gli errori di autorizzazione e gli spostamenti incompleti tra la cartella principale e le sottocartelle.
-- I file spostati vengono aggiornati subito nella barra laterale senza lasciare voci non disponibili.
-- “Sposta in” è ora disponibile dalla schermata Home e include la cartella principale collegata tra le destinazioni.
+- Disegna su qualsiasi schermo del Mac con gli strumenti di Excalidraw, usando uno sfondo in tempo reale o bloccato e una barra degli strumenti spostabile tra i display.
+- Salva l’intero schermo o un’area selezionata come contenuto Excalidraw modificabile, PNG/JPEG o negli appunti, con preset di qualità e destinazioni recenti.
+- Trasforma i frame della tela in diapositive, riordinali, scegli transizioni in dissolvenza, scorrimento o zoom e presenta a schermo intero.
+- Migliorati il salvataggio in background, la continuità degli stili e l’affidabilità delle presentazioni.

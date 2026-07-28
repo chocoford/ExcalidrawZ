@@ -1,5 +1,5 @@
-Ta aktualizacja usprawnia przenoszenie plików i folderów w połączonych folderach.
+Nowość: Prezentacje na kanwie.
 
-- Naprawiono błędy uprawnień i niepełne przenoszenie między folderem głównym a podfolderami.
-- Przeniesione pliki są natychmiast aktualizowane na pasku bocznym i nie pozostawiają niedostępnych wpisów.
-- Opcja „Przenieś do” jest teraz dostępna na ekranie głównym i pozwala wybrać folder główny połączonego folderu.
+- Zamieniaj ramki kanwy w slajdy i prezentuj bezpośrednio z rysunku.
+- Przeciągaj slajdy, aby zmienić kolejność, i wybieraj przejścia zanikania, przesuwania lub powiększania z własnym czasem trwania.
+- Kolejność i przejścia są zapisywane osobno dla każdego rysunku i odświeżane po zmianie ramek.

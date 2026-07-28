@@ -1,3 +1,28 @@
+## 2.3.0
+
+#### Features
+
+- Added Canvas Presentations, turning Excalidraw frames into full-screen slides with drag-to-reorder support and configurable fade, slide, or zoom transitions.
+- Added Screen Annotation on macOS, with a customizable global shortcut, a movable drawing toolbar, live or frozen screen backgrounds, multi-display support, and native controls for editing selected element styles.
+- Added flexible Screen Annotation export options for saving the full screen or a selected region to a new or existing Excalidraw file, the clipboard, or a custom PNG/JPEG location.
+
+#### Optimizations
+
+- Added Original, Balanced, and Compact image quality presets for Screen Annotation, remembered separately for each save destination.
+- Improved Screen Annotation saving with a background task queue and off-screen document updates, so annotations can be submitted without interrupting the active canvas.
+- Added recent Excalidraw save destinations and persistent toolbar placement, format, quality, and destination preferences.
+- Presentation slide order and transition settings are now stored per drawing, while slide previews refresh when canvas frames change.
+
+#### Bug fixed
+
+- Fixed Screen Annotation content remaining on the canvas when starting a new annotation session.
+- Fixed exported annotations including selection handles and other editing chrome.
+- Fixed annotation style changes not carrying forward to subsequently drawn elements.
+- Fixed Screen Annotation property popovers jumping or reopening while selections and tools changed.
+- Fixed Presentation showing stale slides after switching files.
+- Fixed incomplete or one-sided transitions when moving forward, backward, or interrupting an active transition.
+- Fixed Presentation slides being offset instead of centered.
+
 ## 2.2.9
 
 #### Bug fixed

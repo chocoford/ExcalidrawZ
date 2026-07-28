@@ -1,5 +1,6 @@
-Bu güncelleme, Bağlı Klasörlerde dosya ve klasör taşımayı iyileştirir.
+Ekran Notları ve Kanvas Sunumları artık burada.
 
-- Kök klasör ile alt klasörler arasındaki izin hataları ve tamamlanmayan taşıma işlemleri düzeltildi.
-- Taşınan dosyalar artık kenar çubuğunda hemen güncellenir ve kullanılamayan eski girdiler bırakmaz.
-- “Şuraya Taşı” artık Ana Sayfa’dan kullanılabilir ve Bağlı Klasörün kökünü hedef olarak sunar.
+- Excalidraw araçlarıyla herhangi bir Mac ekranının üzerine çizin, canlı veya dondurulmuş arka plan kullanın ve araç çubuğunu ekranlar arasında taşıyın.
+- Tam ekranı veya seçilen bir alanı düzenlenebilir Excalidraw içeriği, PNG/JPEG ya da panoya kaydedin; kalite ön ayarlarını ve son dosya hedeflerini kullanın.
+- Kanvas çerçevelerini slaytlara dönüştürün, sıralayın, solma, kayma veya yakınlaştırma geçişlerini seçin ve tam ekranda sunun.
+- Arka planda kaydetme, not stili sürekliliği ve sunum güvenilirliği iyileştirildi.

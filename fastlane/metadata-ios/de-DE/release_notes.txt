@@ -1,5 +1,5 @@
-Dieses Update verbessert das Verschieben von Dateien und Ordnern in verknüpften Ordnern.
+Neu: Canvas-Präsentationen.
 
-- Berechtigungsfehler und unvollständige Verschiebevorgänge zwischen dem Stammordner und Unterordnern wurden behoben.
-- Verschobene Dateien werden sofort in der Seitenleiste aktualisiert, ohne nicht verfügbare Einträge zu hinterlassen.
-- „Verschieben nach“ ist jetzt auf der Startseite verfügbar und bietet auch den Stamm des verknüpften Ordners als Ziel an.
+- Verwandle Canvas-Rahmen in Folien und präsentiere direkt aus deiner Zeichnung.
+- Ordne Folien per Drag-and-drop neu und wähle Überblend-, Schiebe- oder Zoomübergänge mit eigener Dauer.
+- Reihenfolge und Übergänge werden pro Zeichnung gespeichert und bei Änderungen an den Rahmen aktualisiert.

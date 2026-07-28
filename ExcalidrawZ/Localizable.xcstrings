@@ -139236,6 +139236,119 @@
         }
       }
     },
+    "whatsNewScreenAnnotationDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ارسم فوق شاشة Mac باستخدام أدوات Excalidraw، وبدّل بين الخلفية المباشرة والمجمّدة، واحفظ التعليقات كمحتوى لوحة قابل للتحرير أو كصور."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeichne mit Excalidraw-Werkzeugen direkt auf deinem Mac-Bildschirm, wechsle zwischen Live- und Standbild und speichere Anmerkungen als bearbeitbaren Canvas-Inhalt oder als Bild."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draw over your Mac screen with Excalidraw tools, switch between live and frozen backgrounds, and save annotations as editable canvas content or images."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dibuja sobre la pantalla de tu Mac con las herramientas de Excalidraw, alterna entre fondos en vivo y congelados, y guarda las anotaciones como contenido de lienzo editable o imágenes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dessinez sur l’écran de votre Mac avec les outils Excalidraw, alternez entre un arrière-plan en direct ou figé, puis enregistrez vos annotations comme contenu modifiable ou comme images."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excalidraw टूल से अपने Mac की स्क्रीन पर ड्रॉ करें, लाइव और फ़्रीज़ की गई पृष्ठभूमि के बीच बदलें, और एनोटेशन को संपादन योग्य कैनवास सामग्री या इमेज के रूप में सहेजें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disegna sullo schermo del Mac con gli strumenti di Excalidraw, passa dallo sfondo in tempo reale a quello bloccato e salva le annotazioni come contenuto modificabile o immagini."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawのツールでMacの画面上に描画し、ライブ表示と静止画を切り替え、注釈を編集可能なキャンバス内容または画像として保存できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excalidraw 도구로 Mac 화면 위에 그리고, 실시간 화면과 고정된 화면을 전환하며, 주석을 편집 가능한 캔버스 콘텐츠 또는 이미지로 저장하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teken met Excalidraw-gereedschappen over je Mac-scherm, wissel tussen een live en stilgezette achtergrond en bewaar annotaties als bewerkbare canvasinhoud of afbeeldingen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rysuj po ekranie Maca narzędziami Excalidraw, przełączaj się między obrazem na żywo i zatrzymanym, a adnotacje zapisuj jako edytowalną zawartość kanwy lub obrazy."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desenhe sobre a tela do Mac com as ferramentas do Excalidraw, alterne entre fundos ao vivo e congelados e salve as anotações como conteúdo editável do canvas ou imagens."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рисуйте поверх экрана Mac инструментами Excalidraw, переключайтесь между живым и замороженным фоном и сохраняйте аннотации как редактируемое содержимое холста или изображения."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "วาดบนหน้าจอ Mac ด้วยเครื่องมือ Excalidraw สลับระหว่างพื้นหลังแบบสดและแบบหยุดภาพ แล้วบันทึกคำอธิบายประกอบเป็นเนื้อหาแคนวาสที่แก้ไขได้หรือเป็นรูปภาพ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excalidraw araçlarıyla Mac ekranınızın üzerine çizin, canlı ve dondurulmuş arka planlar arasında geçiş yapın ve notları düzenlenebilir tuval içeriği veya görsel olarak kaydedin."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vẽ lên màn hình Mac bằng các công cụ Excalidraw, chuyển đổi giữa nền trực tiếp và nền đóng băng, rồi lưu chú thích dưới dạng nội dung canvas có thể chỉnh sửa hoặc hình ảnh."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Excalidraw 工具直接在 Mac 屏幕上绘制，可切换实时或冻结背景，并将注释保存为可编辑的画布内容或图像。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Excalidraw 工具直接在 Mac 螢幕上繪製，可切換即時或凍結背景，並將註解儲存為可編輯的畫布內容或影像。"
+          }
+        }
+      }
+    },
     "whatsNewMediaFilesDescription": {
       "extractionState": "manual",
       "localizations": {

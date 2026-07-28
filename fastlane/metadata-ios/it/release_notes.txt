@@ -1,5 +1,5 @@
-Questo aggiornamento migliora lo spostamento di file e cartelle nelle cartelle collegate.
+Arrivano le Presentazioni della tela.
 
-- Risolti gli errori di autorizzazione e gli spostamenti incompleti tra la cartella principale e le sottocartelle.
-- I file spostati vengono aggiornati subito nella barra laterale senza lasciare voci non disponibili.
-- “Sposta in” è ora disponibile dalla schermata Home e include la cartella principale collegata tra le destinazioni.
+- Trasforma i frame della tela in diapositive e avvia la presentazione direttamente dal disegno.
+- Trascina per riordinare le diapositive e scegli transizioni in dissolvenza, scorrimento o zoom con durata personalizzata.
+- Ordine e transizioni vengono salvati per ogni disegno e si aggiornano quando cambiano i frame.
