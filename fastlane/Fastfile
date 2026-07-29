@@ -1,3 +1,5 @@
+ENV["DELIVER_NUMBER_OF_THREADS"] ||= "1"
+
 require "cgi"
 require "fileutils"
 require "json"
@@ -28,10 +30,10 @@ PREVIEW_DEVICES = {
   "mac" => {
     config: "previews/mac.json",
     source_dir: "previews/output/mac",
-    basename: "AppStore_Mac_Previews",
+    basename: "AppStore_mac_Previews",
     slice_width: 2880,
     gap_width: 0,
-    slice_count: nil,
+    slice_count: 6,
     output_prefix: "mac"
   }
 }.freeze
@@ -179,6 +181,61 @@ def staged_metadata_path(app_platform:, metadata_path: nil)
   end
 
   destination_path
+end
+
+def staged_screenshots_path(app_platform:, screenshots_path:)
+  destination_path = File.expand_path(".generated/screenshots/#{app_platform}", __dir__)
+  allowed_prefixes = app_platform == "mac" ? ["mac_"] : ["iphone_", "ipad_"]
+  copied_count = 0
+
+  FileUtils.rm_rf(destination_path)
+  FileUtils.mkdir_p(destination_path)
+
+  Dir.glob(File.join(screenshots_path, "*", "*.png")).sort.each do |source_path|
+    next unless allowed_prefixes.any? { |prefix| File.basename(source_path).start_with?(prefix) }
+
+    locale = File.basename(File.dirname(source_path))
+    locale_path = File.join(destination_path, locale)
+    FileUtils.mkdir_p(locale_path)
+    FileUtils.cp(source_path, locale_path)
+    copied_count += 1
+  end
+
+  if copied_count.zero?
+    UI.user_error!(
+      "No #{app_platform} screenshots found in #{screenshots_path}. " \
+      "Expected filenames beginning with: #{allowed_prefixes.join(', ')}"
+    )
+  end
+
+  UI.message("Staged #{copied_count} #{app_platform} screenshot(s) at #{destination_path}.")
+  destination_path
+end
+
+def with_app_store_connect_proxy(proxy_port)
+  port = proxy_port.to_s.strip
+  unless port.empty? || (port.match?(/\A\d+\z/) && port.to_i.between?(1, 65_535))
+    UI.user_error!("Invalid proxy_port '#{port}'. Expected a port between 1 and 65535.")
+  end
+
+  proxy_keys = %w[http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY]
+  previous_values = proxy_keys.to_h { |key| [key, ENV[key]] }
+  proxy_keys.each { |key| ENV.delete(key) }
+
+  unless port.empty?
+    proxy_url = "http://127.0.0.1:#{port}"
+    ENV["http_proxy"] = proxy_url
+    ENV["https_proxy"] = proxy_url
+    UI.message("Using App Store Connect proxy at #{proxy_url}.")
+  end
+
+  begin
+    yield
+  ensure
+    previous_values.each do |key, value|
+      value.nil? ? ENV.delete(key) : ENV[key] = value
+    end
+  end
 end
 
 def upload_app_store_connect_assets(
@@ -363,51 +420,77 @@ lane :upload_metadata do |options|
     UI.confirm("Upload metadata to App Store Connect version #{version} for #{platforms.map(&:first).join(', ')}?")
   end
 
-  staged_platforms.each do |app_platform, asc_platform, metadata_path|
-    next if options[:dry_run]
+  unless options[:dry_run]
+    with_app_store_connect_proxy(options[:proxy_port]) do
+      staged_platforms.each do |app_platform, asc_platform, metadata_path|
+        upload_app_store_connect_assets(
+          app_platform: app_platform,
+          asc_platform: asc_platform,
+          version: version,
+          metadata_path: metadata_path,
+          screenshots_path: screenshots_path,
+          include_screenshots: false
+        )
+      end
+    end
+  end
+end
 
-    upload_app_store_connect_assets(
-      app_platform: app_platform,
-      asc_platform: asc_platform,
-      version: version,
-      metadata_path: metadata_path,
-      screenshots_path: screenshots_path,
-      include_screenshots: false
+desc "Upload App Store metadata and screenshots for one explicit platform. Build upload stays manual."
+lane :upload_release_assets do |options|
+  app_platform = options[:platform].to_s
+  unless APP_STORE_PLATFORMS.key?(app_platform)
+    UI.user_error!(
+      "Missing or invalid platform. Expected one of: #{APP_STORE_PLATFORMS.keys.join(', ')}"
     )
+  end
+
+  version = options[:version] || current_project_version
+  screenshot_source_path = options[:screenshots_path] || File.expand_path("screenshots", __dir__)
+  screenshots_path = staged_screenshots_path(
+    app_platform: app_platform,
+    screenshots_path: screenshot_source_path
+  )
+  metadata_path = staged_metadata_path(
+    app_platform: app_platform,
+    metadata_path: options[:metadata_path]
+  )
+  locales = release_note_locales(metadata_path)
+  platform_label = app_platform == "ios" ? "iOS" : "macOS"
+
+  UI.message("Preparing to upload #{platform_label} App Store Connect release assets.")
+  UI.message("Target version: #{version}")
+  UI.message("#{platform_label} metadata path: #{metadata_path}")
+  UI.message("#{platform_label} locales: #{locales.join(', ')}")
+  UI.message("#{platform_label} screenshots path: #{screenshots_path}")
+  if options[:dry_run]
+    UI.message("Dry run only. No App Store Connect upload was performed.")
+  else
+    UI.confirm("Upload #{platform_label} metadata and screenshots to App Store Connect version #{version}?")
+  end
+
+  unless options[:dry_run]
+    with_app_store_connect_proxy(options[:proxy_port]) do
+      upload_app_store_connect_assets(
+        app_platform: app_platform,
+        asc_platform: APP_STORE_PLATFORMS.fetch(app_platform),
+        version: version,
+        metadata_path: metadata_path,
+        screenshots_path: screenshots_path,
+        include_screenshots: true
+      )
+    end
   end
 end
 
 desc "Upload iOS App Store metadata and iOS/iPadOS screenshots. Build upload stays manual."
 lane :upload_ios_release_assets do |options|
-  version = options[:version] || current_project_version
-  screenshots_path = options[:screenshots_path] || File.expand_path("screenshots", __dir__)
-  metadata_path = staged_metadata_path(
-    app_platform: "ios",
-    metadata_path: options[:metadata_path]
-  )
-  locales = release_note_locales(metadata_path)
+  upload_release_assets(options.to_h.merge(platform: "ios"))
+end
 
-  UI.message("Preparing to upload iOS App Store Connect release assets.")
-  UI.message("Target version: #{version}")
-  UI.message("iOS metadata path: #{metadata_path}")
-  UI.message("iOS locales: #{locales.join(', ')}")
-  UI.message("iOS screenshots path: #{screenshots_path}")
-  if options[:dry_run]
-    UI.message("Dry run only. No App Store Connect upload was performed.")
-  else
-    UI.confirm("Upload iOS metadata and screenshots to App Store Connect version #{version}?")
-  end
-
-  unless options[:dry_run]
-    upload_app_store_connect_assets(
-      app_platform: "ios",
-      asc_platform: APP_STORE_PLATFORMS.fetch("ios"),
-      version: version,
-      metadata_path: metadata_path,
-      screenshots_path: screenshots_path,
-      include_screenshots: true
-    )
-  end
+desc "Upload macOS App Store metadata and screenshots. Build upload stays manual."
+lane :upload_mac_release_assets do |options|
+  upload_release_assets(options.to_h.merge(platform: "mac"))
 end
 
 desc "Split localized App Store preview strips into fastlane screenshot folders."
@@ -447,9 +530,10 @@ end
 desc "Render localized App Store preview strips from a text-free template."
 lane :render_preview_strips do |options|
   device_options = preview_device_options(preview_device_value(options))
+  module_cache_path = File.join(ENV.fetch("TMPDIR", "/tmp"), "excalidrawz-clang-module-cache")
   args = [
     "env",
-    "CLANG_MODULE_CACHE_PATH=/private/tmp/excalidrawz-clang-module-cache",
+    "CLANG_MODULE_CACHE_PATH=#{module_cache_path}",
     "swift",
     File.expand_path("scripts/render_app_store_previews.swift", __dir__),
     "--config",

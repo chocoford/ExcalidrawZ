@@ -10,7 +10,7 @@ Run from Terminal, or double-click the file in Finder:
 ./ExcalidrawZRelease.command
 ```
 
-The console covers metadata uploads, iOS release assets, screenshot generation,
+The console covers metadata uploads, platform release assets, screenshot generation,
 Sparkle release notes, dry runs, and common status/output-folder tools. The
 commands below remain available for automation and troubleshooting.
 
@@ -32,6 +32,18 @@ macOS metadata upload:
 
 ```sh
 fastlane upload_metadata platform:mac version:x.y.z
+```
+
+macOS metadata and screenshots dry-run:
+
+```sh
+fastlane upload_mac_release_assets version:x.y.z dry_run:true
+```
+
+macOS metadata and screenshots upload:
+
+```sh
+fastlane upload_mac_release_assets version:x.y.z
 ```
 
 iOS metadata dry-run:
@@ -56,6 +68,13 @@ iOS metadata and screenshots upload:
 
 ```sh
 fastlane upload_ios_release_assets version:x.y.z
+```
+
+For an upload that needs a local HTTP/HTTPS proxy, add its port. Omit the
+option to connect directly:
+
+```sh
+fastlane upload_mac_release_assets version:x.y.z proxy_port:7890
 ```
 
 ## Sparkle
@@ -87,6 +106,7 @@ Generate sample screenshots for visual checking:
 ```sh
 fastlane generate_preview_samples device:iphone
 fastlane generate_preview_samples device:ipad
+fastlane generate_preview_samples device:mac
 ```
 
 Render localized preview strips only:
@@ -94,6 +114,7 @@ Render localized preview strips only:
 ```sh
 fastlane render_preview_strips device:iphone
 fastlane render_preview_strips device:ipad
+fastlane render_preview_strips device:mac
 ```
 
 Split existing preview strips only:
@@ -101,6 +122,7 @@ Split existing preview strips only:
 ```sh
 fastlane split_screenshots device:iphone
 fastlane split_screenshots device:ipad
+fastlane split_screenshots device:mac
 ```
 
 Generate preview strips and split screenshots:
@@ -108,6 +130,7 @@ Generate preview strips and split screenshots:
 ```sh
 fastlane generate_previews device:iphone
 fastlane generate_previews device:ipad
+fastlane generate_previews device:mac
 ```
 
 Generate one locale:

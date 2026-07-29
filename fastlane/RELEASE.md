@@ -16,7 +16,7 @@ metadata-mac/<locale>/release_notes.txt
 
 3. Regenerate screenshots if the App Store preview images changed.
 4. Run the relevant dry-run command from `COMMANDS.md`.
-5. Upload metadata or iOS release assets with the matching version.
+5. Upload metadata or platform release assets with the matching version.
 
 Use `./ExcalidrawZRelease.command` from the repository root for the interactive
 workflow. `COMMANDS.md` lists the equivalent direct fastlane commands.
@@ -115,6 +115,7 @@ Source images:
 ```text
 previews/assets/iphone/AppStore_iPhone_Previews.png
 previews/assets/ipad/AppStore_iPad_Previews.png
+previews/assets/mac/AppStore_mac_Previews.png
 ```
 
 Optional localized source images use the same basename with a locale suffix, such as:
@@ -128,6 +129,7 @@ Text configs:
 ```text
 previews/iphone.json
 previews/ipad.json
+previews/mac.json
 ```
 
 The renderer writes preview strips to `previews/output/`, then the splitter writes App Store screenshots to `screenshots/<locale>/`.
