@@ -84,6 +84,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // disable auto capitalization
         UserDefaults.standard.set(false, forKey: "NSAutomaticCapitalizationEnabled")
     }
+
+    func application(
+        _ application: NSApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        logger.info(
+            "Remote notification registration succeeded tokenBytes=\(deviceToken.count)"
+        )
+    }
+
+    func application(
+        _ application: NSApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        logger.warning("Remote notification registration failed: \(error)")
+    }
     
     func application(_ sender: NSApplication, openFile filename: String) -> Bool {
         logger.info("application did open file")
@@ -126,6 +142,22 @@ private extension NSApplication {
 import UIKit
 class AppDelegate: NSObject, UIApplicationDelegate {
     let logger = Logger(label: "AppDelegate")
+
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        logger.info(
+            "Remote notification registration succeeded tokenBytes=\(deviceToken.count)"
+        )
+    }
+
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        logger.warning("Remote notification registration failed: \(error)")
+    }
 
     func application(
         _ application: UIApplication,
