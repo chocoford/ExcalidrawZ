@@ -11,6 +11,7 @@ struct ScreenAnnotationView: View {
     let initialToolbarPlacement: ScreenAnnotationToolbarPlacement?
     let onToolbarPlacementChange: (ScreenAnnotationToolbarPlacement) -> Void
     let onToggleFreeze: () -> Void
+    let onOpenScreenCaptureSettings: () -> Void
     let onSave: (
         ScreenAnnotationSaveDestination,
         ScreenAnnotationSaveFormat,
@@ -31,6 +32,8 @@ struct ScreenAnnotationView: View {
     @State private var captureRegion: CGRect?
     @State private var isCaptureChromeHidden = false
     @State private var isSaving = false
+    @State private var isPermissionWelcomePresented =
+        ScreenAnnotationPermissionState.shouldPresent
 
     private let propertiesPanelEdgePadding: CGFloat = 12
     private let propertiesPanelSelectionSpacing: CGFloat = 40
@@ -41,11 +44,13 @@ struct ScreenAnnotationView: View {
             ZStack {
                 frozenBackground
 
-                ScreenAnnotationWebView(
-                    session: session,
-                    runtime: webRuntime
-                )
-                    .opacity(session.isReady ? 1 : 0)
+                if !isPermissionWelcomePresented {
+                    ScreenAnnotationWebView(
+                        session: session,
+                        runtime: webRuntime
+                    )
+                        .opacity(session.isReady ? 1 : 0)
+                }
 
                 if isPropertiesPopoverPresented {
                     Color.clear
@@ -92,7 +97,7 @@ struct ScreenAnnotationView: View {
                         .zIndex(2_000)
                 }
 
-                if !session.isReady {
+                if !isPermissionWelcomePresented, !session.isReady {
                     loadingIndicator
                 }
 
@@ -106,6 +111,12 @@ struct ScreenAnnotationView: View {
                     )
                     .transition(.opacity)
                     .zIndex(1_000)
+                }
+
+                if isPermissionWelcomePresented {
+                    permissionWelcome
+                        .transition(.opacity)
+                        .zIndex(3_000)
                 }
             }
             .coordinateSpace(name: ScreenAnnotationToolbar.coordinateSpaceName)
@@ -187,6 +198,26 @@ struct ScreenAnnotationView: View {
                 }
             }
         }
+    }
+
+    private var permissionWelcome: some View {
+        ZStack {
+            Color.black.opacity(0.24)
+                .contentShape(Rectangle())
+
+            ScreenAnnotationWelcomeView(
+                onClose: onClose,
+                onReady: {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isPermissionWelcomePresented = false
+                    }
+                },
+                onOpenPermissionSettings: onOpenScreenCaptureSettings
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .shadow(color: .black.opacity(0.24), radius: 28, y: 12)
+        }
+        .ignoresSafeArea()
     }
 
     private var propertiesPanel: some View {

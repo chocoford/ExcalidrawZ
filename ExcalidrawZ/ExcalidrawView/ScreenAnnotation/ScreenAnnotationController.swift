@@ -23,6 +23,8 @@ final class ScreenAnnotationController {
     ] = [:]
     private let webRuntime = ScreenAnnotationWebRuntime()
     private let saveCoordinator = ScreenAnnotationSaveCoordinator()
+    private let permissionGuideController =
+        ScreenCapturePermissionGuideController()
 
     private init() {
         shortcutTask = Task { @MainActor [weak self] in
@@ -50,7 +52,7 @@ final class ScreenAnnotationController {
         if isPresented {
             dismiss()
         } else {
-            present()
+            beginPresentation()
         }
     }
 
@@ -67,12 +69,17 @@ final class ScreenAnnotationController {
         windowController = nil
     }
 
-    private func present() {
+    private func beginPresentation() {
         let mouseLocation = NSEvent.mouseLocation
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(mouseLocation) })
             ?? NSScreen.main else {
             return
         }
+
+        present(on: screen)
+    }
+
+    private func present(on screen: NSScreen) {
         let fileState = resolvedFileState(for: screen)
 
         let toolbarOrderData = UserDefaults.standard.data(
@@ -104,6 +111,11 @@ final class ScreenAnnotationController {
             },
             onToggleFreeze: { [weak self] in
                 self?.toggleFreeze(session: session, screen: screen)
+            },
+            onOpenScreenCaptureSettings: { [weak self] in
+                guard let self else { return }
+                self.dismiss()
+                self.permissionGuideController.present()
             },
             onSave: {
                 [weak self, weak session]

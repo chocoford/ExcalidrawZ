@@ -1,6 +1,571 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "screenAnnotationGetStarted": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "البدء"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loslegen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get Started"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comenzar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Commencer"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "शुरू करें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inizia"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "始める"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시작하기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aan de slag"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozpocznij"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Começar"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Начать"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เริ่มต้นใช้งาน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlayın"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始使用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始使用"
+          }
+        }
+      }
+    },
+    "screenAnnotationPermissionMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتطلب macOS هذا الإذن لتجميد الشاشة وحفظ التعليقات. لا يسجل ExcalidrawZ الفيديو مطلقًا."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS benötigt diese Berechtigung, um den Bildschirm einzufrieren und Anmerkungen zu sichern. ExcalidrawZ zeichnet niemals Videos auf."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS requires this permission to freeze the screen and save annotations. ExcalidrawZ never records video."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS necesita este permiso para congelar la pantalla y guardar las anotaciones. ExcalidrawZ nunca graba vídeo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS requiert cette autorisation pour figer l’écran et enregistrer les annotations. ExcalidrawZ n’enregistre jamais de vidéo."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "स्क्रीन को फ़्रीज़ करने और एनोटेशन सहेजने के लिए macOS को इस अनुमति की आवश्यकता होती है। ExcalidrawZ कभी वीडियो रिकॉर्ड नहीं करता।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS richiede questa autorizzazione per bloccare lo schermo e salvare le annotazioni. ExcalidrawZ non registra mai video."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画面を静止して注釈を保存するために、macOSではこの許可が必要です。ExcalidrawZが動画を録画することはありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "화면을 고정하고 주석을 저장하려면 macOS에서 이 권한이 필요합니다. ExcalidrawZ는 동영상을 녹화하지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS vereist deze toestemming om het scherm stil te zetten en annotaties te bewaren. ExcalidrawZ neemt nooit video op."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS wymaga tego uprawnienia, aby zatrzymać obraz ekranu i zapisywać adnotacje. ExcalidrawZ nigdy nie nagrywa wideo."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O macOS exige esta permissão para congelar a tela e salvar anotações. O ExcalidrawZ nunca grava vídeo."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS требуется это разрешение, чтобы замораживать экран и сохранять аннотации. ExcalidrawZ никогда не записывает видео."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS ต้องใช้สิทธิ์นี้เพื่อหยุดภาพหน้าจอและบันทึกคำอธิบายประกอบ ExcalidrawZ จะไม่บันทึกวิดีโอ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS, ekranı dondurmak ve açıklamaları kaydetmek için bu izni gerektirir. ExcalidrawZ hiçbir zaman video kaydetmez."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS cần quyền này để đóng băng màn hình và lưu chú thích. ExcalidrawZ không bao giờ quay video."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 需要此权限来冻结屏幕并保存注释。ExcalidrawZ 不会录制视频。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 需要此權限來凍結螢幕並儲存註解。ExcalidrawZ 不會錄製影片。"
+          }
+        }
+      }
+    },
+    "screenAnnotationPermissionGuideMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب أيقونة التطبيق إلى قائمة تسجيل الشاشة وصوت النظام، ثم فعّل المفتاح الخاص به."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ziehe das App-Symbol in die Liste „Bildschirm- & Systemaudioaufnahme“ und aktiviere anschließend den Schalter."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag the app icon into the Screen & System Audio Recording list, then turn on its switch."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrastra el icono de la app a la lista de grabación de pantalla y audio del sistema y activa su interruptor."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faites glisser l’icône de l’app dans la liste Enregistrement de l’écran et de l’audio système, puis activez son interrupteur."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ऐप आइकन को स्क्रीन और सिस्टम ऑडियो रिकॉर्डिंग सूची में खींचें, फिर उसका स्विच चालू करें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trascina l’icona dell’app nell’elenco Registrazione schermo e audio di sistema, quindi attiva l’interruttore."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリアイコンを「画面収録とシステムオーディオ録音」のリストにドラッグし、スイッチをオンにします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱 아이콘을 화면 및 시스템 오디오 기록 목록으로 드래그한 다음 스위치를 켜세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep het app-icoon naar de lijst voor scherm- en systeemaudio-opname en schakel de app vervolgens in."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeciągnij ikonę aplikacji na listę nagrywania ekranu i dźwięku systemowego, a następnie włącz jej przełącznik."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arraste o ícone do app para a lista de gravação da tela e áudio do sistema e ative o botão."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перетащите значок приложения в список записи экрана и системного звука, затем включите переключатель."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลากไอคอนแอปไปยังรายการการบันทึกหน้าจอและเสียงระบบ แล้วเปิดสวิตช์ของแอป"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulama simgesini Ekran ve Sistem Sesi Kaydı listesine sürükleyin, ardından anahtarını açın."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kéo biểu tượng ứng dụng vào danh sách Ghi màn hình và âm thanh hệ thống, sau đó bật công tắc."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将 App 图标拖入“屏幕与系统音频录制”列表，然后打开它的开关。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將 App 圖示拖入「螢幕與系統音訊錄製」列表，然後開啟它的開關。"
+          }
+        }
+      }
+    },
+    "screenAnnotationPermissionGuideTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب ExcalidrawZ إلى القائمة"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ in die Liste ziehen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag ExcalidrawZ into the list"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrastra ExcalidrawZ a la lista"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faites glisser ExcalidrawZ dans la liste"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ को सूची में खींचें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trascina ExcalidrawZ nell’elenco"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZをリストにドラッグ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ를 목록으로 드래그"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep ExcalidrawZ naar de lijst"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeciągnij ExcalidrawZ na listę"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arraste o ExcalidrawZ para a lista"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перетащите ExcalidrawZ в список"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลาก ExcalidrawZ ไปยังรายการ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ’yi listeye sürükleyin"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kéo ExcalidrawZ vào danh sách"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将 ExcalidrawZ 拖入列表"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將 ExcalidrawZ 拖入列表"
+          }
+        }
+      }
+    },
+    "screenAnnotationPermissionTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إذن تسجيل الشاشة"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Berechtigung zur Bildschirmaufnahme"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screen Recording Permission"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permiso de grabación de pantalla"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autorisation d’enregistrement de l’écran"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "स्क्रीन रिकॉर्डिंग अनुमति"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autorizzazione registrazione schermo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画面収録の許可"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "화면 기록 권한"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toestemming voor schermopname"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uprawnienie do nagrywania ekranu"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permissão de gravação de tela"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разрешение на запись экрана"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สิทธิ์การบันทึกหน้าจอ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekran Kaydı İzni"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quyền ghi màn hình"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "屏幕录制权限"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "螢幕錄製權限"
+          }
+        }
+      }
+    },
     "paywallFeaturePresentationMessage": {
       "extractionState": "manual",
       "localizations": {
