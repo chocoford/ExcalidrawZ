@@ -148,6 +148,7 @@ struct AdjustElementsTool: Tool {
             latexResults: canvasResults.latexResults.isEmpty ? nil : canvasResults.latexResults,
             skeletonResults: canvasResults.skeletonResults.isEmpty ? nil : canvasResults.skeletonResults,
             connectResults: canvasResults.connectResults.isEmpty ? nil : canvasResults.connectResults,
+            frameResults: canvasResults.frameResults.isEmpty ? nil : canvasResults.frameResults,
             proposalSummary: Self.makeProposalSummary(
                 proposal: proposal,
                 opCount: payload.ops.count,
@@ -289,6 +290,7 @@ private struct ToolOutput: Encodable {
     let latexResults: [LatexInsertResult]?
     let skeletonResults: [ExcalidrawCore.SkeletonInsertResult]?
     let connectResults: [ExcalidrawCore.ConnectElementsResult]?
+    let frameResults: [ExcalidrawCore.FrameMutationResult]?
     let proposalSummary: String?
     let proposalSourceInput: ToolOutputJSONValue?
     let proposalRevisionHint: String?
@@ -434,6 +436,7 @@ struct CanvasApplyResult {
     var latexResults: [LatexInsertResult] = []
     var skeletonResults: [ExcalidrawCore.SkeletonInsertResult] = []
     var connectResults: [ExcalidrawCore.ConnectElementsResult] = []
+    var frameResults: [ExcalidrawCore.FrameMutationResult] = []
 }
 
 struct LatexInsertResult: Codable, Hashable {
@@ -558,6 +561,8 @@ enum Operation: Decodable {
     case resize(ResizeOp)
     case delete(DeleteOp)
     case wrap(WrapOp)
+    case createFrame(CreateFrameOp)
+    case setFrame(SetFrameOp)
     case mermaid(MermaidOp)
     case latex(LatexOp)
     case connect(ConnectOp)
@@ -571,6 +576,8 @@ enum Operation: Decodable {
             case .resize: return "resize"
             case .delete: return "delete"
             case .wrap: return "wrap"
+            case .createFrame: return "createFrame"
+            case .setFrame: return "setFrame"
             case .mermaid: return "mermaid"
             case .latex: return "latex"
             case .connect: return "connect"
@@ -599,6 +606,10 @@ enum Operation: Decodable {
                 self = .delete(try DeleteOp(from: decoder))
             case "wrap":
                 self = .wrap(try WrapOp(from: decoder))
+            case "createFrame":
+                self = .createFrame(try CreateFrameOp(from: decoder))
+            case "setFrame":
+                self = .setFrame(try SetFrameOp(from: decoder))
             case "mermaid":
                 self = .mermaid(try MermaidOp(from: decoder))
             case "latex", "math":
@@ -678,6 +689,21 @@ struct WrapOp: Decodable {
     let style: StylePatch?
     let label: String?
     let labelPosition: String?
+}
+
+struct CreateFrameOp: Decodable {
+    let op: String
+    let targetIds: [String]
+    let name: String?
+    let padding: Double?
+    let captureUpdate: ExcalidrawCore.CaptureUpdate?
+}
+
+struct SetFrameOp: Decodable {
+    let op: String
+    let targetIds: [String]
+    let frameId: Nullable<String>
+    let captureUpdate: ExcalidrawCore.CaptureUpdate?
 }
 
 struct MermaidOp: Decodable {
@@ -794,12 +820,14 @@ enum CanvasAction {
     case insertLatex(LatexOp)
     case insertSkeleton(SkeletonInsertAction)
     case connect(ConnectOp)
+    case createFrame(CreateFrameOp)
+    case setFrame(SetFrameOp)
 
     var pendingElementReferenceIds: [String] {
         switch self {
             case .insertSkeleton(let action):
                 return action.inputElementReferenceIds
-            case .insertMermaid, .insertLatex, .connect:
+            case .insertMermaid, .insertLatex, .connect, .createFrame, .setFrame:
                 return []
         }
     }
@@ -940,6 +968,20 @@ struct AdjustElementsMiddleware {
                             wrapOp,
                             elements: &elements,
                             createdElementIds: &createdElementIds
+                        )
+
+                    case .createFrame(let createFrameOp):
+                        try applyCreateFrameOp(
+                            createFrameOp,
+                            elements: elements,
+                            canvasActions: &canvasActions
+                        )
+
+                    case .setFrame(let setFrameOp):
+                        try applySetFrameOp(
+                            setFrameOp,
+                            elements: elements,
+                            canvasActions: &canvasActions
                         )
 
                     case .mermaid(let mermaidOp):
