@@ -92,9 +92,10 @@ struct LowCreditsBannerView: View {
                 Image(systemSymbol: .exclamationmarkTriangleFill)
                     .foregroundStyle(.orange)
                 Text(localizable: .aiChatLowCreditsBannerLabel(balance.formatted(.number.precision(.fractionLength(2)))))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.primary.opacity(0.78))
                 Spacer(minLength: 0)
                 Image(systemSymbol: .arrowRight)
+                    .foregroundStyle(Color.primary.opacity(0.62))
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
@@ -104,8 +105,8 @@ struct LowCreditsBannerView: View {
             .padding(.bottom, peekBottom)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .tint(.orange)
-        .modernButtonStyle(style: .glass, shape: .roundedRectangle(14))
+        .tint(Color.yellow.opacity(0.1))
+        .modernButtonStyle(style: .glass, shape: .modern)
     }
 
     @ViewBuilder

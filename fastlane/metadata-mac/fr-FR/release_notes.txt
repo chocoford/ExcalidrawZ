@@ -1,6 +1,6 @@
-Cette mise à jour améliore la gestion des médias, les polices personnalisées et la fiabilité de l’ouverture des fichiers.
+Découvrez l’annotation d’écran et les présentations de canevas.
 
-- La section Fichiers multimédias propose désormais une galerie plus rapide, des références détaillées et un nettoyage guidé des médias inutilisés ou uniquement présents dans l’historique.
-- Correction de la disparition des polices personnalisées après un changement d’onglet et du remplacement des polices déjà ajoutées.
-- Amélioration de l’ouverture et du changement de fichier, ainsi que des transitions vers l’accueil.
-- Ajout d’indications plus claires et d’une action Réessayer lorsqu’un dessin ne peut pas être chargé.
+- Dessinez sur n’importe quel écran de votre Mac avec les outils Excalidraw, sur un arrière-plan en direct ou figé, et déplacez la barre d’outils entre vos écrans.
+- Enregistrez l’écran entier ou une zone sélectionnée comme contenu Excalidraw modifiable, en PNG/JPEG ou dans le presse-papiers, avec des préréglages de qualité et des destinations récentes.
+- Transformez les cadres du canevas en diapositives, réorganisez-les, choisissez des transitions en fondu, glissées ou zoomées, puis présentez en plein écran.
+- Amélioration de l’enregistrement en arrière-plan, de la continuité des styles et de la fiabilité des présentations.

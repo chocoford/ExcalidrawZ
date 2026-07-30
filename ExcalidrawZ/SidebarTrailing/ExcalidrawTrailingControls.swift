@@ -179,6 +179,13 @@ struct ExcalidrawTrailingControls: View {
                 )
 
                 InspectorTabButton(
+                    tab: .presentation,
+                    icon: .play,
+                    title: String(localizable: .presentationTitle),
+                    isDisabled: isDisabled(tab: .presentation)
+                )
+
+                InspectorTabButton(
                     tab: .aiChat,
                     icon: .sparkles,
                     title: "AI Chat",

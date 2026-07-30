@@ -73,7 +73,9 @@ struct BackupContentView: View {
         }
     }
 
-    private static func loadBackupSummary(from backup: URL) throws -> BackupSummary {
+    private nonisolated static func loadBackupSummary(
+        from backup: URL
+    ) throws -> BackupSummary {
         let groups = try FileManager.default.contentsOfDirectory(
             at: backup,
             includingPropertiesForKeys: [.nameKey, .isDirectoryKey],

@@ -118,6 +118,9 @@ struct LocalFilesProvider<Content: View>: View {
             .onReceive(localFolderState.itemRenamedPublisher) { path in
                 handleItemRenamed(path: path)
             }
+            .onReceive(localFolderState.itemsMovedPublisher) { mapping in
+                handleItemsMoved(mapping)
+            }
             .onReceive(localFolderState.refreshFilesPublisher) { _ in
                 getFolderContents()
                 if case .localFile(let file) = fileState.currentActiveFile,
@@ -278,6 +281,18 @@ struct LocalFilesProvider<Content: View>: View {
     }
     
     private func handleItemRenamed(path: String) {
+        getFolderContents()
+    }
+
+    private func handleItemsMoved(_ mapping: [URL: URL]) {
+        guard let folderURL = folder.url?.standardizedFileURL else { return }
+        let shouldRefresh = mapping.contains { source, destination in
+            folderURL == source.deletingLastPathComponent().standardizedFileURL
+                || folderURL == destination.deletingLastPathComponent().standardizedFileURL
+        }
+        guard shouldRefresh else {
+            return
+        }
         getFolderContents()
     }
 }

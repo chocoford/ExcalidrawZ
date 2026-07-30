@@ -121,13 +121,18 @@ struct LoadImageResult {
 actor ExcalidrawWebActor {
     let logger = Logger(label: "ExcalidrawWebActor")
 
-    var excalidrawCoordinator: ExcalidrawCore
+    weak var excalidrawCoordinator: ExcalidrawCore?
 
     init(coordinator: ExcalidrawCore) {
         self.excalidrawCoordinator = coordinator
     }
 
-    var webView: ExcalidrawWebView { excalidrawCoordinator.webView }
+    var webView: ExcalidrawWebView {
+        guard let excalidrawCoordinator else {
+            preconditionFailure("ExcalidrawCore was released during a Web operation.")
+        }
+        return excalidrawCoordinator.webView
+    }
 
     @discardableResult
     func loadFile(

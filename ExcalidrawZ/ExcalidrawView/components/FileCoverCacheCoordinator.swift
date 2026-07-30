@@ -170,6 +170,25 @@ final class FileCoverCacheCoordinator: ObservableObject {
         )
     }
 
+    func refreshCover(
+        for activeFile: FileState.ActiveFile,
+        priority: Priority = .userInitiated
+    ) {
+        let otherColorScheme: ColorScheme = currentColorScheme == .light
+            ? .dark
+            : .light
+        cache.removePreviewCache(
+            forID: activeFile.id,
+            colorScheme: otherColorScheme
+        )
+        request(
+            activeFile: activeFile,
+            colorScheme: currentColorScheme,
+            priority: priority,
+            forceRefresh: true
+        )
+    }
+
     func request<Checkpoint: FileCheckpointRepresentable>(
         checkpoint: Checkpoint,
         colorScheme: ColorScheme,

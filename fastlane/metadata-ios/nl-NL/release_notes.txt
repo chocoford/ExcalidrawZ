@@ -1,1 +1,5 @@
-Een probleem opgelost op compacte iOS-lay-outs waarbij een opgeheven selectie opnieuw kon verschijnen bij het verschuiven of zoomen van het canvas nadat de bewerkingsmodus was verlaten.
+Nieuw: Canvaspresentaties.
+
+- Zet canvasframes om in dia’s en presenteer rechtstreeks vanuit je tekening.
+- Sleep om dia’s opnieuw te ordenen en kies fade-, schuif- of zoomovergangen met een aangepaste duur.
+- Volgorde en overgangen worden per tekening bewaard en vernieuwd wanneer frames veranderen.

@@ -1,6 +1,6 @@
-Bản cập nhật này cải thiện việc quản lý tệp phương tiện, phông chữ tùy chỉnh và độ tin cậy khi mở tệp.
+Giới thiệu Chú thích màn hình và Trình bày canvas.
 
-- Thiết kế lại Tệp phương tiện với thư viện nhanh hơn, thông tin tham chiếu chi tiết và quy trình dọn dẹp có hướng dẫn cho nội dung không dùng hoặc chỉ được dùng trong lịch sử tệp.
-- Sửa lỗi phông chữ tùy chỉnh biến mất khi chuyển mục Cài đặt hoặc phông chữ mới thay thế các phông đã thêm.
-- Cải thiện thao tác mở, chuyển đổi tệp và hiệu ứng trở về Trang chủ.
-- Thêm hướng dẫn rõ ràng hơn và thao tác thử lại khi không thể tải bản vẽ.
+- Vẽ trên bất kỳ màn hình Mac nào bằng các công cụ Excalidraw, sử dụng nền trực tiếp hoặc đóng băng và di chuyển thanh công cụ giữa các màn hình.
+- Lưu toàn màn hình hoặc vùng đã chọn dưới dạng nội dung Excalidraw có thể chỉnh sửa, PNG/JPEG hoặc vào bảng nhớ tạm, với các mức chất lượng và đích tệp gần đây.
+- Biến các khung canvas thành trang trình bày, sắp xếp lại, chọn hiệu ứng mờ dần, trượt hoặc thu phóng và trình bày toàn màn hình.
+- Cải thiện lưu trong nền, duy trì kiểu chú thích và độ ổn định của trình bày.

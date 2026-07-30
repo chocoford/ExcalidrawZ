@@ -1,6 +1,6 @@
-Esta atualização melhora o gerenciamento de mídia, as fontes personalizadas e a confiabilidade ao abrir arquivos.
+Apresentamos Anotação de Tela e Apresentações em Canvas.
 
-- A área Arquivos de mídia foi reformulada com uma galeria mais rápida, referências detalhadas e limpeza guiada para mídias não usadas ou usadas apenas no histórico.
-- Corrigido o desaparecimento de fontes personalizadas ao trocar de seção e a substituição de fontes já adicionadas.
-- Melhorias ao abrir e alternar arquivos e nas transições de volta para o Início.
-- Orientações mais claras e uma ação para tentar novamente quando um desenho não puder ser carregado.
+- Desenhe sobre qualquer tela do Mac com as ferramentas do Excalidraw, usando um fundo ao vivo ou congelado e uma barra de ferramentas que pode ser movida entre monitores.
+- Salve a tela inteira ou uma área selecionada como conteúdo editável do Excalidraw, PNG/JPEG ou na área de transferência, com predefinições de qualidade e destinos recentes.
+- Transforme quadros do canvas em slides, reorganize-os, escolha transições de fade, deslizamento ou zoom e apresente em tela cheia.
+- Melhoramos o salvamento em segundo plano, a continuidade dos estilos e a confiabilidade das apresentações.

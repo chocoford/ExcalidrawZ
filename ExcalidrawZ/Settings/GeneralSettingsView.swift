@@ -7,6 +7,10 @@
 
 import SwiftUI
 import ChocofordUI
+#if os(macOS)
+import AppKit
+import KeyboardShortcuts
+#endif
 #if os(macOS) && !APP_STORE
 import Sparkle
 #endif
@@ -67,6 +71,29 @@ struct GeneralSettingsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+
+#if os(macOS)
+        Section {
+            KeyboardShortcuts.Recorder(for: .toggleScreenAnnotation) {
+                Text(localizable: .screenAnnotationTitle)
+            }
+            .shortcutValidation { shortcut in
+                MainActor.assumeIsolated {
+                    Self.validateScreenAnnotationShortcut(shortcut)
+                }
+            }
+            // The Tools menu mirrors this same shortcut. The package's
+            // built-in validator can mistake that mirror for another command.
+            .keyboardShortcutsConflictPolicy(
+                .init(menuItem: .allow)
+            )
+            .onAppear {
+                Self.resignInitialShortcutRecorderFocus()
+            }
+        } header: {
+            Text(localizable: .settingsKeyboardShortcutsTitle)
+        }
+#endif
         
         // Folder structure UI
         Section {
@@ -398,6 +425,76 @@ struct GeneralSettingsView: View {
         ))
     }
 }
+
+#if os(macOS)
+private extension GeneralSettingsView {
+    static func resignInitialShortcutRecorderFocus() {
+        Task { @MainActor in
+            await Task.yield()
+            guard let window = NSApp.keyWindow else { return }
+
+            let responder = window.firstResponder
+            let recorderHasFocus =
+                responder is KeyboardShortcuts.RecorderCocoa
+                || (responder as? NSTextView)?.delegate
+                    is KeyboardShortcuts.RecorderCocoa
+            if recorderHasFocus {
+                window.makeFirstResponder(nil)
+            }
+        }
+    }
+
+    static func validateScreenAnnotationShortcut(
+        _ shortcut: KeyboardShortcuts.Shortcut
+    ) -> KeyboardShortcuts.ValidationResult {
+        guard let mainMenu = NSApp.mainMenu,
+              let conflict = firstConflictingMenuItem(
+                for: shortcut,
+                in: mainMenu,
+                excludingTitle: String(localizable: .screenAnnotationTitle)
+              ) else {
+            return .allow
+        }
+
+        return .disallow(
+            reason: "This keyboard shortcut is already used by the “\(conflict.title)” menu item."
+        )
+    }
+
+    static func firstConflictingMenuItem(
+        for shortcut: KeyboardShortcuts.Shortcut,
+        in menu: NSMenu,
+        excludingTitle: String
+    ) -> NSMenuItem? {
+        for item in menu.items {
+            var keyEquivalent = item.keyEquivalent
+            var modifiers = item.keyEquivalentModifierMask
+
+            if shortcut.modifiers.contains(.shift),
+               keyEquivalent.lowercased() != keyEquivalent {
+                keyEquivalent = keyEquivalent.lowercased()
+                modifiers.insert(.shift)
+            }
+
+            if shortcut.nsMenuItemKeyEquivalent == keyEquivalent,
+               shortcut.modifiers == modifiers,
+               item.title != excludingTitle {
+                return item
+            }
+
+            if let submenu = item.submenu,
+               let conflict = firstConflictingMenuItem(
+                    for: shortcut,
+                    in: submenu,
+                    excludingTitle: excludingTitle
+               ) {
+                return conflict
+            }
+        }
+        return nil
+    }
+}
+#endif
 
 #if DEBUG
 #Preview {

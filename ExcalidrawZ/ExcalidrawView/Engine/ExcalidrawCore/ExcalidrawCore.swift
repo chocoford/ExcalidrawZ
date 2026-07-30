@@ -44,6 +44,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     @Published private(set) var isLoading: Bool = false
     @Published private(set) var cameraState = CameraState()
     @Published private(set) var selectedElementIDs: [String] = []
+    @Published private(set) var contentChangeToken = 0
     
     var downloadCache: [String : Data] = [:]
     var downloads: [URLRequest : URL] = [:]
@@ -59,6 +60,11 @@ class ExcalidrawCore: NSObject, ObservableObject {
     private var lastVersion: Int = 0
 
     var hasInjectIndexedDBData = false
+
+    @MainActor
+    func noteAcceptedContentChange() {
+        contentChangeToken &+= 1
+    }
 
     // Track loaded MediaItem IDs for re-injection detection
     private var loadedMediaItemIDs: Set<String> = []
@@ -274,8 +280,10 @@ extension ExcalidrawCore {
         while true {
             let coreLoading = self.isLoading || self.isNavigating || !self.isDocumentLoaded
             let webLoading = await self.webView.isLoading
+            let initialMediaLoading = parent != nil
+                && !hasInjectIndexedDBData
 
-            if !coreLoading && !webLoading {
+            if !coreLoading && !webLoading && !initialMediaLoading {
                 return true
             }
 
@@ -284,12 +292,22 @@ extension ExcalidrawCore {
             }
 
             if Date() >= deadline {
-                logger.warning("Timed out waiting to load file \(fileID). coreLoading=\(coreLoading) webLoading=\(webLoading)")
+                if !coreLoading && !webLoading && initialMediaLoading {
+                    logger.warning(
+                        "Timed out waiting for initial media injection before loading file \(fileID); continuing with available media"
+                    )
+                    return true
+                }
+                logger.warning(
+                    "Timed out waiting to load file \(fileID). coreLoading=\(coreLoading) webLoading=\(webLoading) initialMediaLoading=\(initialMediaLoading)"
+                )
                 return false
             }
 
             if !didLogWait {
-                logger.info("Waiting for Excalidraw readiness before loading file \(fileID)")
+                logger.info(
+                    "Waiting for Excalidraw readiness before loading file \(fileID), initialMediaLoading=\(initialMediaLoading)"
+                )
                 didLogWait = true
             }
             try? await Task.sleep(nanoseconds: 100_000_000)

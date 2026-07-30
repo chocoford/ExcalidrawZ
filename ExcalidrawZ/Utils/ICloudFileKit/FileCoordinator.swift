@@ -245,29 +245,36 @@ public actor FileCoordinator {
     public func coordinatedMove(from source: URL, to destination: URL) async throws {
         logger.info("Moving \(source.lastPathComponent) to \(destination.lastPathComponent)")
 
-        return try await withCheckedThrowingContinuation { continuation in
-            var coordinationError: NSError?
-            let coordinator = NSFileCoordinator()
+        var coordinationError: NSError?
+        var moveError: Error?
+        let coordinator = NSFileCoordinator()
 
-            coordinator.coordinate(
-                writingItemAt: destination,
-                options: .forMoving,
-                error: &coordinationError
-            ) { coordinatedURL in
-                do {
-                    try FileManager.default.moveItem(at: source, to: coordinatedURL)
-                    logger.info("Successfully moved \(source.lastPathComponent) to \(destination.lastPathComponent)")
-                    continuation.resume()
-                } catch {
-                    logger.error("Failed to move file: \(source.lastPathComponent) - \(error)")
-                    continuation.resume(throwing: FileCoordinatorError.moveFailed(error))
-                }
+        coordinator.coordinate(
+            writingItemAt: source,
+            options: .forMoving,
+            writingItemAt: destination,
+            options: .forReplacing,
+            error: &coordinationError
+        ) { coordinatedSourceURL, coordinatedDestinationURL in
+            do {
+                try FileManager.default.moveItem(
+                    at: coordinatedSourceURL,
+                    to: coordinatedDestinationURL
+                )
+                logger.info("Successfully moved \(source.lastPathComponent) to \(destination.lastPathComponent)")
+            } catch {
+                moveError = error
             }
+        }
 
-            if let coordinationError = coordinationError {
-                logger.error("File coordination error: \(coordinationError)")
-                continuation.resume(throwing: FileCoordinatorError.coordinationFailed(coordinationError))
-            }
+        if let coordinationError {
+            logger.error("File coordination error: \(coordinationError)")
+            throw FileCoordinatorError.coordinationFailed(coordinationError)
+        }
+
+        if let moveError {
+            logger.error("Failed to move file: \(source.lastPathComponent) - \(moveError)")
+            throw FileCoordinatorError.moveFailed(moveError)
         }
     }
 

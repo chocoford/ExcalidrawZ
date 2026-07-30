@@ -1,1 +1,5 @@
-Ein Problem auf kompakten iOS-Layouts wurde behoben, bei dem eine aufgehobene Auswahl nach dem Verlassen des Bearbeitungsmodus beim Verschieben oder Zoomen der Zeichenfläche erneut erscheinen konnte.
+Neu: Canvas-Präsentationen.
+
+- Verwandle Canvas-Rahmen in Folien und präsentiere direkt aus deiner Zeichnung.
+- Ordne Folien per Drag-and-drop neu und wähle Überblend-, Schiebe- oder Zoomübergänge mit eigener Dauer.
+- Reihenfolge und Übergänge werden pro Zeichnung gespeichert und bei Änderungen an den Rahmen aktualisiert.

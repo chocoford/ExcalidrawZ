@@ -27,15 +27,21 @@ extension ExcalidrawCore {
     /// Returns a one-time snapshot copy of the current live canvas without
     /// participating in the persistence/autosave flow. Use this for AI tools
     /// and debug reads that need editor state newer than the throttled
-    /// `onStateChanged` broadcast.
+    /// `onStateChanged` broadcast. Callers that only need live elements can
+    /// omit files to avoid streaming large media payloads across the bridge.
     @MainActor
-    func getCurrentFileSnapshot(preferSaveStream: Bool = true) async throws -> CurrentFileSnapshot {
+    func getCurrentFileSnapshot(
+        preferSaveStream: Bool = true,
+        includeFiles: Bool = true
+    ) async throws -> CurrentFileSnapshot {
         guard !self.webView.isLoading else {
             throw InvalidJavaScriptResult()
         }
         if preferSaveStream {
             do {
-                return try await getCurrentFileSnapshotUsingSaveStream()
+                return try await getCurrentFileSnapshotUsingSaveStream(
+                    includeFiles: includeFiles
+                )
             } catch CurrentFileSaveStreamError.unsupported {
                 logger.debug("Current file save stream is not supported; falling back to direct snapshot.")
             } catch is CancellationError {
@@ -50,7 +56,16 @@ extension ExcalidrawCore {
             arguments: [:],
             contentWorld: .page
         )
-        return try CurrentFileSnapshot.fromJavaScriptResult(result)
+        let snapshot = try CurrentFileSnapshot.fromJavaScriptResult(result)
+        guard !includeFiles else {
+            return snapshot
+        }
+        return CurrentFileSnapshot(
+            revision: snapshot.revision,
+            elementCount: snapshot.elementCount,
+            fileCount: 0,
+            documentData: try snapshot.documentData(includeFiles: false)
+        )
     }
 
     @MainActor
@@ -77,8 +92,12 @@ extension ExcalidrawCore {
     }
 
     @MainActor
-    private func getCurrentFileSnapshotUsingSaveStream() async throws -> CurrentFileSnapshot {
-        let result = try await requestCurrentFileSaveStream(includeFiles: true)
+    private func getCurrentFileSnapshotUsingSaveStream(
+        includeFiles: Bool
+    ) async throws -> CurrentFileSnapshot {
+        let result = try await requestCurrentFileSaveStream(
+            includeFiles: includeFiles
+        )
         return CurrentFileSnapshot(saveStreamResult: result)
     }
 

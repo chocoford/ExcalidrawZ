@@ -936,49 +936,72 @@ final class FileState: ObservableObject {
     ) async {
         let logger = Logger(label: "FileState")
         do {
-            switch target.kind {
-                case .libraryFile(let objectURI, let fileName, let didUpdate, let suppressCheckpoint):
-                    guard let fileObjectID = managedObjectID(for: objectURI),
-                          let content = excalidrawFile.content else {
-                        return
-                    }
-                    _ = try await PersistenceController.shared.mediaItemRepository.syncMediaItemsForFile(
-                        excalidrawFile: excalidrawFile,
-                        fileObjectID: fileObjectID
-                    )
-                    let checkpointPolicy: CheckpointWriteOptions = suppressCheckpoint
-                        ? .suppress
-                        : .userEdit(newCheckpoint: !didUpdate)
-                    try await PersistenceController.shared.fileRepository.updateElements(
-                        fileObjectID: fileObjectID,
-                        fileData: content,
-                        checkpoint: checkpointPolicy
-                    )
-                    logger.debug("Background captured file update saved: \(fileName)")
-
-                case .localFile(let url, let didUpdate, let suppressCheckpoint):
-                    try await saveCapturedLocalCanvasUpdate(
-                        to: url,
-                        with: excalidrawFile,
-                        didUpdate: didUpdate,
-                        suppressCheckpoint: suppressCheckpoint,
-                        logger: logger
-                    )
-
-                case .collaborationFile(let objectURI, let fileName, let didUpdate):
-                    guard let collaborationFileObjectID = managedObjectID(for: objectURI),
-                          let content = excalidrawFile.content else {
-                        return
-                    }
-                    try await PersistenceController.shared.collaborationFileRepository.updateElements(
-                        collaborationFileObjectID: collaborationFileObjectID,
-                        content: content,
-                        newCheckpoint: !didUpdate
-                    )
-                    logger.debug("Background captured collaboration file update saved: \(fileName)")
-            }
+            try await persistCapturedCanvasUpdate(
+                target,
+                with: excalidrawFile,
+                logger: logger
+            )
         } catch {
             logger.error("Failed to update background captured file \(target.id): \(error)")
+        }
+    }
+
+    static func persistCapturedCanvasUpdate(
+        _ target: CapturedCanvasSaveTarget,
+        with excalidrawFile: ExcalidrawFile
+    ) async throws {
+        try await persistCapturedCanvasUpdate(
+            target,
+            with: excalidrawFile,
+            logger: Logger(label: "FileState")
+        )
+    }
+
+    private static func persistCapturedCanvasUpdate(
+        _ target: CapturedCanvasSaveTarget,
+        with excalidrawFile: ExcalidrawFile,
+        logger: Logger
+    ) async throws {
+        switch target.kind {
+            case .libraryFile(let objectURI, let fileName, let didUpdate, let suppressCheckpoint):
+                guard let fileObjectID = managedObjectID(for: objectURI),
+                      let content = excalidrawFile.content else {
+                    throw AppError.fileError(.notFound)
+                }
+                _ = try await PersistenceController.shared.mediaItemRepository.syncMediaItemsForFile(
+                    excalidrawFile: excalidrawFile,
+                    fileObjectID: fileObjectID
+                )
+                let checkpointPolicy: CheckpointWriteOptions = suppressCheckpoint
+                    ? .suppress
+                    : .userEdit(newCheckpoint: !didUpdate)
+                try await PersistenceController.shared.fileRepository.updateElements(
+                    fileObjectID: fileObjectID,
+                    fileData: content,
+                    checkpoint: checkpointPolicy
+                )
+                logger.debug("Background captured file update saved: \(fileName)")
+
+            case .localFile(let url, let didUpdate, let suppressCheckpoint):
+                try await saveCapturedLocalCanvasUpdate(
+                    to: url,
+                    with: excalidrawFile,
+                    didUpdate: didUpdate,
+                    suppressCheckpoint: suppressCheckpoint,
+                    logger: logger
+                )
+
+            case .collaborationFile(let objectURI, let fileName, let didUpdate):
+                guard let collaborationFileObjectID = managedObjectID(for: objectURI),
+                      let content = excalidrawFile.content else {
+                    throw AppError.fileError(.notFound)
+                }
+                try await PersistenceController.shared.collaborationFileRepository.updateElements(
+                    collaborationFileObjectID: collaborationFileObjectID,
+                    content: content,
+                    newCheckpoint: !didUpdate
+                )
+                logger.debug("Background captured collaboration file update saved: \(fileName)")
         }
     }
 
@@ -1142,7 +1165,25 @@ final class FileState: ObservableObject {
             force: true
         )
     }
-    
+
+    @MainActor
+    func flushPendingCanvasSnapshotBeforeExternalMutation(fileID: String) async {
+        guard let activeFile = currentActiveFile,
+              activeFile.id == fileID,
+              let saveTarget = capturedCanvasSaveTarget(for: activeFile),
+              let coordinator = canvasCoordinator(for: activeFile) else {
+            return
+        }
+
+        await coordinator.documentSyncController
+            .flushPendingDirtySnapshotToCapturedTarget(
+                reason: "externalDocumentMutation",
+                expectedFileID: fileID,
+                target: saveTarget,
+                forceCurrentAppState: true
+            )
+    }
+
     @discardableResult
     func createNewLocalFile(active: Bool = true, folderURL scopedURL: URL) async throws -> URL? {
         guard let data = ExcalidrawFile().content else { return nil }

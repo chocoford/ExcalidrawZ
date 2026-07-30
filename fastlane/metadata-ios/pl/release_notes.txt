@@ -1,1 +1,5 @@
-Naprawiono problem w kompaktowych układach iOS, przez który anulowane zaznaczenie mogło pojawić się ponownie podczas przesuwania lub powiększania płótna po wyjściu z trybu edycji.
+Nowość: Prezentacje na kanwie.
+
+- Zamieniaj ramki kanwy w slajdy i prezentuj bezpośrednio z rysunku.
+- Przeciągaj slajdy, aby zmienić kolejność, i wybieraj przejścia zanikania, przesuwania lub powiększania z własnym czasem trwania.
+- Kolejność i przejścia są zapisywane osobno dla każdego rysunku i odświeżane po zmianie ramek.

@@ -210,6 +210,11 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
                 title: String(localizable: .checkpoints)
             )
             compactInspectorTabButton(
+                tab: .presentation,
+                icon: .play,
+                title: String(localizable: .presentationTitle)
+            )
+            compactInspectorTabButton(
                 tab: .aiChat,
                 icon: .sparkles,
                 title: "AI Chat",
@@ -364,6 +369,11 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
                 icon: .clockArrowCirclepath,
                 title: String(localizable: .checkpoints)
             )
+            compactInspectorTabMenuButton(
+                tab: .presentation,
+                icon: .play,
+                title: String(localizable: .presentationTitle)
+            )
         } label: {
             Label(.localizable(.generalButtonMore), systemSymbol: .ellipsis)
                 .labelStyle(.iconOnly)
@@ -393,7 +403,7 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
     }
 
     private var compactCollapsedInspectorTabsContainActive: Bool {
-        [LayoutState.InspectorTab.preference, .search, .history].contains { tab in
+        [LayoutState.InspectorTab.preference, .search, .history, .presentation].contains { tab in
             compactInspectorTabIsActive(tab)
         }
     }

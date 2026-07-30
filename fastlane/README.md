@@ -21,6 +21,14 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 Upload App Store Connect metadata for one explicit platform. Build upload stays manual.
 
+### upload_release_assets
+
+```sh
+[bundle exec] fastlane upload_release_assets
+```
+
+Upload App Store metadata and screenshots for one explicit platform. Build upload stays manual.
+
 ### upload_ios_release_assets
 
 ```sh
@@ -28,6 +36,14 @@ Upload App Store Connect metadata for one explicit platform. Build upload stays 
 ```
 
 Upload iOS App Store metadata and iOS/iPadOS screenshots. Build upload stays manual.
+
+### upload_mac_release_assets
+
+```sh
+[bundle exec] fastlane upload_mac_release_assets
+```
+
+Upload macOS App Store metadata and screenshots. Build upload stays manual.
 
 ### split_screenshots
 
@@ -65,6 +81,14 @@ Generate only en-US and zh-Hans preview samples for visual checks.
 
 
 ## Mac
+
+### mac prepare_sparkle_release
+
+```sh
+[bundle exec] fastlane mac prepare_sparkle_release
+```
+
+Prepare localized Sparkle release notes and an appcast containing the Sparkle update signature.
 
 ### mac generate_sparkle_release_notes
 

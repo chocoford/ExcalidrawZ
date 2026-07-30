@@ -1,1 +1,5 @@
-Se ha corregido un problema en los diseños compactos de iOS por el que una selección anulada podía volver a aparecer al desplazar o ampliar el lienzo después de salir del modo de edición.
+Presentamos las Presentaciones de lienzo.
+
+- Convierte los marcos del lienzo en diapositivas y presenta directamente desde tu dibujo.
+- Arrastra para reordenar las diapositivas y elige transiciones de fundido, deslizamiento o zoom con una duración personalizada.
+- El orden y las transiciones se guardan para cada dibujo y se actualizan al cambiar los marcos.

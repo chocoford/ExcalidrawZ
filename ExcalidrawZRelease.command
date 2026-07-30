@@ -14,6 +14,7 @@ PBX_PATH="ExcalidrawZ.xcodeproj/project.pbxproj"
 RELEASE_VERSION=""
 PREVIEW_DEVICE=""
 PREVIEW_LOCALES=""
+UPLOAD_PROXY_PORT=""
 
 current_version() {
   awk '
@@ -200,6 +201,23 @@ read_release_version() {
   RELEASE_VERSION="$version"
 }
 
+read_upload_proxy_port() {
+  local port
+
+  read "?本机 HTTP/HTTPS 代理端口（127.0.0.1，留空不代理）: " port
+  if [[ -z "$port" ]]; then
+    UPLOAD_PROXY_PORT=""
+    return 0
+  fi
+
+  if [[ ! "$port" =~ '^[0-9]+$' ]] || (( port < 1 || port > 65535 )); then
+    echo "代理端口无效，需要是 1...65535 之间的数字"
+    return 1
+  fi
+
+  UPLOAD_PROXY_PORT="$port"
+}
+
 run_metadata() {
   local platform="$1"
   local dry_run="$2"
@@ -211,24 +229,41 @@ run_metadata() {
   if [[ "$dry_run" == "true" ]]; then
     args+=("dry_run:true")
     title_suffix=" dry run"
+  else
+    read_upload_proxy_port || return 1
+    if [[ -n "$UPLOAD_PROXY_PORT" ]]; then
+      args+=("proxy_port:$UPLOAD_PROXY_PORT")
+    fi
   fi
 
   run_fastlane "${platform:u} metadata$title_suffix" "${args[@]}"
 }
 
-run_ios_release_assets() {
-  local dry_run="$1"
+run_release_assets() {
+  local platform="$1"
+  local dry_run="$2"
   local title_suffix=""
   local -a args
+  local platform_label
 
   read_release_version || return 1
-  args=(upload_ios_release_assets "version:$RELEASE_VERSION")
+  if [[ "$platform" == "mac" ]]; then
+    platform_label="macOS"
+  else
+    platform_label="iOS"
+  fi
+  args=("upload_${platform}_release_assets" "version:$RELEASE_VERSION")
   if [[ "$dry_run" == "true" ]]; then
     args+=("dry_run:true")
     title_suffix=" dry run"
+  else
+    read_upload_proxy_port || return 1
+    if [[ -n "$UPLOAD_PROXY_PORT" ]]; then
+      args+=("proxy_port:$UPLOAD_PROXY_PORT")
+    fi
   fi
 
-  run_fastlane "iOS metadata + screenshots$title_suffix" "${args[@]}"
+  run_fastlane "$platform_label metadata + screenshots$title_suffix" "${args[@]}"
 }
 
 metadata_menu() {
@@ -237,6 +272,8 @@ metadata_menu() {
   choice="$(select_option "App Store Connect\n版本默认读取 Xcode MARKETING_VERSION。上传 build 仍由 Xcode Organizer 完成。" \
     "mac_dry|macOS metadata dry run|校验并生成 staged metadata，不上传。" \
     "mac_upload|Upload macOS metadata|上传 macOS metadata 和 release notes。" \
+    "mac_assets_dry|macOS release assets dry run|校验 macOS metadata 和 screenshots，不上传。" \
+    "mac_assets_upload|Upload macOS release assets|上传 macOS metadata 及 screenshots。" \
     "ios_dry|iOS metadata dry run|校验并生成 staged metadata，不上传。" \
     "ios_upload|Upload iOS metadata|上传 iOS/iPadOS metadata 和 release notes。" \
     "ios_assets_dry|iOS release assets dry run|校验 iOS metadata 和 screenshots，不上传。" \
@@ -246,10 +283,12 @@ metadata_menu() {
   case "$choice" in
     mac_dry) run_metadata mac true ;;
     mac_upload) run_metadata mac false ;;
+    mac_assets_dry) run_release_assets mac true ;;
+    mac_assets_upload) run_release_assets mac false ;;
     ios_dry) run_metadata ios true ;;
     ios_upload) run_metadata ios false ;;
-    ios_assets_dry) run_ios_release_assets true ;;
-    ios_assets_upload) run_ios_release_assets false ;;
+    ios_assets_dry) run_release_assets ios true ;;
+    ios_assets_upload) run_release_assets ios false ;;
     back) return 0 ;;
     *) echo "无效选择"; return 1 ;;
   esac
@@ -260,10 +299,11 @@ choose_preview_device() {
   choice="$(select_option "选择截图设备" \
     "iphone|iPhone" \
     "ipad|iPad" \
+    "mac|Mac" \
     "back|Back")"
 
   case "$choice" in
-    iphone|ipad)
+    iphone|ipad|mac)
       PREVIEW_DEVICE="$choice"
       return 0
       ;;
@@ -331,10 +371,24 @@ screenshots_menu() {
   esac
 }
 
+prepare_sparkle_release() {
+  local verify_asset="$1"
+  local -a args
+
+  read_release_version || return 1
+  args=(mac prepare_sparkle_release "version:$RELEASE_VERSION")
+  if [[ "$verify_asset" == "true" ]]; then
+    args+=("verify_asset:true")
+  fi
+
+  run_fastlane \
+    "Prepare Sparkle release" \
+    "${args[@]}"
+}
+
 generate_sparkle_release_notes() {
   read_release_version || return 1
-  run_fastlane \
-    "Generate Sparkle release notes" \
+  run_fastlane "Generate Sparkle release notes only" \
     mac generate_sparkle_release_notes "version:$RELEASE_VERSION"
 }
 
@@ -342,11 +396,15 @@ sparkle_menu() {
   local choice
 
   choice="$(select_option "Sparkle" \
-    "generate|Generate localized release notes|从 macOS metadata 生成 HTML，并更新已有 appcast item。" \
+    "prepare|Prepare publish files|读取 archives-new 的最终 DMG，生成带 Sparkle 更新签名的 appcast 和本地化 release notes。" \
+    "verify|Prepare and verify GitHub asset|生成发布文件，并确认对应 GitHub Release DMG 已可下载。" \
+    "notes|Generate release notes only|只从 macOS metadata 生成 HTML，并更新已有 appcast item。" \
     "back|Back")"
 
   case "$choice" in
-    generate) generate_sparkle_release_notes ;;
+    prepare) prepare_sparkle_release false ;;
+    verify) prepare_sparkle_release true ;;
+    notes) generate_sparkle_release_notes ;;
     back) return 0 ;;
     *) echo "无效选择"; return 1 ;;
   esac
@@ -378,6 +436,7 @@ show_status() {
   echo "Preview assets:"
   [[ -f fastlane/previews/assets/iphone/AppStore_iPhone_Previews.png ]] && echo "  iPhone: 已准备" || echo "  iPhone: 缺少底图"
   [[ -f fastlane/previews/assets/ipad/AppStore_iPad_Previews.png ]] && echo "  iPad: 已准备" || echo "  iPad: 缺少底图"
+  [[ -f fastlane/previews/assets/mac/AppStore_mac_Previews.png ]] && echo "  Mac: 已准备" || echo "  Mac: 缺少底图"
 }
 
 tools_menu() {
@@ -406,9 +465,9 @@ tools_menu() {
 
 print_menu() {
   select_option "ExcalidrawZ Release Console\n目录: $ROOT_DIR\n版本: $(current_version) ($(current_build))" \
-    "metadata|App Store Connect|上传 macOS/iOS metadata 和 iOS release assets。" \
-    "screenshots|Screenshots|渲染并分割 iPhone/iPad 多语言 App Store 截图。" \
-    "sparkle|Sparkle|生成多语言 Sparkle release notes 并更新 appcast。" \
+    "metadata|App Store Connect|上传 macOS/iOS metadata 和各平台 release assets。" \
+    "screenshots|Screenshots|渲染并分割 iPhone/iPad/Mac 多语言 App Store 截图。" \
+    "sparkle|Sparkle|从最终 DMG 准备 appcast、本地化 release notes，并校验 GitHub asset。" \
     "tools|Tools|检查配置、列出 lanes 或打开相关目录。" \
     "quit|Quit|退出 Release Console。"
 }

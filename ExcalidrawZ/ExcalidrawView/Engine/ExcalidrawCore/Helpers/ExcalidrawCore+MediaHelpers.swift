@@ -27,12 +27,22 @@ extension ExcalidrawCore {
     /// Insert media files to IndexedDB
     @MainActor
     func insertMediaFiles(_ files: [ExcalidrawFile.ResourceFile]) async throws {
+        guard !files.isEmpty else { return }
+
         let jsonStringified = try files.jsonStringified()
         _ = try await webView.callAsyncJavaScript(
-            "window.excalidrawZHelper.insertMedias('\(jsonStringified)');",
-            arguments: [:],
+            """
+            return await window.excalidrawZHelper.insertMedias(filesJSON);
+            """,
+            arguments: [
+                "filesJSON": jsonStringified,
+            ],
             contentWorld: .page
         )
+
+        var loadedIDs = loadedMediaItemIDSnapshot()
+        loadedIDs.formUnion(files.map(\.id))
+        updateLoadedMediaItemIDs(loadedIDs)
     }
 
     /// Inject all MediaItems from CoreData to IndexedDB

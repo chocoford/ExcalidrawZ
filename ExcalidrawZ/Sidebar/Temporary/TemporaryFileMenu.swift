@@ -31,6 +31,7 @@ struct TemporaryFileMenuItems: View {
     @Environment(\.alertToast) private var alertToast
     
     @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var localFolderState: LocalFolderState
     
     var file: URL?
     
@@ -310,6 +311,7 @@ struct TemporaryFileMenuItems: View {
                     to: targetFolderID,
                     context: context
                 )
+                await localFolderState.publishMovedItems(mapping)
                 await MainActor.run {
                     fileState.expandToGroup(targetFolderID)
                     fileState.temporaryFiles.removeAll(where: {filesToMove.contains($0)})

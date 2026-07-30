@@ -1,6 +1,6 @@
-Questo aggiornamento migliora la gestione dei file multimediali, i font personalizzati e l’affidabilità nell’apertura dei file.
+Arrivano Annotazione dello Schermo e Presentazioni della tela.
 
-- File multimediali è stato riprogettato con una galleria più veloce, riferimenti dettagliati e una pulizia guidata dei contenuti inutilizzati o usati solo nella cronologia.
-- Risolto il problema per cui i font personalizzati scomparivano cambiando sezione o i nuovi font sostituivano quelli già aggiunti.
-- Migliorati l’apertura e il cambio dei file e le transizioni per tornare alla schermata Home.
-- Aggiunte indicazioni più chiare e un’azione per riprovare quando non è possibile caricare un disegno.
+- Disegna su qualsiasi schermo del Mac con gli strumenti di Excalidraw, usando uno sfondo in tempo reale o bloccato e una barra degli strumenti spostabile tra i display.
+- Salva l’intero schermo o un’area selezionata come contenuto Excalidraw modificabile, PNG/JPEG o negli appunti, con preset di qualità e destinazioni recenti.
+- Trasforma i frame della tela in diapositive, riordinali, scegli transizioni in dissolvenza, scorrimento o zoom e presenta a schermo intero.
+- Migliorati il salvataggio in background, la continuità degli stili e l’affidabilità delle presentazioni.

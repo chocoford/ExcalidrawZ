@@ -1,6 +1,6 @@
-Esta actualización mejora la gestión de archivos multimedia, las fuentes personalizadas y la fiabilidad al abrir archivos.
+Presentamos Anotación en Pantalla y Presentaciones de lienzo.
 
-- Se ha rediseñado Archivos multimedia con una galería más rápida, referencias detalladas y una limpieza guiada para contenido sin usar o utilizado solo en el historial.
-- Se ha corregido la desaparición de fuentes personalizadas al cambiar de sección y que las nuevas fuentes reemplazaran a las ya añadidas.
-- Se han mejorado la apertura y el cambio de archivos, así como las transiciones de vuelta a Inicio.
-- Se han añadido indicaciones más claras y una acción para reintentar cuando no se puede cargar un dibujo.
+- Dibuja sobre cualquier pantalla del Mac con las herramientas de Excalidraw, usando un fondo en vivo o congelado y una barra de herramientas que puedes mover entre pantallas.
+- Guarda la pantalla completa o un área seleccionada como contenido editable de Excalidraw, PNG/JPEG o en el portapapeles, con ajustes de calidad y destinos recientes.
+- Convierte los marcos del lienzo en diapositivas, reordénalos, elige transiciones de fundido, deslizamiento o zoom y presenta a pantalla completa.
+- Se ha mejorado el guardado en segundo plano, la continuidad de estilos y la fiabilidad de las presentaciones.

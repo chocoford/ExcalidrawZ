@@ -72,6 +72,7 @@ extension ExcalidrawCore {
 
     func exportElementsToPNGData(
         elements: [ExcalidrawElement],
+        exportingFrame: ExcalidrawFrameLikeElement? = nil,
         files: [String : ExcalidrawFile.ResourceFile]? = nil,
         embedScene: Bool = false,
         withBackground: Bool = true,
@@ -79,6 +80,7 @@ extension ExcalidrawCore {
         exportScale: Int = 1
     ) async throws -> Data {
         let elementsJSON = try elements.jsonStringified()
+        let exportingFrameJSON = try exportingFrame?.jsonStringified() ?? "undefined"
         let filesJSON = try files?.jsonStringified() ?? "undefined"
         let script = """
         return await window.excalidrawZHelper.exportElementsToBlob(
@@ -87,7 +89,8 @@ extension ExcalidrawCore {
                 withBackground: \(withBackground),
                 exportWithDarkMode: \(colorScheme == .dark),
                 mimeType: 'image/png',
-                exportScale: \(exportScale)
+                exportScale: \(exportScale),
+                exportingFrame: \(exportingFrameJSON)
             }
         );
         """
@@ -217,6 +220,7 @@ extension ExcalidrawCore {
     @MainActor
     func exportElementsPreviewToPNG(
         elements: [ExcalidrawElement],
+        exportingFrame: ExcalidrawFrameLikeElement? = nil,
         embedScene: Bool = false,
         files: [String : ExcalidrawFile.ResourceFile]? = nil,
         withBackground: Bool = true,
@@ -241,6 +245,7 @@ extension ExcalidrawCore {
         ) {
             try await self.exportElementsToPNGData(
                 elements: elements,
+                exportingFrame: exportingFrame,
                 files: files,
                 embedScene: embedScene,
                 withBackground: withBackground,

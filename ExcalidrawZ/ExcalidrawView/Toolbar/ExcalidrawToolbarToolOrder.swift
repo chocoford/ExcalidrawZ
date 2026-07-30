@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct ExcalidrawToolbarToolOrder: Equatable, Hashable {
+    static let storageKey = "toolbarToolOrderData"
+
     static let defaultTools: [ExcalidrawTool] = [
         .cursor,
         .rectangle,

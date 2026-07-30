@@ -1,1 +1,5 @@
-Sửa lỗi trên bố cục iOS compact khiến vùng chọn đã bỏ có thể xuất hiện lại khi di chuyển hoặc thu phóng canvas sau khi thoát chế độ chỉnh sửa.
+Giới thiệu Trình bày canvas.
+
+- Biến các khung canvas thành trang trình bày và bắt đầu trình bày trực tiếp từ bản vẽ.
+- Kéo để sắp xếp lại các trang và chọn hiệu ứng mờ dần, trượt hoặc thu phóng với thời lượng tùy chỉnh.
+- Thứ tự và hiệu ứng chuyển tiếp được lưu riêng cho từng bản vẽ và làm mới khi các khung thay đổi.

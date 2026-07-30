@@ -1,6 +1,6 @@
-Deze update verbetert mediabeheer, aangepaste lettertypen en de betrouwbaarheid bij het openen van bestanden.
+Nieuw: Schermannotatie en canvaspresentaties.
 
-- Mediabestanden is vernieuwd met een snellere galerij, gedetailleerde verwijzingen en begeleide opschoning voor ongebruikte media of media die alleen in de bestandsgeschiedenis voorkomen.
-- Opgelost dat aangepaste lettertypen verdwenen na het wisselen van instellingen of dat nieuwe lettertypen eerder toegevoegde lettertypen vervingen.
-- Het openen en wisselen van bestanden en de overgang terug naar Home zijn verbeterd.
-- Duidelijker herstel en een actie om opnieuw te proberen wanneer een tekening niet kan worden geladen.
+- Teken met Excalidraw-gereedschappen over elk Mac-scherm, met een live of stilgezette achtergrond en een werkbalk die je tussen beeldschermen kunt verplaatsen.
+- Bewaar het volledige scherm of een geselecteerd gebied als bewerkbare Excalidraw-inhoud, PNG/JPEG of op het klembord, met kwaliteitsinstellingen en recente bestandsdoelen.
+- Zet canvasframes om in dia’s, wijzig de volgorde, kies fade-, schuif- of zoomovergangen en presenteer op volledig scherm.
+- Opslaan op de achtergrond, behoud van annotatiestijlen en betrouwbaarheid van presentaties zijn verbeterd.

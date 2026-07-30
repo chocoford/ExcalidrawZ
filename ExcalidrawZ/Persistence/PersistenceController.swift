@@ -37,6 +37,7 @@ class PersistenceController {
     lazy var aiConversationRepository = AIConversationRepository()
     lazy var aiMessageCheckpointLinkRepository = AIMessageCheckpointLinkRepository()
     lazy var aiChatAttachmentRepository = AIChatAttachmentRepository()
+    lazy var presentationConfigurationRepository = PresentationConfigurationRepository()
     
     /// Init function
     /// - Parameters:

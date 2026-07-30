@@ -1,1 +1,5 @@
-iOS kompakt yerleşimlerinde düzenleme modundan çıktıktan sonra tuvali kaydırırken veya yakınlaştırırken kaldırılmış bir seçimin yeniden görünebilmesine neden olan sorun düzeltildi.
+Kanvas Sunumları artık burada.
+
+- Kanvas çerçevelerini slaytlara dönüştürün ve doğrudan çiziminizden sunun.
+- Slaytları sürükleyerek yeniden sıralayın ve özel süreli solma, kayma veya yakınlaştırma geçişlerini seçin.
+- Sunum sırası ve geçiş ayarları her çizim için kaydedilir ve çerçeveler değiştikçe yenilenir.

@@ -9,6 +9,7 @@ import Foundation
 import SwiftUI
 import Logging
 #if os(macOS)
+import KeyboardShortcuts
 import ServiceManagement
 #endif
 
@@ -262,6 +263,11 @@ struct ExcalidrawZApp: App {
                 .llmProvider(state: llmState, client: .shared)
                 .lockedContentAutoRelock(lockedContentState: lockedContentState)
                 .onAppear {
+#if os(macOS)
+                    // Initialize after the SwiftUI scene to avoid shortcut event
+                    // monitoring affecting the initial accent color environment.
+                    _ = ScreenAnnotationController.shared
+#endif
 #if os(macOS) && !APP_STORE
                     updateChecker.assignUpdater(updater: updaterController.updater)
 #endif
@@ -370,6 +376,15 @@ struct ExcalidrawZApp: App {
                 } label: {
                     Text(.localizable(.whatsNewTitle))
                 }
+            }
+
+            CommandMenu("Tools") {
+                Button {
+                    ScreenAnnotationController.shared.toggle()
+                } label: {
+                    Text(.localizable(.screenAnnotationTitle))
+                }
+                .globalKeyboardShortcut(.toggleScreenAnnotation)
             }
         }
 #endif

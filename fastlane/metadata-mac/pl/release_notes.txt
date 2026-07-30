@@ -1,6 +1,6 @@
-Ta aktualizacja ulepsza zarządzanie multimediami, niestandardowe czcionki i niezawodność otwierania plików.
+Nowość: Adnotacja ekranu i prezentacje na kanwie.
 
-- Przeprojektowano Pliki multimedialne: szybsza galeria, szczegółowe odwołania i prowadzona funkcja czyszczenia nieużywanych multimediów lub używanych tylko w historii pliku.
-- Naprawiono znikanie niestandardowych czcionek po zmianie sekcji oraz zastępowanie wcześniej dodanych czcionek.
-- Ulepszono otwieranie i przełączanie plików oraz przejścia z powrotem do ekranu głównego.
-- Dodano jaśniejsze informacje i możliwość ponowienia próby, gdy rysunku nie można wczytać.
+- Rysuj narzędziami Excalidraw po dowolnym ekranie Maca, korzystając z obrazu na żywo lub zatrzymanego i przenosząc pasek narzędzi między ekranami.
+- Zapisuj cały ekran lub wybrany obszar jako edytowalną zawartość Excalidraw, PNG/JPEG albo do schowka, z ustawieniami jakości i ostatnimi plikami docelowymi.
+- Zamieniaj ramki kanwy w slajdy, zmieniaj ich kolejność, wybieraj przejścia zanikania, przesuwania lub powiększania i prezentuj na pełnym ekranie.
+- Ulepszono zapisywanie w tle, zachowywanie stylu adnotacji i niezawodność prezentacji.

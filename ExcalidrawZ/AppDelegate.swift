@@ -35,21 +35,14 @@ final class ApplicationTerminationCanvasFlushCoordinator {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    private static let lastWindowCloseTerminationDelay: UInt64 = 2_000_000_000
-
     let logger = Logger(label: "AppDelegate")
     private var isHandlingApplicationTermination = false
-    private var didPrepareLastWindowCloseTermination = false
     
     func applicationWillTerminate(_ notification: Notification) {
         PersistenceController.shared.save()
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        if didPrepareLastWindowCloseTermination {
-            return .terminateNow
-        }
-
         guard !isHandlingApplicationTermination else {
             return .terminateCancel
         }
@@ -66,28 +59,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        Task { @MainActor in
-            await terminateAfterLastWindowClosedIfNeeded()
-        }
         return false
     }
 
     @MainActor
-    private func terminateAfterLastWindowClosedIfNeeded() async {
-        await backupFilesBeforeTermination()
-        try? await Task.sleep(nanoseconds: Self.lastWindowCloseTerminationDelay)
-
-        guard NSApp.visibleMainWindows.isEmpty else { return }
-
-        await prepareForApplicationTermination()
-        didPrepareLastWindowCloseTermination = true
-        NSApp.terminate(nil)
-    }
-
-    @MainActor
     private func prepareForApplicationTermination() async {
+        await ScreenAnnotationSaveTaskManager.shared.waitUntilIdle()
+        await OffscreenExcalidrawEditor.waitForPendingOperations()
         await ApplicationTerminationCanvasFlushCoordinator.shared.flushPendingCanvasSnapshot()
         PersistenceController.shared.save()
+        await backupFilesBeforeTermination()
     }
 
     @MainActor
@@ -102,6 +83,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // disable auto capitalization
         UserDefaults.standard.set(false, forKey: "NSAutomaticCapitalizationEnabled")
+    }
+
+    func application(
+        _ application: NSApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        logger.info(
+            "Remote notification registration succeeded tokenBytes=\(deviceToken.count)"
+        )
+    }
+
+    func application(
+        _ application: NSApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        logger.warning("Remote notification registration failed: \(error)")
     }
     
     func application(_ sender: NSApplication, openFile filename: String) -> Bool {
@@ -145,6 +142,22 @@ private extension NSApplication {
 import UIKit
 class AppDelegate: NSObject, UIApplicationDelegate {
     let logger = Logger(label: "AppDelegate")
+
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        logger.info(
+            "Remote notification registration succeeded tokenBytes=\(deviceToken.count)"
+        )
+    }
+
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        logger.warning("Remote notification registration failed: \(error)")
+    }
 
     func application(
         _ application: UIApplication,

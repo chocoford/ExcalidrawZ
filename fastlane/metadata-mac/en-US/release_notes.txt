@@ -1,6 +1,6 @@
-This update improves media management, custom fonts, and file opening reliability.
+Introducing Screen Annotation and Canvas Presentations.
 
-- Redesigned Media Files with a faster gallery, detailed references, and a guided cleanup workflow for unused or history-only media.
-- Fixed custom fonts disappearing from Settings or replacing fonts that had already been added.
-- Improved file opening, switching, and transitions back to Home.
-- Added clearer recovery and a retry action when a drawing cannot be loaded.
+- Draw over any Mac screen with Excalidraw tools, using a live or frozen background and a movable toolbar across displays.
+- Save the full screen or a selected region as editable Excalidraw content, PNG/JPEG, or to the clipboard, with quality presets and recent file destinations.
+- Turn canvas frames into slides, reorder them, choose fade, slide, or zoom transitions, and present full screen.
+- Improved background saving, annotation style continuity, and presentation reliability.

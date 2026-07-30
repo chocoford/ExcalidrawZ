@@ -1,1 +1,5 @@
-Fixed an issue on compact iOS layouts where a cleared canvas selection could reappear after leaving Edit mode and panning or zooming the canvas.
+Introducing Canvas Presentations.
+
+- Turn canvas frames into slides and present directly from your drawing.
+- Drag to reorder slides and choose fade, slide, or zoom transitions with custom timing.
+- Presentation order and transition settings are saved per drawing and refresh as your frames change.

@@ -1,3 +1,27 @@
+## 2.3.0
+
+#### Features
+
+- Added Canvas Presentations, turning Excalidraw frames into centered full-screen slides with drag-to-reorder support and responsive fade, slide, or zoom transitions in either direction.
+- Added Screen Annotation on macOS, with a customizable global shortcut, a movable drawing toolbar, live or frozen screen backgrounds, multi-display support, and native controls for editing selected element styles across consecutive drawings.
+- Added flexible Screen Annotation export options for saving clean output without editing controls, covering the full screen or a selected region, to a new or existing Excalidraw file, the clipboard, or a custom PNG/JPEG location.
+
+#### Optimizations
+
+- Added Original, Balanced, and Compact image quality presets for Screen Annotation, remembered separately for each save destination.
+- Improved Screen Annotation saving with a background task queue and off-screen document updates, so annotations can be submitted without interrupting the active canvas.
+- Added recent Excalidraw save destinations and persistent toolbar placement, format, quality, and destination preferences.
+- Presentation slide order and transition settings are now stored per drawing, while slide previews refresh when canvas frames change.
+
+## 2.2.9
+
+#### Bug fixed
+
+- Fixed permission errors and incomplete moves when moving drawings or folders between levels of a Linked Folder.
+- Fixed moved local files remaining as unavailable entries in the Sidebar until a later refresh.
+- Fixed the Move to menu being unavailable from Home and missing the Linked Folder root as a destination.
+- Fixed active local drawings losing their folder context after being moved.
+
 ## 2.2.8
 
 #### Features

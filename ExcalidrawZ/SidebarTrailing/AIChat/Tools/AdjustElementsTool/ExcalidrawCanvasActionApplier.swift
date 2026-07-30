@@ -94,6 +94,7 @@ enum ExcalidrawCanvasActionApplier {
         var latexResults: [LatexInsertResult] = []
         var skeletonResults: [ExcalidrawCore.SkeletonInsertResult] = []
         var connectResults: [ExcalidrawCore.ConnectElementsResult] = []
+        var frameResults: [ExcalidrawCore.FrameMutationResult] = []
         var elementIdAliases: [String: String] = [:]
 
         for (index, action) in actions.enumerated() {
@@ -169,6 +170,23 @@ enum ExcalidrawCanvasActionApplier {
                             captureUpdate: op.captureUpdate
                         )
                         connectResults.append(connectResult)
+
+                    case .createFrame(let op):
+                        let frameResult = try await coordinator.createFrameFromElements(
+                            elementIds: op.targetIds,
+                            name: op.name,
+                            padding: op.padding,
+                            captureUpdate: op.captureUpdate
+                        )
+                        frameResults.append(frameResult)
+
+                    case .setFrame(let op):
+                        let frameResult = try await coordinator.setElementsFrame(
+                            elementIds: op.targetIds,
+                            frameId: op.frameId.value,
+                            captureUpdate: op.captureUpdate
+                        )
+                        frameResults.append(frameResult)
                 }
             } catch {
                 throw CanvasActionExecutionError(
@@ -183,7 +201,8 @@ enum ExcalidrawCanvasActionApplier {
             mermaidResults: mermaidResults,
             latexResults: latexResults,
             skeletonResults: skeletonResults,
-            connectResults: connectResults
+            connectResults: connectResults,
+            frameResults: frameResults
         )
     }
 
@@ -257,6 +276,10 @@ enum ExcalidrawCanvasActionApplier {
                 return parts.joined(separator: " ")
             case .connect(let op):
                 return "connect from=\(op.from) to=\(op.to)"
+            case .createFrame(let op):
+                return "createFrame targetIds=\(op.targetIds.joined(separator: ","))"
+            case .setFrame(let op):
+                return "setFrame targetIds=\(op.targetIds.joined(separator: ",")) frameId=\(op.frameId)"
         }
     }
 

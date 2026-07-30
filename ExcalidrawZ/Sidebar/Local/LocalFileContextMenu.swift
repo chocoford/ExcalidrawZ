@@ -55,7 +55,7 @@ struct LocalFileMenuProvider: View {
     private var firstFile: URL? {
         files.first
     }
-    
+
     var body: some View {
         content(triggers)
             .modifier(
@@ -219,6 +219,22 @@ struct LocalFileRowMenuItems: View {
     private var firstFile: URL? {
         files.first
     }
+
+    private var sourceLocalFolder: LocalFolder? {
+        let parentPaths = Set(
+            files.map {
+                $0.deletingLastPathComponent().standardizedFileURL.filePath
+            }
+        )
+        guard parentPaths.count == 1, let parentPath = parentPaths.first else {
+            return nil
+        }
+
+        let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+        request.predicate = NSPredicate(format: "filePath == %@", parentPath)
+        request.fetchLimit = 1
+        return try? viewContext.fetch(request).first
+    }
     
     var body: some View {
         if containerHorizontalSizeClass != .compact {
@@ -361,12 +377,13 @@ struct LocalFileRowMenuItems: View {
     
     @ViewBuilder
     private func moveLocalFileMenu() -> some View {
-        if case .localFolder(let currentLocalFolder) = fileState.currentActiveGroup {
+        if !files.isEmpty {
+            let sourceFolder = sourceLocalFolder
             Menu {
                 ForEach(topLevelLocalFolders) { folder in
                     MoveToGroupMenu(
                         destination: folder,
-                        sourceGroup: currentLocalFolder,
+                        sourceGroup: sourceFolder,
                         childrenSortKey: \LocalFolder.filePath,
                         allowSubgroups: true
                     ) { targetFolderID in
@@ -461,9 +478,13 @@ struct LocalFileRowMenuItems: View {
 
                 if let currentActiveFile, let newURL = mapping[currentActiveFile] {
                     await MainActor.run {
+                        if let targetFolder = viewContext.object(with: targetFolderID) as? LocalFolder {
+                            fileState.currentActiveGroup = .localFolder(targetFolder)
+                        }
                         fileState.setActiveFile(.localFile(newURL))
                     }
                 }
+                localFolderState.publishMovedItems(mapping)
             } catch {
                 await MainActor.run {
                     alertToast(error)

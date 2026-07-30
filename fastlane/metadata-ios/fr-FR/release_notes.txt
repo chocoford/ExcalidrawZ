@@ -1,1 +1,5 @@
-Correction d'un problème sur les présentations compactes d'iOS où une sélection annulée pouvait réapparaître lors du déplacement ou du zoom du canevas après avoir quitté le mode d'édition.
+Découvrez les présentations de canevas.
+
+- Transformez les cadres du canevas en diapositives et présentez directement depuis votre dessin.
+- Faites glisser les diapositives pour les réorganiser et choisissez des transitions en fondu, glissées ou zoomées avec une durée personnalisée.
+- L’ordre et les transitions sont enregistrés pour chaque dessin et se mettent à jour avec les cadres.

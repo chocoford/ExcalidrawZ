@@ -107,6 +107,31 @@ extension ExcalidrawElement: Identifiable {
 }
 
 extension ExcalidrawElement {
+    var frameId: String? {
+        switch self {
+            case .generic(let element):
+                element.frameId
+            case .text(let element):
+                element.frameId
+            case .linear(let element):
+                element.frameId
+            case .arrow(let element):
+                element.frameId
+            case .freeDraw(let element):
+                element.frameId
+            case .draw(let element):
+                element.frameId
+            case .image(let element):
+                element.frameId
+            case .pdf(let element):
+                element.frameId
+            case .frameLike(let element):
+                element.frameId
+            case .iframeLike(let element):
+                element.frameId
+        }
+    }
+
     var x: Double {
         switch self {
             case .generic(let excalidrawGenericElement):
@@ -232,4 +257,3 @@ extension ExcalidrawElement {
         }
     }
 }
-

@@ -1,6 +1,6 @@
-Dieses Update verbessert die Medienverwaltung, benutzerdefinierte Schriften und die Zuverlässigkeit beim Öffnen von Dateien.
+Neu: Bildschirmannotation und Canvas-Präsentationen.
 
-- „Mediendateien“ wurde mit einer schnelleren Galerie, detaillierten Verweisen und einer geführten Bereinigung für ungenutzte oder nur im Dateiverlauf verwendete Medien neu gestaltet.
-- Benutzerdefinierte Schriften verschwinden nicht mehr beim Wechseln der Einstellungen und neu hinzugefügte Schriften ersetzen keine vorhandenen mehr.
-- Öffnen und Wechseln von Dateien sowie Übergänge zurück zur Startseite wurden verbessert.
-- Wenn eine Zeichnung nicht geladen werden kann, gibt es klarere Hinweise und eine Aktion zum erneuten Versuchen.
+- Zeichne mit Excalidraw-Werkzeugen direkt auf jedem Mac-Bildschirm, wahlweise über einem Live- oder Standbild, und verschiebe die Werkzeugleiste zwischen Displays.
+- Speichere den gesamten Bildschirm oder einen ausgewählten Bereich als bearbeitbaren Excalidraw-Inhalt, PNG/JPEG oder in der Zwischenablage – mit Qualitätsvorgaben und zuletzt verwendeten Zieldateien.
+- Verwandle Canvas-Rahmen in Folien, ordne sie neu, wähle Überblend-, Schiebe- oder Zoomübergänge und präsentiere im Vollbild.
+- Hintergrundspeicherung, Übernahme von Annotationsstilen und Zuverlässigkeit von Präsentationen wurden verbessert.

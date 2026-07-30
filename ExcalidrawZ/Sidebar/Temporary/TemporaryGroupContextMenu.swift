@@ -15,6 +15,7 @@ struct TemporaryGroupMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject var fileState: FileState
+    @EnvironmentObject private var localFolderState: LocalFolderState
     
     @FetchRequest(
         sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],
@@ -194,6 +195,7 @@ struct TemporaryGroupMenuItems: View {
                     to: targetFolderID,
                     context: context
                 )
+                await localFolderState.publishMovedItems(mapping)
                 
                 
                 await MainActor.run {
