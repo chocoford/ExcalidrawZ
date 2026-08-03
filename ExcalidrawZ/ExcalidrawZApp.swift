@@ -229,8 +229,6 @@ struct ExcalidrawZApp: App {
     // Can not run agent in a sandboxed app.
     // let service = SMAppService.agent(plistName: "com.chocoford.excalidraw.ExcalidrawServer.agent.plist")
     
-    @Environment(\.scenePhase) var scenePhase
-    
     @StateObject private var appPrefernece = AppPreference()
     @StateObject private var store = Store.shared
 #if os(macOS) && !APP_STORE
@@ -272,6 +270,11 @@ struct ExcalidrawZApp: App {
                     updateChecker.assignUpdater(updater: updaterController.updater)
 #endif
                     scheduleAIConversationCacheWarmupIfNeeded()
+                }
+                .task {
+                    await CloudStorageSyncService.shared.monitor(
+                        connections: .shared
+                    )
                 }
         }
         // prevent window being open by urls.

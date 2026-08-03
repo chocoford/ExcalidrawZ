@@ -93,6 +93,17 @@ extension FileState {
                     object: restoredFile
                 )
 
+            case .cloudStorageFile(let reference):
+                let activeFile = ActiveFile.cloudStorageFile(reference)
+                let parsedFile = try ExcalidrawFile(data: content, id: activeFile.id)
+                try await CloudStorageDocumentStore.shared.save(content, to: reference)
+                guard currentActiveFile?.id == activeFile.id else { return }
+                await excalidrawWebCoordinator?.loadFile(from: parsedFile, force: true)
+                NotificationCenter.default.post(
+                    name: .activeCanvasFileDidRestore,
+                    object: parsedFile
+                )
+
             case .temporaryFile, nil:
                 throw AIChatEditError.unsupportedFile
         }

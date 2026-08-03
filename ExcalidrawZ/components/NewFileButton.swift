@@ -130,7 +130,7 @@ struct NewFileButton: View {
                 return true
             }
             return false
-        }() || fileState.currentActiveGroup == .temporary)
+        }() || fileState.currentActiveGroup == .temporary || isCreatingFile)
         .onReceive(NotificationCenter.default.publisher(for: .shouldHandleNewDraw)) { _ in
             guard window?.isKeyWindow == true else { return }
             
@@ -212,6 +212,14 @@ struct NewFileButton: View {
                                 alertToast(error)
                             }
                         }
+                    }
+                } else if case .cloudStorageFolder(let folder) = fileState.currentActiveGroup {
+                    let reference = try await CloudStorageDocumentStore.shared.createDocument(
+                        in: folder
+                    )
+                    await MainActor.run {
+                        fileState.setActiveFile(.cloudStorageFile(reference))
+                        isCreatingFile = false
                     }
                 } else if let defaultGroup = try PersistenceController.shared.getDefaultGroup(context: viewContext) {
                     createFile(in: defaultGroup.objectID, delay: 0)
@@ -315,6 +323,11 @@ struct NewFileButton: View {
                             alertToast(error)
                         }
                     }
+                } else if case .cloudStorageFolder(let folder) = fileState.currentActiveGroup {
+                    let reference = try await CloudStorageDocumentStore.shared.createDocument(
+                        in: folder
+                    )
+                    fileState.setActiveFile(.cloudStorageFile(reference))
                 } else {
                     let defaultGroup = try await viewContext.perform {
                         try PersistenceController.shared.getDefaultGroup(

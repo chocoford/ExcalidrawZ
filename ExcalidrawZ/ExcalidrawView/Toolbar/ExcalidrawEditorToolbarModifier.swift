@@ -615,6 +615,17 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                                 CollaborationMembersPopoverButton()
                             }
                         }
+                    case .cloudStorageFile(let reference):
+                        VStack(alignment: .leading) {
+                            Text(activeFile.name ?? reference.lastKnownName)
+                                .font(.headline)
+                            Text(
+                                activeFile.updatedAt?.formatted()
+                                    ?? String(localizable: .generalFileNeverModified)
+                            )
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
                 }
             }
             .frame(width: 120, alignment: .leading)
@@ -645,6 +656,8 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                         CollaborationFileMenu(file: collaborationFile) {
                             fileMenuLabel()
                         }
+                    case .cloudStorageFile:
+                        EmptyView()
                 }
             }
             .labelsHidden()
@@ -730,6 +743,11 @@ struct NavigationBackButton: View {
                         fileState.currentActiveGroup = localFolder.parent != nil
                         ? .localFolder(localFolder.parent!)
                         : nil
+                    case .cloudStorageFolder(let folder):
+                        let path = CloudStorageDocumentStore.shared.folderPath(for: folder)
+                        fileState.currentActiveGroup = path.dropLast().last.map {
+                            .cloudStorageFolder($0)
+                        }
                     default:
                         fileState.currentActiveGroup = nil
                 }

@@ -9,6 +9,7 @@ import Foundation
 import SwiftUI
 import Logging
 import CoreSpotlight
+import MSAL
 
 extension Notification.Name {
     static let didOpenFromUrls = Notification.Name("DidOpenFromUrls")
@@ -165,6 +166,17 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         restorationHandler: @escaping ([any UIUserActivityRestoring]?) -> Void
     ) -> Bool {
         return handleUserActivity(userActivity)
+    }
+
+    func application(
+        _ app: UIApplication,
+        open url: URL,
+        options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+    ) -> Bool {
+        MSALPublicClientApplication.handleMSALResponse(
+            url,
+            sourceApplication: options[.sourceApplication] as? String
+        )
     }
 }
 #endif

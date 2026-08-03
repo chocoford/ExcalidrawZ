@@ -163,31 +163,8 @@ struct CompactGroupBrowserView: View {
     init(group: Group, sortField: ExcalidrawFileSortField = .updatedAt) {
         self.group = group
 
-        // Fetch files in this group
-        let sortDescriptors: [SortDescriptor<File>] = {
-            switch sortField {
-            case .updatedAt:
-                [
-                    SortDescriptor(\.updatedAt, order: .reverse),
-                    SortDescriptor(\.createdAt, order: .reverse)
-                ]
-            case .name:
-                [
-                    SortDescriptor(\.name, order: .forward),
-                    SortDescriptor(\.updatedAt, order: .reverse),
-                    SortDescriptor(\.createdAt, order: .reverse),
-                ]
-            case .rank:
-                [
-                    SortDescriptor(\.rank, order: .forward),
-                    SortDescriptor(\.updatedAt, order: .reverse),
-                    SortDescriptor(\.createdAt, order: .reverse),
-                ]
-            }
-        }()
-        
         self._files = FetchRequest(
-            sortDescriptors: sortDescriptors,
+            sortDescriptors: ExcalidrawFileSortProvider.fileSortDescriptors(for: sortField),
             predicate: group.groupType == .trash
             ? NSPredicate(format: "inTrash == YES")
             : NSPredicate(format: "group == %@ AND inTrash == NO", group)

@@ -17,6 +17,7 @@ struct HomeFolderItemView: View {
     var isHighlighted: Bool
     var name: String
     var itemsCount: Int
+    var isLoading = false
     
     @State private var isHovered = false
     
@@ -42,6 +43,11 @@ struct HomeFolderItemView: View {
             }
                    
             Spacer()
+            if isLoading {
+                ProgressView()
+                    .controlSize(.mini)
+                    .frame(width: 12, height: 12)
+            }
             if #available(macOS 13.0, iOS 16.0, *) {} else {
                 Text(itemsCount.formatted())
                     .font(.footnote)

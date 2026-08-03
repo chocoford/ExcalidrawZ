@@ -18,6 +18,7 @@ struct NewGroupButton: View {
     enum GroupType {
         case localFolder
         case group
+        case cloudStorageFolder
     }
         
     var groupType: GroupType?
@@ -33,6 +34,8 @@ struct NewGroupButton: View {
                     AnyView(Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .folderBadgePlus))
                 case .group:
                     AnyView(Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .folderBadgePlus))
+                case .cloudStorageFolder:
+                    AnyView(Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .folderBadgePlus))
             }
         }
     }
@@ -55,6 +58,8 @@ struct NewGroupButton: View {
                 return .localFolder
             case .group:
                 return .group
+            case .cloudStorageFolder:
+                return .cloudStorageFolder
             default:
                 return nil
         }
@@ -62,6 +67,9 @@ struct NewGroupButton: View {
     
     @State private var isCreateGroupDialogPresented = false
     @State private var isCreateLocalFolderDialogPresented = false
+    @State private var isCreateCloudFolderDialogPresented = false
+    @State private var isCreatingCloudFolder = false
+    @State private var newCloudFolderName = ""
 
     var body: some View {
         content()
@@ -77,6 +85,9 @@ struct NewGroupButton: View {
                     parentFolderID: parentGroupID
                 )
             )
+            .sheet(isPresented: $isCreateCloudFolderDialogPresented) {
+                cloudFolderSheet
+            }
     }
     
     @ViewBuilder
@@ -94,10 +105,61 @@ struct NewGroupButton: View {
                 } label: {
                     label(.localFolder)
                 }
+            case .cloudStorageFolder:
+                Button {
+                    guard !isCreatingCloudFolder else { return }
+                    guard case .cloudStorageFolder(let folder) = fileState.currentActiveGroup else {
+                        return
+                    }
+                    newCloudFolderName = CloudStorageDocumentStore.shared.availableFolderName(
+                        in: folder
+                    )
+                    isCreateCloudFolderDialogPresented = true
+                } label: {
+                    ZStack {
+                        label(.cloudStorageFolder)
+                            .opacity(isCreatingCloudFolder ? 0 : 1)
+
+                        if isCreatingCloudFolder {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                    }
+                }
+                .disabled(isCreatingCloudFolder)
             default:
                 EmptyView()
         }
     }
-    
+
+    @ViewBuilder
+    private var cloudFolderSheet: some View {
+        CreateGroupSheetView(
+            name: $newCloudFolderName,
+            createType: .localFolder
+        ) { name in
+            guard !isCreatingCloudFolder else { return }
+            guard case .cloudStorageFolder(let parent) = fileState.currentActiveGroup else {
+                return
+            }
+            isCreatingCloudFolder = true
+            Task {
+                defer { isCreatingCloudFolder = false }
+                do {
+                    let folder = try await CloudStorageDocumentStore.shared.createFolder(
+                        named: name,
+                        in: parent
+                    )
+                    fileState.setActiveGroupIfNeeded(.cloudStorageFolder(folder))
+                } catch {
+                    alertToast(error)
+                }
+            }
+        }
+        .controlSize(.large)
+#if os(macOS)
+        .frame(width: 400, height: 140)
+#endif
+    }
 
 }

@@ -103,20 +103,13 @@ struct GroupListView: View {
                             // iCloud
                             DatabaseGroupsListView(sortField: sortField, fileState: fileState)
                                 .modifier(
-                                    ContentHeaderCreateButtonHoverModifier(
+                                    ContentHeaderCreateButtonModifier(
                                         groupType: .group,
                                         title: .localizable(.sidebarGroupListSectionHeaderICloud)
                                     )
                                 )
-                            
-                            // Local
-                            LocalFoldersListView()
-                                .modifier(
-                                    ContentHeaderCreateButtonHoverModifier(
-                                        groupType: .localFolder,
-                                        title: .localizable(.localFoldersTitle)
-                                    )
-                                )
+
+                            LinkedStorageSidebarSection()
                         }
                         .padding(8)
                         .readHeight($scrollViewContentHeight)
@@ -272,7 +265,7 @@ struct GroupListView: View {
                 return group.containsInAncestorChain(groupID)
             case .localFolder(let folder):
                 return folder.containsInAncestorChain(groupID)
-            case .temporary, .collaboration:
+            case .cloudStorageFolder, .temporary, .collaboration:
                 return false
         }
     }
@@ -410,7 +403,7 @@ private struct DatabaseGroupsListView: View {
     }
 }
 
-fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
+fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
     @Environment(\.alert) private var alert
     @Environment(\.alertToast) private var alertToast
 
@@ -426,10 +419,10 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
         self.title = title
     }
     
-    @State private var isHovered = false
     @State private var isImportLocalFolderDialogPresented = false
     @State private var isImportFilesDialogPresented = false
     @State private var isCreateGroupDialogPresented = false
+    @State private var isHovered = false
 
     
     func body(content: Content) -> some View {
@@ -438,9 +431,7 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
             content
         }
         .contentShape(Rectangle())
-        .onHover {
-            isHovered = $0
-        }
+        .onHover { isHovered = $0 }
     }
     
     @ViewBuilder
@@ -459,10 +450,6 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
                         } label: {
                             Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .plusCircleFill)
                         }
-#if os(macOS)
-                        .controlSize(.large)
-                        .padding(.trailing, 2)
-#endif
                         // Two file importers can not be called in same place
                         .modifier(ImportLocalFolderModifier(isPresented: $isImportLocalFolderDialogPresented))
                     case .group:
@@ -497,34 +484,26 @@ fileprivate struct ContentHeaderCreateButtonHoverModifier: ViewModifier {
                                 parentGroupID: nil,
                             )
                         )
+                    case .cloudStorageFolder:
+                        EmptyView()
                 }
             }
+#if os(macOS)
+            .controlSize(.large)
+            .padding(.trailing, 2)
+#endif
 #if os(iOS)
             .tint(.secondary)
 #endif
-            .opacity(isHovered ? 1 : 0.4)
             .labelStyle(.iconOnly)
             .buttonStyle(.borderless)
+            .opacity(isHovered ? 1 : 0.4)
         }
         .font(.callout.bold())
         .animation(.smooth, value: isHovered)
 
     }
     
-    @ViewBuilder
-    private func newGroupButton() -> some View {
-        NewGroupButton(type: groupType, parentID: nil) { type in
-            ZStack {
-                switch type {
-                    case .localFolder:
-                        Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .plusCircleFill)
-                    case .group:
-                        Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
-                }
-            }
-        }
-    }
-
 }
 
 struct ImportFilesModifier: ViewModifier {

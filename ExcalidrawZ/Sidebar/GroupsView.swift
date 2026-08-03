@@ -49,32 +49,10 @@ struct GroupsView: View {
         fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \Group.name, ascending: true)]
         self._children = FetchRequest(fetchRequest: fetchRequest)
         
-        /// Put the important things first.
-        let sortDescriptors: [SortDescriptor<File>] = {
-            switch sortField {
-                case .updatedAt:
-                    [
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse)
-                    ]
-                case .name:
-                    [
-                        SortDescriptor(\.name, order: .reverse),
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse),
-                    ]
-                case .rank:
-                    [
-                        SortDescriptor(\.rank, order: .forward),
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse),
-                    ]
-            }
-        }()
         self.sortField = sortField
 
         self._files = FetchRequest(
-            sortDescriptors: sortDescriptors,
+            sortDescriptors: ExcalidrawFileSortProvider.fileSortDescriptors(for: sortField),
             predicate: group.groupType == .trash ? NSPredicate(
                 format: "inTrash == YES"
             ) : NSPredicate(

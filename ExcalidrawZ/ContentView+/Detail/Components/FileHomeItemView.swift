@@ -408,6 +408,8 @@ private struct FileHomeItemContentView: View {
                                     Image(systemSymbol: .clock)
                                 case .collaborationFile:
                                     Image(systemSymbol: .person3Fill)
+                                case .cloudStorageFile(let reference):
+                                    CloudStorageDocumentSyncIndicator(reference: reference)
                             }
                         }
                     }
@@ -478,6 +480,8 @@ private struct FileHomeItemContextMenuModifier: ViewModifier {
                     // Missing CollaborationFile no matter
                     content
                         .modifier(CollaborationFileContextMenuModifier(file: room))
+                case .cloudStorageFile:
+                    content
             }
         } else {
             switch file {
@@ -493,6 +497,9 @@ private struct FileHomeItemContextMenuModifier: ViewModifier {
                 case .collaborationFile(let collaborationFile):
                     content
                         .modifier(CollaborationFileContextMenuModifier(file: collaborationFile))
+                case .cloudStorageFile(let reference):
+                    content
+                        .modifier(CloudStorageFileContextMenuModifier(reference: reference))
             }
         }
     }
@@ -515,6 +522,8 @@ private struct FileHomeItemDragModifier: ViewModifier {
             case .collaborationFile(let collaborationFile):
                 content
                     .modifier(FileRowDragModifier(file: collaborationFile))
+            case .cloudStorageFile:
+                content
                 
         }
     }

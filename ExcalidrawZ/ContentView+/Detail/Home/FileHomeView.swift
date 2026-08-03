@@ -11,38 +11,15 @@ import SmoothGradient
 
 struct GroupFileHomeView: View {
     var group: Group
-    
+
     @FetchRequest
     private var files: FetchedResults<File>
     
     init(group: Group, sortField: ExcalidrawFileSortField) {
         self.group = group
         
-        /// Put the important things first.
-        let sortDescriptors: [SortDescriptor<File>] = {
-            switch sortField {
-                case .updatedAt:
-                    [
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse)
-                    ]
-                case .name:
-                    [
-                        SortDescriptor(\.name, order: .reverse),
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse),
-                    ]
-                case .rank:
-                    [
-                        SortDescriptor(\.rank, order: .forward),
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse),
-                    ]
-            }
-        }()
-        
         self._files = FetchRequest<File>(
-            sortDescriptors: sortDescriptors,
+            sortDescriptors: ExcalidrawFileSortProvider.fileSortDescriptors(for: sortField),
             predicate: group.groupType == .trash
             ? NSPredicate(format: "inTrash == true")
             : NSPredicate(format: "inTrash == false AND group == %@", group)
@@ -240,7 +217,7 @@ struct FileHomeContainer: View {
         config.itemWidth = itemWidth
         return self
     }
-    
+
 }
 
 
@@ -638,10 +615,37 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
             .animation(.smooth, value: Array(childGroups))
 #endif
         }
-        // Files
+        FileHomeFilesGrid(files: files, itemWidth: fileItemWidth)
+    }
+}
+
+struct FileHomeFilesGrid: View {
+    let files: [FileState.ActiveFile]
+    let itemWidth: CGFloat
+    /// Invalidates the grid value when a source changes presentation metadata
+    /// without changing any stable file identities.
+    let contentRevision: Int
+
+    init(
+        files: [FileState.ActiveFile],
+        itemWidth: CGFloat,
+        contentRevision: Int = 0
+    ) {
+        self.files = files
+        self.itemWidth = itemWidth
+        self.contentRevision = contentRevision
+    }
+
+    var body: some View {
         LazyVGrid(
             columns: [
-                .init(.adaptive(minimum: fileItemWidth, maximum: fileItemWidth * 2 - 0.1), spacing: 20)
+                .init(
+                    .adaptive(
+                        minimum: itemWidth,
+                        maximum: itemWidth * 2 - 0.1
+                    ),
+                    spacing: 20
+                )
             ],
             spacing: 20
         ) {
@@ -650,15 +654,30 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                     file: file,
                     selectionSiblings: files
                 )
-                .id(file.id)
+                .id(file.fileHomeItemContentID)
             }
         }
         .animation(.smooth(duration: 0.22), value: files.map(\.id))
     }
-    
 }
 
-private struct FileHomeQuickActionButtonStyleModifier: ViewModifier {
+private extension FileState.ActiveFile {
+    /// Remote metadata can change without changing a cloud document's stable
+    /// identity. Include its presentation snapshot in the row identity so
+    /// SwiftUI refreshes that row without treating the editor as a new file.
+    var fileHomeItemContentID: String {
+        switch self {
+            case .cloudStorageFile(let reference):
+                let modifiedAt = reference.lastKnownModifiedAt?
+                    .timeIntervalSinceReferenceDate ?? 0
+                return "\(id):\(reference.lastKnownName):\(modifiedAt)"
+            default:
+                return id
+        }
+    }
+}
+
+struct FileHomeQuickActionButtonStyleModifier: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(macOS 26.0, iOS 26.0, *) {

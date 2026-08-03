@@ -1,0 +1,121 @@
+//
+//  CloudStorageProvider.swift
+//  ExcalidrawZ
+//
+//  A provider creates authenticated account sessions. Each session scopes all
+//  opaque item IDs to one provider account and serializes its own operations.
+//
+
+import Foundation
+
+protocol CloudStorageProvider: Sendable {
+    var descriptor: CloudStorageProviderDescriptor { get }
+
+    func authorizationStatus() async -> CloudStorageAuthorizationStatus
+    func authorize() async throws -> CloudStorageAccount
+    func makeSession(for account: CloudStorageAccount) async throws -> any CloudStorageSession
+    func signOut(accountID: CloudStorageAccountID) async throws
+}
+
+/// The local URL parameters below are transfer endpoints, not remote identity.
+/// Providers can stream downloads into App-managed cache files and upload from
+/// them without requiring the entire drawing or media payload in memory.
+protocol CloudStorageSession: Actor {
+    nonisolated var providerID: CloudStorageProviderID { get }
+    nonisolated var account: CloudStorageAccount { get }
+    nonisolated var capabilities: CloudStorageProviderCapabilities { get }
+
+    func rootItem() async throws -> CloudStorageItem
+    func item(for id: CloudStorageItemID) async throws -> CloudStorageItem
+    func listChildren(
+        of folderID: CloudStorageItemID,
+        pageToken: String?
+    ) async throws -> CloudStorageItemPage
+
+    func downloadFile(
+        _ fileID: CloudStorageItemID,
+        to localURL: URL
+    ) async throws -> CloudStorageItem
+
+    func createFile(
+        named name: String,
+        in parentID: CloudStorageItemID,
+        contentsAt localURL: URL,
+        condition: CloudStorageWriteCondition
+    ) async throws -> CloudStorageItem
+
+    func updateFile(
+        _ fileID: CloudStorageItemID,
+        contentsAt localURL: URL,
+        condition: CloudStorageWriteCondition
+    ) async throws -> CloudStorageItem
+
+    func createFolder(
+        named name: String,
+        in parentID: CloudStorageItemID
+    ) async throws -> CloudStorageItem
+
+    func moveItem(
+        _ itemID: CloudStorageItemID,
+        to parentID: CloudStorageItemID?,
+        newName: String?
+    ) async throws -> CloudStorageItem
+
+    func deleteItem(
+        _ itemID: CloudStorageItemID,
+        condition: CloudStorageWriteCondition
+    ) async throws
+
+    func changes(
+        in rootItemID: CloudStorageItemID,
+        since cursor: CloudStorageChangeCursor?
+    ) async throws -> CloudStorageChangePage
+}
+
+extension CloudStorageSession {
+    func createFile(
+        named name: String,
+        in parentID: CloudStorageItemID,
+        contentsAt localURL: URL,
+        condition: CloudStorageWriteCondition
+    ) async throws -> CloudStorageItem {
+        throw CloudStorageError.unsupportedOperation(.createFile)
+    }
+
+    func updateFile(
+        _ fileID: CloudStorageItemID,
+        contentsAt localURL: URL,
+        condition: CloudStorageWriteCondition
+    ) async throws -> CloudStorageItem {
+        throw CloudStorageError.unsupportedOperation(.updateFile)
+    }
+
+    func createFolder(
+        named name: String,
+        in parentID: CloudStorageItemID
+    ) async throws -> CloudStorageItem {
+        throw CloudStorageError.unsupportedOperation(.createFolder)
+    }
+
+    func moveItem(
+        _ itemID: CloudStorageItemID,
+        to parentID: CloudStorageItemID?,
+        newName: String?
+    ) async throws -> CloudStorageItem {
+        throw CloudStorageError.unsupportedOperation(.moveItem)
+    }
+
+    func deleteItem(
+        _ itemID: CloudStorageItemID,
+        condition: CloudStorageWriteCondition
+    ) async throws {
+        throw CloudStorageError.unsupportedOperation(.deleteItem)
+    }
+
+    func changes(
+        in rootItemID: CloudStorageItemID,
+        since cursor: CloudStorageChangeCursor?
+    ) async throws -> CloudStorageChangePage {
+        throw CloudStorageError.unsupportedOperation(.readChanges)
+    }
+}

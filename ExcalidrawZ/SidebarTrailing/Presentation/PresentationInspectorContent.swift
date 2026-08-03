@@ -56,7 +56,7 @@ struct PresentationInspectorContent: View {
         switch fileState.currentActiveFile {
             case .collaborationFile:
                 fileState.excalidrawCollaborationWebCoordinator
-            case .file, .localFile, .temporaryFile:
+            case .file, .localFile, .temporaryFile, .cloudStorageFile:
                 fileState.excalidrawWebCoordinator
             case nil:
                 nil

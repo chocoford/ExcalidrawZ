@@ -550,7 +550,7 @@ final class ExcalidrawMCPAppBridge {
                     description: description
                 )
 
-            case .temporaryFile, .collaborationFile:
+            case .temporaryFile, .collaborationFile, .cloudStorageFile:
                 return nil
         }
     }
@@ -622,7 +622,7 @@ final class ExcalidrawMCPAppBridge {
             case .localFile(let url):
                 try await deleteLocalMCPCheckpoint(id: id, url: url)
 
-            case .temporaryFile, .collaborationFile:
+            case .temporaryFile, .collaborationFile, .cloudStorageFile:
                 break
         }
     }
@@ -1097,7 +1097,7 @@ final class ExcalidrawMCPAppBridge {
         }
 
         switch activeFile {
-            case .file, .localFile, .temporaryFile:
+            case .file, .localFile, .temporaryFile, .cloudStorageFile:
                 return
             case .collaborationFile:
                 throw BridgeError.unsupportedActiveFile("collaboration files are not supported yet.")
@@ -1381,6 +1381,10 @@ final class ExcalidrawMCPAppBridge {
                 )
             case .collaborationFile:
                 throw BridgeError.unsupportedActiveFile("collaboration files are not supported yet.")
+            case .cloudStorageFile:
+                throw BridgeError.unsupportedActiveFile(
+                    "get_current_file_checkpoints does not support cloud storage files yet."
+                )
             case nil:
                 throw BridgeError.unsupportedActiveFile(
                     "get_current_file_checkpoints requires an active library file or active local file."
@@ -1642,6 +1646,8 @@ final class ExcalidrawMCPAppBridge {
                 return "temporaryFile"
             case .collaborationFile:
                 return "collaborationFile"
+            case .cloudStorageFile:
+                return "cloudStorageFile"
         }
     }
 

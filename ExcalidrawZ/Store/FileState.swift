@@ -26,6 +26,7 @@ final class FileState: ObservableObject {
     enum ActiveGroup: Identifiable, Equatable {
         case group(Group)
         case localFolder(LocalFolder)
+        case cloudStorageFolder(CloudStorageFolderReference)
         case temporary
         case collaboration
         
@@ -35,6 +36,8 @@ final class FileState: ObservableObject {
                     (group.id ?? UUID()).uuidString
                 case .localFolder(let folder):
                     folder.filePath ?? UUID().uuidString
+                case .cloudStorageFolder(let folder):
+                    folder.id
                 case .temporary:
                     "temporary"
                 case .collaboration:
@@ -57,12 +60,32 @@ final class FileState: ObservableObject {
         guard currentActiveGroup != group else { return }
         currentActiveGroup = group
     }
+
+    @MainActor
+    func replaceCloudStorageDocumentReference(
+        _ reference: CloudStorageDocumentReference
+    ) {
+        var replacedCount = 0
+        for index in activeFiles.indices {
+            guard let activeFile = activeFiles[index],
+                  case .cloudStorageFile(let currentReference) = activeFile,
+                  currentReference == reference else { continue }
+            activeFiles[index] = .cloudStorageFile(reference)
+            replacedCount += 1
+        }
+#if DEBUG
+        logger.debug(
+            "Replaced cloud document metadata itemID=\(reference.itemID.rawValue) name=\(reference.lastKnownName) activeSessions=\(replacedCount)"
+        )
+#endif
+    }
     
     enum ActiveFile: Identifiable, Hashable {
         case file(File)
         case localFile(URL)
         case temporaryFile(URL)
         case collaborationFile(CollaborationFile)
+        case cloudStorageFile(CloudStorageDocumentReference)
         
         var id: String {
             switch self {
@@ -76,6 +99,8 @@ final class FileState: ObservableObject {
                 case .collaborationFile(let collaborationFile):
                     // collaborationFile.objectID.description
                     collaborationFile.id?.uuidString ?? UUID().uuidString
+                case .cloudStorageFile(let reference):
+                    reference.id
             }
         }
 
@@ -97,23 +122,30 @@ final class FileState: ObservableObject {
                             ?? file.roomID
                             ?? file.objectID.uriRepresentation().absoluteString
                     )
+                case .cloudStorageFile(let reference):
+                    AIConversationFileScope(kind: .cloudStorageFile, id: reference.id)
             }
         }
         
         var name: String? {
             switch self {
                 case .file(let file):
-                    file.name
+                    return file.name
                 case .localFile(let url):
-                    fileType == .excalidrawPNG || fileType == .excalidrawSVG
+                    return fileType == .excalidrawPNG || fileType == .excalidrawSVG
                     ? url.deletingPathExtension().deletingPathExtension().lastPathComponent
                     : url.deletingPathExtension().lastPathComponent
                 case .temporaryFile(let url):
-                    fileType == .excalidrawPNG || fileType == .excalidrawSVG
+                    return fileType == .excalidrawPNG || fileType == .excalidrawSVG
                     ? url.deletingPathExtension().deletingPathExtension().lastPathComponent
                     : url.deletingPathExtension().lastPathComponent
                 case .collaborationFile(let file):
-                    file.name
+                    return file.name
+                case .cloudStorageFile(let reference):
+                    let url = URL(fileURLWithPath: reference.lastKnownName)
+                    return fileType == .excalidrawPNG || fileType == .excalidrawSVG
+                        ? url.deletingPathExtension().deletingPathExtension().lastPathComponent
+                        : url.deletingPathExtension().lastPathComponent
             }
         }
         
@@ -127,6 +159,8 @@ final class FileState: ObservableObject {
                     (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? nil
                 case .collaborationFile(let file):
                     file.updatedAt
+                case .cloudStorageFile(let reference):
+                    reference.lastKnownModifiedAt
             }
         }
 
@@ -134,7 +168,7 @@ final class FileState: ObservableObject {
             switch self {
                 case .file(let file):
                     file.inTrash
-                case .localFile, .temporaryFile, .collaborationFile:
+                case .localFile, .temporaryFile, .collaborationFile, .cloudStorageFile:
                     false
             }
         }
@@ -142,18 +176,35 @@ final class FileState: ObservableObject {
         var fileType: UTType {
             switch self {
                 case .localFile(let url):
-                    url.pathExtension == "svg"
+                    return url.pathExtension == "svg"
                     ? .excalidrawSVG
                     : url.pathExtension == "png"
                     ? .excalidrawPNG
                     : .excalidrawFile
                 case .temporaryFile(let url):
-                    url.pathExtension == "svg"
+                    return url.pathExtension == "svg"
                     ? .excalidrawSVG
                     : url.pathExtension == "png"
                     ? .excalidrawPNG
                     : .excalidrawFile
-                default: .excalidrawFile
+                case .cloudStorageFile(let reference):
+                    let pathExtension = (reference.lastKnownName as NSString).pathExtension.lowercased()
+                    return pathExtension == "svg"
+                        ? .excalidrawSVG
+                        : pathExtension == "png"
+                        ? .excalidrawPNG
+                        : .excalidrawFile
+                default:
+                    return .excalidrawFile
+            }
+        }
+
+        var usesLocalViewportSidecar: Bool {
+            switch self {
+                case .file, .cloudStorageFile:
+                    true
+                case .localFile, .temporaryFile, .collaborationFile:
+                    false
             }
         }
     }
@@ -176,6 +227,31 @@ final class FileState: ObservableObject {
                 fileName: String,
                 didUpdate: Bool
             )
+            case cloudStorageFile(reference: CloudStorageDocumentReference)
+
+            var usesLocalViewportSidecar: Bool {
+                switch self {
+                    case .libraryFile, .cloudStorageFile:
+                        true
+                    case .localFile, .collaborationFile:
+                        false
+                }
+            }
+
+            var nativeFileName: String? {
+                switch self {
+                    case .libraryFile(_, let fileName, _, _):
+                        fileName
+                    case .localFile(let url, _, _):
+                        url.deletingPathExtension().lastPathComponent
+                    case .collaborationFile(_, let fileName, _):
+                        fileName
+                    case .cloudStorageFile(let reference):
+                        URL(fileURLWithPath: reference.lastKnownName)
+                            .deletingPathExtension()
+                            .lastPathComponent
+                }
+            }
         }
 
         let id: String
@@ -348,6 +424,11 @@ final class FileState: ObservableObject {
                         fileName: file.name ?? "Untitled",
                         didUpdate: didUpdateFileState[activeFile] ?? false
                     )
+                )
+            case .cloudStorageFile(let reference):
+                return CapturedCanvasSaveTarget(
+                    id: activeFile.id,
+                    kind: .cloudStorageFile(reference: reference)
                 )
         }
     }
@@ -536,6 +617,10 @@ final class FileState: ObservableObject {
                         collaboratingFilesState[room] = .loading
                     }
                 }
+            case .cloudStorageFile(let reference):
+                if let folder = CloudStorageDocumentStore.shared.parentFolder(for: reference) {
+                    setActiveGroupIfNeeded(.cloudStorageFolder(folder))
+                }
         }
         return true
     }
@@ -575,7 +660,7 @@ final class FileState: ObservableObject {
             case .collaborationFile(let room):
                 room.visitedAt = now
                 saveVisitedAtChange(in: room.managedObjectContext)
-            case .localFile, .temporaryFile:
+            case .localFile, .temporaryFile, .cloudStorageFile:
                 break
         }
     }
@@ -603,6 +688,9 @@ final class FileState: ObservableObject {
     
     @Published var selectedTemporaryFiles: Set<URL> = []
     @Published var selectedStartTemporaryFile: URL?
+
+    @Published var selectedCloudStorageFiles: Set<CloudStorageDocumentReference> = []
+    @Published var selectedStartCloudStorageFile: CloudStorageDocumentReference?
     
     // Collab
     var isInCollaborationSpace: Bool {
@@ -1002,6 +1090,21 @@ final class FileState: ObservableObject {
                     newCheckpoint: !didUpdate
                 )
                 logger.debug("Background captured collaboration file update saved: \(fileName)")
+
+            case .cloudStorageFile(let reference):
+                var file = excalidrawFile
+                try file.updateContentFilesFromFiles()
+                guard let content = file.content else {
+                    throw AppError.fileError(.notFound)
+                }
+                try await CloudStorageDocumentStore.shared.saveToLocalCache(
+                    content,
+                    for: reference
+                )
+                await CloudStorageSyncService.shared.enqueueUpload(for: reference)
+                logger.debug(
+                    "Background captured cloud storage file update cached: \(reference.lastKnownName)"
+                )
         }
     }
 
@@ -1030,6 +1133,16 @@ final class FileState: ObservableObject {
 
                 case .collaborationFile:
                     break
+
+                case .cloudStorageFile(let reference):
+                    try await CloudStorageDocumentStore.shared.saveToLocalCache(
+                        content,
+                        for: reference
+                    )
+                    await CloudStorageSyncService.shared.enqueueUpload(for: reference)
+                    logger.debug(
+                        "Background appState-only cloud storage file update cached: \(reference.lastKnownName)"
+                    )
             }
         } catch {
             logger.error("Failed to update background appState-only file \(target.id): \(error)")
@@ -1143,6 +1256,18 @@ final class FileState: ObservableObject {
 
             case .collaborationFile:
                 break
+
+            case .cloudStorageFile(let reference):
+                Task {
+                    do {
+                        try await CloudStorageDocumentStore.shared.save(content, to: reference)
+                        self.logger.debug("AppState-only cloud storage file update saved")
+                    } catch {
+                        self.logger.error(
+                            "Failed to update appState-only cloud storage file \(reference.lastKnownName): \(error)"
+                        )
+                    }
+                }
         }
     }
 
@@ -1940,5 +2065,8 @@ final class FileState: ObservableObject {
         self.selectedLocalFiles = []
         self.selectedStartLocalFile = nil
         self.selectedTemporaryFiles = []
+        self.selectedStartTemporaryFile = nil
+        self.selectedCloudStorageFiles = []
+        self.selectedStartCloudStorageFile = nil
     }
 }

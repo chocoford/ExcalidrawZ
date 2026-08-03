@@ -10,8 +10,8 @@
 		3908EB9929674DF60054A3ED /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3908EB9729674DF60054A3ED /* Model.xcdatamodeld */; };
 		391087832DFFCC1A0057F493 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 391087822DFFCC1A0057F493 /* Logging */; };
 		3910878A2DFFCC200057F493 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 391087892DFFCC200057F493 /* Logging */; };
-		3910E993301462BD00E422D4 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 3910E992301462BD00E422D4 /* KeyboardShortcuts */; };
-		3910E998301462C600E422D4 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 3910E997301462C600E422D4 /* KeyboardShortcuts */; };
+		3910E993301462BD00E422D4 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 3910E992301462BD00E422D4 /* KeyboardShortcuts */; };
+		3910E998301462C600E422D4 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 3910E997301462C600E422D4 /* KeyboardShortcuts */; };
 		3913C0262FED942F00689184 /* ChocofordEssentials in Frameworks */ = {isa = PBXBuildFile; productRef = 3913C0252FED942F00689184 /* ChocofordEssentials */; };
 		3913C0282FED942F00689184 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3913C0272FED942F00689184 /* ChocofordUI */; };
 		3914876D2960AFD10042927A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 3914876C2960AFD10042927A /* Sparkle */; };
@@ -102,6 +102,8 @@
 		39F71C4F2FA88BD30040C8D7 /* ChocofordUI in Frameworks */ = {isa = PBXBuildFile; productRef = 39F71C4E2FA88BD30040C8D7 /* ChocofordUI */; };
 		39F8B6EE2F137973006D5A90 /* LLMKit in Frameworks */ = {isa = PBXBuildFile; productRef = 39F8B6ED2F137973006D5A90 /* LLMKit */; };
 		39F8C2192F1579F7006D5A90 /* LLMCore in Frameworks */ = {isa = PBXBuildFile; productRef = 39F8C2182F1579F7006D5A90 /* LLMCore */; };
+		39FD00013012100000C10001 /* MSAL in Frameworks */ = {isa = PBXBuildFile; productRef = 39FD00013012100000C10004 /* MSAL */; };
+		39FD00013012100000C10002 /* MSAL in Frameworks */ = {isa = PBXBuildFile; productRef = 39FD00013012100000C10005 /* MSAL */; };
 		9009E9B6D7F84E138B7BDA37 /* MathRendering in Resources */ = {isa = PBXBuildFile; fileRef = 54A01A9B81924C01A4E4216B /* MathRendering */; };
 /* End PBXBuildFile section */
 
@@ -401,6 +403,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				39FD00013012100000C10001 /* MSAL in Frameworks */,
 				39704EDF2E7990BC00B98F7A /* Vortex in Frameworks */,
 				3998125E2E73EBF400B7AAC9 /* ChocofordUI in Frameworks */,
 				3973D6092E7D1A7B005FD6A5 /* AVKit.framework in Frameworks */,
@@ -426,6 +429,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				39FD00013012100000C10002 /* MSAL in Frameworks */,
 				394BBCDF2FDDEB0300E25D8F /* ChocofordUI in Frameworks */,
 				399812642E73EBF400B7AAC9 /* ChocofordUI in Frameworks */,
 				39F71C4F2FA88BD30040C8D7 /* ChocofordUI in Frameworks */,
@@ -629,6 +633,7 @@
 			);
 			name = "ExcalidrawZ (AppStore)";
 			packageProductDependencies = (
+				39FD00013012100000C10004 /* MSAL */,
 				3963A0392C6C7EAA00472AE7 /* ChocofordEssentials */,
 				3963A03A2C6C7EAA00472AE7 /* ChocofordUI */,
 				3963A03B2C6C7EAA00472AE7 /* ChocofordEssentials */,
@@ -685,6 +690,7 @@
 			);
 			name = ExcalidrawZ;
 			packageProductDependencies = (
+				39FD00013012100000C10005 /* MSAL */,
 				3914876C2960AFD10042927A /* Sparkle */,
 				3930B2F72C512E7B00F14E88 /* ChocofordEssentials */,
 				3930B2F92C512E7B00F14E88 /* ChocofordUI */,
@@ -830,6 +836,7 @@
 			);
 			mainGroup = 397E464A295838CF003B824B;
 			packageReferences = (
+				39FD00013012100000C10003 /* XCRemoteSwiftPackageReference "microsoft-authentication-library-for-objc" */,
 				3914876B2960AFD00042927A /* XCRemoteSwiftPackageReference "Sparkle" */,
 				3966623D2C666EC600F863BC /* XCRemoteSwiftPackageReference "FlyingFox" */,
 				390716CF2C6E82CF002D7834 /* XCRemoteSwiftPackageReference "xcstrings-tool-plugin" */,
@@ -1965,6 +1972,14 @@
 				kind = branch;
 			};
 		};
+		39FD00013012100000C10003 /* XCRemoteSwiftPackageReference "microsoft-authentication-library-for-objc" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AzureAD/microsoft-authentication-library-for-objc";
+			requirement = {
+				kind = exactVersion;
+				version = 2.14.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -2223,6 +2238,16 @@
 		39F8C2182F1579F7006D5A90 /* LLMCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LLMCore;
+		};
+		39FD00013012100000C10004 /* MSAL */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 39FD00013012100000C10003 /* XCRemoteSwiftPackageReference "microsoft-authentication-library-for-objc" */;
+			productName = MSAL;
+		};
+		39FD00013012100000C10005 /* MSAL */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 39FD00013012100000C10003 /* XCRemoteSwiftPackageReference "microsoft-authentication-library-for-objc" */;
+			productName = MSAL;
 		};
 /* End XCSwiftPackageProductDependency section */
 

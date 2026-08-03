@@ -213,24 +213,13 @@ struct LocalFilesProvider<Content: View>: View {
     }
     
     private func sortFiles(field: ExcalidrawFileSortField) {
-        switch field {
-            case .updatedAt, .rank:
-                files.sort {
-                    // createdAt
-                    let lhsAttrs = try? FileManager.default.attributesOfItem(atPath: $0.filePath)
-                    let rhsAttrs = try? FileManager.default.attributesOfItem(atPath: $1.filePath)
-                    return (lhsAttrs?[.creationDate] as? Date) ?? .distantPast > (rhsAttrs?[.creationDate] as? Date) ?? .distantPast
-                }
-                files.sort {
-                    // updatedAt
-                    let lhsAttrs = try? FileManager.default.attributesOfItem(atPath: $0.filePath)
-                    let rhsAttrs = try? FileManager.default.attributesOfItem(atPath: $1.filePath)
-                    return (lhsAttrs?[.modificationDate] as? Date) ?? .distantPast > (rhsAttrs?[.modificationDate] as? Date) ?? .distantPast
-                }
-            case .name:
-                files.sort {
-                    $0.deletingPathExtension().lastPathComponent < $1.deletingPathExtension().lastPathComponent
-                }
+        files = ExcalidrawFileSortProvider.sorted(files, by: field) { file in
+            let attributes = try? FileManager.default.attributesOfItem(atPath: file.filePath)
+            return ExcalidrawFileSortProvider.Values(
+                name: file.deletingPathExtension().lastPathComponent,
+                updatedAt: attributes?[.modificationDate] as? Date,
+                createdAt: attributes?[.creationDate] as? Date
+            )
         }
     }
     

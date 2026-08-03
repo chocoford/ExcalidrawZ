@@ -97,13 +97,30 @@ final class FileCoverCacheCoordinator: ObservableObject {
     private let logger = Logger(label: "FileCoverCacheCoordinator")
     private let maximumRetryCount = 8
     private let libraryPrewarmMinimumInterval: TimeInterval = 10 * 60
+    private var cloudStorageContentObserver: NSObjectProtocol?
 
     private struct CoverPrewarmKey: Equatable {
         let colorScheme: ColorScheme
         let fileIDs: [String]
     }
 
-    private init() {}
+    private init() {
+        cloudStorageContentObserver = NotificationCenter.default.addObserver(
+            forName: .cloudStorageDocumentContentDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let reference = notification.object as? CloudStorageDocumentReference else {
+                return
+            }
+            Task { @MainActor [weak self] in
+                self?.refreshCover(
+                    for: .cloudStorageFile(reference),
+                    priority: .userInitiated
+                )
+            }
+        }
+    }
 
     func register(
         fileState: FileState,
@@ -139,9 +156,38 @@ final class FileCoverCacheCoordinator: ObservableObject {
             queuedKeys.remove(cacheKey)
         }
 
-        guard !inFlightKeys.contains(cacheKey) else { return }
+        if inFlightKeys.contains(cacheKey) {
+            guard forceRefresh, !queuedKeys.contains(cacheKey) else { return }
+            enqueue(
+                source: source,
+                colorScheme: colorScheme,
+                forceRefresh: true,
+                priority: priority,
+                cacheKey: cacheKey,
+                retryCount: 0
+            )
+            return
+        }
         guard !shouldSkipLockedSource(source) else { return }
 
+        enqueue(
+            source: source,
+            colorScheme: colorScheme,
+            forceRefresh: forceRefresh,
+            priority: priority,
+            cacheKey: cacheKey,
+            retryCount: 0
+        )
+    }
+
+    private func enqueue(
+        source: Source,
+        colorScheme: ColorScheme,
+        forceRefresh: Bool,
+        priority: Priority,
+        cacheKey: String,
+        retryCount: Int
+    ) {
         queuedKeys.insert(cacheKey)
         queue.append(Job(
             source: source,
@@ -149,7 +195,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
             forceRefresh: forceRefresh,
             priority: priority,
             sequence: nextSequence,
-            retryCount: 0
+            retryCount: retryCount
         ))
         nextSequence += 1
         sortQueue()
@@ -534,6 +580,8 @@ final class FileCoverCacheCoordinator: ObservableObject {
                     resourceValues?.contentModificationDate ?? .distantPast,
                     resourceValues?.creationDate ?? .distantPast
                 )
+            case .cloudStorageFile:
+                return .distantPast
         }
     }
 
@@ -578,6 +626,17 @@ final class FileCoverCacheCoordinator: ObservableObject {
                             excalidrawFile = try ExcalidrawFile(
                                 data: content,
                                 id: collaborationFile.id?.uuidString
+                            )
+
+                        case .cloudStorageFile(let reference):
+                            mediaHydrationFileObjectID = nil
+                            let documentStore = CloudStorageDocumentStore.shared
+                            guard let content = try documentStore.cachedContent(for: reference) else {
+                                return .completed
+                            }
+                            excalidrawFile = try ExcalidrawFile(
+                                data: content,
+                                id: reference.id
                             )
                     }
 

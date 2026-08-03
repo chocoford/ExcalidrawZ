@@ -220,7 +220,7 @@ extension FileState {
                 )
                 return RecordedAICheckpoint(id: checkpointID, kind: .local)
 
-            case .temporaryFile, .collaborationFile:
+            case .temporaryFile, .collaborationFile, .cloudStorageFile:
                 // Temporary files don't have history at all; collaboration
                 // files have shared history that's a different beast (and
                 // out of scope for this iteration). Skip silently — the
@@ -268,7 +268,7 @@ extension FileState {
                     excludingCheckpointID: checkpointID
                 )
 
-            case .temporaryFile, .collaborationFile:
+            case .temporaryFile, .collaborationFile, .cloudStorageFile:
                 return nil
         }
     }
@@ -291,7 +291,8 @@ extension FileState {
                     checkpointID: checkpoint.id
                 )
 
-            case (.temporaryFile, _), (.collaborationFile, _), (.file, .local), (.localFile, .file):
+            case (.temporaryFile, _), (.collaborationFile, _), (.cloudStorageFile, _),
+                    (.file, .local), (.localFile, .file):
                 return
         }
     }

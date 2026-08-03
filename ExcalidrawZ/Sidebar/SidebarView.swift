@@ -10,12 +10,6 @@ import CoreData
 
 import ChocofordUI
 
-enum ExcalidrawFileSortField: String, Hashable {
-    case updatedAt
-    case name
-    case rank
-}
-
 struct SidebarView: View {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.searchExcalidrawAction) private var searchExcalidraw

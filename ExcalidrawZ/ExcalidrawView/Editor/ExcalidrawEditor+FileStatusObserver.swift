@@ -376,7 +376,7 @@ private struct FileStatusObserverModifier: ViewModifier {
                 return dbFile.updatedAt
             case .collaborationFile(let collabFile):
                 return collabFile.updatedAt
-            case .localFile, .temporaryFile:
+            case .localFile, .temporaryFile, .cloudStorageFile:
                 return nil
         }
     }
@@ -389,7 +389,7 @@ private struct FileStatusObserverModifier: ViewModifier {
                 return .file(dbFile.objectID)
             case .collaborationFile(let collabFile):
                 return .collaborationFile(collabFile.objectID)
-            case .localFile, .temporaryFile:
+            case .localFile, .temporaryFile, .cloudStorageFile:
                 return nil
         }
     }
@@ -743,6 +743,8 @@ private struct FileStatusObserverModifier: ViewModifier {
 
             case .temporaryFile:
                 return nil
+            case .cloudStorageFile:
+                return nil
         }
     }
 
@@ -788,6 +790,8 @@ private struct FileStatusObserverModifier: ViewModifier {
 
             case .temporaryFile:
                 return false
+            case .cloudStorageFile:
+                return false
         }
     }
 
@@ -817,7 +821,7 @@ private struct FileStatusObserverModifier: ViewModifier {
                     relativePath: FileStorageContentType.collaborationFile.generateRelativePath(fileID: fileID)
                 )
 
-            case .localFile, .temporaryFile:
+            case .localFile, .temporaryFile, .cloudStorageFile:
                 return nil
         }
     }

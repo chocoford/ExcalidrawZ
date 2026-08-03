@@ -208,8 +208,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
     }
 
     private var loadingCoverImage: PlatformImage? {
-        guard hasFile,
-              let activeFile = fileState.currentActiveFile else {
+        guard let activeFile = fileState.currentActiveFile else {
             return nil
         }
         return FileItemPreviewCache.shared.getPreviewCache(

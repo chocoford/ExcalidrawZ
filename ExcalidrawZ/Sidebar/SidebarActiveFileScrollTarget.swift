@@ -13,6 +13,7 @@ enum SidebarActiveFileScrollTarget: Hashable {
     case localFile(URL)
     case temporaryFile(URL)
     case collaborationFile(NSManagedObjectID)
+    case cloudStorageFile(CloudStorageItemID)
 
     init?(activeFile: FileState.ActiveFile?) {
         guard let activeFile else { return nil }
@@ -26,6 +27,8 @@ enum SidebarActiveFileScrollTarget: Hashable {
                 self = .temporaryFile(url)
             case .collaborationFile(let file):
                 self = .collaborationFile(file.objectID)
+            case .cloudStorageFile(let reference):
+                self = .cloudStorageFile(reference.itemID)
         }
     }
 }
