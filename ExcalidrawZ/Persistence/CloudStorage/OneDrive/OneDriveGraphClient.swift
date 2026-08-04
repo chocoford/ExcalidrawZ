@@ -248,6 +248,16 @@ actor OneDriveGraphClient {
             logger.error(
                 "Microsoft Graph request failed status=\(response.statusCode) itemID=\(itemID?.rawValue ?? "none") code=\(graphError?.code ?? "unknown") message=\(graphError?.message ?? "none")"
             )
+            let changeTrackingResetCodes: Set<String> = [
+                "resyncrequired",
+                "resyncchangesapplydifferences",
+                "resyncchangesuploaddifferences",
+                "syncstatenotfound",
+            ]
+            if response.statusCode == 410
+                || changeTrackingResetCodes.contains(graphError?.code.lowercased() ?? "") {
+                throw CloudStorageError.changeTrackingResetRequired
+            }
             switch response.statusCode {
                 case 401:
                     throw CloudStorageError.authenticationRequired

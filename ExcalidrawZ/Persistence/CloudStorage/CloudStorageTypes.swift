@@ -86,6 +86,43 @@ struct CloudStorageProviderCapabilities: OptionSet, Codable, Hashable, Sendable 
     ]
 }
 
+/// Operations allowed for one remote item.
+///
+/// Provider-level capabilities describe which APIs an integration implements;
+/// item capabilities reflect the effective permissions of the signed-in user
+/// for a particular file or folder. A nil value means the provider did not
+/// supply item-level permissions, in which case the App preserves the existing
+/// read-write behavior and lets the remote API make the final decision.
+struct CloudStorageItemCapabilities: OptionSet, Codable, Hashable, Sendable {
+    let rawValue: UInt
+
+    init(rawValue: UInt) {
+        self.rawValue = rawValue
+    }
+
+    static let download = Self(rawValue: 1 << 0)
+    static let createChildren = Self(rawValue: 1 << 1)
+    static let updateContent = Self(rawValue: 1 << 2)
+    static let rename = Self(rawValue: 1 << 3)
+    static let move = Self(rawValue: 1 << 4)
+    static let delete = Self(rawValue: 1 << 5)
+
+    static let writableFile: Self = [
+        .download,
+        .updateContent,
+        .rename,
+        .move,
+        .delete,
+    ]
+
+    static let writableFolder: Self = [
+        .createChildren,
+        .rename,
+        .move,
+        .delete,
+    ]
+}
+
 struct CloudStorageProviderDescriptor: Codable, Hashable, Sendable {
     let id: CloudStorageProviderID
     let displayName: String
@@ -110,6 +147,10 @@ struct CloudStorageLocation: Codable, Hashable, Identifiable, Sendable {
     let rootItemID: CloudStorageItemID
     let displayName: String
     let createdAt: Date
+    /// Effective permissions of the selected root. The root is not included in
+    /// its own children listing, so its permissions must travel with the
+    /// persisted location instead of relying on the metadata index.
+    let rootCapabilities: CloudStorageItemCapabilities?
 
     init(
         id: UUID = UUID(),
@@ -117,7 +158,8 @@ struct CloudStorageLocation: Codable, Hashable, Identifiable, Sendable {
         accountID: CloudStorageAccountID,
         rootItemID: CloudStorageItemID,
         displayName: String,
-        createdAt: Date = Date()
+        createdAt: Date = Date(),
+        rootCapabilities: CloudStorageItemCapabilities? = nil
     ) {
         self.id = id
         self.providerID = providerID
@@ -125,6 +167,11 @@ struct CloudStorageLocation: Codable, Hashable, Identifiable, Sendable {
         self.rootItemID = rootItemID
         self.displayName = displayName
         self.createdAt = createdAt
+        self.rootCapabilities = rootCapabilities
+    }
+
+    var effectiveRootCapabilities: CloudStorageItemCapabilities {
+        rootCapabilities ?? .writableFolder
     }
 }
 
@@ -150,6 +197,50 @@ struct CloudStorageItem: Codable, Hashable, Identifiable, Sendable {
     /// Opaque provider revision, ETag, or content version used for conflict
     /// detection. Callers must not compare revisions across providers.
     let revision: String?
+
+    /// Effective permissions when the provider exposes them. This remains
+    /// optional so persisted indexes from older App versions decode safely.
+    let capabilities: CloudStorageItemCapabilities?
+
+    init(
+        id: CloudStorageItemID,
+        parentID: CloudStorageItemID?,
+        name: String,
+        kind: Kind,
+        contentType: String?,
+        size: Int64?,
+        createdAt: Date?,
+        modifiedAt: Date?,
+        remoteURL: URL?,
+        revision: String?,
+        capabilities: CloudStorageItemCapabilities? = nil
+    ) {
+        self.id = id
+        self.parentID = parentID
+        self.name = name
+        self.kind = kind
+        self.contentType = contentType
+        self.size = size
+        self.createdAt = createdAt
+        self.modifiedAt = modifiedAt
+        self.remoteURL = remoteURL
+        self.revision = revision
+        self.capabilities = capabilities
+    }
+
+    /// Backward-compatible behavior for providers that cannot expose
+    /// effective permissions without an additional network request.
+    var effectiveCapabilities: CloudStorageItemCapabilities {
+        if let capabilities {
+            return capabilities
+        }
+        switch kind {
+            case .folder:
+                return .writableFolder
+            case .file, .package, .shortcut, .unknown:
+                return .writableFile
+        }
+    }
 }
 
 /// Stable remote identity carried by an open editor session. Mutable provider
@@ -362,6 +453,10 @@ enum CloudStorageError: LocalizedError, Equatable, Sendable {
     case itemNotFound(CloudStorageItemID)
     case itemNameAlreadyExists(String?)
     case conflict
+    case permissionDenied(CloudStorageOperation)
+    /// The provider can no longer continue from the persisted change cursor.
+    /// Callers should rebuild the selected location and obtain a new cursor.
+    case changeTrackingResetRequired
     case rateLimited(retryAfter: TimeInterval?)
     case unsupportedOperation(CloudStorageOperation)
     case invalidProviderResponse(String)
@@ -384,6 +479,10 @@ enum CloudStorageError: LocalizedError, Equatable, Sendable {
                 return "An item with this name already exists in this folder."
             case .conflict:
                 return "The cloud storage item changed before the operation completed."
+            case .permissionDenied(let operation):
+                return "You do not have permission to perform \(operation.rawValue) on this cloud storage item."
+            case .changeTrackingResetRequired:
+                return "The cloud storage change history must be synchronized again."
             case .rateLimited(let retryAfter):
                 if let retryAfter {
                     return "The cloud storage provider rate limited the request. Retry after \(retryAfter) seconds."

@@ -91,6 +91,16 @@
 				<string>msauth.$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>Dropbox Authentication</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>db-60tm26t6cjqvtab</string>
+			</array>
+		</dict>
 	</array>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>

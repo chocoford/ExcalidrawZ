@@ -129,6 +129,14 @@ struct CloudStorageFileContextMenuModifier: ViewModifier {
         return [reference]
     }
 
+    private func selectedReferencesAllow(
+        _ capability: CloudStorageItemCapabilities
+    ) -> Bool {
+        selectedReferences.allSatisfy {
+            documentStore.capabilities(for: $0).contains(capability)
+        }
+    }
+
     func body(content: Content) -> some View {
         content
             .contextMenu {
@@ -138,7 +146,8 @@ struct CloudStorageFileContextMenuModifier: ViewModifier {
                     Label(.localizable(.generalButtonOpen), systemSymbol: .arrowUpRightSquare)
                 }
 
-                if selectedReferences.count == 1 {
+                if selectedReferences.count == 1,
+                   selectedReferencesAllow(.rename) {
                     Button {
                         isRenamePresented = true
                     } label: {
@@ -146,21 +155,23 @@ struct CloudStorageFileContextMenuModifier: ViewModifier {
                     }
                 }
 
-                Button {
-                    duplicateSelectedFiles()
-                } label: {
-                    Label {
-                        if selectedReferences.count > 1 {
-                            Text(
-                                localizable: .sidebarFileRowContextMenuDuplicateFiles(
-                                    selectedReferences.count
+                if selectedReferencesAllow(.download) {
+                    Button {
+                        duplicateSelectedFiles()
+                    } label: {
+                        Label {
+                            if selectedReferences.count > 1 {
+                                Text(
+                                    localizable: .sidebarFileRowContextMenuDuplicateFiles(
+                                        selectedReferences.count
+                                    )
                                 )
-                            )
-                        } else {
-                            Text(localizable: .sidebarFileRowContextMenuDuplicate)
+                            } else {
+                                Text(localizable: .sidebarFileRowContextMenuDuplicate)
+                            }
+                        } icon: {
+                            Image(systemSymbol: .plusSquareOnSquare)
                         }
-                    } icon: {
-                        Image(systemSymbol: .plusSquareOnSquare)
                     }
                 }
 
@@ -185,12 +196,14 @@ struct CloudStorageFileContextMenuModifier: ViewModifier {
                     Label(.localizable(.cloudStorageContextMenuCopyLink), systemImage: "link")
                 }
 
-                Divider()
+                if selectedReferencesAllow(.delete) {
+                    Divider()
 
-                Button(role: .destructive) {
-                    isDeletePresented = true
-                } label: {
-                    Label(.localizable(.sidebarFileRowContextMenuDelete), systemSymbol: .trash)
+                    Button(role: .destructive) {
+                        isDeletePresented = true
+                    } label: {
+                        Label(.localizable(.sidebarFileRowContextMenuDelete), systemSymbol: .trash)
+                    }
                 }
             }
             .modifier(
@@ -362,17 +375,21 @@ struct CloudStorageFolderActionsModifier: ViewModifier {
             Label(.localizable(.generalButtonOpen), systemSymbol: .arrowUpRightSquare)
         }
 
-        Button {
-            isRenamePresented = true
-        } label: {
-            Label(.localizable(.sidebarGroupRowContextMenuRename), systemSymbol: .pencil)
+        if capabilities.contains(.rename) {
+            Button {
+                isRenamePresented = true
+            } label: {
+                Label(.localizable(.sidebarGroupRowContextMenuRename), systemSymbol: .pencil)
+            }
         }
 
-        Button {
-            newFolderName = documentStore.availableFolderName(in: folder)
-            isCreateFolderPresented = true
-        } label: {
-            Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .folderBadgePlus)
+        if capabilities.contains(.createChildren) {
+            Button {
+                newFolderName = documentStore.availableFolderName(in: folder)
+                isCreateFolderPresented = true
+            } label: {
+                Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .folderBadgePlus)
+            }
         }
 
         Divider()
@@ -396,13 +413,19 @@ struct CloudStorageFolderActionsModifier: ViewModifier {
             Label(.localizable(.cloudStorageContextMenuCopyLink), systemImage: "link")
         }
 
-        Divider()
+        if capabilities.contains(.delete) {
+            Divider()
 
-        Button(role: .destructive) {
-            isDeletePresented = true
-        } label: {
-            Label(.localizable(.sidebarGroupRowContextMenuDelete), systemSymbol: .trash)
+            Button(role: .destructive) {
+                isDeletePresented = true
+            } label: {
+                Label(.localizable(.sidebarGroupRowContextMenuDelete), systemSymbol: .trash)
+            }
         }
+    }
+
+    private var capabilities: CloudStorageItemCapabilities {
+        documentStore.capabilities(for: folder)
     }
 
     private func withPresentations<PresentedContent: View>(

@@ -27,6 +27,9 @@ protocol CloudStorageSession: Actor {
 
     func rootItem() async throws -> CloudStorageItem
     func item(for id: CloudStorageItemID) async throws -> CloudStorageItem
+    /// Resolves the provider-facing URL used by reveal and copy-link actions.
+    /// Providers may override this when metadata does not carry a stable URL.
+    func remoteURL(for item: CloudStorageItem) async throws -> URL
     func listChildren(
         of folderID: CloudStorageItemID,
         pageToken: String?
@@ -66,6 +69,13 @@ protocol CloudStorageSession: Actor {
         condition: CloudStorageWriteCondition
     ) async throws
 
+    /// Returns changes normalized to the selected root. Providers whose native
+    /// change feed is account-wide must filter out unrelated entries, emit a
+    /// deletion when an indexed item leaves this subtree, and enumerate a
+    /// folder's descendants when it enters the subtree.
+    ///
+    /// Throw `CloudStorageError.changeTrackingResetRequired` when the provider
+    /// can no longer continue from the supplied cursor.
     func changes(
         in rootItemID: CloudStorageItemID,
         since cursor: CloudStorageChangeCursor?
@@ -73,6 +83,15 @@ protocol CloudStorageSession: Actor {
 }
 
 extension CloudStorageSession {
+    func remoteURL(for item: CloudStorageItem) async throws -> URL {
+        guard let remoteURL = item.remoteURL else {
+            throw CloudStorageError.invalidProviderResponse(
+                "The cloud storage provider did not return a web URL for this item."
+            )
+        }
+        return remoteURL
+    }
+
     func createFile(
         named name: String,
         in parentID: CloudStorageItemID,

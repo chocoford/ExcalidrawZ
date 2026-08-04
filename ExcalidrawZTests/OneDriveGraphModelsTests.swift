@@ -36,6 +36,8 @@ final class OneDriveGraphModelsTests: XCTestCase {
         XCTAssertEqual(item.contentType, "application/vnd.excalidraw+json")
         XCTAssertEqual(item.size, 2048)
         XCTAssertEqual(item.revision, "revision-1")
+        XCTAssertNil(item.capabilities)
+        XCTAssertEqual(item.effectiveCapabilities, .writableFile)
         XCTAssertNotNil(item.createdAt)
         XCTAssertNotNil(item.modifiedAt)
     }

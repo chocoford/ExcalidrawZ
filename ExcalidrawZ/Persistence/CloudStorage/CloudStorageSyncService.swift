@@ -74,8 +74,9 @@ final class CloudStorageSyncService {
 
     func enqueueUpload(
         for reference: CloudStorageDocumentReference,
-        connections: CloudStorageConnectionStore = .shared
+        connections: CloudStorageConnectionStore? = nil
     ) {
+        let connections = connections ?? .shared
         documentStore.scheduleContentSynchronization(
             for: reference,
             connections: connections,
@@ -86,8 +87,28 @@ final class CloudStorageSyncService {
     func prioritizeDocuments(
         in location: CloudStorageLocation,
         parentID: CloudStorageItemID,
-        connections: CloudStorageConnectionStore = .shared
-    ) {
+        connections: CloudStorageConnectionStore? = nil
+    ) async {
+        let connections = connections ?? .shared
+        do {
+            _ = try await connections.ensureAccess(to: location)
+        } catch CloudStorageError.authorizationCancelled {
+            return
+        } catch {
+#if DEBUG
+            logger.warning(
+                "Unable to restore cloud storage access for user-initiated synchronization location=\(location.displayName) id=\(location.id) error=\(error)"
+            )
+#endif
+            return
+        }
+
+        let refreshed = await documentStore.refresh(
+            location,
+            connections: connections,
+            force: true
+        )
+        guard refreshed else { return }
         documentStore.scheduleDocumentSynchronizations(
             in: location,
             parentID: parentID,
@@ -136,11 +157,16 @@ final class CloudStorageSyncService {
                 Task { @MainActor [weak self, weak connections] in
                     guard let self, let connections else { return }
                     let currentLocationIDs = Set(locations.map(\.id))
+                    let removedLocationIDs = self.observedLocationIDs
+                        .subtracting(currentLocationIDs)
                     let addedLocations = locations.filter {
                         !self.observedLocationIDs.contains($0.id)
                     }
                     self.observedLocationIDs = currentLocationIDs
 
+                    for locationID in removedLocationIDs {
+                        self.cancelSynchronization(for: locationID)
+                    }
                     for location in addedLocations {
                         self.requestSynchronization(
                             for: location,
@@ -149,6 +175,11 @@ final class CloudStorageSyncService {
                     }
                 }
             }
+    }
+
+    private func cancelSynchronization(for locationID: UUID) {
+        locationSynchronizationTasks.removeValue(forKey: locationID)?.cancel()
+        locationSynchronizationTaskIDs.removeValue(forKey: locationID)
     }
 
     private func requestSynchronization(
@@ -173,12 +204,19 @@ final class CloudStorageSyncService {
                 "Synchronizing cloud location location=\(location.displayName) id=\(location.id)"
             )
 #endif
-            await documentStore.refresh(
+            let refreshed = await documentStore.refresh(
                 location,
                 connections: connections,
                 force: true
             )
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, refreshed else {
+#if DEBUG
+                logger.debug(
+                    "Skipped document synchronization after cloud location refresh failed location=\(location.displayName) id=\(location.id)"
+                )
+#endif
+                return
+            }
             documentStore.scheduleDocumentSynchronizations(
                 in: location,
                 excludingDocumentIDs: Set(activeDocumentObservers.keys),

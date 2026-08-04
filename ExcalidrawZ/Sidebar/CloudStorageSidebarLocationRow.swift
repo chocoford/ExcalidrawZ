@@ -46,7 +46,17 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer(minLength: 4)
-                if isLoadingMetadata {
+                if isConnecting {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .frame(width: 12, height: 12)
+                } else if connections.requiresAuthentication(for: location) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .imageScale(.small)
+                        .foregroundStyle(.orange)
+                        .frame(width: 12, height: 12)
+                        .help("Sign in to reconnect \(location.displayName)")
+                } else if isLoadingMetadata {
                     ProgressView()
                         .controlSize(.mini)
                         .frame(width: 12, height: 12)
@@ -82,6 +92,10 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
                 in: location.rootItemID,
                 sortedBy: fileState.sortField
             ) == nil
+    }
+
+    private var isConnecting: Bool {
+        connections.connectingProviderIDs.contains(location.providerID)
     }
 
     private var folderSyncState: CloudStorageFolderSyncState {
@@ -146,10 +160,7 @@ private struct CloudStorageSidebarFolderContents: View {
             }
         }
         .task(id: folderID) {
-            if items == nil {
-                await browser.refresh(connections: connections, force: false)
-            }
-            CloudStorageSyncService.shared.prioritizeDocuments(
+            await CloudStorageSyncService.shared.prioritizeDocuments(
                 in: browser.location,
                 parentID: folderID,
                 connections: connections

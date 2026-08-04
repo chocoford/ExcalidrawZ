@@ -14,6 +14,7 @@ struct NewGroupButton: View {
     @Environment(\.alert) private var alert
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
+    @ObservedObject private var cloudStorageDocumentStore = CloudStorageDocumentStore.shared
 
     enum GroupType {
         case localFolder
@@ -126,10 +127,21 @@ struct NewGroupButton: View {
                         }
                     }
                 }
-                .disabled(isCreatingCloudFolder)
+                .disabled(
+                    isCreatingCloudFolder
+                        || !canCreateChildrenInActiveCloudFolder
+                )
             default:
                 EmptyView()
         }
+    }
+
+    private var canCreateChildrenInActiveCloudFolder: Bool {
+        guard case .cloudStorageFolder(let folder) = fileState.currentActiveGroup else {
+            return false
+        }
+        return cloudStorageDocumentStore.capabilities(for: folder)
+            .contains(.createChildren)
     }
 
     @ViewBuilder

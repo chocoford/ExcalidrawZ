@@ -54,7 +54,7 @@ final class CloudStorageDocumentStore: ObservableObject {
     private var persistedStates: [UUID: PersistedLocationState] = [:]
     private var loadedLocationIDs: Set<UUID> = []
     private var sessionsByLocationID: [UUID: any CloudStorageSession] = [:]
-    private var refreshTasksByLocationID: [UUID: Task<Void, Never>] = [:]
+    private var refreshTasksByLocationID: [UUID: Task<Bool, Never>] = [:]
     private var refreshTaskIDsByLocationID: [UUID: UUID] = [:]
     private var saveTasks: [String: Task<Void, Error>] = [:]
     private var saveTaskIDs: [String: UUID] = [:]
@@ -63,7 +63,7 @@ final class CloudStorageDocumentStore: ObservableObject {
     private var activeContentSynchronizationPriorities: [String: CloudStorageContentSynchronizationPriority] = [:]
     private var contentSynchronizationQueue: [String: ContentSynchronizationRequest] = [:]
     private var nextContentSynchronizationSequence = 0
-    private var retryScheduledItemIDs: Set<CloudStorageItemID> = []
+    private var retryScheduledDocumentIDs: Set<String> = []
     private var metadataMutationIDs: [MetadataMutationKey: UUID] = [:]
 
     private let maximumConcurrentBackgroundContentSynchronizations = 2
@@ -99,6 +99,21 @@ final class CloudStorageDocumentStore: ObservableObject {
 
     func item(for folder: CloudStorageFolderReference) -> CloudStorageItem? {
         itemsByLocationID[folder.location.id]?[folder.itemID]
+    }
+
+    func capabilities(
+        for reference: CloudStorageDocumentReference
+    ) -> CloudStorageItemCapabilities {
+        item(for: reference)?.effectiveCapabilities ?? .writableFile
+    }
+
+    func capabilities(
+        for folder: CloudStorageFolderReference
+    ) -> CloudStorageItemCapabilities {
+        if folder.isLocationRoot {
+            return folder.location.effectiveRootCapabilities
+        }
+        return item(for: folder)?.effectiveCapabilities ?? .writableFolder
     }
 
     func remoteURL(
@@ -140,12 +155,7 @@ final class CloudStorageDocumentStore: ObservableObject {
         let session = try await resolvedSession(for: location, connections: connections)
         let item = try await session.item(for: itemID)
         upsert(item, in: locationID)
-        guard let remoteURL = item.remoteURL else {
-            throw CloudStorageError.invalidProviderResponse(
-                "The cloud storage provider did not return a web URL for this item."
-            )
-        }
-        return remoteURL
+        return try await session.remoteURL(for: item)
     }
 
     func latestReference(
@@ -317,38 +327,39 @@ final class CloudStorageDocumentStore: ObservableObject {
 
     // MARK: - Metadata Refresh
 
+    @discardableResult
     func refresh(
         _ location: CloudStorageLocation,
         connections: CloudStorageConnectionStore,
         force: Bool = false
-    ) async {
+    ) async -> Bool {
         ensureLocationStateLoaded(location.id)
-        guard force || itemsByLocationID[location.id] == nil else { return }
+        guard force || itemsByLocationID[location.id] == nil else { return true }
 
         if let refreshTask = refreshTasksByLocationID[location.id] {
-            await refreshTask.value
-            return
+            return await refreshTask.value
         }
 
         let refreshTaskID = UUID()
         let refreshTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            await self.performRefresh(location, connections: connections)
+            guard let self else { return false }
+            return await self.performRefresh(location, connections: connections)
         }
         refreshTasksByLocationID[location.id] = refreshTask
         refreshTaskIDsByLocationID[location.id] = refreshTaskID
-        await refreshTask.value
+        let succeeded = await refreshTask.value
 
         if refreshTaskIDsByLocationID[location.id] == refreshTaskID {
             refreshTasksByLocationID[location.id] = nil
             refreshTaskIDsByLocationID[location.id] = nil
         }
+        return succeeded
     }
 
     private func performRefresh(
         _ location: CloudStorageLocation,
         connections: CloudStorageConnectionStore
-    ) async {
+    ) async -> Bool {
 
         refreshingLocationIDs.insert(location.id)
         errorsByLocationID[location.id] = nil
@@ -369,6 +380,15 @@ final class CloudStorageDocumentStore: ObservableObject {
                     throw CancellationError()
                 } catch where Self.isCancellationError(error) {
                     throw CancellationError()
+                } catch CloudStorageError.changeTrackingResetRequired {
+                    logger.info(
+                        "Cloud change cursor requires reset for \(location.displayName); rebuilding its remote index"
+                    )
+                    state = try await rebuiltStateAfterChangeTrackingReset(
+                        state,
+                        location: location,
+                        session: session
+                    )
                 } catch where state.cursor == nil {
                     logger.warning(
                         "Initial delta enumeration failed for \(location.displayName); falling back to recursive listing: \(error)"
@@ -389,14 +409,18 @@ final class CloudStorageDocumentStore: ObservableObject {
 
             apply(state, to: location.id)
             try persist(state, for: location.id)
+            connections.clearAuthenticationRequirement(for: location)
+            return true
         } catch is CancellationError {
-            return
+            return false
         } catch {
             if Self.isCancellationError(error) {
-                return
+                return false
             }
+            connections.recordAccessFailure(error, for: location)
             errorsByLocationID[location.id] = error.localizedDescription
             logger.error("Failed to refresh cloud location \(location.displayName): \(error)")
+            return false
         }
     }
 
@@ -532,6 +556,7 @@ final class CloudStorageDocumentStore: ObservableObject {
         let state = persistedStates[location.id] ?? Self.emptyState
 
         for item in state.items where item.kind == .file
+            && item.effectiveCapabilities.contains(.download)
             && (parentID == nil || item.parentID == parentID) {
             let reference = CloudStorageDocumentReference(
                 locationID: location.id,
@@ -602,6 +627,11 @@ final class CloudStorageDocumentStore: ObservableObject {
 
             let session = try await resolvedSession(for: location, connections: connections)
             let remoteItem = try await session.item(for: reference.itemID)
+            try Self.require(
+                .download,
+                for: remoteItem,
+                operation: .download
+            )
             let cacheURL = cachedDocumentURL(for: reference)
             if fileManager.fileExists(atPath: cacheURL.path),
                state.cachedRevisions[reference.itemID] == remoteItem.revision {
@@ -755,11 +785,11 @@ final class CloudStorageDocumentStore: ObservableObject {
         connections: CloudStorageConnectionStore
     ) {
         guard saveTasks[reference.id] == nil,
-              retryScheduledItemIDs.insert(reference.itemID).inserted else { return }
+              retryScheduledDocumentIDs.insert(reference.id).inserted else { return }
         setSyncState(.queued, for: reference)
         Task { @MainActor [weak self] in
             guard let self else { return }
-            defer { self.retryScheduledItemIDs.remove(reference.itemID) }
+            defer { self.retryScheduledDocumentIDs.remove(reference.id) }
             do {
                 try await self.uploadCachedContent(
                     data,
@@ -869,13 +899,18 @@ final class CloudStorageDocumentStore: ObservableObject {
         connections: CloudStorageConnectionStore? = nil
     ) async throws -> CloudStorageDocumentReference {
         let connections = connections ?? .shared
+        ensureLocationStateLoaded(folder.location.id)
+        try Self.require(
+            .createChildren,
+            in: capabilities(for: folder),
+            operation: .createFile
+        )
         guard let content = ExcalidrawFile().content else {
             throw CloudStorageError.invalidProviderResponse(
                 "Unable to create an empty Excalidraw document."
             )
         }
 
-        ensureLocationStateLoaded(folder.location.id)
         let name = uniqueName(
             baseName: String(localizable: .generalUntitled),
             pathExtension: "excalidraw",
@@ -942,6 +977,18 @@ final class CloudStorageDocumentStore: ObservableObject {
             guard let sourceItem = itemsByLocationID[location.id]?[reference.itemID],
                   let parentID = sourceItem.parentID else {
                 throw CloudStorageError.itemNotFound(reference.itemID)
+            }
+            try Self.require(
+                .download,
+                for: sourceItem,
+                operation: .download
+            )
+            if let parent = itemsByLocationID[location.id]?[parentID] {
+                try Self.require(
+                    .createChildren,
+                    for: parent,
+                    operation: .createFile
+                )
             }
 
             let data = try await content(
@@ -1010,6 +1057,12 @@ final class CloudStorageDocumentStore: ObservableObject {
         connections: CloudStorageConnectionStore? = nil
     ) async throws -> CloudStorageFolderReference {
         let connections = connections ?? .shared
+        ensureLocationStateLoaded(folder.location.id)
+        try Self.require(
+            .createChildren,
+            in: capabilities(for: folder),
+            operation: .createFolder
+        )
         let session = try await resolvedSession(
             for: folder.location,
             connections: connections
@@ -1053,6 +1106,7 @@ final class CloudStorageDocumentStore: ObservableObject {
         guard let item = itemsByLocationID[location.id]?[reference.itemID] else {
             throw CloudStorageError.itemNotFound(reference.itemID)
         }
+        try Self.require(.rename, for: item, operation: .moveItem)
         let name = Self.fileName(displayName, preservingExtensionsFrom: item.name)
         if name == item.name {
             return reference
@@ -1136,6 +1190,7 @@ final class CloudStorageDocumentStore: ObservableObject {
         guard let item = itemsByLocationID[folder.location.id]?[folder.itemID] else {
             throw CloudStorageError.itemNotFound(folder.itemID)
         }
+        try Self.require(.rename, for: item, operation: .moveItem)
         if name == item.name {
             return folder
         }
@@ -1257,6 +1312,13 @@ final class CloudStorageDocumentStore: ObservableObject {
         }
         ensureLocationStateLoaded(location.id)
         var state = persistedStates[location.id] ?? Self.emptyState
+        if let item = state.items.first(where: { $0.id == reference.itemID }) {
+            try Self.require(
+                .updateContent,
+                for: item,
+                operation: .updateFile
+            )
+        }
         let uploadURL = fileManager.temporaryDirectory
             .appending(path: UUID().uuidString)
             .appendingPathExtension(
@@ -1274,6 +1336,11 @@ final class CloudStorageDocumentStore: ObservableObject {
             ?? state.items.first(where: { $0.id == reference.itemID })?.revision
         if revision == nil {
             let remoteItem = try await session.item(for: reference.itemID)
+            try Self.require(
+                .updateContent,
+                for: remoteItem,
+                operation: .updateFile
+            )
             state.items.removeAll { $0.id == reference.itemID }
             state.items.append(remoteItem)
             revision = remoteItem.revision
@@ -1339,6 +1406,9 @@ final class CloudStorageDocumentStore: ObservableObject {
         }
         ensureLocationStateLoaded(locationID)
         var state = persistedStates[locationID] ?? Self.emptyState
+        if let item = state.items.first(where: { $0.id == itemID }) {
+            try Self.require(.delete, for: item, operation: .deleteItem)
+        }
         let revision = state.items.first(where: { $0.id == itemID })?.revision
         let condition = revision.map(CloudStorageWriteCondition.ifUnmodified)
             ?? .unconditional
@@ -1392,7 +1462,8 @@ final class CloudStorageDocumentStore: ObservableObject {
     private func refreshedDeltaState(
         _ existingState: PersistedLocationState,
         location: CloudStorageLocation,
-        session: any CloudStorageSession
+        session: any CloudStorageSession,
+        replacingExistingIndex: Bool = false
     ) async throws -> PersistedLocationState {
         let startedWithInitialCursor = existingState.cursor == nil
         var cursor = existingState.cursor
@@ -1421,9 +1492,16 @@ final class CloudStorageDocumentStore: ObservableObject {
         // into the latest state so a concurrent rename/save is not overwritten
         // by the snapshot captured before the request started.
         var state = persistedStates[location.id] ?? existingState
-        if startedWithInitialCursor, state.cursor == nil {
-            state.items = []
+        if startedWithInitialCursor,
+           (state.cursor == nil || replacingExistingIndex) {
+            let protectedItemIDs = state.dirtyItemIDs.union(
+                metadataMutationIDs.keys
+                    .filter { $0.locationID == location.id }
+                    .map(\.itemID)
+            )
+            state.items.removeAll { !protectedItemIDs.contains($0.id) }
         }
+        var deletedItemIDs: [CloudStorageItemID] = []
         for change in collectedChanges {
             switch change {
                 case .upsert(let item):
@@ -1441,14 +1519,30 @@ final class CloudStorageDocumentStore: ObservableObject {
                     state.items.removeAll { $0.id == item.id }
                     state.items.append(item)
                 case .deleted(let itemID):
-                    let mutationKey = MetadataMutationKey(
-                        locationID: location.id,
-                        itemID: itemID
-                    )
-                    guard metadataMutationIDs[mutationKey] == nil else { continue }
-                    state.items.removeAll { $0.id == itemID }
-                    state.cachedRevisions.removeValue(forKey: itemID)
-                    state.dirtyItemIDs.remove(itemID)
+                    deletedItemIDs.append(itemID)
+            }
+        }
+        // Apply removals after upserts so a child moved out of a deleted folder
+        // keeps its new parent and is not removed as part of the old subtree.
+        for itemID in deletedItemIDs {
+            let mutationKey = MetadataMutationKey(
+                locationID: location.id,
+                itemID: itemID
+            )
+            guard metadataMutationIDs[mutationKey] == nil else { continue }
+            let removedIDs = descendantItemIDs(of: itemID, in: state.items)
+                .union([itemID])
+            state.items.removeAll { removedIDs.contains($0.id) }
+            for removedID in removedIDs {
+                state.cachedRevisions.removeValue(forKey: removedID)
+                state.dirtyItemIDs.remove(removedID)
+            }
+        }
+        if startedWithInitialCursor,
+           (state.cursor == nil || replacingExistingIndex) {
+            let retainedItemIDs = Set(state.items.map(\.id))
+            state.cachedRevisions = state.cachedRevisions.filter {
+                retainedItemIDs.contains($0.key)
             }
         }
         state.cursor = cursor
@@ -1459,6 +1553,36 @@ final class CloudStorageDocumentStore: ObservableObject {
             )
         }
         return state
+    }
+
+    private func rebuiltStateAfterChangeTrackingReset(
+        _ existingState: PersistedLocationState,
+        location: CloudStorageLocation,
+        session: any CloudStorageSession
+    ) async throws -> PersistedLocationState {
+        var resetState = existingState
+        resetState.cursor = nil
+        do {
+            return try await refreshedDeltaState(
+                resetState,
+                location: location,
+                session: session,
+                replacingExistingIndex: true
+            )
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch where Self.isCancellationError(error) {
+            throw CancellationError()
+        } catch {
+            logger.warning(
+                "Delta rebuild failed for \(location.displayName); falling back to recursive listing: \(error)"
+            )
+            return try await recursivelyEnumeratedState(
+                preservingCacheFrom: resetState,
+                location: location,
+                session: session
+            )
+        }
     }
 
     private func recursivelyEnumeratedState(
@@ -1478,11 +1602,30 @@ final class CloudStorageDocumentStore: ObservableObject {
                 pageToken = page.nextPageToken
             } while pageToken != nil
         }
+        // Listing the complete subtree replaces the remote index, but local
+        // dirty documents and optimistic metadata mutations must survive while
+        // their provider requests are still pending.
+        let latestState = persistedStates[location.id] ?? existingState
+        let protectedItemIDs = latestState.dirtyItemIDs.union(
+            metadataMutationIDs.keys
+                .filter { $0.locationID == location.id }
+                .map(\.itemID)
+        )
+        let protectedItems = latestState.items.filter {
+            protectedItemIDs.contains($0.id)
+        }
+        let protectedIDs = Set(protectedItems.map(\.id))
+        let mergedItems = items.filter { !protectedIDs.contains($0.id) }
+            + protectedItems
+        let retainedItemIDs = Set(mergedItems.map(\.id))
+
         return PersistedLocationState(
             cursor: nil,
-            items: items,
-            cachedRevisions: existingState.cachedRevisions,
-            dirtyItemIDs: existingState.dirtyItemIDs
+            items: mergedItems,
+            cachedRevisions: latestState.cachedRevisions.filter {
+                retainedItemIDs.contains($0.key)
+            },
+            dirtyItemIDs: latestState.dirtyItemIDs
         )
     }
 
@@ -1499,12 +1642,20 @@ final class CloudStorageDocumentStore: ObservableObject {
             await connections.refresh()
         }
         guard let account = connections.account(for: location) else {
-            throw CloudStorageError.accountUnavailable(location.accountID)
+            let error = CloudStorageError.accountUnavailable(location.accountID)
+            connections.recordAccessFailure(error, for: location)
+            throw error
         }
-        let session = try await connections.makeSession(
-            providerID: location.providerID,
-            account: account
-        )
+        let session: any CloudStorageSession
+        do {
+            session = try await connections.makeSession(
+                providerID: location.providerID,
+                account: account
+            )
+        } catch {
+            connections.recordAccessFailure(error, for: location)
+            throw error
+        }
         sessionsByLocationID[location.id] = session
         return session
     }
@@ -1566,8 +1717,27 @@ final class CloudStorageDocumentStore: ObservableObject {
             createdAt: item.createdAt,
             modifiedAt: item.modifiedAt,
             remoteURL: item.remoteURL,
-            revision: item.revision
+            revision: item.revision,
+            capabilities: item.capabilities
         )
+    }
+
+    private static func require(
+        _ capability: CloudStorageItemCapabilities,
+        for item: CloudStorageItem,
+        operation: CloudStorageOperation
+    ) throws {
+        try require(capability, in: item.effectiveCapabilities, operation: operation)
+    }
+
+    private static func require(
+        _ capability: CloudStorageItemCapabilities,
+        in capabilities: CloudStorageItemCapabilities,
+        operation: CloudStorageOperation
+    ) throws {
+        guard capabilities.contains(capability) else {
+            throw CloudStorageError.permissionDenied(operation)
+        }
     }
 
     private func uniqueName(

@@ -67,10 +67,7 @@ struct CloudStorageFolderFileHomeView: View {
             }
         }
         .task(id: folder.id) {
-            if items == nil {
-                await browser.refresh(connections: connections, force: false)
-            }
-            CloudStorageSyncService.shared.prioritizeDocuments(
+            await CloudStorageSyncService.shared.prioritizeDocuments(
                 in: folder.location,
                 parentID: folder.itemID,
                 connections: connections
@@ -189,7 +186,11 @@ struct CloudStorageFolderFileHomeView: View {
     private func retryButton(errorMessage: String) -> some View {
         Button {
             Task {
-                await browser.refresh(connections: connections)
+                await CloudStorageSyncService.shared.prioritizeDocuments(
+                    in: folder.location,
+                    parentID: folder.itemID,
+                    connections: connections
+                )
                 if let errorMessage = browser.errorMessage {
                     alertToast(CloudStorageError.transport(errorMessage))
                 }
@@ -209,6 +210,7 @@ struct CloudStorageFolderFileHomeView: View {
 
             Spacer()
         }
+        .disabled(!documentStore.capabilities(for: folder).contains(.createChildren))
 #if os(iOS)
         .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
 #else

@@ -61,6 +61,35 @@ final class FileState: ObservableObject {
         currentActiveGroup = group
     }
 
+    /// Keeps per-window navigation consistent when a cloud location is
+    /// removed from another scene, such as the macOS Settings window.
+    @MainActor
+    func reconcileCloudStorageLocations(_ locationIDs: Set<UUID>) async {
+        let activeGroupWasRemoved = if case .cloudStorageFolder(let folder) = currentActiveGroup {
+            !locationIDs.contains(folder.location.id)
+        } else {
+            false
+        }
+        let activeFileWasRemoved = if case .cloudStorageFile(let reference) = currentActiveFile {
+            !locationIDs.contains(reference.locationID)
+        } else {
+            false
+        }
+
+        guard activeGroupWasRemoved || activeFileWasRemoved else {
+            return
+        }
+
+        if activeGroupWasRemoved {
+            setActiveGroupIfNeeded(nil)
+        }
+        resetSelections()
+
+        if activeFileWasRemoved {
+            _ = await requestActiveFileChange(nil)
+        }
+    }
+
     @MainActor
     func replaceCloudStorageDocumentReference(
         _ reference: CloudStorageDocumentReference

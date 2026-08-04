@@ -31,6 +31,7 @@ struct ContentView: View {
     @EnvironmentObject private var aiChatState: AIChatState
     @EnvironmentObject private var lockedContentState: LockedContentStateStore
     @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
+    @ObservedObject private var cloudStorageConnections = CloudStorageConnectionStore.shared
     
     @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
     
@@ -127,6 +128,11 @@ struct ContentView: View {
                     colorScheme: colorScheme
                 )
             }
+            .task(id: connectedCloudStorageLocationIDs) {
+                await fileState.reconcileCloudStorageLocations(
+                    connectedCloudStorageLocationIDs
+                )
+            }
             // Pre-select the chat conversation tied to the active file
             // without restoring the full LLM conversation cache. The id-based
             // `.task` fires on first appear and on every subsequent change;
@@ -170,6 +176,10 @@ struct ContentView: View {
                 }
                 await prepare()
             }
+    }
+
+    private var connectedCloudStorageLocationIDs: Set<UUID> {
+        Set(cloudStorageConnections.locations.map(\.id))
     }
     
     @ViewBuilder
