@@ -63,8 +63,12 @@ final class CloudStorageDocumentStore: ObservableObject {
     private var activeContentSynchronizationPriorities: [String: CloudStorageContentSynchronizationPriority] = [:]
     private var contentSynchronizationQueue: [String: ContentSynchronizationRequest] = [:]
     private var nextContentSynchronizationSequence = 0
-    private var retryScheduledDocumentIDs: Set<String> = []
+    private var retryUploadTasks: [String: Task<Void, Never>] = [:]
+    private var retryUploadTaskIDs: [String: UUID] = [:]
     private var metadataMutationIDs: [MetadataMutationKey: UUID] = [:]
+    private var remoteContentMutationGeneration: UInt64 = 0
+    private var remoteContentMutationGenerationByItem: [MetadataMutationKey: UInt64] = [:]
+    private var resolvingConflictDocumentIDs: Set<String> = []
 
     private let maximumConcurrentBackgroundContentSynchronizations = 2
     private let maximumConcurrentContentSynchronizations = 6
@@ -99,6 +103,30 @@ final class CloudStorageDocumentStore: ObservableObject {
 
     func item(for folder: CloudStorageFolderReference) -> CloudStorageItem? {
         itemsByLocationID[folder.location.id]?[folder.itemID]
+    }
+
+    /// Returns provider-neutral document identities from the device-local
+    /// metadata index. This never performs network IO; consumers update when
+    /// the synchronization service publishes a newer index.
+    func indexedDocumentReferences(
+        in locations: [CloudStorageLocation]
+    ) -> [CloudStorageDocumentReference] {
+        var references: [CloudStorageDocumentReference] = []
+        for location in locations {
+            guard let indexedItems = itemsByLocationID[location.id] else { continue }
+            for item in indexedItems.values
+            where item.kind == .file && Self.shouldDisplay(item) {
+                references.append(CloudStorageDocumentReference(
+                    locationID: location.id,
+                    providerID: location.providerID,
+                    accountID: location.accountID,
+                    itemID: item.id,
+                    lastKnownName: item.name,
+                    lastKnownModifiedAt: item.modifiedAt
+                ))
+            }
+        }
+        return references
     }
 
     func capabilities(
@@ -451,16 +479,21 @@ final class CloudStorageDocumentStore: ObservableObject {
     func scheduleContentSynchronization(
         for reference: CloudStorageDocumentReference,
         connections: CloudStorageConnectionStore? = nil,
-        priority: CloudStorageContentSynchronizationPriority = .background
+        priority: CloudStorageContentSynchronizationPriority = .background,
+        queueAfterActiveSynchronization: Bool = false
     ) {
         let synchronizationKey = reference.id
-        guard contentSynchronizationTasks[synchronizationKey] == nil else { return }
+        guard !resolvingConflictDocumentIDs.contains(synchronizationKey) else { return }
+        let hasActiveSynchronization = contentSynchronizationTasks[synchronizationKey] != nil
+        guard !hasActiveSynchronization || queueAfterActiveSynchronization else { return }
 
         if var request = contentSynchronizationQueue[synchronizationKey] {
             guard priority > request.priority else { return }
             request.priority = priority
             contentSynchronizationQueue[synchronizationKey] = request
-            processContentSynchronizationQueue()
+            if !hasActiveSynchronization {
+                processContentSynchronizationQueue()
+            }
             return
         }
 
@@ -473,7 +506,44 @@ final class CloudStorageDocumentStore: ObservableObject {
         )
         nextContentSynchronizationSequence &+= 1
         setSyncState(.queued, for: reference)
+
+        if hasActiveSynchronization { return }
         processContentSynchronizationQueue()
+    }
+
+    /// Promotes a document only when its device cache actually needs work.
+    /// This keeps visibility-driven prioritization from turning an already
+    /// synchronized document back into a queued state.
+    func scheduleContentSynchronizationIfNeeded(
+        for reference: CloudStorageDocumentReference,
+        connections: CloudStorageConnectionStore? = nil,
+        priority: CloudStorageContentSynchronizationPriority = .background
+    ) {
+        ensureLocationStateLoaded(reference.locationID)
+        guard !resolvingConflictDocumentIDs.contains(reference.id) else { return }
+        if case .conflict = syncState(for: reference) { return }
+
+        let state = persistedStates[reference.locationID] ?? Self.emptyState
+        guard let item = state.items.first(where: { $0.id == reference.itemID }),
+              item.kind == .file,
+              item.effectiveCapabilities.contains(.download) else { return }
+
+        let cacheExists = fileManager.fileExists(
+            atPath: cachedDocumentURL(for: reference).path
+        )
+        let needsSynchronization = state.dirtyItemIDs.contains(reference.itemID)
+            || !cacheExists
+            || state.cachedRevisions[reference.itemID] != item.revision
+
+        if needsSynchronization {
+            scheduleContentSynchronization(
+                for: reference,
+                connections: connections,
+                priority: priority
+            )
+        } else {
+            setSyncState(.synced(lastVerifiedAt: Date()), for: reference)
+        }
     }
 
     private func processContentSynchronizationQueue() {
@@ -482,7 +552,10 @@ final class CloudStorageDocumentStore: ObservableObject {
                 if $1 == .background { $0 += 1 }
             }
             let nextRequest = contentSynchronizationQueue.values
-                .filter { saveTasks[$0.reference.id] == nil }
+                .filter {
+                    saveTasks[$0.reference.id] == nil
+                        && retryUploadTasks[$0.reference.id] == nil
+                }
                 .sorted { lhs, rhs in
                     if lhs.priority != rhs.priority {
                         return lhs.priority > rhs.priority
@@ -534,12 +607,24 @@ final class CloudStorageDocumentStore: ObservableObject {
 
     /// Persists a document to the device cache and marks it for provider
     /// upload without waiting for network availability.
+    @discardableResult
     func saveToLocalCache(
         _ data: Data,
         for reference: CloudStorageDocumentReference
-    ) throws {
-        _ = try stageLocalSave(data, for: reference)
+    ) throws -> Bool {
+        // Conflict resolution owns the cache and remote revision until the
+        // selected version is committed. Ignore stale canvas snapshots that
+        // were scheduled before the conflict sheet appeared.
+        guard !resolvingConflictDocumentIDs.contains(reference.id) else {
+            return false
+        }
+        if case .conflict = syncState(for: reference) {
+            throw CloudStorageError.conflict
+        }
+        let stagedSave = try stageLocalSave(data, for: reference)
+        guard stagedSave.needsUpload else { return false }
         setSyncState(.queued, for: reference)
+        return true
     }
 
     /// Reconciles the provider index with the device cache. Background scans
@@ -600,6 +685,9 @@ final class CloudStorageDocumentStore: ObservableObject {
         for reference: CloudStorageDocumentReference,
         connections: CloudStorageConnectionStore? = nil
     ) async throws -> RemoteContentCandidate? {
+        guard !resolvingConflictDocumentIDs.contains(reference.id) else {
+            return nil
+        }
         let connections = connections ?? .shared
         setSyncState(.checking, for: reference)
 
@@ -707,6 +795,147 @@ final class CloudStorageDocumentStore: ObservableObject {
         syncStatesByDocumentID.removeValue(forKey: reference.id)
     }
 
+    func conflictSnapshot(
+        for reference: CloudStorageDocumentReference,
+        connections: CloudStorageConnectionStore? = nil
+    ) async throws -> CloudStorageConflictSnapshot {
+        let connections = connections ?? .shared
+        guard let location = connections.locations.first(where: {
+            $0.id == reference.locationID
+        }) else {
+            throw CloudStorageError.itemNotFound(reference.itemID)
+        }
+        ensureLocationStateLoaded(location.id)
+
+        let cacheURL = cachedDocumentURL(for: reference)
+        guard fileManager.fileExists(atPath: cacheURL.path) else {
+            throw CloudStorageError.itemNotFound(reference.itemID)
+        }
+        let localData = try Data(contentsOf: cacheURL)
+        let localModifiedAt = try? cacheURL.resourceValues(
+            forKeys: [.contentModificationDateKey]
+        ).contentModificationDate
+
+        let session = try await resolvedSession(for: location, connections: connections)
+        let remoteItem = try await session.item(for: reference.itemID)
+        try Self.require(.download, for: remoteItem, operation: .download)
+
+        let stagingURL = fileManager.temporaryDirectory
+            .appending(path: UUID().uuidString)
+            .appendingPathExtension(
+                (displayName(for: reference) as NSString).pathExtension
+            )
+        defer { try? fileManager.removeItem(at: stagingURL) }
+        let downloadedItem = try await session.downloadFile(reference.itemID, to: stagingURL)
+
+        return CloudStorageConflictSnapshot(
+            reference: reference,
+            localData: localData,
+            localModifiedAt: localModifiedAt,
+            remoteData: try Data(contentsOf: stagingURL),
+            remoteItem: downloadedItem
+        )
+    }
+
+    func resolveConflict(
+        _ snapshot: CloudStorageConflictSnapshot,
+        keeping version: CloudStorageConflictVersion,
+        connections: CloudStorageConnectionStore? = nil
+    ) async throws {
+        let reference = snapshot.reference
+        guard resolvingConflictDocumentIDs.insert(reference.id).inserted else {
+            return
+        }
+        defer {
+            resolvingConflictDocumentIDs.remove(reference.id)
+        }
+        let connections = connections ?? .shared
+        guard let location = connections.locations.first(where: {
+            $0.id == reference.locationID
+        }) else {
+            throw CloudStorageError.itemNotFound(reference.itemID)
+        }
+        ensureLocationStateLoaded(location.id)
+
+        // A retry started while the conflict sheet was open must not race the
+        // explicit user choice and turn the resolved revision into a conflict
+        // again. Cancel it before taking the final remote revision snapshot.
+        await cancelPendingDocumentWork(for: reference)
+
+        let session = try await resolvedSession(for: location, connections: connections)
+        let currentRemoteItem = try await session.item(for: reference.itemID)
+        guard Self.representsSameRemoteRevision(
+            currentRemoteItem,
+            snapshot.remoteItem
+        ) else {
+            setSyncState(.conflict, for: reference)
+            throw CloudStorageError.conflict
+        }
+
+        switch version {
+            case .local:
+                let localData = snapshot.localData
+                let cacheURL = cachedDocumentURL(for: reference)
+                try fileManager.createDirectory(
+                    at: cacheURL.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
+                try localData.write(to: cacheURL, options: .atomic)
+                localContentGenerations[reference.id, default: 0] &+= 1
+
+                var state = persistedStates[location.id] ?? Self.emptyState
+                state.items.removeAll { $0.id == reference.itemID }
+                state.items.append(currentRemoteItem)
+                if let revision = currentRemoteItem.revision {
+                    state.cachedRevisions[reference.itemID] = revision
+                } else {
+                    state.cachedRevisions.removeValue(forKey: reference.itemID)
+                }
+                state.dirtyItemIDs.insert(reference.itemID)
+                apply(state, to: location.id)
+                try persist(state, for: location.id)
+
+                try await uploadCachedContent(
+                    localData,
+                    for: reference,
+                    connections: connections
+                )
+                notifyConflictDidResolve(
+                    reference,
+                    keptVersion: .local,
+                    content: localData
+                )
+
+            case .remote:
+                let cacheURL = cachedDocumentURL(for: reference)
+                try fileManager.createDirectory(
+                    at: cacheURL.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
+                try snapshot.remoteData.write(to: cacheURL, options: .atomic)
+
+                var state = persistedStates[location.id] ?? Self.emptyState
+                state.items.removeAll { $0.id == reference.itemID }
+                state.items.append(currentRemoteItem)
+                if let revision = currentRemoteItem.revision {
+                    state.cachedRevisions[reference.itemID] = revision
+                } else {
+                    state.cachedRevisions.removeValue(forKey: reference.itemID)
+                }
+                state.dirtyItemIDs.remove(reference.itemID)
+                localContentGenerations[reference.id, default: 0] &+= 1
+                apply(state, to: location.id)
+                try persist(state, for: location.id)
+                setSyncState(.synced(lastVerifiedAt: Date()), for: reference)
+                notifyDocumentContentDidChange(reference)
+                notifyConflictDidResolve(
+                    reference,
+                    keptVersion: .remote,
+                    content: snapshot.remoteData
+                )
+        }
+    }
+
     func content(
         for reference: CloudStorageDocumentReference,
         connections: CloudStorageConnectionStore,
@@ -742,6 +971,11 @@ final class CloudStorageDocumentStore: ObservableObject {
         ensureLocationStateLoaded(reference.locationID)
         let state = persistedStates[reference.locationID] ?? Self.emptyState
         let cacheURL = cachedDocumentURL(for: reference)
+
+        if resolvingConflictDocumentIDs.contains(reference.id),
+           fileManager.fileExists(atPath: cacheURL.path) {
+            return try Data(contentsOf: cacheURL)
+        }
 
         if state.dirtyItemIDs.contains(reference.itemID),
            fileManager.fileExists(atPath: cacheURL.path) {
@@ -784,13 +1018,23 @@ final class CloudStorageDocumentStore: ObservableObject {
         reference: CloudStorageDocumentReference,
         connections: CloudStorageConnectionStore
     ) {
-        guard saveTasks[reference.id] == nil,
-              retryScheduledDocumentIDs.insert(reference.id).inserted else { return }
+        guard !resolvingConflictDocumentIDs.contains(reference.id),
+              saveTasks[reference.id] == nil,
+              retryUploadTasks[reference.id] == nil else { return }
         setSyncState(.queued, for: reference)
-        Task { @MainActor [weak self] in
+        let taskID = UUID()
+        retryUploadTaskIDs[reference.id] = taskID
+        retryUploadTasks[reference.id] = Task { @MainActor [weak self] in
             guard let self else { return }
-            defer { self.retryScheduledDocumentIDs.remove(reference.id) }
+            defer {
+                if self.retryUploadTaskIDs[reference.id] == taskID {
+                    self.retryUploadTasks[reference.id] = nil
+                    self.retryUploadTaskIDs[reference.id] = nil
+                    self.processContentSynchronizationQueue()
+                }
+            }
             do {
+                try Task.checkCancellation()
                 try await self.uploadCachedContent(
                     data,
                     for: reference,
@@ -799,6 +1043,8 @@ final class CloudStorageDocumentStore: ObservableObject {
                 self.logger.debug(
                     "Retried dirty cloud document upload: \(self.displayName(for: reference))"
                 )
+            } catch is CancellationError {
+                return
             } catch {
                 self.logger.warning(
                     "Dirty cloud document remains queued after upload retry: \(self.displayName(for: reference)), error=\(error)"
@@ -819,12 +1065,19 @@ final class CloudStorageDocumentStore: ObservableObject {
         to reference: CloudStorageDocumentReference,
         connections: CloudStorageConnectionStore
     ) async throws {
-        let localGeneration = try stageLocalSave(data, for: reference)
+        guard !resolvingConflictDocumentIDs.contains(reference.id) else {
+            return
+        }
+        if case .conflict = syncState(for: reference) {
+            throw CloudStorageError.conflict
+        }
+        let stagedSave = try stageLocalSave(data, for: reference)
+        guard stagedSave.needsUpload else { return }
         try await enqueueSave(
             data,
             to: reference,
             connections: connections,
-            localGeneration: localGeneration
+            localGeneration: stagedSave.generation
         )
     }
 
@@ -856,6 +1109,7 @@ final class CloudStorageDocumentStore: ObservableObject {
             if let previousTask {
                 _ = try? await previousTask.value
             }
+            try Task.checkCancellation()
             self.setSyncState(.uploading(progress: nil), for: reference)
             do {
                 let uploadedLatestContent = try await self.performSave(
@@ -1293,6 +1547,9 @@ final class CloudStorageDocumentStore: ObservableObject {
         sessionsByLocationID.removeValue(forKey: locationID)
         errorsByLocationID.removeValue(forKey: locationID)
         processingFolderIDsByLocationID.removeValue(forKey: locationID)
+        remoteContentMutationGenerationByItem = remoteContentMutationGenerationByItem.filter {
+            $0.key.locationID != locationID
+        }
         syncStatesByDocumentID = syncStatesByDocumentID.filter {
             !$0.key.contains(locationMarker)
         }
@@ -1347,10 +1604,19 @@ final class CloudStorageDocumentStore: ObservableObject {
         }
         let condition = revision.map(CloudStorageWriteCondition.ifUnmodified)
             ?? .unconditional
+#if DEBUG
+        logger.debug(
+            "Uploading cloud document \(displayName(for: reference)) expectedRevision=\(revision ?? "nil") localGeneration=\(localGeneration)"
+        )
+#endif
         let updatedItem = try await session.updateFile(
             reference.itemID,
             contentsAt: uploadURL,
             condition: condition
+        )
+        recordRemoteContentMutation(
+            locationID: location.id,
+            itemID: reference.itemID
         )
 
         state = persistedStates[location.id] ?? state
@@ -1368,7 +1634,9 @@ final class CloudStorageDocumentStore: ObservableObject {
         apply(state, to: location.id)
         try persist(state, for: location.id)
         notifyDocumentContentDidChange(reference)
-        logger.debug("Uploaded cloud document \(displayName(for: reference))")
+        logger.debug(
+            "Uploaded cloud document \(displayName(for: reference)) revision=\(updatedItem.revision ?? "nil") uploadedLatestContent=\(uploadedLatestContent)"
+        )
         return uploadedLatestContent
     }
 
@@ -1376,10 +1644,19 @@ final class CloudStorageDocumentStore: ObservableObject {
     private func stageLocalSave(
         _ data: Data,
         for reference: CloudStorageDocumentReference
-    ) throws -> UInt64 {
+    ) throws -> (generation: UInt64, needsUpload: Bool) {
         ensureLocationStateLoaded(reference.locationID)
         var state = persistedStates[reference.locationID] ?? Self.emptyState
         let cacheURL = cachedDocumentURL(for: reference)
+        let generation = localContentGenerations[reference.id, default: 0]
+        if fileManager.fileExists(atPath: cacheURL.path),
+           try Data(contentsOf: cacheURL) == data {
+            return (
+                generation,
+                state.dirtyItemIDs.contains(reference.itemID)
+            )
+        }
+
         try fileManager.createDirectory(
             at: cacheURL.deletingLastPathComponent(),
             withIntermediateDirectories: true
@@ -1389,10 +1666,10 @@ final class CloudStorageDocumentStore: ObservableObject {
         apply(state, to: reference.locationID)
         try persist(state, for: reference.locationID)
 
-        let generation = localContentGenerations[reference.id, default: 0] &+ 1
-        localContentGenerations[reference.id] = generation
+        let nextGeneration = generation &+ 1
+        localContentGenerations[reference.id] = nextGeneration
         notifyDocumentContentDidChange(reference)
-        return generation
+        return (nextGeneration, true)
     }
 
     private func deleteItem(
@@ -1465,6 +1742,7 @@ final class CloudStorageDocumentStore: ObservableObject {
         session: any CloudStorageSession,
         replacingExistingIndex: Bool = false
     ) async throws -> PersistedLocationState {
+        let contentMutationGenerationAtStart = remoteContentMutationGeneration
         let startedWithInitialCursor = existingState.cursor == nil
         var cursor = existingState.cursor
         var collectedChanges: [CloudStorageChange] = []
@@ -1498,6 +1776,11 @@ final class CloudStorageDocumentStore: ObservableObject {
                 metadataMutationIDs.keys
                     .filter { $0.locationID == location.id }
                     .map(\.itemID)
+            ).union(
+                itemIDsMutatedSince(
+                    contentMutationGenerationAtStart,
+                    in: location.id
+                )
             )
             state.items.removeAll { !protectedItemIDs.contains($0.id) }
         }
@@ -1509,7 +1792,11 @@ final class CloudStorageDocumentStore: ObservableObject {
                         locationID: location.id,
                         itemID: item.id
                     )
-                    guard metadataMutationIDs[mutationKey] == nil else { continue }
+                    guard metadataMutationIDs[mutationKey] == nil,
+                          !wasContentMutated(
+                            mutationKey,
+                            since: contentMutationGenerationAtStart
+                          ) else { continue }
                     if let previousItem = state.items.first(where: { $0.id == item.id }),
                        previousItem.name != item.name {
                         logger.debug(
@@ -1529,7 +1816,11 @@ final class CloudStorageDocumentStore: ObservableObject {
                 locationID: location.id,
                 itemID: itemID
             )
-            guard metadataMutationIDs[mutationKey] == nil else { continue }
+            guard metadataMutationIDs[mutationKey] == nil,
+                  !wasContentMutated(
+                    mutationKey,
+                    since: contentMutationGenerationAtStart
+                  ) else { continue }
             let removedIDs = descendantItemIDs(of: itemID, in: state.items)
                 .union([itemID])
             state.items.removeAll { removedIDs.contains($0.id) }
@@ -1590,6 +1881,7 @@ final class CloudStorageDocumentStore: ObservableObject {
         location: CloudStorageLocation,
         session: any CloudStorageSession
     ) async throws -> PersistedLocationState {
+        let contentMutationGenerationAtStart = remoteContentMutationGeneration
         var queue = [location.rootItemID]
         var items: [CloudStorageItem] = []
         while let folderID = queue.first {
@@ -1610,6 +1902,11 @@ final class CloudStorageDocumentStore: ObservableObject {
             metadataMutationIDs.keys
                 .filter { $0.locationID == location.id }
                 .map(\.itemID)
+        ).union(
+            itemIDsMutatedSince(
+                contentMutationGenerationAtStart,
+                in: location.id
+            )
         )
         let protectedItems = latestState.items.filter {
             protectedItemIDs.contains($0.id)
@@ -1666,6 +1963,36 @@ final class CloudStorageDocumentStore: ObservableObject {
         state.items.append(item)
         apply(state, to: locationID)
         try? persist(state, for: locationID)
+    }
+
+    /// A provider refresh can start before an upload and finish after it. Keep
+    /// the upload response authoritative over metadata captured by that older
+    /// refresh so its stale revision cannot queue the document again.
+    private func recordRemoteContentMutation(
+        locationID: UUID,
+        itemID: CloudStorageItemID
+    ) {
+        let key = MetadataMutationKey(locationID: locationID, itemID: itemID)
+        remoteContentMutationGeneration &+= 1
+        remoteContentMutationGenerationByItem[key] = remoteContentMutationGeneration
+    }
+
+    private func wasContentMutated(
+        _ key: MetadataMutationKey,
+        since generation: UInt64
+    ) -> Bool {
+        remoteContentMutationGenerationByItem[key, default: 0] > generation
+    }
+
+    private func itemIDsMutatedSince(
+        _ generation: UInt64,
+        in locationID: UUID
+    ) -> Set<CloudStorageItemID> {
+        Set(remoteContentMutationGenerationByItem.compactMap { key, itemGeneration in
+            guard key.locationID == locationID,
+                  itemGeneration > generation else { return nil }
+            return key.itemID
+        })
     }
 
     private func beginOptimisticRename(
@@ -1855,6 +2182,54 @@ final class CloudStorageDocumentStore: ObservableObject {
             name: .cloudStorageDocumentContentDidChange,
             object: reference
         )
+    }
+
+    private func notifyConflictDidResolve(
+        _ reference: CloudStorageDocumentReference,
+        keptVersion: CloudStorageConflictVersion,
+        content: Data
+    ) {
+        NotificationCenter.default.post(
+            name: .cloudStorageConflictDidResolve,
+            object: CloudStorageConflictResolutionResult(
+                reference: reference,
+                keptVersion: keptVersion,
+                content: content
+            )
+        )
+    }
+
+    private func cancelPendingDocumentWork(
+        for reference: CloudStorageDocumentReference
+    ) async {
+        let retryTask = retryUploadTasks[reference.id]
+        let saveTask = saveTasks[reference.id]
+        let synchronizationTask = contentSynchronizationTasks[reference.id]
+
+        retryTask?.cancel()
+        retryUploadTasks[reference.id] = nil
+        retryUploadTaskIDs[reference.id] = nil
+        saveTask?.cancel()
+        saveTasks[reference.id] = nil
+        saveTaskIDs[reference.id] = nil
+        synchronizationTask?.cancel()
+        contentSynchronizationTasks[reference.id] = nil
+        contentSynchronizationQueue[reference.id] = nil
+        activeContentSynchronizationPriorities[reference.id] = nil
+
+        await retryTask?.value
+        _ = try? await saveTask?.value
+        await synchronizationTask?.value
+    }
+
+    private static func representsSameRemoteRevision(
+        _ lhs: CloudStorageItem,
+        _ rhs: CloudStorageItem
+    ) -> Bool {
+        if lhs.revision != nil || rhs.revision != nil {
+            return lhs.revision == rhs.revision
+        }
+        return lhs.modifiedAt == rhs.modifiedAt && lhs.size == rhs.size
     }
 
     // MARK: - Cache Paths and Utilities

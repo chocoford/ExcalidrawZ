@@ -12,7 +12,32 @@ enum CloudStorageBootstrap {
     @MainActor
     static func registerConfiguredProviders() async {
         await registerOneDrive()
+        await registerGoogleDrive()
         await registerDropbox()
+    }
+
+    @MainActor
+    private static func registerGoogleDrive() async {
+        guard let clientID = Secrets.shared.googleDriveClientID else {
+            logger.debug("Google Drive provider is not configured")
+            return
+        }
+
+        let configuration = GoogleDriveConfiguration(clientID: clientID)
+        let authenticator = GoogleDriveOAuthAuthenticator(configuration: configuration)
+        do {
+            try await CloudStorageProviderRegistry.shared.register(
+                GoogleDriveCloudStorageProvider(
+                    authenticator: authenticator,
+                    configuration: configuration
+                )
+            )
+            logger.info("Registered Google Drive cloud storage provider")
+        } catch CloudStorageProviderRegistry.RegistryError.providerAlreadyRegistered(_) {
+            return
+        } catch {
+            logger.error("Failed to register Google Drive cloud storage provider: \(error)")
+        }
     }
 
     @MainActor

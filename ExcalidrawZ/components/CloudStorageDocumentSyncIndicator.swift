@@ -16,6 +16,7 @@ struct CloudStorageDocumentSyncIndicator: View {
 
     let reference: CloudStorageDocumentReference
     var presentation: Presentation = .iconOnly
+    var onConflictSelected: (() -> Void)? = nil
 
     private var state: CloudStorageDocumentSyncState {
         documentStore.syncState(for: reference)
@@ -23,14 +24,32 @@ struct CloudStorageDocumentSyncIndicator: View {
 
     @ViewBuilder
     var body: some View {
-        if state.isVisiblyPresented {
-            visibleContent
-                .foregroundStyle(state.tint)
-                .help(state.displayText)
-                .accessibilityLabel(state.displayText)
-                .animation(.smooth(duration: 0.22), value: state)
-        } else {
-            EmptyView()
+        ZStack {
+            if state.isVisiblyPresented {
+                if case .conflict = state, let onConflictSelected {
+                    Button(action: onConflictSelected) {
+                        visibleContent
+                    }
+                    .buttonStyle(.plain)
+                    .statusPresentation(state, transition: visibilityTransition)
+                } else {
+                    visibleContent
+                        .statusPresentation(state, transition: visibilityTransition)
+                }
+            }
+        }
+        .animation(.smooth(duration: 0.22), value: state)
+    }
+
+    private var visibilityTransition: AnyTransition {
+        switch presentation {
+            case .iconOnly:
+                .identity
+            case .canvas:
+                .asymmetric(
+                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .opacity
+                )
         }
     }
 
@@ -92,6 +111,18 @@ struct CloudStorageDocumentSyncIndicator: View {
                         }
                 }
         }
+    }
+}
+
+private extension View {
+    func statusPresentation(
+        _ state: CloudStorageDocumentSyncState,
+        transition: AnyTransition
+    ) -> some View {
+        foregroundStyle(state.tint)
+            .help(state.displayText)
+            .accessibilityLabel(state.displayText)
+            .transition(transition)
     }
 }
 

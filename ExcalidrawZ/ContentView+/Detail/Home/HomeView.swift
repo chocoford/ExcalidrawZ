@@ -165,6 +165,8 @@ struct RecentlyFilesProvider: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var localFolderState: LocalFolderState
+    @ObservedObject private var cloudStorageConnections = CloudStorageConnectionStore.shared
+    @ObservedObject private var cloudStorageDocumentStore = CloudStorageDocumentStore.shared
 
     var content: ([FileState.ActiveFile]) -> AnyView
     
@@ -203,8 +205,14 @@ struct RecentlyFilesProvider: View {
     
     
     @State private var recentlyFiles: [FileState.ActiveFile] = []
-    @State private var lastRecentlyFileIDs: [String] = []
+    @State private var lastRecentlyFilesKey: [RecentlyFilePresentationKey] = []
     @State private var lastCoverPriorityKey: CoverPriorityKey?
+
+    private struct RecentlyFilePresentationKey: Equatable {
+        let id: String
+        let name: String?
+        let updatedAt: Date?
+    }
 
     private struct FileRefreshKey: Equatable {
         let id: String
@@ -239,6 +247,19 @@ struct RecentlyFilesProvider: View {
             )
         }
     }
+
+    private var cloudStorageRefreshKey: [RecentlyFilePresentationKey] {
+        cloudStorageDocumentStore
+            .indexedDocumentReferences(in: cloudStorageConnections.locations)
+            .map {
+                RecentlyFilePresentationKey(
+                    id: $0.id,
+                    name: $0.lastKnownName,
+                    updatedAt: $0.lastKnownModifiedAt
+                )
+            }
+            .sorted { $0.id < $1.id }
+    }
     
     var body: some View {
         content(recentlyFiles)
@@ -251,12 +272,16 @@ struct RecentlyFilesProvider: View {
             .watch(value: collaborationFilesRefreshKey) { _ in
                 getRecentlyFiles()
             }
+            .watch(value: cloudStorageRefreshKey) { _ in
+                getRecentlyFiles()
+            }
             .watch(value: colorScheme) { _ in
                 getRecentlyFiles()
             }
             .watch(value: scenePhase) { newValue in
                 if newValue == .active {
                     getRecentlyFiles()
+                    prioritizeCloudStorageRecents()
                 }
             }
             .onReceive(localFolderState.itemRemovedPublisher) { path in
@@ -270,6 +295,7 @@ struct RecentlyFilesProvider: View {
             }
             .onAppear {
                 getRecentlyFiles()
+                prioritizeCloudStorageRecents()
             }
     }
 
@@ -281,7 +307,7 @@ struct RecentlyFilesProvider: View {
         }
         guard nextFiles.count != recentlyFiles.count else { return }
         recentlyFiles = nextFiles
-        lastRecentlyFileIDs = nextFiles.map(\.id)
+        lastRecentlyFilesKey = nextFiles.map(presentationKey)
     }
     
     private func getRecentlyFiles() {
@@ -320,6 +346,15 @@ struct RecentlyFilesProvider: View {
         collaborationFiles.forEach { file in
             allDatedFiles[.collaborationFile(file)] = file.visitedAt ?? file.updatedAt ?? file.createdAt ?? .distantPast
         }
+
+        // Cloud Storage documents use the provider's modification date as a
+        // lightweight recently-used approximation, matching linked folders.
+        cloudStorageDocumentStore
+            .indexedDocumentReferences(in: cloudStorageConnections.locations)
+            .forEach { reference in
+                allDatedFiles[.cloudStorageFile(reference)] =
+                    reference.lastKnownModifiedAt ?? .distantPast
+            }
         
         
         let sortedAllFiles = allDatedFiles.sorted(by: {
@@ -328,8 +363,9 @@ struct RecentlyFilesProvider: View {
         
         let recentlyFiles = Array(sortedAllFiles.prefix(20))
         let recentlyFileIDs = recentlyFiles.map(\.id)
-        if recentlyFileIDs != lastRecentlyFileIDs {
-            lastRecentlyFileIDs = recentlyFileIDs
+        let recentlyFilesKey = recentlyFiles.map(presentationKey)
+        if recentlyFilesKey != lastRecentlyFilesKey {
+            lastRecentlyFilesKey = recentlyFilesKey
             self.recentlyFiles = recentlyFiles
         }
 
@@ -342,6 +378,24 @@ struct RecentlyFilesProvider: View {
             FileCoverCacheCoordinator.shared.prioritizeRecentlyVisibleFiles(
                 recentlyFiles,
                 colorScheme: colorScheme
+            )
+        }
+    }
+
+    private func presentationKey(
+        for file: FileState.ActiveFile
+    ) -> RecentlyFilePresentationKey {
+        RecentlyFilePresentationKey(
+            id: file.id,
+            name: file.name,
+            updatedAt: file.updatedAt
+        )
+    }
+
+    private func prioritizeCloudStorageRecents() {
+        Task { @MainActor in
+            await CloudStorageSyncService.shared.prioritizeRecentlyModifiedDocuments(
+                connections: cloudStorageConnections
             )
         }
     }
@@ -365,7 +419,8 @@ private struct RecentlyFilesSection: View {
                         ForEach(recentlyFiles) { file in
                             FileHomeItemView(
                                 file: file,
-                                canMultiSelect: false
+                                canMultiSelect: false,
+                                subtitle: .location
                             )
                             .frame(width: 200)
                         }

@@ -198,25 +198,30 @@ struct ExcalidrawFileCover: View {
     private let source: Source
     private let refreshToken: String?
     private let allowsGeneration: Bool
+    private let generationPriority: FileCoverCacheCoordinator.Priority
     
     init(
         file: FileState.ActiveFile,
         refreshToken: String? = nil,
-        allowsGeneration: Bool = true
+        allowsGeneration: Bool = true,
+        generationPriority: FileCoverCacheCoordinator.Priority = .recently
     ) {
         self.source = .activeFile(file)
         self.refreshToken = refreshToken
         self.allowsGeneration = allowsGeneration
+        self.generationPriority = generationPriority
     }
     
     init(
         excalidrawFile: ExcalidrawFile,
         refreshToken: String? = nil,
-        allowsGeneration: Bool = true
+        allowsGeneration: Bool = true,
+        generationPriority: FileCoverCacheCoordinator.Priority = .recently
     ) {
         self.source = .excalidrawFile(excalidrawFile)
         self.refreshToken = refreshToken
         self.allowsGeneration = allowsGeneration
+        self.generationPriority = generationPriority
     }
     
     var fileID: String {
@@ -319,7 +324,10 @@ struct ExcalidrawFileCover: View {
         if !showCachedCoverIfAvailable() {
             coverImage = nil
             if requestIfMissing {
-                requestCoverRefresh(forceRefresh: false, priority: .recently)
+                requestCoverRefresh(
+                    forceRefresh: false,
+                    priority: generationPriority
+                )
             }
         }
     }

@@ -12,6 +12,9 @@ extension Notification.Name {
     static let cloudStorageDocumentContentDidChange = Notification.Name(
         "CloudStorageDocumentContentDidChange"
     )
+    static let cloudStorageConflictDidResolve = Notification.Name(
+        "CloudStorageConflictDidResolve"
+    )
 }
 
 struct CloudStorageProviderID: RawRepresentable, Codable, Hashable, Sendable {
@@ -426,6 +429,27 @@ enum CloudStorageDocumentSyncState: Equatable, Sendable {
                 false
         }
     }
+}
+
+enum CloudStorageConflictVersion: String, CaseIterable, Identifiable, Sendable {
+    case local
+    case remote
+
+    var id: String { rawValue }
+}
+
+struct CloudStorageConflictSnapshot: Sendable {
+    let reference: CloudStorageDocumentReference
+    let localData: Data
+    let localModifiedAt: Date?
+    let remoteData: Data
+    let remoteItem: CloudStorageItem
+}
+
+struct CloudStorageConflictResolutionResult: Sendable {
+    let reference: CloudStorageDocumentReference
+    let keptVersion: CloudStorageConflictVersion
+    let content: Data
 }
 
 enum CloudStorageFolderSyncState: Equatable, Sendable {

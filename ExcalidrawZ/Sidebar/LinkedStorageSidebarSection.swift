@@ -170,18 +170,25 @@ struct LinkedStorageSidebarSection: View {
     }
 
     private func addLocation(to providerID: CloudStorageProviderID) {
-        if let account = connections.accounts(for: providerID).first {
-            presentPicker(providerID: providerID, account: account)
-        } else {
-            connectAndChooseFolder(providerID: providerID)
-        }
-    }
-
-    private func connectAndChooseFolder(providerID: CloudStorageProviderID) {
+        guard preparingProviderID == nil else { return }
+        preparingProviderID = providerID
         Task {
+            defer { preparingProviderID = nil }
             do {
-                let account = try await connections.connect(to: providerID)
-                presentPicker(providerID: providerID, account: account)
+                let selection = try await connections.selectLocation(
+                    with: providerID,
+                    account: connections.accounts(for: providerID).first
+                )
+                switch selection {
+                    case .browse(let account):
+                        await preparePicker(providerID: providerID, account: account)
+                    case .selected(let account, let folder):
+                        connections.saveLocation(
+                            providerID: providerID,
+                            account: account,
+                            folder: folder
+                        )
+                }
             } catch CloudStorageError.authorizationCancelled {
                 return
             } catch {
@@ -190,28 +197,23 @@ struct LinkedStorageSidebarSection: View {
         }
     }
 
-    private func presentPicker(
+    private func preparePicker(
         providerID: CloudStorageProviderID,
         account: CloudStorageAccount
-    ) {
-        guard preparingProviderID == nil else { return }
-        preparingProviderID = providerID
-        Task {
-            defer { preparingProviderID = nil }
-            do {
-                let session = try await connections.makeSession(
-                    providerID: providerID,
-                    account: account
-                )
-                pickerContext = CloudStorageFolderPickerContext(
-                    providerID: providerID,
-                    providerName: descriptor(for: providerID)?.displayName ?? "Cloud Storage",
-                    account: account,
-                    session: session
-                )
-            } catch {
-                alertToast(error)
-            }
+    ) async {
+        do {
+            let session = try await connections.makeSession(
+                providerID: providerID,
+                account: account
+            )
+            pickerContext = CloudStorageFolderPickerContext(
+                providerID: providerID,
+                providerName: descriptor(for: providerID)?.displayName ?? "Cloud Storage",
+                account: account,
+                session: session
+            )
+        } catch {
+            alertToast(error)
         }
     }
 

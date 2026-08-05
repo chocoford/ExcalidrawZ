@@ -80,7 +80,8 @@ final class CloudStorageSyncService {
         documentStore.scheduleContentSynchronization(
             for: reference,
             connections: connections,
-            priority: .userInitiated
+            priority: .userInitiated,
+            queueAfterActiveSynchronization: true
         )
     }
 
@@ -90,31 +91,81 @@ final class CloudStorageSyncService {
         connections: CloudStorageConnectionStore? = nil
     ) async {
         let connections = connections ?? .shared
-        do {
-            _ = try await connections.ensureAccess(to: location)
-        } catch CloudStorageError.authorizationCancelled {
-            return
-        } catch {
-#if DEBUG
-            logger.warning(
-                "Unable to restore cloud storage access for user-initiated synchronization location=\(location.displayName) id=\(location.id) error=\(error)"
-            )
-#endif
-            return
-        }
-
-        let refreshed = await documentStore.refresh(
+        guard await refreshForUserInitiatedSynchronization(
             location,
             connections: connections,
-            force: true
-        )
-        guard refreshed else { return }
+            reason: "folder"
+        ) else { return }
         documentStore.scheduleDocumentSynchronizations(
             in: location,
             parentID: parentID,
             excludingDocumentIDs: Set(activeDocumentObservers.keys),
             connections: connections,
             priority: .userInitiated
+        )
+    }
+
+    /// Refreshes linked-storage metadata for Recently, then promotes the most
+    /// recently modified documents ahead of background content synchronization.
+    func prioritizeRecentlyModifiedDocuments(
+        connections: CloudStorageConnectionStore? = nil,
+        limit: Int = 20
+    ) async {
+        let connections = connections ?? .shared
+        let locations = connections.locations
+        guard !locations.isEmpty else { return }
+
+        for location in locations {
+            _ = await refreshForUserInitiatedSynchronization(
+                location,
+                connections: connections,
+                reason: "recently"
+            )
+        }
+
+        let recentReferences = documentStore
+            .indexedDocumentReferences(in: locations)
+            .filter {
+                documentStore.capabilities(for: $0).contains(.download)
+                    && activeDocumentObservers[$0.id] == nil
+            }
+            .sorted {
+                ($0.lastKnownModifiedAt ?? .distantPast)
+                    > ($1.lastKnownModifiedAt ?? .distantPast)
+            }
+            .prefix(max(0, limit))
+
+        for reference in recentReferences {
+            documentStore.scheduleContentSynchronizationIfNeeded(
+                for: reference,
+                connections: connections,
+                priority: .userInitiated
+            )
+        }
+    }
+
+    private func refreshForUserInitiatedSynchronization(
+        _ location: CloudStorageLocation,
+        connections: CloudStorageConnectionStore,
+        reason: String
+    ) async -> Bool {
+        do {
+            _ = try await connections.ensureAccess(to: location)
+        } catch CloudStorageError.authorizationCancelled {
+            return false
+        } catch {
+#if DEBUG
+            logger.warning(
+                "Unable to restore cloud storage access reason=\(reason) location=\(location.displayName) id=\(location.id) error=\(error)"
+            )
+#endif
+            return false
+        }
+
+        return await documentStore.refresh(
+            location,
+            connections: connections,
+            force: true
         )
     }
 

@@ -469,6 +469,8 @@ struct CompactContentMoreMenu<HomeGroup: ExcalidrawGroup>: View {
                                         AnyView(Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .folderBadgePlus))
                                     case .group:
                                         AnyView(Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .folderBadgePlus))
+                                    case .cloudStorageFolder:
+                                        AnyView(Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .folderBadgePlus))
                                 }
                             }
                         }

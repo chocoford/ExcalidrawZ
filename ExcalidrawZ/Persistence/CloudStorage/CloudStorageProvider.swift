@@ -15,6 +15,30 @@ protocol CloudStorageProvider: Sendable {
     func authorize() async throws -> CloudStorageAccount
     func makeSession(for account: CloudStorageAccount) async throws -> any CloudStorageSession
     func signOut(accountID: CloudStorageAccountID) async throws
+
+    /// Begins the provider's preferred root-selection flow. Most providers
+    /// authenticate first and then use ExcalidrawZ's folder browser. Providers
+    /// with a security-scoped system picker can authorize and select a root in
+    /// one operation instead.
+    func selectLocation(
+        for account: CloudStorageAccount?
+    ) async throws -> CloudStorageLocationSelection
+}
+
+enum CloudStorageLocationSelection: Sendable {
+    case browse(account: CloudStorageAccount)
+    case selected(account: CloudStorageAccount, folder: CloudStorageItem)
+}
+
+extension CloudStorageProvider {
+    func selectLocation(
+        for account: CloudStorageAccount?
+    ) async throws -> CloudStorageLocationSelection {
+        if let account {
+            return .browse(account: account)
+        }
+        return .browse(account: try await authorize())
+    }
 }
 
 /// The local URL parameters below are transfer endpoints, not remote identity.

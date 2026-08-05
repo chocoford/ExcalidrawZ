@@ -121,6 +121,7 @@ struct CloudStorageFileContextMenuModifier: ViewModifier {
 
     @State private var isRenamePresented = false
     @State private var isDeletePresented = false
+    @State private var isConflictResolutionPresented = false
 
     private var selectedReferences: Set<CloudStorageDocumentReference> {
         if fileState.selectedCloudStorageFiles.contains(reference) {
@@ -144,6 +145,20 @@ struct CloudStorageFileContextMenuModifier: ViewModifier {
                     open()
                 } label: {
                     Label(.localizable(.generalButtonOpen), systemSymbol: .arrowUpRightSquare)
+                }
+
+                if case .conflict = documentStore.syncState(for: reference) {
+                    Button {
+                        isConflictResolutionPresented = true
+                    } label: {
+                        Label(
+                            String(
+                                localized: "cloudStorageConflictResolveAction",
+                                defaultValue: "Resolve Conflict…"
+                            ),
+                            systemImage: "exclamationmark.triangle"
+                        )
+                    }
                 }
 
                 if selectedReferences.count == 1,
@@ -215,6 +230,9 @@ struct CloudStorageFileContextMenuModifier: ViewModifier {
                     rename(to: name)
                 }
             )
+            .sheet(isPresented: $isConflictResolutionPresented) {
+                CloudStorageConflictResolutionSheetView(reference: reference)
+            }
             .confirmationDialog(
                 String(
                     localizable: .sidebarFileRowDeletePermanentlyAlertTitle(

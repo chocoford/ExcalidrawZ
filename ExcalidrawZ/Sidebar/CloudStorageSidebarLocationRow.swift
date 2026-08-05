@@ -68,6 +68,12 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
             .modifier(CloudStorageLocationActionsModifier(location: location))
         }
         .disclosureGroupIndicatorVisibility(.visible)
+        .onAppear {
+            expandForActiveFolder(fileState.currentActiveGroup)
+        }
+        .watch(value: fileState.currentActiveGroup) { activeGroup in
+            expandForActiveFolder(activeGroup)
+        }
     }
 
     private var selectionBinding: Binding<Bool> {
@@ -100,6 +106,15 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
 
     private var folderSyncState: CloudStorageFolderSyncState {
         browser.folderSyncState(in: location.rootItemID)
+    }
+
+    private func expandForActiveFolder(_ activeGroup: FileState.ActiveGroup?) {
+        guard case .cloudStorageFolder(let folder) = activeGroup,
+              folder.location.id == location.id,
+              !isExpanded else { return }
+        withAnimation(.smooth(duration: 0.2)) {
+            isExpanded = true
+        }
     }
 }
 
@@ -221,6 +236,12 @@ private struct CloudStorageSidebarFolderRow: View {
             .modifier(CloudStorageFolderActionsModifier(folder: reference))
         }
         .disclosureGroupIndicatorVisibility(.visible)
+        .onAppear {
+            expandForActiveFolder(fileState.currentActiveGroup)
+        }
+        .watch(value: fileState.currentActiveGroup) { activeGroup in
+            expandForActiveFolder(activeGroup)
+        }
     }
 
     private var reference: CloudStorageFolderReference {
@@ -241,6 +262,15 @@ private struct CloudStorageSidebarFolderRow: View {
                 }
             }
         )
+    }
+
+    private func expandForActiveFolder(_ activeGroup: FileState.ActiveGroup?) {
+        guard case .cloudStorageFolder(let activeFolder) = activeGroup,
+              browser.isFolder(folder.id, inPathTo: activeFolder),
+              !isExpanded else { return }
+        withAnimation(.smooth(duration: 0.2)) {
+            isExpanded = true
+        }
     }
 }
 
@@ -265,6 +295,7 @@ private struct CloudStorageSidebarFileRow: View {
             }
         }
         .modifier(CloudStorageFileContextMenuModifier(reference: reference))
+        .id(SidebarActiveFileScrollTarget.cloudStorageFile(item.id))
     }
 
     private var reference: CloudStorageDocumentReference {

@@ -51,7 +51,7 @@ struct CloudStorageFolderFileHomeView: View {
         FileHomeContainer {
             containerContent
         }
-        .showPlaceholder(items != nil && files.isEmpty, itemWidth: fileItemWidth)
+        .showPlaceholder(items?.isEmpty == true, itemWidth: fileItemWidth)
         .contentBackground {
             Color.clear
                 .contentShape(Rectangle())
@@ -346,10 +346,14 @@ struct CloudStorageFolderFileHomeView: View {
 private struct CloudStorageFileHomeAccessoryButtonModifier: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
+#if os(macOS)
         if #available(macOS 14.0, *) {
             content.buttonStyle(.accessoryBar)
         } else {
             content
         }
+#else
+        content
+#endif
     }
 }

@@ -405,6 +405,30 @@ final class FileState: ObservableObject {
         return await performActiveFileChange(file, generation: generation)
     }
 
+    /// Closes the active editor session without persisting its canvas state.
+    ///
+    /// This is intentionally separate from the normal active-file transition,
+    /// which flushes pending canvas changes before closing. Use it only when
+    /// the current session must be discarded, such as cancelling unresolved
+    /// cloud-storage conflict resolution.
+    @MainActor
+    func discardAndCloseActiveFile() {
+        guard currentActiveFile != nil else { return }
+
+        activeFileChangeGeneration += 1
+        let generation = activeFileChangeGeneration
+        let previousFile = currentActiveFile
+
+        Task { @MainActor in
+            await prepareActiveFileCloseTransitionIfNeeded(
+                from: previousFile,
+                to: nil
+            )
+            guard generation == activeFileChangeGeneration else { return }
+            applyActiveFile(nil)
+        }
+    }
+
     @MainActor
     func consumeActiveFileOpenDurationOverride(for fileID: String) -> TimeInterval? {
         pendingActiveFileOpenDurationOverrides.removeValue(forKey: fileID)
@@ -1126,11 +1150,13 @@ final class FileState: ObservableObject {
                 guard let content = file.content else {
                     throw AppError.fileError(.notFound)
                 }
-                try await CloudStorageDocumentStore.shared.saveToLocalCache(
+                let needsUpload = try await CloudStorageDocumentStore.shared.saveToLocalCache(
                     content,
                     for: reference
                 )
-                await CloudStorageSyncService.shared.enqueueUpload(for: reference)
+                if needsUpload {
+                    await CloudStorageSyncService.shared.enqueueUpload(for: reference)
+                }
                 logger.debug(
                     "Background captured cloud storage file update cached: \(reference.lastKnownName)"
                 )
@@ -1164,11 +1190,13 @@ final class FileState: ObservableObject {
                     break
 
                 case .cloudStorageFile(let reference):
-                    try await CloudStorageDocumentStore.shared.saveToLocalCache(
+                    let needsUpload = try await CloudStorageDocumentStore.shared.saveToLocalCache(
                         content,
                         for: reference
                     )
-                    await CloudStorageSyncService.shared.enqueueUpload(for: reference)
+                    if needsUpload {
+                        await CloudStorageSyncService.shared.enqueueUpload(for: reference)
+                    }
                     logger.debug(
                         "Background appState-only cloud storage file update cached: \(reference.lastKnownName)"
                     )

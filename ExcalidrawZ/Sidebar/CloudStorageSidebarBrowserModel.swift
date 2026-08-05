@@ -150,6 +150,16 @@ final class CloudStorageSidebarBrowserModel: ObservableObject {
         documentStore.parentFolder(for: document)
     }
 
+    func isFolder(
+        _ folderID: CloudStorageItemID,
+        inPathTo target: CloudStorageFolderReference
+    ) -> Bool {
+        guard target.location.id == location.id else { return false }
+        return documentStore.folderPath(for: target).contains { folder in
+            folder.itemID == folderID
+        }
+    }
+
     func folderSyncState(in folderID: CloudStorageItemID) -> CloudStorageFolderSyncState {
         _ = stateRevision
         if folderSyncStatesCache == nil {

@@ -19,6 +19,9 @@ final class CloudStorageConnectionStore: ObservableObject {
     @Published private(set) var connectingProviderIDs: Set<CloudStorageProviderID> = []
     @Published private(set) var authenticationRequiredLocationIDs: Set<UUID> = []
 
+    private var missingAccountLocationIDs: Set<UUID> = []
+    private var accessFailureLocationIDs: Set<UUID> = []
+
     private let registry: CloudStorageProviderRegistry
     private let userDefaults: UserDefaults
     private let locationsDefaultsKey = "CloudStorageLocations.v1"
@@ -101,7 +104,7 @@ final class CloudStorageConnectionStore: ObservableObject {
         providerDescriptors = descriptors
         accountsByProvider = refreshedAccounts
 
-        let missingAccountLocationIDs = locations.reduce(into: Set<UUID>()) { result, location in
+        missingAccountLocationIDs = locations.reduce(into: Set<UUID>()) { result, location in
             let hasMatchingAccount = refreshedAccounts[location.providerID]?.contains {
                 $0.id == location.accountID
             } == true
@@ -109,7 +112,7 @@ final class CloudStorageConnectionStore: ObservableObject {
                 result.insert(location.id)
             }
         }
-        authenticationRequiredLocationIDs.formUnion(missingAccountLocationIDs)
+        publishAuthenticationRequirements()
     }
 
     func accounts(for providerID: CloudStorageProviderID) -> [CloudStorageAccount] {
@@ -151,6 +154,22 @@ final class CloudStorageConnectionStore: ObservableObject {
         return account
     }
 
+    func selectLocation(
+        with providerID: CloudStorageProviderID,
+        account: CloudStorageAccount?
+    ) async throws -> CloudStorageLocationSelection {
+        let provider = try await registry.provider(withID: providerID)
+        connectingProviderIDs.insert(providerID)
+        defer { connectingProviderIDs.remove(providerID) }
+
+        let selection = try await provider.selectLocation(for: account)
+        switch selection {
+            case .browse(let account), .selected(let account, _):
+                storeConnectedAccount(account)
+        }
+        return selection
+    }
+
     /// Validates a persisted location before a user-initiated operation. A
     /// missing account or an expired token starts the provider's interactive
     /// authorization flow, while background synchronization remains silent.
@@ -174,7 +193,8 @@ final class CloudStorageConnectionStore: ObservableObject {
 
         let account = try await connect(to: location.providerID)
         guard account.id == location.accountID else {
-            authenticationRequiredLocationIDs.insert(location.id)
+            accessFailureLocationIDs.insert(location.id)
+            publishAuthenticationRequirements()
             throw CloudStorageError.invalidProviderResponse(
                 "Sign in to the account originally used for this linked storage location."
             )
@@ -189,11 +209,14 @@ final class CloudStorageConnectionStore: ObservableObject {
 
     func recordAccessFailure(_ error: Error, for location: CloudStorageLocation) {
         guard Self.requiresInteractiveAuthorization(error) else { return }
-        authenticationRequiredLocationIDs.insert(location.id)
+        accessFailureLocationIDs.insert(location.id)
+        publishAuthenticationRequirements()
     }
 
     func clearAuthenticationRequirement(for location: CloudStorageLocation) {
-        authenticationRequiredLocationIDs.remove(location.id)
+        missingAccountLocationIDs.remove(location.id)
+        accessFailureLocationIDs.remove(location.id)
+        publishAuthenticationRequirements()
     }
 
     func makeSession(
@@ -240,7 +263,9 @@ final class CloudStorageConnectionStore: ObservableObject {
 
     func removeLocation(_ location: CloudStorageLocation) {
         locations.removeAll { $0.id == location.id }
-        authenticationRequiredLocationIDs.remove(location.id)
+        missingAccountLocationIDs.remove(location.id)
+        accessFailureLocationIDs.remove(location.id)
+        publishAuthenticationRequirements()
         persistLocations()
     }
 
@@ -258,7 +283,9 @@ final class CloudStorageConnectionStore: ObservableObject {
             $0.providerID == account.providerID && $0.accountID == account.id
         }
         accountsByProvider[account.providerID]?.removeAll { $0.id == account.id }
-        authenticationRequiredLocationIDs.subtract(removedLocationIDs)
+        missingAccountLocationIDs.subtract(removedLocationIDs)
+        accessFailureLocationIDs.subtract(removedLocationIDs)
+        publishAuthenticationRequirements()
         persistLocations()
     }
 
@@ -275,13 +302,21 @@ final class CloudStorageConnectionStore: ObservableObject {
             accounts.append(account)
         }
         accountsByProvider[account.providerID] = accounts
-        authenticationRequiredLocationIDs.subtract(
+        let restoredLocationIDs = Set(
             locations
                 .filter {
                     $0.providerID == account.providerID && $0.accountID == account.id
                 }
                 .map(\.id)
         )
+        missingAccountLocationIDs.subtract(restoredLocationIDs)
+        accessFailureLocationIDs.subtract(restoredLocationIDs)
+        publishAuthenticationRequirements()
+    }
+
+    private func publishAuthenticationRequirements() {
+        authenticationRequiredLocationIDs = missingAccountLocationIDs
+            .union(accessFailureLocationIDs)
     }
 
     private static func requiresInteractiveAuthorization(_ error: Error) -> Bool {
