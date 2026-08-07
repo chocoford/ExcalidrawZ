@@ -132,6 +132,13 @@ final class CloudStorageConnectionStore: ObservableObject {
     }
 
     func connect(to providerID: CloudStorageProviderID) async throws -> CloudStorageAccount {
+        try await connect(to: providerID, using: nil)
+    }
+
+    func connect(
+        to providerID: CloudStorageProviderID,
+        using connectionInput: CloudStorageConnectionInput?
+    ) async throws -> CloudStorageAccount {
         if let authorizationTask = authorizationTasks[providerID] {
             let account = try await authorizationTask.value
             storeConnectedAccount(account)
@@ -140,7 +147,7 @@ final class CloudStorageConnectionStore: ObservableObject {
 
         let provider = try await registry.provider(withID: providerID)
         let authorizationTask = Task { @MainActor in
-            try await provider.authorize()
+            try await provider.authorize(using: connectionInput)
         }
         authorizationTasks[providerID] = authorizationTask
         connectingProviderIDs.insert(providerID)
@@ -156,13 +163,17 @@ final class CloudStorageConnectionStore: ObservableObject {
 
     func selectLocation(
         with providerID: CloudStorageProviderID,
-        account: CloudStorageAccount?
+        account: CloudStorageAccount?,
+        connectionInput: CloudStorageConnectionInput? = nil
     ) async throws -> CloudStorageLocationSelection {
         let provider = try await registry.provider(withID: providerID)
         connectingProviderIDs.insert(providerID)
         defer { connectingProviderIDs.remove(providerID) }
 
-        let selection = try await provider.selectLocation(for: account)
+        let selection = try await provider.selectLocation(
+            for: account,
+            using: connectionInput
+        )
         switch selection {
             case .browse(let account), .selected(let account, _):
                 storeConnectedAccount(account)
@@ -174,7 +185,9 @@ final class CloudStorageConnectionStore: ObservableObject {
     /// missing account or an expired token starts the provider's interactive
     /// authorization flow, while background synchronization remains silent.
     func ensureAccess(to location: CloudStorageLocation) async throws -> CloudStorageAccount {
-        await refresh()
+        if account(for: location) == nil {
+            await refresh()
+        }
 
         if let account = account(for: location) {
             do {

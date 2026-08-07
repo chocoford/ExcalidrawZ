@@ -8,10 +8,12 @@ import UniformTypeIdentifiers
 
 struct CloudStorageSidebarLocationRow<Icon: View>: View {
     @EnvironmentObject private var fileState: FileState
+    @ObservedObject private var connectivity = CloudStorageConnectivityMonitor.shared
 
     let location: CloudStorageLocation
     @ObservedObject var connections: CloudStorageConnectionStore
     let icon: Icon
+    let onReconnect: () -> Void
 
     @StateObject private var browser: CloudStorageSidebarBrowserModel
     @State private var isExpanded = false
@@ -19,11 +21,13 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
     init(
         location: CloudStorageLocation,
         connections: CloudStorageConnectionStore,
-        @ViewBuilder icon: () -> Icon
+        @ViewBuilder icon: () -> Icon,
+        onReconnect: @escaping () -> Void
     ) {
         self.location = location
         self.connections = connections
         self.icon = icon()
+        self.onReconnect = onReconnect
         self._browser = StateObject(
             wrappedValue: CloudStorageSidebarBrowserModel(location: location)
         )
@@ -42,6 +46,7 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
         } label: {
             HStack(spacing: 6) {
                 icon
+                    .frame(width: 18, height: 16)
                 Text(location.displayName)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -51,11 +56,25 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
                         .controlSize(.mini)
                         .frame(width: 12, height: 12)
                 } else if connections.requiresAuthentication(for: location) {
-                    Image(systemName: "exclamationmark.circle.fill")
+                    Button(action: onReconnect) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .imageScale(.small)
+                            .foregroundStyle(.orange)
+                            .frame(width: 12, height: 12)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Sign in to reconnect \(location.displayName)")
+                } else if connectivity.status == .unavailable {
+                    Image(systemName: "wifi.slash")
                         .imageScale(.small)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.secondary)
                         .frame(width: 12, height: 12)
-                        .help("Sign in to reconnect \(location.displayName)")
+                        .help(
+                            String(
+                                localized: "cloudStorageStatusWaitingForConnection",
+                                defaultValue: "Waiting for connection…"
+                            )
+                        )
                 } else if isLoadingMetadata {
                     ProgressView()
                         .controlSize(.mini)
@@ -120,6 +139,7 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
 
 private struct CloudStorageSidebarFolderContents: View {
     @EnvironmentObject private var fileState: FileState
+    @ObservedObject private var connectivity = CloudStorageConnectivityMonitor.shared
 
     let folderID: CloudStorageItemID
     @ObservedObject var browser: CloudStorageSidebarBrowserModel
@@ -128,7 +148,17 @@ private struct CloudStorageSidebarFolderContents: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if items == nil {
-                if let errorMessage = browser.errorMessage,
+                if connectivity.status == .unavailable {
+                    statusRow {
+                        Image(systemName: "wifi.slash")
+                        Text(
+                            String(
+                                localized: "cloudStorageStatusOffline",
+                                defaultValue: "Offline"
+                            )
+                        )
+                    }
+                } else if let errorMessage = browser.errorMessage,
                    !browser.isRefreshing {
                     statusRow {
                         Image(systemName: "exclamationmark.triangle")
@@ -223,7 +253,9 @@ private struct CloudStorageSidebarFolderRow: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "folder.fill")
+                    .font(.system(size: 15))
                     .foregroundStyle(.blue)
+                    .frame(width: 18, height: 16)
                 Text(folder.name)
                 Spacer(minLength: 4)
                 CloudStorageFolderSyncIndicator(
@@ -291,7 +323,10 @@ private struct CloudStorageSidebarFileRow: View {
                 fileType: reference.fileType,
                 updatedAt: item.modifiedAt ?? .distantPast
             ) {
-                CloudStorageDocumentSyncIndicator(reference: reference)
+                CloudStorageDocumentSyncIndicator(
+                    reference: reference,
+                    presentation: .sidebar
+                )
             }
         }
         .modifier(CloudStorageFileContextMenuModifier(reference: reference))
@@ -310,7 +345,7 @@ private struct CloudStorageSidebarFileRow: View {
     }
 
     private func open() {
-        if let parent = browser.parentFolder(for: reference) {
+        if let parent = CloudStorageDocumentStore.shared.bestKnownParentFolder(for: reference) {
             fileState.setActiveGroupIfNeeded(.cloudStorageFolder(parent))
         }
         fileState.setActiveFile(.cloudStorageFile(reference))
@@ -330,6 +365,8 @@ private struct CloudStorageSidebarFileRow: View {
 }
 
 private struct CloudStorageFolderSyncIndicator: View {
+    @ObservedObject private var connectivity = CloudStorageConnectivityMonitor.shared
+
     let state: CloudStorageFolderSyncState
 
     @ViewBuilder
@@ -339,11 +376,26 @@ private struct CloudStorageFolderSyncIndicator: View {
                 ProgressView()
                     .controlSize(.mini)
                     .frame(width: 12, height: 12)
-            case .queued:
-                Image(systemName: "icloud.and.arrow.down")
+            case .queued(let direction):
+                Image(systemName: connectivity.status == .unavailable
+                      ? "wifi.slash"
+                      : direction.symbolName)
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
+                    .frame(width: 12, height: 12)
             case .idle:
                 EmptyView()
+        }
+    }
+}
+
+private extension CloudStoragePendingSyncDirection {
+    var symbolName: String {
+        switch self {
+            case .upload:
+                "icloud.and.arrow.up"
+            case .download:
+                "icloud.and.arrow.down"
         }
     }
 }

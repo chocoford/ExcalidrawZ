@@ -30,16 +30,16 @@ enum CheckpointWriteOptions {
 enum UserCheckpointRolloverPolicy {
     static let interval: TimeInterval = 10 * 60
 
-    /// User checkpoints use `updatedAt` as the checkpoint window's start time.
-    /// Segment updates should replace content without sliding this timestamp;
-    /// otherwise long editing runs would never roll over to a fresh checkpoint.
-    static func shouldCreateNewCheckpoint(
-        latestUpdatedAt: Date?,
+    /// Checkpoint windows belong to the current editor session. Their start
+    /// time is deliberately kept in memory so reopening a document begins a
+    /// fresh history segment while `updatedAt` retains its normal meaning.
+    static func shouldStartNewWindow(
+        startedAt: Date?,
         now: Date = .now
     ) -> Bool {
-        guard let latestUpdatedAt else {
+        guard let startedAt else {
             return true
         }
-        return now.timeIntervalSince(latestUpdatedAt) >= interval
+        return now.timeIntervalSince(startedAt) >= interval
     }
 }

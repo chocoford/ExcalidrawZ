@@ -14,6 +14,7 @@ enum CloudStorageBootstrap {
         await registerOneDrive()
         await registerGoogleDrive()
         await registerDropbox()
+        await registerWebDAV()
     }
 
     @MainActor
@@ -86,6 +87,20 @@ enum CloudStorageBootstrap {
             return
         } catch {
             logger.error("Failed to register Dropbox cloud storage provider: \(error)")
+        }
+    }
+
+    @MainActor
+    private static func registerWebDAV() async {
+        do {
+            try await CloudStorageProviderRegistry.shared.register(
+                WebDAVCloudStorageProvider(authenticator: WebDAVAuthenticator())
+            )
+            logger.info("Registered WebDAV cloud storage provider")
+        } catch CloudStorageProviderRegistry.RegistryError.providerAlreadyRegistered(_) {
+            return
+        } catch {
+            logger.error("Failed to register WebDAV cloud storage provider: \(error)")
         }
     }
 

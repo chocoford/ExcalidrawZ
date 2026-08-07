@@ -22,6 +22,10 @@ final class FileState: ObservableObject {
     var currentGroupPublisherCancellables: [AnyCancellable] = []
     var currentFilePublisherCancellables: [AnyCancellable] = []
     private var isRestoringActiveGroupAfterBlockedSwitch = false
+    private var pendingActiveFileCloseTransitionIDs: Set<String> = []
+    private var activeFileCloseTransitionContinuations: [
+        String: [CheckedContinuation<Void, Never>]
+    ] = [:]
     
     enum ActiveGroup: Identifiable, Equatable {
         case group(Group)
@@ -99,7 +103,9 @@ final class FileState: ObservableObject {
             guard let activeFile = activeFiles[index],
                   case .cloudStorageFile(let currentReference) = activeFile,
                   currentReference == reference else { continue }
-            activeFiles[index] = .cloudStorageFile(reference)
+            activeFiles[index] = .cloudStorageFile(
+                reference.preservingActiveFileID(currentReference.activeFileID)
+            )
             replacedCount += 1
         }
 #if DEBUG
@@ -107,6 +113,72 @@ final class FileState: ObservableObject {
             "Replaced cloud document metadata itemID=\(reference.itemID.rawValue) name=\(reference.lastKnownName) activeSessions=\(replacedCount)"
         )
 #endif
+    }
+
+    @MainActor
+    func applyCloudStorageIdentityChange(
+        _ change: CloudStorageItemIdentityChange
+    ) {
+        for index in activeFiles.indices {
+            guard let activeFile = activeFiles[index],
+                  case .cloudStorageFile(let reference) = activeFile,
+                  reference.locationID == change.location.id,
+                  let item = change.replacements[reference.itemID] else {
+                continue
+            }
+            let replacement = CloudStorageDocumentReference(
+                locationID: change.location.id,
+                providerID: change.location.providerID,
+                accountID: change.location.accountID,
+                itemID: item.id,
+                lastKnownName: item.name,
+                lastKnownModifiedAt: item.modifiedAt,
+                activeFileID: reference.activeFileID
+            )
+            let replacementFile = ActiveFile.cloudStorageFile(replacement)
+            if let didUpdate = didUpdateFileState.removeValue(forKey: activeFile) {
+                didUpdateFileState[replacementFile] = didUpdate
+            }
+            if let startedAt = userCheckpointWindowStartedAt.removeValue(forKey: activeFile.id) {
+                userCheckpointWindowStartedAt[replacementFile.id] = startedAt
+            }
+            activeFiles[index] = replacementFile
+        }
+
+        selectedCloudStorageFiles = Set(selectedCloudStorageFiles.map { reference in
+            guard reference.locationID == change.location.id,
+                  let item = change.replacements[reference.itemID] else {
+                return reference
+            }
+            return CloudStorageDocumentReference(
+                locationID: change.location.id,
+                providerID: change.location.providerID,
+                accountID: change.location.accountID,
+                itemID: item.id,
+                lastKnownName: item.name,
+                lastKnownModifiedAt: item.modifiedAt
+            )
+        })
+        if let reference = selectedStartCloudStorageFile,
+           reference.locationID == change.location.id,
+           let item = change.replacements[reference.itemID] {
+            selectedStartCloudStorageFile = CloudStorageDocumentReference(
+                locationID: change.location.id,
+                providerID: change.location.providerID,
+                accountID: change.location.accountID,
+                itemID: item.id,
+                lastKnownName: item.name,
+                lastKnownModifiedAt: item.modifiedAt
+            )
+        }
+
+        if case .cloudStorageFolder(let folder) = currentActiveGroup,
+           folder.location.id == change.location.id,
+           let item = change.replacements[folder.itemID] {
+            currentActiveGroup = .cloudStorageFolder(
+                CloudStorageFolderReference(location: change.location, item: item)
+            )
+        }
     }
     
     enum ActiveFile: Identifiable, Hashable {
@@ -129,7 +201,19 @@ final class FileState: ObservableObject {
                     // collaborationFile.objectID.description
                     collaborationFile.id?.uuidString ?? UUID().uuidString
                 case .cloudStorageFile(let reference):
+                    reference.activeFileID
+            }
+        }
+
+        /// Identity used by persisted UI state such as covers and File Home
+        /// transitions. An open cloud editor may temporarily keep an older
+        /// session ID while its provisional provider identity is replaced.
+        var canonicalID: String {
+            switch self {
+                case .cloudStorageFile(let reference):
                     reference.id
+                default:
+                    id
             }
         }
 
@@ -243,20 +327,24 @@ final class FileState: ObservableObject {
             case libraryFile(
                 objectURI: URL,
                 fileName: String,
-                didUpdate: Bool,
+                newCheckpoint: Bool,
                 suppressCheckpoint: Bool
             )
             case localFile(
                 url: URL,
-                didUpdate: Bool,
+                newCheckpoint: Bool,
                 suppressCheckpoint: Bool
             )
             case collaborationFile(
                 objectURI: URL,
                 fileName: String,
-                didUpdate: Bool
+                newCheckpoint: Bool
             )
-            case cloudStorageFile(reference: CloudStorageDocumentReference)
+            case cloudStorageFile(
+                reference: CloudStorageDocumentReference,
+                newCheckpoint: Bool,
+                suppressCheckpoint: Bool
+            )
 
             var usesLocalViewportSidecar: Bool {
                 switch self {
@@ -275,7 +363,7 @@ final class FileState: ObservableObject {
                         url.deletingPathExtension().lastPathComponent
                     case .collaborationFile(_, let fileName, _):
                         fileName
-                    case .cloudStorageFile(let reference):
+                    case .cloudStorageFile(let reference, _, _):
                         URL(fileURLWithPath: reference.lastKnownName)
                             .deletingPathExtension()
                             .lastPathComponent
@@ -349,9 +437,11 @@ final class FileState: ObservableObject {
         resetSelections()
         if let previousActiveFile {
             didUpdateFileState[previousActiveFile] = false
+            userCheckpointWindowStartedAt.removeValue(forKey: previousActiveFile.id)
         }
         if let newValue {
             didUpdateFileState[newValue] = false
+            userCheckpointWindowStartedAt.removeValue(forKey: newValue.id)
         }
         resetCurrentFileChangesListener()
     }
@@ -405,6 +495,40 @@ final class FileState: ObservableObject {
         return await performActiveFileChange(file, generation: generation)
     }
 
+    /// Closes an active cloud document before its backing item is removed.
+    /// Keeping the item in the document store until the close transition
+    /// completes preserves the File Home destination for the hero animation.
+    @MainActor
+    func closeActiveFileIfDeleting(
+        anyOf references: Set<CloudStorageDocumentReference>
+    ) async -> Bool {
+        guard case .cloudStorageFile(let activeReference) = currentActiveFile,
+              references.contains(where: {
+                  $0.locationID == activeReference.locationID
+                      && $0.itemID == activeReference.itemID
+              }) else {
+            return true
+        }
+
+        let transitionFileID = currentActiveFile?.canonicalID
+        guard await requestActiveFileChange(nil) else { return false }
+        if let transitionFileID {
+            await waitForActiveFileCloseTransition(fileID: transitionFileID)
+        }
+        return true
+    }
+
+    @MainActor
+    func completeActiveFileCloseTransition(fileID: String) {
+        guard pendingActiveFileCloseTransitionIDs.remove(fileID) != nil else {
+            return
+        }
+        let continuations = activeFileCloseTransitionContinuations.removeValue(
+            forKey: fileID
+        ) ?? []
+        continuations.forEach { $0.resume() }
+    }
+
     /// Closes the active editor session without persisting its canvas state.
     ///
     /// This is intentionally separate from the normal active-file transition,
@@ -449,23 +573,29 @@ final class FileState: ObservableObject {
         switch activeFile {
             case .file(let file):
                 guard !file.inTrash else { return nil }
+                let suppressCheckpoint = automaticCheckpointWritesSuppressed
                 return CapturedCanvasSaveTarget(
                     id: activeFile.id,
                     kind: .libraryFile(
                         objectURI: file.objectID.uriRepresentation(),
                         fileName: file.name ?? "Untitled",
-                        didUpdate: didUpdateFileState[activeFile] ?? false,
-                        suppressCheckpoint: automaticCheckpointWritesSuppressed
+                        newCheckpoint: suppressCheckpoint
+                            ? false
+                            : shouldCreateUserCheckpoint(for: activeFile),
+                        suppressCheckpoint: suppressCheckpoint
                     )
                 )
 
             case .localFile(let url), .temporaryFile(let url):
+                let suppressCheckpoint = automaticCheckpointWritesSuppressed
                 return CapturedCanvasSaveTarget(
                     id: activeFile.id,
                     kind: .localFile(
                         url: url,
-                        didUpdate: didUpdateFile,
-                        suppressCheckpoint: automaticCheckpointWritesSuppressed
+                        newCheckpoint: suppressCheckpoint
+                            ? false
+                            : shouldCreateUserCheckpoint(for: activeFile),
+                        suppressCheckpoint: suppressCheckpoint
                     )
                 )
 
@@ -475,13 +605,21 @@ final class FileState: ObservableObject {
                     kind: .collaborationFile(
                         objectURI: file.objectID.uriRepresentation(),
                         fileName: file.name ?? "Untitled",
-                        didUpdate: didUpdateFileState[activeFile] ?? false
+                        newCheckpoint: shouldCreateUserCheckpoint(for: activeFile)
                     )
                 )
             case .cloudStorageFile(let reference):
+                didUpdateFileState[activeFile] = true
+                let suppressCheckpoint = automaticCheckpointWritesSuppressed
                 return CapturedCanvasSaveTarget(
                     id: activeFile.id,
-                    kind: .cloudStorageFile(reference: reference)
+                    kind: .cloudStorageFile(
+                        reference: reference,
+                        newCheckpoint: suppressCheckpoint
+                            ? false
+                            : shouldCreateUserCheckpoint(for: activeFile),
+                        suppressCheckpoint: suppressCheckpoint
+                    )
                 )
         }
     }
@@ -551,6 +689,15 @@ final class FileState: ObservableObject {
             return false
         }
 
+        if let previousFile {
+            // Checkpoint windows are editor-session scoped. Reopening the file
+            // starts a new history segment even when less than ten minutes passed.
+            userCheckpointWindowStartedAt.removeValue(forKey: previousFile.id)
+        }
+
+        if file == nil, let previousFile {
+            pendingActiveFileCloseTransitionIDs.insert(previousFile.canonicalID)
+        }
         applyActiveFile(file)
 
         guard let file else {
@@ -671,7 +818,7 @@ final class FileState: ObservableObject {
                     }
                 }
             case .cloudStorageFile(let reference):
-                if let folder = CloudStorageDocumentStore.shared.parentFolder(for: reference) {
+                if let folder = CloudStorageDocumentStore.shared.bestKnownParentFolder(for: reference) {
                     setActiveGroupIfNeeded(.cloudStorageFolder(folder))
                 }
         }
@@ -685,6 +832,17 @@ final class FileState: ObservableObject {
     ) async {
         guard previousFile != nil, nextFile == nil else { return }
         await prepareActiveFileCloseTransition?()
+    }
+
+    @MainActor
+    private func waitForActiveFileCloseTransition(fileID: String) async {
+        guard pendingActiveFileCloseTransitionIDs.contains(fileID) else {
+            return
+        }
+        await withCheckedContinuation { continuation in
+            activeFileCloseTransitionContinuations[fileID, default: []]
+                .append(continuation)
+        }
     }
 
     @MainActor
@@ -876,6 +1034,7 @@ final class FileState: ObservableObject {
     /// Indicate the file is being updated after being set as current file.
     var didUpdateFile = false
     var didUpdateFileState: [ActiveFile : Bool] = [:]
+    private var userCheckpointWindowStartedAt: [String: Date] = [:]
     var isCreatingFile = false
     private var pendingProgrammaticCanvasCommitDates: [String: Date] = [:]
     private var recentLocalCanvasMutationDates: [String: Date] = [:]
@@ -938,6 +1097,22 @@ final class FileState: ObservableObject {
             shouldIgnoreUpdate = false
             didUpdateFile = false
         }
+        return true
+    }
+
+    @MainActor
+    private func shouldCreateUserCheckpoint(
+        for activeFile: ActiveFile,
+        now: Date = .now
+    ) -> Bool {
+        let startedAt = userCheckpointWindowStartedAt[activeFile.id]
+        guard UserCheckpointRolloverPolicy.shouldStartNewWindow(
+            startedAt: startedAt,
+            now: now
+        ) else {
+            return false
+        }
+        userCheckpointWindowStartedAt[activeFile.id] = now
         return true
     }
 
@@ -1025,16 +1200,21 @@ final class FileState: ObservableObject {
     }
     
     @discardableResult
-    func persistPreparedLibraryCanvasUpdate(_ file: File, with excalidrawFile: ExcalidrawFile) -> Bool {
+    @MainActor
+    func persistPreparedLibraryCanvasUpdate(
+        _ file: File,
+        with excalidrawFile: ExcalidrawFile
+    ) -> Bool {
         let activeFile = ActiveFile.file(file)
-        let didUpdateFlag = didUpdateFileState[.file(file)] ?? false
         guard !file.inTrash,
               shouldAcceptCanvasUpdate(fileID: activeFile.id, label: file.name ?? "Untitled") else {
             return false
         }
-        let didUpdateFile = didUpdateFlag
         let id = file.objectID
         let suppressCheckpoint = automaticCheckpointWritesSuppressed
+        let newCheckpoint = suppressCheckpoint
+            ? false
+            : shouldCreateUserCheckpoint(for: activeFile)
         self.didUpdateFileState[activeFile] = true
         Task.detached {
             do {
@@ -1053,7 +1233,7 @@ final class FileState: ObservableObject {
                 // user-edit semantics.
                 let checkpointPolicy: CheckpointWriteOptions = suppressCheckpoint
                     ? .suppress
-                    : .userEdit(newCheckpoint: !didUpdateFile)
+                    : .userEdit(newCheckpoint: newCheckpoint)
                 try await PersistenceController.shared.fileRepository.updateElements(
                     fileObjectID: id,
                     fileData: content,
@@ -1069,6 +1249,27 @@ final class FileState: ObservableObject {
             }
         }
         return true
+    }
+
+    @MainActor
+    func updateCloudStorageFile(
+        _ reference: CloudStorageDocumentReference,
+        content: Data
+    ) async throws {
+        let activeFile = ActiveFile.cloudStorageFile(reference)
+        let suppressCheckpoint = automaticCheckpointWritesSuppressed
+        let newCheckpoint = suppressCheckpoint
+            ? false
+            : shouldCreateUserCheckpoint(for: activeFile)
+        didUpdateFileState[activeFile] = true
+        try await Self.saveCloudStorageCanvasContent(
+            reference: reference,
+            content: content,
+            newCheckpoint: newCheckpoint,
+            suppressCheckpoint: suppressCheckpoint,
+            logger: logger
+        )
+        objectWillChange.send()
     }
 
     static func saveCapturedCanvasUpdate(
@@ -1104,7 +1305,7 @@ final class FileState: ObservableObject {
         logger: Logger
     ) async throws {
         switch target.kind {
-            case .libraryFile(let objectURI, let fileName, let didUpdate, let suppressCheckpoint):
+            case .libraryFile(let objectURI, let fileName, let newCheckpoint, let suppressCheckpoint):
                 guard let fileObjectID = managedObjectID(for: objectURI),
                       let content = excalidrawFile.content else {
                     throw AppError.fileError(.notFound)
@@ -1115,7 +1316,7 @@ final class FileState: ObservableObject {
                 )
                 let checkpointPolicy: CheckpointWriteOptions = suppressCheckpoint
                     ? .suppress
-                    : .userEdit(newCheckpoint: !didUpdate)
+                    : .userEdit(newCheckpoint: newCheckpoint)
                 try await PersistenceController.shared.fileRepository.updateElements(
                     fileObjectID: fileObjectID,
                     fileData: content,
@@ -1123,16 +1324,16 @@ final class FileState: ObservableObject {
                 )
                 logger.debug("Background captured file update saved: \(fileName)")
 
-            case .localFile(let url, let didUpdate, let suppressCheckpoint):
+            case .localFile(let url, let newCheckpoint, let suppressCheckpoint):
                 try await saveCapturedLocalCanvasUpdate(
                     to: url,
                     with: excalidrawFile,
-                    didUpdate: didUpdate,
+                    newCheckpoint: newCheckpoint,
                     suppressCheckpoint: suppressCheckpoint,
                     logger: logger
                 )
 
-            case .collaborationFile(let objectURI, let fileName, let didUpdate):
+            case .collaborationFile(let objectURI, let fileName, let newCheckpoint):
                 guard let collaborationFileObjectID = managedObjectID(for: objectURI),
                       let content = excalidrawFile.content else {
                     throw AppError.fileError(.notFound)
@@ -1140,26 +1341,77 @@ final class FileState: ObservableObject {
                 try await PersistenceController.shared.collaborationFileRepository.updateElements(
                     collaborationFileObjectID: collaborationFileObjectID,
                     content: content,
-                    newCheckpoint: !didUpdate
+                    newCheckpoint: newCheckpoint
                 )
                 logger.debug("Background captured collaboration file update saved: \(fileName)")
 
-            case .cloudStorageFile(let reference):
-                var file = excalidrawFile
-                try file.updateContentFilesFromFiles()
-                guard let content = file.content else {
-                    throw AppError.fileError(.notFound)
-                }
-                let needsUpload = try await CloudStorageDocumentStore.shared.saveToLocalCache(
-                    content,
-                    for: reference
+            case .cloudStorageFile(let reference, let newCheckpoint, let suppressCheckpoint):
+                try await saveCloudStorageCanvasUpdate(
+                    reference: reference,
+                    excalidrawFile: excalidrawFile,
+                    newCheckpoint: newCheckpoint,
+                    suppressCheckpoint: suppressCheckpoint,
+                    logger: logger
                 )
-                if needsUpload {
-                    await CloudStorageSyncService.shared.enqueueUpload(for: reference)
-                }
-                logger.debug(
-                    "Background captured cloud storage file update cached: \(reference.lastKnownName)"
+                logger.debug("Background captured cloud storage file update cached: \(reference.lastKnownName)")
+        }
+    }
+
+    private static func saveCloudStorageCanvasUpdate(
+        reference: CloudStorageDocumentReference,
+        excalidrawFile: ExcalidrawFile,
+        newCheckpoint: Bool,
+        suppressCheckpoint: Bool,
+        logger: Logger
+    ) async throws {
+        var file = excalidrawFile
+        try file.updateContentFilesFromFiles()
+        guard let content = file.content else {
+            throw AppError.fileError(.notFound)
+        }
+
+        try await saveCloudStorageCanvasContent(
+            reference: reference,
+            content: content,
+            newCheckpoint: newCheckpoint,
+            suppressCheckpoint: suppressCheckpoint,
+            logger: logger
+        )
+    }
+
+    private static func saveCloudStorageCanvasContent(
+        reference: CloudStorageDocumentReference,
+        content: Data,
+        newCheckpoint: Bool,
+        suppressCheckpoint: Bool,
+        logger: Logger
+    ) async throws {
+        try await stageCloudStorageUpload(content, for: reference)
+        if !suppressCheckpoint {
+            do {
+                try await CloudStorageCheckpointStore.recordUserEdit(
+                    content: content,
+                    for: reference,
+                    newCheckpoint: newCheckpoint
                 )
+            } catch {
+                logger.warning(
+                    "Failed to record cloud checkpoint for \(reference.lastKnownName): \(error.localizedDescription)"
+                )
+            }
+        }
+    }
+
+    private static func stageCloudStorageUpload(
+        _ content: Data,
+        for reference: CloudStorageDocumentReference
+    ) async throws {
+        let needsUpload = try await CloudStorageDocumentStore.shared.saveToLocalCache(
+            content,
+            for: reference
+        )
+        if needsUpload {
+            await CloudStorageSyncService.shared.enqueueUpload(for: reference)
         }
     }
 
@@ -1189,14 +1441,8 @@ final class FileState: ObservableObject {
                 case .collaborationFile:
                     break
 
-                case .cloudStorageFile(let reference):
-                    let needsUpload = try await CloudStorageDocumentStore.shared.saveToLocalCache(
-                        content,
-                        for: reference
-                    )
-                    if needsUpload {
-                        await CloudStorageSyncService.shared.enqueueUpload(for: reference)
-                    }
+                case .cloudStorageFile(let reference, _, _):
+                    try await stageCloudStorageUpload(content, for: reference)
                     logger.debug(
                         "Background appState-only cloud storage file update cached: \(reference.lastKnownName)"
                     )
@@ -1209,7 +1455,7 @@ final class FileState: ObservableObject {
     private static func saveCapturedLocalCanvasUpdate(
         to url: URL,
         with file: ExcalidrawFile,
-        didUpdate: Bool,
+        newCheckpoint: Bool,
         suppressCheckpoint: Bool,
         logger: Logger
     ) async throws {
@@ -1227,39 +1473,11 @@ final class FileState: ObservableObject {
             return
         }
 
-        let context = PersistenceController.shared.newTaskContext()
-        try await context.perform {
-            let fetchRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
-            fetchRequest.predicate = NSPredicate(
-                format: "url = %@ AND (source == nil OR source == %@)",
-                url as NSURL,
-                FileCheckpointSource.user.rawValue
-            )
-            fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \LocalFileCheckpoint.updatedAt, ascending: false)]
-            let localFileCheckpoints = try context.fetch(fetchRequest)
-
-            if didUpdate,
-               let firstCheckpoint = localFileCheckpoints.first,
-               !UserCheckpointRolloverPolicy.shouldCreateNewCheckpoint(latestUpdatedAt: firstCheckpoint.updatedAt) {
-                firstCheckpoint.content = file.content
-                if firstCheckpoint.source == nil {
-                    firstCheckpoint.source = FileCheckpointSource.user.rawValue
-                }
-            } else {
-                let localFileCheckpoint = LocalFileCheckpoint(context: context)
-                localFileCheckpoint.id = UUID()
-                localFileCheckpoint.url = url
-                localFileCheckpoint.updatedAt = Date()
-                localFileCheckpoint.content = file.content
-                localFileCheckpoint.source = FileCheckpointSource.user.rawValue
-                context.insert(localFileCheckpoint)
-
-                if localFileCheckpoints.count > 50, let last = localFileCheckpoints.last {
-                    context.delete(last)
-                }
-            }
-            try context.save()
-        }
+        try await LocalFileCheckpointStore.recordUserEdit(
+            content: data,
+            for: url,
+            newCheckpoint: newCheckpoint
+        )
 
         logger.debug("Background captured local file update saved: \(url.lastPathComponent)")
     }
@@ -1317,8 +1535,8 @@ final class FileState: ObservableObject {
             case .cloudStorageFile(let reference):
                 Task {
                     do {
-                        try await CloudStorageDocumentStore.shared.save(content, to: reference)
-                        self.logger.debug("AppState-only cloud storage file update saved")
+                        try await Self.stageCloudStorageUpload(content, for: reference)
+                        self.logger.debug("AppState-only cloud storage file update cached")
                     } catch {
                         self.logger.error(
                             "Failed to update appState-only cloud storage file \(reference.lastKnownName): \(error)"
@@ -1397,7 +1615,6 @@ final class FileState: ObservableObject {
     /// Remember to call `startAccessingSecurityScopedResource` before calling this function.
     func updateLocalFile(to url: URL, with excalidrawFile: ExcalidrawFile, context: NSManagedObjectContext) async throws {
         guard shouldAcceptCanvasUpdate(fileID: url.absoluteString, label: url.lastPathComponent) else { return }
-        let didUpdateFile = didUpdateFile
         var excalidrawFile = excalidrawFile
         try excalidrawFile.updateContentFilesFromFiles()
 
@@ -1420,45 +1637,15 @@ final class FileState: ObservableObject {
             return
         }
 
-        try await context.perform {
-            // Match user-source rows or legacy (nil source) — AI-tagged
-            // rows are immutable snapshots.
-            let fetchRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
-            fetchRequest.predicate = NSPredicate(
-                format: "url = %@ AND (source == nil OR source == %@)",
-                url as NSURL,
-                FileCheckpointSource.user.rawValue
-            )
-            fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \LocalFileCheckpoint.updatedAt, ascending: false)]
-            let localFileCheckpoints = try context.fetch(fetchRequest)
-
-            if didUpdateFile,
-               let firstCheckpoint = localFileCheckpoints.first,
-               !UserCheckpointRolloverPolicy.shouldCreateNewCheckpoint(latestUpdatedAt: firstCheckpoint.updatedAt) {
-                firstCheckpoint.content = excalidrawFile.content
-                // Backfill on legacy rows so future predicates needn't OR-nil.
-                if firstCheckpoint.source == nil {
-                    firstCheckpoint.source = FileCheckpointSource.user.rawValue
-                }
-            } else {
-                let localFileCheckpoint = LocalFileCheckpoint(context: context)
-                localFileCheckpoint.id = UUID()
-                localFileCheckpoint.url = url
-                localFileCheckpoint.updatedAt = Date()
-                localFileCheckpoint.content = excalidrawFile.content
-                localFileCheckpoint.source = FileCheckpointSource.user.rawValue
-
-                context.insert(localFileCheckpoint)
-
-                // Cap retention at 50 *user* rows — AI rows live outside
-                // this budget so a long AI conversation doesn't push out
-                // a user's normal edit history.
-                if localFileCheckpoints.count > 50, let last = localFileCheckpoints.last {
-                    context.delete(last)
-                }
-            }
-            try context.save()
+        let newCheckpoint = await MainActor.run {
+            self.shouldCreateUserCheckpoint(for: .localFile(url))
         }
+
+        try await LocalFileCheckpointStore.recordUserEdit(
+            content: data,
+            for: url,
+            newCheckpoint: newCheckpoint
+        )
 
         await MainActor.run {
             self.didUpdateFile = true
@@ -1482,10 +1669,11 @@ final class FileState: ObservableObject {
     }
     
     
+    @MainActor
     func updateCollaborationFile(_ file: CollaborationFile, with excalidrawFile: ExcalidrawFile) {
         guard !shouldIgnoreUpdate else { return }
         let activeFile = ActiveFile.collaborationFile(file)
-        let didUpdateFile = didUpdateFileState[activeFile] ?? false
+        let newCheckpoint = shouldCreateUserCheckpoint(for: activeFile)
         let fileObjectID = file.objectID
         self.didUpdateFileState[activeFile] = true
 
@@ -1516,7 +1704,7 @@ final class FileState: ObservableObject {
                 try await PersistenceController.shared.collaborationFileRepository.updateElements(
                     collaborationFileObjectID: fileObjectID,
                     content: content,
-                    newCheckpoint: !didUpdateFile
+                    newCheckpoint: newCheckpoint
                 )
                 
                 await MainActor.run {

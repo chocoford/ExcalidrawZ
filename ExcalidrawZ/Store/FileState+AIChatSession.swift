@@ -196,6 +196,7 @@ extension FileState {
     /// Force-write a checkpoint of the file's current on-disk content
     /// with explicit metadata. Bypasses the user-edit "first creates,
     /// subsequent updates" semantics — every call creates a fresh row.
+    @MainActor
     private func snapshot(
         file: ActiveFile,
         source: FileCheckpointSource,
@@ -220,7 +221,19 @@ extension FileState {
                 )
                 return RecordedAICheckpoint(id: checkpointID, kind: .local)
 
-            case .temporaryFile, .collaborationFile, .cloudStorageFile:
+            case .cloudStorageFile(let reference):
+                let content = try await currentCloudStorageSnapshot(
+                    reference: reference
+                )
+                let checkpointID = try await CloudStorageCheckpointStore.record(
+                    content: content,
+                    for: reference,
+                    source: source,
+                    description: description
+                )
+                return RecordedAICheckpoint(id: checkpointID, kind: .local)
+
+            case .temporaryFile, .collaborationFile:
                 // Temporary files don't have history at all; collaboration
                 // files have shared history that's a different beast (and
                 // out of scope for this iteration). Skip silently — the
@@ -268,7 +281,13 @@ extension FileState {
                     excludingCheckpointID: checkpointID
                 )
 
-            case .temporaryFile, .collaborationFile, .cloudStorageFile:
+            case .cloudStorageFile(let reference):
+                return try await latestReusableLocalCheckpoint(
+                    url: reference.checkpointURL,
+                    excludingCheckpointID: checkpointID
+                )
+
+            case .temporaryFile, .collaborationFile:
                 return nil
         }
     }
@@ -291,10 +310,38 @@ extension FileState {
                     checkpointID: checkpoint.id
                 )
 
-            case (.temporaryFile, _), (.collaborationFile, _), (.cloudStorageFile, _),
-                    (.file, .local), (.localFile, .file):
+            case (.cloudStorageFile(let reference), .local):
+                try await deleteLocalCheckpoint(
+                    url: reference.checkpointURL,
+                    checkpointID: checkpoint.id
+                )
+
+            case (.temporaryFile, _), (.collaborationFile, _),
+                    (.file, .local), (.localFile, .file), (.cloudStorageFile, .file):
                 return
         }
+    }
+
+    @MainActor
+    private func currentCloudStorageSnapshot(
+        reference: CloudStorageDocumentReference
+    ) async throws -> Data {
+        if currentActiveFile?.id == ActiveFile.cloudStorageFile(reference).id,
+           let liveContent = try await CurrentExcalidrawDataResolver.resolve(
+                fileState: self,
+                canvasTarget: .normal
+           ) {
+            return liveContent
+        }
+        if let cachedContent = try CloudStorageDocumentStore.shared.cachedContent(
+            for: reference
+        ) {
+            return cachedContent
+        }
+        return try await CloudStorageDocumentStore.shared.content(
+            for: reference,
+            checkingRemoteRevision: false
+        )
     }
 
     private func deleteFileCheckpoint(

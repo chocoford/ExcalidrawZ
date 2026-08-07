@@ -227,7 +227,7 @@ struct ExcalidrawFileCover: View {
     var fileID: String {
         switch source {
             case .activeFile(let file):
-                return file.id
+                return file.canonicalID
             case .excalidrawFile(let file):
                 return file.id
         }

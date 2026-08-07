@@ -34,6 +34,50 @@ final class CloudStorageDocumentStore: ObservableObject {
         var items: [CloudStorageItem]
         var cachedRevisions: [CloudStorageItemID: String]
         var dirtyItemIDs: Set<CloudStorageItemID>
+        var metadataOperations: [CloudStorageMetadataOperation]
+
+        private enum CodingKeys: String, CodingKey {
+            case cursor
+            case items
+            case cachedRevisions
+            case dirtyItemIDs
+            case metadataOperations
+        }
+
+        init(
+            cursor: CloudStorageChangeCursor?,
+            items: [CloudStorageItem],
+            cachedRevisions: [CloudStorageItemID: String],
+            dirtyItemIDs: Set<CloudStorageItemID>,
+            metadataOperations: [CloudStorageMetadataOperation] = []
+        ) {
+            self.cursor = cursor
+            self.items = items
+            self.cachedRevisions = cachedRevisions
+            self.dirtyItemIDs = dirtyItemIDs
+            self.metadataOperations = metadataOperations
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            cursor = try container.decodeIfPresent(
+                CloudStorageChangeCursor.self,
+                forKey: .cursor
+            )
+            items = try container.decode([CloudStorageItem].self, forKey: .items)
+            cachedRevisions = try container.decode(
+                [CloudStorageItemID: String].self,
+                forKey: .cachedRevisions
+            )
+            dirtyItemIDs = try container.decode(
+                Set<CloudStorageItemID>.self,
+                forKey: .dirtyItemIDs
+            )
+            metadataOperations = try container.decodeIfPresent(
+                [CloudStorageMetadataOperation].self,
+                forKey: .metadataOperations
+            ) ?? []
+        }
     }
 
     private struct MetadataMutationKey: Hashable {
@@ -56,6 +100,7 @@ final class CloudStorageDocumentStore: ObservableObject {
     private var sessionsByLocationID: [UUID: any CloudStorageSession] = [:]
     private var refreshTasksByLocationID: [UUID: Task<Bool, Never>] = [:]
     private var refreshTaskIDsByLocationID: [UUID: UUID] = [:]
+    private var automaticRetryDatesByLocationID: [UUID: Date] = [:]
     private var saveTasks: [String: Task<Void, Error>] = [:]
     private var saveTaskIDs: [String: UUID] = [:]
     private var localContentGenerations: [String: UInt64] = [:]
@@ -65,7 +110,7 @@ final class CloudStorageDocumentStore: ObservableObject {
     private var nextContentSynchronizationSequence = 0
     private var retryUploadTasks: [String: Task<Void, Never>] = [:]
     private var retryUploadTaskIDs: [String: UUID] = [:]
-    private var metadataMutationIDs: [MetadataMutationKey: UUID] = [:]
+    private var replayingMetadataOperationIDs: Set<UUID> = []
     private var remoteContentMutationGeneration: UInt64 = 0
     private var remoteContentMutationGenerationByItem: [MetadataMutationKey: UInt64] = [:]
     private var resolvingConflictDocumentIDs: Set<String> = []
@@ -255,12 +300,34 @@ final class CloudStorageDocumentStore: ObservableObject {
         return CloudStorageFolderReference(location: location, item: parent)
     }
 
+    /// Returns the most specific folder currently available for navigation.
+    /// The metadata index may not contain a WebDAV document's parent yet, so
+    /// fall back to its linked root instead of leaving Sidebar navigation in
+    /// the previously selected location.
+    func bestKnownParentFolder(
+        for document: CloudStorageDocumentReference
+    ) -> CloudStorageFolderReference? {
+        if let parent = parentFolder(for: document) {
+            return parent
+        }
+        guard let location = CloudStorageConnectionStore.shared.locations.first(where: {
+            $0.id == document.locationID
+        }) else {
+            return nil
+        }
+        return .root(of: location)
+    }
+
     func isRefreshing(_ location: CloudStorageLocation) -> Bool {
         refreshingLocationIDs.contains(location.id)
     }
 
     func errorMessage(for location: CloudStorageLocation) -> String? {
         errorsByLocationID[location.id]
+    }
+
+    func automaticRetryDate(for locationID: UUID) -> Date? {
+        automaticRetryDatesByLocationID[locationID]
     }
 
     // MARK: - Synchronization State
@@ -296,13 +363,29 @@ final class CloudStorageDocumentStore: ObservableObject {
             if documentState.isActivelySynchronizing {
                 folderState = .synchronizing
             } else if documentState == .queued {
-                folderState = .queued
+                folderState = .queued(
+                    pendingSyncDirection(for: reference)
+                )
             } else {
                 continue
             }
 
             propagateFolderState(
                 folderState,
+                from: folderID,
+                rootID: location.rootItemID,
+                parentIDByFolderID: parentIDByFolderID,
+                states: &states
+            )
+        }
+
+        for operation in persistedStates[location.id]?.metadataOperations ?? [] {
+            let operationItem = items[operation.itemID]
+            guard let folderID = operationItem?.kind == .folder
+                ? operationItem?.id
+                : operation.parentID else { continue }
+            propagateFolderState(
+                .queued(.upload),
                 from: folderID,
                 rootID: location.rootItemID,
                 parentIDByFolderID: parentIDByFolderID,
@@ -322,6 +405,20 @@ final class CloudStorageDocumentStore: ObservableObject {
         return states
     }
 
+    func pendingSyncDirection(
+        for reference: CloudStorageDocumentReference
+    ) -> CloudStoragePendingSyncDirection {
+        guard let state = persistedStates[reference.locationID] else {
+            return .download
+        }
+        let hasPendingUpload = state.dirtyItemIDs.contains(reference.itemID)
+            || state.metadataOperations.contains { operation in
+                operation.itemID == reference.itemID
+                    || operation.parentID == reference.itemID
+            }
+        return hasPendingUpload ? .upload : .download
+    }
+
     func syncState(
         for reference: CloudStorageDocumentReference
     ) -> CloudStorageDocumentSyncState {
@@ -329,8 +426,17 @@ final class CloudStorageDocumentStore: ObservableObject {
             return state
         }
 
+        if reference.itemID.isPendingLocalID {
+            return .local
+        }
+
         guard let persistedState = persistedStates[reference.locationID] else {
             return .local
+        }
+        if persistedState.metadataOperations.contains(where: {
+            $0.itemID == reference.itemID
+        }) {
+            return .queued
         }
         if persistedState.dirtyItemIDs.contains(reference.itemID) {
             return .queued
@@ -394,6 +500,12 @@ final class CloudStorageDocumentStore: ObservableObject {
         defer { refreshingLocationIDs.remove(location.id) }
 
         do {
+            guard try await replayPendingMetadataOperations(
+                in: location,
+                connections: connections
+            ) else {
+                return false
+            }
             let session = try await resolvedSession(for: location, connections: connections)
             var state = persistedStates[location.id] ?? Self.emptyState
 
@@ -437,6 +549,7 @@ final class CloudStorageDocumentStore: ObservableObject {
 
             apply(state, to: location.id)
             try persist(state, for: location.id)
+            automaticRetryDatesByLocationID.removeValue(forKey: location.id)
             connections.clearAuthenticationRequirement(for: location)
             return true
         } catch is CancellationError {
@@ -445,8 +558,17 @@ final class CloudStorageDocumentStore: ObservableObject {
             if Self.isCancellationError(error) {
                 return false
             }
+            if case let CloudStorageError.rateLimited(retryAfter) = error {
+                automaticRetryDatesByLocationID[location.id] = Date().addingTimeInterval(
+                    max(retryAfter ?? 300, 60)
+                )
+            }
             connections.recordAccessFailure(error, for: location)
-            errorsByLocationID[location.id] = error.localizedDescription
+            if CloudStorageConnectivityMonitor.shared.status == .unavailable {
+                errorsByLocationID[location.id] = nil
+            } else {
+                errorsByLocationID[location.id] = error.localizedDescription
+            }
             logger.error("Failed to refresh cloud location \(location.displayName): \(error)")
             return false
         }
@@ -505,7 +627,7 @@ final class CloudStorageDocumentStore: ObservableObject {
             sequence: nextContentSynchronizationSequence
         )
         nextContentSynchronizationSequence &+= 1
-        setSyncState(.queued, for: reference)
+        setPendingSyncState(for: reference)
 
         if hasActiveSynchronization { return }
         processContentSynchronizationQueue()
@@ -547,6 +669,9 @@ final class CloudStorageDocumentStore: ObservableObject {
     }
 
     private func processContentSynchronizationQueue() {
+        guard CloudStorageConnectivityMonitor.shared.canAttemptNetworkRequests else {
+            return
+        }
         while contentSynchronizationTasks.count < maximumConcurrentContentSynchronizations {
             let activeBackgroundCount = activeContentSynchronizationPriorities.values.reduce(into: 0) {
                 if $1 == .background { $0 += 1 }
@@ -623,8 +748,14 @@ final class CloudStorageDocumentStore: ObservableObject {
         }
         let stagedSave = try stageLocalSave(data, for: reference)
         guard stagedSave.needsUpload else { return false }
-        setSyncState(.queued, for: reference)
+        setPendingSyncState(for: reference)
         return true
+    }
+
+    /// Resumes requests that were deliberately left queued while the device
+    /// had no usable network path.
+    func resumeQueuedContentSynchronizations() {
+        processContentSynchronizationQueue()
     }
 
     /// Reconciles the provider index with the device cache. Background scans
@@ -651,11 +782,16 @@ final class CloudStorageDocumentStore: ObservableObject {
                 lastKnownName: item.name,
                 lastKnownModifiedAt: item.modifiedAt
             )
-            guard !excludingDocumentIDs.contains(reference.id) else { continue }
-
             let cacheExists = fileManager.fileExists(
                 atPath: cachedDocumentURL(for: reference).path
             )
+
+            if state.metadataOperations.contains(where: {
+                $0.itemID == item.id
+            }) {
+                setPendingSyncState(for: reference)
+                continue
+            }
 
             if state.dirtyItemIDs.contains(item.id) {
                 scheduleContentSynchronization(
@@ -665,6 +801,8 @@ final class CloudStorageDocumentStore: ObservableObject {
                 )
                 continue
             }
+
+            guard !excludingDocumentIDs.contains(reference.id) else { continue }
 
             let cachedRevision = state.cachedRevisions[item.id]
             if !cacheExists || cachedRevision != item.revision {
@@ -688,6 +826,10 @@ final class CloudStorageDocumentStore: ObservableObject {
         guard !resolvingConflictDocumentIDs.contains(reference.id) else {
             return nil
         }
+        guard CloudStorageConnectivityMonitor.shared.canAttemptNetworkRequests else {
+            setPendingSyncState(for: reference)
+            return nil
+        }
         let connections = connections ?? .shared
         setSyncState(.checking, for: reference)
 
@@ -697,6 +839,13 @@ final class CloudStorageDocumentStore: ObservableObject {
             }
             ensureLocationStateLoaded(location.id)
             let state = persistedStates[location.id] ?? Self.emptyState
+
+            if state.metadataOperations.contains(where: {
+                $0.itemID == reference.itemID
+            }) {
+                setPendingSyncState(for: reference)
+                return nil
+            }
 
             if state.dirtyItemIDs.contains(reference.itemID) {
                 if case .conflict = syncStatesByDocumentID[reference.id] {
@@ -972,6 +1121,16 @@ final class CloudStorageDocumentStore: ObservableObject {
         let state = persistedStates[reference.locationID] ?? Self.emptyState
         let cacheURL = cachedDocumentURL(for: reference)
 
+        if state.metadataOperations.contains(where: {
+            $0.itemID == reference.itemID
+        }) {
+            setPendingSyncState(for: reference)
+            guard fileManager.fileExists(atPath: cacheURL.path) else {
+                throw CloudStorageError.itemNotFound(reference.itemID)
+            }
+            return try Data(contentsOf: cacheURL)
+        }
+
         if resolvingConflictDocumentIDs.contains(reference.id),
            fileManager.fileExists(atPath: cacheURL.path) {
             return try Data(contentsOf: cacheURL)
@@ -984,11 +1143,13 @@ final class CloudStorageDocumentStore: ObservableObject {
             }
             setSyncState(.queued, for: reference)
             let data = try Data(contentsOf: cacheURL)
-            retryDirtyUploadIfNeeded(
-                data,
-                reference: reference,
-                connections: connections
-            )
+            if CloudStorageConnectivityMonitor.shared.canAttemptNetworkRequests {
+                retryDirtyUploadIfNeeded(
+                    data,
+                    reference: reference,
+                    connections: connections
+                )
+            }
             return data
         }
 
@@ -997,6 +1158,17 @@ final class CloudStorageDocumentStore: ObservableObject {
            let indexedItem = state.items.first(where: { $0.id == reference.itemID }),
            state.cachedRevisions[reference.itemID] == indexedItem.revision {
             setSyncState(.synced(lastVerifiedAt: Date()), for: reference)
+            return try Data(contentsOf: cacheURL)
+        }
+
+        if !CloudStorageConnectivityMonitor.shared.canAttemptNetworkRequests {
+            setSyncState(.queued, for: reference)
+            guard fileManager.fileExists(atPath: cacheURL.path) else {
+                throw NSError(
+                    domain: NSURLErrorDomain,
+                    code: NSURLErrorNotConnectedToInternet
+                )
+            }
             return try Data(contentsOf: cacheURL)
         }
 
@@ -1018,10 +1190,16 @@ final class CloudStorageDocumentStore: ObservableObject {
         reference: CloudStorageDocumentReference,
         connections: CloudStorageConnectionStore
     ) {
+        if deferContentUploadUntilMetadataReplayIfNeeded(
+            for: reference,
+            connections: connections
+        ) {
+            return
+        }
         guard !resolvingConflictDocumentIDs.contains(reference.id),
               saveTasks[reference.id] == nil,
               retryUploadTasks[reference.id] == nil else { return }
-        setSyncState(.queued, for: reference)
+        setPendingSyncState(for: reference)
         let taskID = UUID()
         retryUploadTaskIDs[reference.id] = taskID
         retryUploadTasks[reference.id] = Task { @MainActor [weak self] in
@@ -1073,6 +1251,16 @@ final class CloudStorageDocumentStore: ObservableObject {
         }
         let stagedSave = try stageLocalSave(data, for: reference)
         guard stagedSave.needsUpload else { return }
+        if deferContentUploadUntilMetadataReplayIfNeeded(
+            for: reference,
+            connections: connections
+        ) {
+            return
+        }
+        guard CloudStorageConnectivityMonitor.shared.canAttemptNetworkRequests else {
+            setSyncState(.queued, for: reference)
+            return
+        }
         try await enqueueSave(
             data,
             to: reference,
@@ -1102,29 +1290,46 @@ final class CloudStorageDocumentStore: ObservableObject {
         connections: CloudStorageConnectionStore,
         localGeneration: UInt64
     ) async throws {
+        if deferContentUploadUntilMetadataReplayIfNeeded(
+            for: reference,
+            connections: connections
+        ) {
+            return
+        }
         let saveKey = reference.id
-        let previousTask = saveTasks[saveKey]
+        if let activeTask = saveTasks[saveKey] {
+            // The active worker reads the cache again after each upload. A
+            // newer staged generation therefore joins that worker instead of
+            // creating an upload for every intermediate canvas snapshot.
+            try await activeTask.value
+            return
+        }
+
         let taskID = UUID()
         let task = Task { @MainActor in
-            if let previousTask {
-                _ = try? await previousTask.value
-            }
-            try Task.checkCancellation()
             self.setSyncState(.uploading(progress: nil), for: reference)
             do {
-                let uploadedLatestContent = try await self.performSave(
-                    data,
-                    to: reference,
-                    connections: connections,
-                    localGeneration: localGeneration
-                )
-                if self.saveTaskIDs[saveKey] == taskID {
-                    self.setSyncState(
-                        uploadedLatestContent
-                            ? .synced(lastVerifiedAt: Date())
-                            : .queued,
-                        for: reference
+                var pendingData = data
+                var pendingGeneration = localGeneration
+                while true {
+                    try Task.checkCancellation()
+                    let uploadedLatestContent = try await self.performSave(
+                        pendingData,
+                        to: reference,
+                        connections: connections,
+                        localGeneration: pendingGeneration
                     )
+                    if uploadedLatestContent {
+                        break
+                    }
+
+                    pendingData = try Data(
+                        contentsOf: self.cachedDocumentURL(for: reference)
+                    )
+                    pendingGeneration = self.localContentGenerations[reference.id, default: 0]
+                }
+                if self.saveTaskIDs[saveKey] == taskID {
+                    self.setSyncState(.synced(lastVerifiedAt: Date()), for: reference)
                 }
             } catch {
                 if self.saveTaskIDs[saveKey] == taskID {
@@ -1133,7 +1338,7 @@ final class CloudStorageDocumentStore: ObservableObject {
                 throw error
             }
         }
-        setSyncState(previousTask == nil ? .uploading(progress: nil) : .queued, for: reference)
+        setSyncState(.uploading(progress: nil), for: reference)
         saveTasks[saveKey] = task
         saveTaskIDs[saveKey] = taskID
         defer {
@@ -1144,6 +1349,32 @@ final class CloudStorageDocumentStore: ObservableObject {
             }
         }
         try await task.value
+    }
+
+    /// A provider cannot address content by the provisional ID used by a
+    /// local-first create. The metadata outbox resolves that identity first;
+    /// its completion preserves dirty state and schedules the content upload.
+    private func deferContentUploadUntilMetadataReplayIfNeeded(
+        for reference: CloudStorageDocumentReference,
+        connections: CloudStorageConnectionStore
+    ) -> Bool {
+        ensureLocationStateLoaded(reference.locationID)
+        guard persistedStates[reference.locationID]?.metadataOperations.contains(where: {
+            $0.itemID == reference.itemID
+        }) == true else {
+            return false
+        }
+
+        setSyncState(.local, for: reference)
+        if let location = connections.locations.first(where: {
+            $0.id == reference.locationID
+        }) {
+            CloudStorageSyncService.shared.enqueueMetadataSynchronization(
+                for: location,
+                connections: connections
+            )
+        }
+        return true
     }
 
     // MARK: - Item Mutations
@@ -1171,21 +1402,10 @@ final class CloudStorageDocumentStore: ObservableObject {
             in: folder.itemID,
             locationID: folder.location.id
         )
-        let stagingURL = fileManager.temporaryDirectory
-            .appending(path: UUID().uuidString)
-            .appendingPathExtension("excalidraw")
-        defer { try? fileManager.removeItem(at: stagingURL) }
-        try content.write(to: stagingURL, options: .atomic)
-
-        let session = try await resolvedSession(
-            for: folder.location,
-            connections: connections
-        )
-        let item = try await session.createFile(
-            named: name,
-            in: folder.itemID,
-            contentsAt: stagingURL,
-            condition: .ifAbsent
+        let item = Self.pendingItem(
+            name: name,
+            kind: .file,
+            parentID: folder.itemID
         )
         let reference = CloudStorageDocumentReference(
             locationID: folder.location.id,
@@ -1197,11 +1417,15 @@ final class CloudStorageDocumentStore: ObservableObject {
         )
 
         var state = persistedStates[folder.location.id] ?? Self.emptyState
-        state.items.removeAll { $0.id == item.id }
         state.items.append(item)
-        if let revision = item.revision {
-            state.cachedRevisions[item.id] = revision
-        }
+        state.metadataOperations.append(
+            CloudStorageMetadataOperation(
+                kind: .createFile,
+                itemID: item.id,
+                parentID: folder.itemID,
+                name: name
+            )
+        )
         let cacheURL = cachedDocumentURL(for: reference)
         try fileManager.createDirectory(
             at: cacheURL.deletingLastPathComponent(),
@@ -1210,7 +1434,11 @@ final class CloudStorageDocumentStore: ObservableObject {
         try content.write(to: cacheURL, options: .atomic)
         apply(state, to: folder.location.id)
         try persist(state, for: folder.location.id)
-        setSyncState(.synced(lastVerifiedAt: Date()), for: reference)
+        setSyncState(.local, for: reference)
+        CloudStorageSyncService.shared.enqueueMetadataSynchronization(
+            for: folder.location,
+            connections: connections
+        )
         return reference
     }
 
@@ -1259,21 +1487,10 @@ final class CloudStorageDocumentStore: ObservableObject {
                 in: parentID,
                 locationID: location.id
             )
-            let stagingURL = fileManager.temporaryDirectory
-                .appending(path: UUID().uuidString)
-                .appendingPathExtension(pathExtension)
-            defer { try? fileManager.removeItem(at: stagingURL) }
-            try data.write(to: stagingURL, options: .atomic)
-
-            let session = try await resolvedSession(
-                for: location,
-                connections: connections
-            )
-            let item = try await session.createFile(
-                named: name,
-                in: parentID,
-                contentsAt: stagingURL,
-                condition: .ifAbsent
+            let item = Self.pendingItem(
+                name: name,
+                kind: .file,
+                parentID: parentID
             )
             let duplicate = CloudStorageDocumentReference(
                 locationID: location.id,
@@ -1285,11 +1502,15 @@ final class CloudStorageDocumentStore: ObservableObject {
             )
 
             var state = persistedStates[location.id] ?? Self.emptyState
-            state.items.removeAll { $0.id == item.id }
             state.items.append(item)
-            if let revision = item.revision {
-                state.cachedRevisions[item.id] = revision
-            }
+            state.metadataOperations.append(
+                CloudStorageMetadataOperation(
+                    kind: .createFile,
+                    itemID: item.id,
+                    parentID: parentID,
+                    name: name
+                )
+            )
             let cacheURL = cachedDocumentURL(for: duplicate)
             try fileManager.createDirectory(
                 at: cacheURL.deletingLastPathComponent(),
@@ -1298,8 +1519,17 @@ final class CloudStorageDocumentStore: ObservableObject {
             try data.write(to: cacheURL, options: .atomic)
             apply(state, to: location.id)
             try persist(state, for: location.id)
-            setSyncState(.synced(lastVerifiedAt: Date()), for: duplicate)
+            setSyncState(.local, for: duplicate)
             duplicates.append(duplicate)
+        }
+
+        for location in connections.locations where duplicates.contains(where: {
+            $0.locationID == location.id
+        }) {
+            CloudStorageSyncService.shared.enqueueMetadataSynchronization(
+                for: location,
+                connections: connections
+            )
         }
 
         return duplicates
@@ -1317,15 +1547,27 @@ final class CloudStorageDocumentStore: ObservableObject {
             in: capabilities(for: folder),
             operation: .createFolder
         )
-        let session = try await resolvedSession(
+        let item = Self.pendingItem(
+            name: name,
+            kind: .folder,
+            parentID: folder.itemID
+        )
+        var state = persistedStates[folder.location.id] ?? Self.emptyState
+        state.items.append(item)
+        state.metadataOperations.append(
+            CloudStorageMetadataOperation(
+                kind: .createFolder,
+                itemID: item.id,
+                parentID: folder.itemID,
+                name: name
+            )
+        )
+        apply(state, to: folder.location.id)
+        try persist(state, for: folder.location.id)
+        CloudStorageSyncService.shared.enqueueMetadataSynchronization(
             for: folder.location,
             connections: connections
         )
-        let item = try await session.createFolder(
-            named: name,
-            in: folder.itemID
-        )
-        upsert(item, in: folder.location.id)
         return CloudStorageFolderReference(location: folder.location, item: item)
     }
 
@@ -1373,55 +1615,13 @@ final class CloudStorageDocumentStore: ObservableObject {
         if hasConflictingSibling {
             throw CloudStorageError.itemNameAlreadyExists(name)
         }
-        let mutationID = beginOptimisticRename(
+        let latestItem = try enqueueMove(
             item,
-            to: name,
-            locationID: location.id
+            to: nil,
+            newName: name,
+            location: location
         )
-        setSyncState(.processing, for: reference)
-#if DEBUG
-        logger.debug(
-            "Renaming cloud document itemID=\(item.id.rawValue) name=\(item.name) -> \(name)"
-        )
-#endif
-        let updatedItem: CloudStorageItem
-        do {
-            let session = try await resolvedSession(
-                for: location,
-                connections: connections
-            )
-            updatedItem = try await session.moveItem(
-                item.id,
-                to: nil,
-                newName: name
-            )
-        } catch {
-            rollbackOptimisticRename(
-                item,
-                mutationID: mutationID,
-                locationID: location.id
-            )
-            setFailure(error, operation: .moveItem, for: reference)
-            logger.error(
-                "Failed to rename cloud document itemID=\(item.id.rawValue) name=\(item.name) -> \(name): \(error)"
-            )
-            throw error
-        }
-#if DEBUG
-        logger.debug(
-            "Renamed cloud document itemID=\(updatedItem.id.rawValue) providerName=\(updatedItem.name)"
-        )
-#endif
-        let didCompleteCurrentMutation = completeOptimisticRename(
-            updatedItem,
-            mutationID: mutationID,
-            locationID: location.id
-        )
-        if didCompleteCurrentMutation {
-            setSyncState(.synced(lastVerifiedAt: Date()), for: reference)
-        }
-        let latestItem = itemsByLocationID[location.id]?[reference.itemID] ?? updatedItem
-        return CloudStorageDocumentReference(
+        let updatedReference = CloudStorageDocumentReference(
             locationID: location.id,
             providerID: location.providerID,
             accountID: location.accountID,
@@ -1429,6 +1629,12 @@ final class CloudStorageDocumentStore: ObservableObject {
             lastKnownName: latestItem.name,
             lastKnownModifiedAt: latestItem.modifiedAt
         )
+        setSyncState(.queued, for: updatedReference)
+        CloudStorageSyncService.shared.enqueueMetadataSynchronization(
+            for: location,
+            connections: connections
+        )
+        return updatedReference
     }
 
     func renameFolder(
@@ -1456,36 +1662,16 @@ final class CloudStorageDocumentStore: ObservableObject {
         if hasConflictingSibling {
             throw CloudStorageError.itemNameAlreadyExists(name)
         }
-        let mutationID = beginOptimisticRename(
+        let latestItem = try enqueueMove(
             item,
-            to: name,
-            locationID: folder.location.id
+            to: nil,
+            newName: name,
+            location: folder.location
         )
-        let updatedItem: CloudStorageItem
-        do {
-            let session = try await resolvedSession(
-                for: folder.location,
-                connections: connections
-            )
-            updatedItem = try await session.moveItem(
-                folder.itemID,
-                to: nil,
-                newName: name
-            )
-        } catch {
-            rollbackOptimisticRename(
-                item,
-                mutationID: mutationID,
-                locationID: folder.location.id
-            )
-            throw error
-        }
-        _ = completeOptimisticRename(
-            updatedItem,
-            mutationID: mutationID,
-            locationID: folder.location.id
+        CloudStorageSyncService.shared.enqueueMetadataSynchronization(
+            for: folder.location,
+            connections: connections
         )
-        let latestItem = itemsByLocationID[folder.location.id]?[folder.itemID] ?? updatedItem
         return CloudStorageFolderReference(location: folder.location, item: latestItem)
     }
 
@@ -1530,30 +1716,54 @@ final class CloudStorageDocumentStore: ObservableObject {
     func removeCachedState(for locationID: UUID) {
         refreshTasksByLocationID.removeValue(forKey: locationID)?.cancel()
         refreshTaskIDsByLocationID.removeValue(forKey: locationID)
-        let locationMarker = ":\(locationID.uuidString):"
-        for (key, task) in contentSynchronizationTasks where key.contains(locationMarker) {
-            task.cancel()
+
+        var documentIDs = Set(syncStatesByDocumentID.keys)
+        documentIDs.formUnion(localContentGenerations.keys)
+        documentIDs.formUnion(saveTasks.keys)
+        documentIDs.formUnion(saveTaskIDs.keys)
+        documentIDs.formUnion(retryUploadTasks.keys)
+        documentIDs.formUnion(retryUploadTaskIDs.keys)
+        documentIDs.formUnion(contentSynchronizationTasks.keys)
+        documentIDs.formUnion(contentSynchronizationQueue.keys)
+        documentIDs.formUnion(activeContentSynchronizationPriorities.keys)
+        documentIDs.formUnion(resolvingConflictDocumentIDs)
+        documentIDs = documentIDs.filter {
+            documentIDBelongsToLocation($0, locationID: locationID)
         }
-        activeContentSynchronizationPriorities = activeContentSynchronizationPriorities.filter {
-            !$0.key.contains(locationMarker)
-        }
-        contentSynchronizationQueue = contentSynchronizationQueue.filter {
-            !$0.key.contains(locationMarker)
-        }
+        documentIDs.forEach(removeDocumentRuntimeState)
         loadedLocationIDs.remove(locationID)
         persistedStates.removeValue(forKey: locationID)
         itemsByLocationID.removeValue(forKey: locationID)
         metadataRevisionsByLocationID.removeValue(forKey: locationID)
         sessionsByLocationID.removeValue(forKey: locationID)
         errorsByLocationID.removeValue(forKey: locationID)
+        automaticRetryDatesByLocationID.removeValue(forKey: locationID)
         processingFolderIDsByLocationID.removeValue(forKey: locationID)
         remoteContentMutationGenerationByItem = remoteContentMutationGenerationByItem.filter {
             $0.key.locationID != locationID
         }
-        syncStatesByDocumentID = syncStatesByDocumentID.filter {
-            !$0.key.contains(locationMarker)
-        }
         try? fileManager.removeItem(at: locationDirectoryURL(locationID))
+        processContentSynchronizationQueue()
+    }
+
+    private func removeDocumentRuntimeState(_ documentID: String) {
+        saveTasks.removeValue(forKey: documentID)?.cancel()
+        saveTaskIDs.removeValue(forKey: documentID)
+        retryUploadTasks.removeValue(forKey: documentID)?.cancel()
+        retryUploadTaskIDs.removeValue(forKey: documentID)
+        contentSynchronizationTasks.removeValue(forKey: documentID)?.cancel()
+        contentSynchronizationQueue.removeValue(forKey: documentID)
+        activeContentSynchronizationPriorities.removeValue(forKey: documentID)
+        localContentGenerations.removeValue(forKey: documentID)
+        syncStatesByDocumentID.removeValue(forKey: documentID)
+        resolvingConflictDocumentIDs.remove(documentID)
+        FileStatusService.shared.clearStatus(fileID: documentID)
+    }
+
+    /// Forces the next operation to rebuild its authenticated provider
+    /// session while preserving the location index and document cache.
+    func invalidateSession(for locationID: UUID) {
+        sessionsByLocationID.removeValue(forKey: locationID)
     }
 
     // MARK: - Save Pipeline
@@ -1614,6 +1824,13 @@ final class CloudStorageDocumentStore: ObservableObject {
             contentsAt: uploadURL,
             condition: condition
         )
+        // Disconnecting a location cancels its workers. Some URLSession-backed
+        // providers can still return a response after cancellation, so prevent
+        // that result from rebuilding state which has already been removed.
+        try Task.checkCancellation()
+        guard connections.locations.contains(where: { $0.id == location.id }) else {
+            throw CancellationError()
+        }
         recordRemoteContentMutation(
             locationID: location.id,
             itemID: reference.itemID
@@ -1633,7 +1850,6 @@ final class CloudStorageDocumentStore: ObservableObject {
         }
         apply(state, to: location.id)
         try persist(state, for: location.id)
-        notifyDocumentContentDidChange(reference)
         logger.debug(
             "Uploaded cloud document \(displayName(for: reference)) revision=\(updatedItem.revision ?? "nil") uploadedLatestContent=\(uploadedLatestContent)"
         )
@@ -1683,29 +1899,41 @@ final class CloudStorageDocumentStore: ObservableObject {
         }
         ensureLocationStateLoaded(locationID)
         var state = persistedStates[locationID] ?? Self.emptyState
-        if let item = state.items.first(where: { $0.id == itemID }) {
-            try Self.require(.delete, for: item, operation: .deleteItem)
+        guard let item = state.items.first(where: { $0.id == itemID }) else {
+            throw CloudStorageError.itemNotFound(itemID)
         }
-        let revision = state.items.first(where: { $0.id == itemID })?.revision
-        let condition = revision.map(CloudStorageWriteCondition.ifUnmodified)
-            ?? .unconditional
-        if let cacheReference {
-            setSyncState(.processing, for: cacheReference)
-        }
-
-        do {
-            let session = try await resolvedSession(for: location, connections: connections)
-            try await session.deleteItem(itemID, condition: condition)
-        } catch {
-            if let cacheReference {
-                setFailure(error, operation: .deleteItem, for: cacheReference)
-            }
-            throw error
-        }
+        try Self.require(.delete, for: item, operation: .deleteItem)
 
         let descendantIDs = descendantItemIDs(of: itemID, in: state.items)
         let removedIDs = descendantIDs.union([itemID])
         let removedItems = state.items.filter { removedIDs.contains($0.id) }
+        let removedDocumentReferences = removedItems.compactMap { item in
+            item.kind == .file
+                ? Self.documentReference(for: item, in: location)
+                : nil
+        }
+        let wasCreatedLocally = state.metadataOperations.contains {
+            ($0.kind == .createFile || $0.kind == .createFolder)
+                && $0.itemID == itemID
+                && !replayingMetadataOperationIDs.contains($0.id)
+        }
+        state.metadataOperations.removeAll {
+            !replayingMetadataOperationIDs.contains($0.id)
+                && (
+                    removedIDs.contains($0.itemID)
+                        || $0.parentID.map(removedIDs.contains) == true
+                )
+        }
+        if !wasCreatedLocally {
+            state.metadataOperations.append(
+                CloudStorageMetadataOperation(
+                    kind: .deleteItem,
+                    itemID: itemID,
+                    parentID: item.parentID,
+                    revision: item.revision
+                )
+            )
+        }
         state.items.removeAll { removedIDs.contains($0.id) }
         removedIDs.forEach {
             state.cachedRevisions.removeValue(forKey: $0)
@@ -1732,6 +1960,25 @@ final class CloudStorageDocumentStore: ObservableObject {
         }
         apply(state, to: locationID)
         try persist(state, for: locationID)
+        if !removedDocumentReferences.isEmpty {
+            do {
+                try await CloudStorageCheckpointStore.deleteCheckpoints(
+                    for: removedDocumentReferences
+                )
+            } catch {
+                logger.warning(
+                    "Failed to delete cloud document checkpoints: \(error)"
+                )
+            }
+            NotificationCenter.default.post(
+                name: .cloudStorageDocumentsDidDelete,
+                object: removedDocumentReferences
+            )
+        }
+        CloudStorageSyncService.shared.enqueueMetadataSynchronization(
+            for: location,
+            connections: connections
+        )
     }
 
     // MARK: - Remote Index Reconciliation
@@ -1773,9 +2020,7 @@ final class CloudStorageDocumentStore: ObservableObject {
         if startedWithInitialCursor,
            (state.cursor == nil || replacingExistingIndex) {
             let protectedItemIDs = state.dirtyItemIDs.union(
-                metadataMutationIDs.keys
-                    .filter { $0.locationID == location.id }
-                    .map(\.itemID)
+                state.metadataOperations.map(\.itemID)
             ).union(
                 itemIDsMutatedSince(
                     contentMutationGenerationAtStart,
@@ -1792,7 +2037,9 @@ final class CloudStorageDocumentStore: ObservableObject {
                         locationID: location.id,
                         itemID: item.id
                     )
-                    guard metadataMutationIDs[mutationKey] == nil,
+                    guard !state.metadataOperations.contains(where: {
+                        $0.itemID == item.id
+                    }),
                           !wasContentMutated(
                             mutationKey,
                             since: contentMutationGenerationAtStart
@@ -1816,7 +2063,9 @@ final class CloudStorageDocumentStore: ObservableObject {
                 locationID: location.id,
                 itemID: itemID
             )
-            guard metadataMutationIDs[mutationKey] == nil,
+            guard !state.metadataOperations.contains(where: {
+                $0.itemID == itemID
+            }),
                   !wasContentMutated(
                     mutationKey,
                     since: contentMutationGenerationAtStart
@@ -1829,6 +2078,10 @@ final class CloudStorageDocumentStore: ObservableObject {
                 state.dirtyItemIDs.remove(removedID)
             }
         }
+        state.items = Self.removingPendingDeletionTombstones(
+            from: state.items,
+            operations: state.metadataOperations
+        )
         if startedWithInitialCursor,
            (state.cursor == nil || replacingExistingIndex) {
             let retainedItemIDs = Set(state.items.map(\.id))
@@ -1899,9 +2152,7 @@ final class CloudStorageDocumentStore: ObservableObject {
         // their provider requests are still pending.
         let latestState = persistedStates[location.id] ?? existingState
         let protectedItemIDs = latestState.dirtyItemIDs.union(
-            metadataMutationIDs.keys
-                .filter { $0.locationID == location.id }
-                .map(\.itemID)
+            latestState.metadataOperations.map(\.itemID)
         ).union(
             itemIDsMutatedSince(
                 contentMutationGenerationAtStart,
@@ -1912,7 +2163,11 @@ final class CloudStorageDocumentStore: ObservableObject {
             protectedItemIDs.contains($0.id)
         }
         let protectedIDs = Set(protectedItems.map(\.id))
-        let mergedItems = items.filter { !protectedIDs.contains($0.id) }
+        let remoteItems = Self.removingPendingDeletionTombstones(
+            from: items,
+            operations: latestState.metadataOperations
+        )
+        let mergedItems = remoteItems.filter { !protectedIDs.contains($0.id) }
             + protectedItems
         let retainedItemIDs = Set(mergedItems.map(\.id))
 
@@ -1922,11 +2177,318 @@ final class CloudStorageDocumentStore: ObservableObject {
             cachedRevisions: latestState.cachedRevisions.filter {
                 retainedItemIDs.contains($0.key)
             },
-            dirtyItemIDs: latestState.dirtyItemIDs
+            dirtyItemIDs: latestState.dirtyItemIDs,
+            metadataOperations: latestState.metadataOperations
         )
     }
 
     // MARK: - Provider Sessions and Index Mutations
+
+    /// Replays local-first metadata mutations before accepting a newer remote
+    /// index. Returning false keeps the optimistic local index intact until a
+    /// later synchronization attempt can continue the queue.
+    private func replayPendingMetadataOperations(
+        in location: CloudStorageLocation,
+        connections: CloudStorageConnectionStore
+    ) async throws -> Bool {
+        ensureLocationStateLoaded(location.id)
+        guard CloudStorageConnectivityMonitor.shared.canAttemptNetworkRequests else {
+            return false
+        }
+        guard persistedStates[location.id]?.metadataOperations.isEmpty == false else {
+            return true
+        }
+
+        let session = try await resolvedSession(for: location, connections: connections)
+        while let operation = persistedStates[location.id]?.metadataOperations.first {
+            try Task.checkCancellation()
+            replayingMetadataOperationIDs.insert(operation.id)
+            let localItem = persistedStates[location.id]?.items.first {
+                $0.id == operation.itemID
+            }
+            let documentReference = localItem.flatMap { item in
+                item.kind == .file
+                    ? Self.documentReference(for: item, in: location)
+                    : nil
+            }
+            if let documentReference {
+                setSyncState(
+                    operation.kind == .createFile
+                        ? .uploading(progress: nil)
+                        : .processing,
+                    for: documentReference
+                )
+            }
+            let processingFolderID = localItem?.kind == .folder
+                ? localItem?.id
+                : operation.parentID ?? localItem?.parentID
+            if let processingFolderID {
+                processingFolderIDsByLocationID[location.id, default: []]
+                    .insert(processingFolderID)
+            }
+
+            do {
+                switch operation.kind {
+                    case .createFile:
+                        guard let localItem,
+                              let parentID = operation.parentID,
+                              let name = operation.name else {
+                            throw CloudStorageError.invalidProviderResponse(
+                                "A queued file creation is missing local metadata."
+                            )
+                        }
+                        let cacheURL = cachedDocumentURL(
+                            locationID: location.id,
+                            itemID: operation.itemID
+                        )
+                        guard fileManager.fileExists(atPath: cacheURL.path) else {
+                            throw CloudStorageError.itemNotFound(operation.itemID)
+                        }
+                        let localGeneration = localContentGenerations[
+                            documentReference?.id ?? "",
+                            default: 0
+                        ]
+                        let uploadURL = fileManager.temporaryDirectory
+                            .appending(path: UUID().uuidString)
+                            .appendingPathExtension(
+                                (name as NSString).pathExtension
+                            )
+                        defer { try? fileManager.removeItem(at: uploadURL) }
+                        try Data(contentsOf: cacheURL).write(
+                            to: uploadURL,
+                            options: .atomic
+                        )
+                        let remoteItem = try await session.createFile(
+                            named: name,
+                            in: parentID,
+                            contentsAt: uploadURL,
+                            condition: .ifAbsent
+                        )
+                        try await completeMetadataOperation(
+                            operation,
+                            replacing: localItem,
+                            with: remoteItem,
+                            location: location,
+                            uploadedLocalGeneration: localGeneration
+                        )
+
+                    case .createFolder:
+                        guard let localItem,
+                              let parentID = operation.parentID,
+                              let name = operation.name else {
+                            throw CloudStorageError.invalidProviderResponse(
+                                "A queued folder creation is missing local metadata."
+                            )
+                        }
+                        let remoteItem = try await session.createFolder(
+                            named: name,
+                            in: parentID
+                        )
+                        try await completeMetadataOperation(
+                            operation,
+                            replacing: localItem,
+                            with: remoteItem,
+                            location: location
+                        )
+
+                    case .moveItem:
+                        guard let localItem else {
+                            throw CloudStorageError.itemNotFound(operation.itemID)
+                        }
+                        let remoteItem = try await session.moveItem(
+                            operation.itemID,
+                            to: operation.parentID,
+                            newName: operation.name
+                        )
+                        try await completeMetadataOperation(
+                            operation,
+                            replacing: localItem,
+                            with: remoteItem,
+                            location: location
+                        )
+
+                    case .deleteItem:
+                        let condition = operation.revision.map(
+                            CloudStorageWriteCondition.ifUnmodified
+                        ) ?? .unconditional
+                        do {
+                            try await session.deleteItem(
+                                operation.itemID,
+                                condition: condition
+                            )
+                        } catch CloudStorageError.itemNotFound(_) {
+                            // The desired final state already exists remotely.
+                        }
+                        try removeMetadataOperation(
+                            operation.id,
+                            locationID: location.id
+                        )
+                }
+            } catch is CancellationError {
+                replayingMetadataOperationIDs.remove(operation.id)
+                clearMetadataProcessingState(
+                    processingFolderID,
+                    locationID: location.id
+                )
+                throw CancellationError()
+            } catch {
+                replayingMetadataOperationIDs.remove(operation.id)
+                clearMetadataProcessingState(
+                    processingFolderID,
+                    locationID: location.id
+                )
+                if let documentReference {
+                    setFailure(error, operation: operation.cloudOperation, for: documentReference)
+                }
+                if Self.shouldRetrySynchronization(after: error) {
+                    return false
+                }
+                connections.recordAccessFailure(error, for: location)
+                errorsByLocationID[location.id] = error.localizedDescription
+                return false
+            }
+
+            replayingMetadataOperationIDs.remove(operation.id)
+            clearMetadataProcessingState(
+                processingFolderID,
+                locationID: location.id
+            )
+        }
+        return true
+    }
+
+    private func enqueueMove(
+        _ item: CloudStorageItem,
+        to parentID: CloudStorageItemID?,
+        newName: String?,
+        location: CloudStorageLocation
+    ) throws -> CloudStorageItem {
+        var state = persistedStates[location.id] ?? Self.emptyState
+        let updatedItem = Self.moving(item, to: parentID, newName: newName)
+        state.items.removeAll { $0.id == item.id }
+        state.items.append(updatedItem)
+
+        if let createIndex = state.metadataOperations.firstIndex(where: {
+            ($0.kind == .createFile || $0.kind == .createFolder)
+                && $0.itemID == item.id
+                && !replayingMetadataOperationIDs.contains($0.id)
+        }) {
+            if let parentID {
+                state.metadataOperations[createIndex].parentID = parentID
+            }
+            if let newName {
+                state.metadataOperations[createIndex].name = newName
+            }
+        } else if let moveIndex = state.metadataOperations.lastIndex(where: {
+            $0.kind == .moveItem
+                && $0.itemID == item.id
+                && !replayingMetadataOperationIDs.contains($0.id)
+        }) {
+            if let parentID {
+                state.metadataOperations[moveIndex].parentID = parentID
+            }
+            if let newName {
+                state.metadataOperations[moveIndex].name = newName
+            }
+        } else {
+            state.metadataOperations.append(
+                CloudStorageMetadataOperation(
+                    kind: .moveItem,
+                    itemID: item.id,
+                    parentID: parentID,
+                    name: newName,
+                    revision: item.revision
+                )
+            )
+        }
+
+        apply(state, to: location.id)
+        try persist(state, for: location.id)
+        return updatedItem
+    }
+
+    private func completeMetadataOperation(
+        _ operation: CloudStorageMetadataOperation,
+        replacing localItem: CloudStorageItem,
+        with remoteItem: CloudStorageItem,
+        location: CloudStorageLocation,
+        uploadedLocalGeneration: UInt64? = nil
+    ) async throws {
+        let replacements = try migrateItemIdentities(
+            replacing: localItem,
+            with: remoteItem,
+            locationID: location.id,
+            removingMetadataOperationID: operation.id
+        )
+        var state = persistedStates[location.id] ?? Self.emptyState
+        if let uploadedLocalGeneration {
+            let reference = Self.documentReference(for: remoteItem, in: location)
+            if localContentGenerations[reference.id, default: 0] == uploadedLocalGeneration {
+                state.dirtyItemIDs.remove(remoteItem.id)
+            } else {
+                state.dirtyItemIDs.insert(remoteItem.id)
+            }
+            if let revision = remoteItem.revision {
+                state.cachedRevisions[remoteItem.id] = revision
+            }
+            apply(state, to: location.id)
+            try persist(state, for: location.id)
+        } else if operation.kind == .moveItem,
+                  remoteItem.kind == .file,
+                  fileManager.fileExists(
+                    atPath: cachedDocumentURL(
+                        locationID: location.id,
+                        itemID: remoteItem.id
+                    ).path
+                  ),
+                  let revision = remoteItem.revision {
+            // A provider may issue a new metadata revision for a rename or
+            // move even though file bytes did not change.
+            state.cachedRevisions[remoteItem.id] = revision
+            apply(state, to: location.id)
+            try persist(state, for: location.id)
+        }
+
+        let reference = Self.documentReference(for: remoteItem, in: location)
+        if remoteItem.kind == .file {
+            let persistedState = persistedStates[location.id]
+            let hasPendingLocalWork = persistedState?.dirtyItemIDs.contains(remoteItem.id) == true
+                || persistedState?.metadataOperations.contains(where: {
+                    $0.itemID == remoteItem.id
+                }) == true
+            if hasPendingLocalWork {
+                setSyncState(.queued, for: reference)
+            } else {
+                setSyncState(.synced(lastVerifiedAt: Date()), for: reference)
+            }
+        }
+        await notifyIdentityChange(
+            replacements: replacements,
+            location: location
+        )
+    }
+
+    private func removeMetadataOperation(
+        _ operationID: UUID,
+        locationID: UUID
+    ) throws {
+        var state = persistedStates[locationID] ?? Self.emptyState
+        state.metadataOperations.removeAll { $0.id == operationID }
+        apply(state, to: locationID)
+        try persist(state, for: locationID)
+    }
+
+    private func clearMetadataProcessingState(
+        _ folderID: CloudStorageItemID?,
+        locationID: UUID
+    ) {
+        if let folderID {
+            processingFolderIDsByLocationID[locationID]?.remove(folderID)
+        }
+        if processingFolderIDsByLocationID[locationID]?.isEmpty == true {
+            processingFolderIDsByLocationID.removeValue(forKey: locationID)
+        }
+    }
 
     private func resolvedSession(
         for location: CloudStorageLocation,
@@ -1995,49 +2557,154 @@ final class CloudStorageDocumentStore: ObservableObject {
         })
     }
 
-    private func beginOptimisticRename(
-        _ item: CloudStorageItem,
-        to name: String,
-        locationID: UUID
-    ) -> UUID {
-        let key = MetadataMutationKey(locationID: locationID, itemID: item.id)
-        let mutationID = UUID()
-        metadataMutationIDs[key] = mutationID
-        upsert(Self.renaming(item, to: name), in: locationID)
-        return mutationID
+    /// Some providers use the remote path as item identity. Moving a WebDAV
+    /// resource therefore changes the file ID, and moving a folder changes
+    /// every descendant ID. Keep the local index and document cache aligned
+    /// with that new identity before the next provider refresh arrives.
+    private func migrateItemIdentities(
+        replacing originalItem: CloudStorageItem,
+        with updatedItem: CloudStorageItem,
+        locationID: UUID,
+        removingMetadataOperationID: UUID? = nil
+    ) throws -> [CloudStorageItemID: CloudStorageItem] {
+        var state = persistedStates[locationID] ?? Self.emptyState
+        let oldPrefix = originalItem.id.rawValue
+        let newPrefix = updatedItem.id.rawValue
+        var replacements: [CloudStorageItemID: CloudStorageItemID] = [
+            originalItem.id: updatedItem.id,
+        ]
+
+        if originalItem.kind == .folder {
+            for existingItem in state.items where existingItem.id.rawValue.hasPrefix(oldPrefix) {
+                let suffix = existingItem.id.rawValue.dropFirst(oldPrefix.count)
+                replacements[existingItem.id] = CloudStorageItemID(
+                    rawValue: newPrefix + suffix
+                )
+            }
+        }
+
+        let hasFollowUpMutation = state.metadataOperations.contains {
+            $0.id != removingMetadataOperationID
+                && $0.itemID == originalItem.id
+        }
+
+        state.items = state.items.map { existingItem in
+            if existingItem.id == originalItem.id {
+                return hasFollowUpMutation
+                    ? Self.replacingItemIdentity(existingItem, using: replacements)
+                    : updatedItem
+            }
+            return Self.replacingItemIdentity(existingItem, using: replacements)
+        }
+        state.cachedRevisions = Dictionary(uniqueKeysWithValues: state.cachedRevisions.map { itemID, revision in
+            (replacements[itemID] ?? itemID, revision)
+        })
+        state.dirtyItemIDs = Set(state.dirtyItemIDs.map { replacements[$0] ?? $0 })
+        state.metadataOperations = state.metadataOperations
+            .filter { $0.id != removingMetadataOperationID }
+            .map { $0.replacingItemIDs(using: replacements) }
+
+        for (oldID, newID) in replacements where oldID != newID {
+            migrateCachedDocument(
+                from: oldID,
+                to: newID,
+                locationID: locationID
+            )
+            migrateDocumentRuntimeState(from: oldID, to: newID)
+
+            let oldMutationKey = MetadataMutationKey(locationID: locationID, itemID: oldID)
+            let newMutationKey = MetadataMutationKey(locationID: locationID, itemID: newID)
+            if let generation = remoteContentMutationGenerationByItem.removeValue(forKey: oldMutationKey) {
+                remoteContentMutationGenerationByItem[newMutationKey] = generation
+            }
+        }
+
+        apply(state, to: locationID)
+        try persist(state, for: locationID)
+        recordRemoteContentMutation(locationID: locationID, itemID: updatedItem.id)
+        return Dictionary(uniqueKeysWithValues: replacements.compactMap { oldID, newID in
+            state.items.first(where: { $0.id == newID }).map { (oldID, $0) }
+        })
     }
 
-    private func completeOptimisticRename(
+    private static func replacingItemIdentity(
         _ item: CloudStorageItem,
-        mutationID: UUID,
-        locationID: UUID
-    ) -> Bool {
-        let key = MetadataMutationKey(locationID: locationID, itemID: item.id)
-        guard metadataMutationIDs[key] == mutationID else { return false }
-        metadataMutationIDs.removeValue(forKey: key)
-        upsert(item, in: locationID)
-        return true
+        using replacements: [CloudStorageItemID: CloudStorageItemID]
+    ) -> CloudStorageItem {
+        let itemID = replacements[item.id] ?? item.id
+        let parentID = item.parentID.map { replacements[$0] ?? $0 }
+        let remoteURL = replacements[item.id].flatMap { URL(string: $0.rawValue) }
+            ?? item.remoteURL
+        guard itemID != item.id || parentID != item.parentID || remoteURL != item.remoteURL else {
+            return item
+        }
+        return CloudStorageItem(
+            id: itemID,
+            parentID: parentID,
+            name: item.name,
+            kind: item.kind,
+            contentType: item.contentType,
+            size: item.size,
+            createdAt: item.createdAt,
+            modifiedAt: item.modifiedAt,
+            remoteURL: remoteURL,
+            revision: item.revision,
+            capabilities: item.capabilities
+        )
     }
 
-    private func rollbackOptimisticRename(
-        _ item: CloudStorageItem,
-        mutationID: UUID,
+    private func migrateCachedDocument(
+        from oldID: CloudStorageItemID,
+        to newID: CloudStorageItemID,
         locationID: UUID
     ) {
-        let key = MetadataMutationKey(locationID: locationID, itemID: item.id)
-        guard metadataMutationIDs[key] == mutationID else { return }
-        metadataMutationIDs.removeValue(forKey: key)
-        upsert(item, in: locationID)
+        let oldURL = cachedDocumentURL(locationID: locationID, itemID: oldID)
+        guard fileManager.fileExists(atPath: oldURL.path) else { return }
+        let newURL = cachedDocumentURL(locationID: locationID, itemID: newID)
+        do {
+            try fileManager.createDirectory(
+                at: newURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try? fileManager.removeItem(at: newURL)
+            try fileManager.moveItem(at: oldURL, to: newURL)
+        } catch {
+            logger.warning(
+                "Unable to migrate cloud document cache after remote rename: \(error)"
+            )
+        }
     }
 
-    private static func renaming(
+    private func migrateDocumentRuntimeState(
+        from oldID: CloudStorageItemID,
+        to newID: CloudStorageItemID
+    ) {
+        let oldSuffix = ":\(oldID.rawValue)"
+        let matchingDocumentIDs = syncStatesByDocumentID.keys.filter {
+            $0.hasSuffix(oldSuffix)
+        }
+        for oldDocumentID in matchingDocumentIDs {
+            let prefix = oldDocumentID.dropLast(oldID.rawValue.count)
+            let newDocumentID = String(prefix) + newID.rawValue
+            if let syncState = syncStatesByDocumentID.removeValue(forKey: oldDocumentID) {
+                syncStatesByDocumentID[newDocumentID] = syncState
+            }
+            if let generation = localContentGenerations.removeValue(forKey: oldDocumentID) {
+                localContentGenerations[newDocumentID] = generation
+            }
+            FileStatusService.shared.clearStatus(fileID: oldDocumentID)
+        }
+    }
+
+    private static func moving(
         _ item: CloudStorageItem,
-        to name: String
+        to parentID: CloudStorageItemID?,
+        newName: String?
     ) -> CloudStorageItem {
         CloudStorageItem(
             id: item.id,
-            parentID: item.parentID,
-            name: name,
+            parentID: parentID ?? item.parentID,
+            name: newName ?? item.name,
             kind: item.kind,
             contentType: item.contentType,
             size: item.size,
@@ -2046,6 +2713,64 @@ final class CloudStorageDocumentStore: ObservableObject {
             remoteURL: item.remoteURL,
             revision: item.revision,
             capabilities: item.capabilities
+        )
+    }
+
+    private static func pendingItem(
+        name: String,
+        kind: CloudStorageItem.Kind,
+        parentID: CloudStorageItemID
+    ) -> CloudStorageItem {
+        let now = Date()
+        return CloudStorageItem(
+            id: .pendingLocalID(),
+            parentID: parentID,
+            name: name,
+            kind: kind,
+            contentType: nil,
+            size: nil,
+            createdAt: now,
+            modifiedAt: now,
+            remoteURL: nil,
+            revision: nil,
+            capabilities: kind == .folder ? .writableFolder : .writableFile
+        )
+    }
+
+    private static func documentReference(
+        for item: CloudStorageItem,
+        in location: CloudStorageLocation
+    ) -> CloudStorageDocumentReference {
+        CloudStorageDocumentReference(
+            locationID: location.id,
+            providerID: location.providerID,
+            accountID: location.accountID,
+            itemID: item.id,
+            lastKnownName: item.name,
+            lastKnownModifiedAt: item.modifiedAt
+        )
+    }
+
+    private func notifyIdentityChange(
+        replacements: [CloudStorageItemID: CloudStorageItem],
+        location: CloudStorageLocation
+    ) async {
+        let changedReplacements = replacements.filter { $0.key != $0.value.id }
+        guard !changedReplacements.isEmpty else { return }
+        let change = CloudStorageItemIdentityChange(
+            location: location,
+            replacements: changedReplacements
+        )
+        do {
+            try await CloudStorageCheckpointStore.migrateIdentities(change)
+        } catch {
+            logger.warning(
+                "Failed to migrate cloud document checkpoint identities: \(error)"
+            )
+        }
+        NotificationCenter.default.post(
+            name: .cloudStorageItemIdentityDidChange,
+            object: change
         )
     }
 
@@ -2159,6 +2884,8 @@ final class CloudStorageDocumentStore: ObservableObject {
         if let cloudError = error as? CloudStorageError,
            cloudError == .conflict {
             setSyncState(.conflict, for: reference)
+        } else if Self.shouldRetrySynchronization(after: error) {
+            setPendingSyncState(for: reference)
         } else {
             setSyncState(
                 .failed(operation: operation, message: error.localizedDescription),
@@ -2173,6 +2900,15 @@ final class CloudStorageDocumentStore: ObservableObject {
     ) {
         guard syncStatesByDocumentID[reference.id] != state else { return }
         syncStatesByDocumentID[reference.id] = state
+    }
+
+    private func setPendingSyncState(
+        for reference: CloudStorageDocumentReference
+    ) {
+        setSyncState(
+            reference.itemID.isPendingLocalID ? .local : .queued,
+            for: reference
+        )
     }
 
     private func notifyDocumentContentDidChange(
@@ -2244,9 +2980,19 @@ final class CloudStorageDocumentStore: ObservableObject {
     }
 
     private func cachedDocumentURL(for reference: CloudStorageDocumentReference) -> URL {
-        locationDirectoryURL(reference.locationID)
+        cachedDocumentURL(
+            locationID: reference.locationID,
+            itemID: reference.itemID
+        )
+    }
+
+    private func cachedDocumentURL(
+        locationID: UUID,
+        itemID: CloudStorageItemID
+    ) -> URL {
+        locationDirectoryURL(locationID)
             .appending(path: "Documents", directoryHint: .isDirectory)
-            .appending(path: Self.cacheFileName(for: reference.itemID))
+            .appending(path: Self.cacheFileName(for: itemID))
     }
 
     private func stateURL(_ locationID: UUID) -> URL {
@@ -2261,7 +3007,8 @@ final class CloudStorageDocumentStore: ObservableObject {
         cursor: nil,
         items: [],
         cachedRevisions: [:],
-        dirtyItemIDs: []
+        dirtyItemIDs: [],
+        metadataOperations: []
     )
 
     private static func shouldDisplay(_ item: CloudStorageItem) -> Bool {
@@ -2281,6 +3028,33 @@ final class CloudStorageDocumentStore: ObservableObject {
         }
     }
 
+    /// A complete provider listing can finish after a local-first delete was
+    /// staged. Keep that stale snapshot from resurrecting the deleted subtree
+    /// while its durable metadata operation is still pending.
+    private static func removingPendingDeletionTombstones(
+        from items: [CloudStorageItem],
+        operations: [CloudStorageMetadataOperation]
+    ) -> [CloudStorageItem] {
+        var removedIDs = Set(
+            operations.lazy
+                .filter { $0.kind == .deleteItem }
+                .map(\.itemID)
+        )
+        guard !removedIDs.isEmpty else { return items }
+
+        var didExpand = true
+        while didExpand {
+            didExpand = false
+            for item in items where !removedIDs.contains(item.id) {
+                guard let parentID = item.parentID,
+                      removedIDs.contains(parentID) else { continue }
+                removedIDs.insert(item.id)
+                didExpand = true
+            }
+        }
+        return items.filter { !removedIDs.contains($0.id) }
+    }
+
     private static func cacheFileName(for itemID: CloudStorageItemID) -> String {
         Data(itemID.rawValue.utf8)
             .base64EncodedString()
@@ -2289,10 +3063,47 @@ final class CloudStorageDocumentStore: ObservableObject {
             .replacingOccurrences(of: "=", with: "")
     }
 
+    private func documentIDBelongsToLocation(
+        _ documentID: String,
+        locationID: UUID
+    ) -> Bool {
+        documentID.contains(":\(locationID.uuidString):")
+    }
+
     private static func isCancellationError(_ error: Error) -> Bool {
         let error = error as NSError
         return error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled
     }
+
+    private static func shouldRetrySynchronization(after error: Error) -> Bool {
+        if let cloudError = error as? CloudStorageError,
+           case .rateLimited = cloudError {
+            return true
+        }
+
+        var currentError: NSError? = error as NSError
+        while let candidate = currentError {
+            if candidate.domain == NSURLErrorDomain,
+               retryableURLRequestErrorCodes.contains(candidate.code) {
+                return true
+            }
+            currentError = candidate.userInfo[NSUnderlyingErrorKey] as? NSError
+        }
+        return false
+    }
+
+    private static let retryableURLRequestErrorCodes: Set<Int> = [
+        NSURLErrorTimedOut,
+        NSURLErrorCannotFindHost,
+        NSURLErrorCannotConnectToHost,
+        NSURLErrorNetworkConnectionLost,
+        NSURLErrorDNSLookupFailed,
+        NSURLErrorNotConnectedToInternet,
+        NSURLErrorInternationalRoamingOff,
+        NSURLErrorCallIsActive,
+        NSURLErrorDataNotAllowed,
+        NSURLErrorCannotLoadFromNetwork,
+    ]
 
     private func propagateFolderState(
         _ state: CloudStorageFolderSyncState,
@@ -2305,7 +3116,7 @@ final class CloudStorageDocumentStore: ObservableObject {
         var visited = Set<CloudStorageItemID>()
         while visited.insert(currentFolderID).inserted {
             let currentState = states[currentFolderID, default: .idle]
-            if currentState != .synchronizing {
+            if Self.folderSyncStatePriority(state) > Self.folderSyncStatePriority(currentState) {
                 states[currentFolderID] = state
             }
             guard currentFolderID != rootID,
@@ -2313,6 +3124,21 @@ final class CloudStorageDocumentStore: ObservableObject {
                 break
             }
             currentFolderID = parentID
+        }
+    }
+
+    private static func folderSyncStatePriority(
+        _ state: CloudStorageFolderSyncState
+    ) -> Int {
+        switch state {
+            case .idle:
+                0
+            case .queued(.download):
+                1
+            case .queued(.upload):
+                2
+            case .synchronizing:
+                3
         }
     }
 

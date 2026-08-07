@@ -129,6 +129,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
     @State private var animateFlag: Bool = false
     @State private var transitionRevision: Int = 0
     @State private var phase: Phase = .idle
+    @State private var dismissingFileID: String?
     
     @State private var file: FileState.ActiveFile?
     
@@ -148,7 +149,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                 let fallbackDestinationAnchor = value[FileHomeItemTransitionPreferenceID.destination]
 
                 if let activeFile = file,// ?? fileState.currentActiveFile,
-                   let sAnchor: Anchor<CGRect> = value[FileHomeItemTransitionPreferenceID.source(for: activeFile.id)],
+                   let sAnchor: Anchor<CGRect> = value[FileHomeItemTransitionPreferenceID.source(for: activeFile.canonicalID)],
                    let dAnchor: Anchor<CGRect> = viewportDestinationAnchor ?? fallbackDestinationAnchor {
                     GeometryReader { geomerty in
                         FileHomeItemHeroLayer(
@@ -217,10 +218,11 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                     beginOpenTransition(for: newValue, revision: revision)
                 } else if oldValue != nil, newValue == nil {
                     // dismiss
+                    dismissingFileID = oldValue!.canonicalID
                     phase = .dismissing
                     self.animateFlag = true
-                    itemState.setSourceFileID(oldValue!.id)
-                    itemState.setShouldHideItem(oldValue!.id)
+                    itemState.setSourceFileID(oldValue!.canonicalID)
+                    itemState.setShouldHideItem(oldValue!.canonicalID)
                     state.canShowItemContainerView = true
                     self.show = true
                     
@@ -265,11 +267,12 @@ struct FileHomeItemTransitionModifier: ViewModifier {
         for file: FileState.ActiveFile,
         revision: Int
     ) {
+        completePendingFileCloseTransition()
         let animationDuration = fileState.consumeActiveFileOpenDurationOverride(for: file.id)
             ?? openDuration
         phase = .opening
         self.file = file
-        itemState.setSourceFileID(file.id)
+        itemState.setSourceFileID(file.canonicalID)
         itemState.setShouldHideItem(nil)
         state.canShowItemContainerView = true
         animateFlag = false
@@ -325,6 +328,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
     }
 
     private func completeDismissTransition() {
+        completePendingFileCloseTransition()
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
@@ -334,6 +338,12 @@ struct FileHomeItemTransitionModifier: ViewModifier {
             itemState.setSourceFileID(nil)
             phase = .idle
         }
+    }
+
+    private func completePendingFileCloseTransition() {
+        guard let dismissingFileID else { return }
+        fileState.completeActiveFileCloseTransition(fileID: dismissingFileID)
+        self.dismissingFileID = nil
     }
     
     // private func onCurrentFileChanged
@@ -369,7 +379,7 @@ struct FileHomeItemHeroLayer: View {
     }
     
     var cacheKey: String {
-        colorScheme == .light ? file.id + "_light" : file.id + "_dark"
+        colorScheme == .light ? file.canonicalID + "_light" : file.canonicalID + "_dark"
     }
 
     var lockState: FileContentLockState? {

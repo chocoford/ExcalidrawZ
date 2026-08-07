@@ -328,6 +328,11 @@ struct CloudStorageFolderFileHomeView: View {
         guard !references.isEmpty else { return }
         Task {
             do {
+                guard await fileState.closeActiveFileIfDeleting(
+                    anyOf: references
+                ) else {
+                    return
+                }
                 try await documentStore.deleteDocuments(
                     references,
                     connections: connections

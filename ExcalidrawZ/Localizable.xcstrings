@@ -346,6 +346,29 @@
         }
       }
     },
+    "cloudStorageStatusOffline": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "离线"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "離線"
+          }
+        }
+      }
+    },
     "cloudStorageStatusQueued": {
       "extractionState": "manual",
       "localizations": {
@@ -365,6 +388,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "等待同步…"
+          }
+        }
+      }
+    },
+    "cloudStorageStatusWaitingForConnection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for connection…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待网络连接…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待網路連線…"
           }
         }
       }

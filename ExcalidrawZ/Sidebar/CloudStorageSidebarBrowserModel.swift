@@ -144,12 +144,6 @@ final class CloudStorageSidebarBrowserModel: ObservableObject {
         return documentStore.errorMessage(for: location)
     }
 
-    func parentFolder(
-        for document: CloudStorageDocumentReference
-    ) -> CloudStorageFolderReference? {
-        documentStore.parentFolder(for: document)
-    }
-
     func isFolder(
         _ folderID: CloudStorageItemID,
         inPathTo target: CloudStorageFolderReference

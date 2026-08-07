@@ -13,7 +13,7 @@ import SFSafeSymbols
 private let fileCheckpointRowLogger = Logger(label: "FileCheckpointRowView")
 
 struct FileCheckpointRowView<Checkpoint: FileCheckpointRepresentable>: View {
-    var checkpoint: Checkpoint
+    @ObservedObject var checkpoint: Checkpoint
     var presentsDetail = true
     
     @State private var file: ExcalidrawFile?
@@ -162,7 +162,7 @@ private enum FileCheckpointPreviewMetrics {
 private struct FileCheckpointPreview<Checkpoint: FileCheckpointRepresentable>: View {
     @Environment(\.colorScheme) private var colorScheme
 
-    let checkpoint: Checkpoint
+    @ObservedObject var checkpoint: Checkpoint
 
     @State private var coverImage: Image?
 
@@ -170,6 +170,10 @@ private struct FileCheckpointPreview<Checkpoint: FileCheckpointRepresentable>: V
 
     private var previewID: String {
         FileCoverCacheCoordinator.checkpointPreviewID(for: checkpoint)
+    }
+
+    private var previewLoadID: String {
+        "\(previewID):\(colorScheme == .dark ? "dark" : "light")"
     }
 
     var body: some View {
@@ -197,10 +201,8 @@ private struct FileCheckpointPreview<Checkpoint: FileCheckpointRepresentable>: V
             RoundedRectangle(cornerRadius: FileCheckpointPreviewMetrics.cornerRadius, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
         }
-        .onAppear {
-            updateCoverFromCache()
-        }
-        .watch(value: colorScheme) { _ in
+        .task(id: previewLoadID, priority: .background) {
+            coverImage = nil
             updateCoverFromCache()
         }
         .onReceive(

@@ -9,11 +9,28 @@ import AppKit
 #endif
 
 struct LinkedStorageSidebarSection: View {
+    private enum SheetRoute: Identifiable {
+        case serverCredentials(
+            CloudStorageProviderDescriptor,
+            reconnecting: CloudStorageLocation?
+        )
+        case folderPicker(CloudStorageFolderPickerContext)
+
+        var id: String {
+            switch self {
+                case .serverCredentials(let descriptor, let location):
+                    "credentials:\(descriptor.id.rawValue):\(location?.id.uuidString ?? "new")"
+                case .folderPicker(let context):
+                    "folder-picker:\(context.id.uuidString)"
+            }
+        }
+    }
+
     @Environment(\.alertToast) private var alertToast
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @AppStorage("ShowLinkedStorageEmptyPlaceholder") private var showEmptyPlaceholder = true
     @StateObject private var connections = CloudStorageConnectionStore.shared
-    @State private var pickerContext: CloudStorageFolderPickerContext?
+    @State private var sheetRoute: SheetRoute?
     @State private var preparingProviderID: CloudStorageProviderID?
     @State private var isImportLocalFolderDialogPresented = false
     @State private var isHovered = false
@@ -45,7 +62,13 @@ struct LinkedStorageSidebarSection: View {
                         location: location,
                         connections: connections
                     ) {
-                        CloudStorageProviderIcon(providerID: location.providerID, size: 14)
+                        CloudStorageProviderIcon(
+                            providerID: location.providerID,
+                            size: 18,
+                            accountDisplayName: connections.account(for: location)?.displayName
+                        )
+                    } onReconnect: {
+                        reconnect(location)
                     }
                 }
 
@@ -67,13 +90,42 @@ struct LinkedStorageSidebarSection: View {
             .onHover { isHovered = $0 }
             .animation(.smooth, value: showEmptyPlaceholder)
         }
-        .sheet(item: $pickerContext) { context in
-            CloudStorageFolderPicker(context: context) { folder in
-                connections.saveLocation(
-                    providerID: context.providerID,
-                    account: context.account,
-                    folder: folder
-                )
+        .sheet(item: $sheetRoute) { route in
+            switch route {
+                case .serverCredentials(let descriptor, let location):
+                    CloudStorageServerConnectionSheet(
+                        providerName: descriptor.displayName,
+                        connectedAccounts: location == nil
+                            ? connections.accounts(for: descriptor.id)
+                            : [],
+                        onSelectAccount: { account in
+                            try await preparePicker(
+                                providerID: descriptor.id,
+                                account: account
+                            )
+                        }
+                    ) { credentials in
+                        if let location {
+                            try await reconnect(
+                                location,
+                                using: .serverCredentials(credentials)
+                            )
+                        } else {
+                            try await selectLocation(
+                                with: descriptor.id,
+                                account: nil,
+                                connectionInput: .serverCredentials(credentials)
+                            )
+                        }
+                    }
+                case .folderPicker(let context):
+                    CloudStorageFolderPicker(context: context) { folder in
+                        connections.saveLocation(
+                            providerID: context.providerID,
+                            account: context.account,
+                            folder: folder
+                        )
+                    }
             }
         }
     }
@@ -171,24 +223,21 @@ struct LinkedStorageSidebarSection: View {
 
     private func addLocation(to providerID: CloudStorageProviderID) {
         guard preparingProviderID == nil else { return }
+        if let descriptor = descriptor(for: providerID),
+           descriptor.connectionMethod == .serverCredentials {
+            sheetRoute = .serverCredentials(descriptor, reconnecting: nil)
+            return
+        }
+
         preparingProviderID = providerID
         Task {
             defer { preparingProviderID = nil }
             do {
-                let selection = try await connections.selectLocation(
+                try await selectLocation(
                     with: providerID,
-                    account: connections.accounts(for: providerID).first
+                    account: connections.accounts(for: providerID).first,
+                    connectionInput: nil
                 )
-                switch selection {
-                    case .browse(let account):
-                        await preparePicker(providerID: providerID, account: account)
-                    case .selected(let account, let folder):
-                        connections.saveLocation(
-                            providerID: providerID,
-                            account: account,
-                            folder: folder
-                        )
-                }
             } catch CloudStorageError.authorizationCancelled {
                 return
             } catch {
@@ -197,24 +246,94 @@ struct LinkedStorageSidebarSection: View {
         }
     }
 
+    private func reconnect(_ location: CloudStorageLocation) {
+        guard let descriptor = descriptor(for: location.providerID) else { return }
+        if descriptor.connectionMethod == .serverCredentials {
+            sheetRoute = .serverCredentials(descriptor, reconnecting: location)
+            return
+        }
+
+        guard preparingProviderID == nil else { return }
+        preparingProviderID = location.providerID
+        Task {
+            defer { preparingProviderID = nil }
+            do {
+                _ = try await connections.ensureAccess(to: location)
+                await CloudStorageSyncService.shared.prioritizeDocuments(
+                    in: location,
+                    parentID: location.rootItemID,
+                    connections: connections
+                )
+            } catch CloudStorageError.authorizationCancelled {
+                return
+            } catch {
+                alertToast(error)
+            }
+        }
+    }
+
+    private func reconnect(
+        _ location: CloudStorageLocation,
+        using connectionInput: CloudStorageConnectionInput
+    ) async throws {
+        let account = try await connections.connect(
+            to: location.providerID,
+            using: connectionInput
+        )
+        guard account.id == location.accountID else {
+            throw CloudStorageError.invalidProviderResponse(
+                "These credentials belong to a different WebDAV account or server."
+            )
+        }
+        connections.clearAuthenticationRequirement(for: location)
+        CloudStorageDocumentStore.shared.invalidateSession(for: location.id)
+        sheetRoute = nil
+        await CloudStorageSyncService.shared.prioritizeDocuments(
+            in: location,
+            parentID: location.rootItemID,
+            connections: connections
+        )
+    }
+
+    private func selectLocation(
+        with providerID: CloudStorageProviderID,
+        account: CloudStorageAccount?,
+        connectionInput: CloudStorageConnectionInput?
+    ) async throws {
+        let selection = try await connections.selectLocation(
+            with: providerID,
+            account: account,
+            connectionInput: connectionInput
+        )
+        switch selection {
+            case .browse(let account):
+                try await preparePicker(providerID: providerID, account: account)
+            case .selected(let account, let folder):
+                connections.saveLocation(
+                    providerID: providerID,
+                    account: account,
+                    folder: folder
+                )
+                sheetRoute = nil
+        }
+    }
+
     private func preparePicker(
         providerID: CloudStorageProviderID,
         account: CloudStorageAccount
-    ) async {
-        do {
-            let session = try await connections.makeSession(
-                providerID: providerID,
-                account: account
-            )
-            pickerContext = CloudStorageFolderPickerContext(
+    ) async throws {
+        let session = try await connections.makeSession(
+            providerID: providerID,
+            account: account
+        )
+        sheetRoute = .folderPicker(
+            CloudStorageFolderPickerContext(
                 providerID: providerID,
                 providerName: descriptor(for: providerID)?.displayName ?? "Cloud Storage",
                 account: account,
                 session: session
             )
-        } catch {
-            alertToast(error)
-        }
+        )
     }
 
     @ViewBuilder
@@ -241,6 +360,7 @@ struct LinkedStorageSidebarSection: View {
                             Text(descriptor.displayName)
                         }
                     }
+                    .badge(menuBadge(for: descriptor))
                 }
             }
 
@@ -250,6 +370,22 @@ struct LinkedStorageSidebarSection: View {
         .menuIndicator(.hidden)
         .fixedSize()
         .modifier(ImportLocalFolderModifier(isPresented: $isImportLocalFolderDialogPresented))
+    }
+
+    private func menuBadge(
+        for descriptor: CloudStorageProviderDescriptor
+    ) -> Text? {
+        if descriptor.id == .webDAV {
+            return Text("Beta")
+                .foregroundColor(.yellow)
+                .bold()
+        }
+        if !connections.accounts(for: descriptor.id).isEmpty {
+            return Text("Connected")
+                .foregroundColor(.green)
+                .bold()
+        }
+        return nil
     }
 
     private func descriptor(
@@ -262,7 +398,7 @@ struct LinkedStorageSidebarSection: View {
         .microsoftOneDrive,
         .googleDrive,
         .dropbox,
-        .box,
+        .webDAV,
     ]
 
     @ViewBuilder

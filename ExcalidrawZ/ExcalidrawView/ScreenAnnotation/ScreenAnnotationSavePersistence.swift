@@ -366,7 +366,7 @@ final class ScreenAnnotationSavePersistence {
                         kind: .libraryFile(
                             objectURI: objectID.uriRepresentation(),
                             fileName: activeFile.name ?? "Untitled",
-                            didUpdate: false,
+                            newCheckpoint: true,
                             suppressCheckpoint: false
                         )
                     )
@@ -392,7 +392,7 @@ final class ScreenAnnotationSavePersistence {
                         id: activeFile.id,
                         kind: .localFile(
                             url: url,
-                            didUpdate: false,
+                            newCheckpoint: true,
                             suppressCheckpoint: false
                         )
                     )

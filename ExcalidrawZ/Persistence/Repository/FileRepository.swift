@@ -415,35 +415,18 @@ actor FileRepository {
     ) async throws -> UUID {
         let context = PersistenceController.shared.newTaskContext()
 
-        let (checkpointID, checkpointUpdatedAt) = try await context.perform {
+        let checkpointID = UUID()
+        let checkpointUpdatedAt = Date()
+        let checkpointFilename = try await context.perform {
             guard let file = context.object(with: fileObjectID) as? File else {
                 throw AppError.fileError(.notFound)
             }
-
-            let checkpoint = FileCheckpoint(context: context)
-            let checkpointID = UUID()
-            checkpoint.id = checkpointID
-            checkpoint.filename = file.name
-            checkpoint.updatedAt = .now
-            // New AI-history fields. For pure user edits we still write
-            // `source = "user"` (instead of leaving nil) so query predicates
-            // can match either nil-as-legacy or explicit "user" uniformly
-            // via OR clauses.
-            checkpoint.source = source.rawValue
-            checkpoint.historyDescription = description
-            file.addToCheckpoints(checkpoint)
-
-            try context.save()
-
-            // Clean up old checkpoints if needed
-            if let checkpoints = try? PersistenceController.shared.fetchFileCheckpoints(of: file, viewContext: context),
-               checkpoints.count > 50 {
-                file.removeFromCheckpoints(checkpoints.last!)
-            }
-
-            return (checkpointID, checkpoint.updatedAt)
+            return file.name
         }
 
+        // Persist the payload before publishing its Core Data row. Otherwise
+        // File History can briefly observe a checkpoint with neither content
+        // nor a file path and its first preview request has nothing to load.
         let relativePath = try await PersistenceController.shared.checkpointRepository
             .saveNewCheckpointContentToStorage(
                 content: content,
@@ -453,14 +436,30 @@ actor FileRepository {
             )
 
         try await context.perform {
-            let fetchRequest = NSFetchRequest<FileCheckpoint>(entityName: "FileCheckpoint")
-            fetchRequest.predicate = NSPredicate(format: "id == %@", checkpointID as CVarArg)
-            fetchRequest.fetchLimit = 1
-            guard let checkpoint = try context.fetch(fetchRequest).first else {
+            guard let file = context.object(with: fileObjectID) as? File else {
                 throw AppError.fileError(.notFound)
             }
-            checkpoint.updateAfterSavingToStorage(filePath: relativePath)
+
+            let checkpoint = FileCheckpoint(context: context)
+            checkpoint.id = checkpointID
+            checkpoint.filename = checkpointFilename
+            checkpoint.filePath = relativePath
+            checkpoint.updatedAt = checkpointUpdatedAt
+            checkpoint.source = source.rawValue
+            checkpoint.historyDescription = description
+            file.addToCheckpoints(checkpoint)
+
             try context.save()
+
+            // Keep the existing retention behavior after the complete row has
+            // become visible to fetch requests.
+            if let checkpoints = try? PersistenceController.shared.fetchFileCheckpoints(
+                of: file,
+                viewContext: context
+            ), checkpoints.count > 50, let oldest = checkpoints.last {
+                file.removeFromCheckpoints(oldest)
+                try context.save()
+            }
         }
         return checkpointID
     }
@@ -477,17 +476,9 @@ actor FileRepository {
     ) async throws {
         let context = PersistenceController.shared.newTaskContext()
 
-        struct LatestLookup {
-            let foundUserCheckpoint: NSManagedObjectID?
-            let shouldCreateNewCheckpoint: Bool
-        }
-
-        let lookup: LatestLookup = try await context.perform {
+        let checkpointObjectID: NSManagedObjectID? = try await context.perform {
             guard let file = context.object(with: fileObjectID) as? File else {
-                return LatestLookup(
-                    foundUserCheckpoint: nil,
-                    shouldCreateNewCheckpoint: true
-                )
+                return nil
             }
 
             // Match user-source rows OR legacy rows (source == nil).
@@ -500,33 +491,20 @@ actor FileRepository {
             )
             fetchRequest.sortDescriptors = [.init(key: "updatedAt", ascending: false)]
             guard let checkpoint = try context.fetch(fetchRequest).first else {
-                return LatestLookup(
-                    foundUserCheckpoint: nil,
-                    shouldCreateNewCheckpoint: true
-                )
+                return nil
             }
-
-            return LatestLookup(
-                foundUserCheckpoint: checkpoint.objectID,
-                shouldCreateNewCheckpoint: UserCheckpointRolloverPolicy.shouldCreateNewCheckpoint(
-                    latestUpdatedAt: checkpoint.updatedAt
-                )
-            )
+            return checkpoint.objectID
         }
 
-        if let checkpointObjectID = lookup.foundUserCheckpoint,
-           !lookup.shouldCreateNewCheckpoint {
+        if let checkpointObjectID {
             self.logger.info("Updating latest user checkpoint")
             try await PersistenceController.shared.checkpointRepository.saveCheckpointContentToStorage(
                 checkpointObjectID: checkpointObjectID,
-                content: content,
-                updateMetadataWhenPathUnchanged: false
+                content: content
             )
         } else {
-            // Start a new checkpoint when there is no user row to update,
-            // or when the current editing run has exceeded the rollover
-            // interval. This keeps long sessions from having a single
-            // restore point that can be overwritten by a bad save.
+            // The editor session decides when a checkpoint window rolls over.
+            // Reaching this branch only means there is no user row to update.
             _ = try await createCheckpoint(
                 fileObjectID: fileObjectID,
                 content: content,

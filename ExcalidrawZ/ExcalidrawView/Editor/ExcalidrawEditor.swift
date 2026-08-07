@@ -37,6 +37,9 @@ struct ExcalidrawEditor: View {
     /// lives here rather than at the NavigationSplitView level.
     @EnvironmentObject var layoutState: LayoutState
     @EnvironmentObject private var lockedContentState: LockedContentStateStore
+#if os(macOS)
+    @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
+#endif
 
     @ObservedObject private var cloudStorageConnections = CloudStorageConnectionStore.shared
     @ObservedObject private var cloudStorageDocumentStore = CloudStorageDocumentStore.shared
@@ -57,6 +60,9 @@ struct ExcalidrawEditor: View {
     @State private var recordVisitTask: Task<Void, Never>?
     @State private var documentLoadCompletion: ExcalidrawDocumentLoadCompletion?
     @State private var measuredNativeViewportInsets: ExcalidrawNativeViewportInsets = .zero
+#if os(macOS)
+    @State private var pendingCanvasFocusFileID: String?
+#endif
 
     @State private var conflictFileURL: URL?
     @State private var cloudStorageConflictReference: CloudStorageDocumentReference?
@@ -345,6 +351,9 @@ struct ExcalidrawEditor: View {
         // as a document switch and loaded into the WebView again.
         .watch(value: activeFile?.id) { _ in
             let newFile = activeFile
+#if os(macOS)
+            pendingCanvasFocusFileID = nil
+#endif
             noteOpenTransitionStarted(for: newFile)
             loadingTask?.cancel()
             cloudStorageRefreshTask?.cancel()
@@ -355,6 +364,12 @@ struct ExcalidrawEditor: View {
                 await loadExcalidrawFile(from: newFile)
             }
         }
+#if os(macOS)
+        .watch(value: fileHomeItemTransitionState.canShowItemContainerView) { isVisible in
+            guard !isVisible else { return }
+            focusPendingCanvasIfReady()
+        }
+#endif
         .watch(value: activeCloudStorageMetadataRevision) { _ in
             refreshActiveCloudStorageMetadata()
         }
@@ -393,15 +408,16 @@ struct ExcalidrawEditor: View {
             loadingTask?.cancel()
             loadingTask = Task {
                 do {
+                    let activeFileID = reference.activeFileID
                     let resolvedFile = try await cloudStorageFile(
                         from: result.content,
-                        fileID: reference.id
+                        fileID: activeFileID
                     )
                     await MainActor.run {
-                        guard self.activeFile?.id == reference.id else { return }
+                        guard self.activeFile?.id == activeFileID else { return }
                         self.fileState.excalidrawWebCoordinator?.documentSyncController
-                            .setTargetFileID(reference.id)
-                        self.beginFileLoadRevealGuard(fileID: reference.id)
+                            .setTargetFileID(activeFileID)
+                        self.beginFileLoadRevealGuard(fileID: activeFileID)
                         self.canvasLoadingState = .loading
                         self.isCloudStorageConflictBlockingEditor = false
                         self.excalidrawFile = resolvedFile
@@ -524,11 +540,52 @@ struct ExcalidrawEditor: View {
 
     private func revealLoadedFileAfterRender(fileID: String) {
         guard activeFile?.id == fileID else { return }
+        let shouldFocusCanvas = isLoadingFile
 
         fileLoadRevealTask?.cancel()
         isLoadingFile = false
         fileLoadRevealTask = nil
+
+#if os(macOS)
+        if shouldFocusCanvas {
+            pendingCanvasFocusFileID = fileID
+            focusPendingCanvasIfReady()
+        }
+#endif
     }
+
+#if os(macOS)
+    private func focusPendingCanvasIfReady() {
+        guard let fileID = pendingCanvasFocusFileID,
+              interactionEnabled,
+              activeFile?.id == fileID,
+              !isLoadingFile,
+              !fileHomeItemTransitionState.canShowItemContainerView,
+              !isCloudStorageConflictBlockingEditor,
+              let webView = fileState.excalidrawWebCoordinator?.webView else { return }
+
+        // Apply the responder change after SwiftUI commits the hero transition's
+        // hit-testing update. Until then the Home layer still owns keyboard focus.
+        DispatchQueue.main.async {
+            guard interactionEnabled,
+                  activeFile?.id == fileID,
+                  !isLoadingFile,
+                  !fileHomeItemTransitionState.canShowItemContainerView,
+                  !isCloudStorageConflictBlockingEditor else { return }
+            let didFocus = webView.window?.makeFirstResponder(webView) == true
+#if DEBUG
+            let responderType = webView.window?.firstResponder.map {
+                String(describing: type(of: $0))
+            } ?? "nil"
+            logger.debug(
+                "Focused canvas after file open id=\(fileID) success=\(didFocus) responder=\(responderType)"
+            )
+#endif
+            guard didFocus else { return }
+            pendingCanvasFocusFileID = nil
+        }
+    }
+#endif
 
     private func cancelFileLoadRevealGuard() {
         fileLoadRevealTask?.cancel()
@@ -1080,7 +1137,10 @@ struct ExcalidrawEditor: View {
                                 from: content,
                                 fileID: file.id
                             )
-                        try await CloudStorageDocumentStore.shared.save(content, to: reference)
+                        try await fileState.updateCloudStorageFile(
+                            reference,
+                            content: content
+                        )
                     } catch {
                         alertToast(error)
                     }

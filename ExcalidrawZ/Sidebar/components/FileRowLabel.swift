@@ -66,8 +66,7 @@ struct FileRowLabel: View {
                     lockBadgeIcon
                 }
             }
-            .frame(height: 14)
-            .frame(width: 18)
+            .frame(width: 18, height: 16)
             
             name
             

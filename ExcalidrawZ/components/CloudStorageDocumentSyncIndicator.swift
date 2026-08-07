@@ -8,11 +8,13 @@ import SwiftUI
 @MainActor
 struct CloudStorageDocumentSyncIndicator: View {
     enum Presentation {
+        case sidebar
         case iconOnly
         case canvas
     }
 
     @ObservedObject private var documentStore = CloudStorageDocumentStore.shared
+    @ObservedObject private var connectivity = CloudStorageConnectivityMonitor.shared
 
     let reference: CloudStorageDocumentReference
     var presentation: Presentation = .iconOnly
@@ -31,10 +33,18 @@ struct CloudStorageDocumentSyncIndicator: View {
                         visibleContent
                     }
                     .buttonStyle(.plain)
-                    .statusPresentation(state, transition: visibilityTransition)
+                    .statusPresentation(
+                        tint: state.tint,
+                        text: displayText,
+                        transition: visibilityTransition
+                    )
                 } else {
                     visibleContent
-                        .statusPresentation(state, transition: visibilityTransition)
+                        .statusPresentation(
+                            tint: state.tint,
+                            text: displayText,
+                            transition: visibilityTransition
+                        )
                 }
             }
         }
@@ -43,7 +53,7 @@ struct CloudStorageDocumentSyncIndicator: View {
 
     private var visibilityTransition: AnyTransition {
         switch presentation {
-            case .iconOnly:
+            case .sidebar, .iconOnly:
                 .identity
             case .canvas:
                 .asymmetric(
@@ -56,6 +66,11 @@ struct CloudStorageDocumentSyncIndicator: View {
     @ViewBuilder
     private var visibleContent: some View {
         switch presentation {
+            case .sidebar:
+                statusIcon
+                    .font(.caption2)
+                    .frame(width: 12, height: 12)
+
             case .iconOnly:
                 statusIcon
                     .frame(width: 16, height: 16)
@@ -66,7 +81,7 @@ struct CloudStorageDocumentSyncIndicator: View {
                         .frame(width: 20, height: 20)
 
                     if state.showsExpandedStatus {
-                        Text(state.displayText)
+                        Text(displayText)
                             .font(.callout)
                             .lineLimit(1)
                             .transition(.opacity.combined(with: .scale(scale: 0.98)))
@@ -89,39 +104,66 @@ struct CloudStorageDocumentSyncIndicator: View {
 
     @ViewBuilder
     private var statusIcon: some View {
-        switch state {
-            case .checking, .downloading(progress: nil), .uploading(progress: nil), .processing:
-                ProgressView()
-                    .controlSize(.mini)
+        if isWaitingForConnection {
+            Image(systemName: "wifi.slash")
+                .symbolRenderingMode(.hierarchical)
+        } else {
+            switch state {
+                case .checking, .downloading(progress: nil), .uploading(progress: nil), .processing:
+                    ProgressView()
+                        .controlSize(.mini)
 
-            case .downloading(let progress?), .uploading(let progress?):
-                ProgressView(value: progress)
-                    .controlSize(.mini)
+                case .downloading(let progress?), .uploading(let progress?):
+                    ProgressView(value: progress)
+                        .controlSize(.mini)
 
-            default:
-                if let symbolName = state.symbolName {
-                    Image(systemName: symbolName)
-                        .symbolRenderingMode(.hierarchical)
-                        .apply { content in
-                            if #available(macOS 14.0, iOS 17.0, *) {
-                                content.contentTransition(.symbolEffect(.replace))
-                            } else {
-                                content
+                default:
+                    if let symbolName = statusSymbolName {
+                        Image(systemName: symbolName)
+                            .symbolRenderingMode(.hierarchical)
+                            .apply { content in
+                                if #available(macOS 14.0, iOS 17.0, *) {
+                                    content.contentTransition(.symbolEffect(.replace))
+                                } else {
+                                    content
+                                }
                             }
-                        }
-                }
+                    }
+            }
         }
+    }
+
+    private var isWaitingForConnection: Bool {
+        connectivity.status == .unavailable && state == .queued
+    }
+
+    private var statusSymbolName: String? {
+        guard state == .queued else { return state.symbolName }
+        return documentStore.pendingSyncDirection(for: reference) == .upload
+            ? "icloud.and.arrow.up"
+            : "icloud.and.arrow.down"
+    }
+
+    private var displayText: String {
+        if isWaitingForConnection {
+            return String(
+                localized: "cloudStorageStatusWaitingForConnection",
+                defaultValue: "Waiting for connection…"
+            )
+        }
+        return state.displayText
     }
 }
 
 private extension View {
     func statusPresentation(
-        _ state: CloudStorageDocumentSyncState,
+        tint: Color,
+        text: String,
         transition: AnyTransition
     ) -> some View {
-        foregroundStyle(state.tint)
-            .help(state.displayText)
-            .accessibilityLabel(state.displayText)
+        foregroundStyle(tint)
+            .help(text)
+            .accessibilityLabel(text)
             .transition(transition)
     }
 }

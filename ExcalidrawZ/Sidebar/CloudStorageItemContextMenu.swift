@@ -42,7 +42,6 @@ struct CloudStorageLocationActionsModifier: ViewModifier {
     @EnvironmentObject private var fileState: FileState
 
     @ObservedObject private var connections = CloudStorageConnectionStore.shared
-    @ObservedObject private var documentStore = CloudStorageDocumentStore.shared
 
     let location: CloudStorageLocation
     let presentation: Presentation
@@ -104,8 +103,10 @@ struct CloudStorageLocationActionsModifier: ViewModifier {
                 fileState.setActiveGroupIfNeeded(nil)
             }
             fileState.resetSelections()
-            documentStore.removeCachedState(for: location.id)
-            connections.removeLocation(location)
+            CloudStorageSyncService.shared.removeConnection(
+                for: location,
+                connections: connections
+            )
         }
     }
 }
@@ -317,14 +318,14 @@ struct CloudStorageFileContextMenuModifier: ViewModifier {
 
     private func deleteSelectedFiles() {
         let references = selectedReferences
-        let activeFileID = fileState.currentActiveFile?.id
         Task {
             do {
-                try await documentStore.deleteDocuments(references)
-                if let activeFileID,
-                   references.contains(where: { $0.id == activeFileID }) {
-                    fileState.setActiveFile(nil)
+                guard await fileState.closeActiveFileIfDeleting(
+                    anyOf: references
+                ) else {
+                    return
                 }
+                try await documentStore.deleteDocuments(references)
                 fileState.resetSelections()
             } catch {
                 alertToast(error)

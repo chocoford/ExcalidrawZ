@@ -31,7 +31,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
         var id: String {
             switch self {
                 case .activeFile(let file):
-                    file.id
+                    file.canonicalID
                 case .excalidrawFile(let file):
                     file.id
                 case .checkpoint(let checkpoint):
@@ -68,6 +68,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
         let priority: Priority
         let sequence: Int
         let retryCount: Int
+        let cacheGeneration: UInt64
 
         var cacheKey: String {
             FileItemPreviewCache.cacheKey(forID: source.id, colorScheme: colorScheme) as String
@@ -86,18 +87,20 @@ final class FileCoverCacheCoordinator: ObservableObject {
     private var queue: [Job] = []
     private var queuedKeys: Set<String> = []
     private var inFlightKeys: Set<String> = []
+    private var requestedKeys: Set<String> = []
+    private var cacheGenerations: [String: UInt64] = [:]
     private var nextSequence = 0
     private var processingTask: Task<Void, Never>?
     private var prewarmTask: Task<Void, Never>?
     private var currentColorScheme: ColorScheme = .light
     private var lastRecentlyVisiblePrewarmKey: CoverPrewarmKey?
-    private var lastLibraryPrewarmAt: [ColorScheme: Date] = [:]
 
     private let cache = FileItemPreviewCache.shared
     private let logger = Logger(label: "FileCoverCacheCoordinator")
     private let maximumRetryCount = 8
-    private let libraryPrewarmMinimumInterval: TimeInterval = 10 * 60
     private var cloudStorageContentObserver: NSObjectProtocol?
+    private var cloudStorageIdentityObserver: NSObjectProtocol?
+    private var cloudStorageDeletionObserver: NSObjectProtocol?
 
     private struct CoverPrewarmKey: Equatable {
         let colorScheme: ColorScheme
@@ -114,10 +117,36 @@ final class FileCoverCacheCoordinator: ObservableObject {
                 return
             }
             Task { @MainActor [weak self] in
-                self?.refreshCover(
+                self?.refreshCoverIfTracked(
                     for: .cloudStorageFile(reference),
                     priority: .userInitiated
                 )
+            }
+        }
+        cloudStorageIdentityObserver = NotificationCenter.default.addObserver(
+            forName: .cloudStorageItemIdentityDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let change = notification.object as? CloudStorageItemIdentityChange else {
+                return
+            }
+            Task { @MainActor [weak self] in
+                self?.migrateCloudStorageCoverIdentities(change)
+            }
+        }
+        cloudStorageDeletionObserver = NotificationCenter.default.addObserver(
+            forName: .cloudStorageDocumentsDidDelete,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let references = notification.object as? [CloudStorageDocumentReference] else {
+                return
+            }
+            Task { @MainActor [weak self] in
+                references.forEach {
+                    self?.invalidatePreview(forID: $0.id)
+                }
             }
         }
     }
@@ -143,6 +172,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
             forID: source.id,
             colorScheme: colorScheme
         ) as String
+        requestedKeys.insert(cacheKey)
 
         if !forceRefresh,
            cache.object(forKey: cacheKey as NSString) != nil {
@@ -195,7 +225,8 @@ final class FileCoverCacheCoordinator: ObservableObject {
             forceRefresh: forceRefresh,
             priority: priority,
             sequence: nextSequence,
-            retryCount: retryCount
+            retryCount: retryCount,
+            cacheGeneration: cacheGenerations[cacheKey, default: 0]
         ))
         nextSequence += 1
         sortQueue()
@@ -224,7 +255,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
             ? .dark
             : .light
         cache.removePreviewCache(
-            forID: activeFile.id,
+            forID: activeFile.canonicalID,
             colorScheme: otherColorScheme
         )
         request(
@@ -233,6 +264,18 @@ final class FileCoverCacheCoordinator: ObservableObject {
             priority: priority,
             forceRefresh: true
         )
+    }
+
+    private func refreshCoverIfTracked(
+        for activeFile: FileState.ActiveFile,
+        priority: Priority
+    ) {
+        let cacheKey = FileItemPreviewCache.cacheKey(
+            forID: activeFile.canonicalID,
+            colorScheme: currentColorScheme
+        ) as String
+        guard requestedKeys.contains(cacheKey) else { return }
+        refreshCover(for: activeFile, priority: priority)
     }
 
     func request<Checkpoint: FileCheckpointRepresentable>(
@@ -253,17 +296,18 @@ final class FileCoverCacheCoordinator: ObservableObject {
     }
 
     static func checkpointPreviewID<Checkpoint: FileCheckpointRepresentable>(for checkpoint: Checkpoint) -> String {
+        let contentVersion = checkpoint.updatedAt?.timeIntervalSinceReferenceDate ?? 0
         if let fileCheckpoint = checkpoint as? FileCheckpoint,
            let id = fileCheckpoint.id?.uuidString {
-            return "checkpoint:\(id)"
+            return "checkpoint:\(id):\(contentVersion)"
         }
 
         if let localFileCheckpoint = checkpoint as? LocalFileCheckpoint,
            let id = localFileCheckpoint.id?.uuidString {
-            return "checkpoint:\(id)"
+            return "checkpoint:\(id):\(contentVersion)"
         }
 
-        return "checkpoint:\(checkpoint.objectID.uriRepresentation().absoluteString)"
+        return "checkpoint:\(checkpoint.objectID.uriRepresentation().absoluteString):\(contentVersion)"
     }
 
     func prioritizeRecentlyVisibleFiles(
@@ -289,7 +333,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
         }
     }
 
-    func scheduleLibraryPrewarm(
+    func scheduleRecentCoverPrewarm(
         colorScheme: ColorScheme,
         delay: UInt64 = 1_500_000_000
     ) {
@@ -299,11 +343,6 @@ final class FileCoverCacheCoordinator: ObservableObject {
             try? await Task.sleep(nanoseconds: delay)
             guard !Task.isCancelled else { return }
             enqueueRecentlyUsedCovers(colorScheme: colorScheme)
-            let now = Date()
-            if now.timeIntervalSince(lastLibraryPrewarmAt[colorScheme] ?? .distantPast) >= libraryPrewarmMinimumInterval {
-                lastLibraryPrewarmAt[colorScheme] = now
-                enqueueMissingLibraryCovers(colorScheme: colorScheme)
-            }
         }
     }
 
@@ -386,21 +425,21 @@ final class FileCoverCacheCoordinator: ObservableObject {
                 from: image,
                 maxPixelSize: source.thumbnailMaxPixelSize
             ) else {
-                logger.warning("Failed to downsample current viewport preview for \(activeFile.id)")
+                logger.warning("Failed to downsample current viewport preview for \(activeFile.canonicalID)")
                 return
             }
             let cacheKey = FileItemPreviewCache.cacheKey(
-                forID: activeFile.id,
+                forID: activeFile.canonicalID,
                 colorScheme: currentColorScheme
             )
             cache.setObject(thumbnail, forKey: cacheKey)
-            logger.debug("Cached current viewport preview for \(activeFile.id)")
+            logger.debug("Cached current viewport preview for \(activeFile.canonicalID)")
             NotificationCenter.default.post(
                 name: .filePreviewDidUpdate,
-                object: activeFile.id
+                object: activeFile.canonicalID
             )
         } catch {
-            logger.debug("Failed to cache current viewport preview for \(activeFile.id): \(error)")
+            logger.debug("Failed to cache current viewport preview for \(activeFile.canonicalID): \(error)")
         }
     }
 
@@ -437,6 +476,10 @@ final class FileCoverCacheCoordinator: ObservableObject {
             let job = queue.remove(at: jobIndex)
             queuedKeys.remove(job.cacheKey)
 
+            guard job.cacheGeneration == cacheGenerations[job.cacheKey, default: 0] else {
+                continue
+            }
+
             if !job.forceRefresh,
                cache.object(forKey: job.cacheKey as NSString) != nil {
                 continue
@@ -467,6 +510,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
         }
 
         guard (job.forceRefresh || cache.object(forKey: job.cacheKey as NSString) == nil),
+              job.cacheGeneration == cacheGenerations[job.cacheKey, default: 0],
               !queuedKeys.contains(job.cacheKey),
               !inFlightKeys.contains(job.cacheKey) else {
             return
@@ -479,7 +523,8 @@ final class FileCoverCacheCoordinator: ObservableObject {
             forceRefresh: job.forceRefresh,
             priority: job.priority,
             sequence: nextSequence,
-            retryCount: job.retryCount + 1
+            retryCount: job.retryCount + 1,
+            cacheGeneration: job.cacheGeneration
         ))
         nextSequence += 1
         sortQueue()
@@ -523,35 +568,6 @@ final class FileCoverCacheCoordinator: ObservableObject {
             }
         } catch {
             logger.warning("Failed to enqueue recently used cover prewarm: \(error)")
-        }
-    }
-
-    private func enqueueMissingLibraryCovers(colorScheme: ColorScheme) {
-        guard let context else { return }
-
-        let fetchRequest = NSFetchRequest<File>(entityName: "File")
-        fetchRequest.predicate = NSPredicate(format: "inTrash == NO")
-        fetchRequest.sortDescriptors = [
-            NSSortDescriptor(key: "updatedAt", ascending: false),
-            NSSortDescriptor(key: "createdAt", ascending: false)
-        ]
-
-        do {
-            let files = try context.fetch(fetchRequest)
-            for file in files {
-                let activeFile = FileState.ActiveFile.file(file)
-                if let lockState = lockedContentState?.previewLockState(for: activeFile),
-                   lockState == .locked {
-                    continue
-                }
-                request(
-                    activeFile: activeFile,
-                    colorScheme: colorScheme,
-                    priority: .background
-                )
-            }
-        } catch {
-            logger.warning("Failed to enqueue library cover prewarm: \(error)")
         }
     }
 
@@ -634,9 +650,14 @@ final class FileCoverCacheCoordinator: ObservableObject {
                             guard let content = try documentStore.cachedContent(for: reference) else {
                                 return .completed
                             }
+                            let contentWithViewport = try await ExcalidrawViewportStateStore.shared
+                                .contentDataByApplyingStoredViewport(
+                                    to: content,
+                                    fileID: activeFile.id
+                                )
                             excalidrawFile = try ExcalidrawFile(
-                                data: content,
-                                id: reference.id
+                                data: contentWithViewport,
+                                id: activeFile.id
                             )
                     }
 
@@ -650,6 +671,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
                     }
 
                     let object = try context.existingObject(with: checkpointSource.objectID)
+                    context.refresh(object, mergeChanges: true)
                     if let checkpoint = object as? FileCheckpoint {
                         mediaHydrationFileObjectID = checkpoint.file?.objectID
                         let content = try await checkpoint.loadContent()
@@ -689,7 +711,10 @@ final class FileCoverCacheCoordinator: ObservableObject {
                 return .retry
             }
 
-            guard !Task.isCancelled else { return .completed }
+            guard !Task.isCancelled,
+                  job.cacheGeneration == cacheGenerations[job.cacheKey, default: 0] else {
+                return .completed
+            }
 
             let thumbnail = makeThumbnail(
                 from: image,
@@ -711,6 +736,90 @@ final class FileCoverCacheCoordinator: ObservableObject {
             guard !Task.isCancelled else { return .completed }
             logger.debug("Failed to generate preview for \(job.source.id): \(error)")
             return .completed
+        }
+    }
+
+    private func migrateCloudStorageCoverIdentities(
+        _ change: CloudStorageItemIdentityChange
+    ) {
+        for (oldItemID, newItem) in change.replacements where newItem.kind == .file {
+            let oldReference = CloudStorageDocumentReference(
+                locationID: change.location.id,
+                providerID: change.location.providerID,
+                accountID: change.location.accountID,
+                itemID: oldItemID,
+                lastKnownName: newItem.name
+            )
+            let newReference = CloudStorageDocumentReference(
+                locationID: change.location.id,
+                providerID: change.location.providerID,
+                accountID: change.location.accountID,
+                itemID: newItem.id,
+                lastKnownName: newItem.name,
+                lastKnownModifiedAt: newItem.modifiedAt
+            )
+            migratePreview(
+                fromID: oldReference.id,
+                to: .cloudStorageFile(newReference)
+            )
+        }
+    }
+
+    private func migratePreview(
+        fromID oldID: String,
+        to activeFile: FileState.ActiveFile
+    ) {
+        let newID = activeFile.canonicalID
+        guard oldID != newID else { return }
+
+        let colorSchemes: [ColorScheme] = [.light, .dark]
+        let migratedImages = Dictionary(uniqueKeysWithValues: colorSchemes.compactMap { scheme in
+            cache.getPreviewCache(forID: oldID, colorScheme: scheme).map {
+                (scheme, $0)
+            }
+        })
+        let wasTracked = colorSchemes.contains { scheme in
+            requestedKeys.contains(
+                FileItemPreviewCache.cacheKey(forID: oldID, colorScheme: scheme) as String
+            ) || requestedKeys.contains(
+                FileItemPreviewCache.cacheKey(forID: newID, colorScheme: scheme) as String
+            )
+        }
+
+        invalidatePreview(forID: oldID)
+        invalidatePreview(forID: newID)
+        for (scheme, image) in migratedImages {
+            cache.setObject(
+                image,
+                forKey: FileItemPreviewCache.cacheKey(forID: newID, colorScheme: scheme)
+            )
+        }
+
+        NotificationCenter.default.post(
+            name: .filePreviewDidUpdate,
+            object: newID
+        )
+        if wasTracked {
+            request(
+                activeFile: activeFile,
+                colorScheme: currentColorScheme,
+                priority: .userInitiated,
+                forceRefresh: true
+            )
+        }
+    }
+
+    private func invalidatePreview(forID fileID: String) {
+        for colorScheme in [ColorScheme.light, .dark] {
+            let cacheKey = FileItemPreviewCache.cacheKey(
+                forID: fileID,
+                colorScheme: colorScheme
+            ) as String
+            cacheGenerations[cacheKey, default: 0] &+= 1
+            queue.removeAll { $0.cacheKey == cacheKey }
+            queuedKeys.remove(cacheKey)
+            requestedKeys.remove(cacheKey)
+            cache.removeObject(forKey: cacheKey as NSString)
         }
     }
 

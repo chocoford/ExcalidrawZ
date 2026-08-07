@@ -84,7 +84,8 @@ struct CloudStorageSettingsView: View {
         HStack(spacing: 14) {
             CloudStorageProviderIcon(
                 providerID: entry.account.providerID,
-                size: 32
+                size: 32,
+                accountDisplayName: entry.account.displayName
             )
             .frame(width: 38, height: 38)
 
@@ -125,19 +126,15 @@ struct CloudStorageSettingsView: View {
     }
 
     private func disconnect(_ entry: AccountEntry) {
-        let locations = connections.locations.filter {
-            $0.providerID == entry.account.providerID
-                && $0.accountID == entry.account.id
-        }
         disconnectingAccountID = entry.id
 
         Task {
             defer { disconnectingAccountID = nil }
             do {
-                try await connections.disconnect(entry.account)
-                for location in locations {
-                    CloudStorageDocumentStore.shared.removeCachedState(for: location.id)
-                }
+                try await CloudStorageSyncService.shared.disconnect(
+                    entry.account,
+                    connections: connections
+                )
             } catch {
                 alertToast(error)
             }

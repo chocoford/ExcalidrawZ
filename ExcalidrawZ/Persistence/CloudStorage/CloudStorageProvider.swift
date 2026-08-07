@@ -13,6 +13,9 @@ protocol CloudStorageProvider: Sendable {
 
     func authorizationStatus() async -> CloudStorageAuthorizationStatus
     func authorize() async throws -> CloudStorageAccount
+    func authorize(
+        using connectionInput: CloudStorageConnectionInput?
+    ) async throws -> CloudStorageAccount
     func makeSession(for account: CloudStorageAccount) async throws -> any CloudStorageSession
     func signOut(accountID: CloudStorageAccountID) async throws
 
@@ -23,6 +26,10 @@ protocol CloudStorageProvider: Sendable {
     func selectLocation(
         for account: CloudStorageAccount?
     ) async throws -> CloudStorageLocationSelection
+    func selectLocation(
+        for account: CloudStorageAccount?,
+        using connectionInput: CloudStorageConnectionInput?
+    ) async throws -> CloudStorageLocationSelection
 }
 
 enum CloudStorageLocationSelection: Sendable {
@@ -31,6 +38,17 @@ enum CloudStorageLocationSelection: Sendable {
 }
 
 extension CloudStorageProvider {
+    func authorize(
+        using connectionInput: CloudStorageConnectionInput?
+    ) async throws -> CloudStorageAccount {
+        guard case nil = connectionInput else {
+            throw CloudStorageError.invalidProviderResponse(
+                "This provider does not accept server credentials."
+            )
+        }
+        return try await authorize()
+    }
+
     func selectLocation(
         for account: CloudStorageAccount?
     ) async throws -> CloudStorageLocationSelection {
@@ -38,6 +56,16 @@ extension CloudStorageProvider {
             return .browse(account: account)
         }
         return .browse(account: try await authorize())
+    }
+
+    func selectLocation(
+        for account: CloudStorageAccount?,
+        using connectionInput: CloudStorageConnectionInput?
+    ) async throws -> CloudStorageLocationSelection {
+        if case nil = connectionInput {
+            return try await selectLocation(for: account)
+        }
+        return .browse(account: try await authorize(using: connectionInput))
     }
 }
 

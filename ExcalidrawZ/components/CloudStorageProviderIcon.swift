@@ -8,6 +8,7 @@ import SwiftUI
 struct CloudStorageProviderIcon: View {
     let providerID: CloudStorageProviderID
     let size: CGFloat
+    var accountDisplayName: String? = nil
 
     var body: some View {
         if let imageName {
@@ -32,6 +33,10 @@ struct CloudStorageProviderIcon: View {
                 return "CloudStorage/Dropbox"
             case .box:
                 return "CloudStorage/Box"
+            case .webDAV:
+                return WebDAVServiceIdentity.imageAssetName(
+                    for: accountDisplayName
+                ) ?? "CloudStorage/WebDAV"
             default:
                 return nil
         }

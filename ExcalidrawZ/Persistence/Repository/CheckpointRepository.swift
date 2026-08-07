@@ -181,6 +181,7 @@ actor CheckpointRepository {
         content: Data,
         updateMetadataWhenPathUnchanged: Bool = true
     ) async throws {
+        let contentUpdatedAt = Date()
         let snapshot = try await rawCheckpointContentSnapshot(checkpointObjectID: checkpointObjectID)
         let contentToSave = try await encryptedCheckpointContentIfNeeded(
             content,
@@ -191,7 +192,8 @@ actor CheckpointRepository {
         try await saveRawCheckpointContentToStorage(
             snapshot: snapshot,
             content: contentToSave,
-            updateMetadataWhenPathUnchanged: updateMetadataWhenPathUnchanged
+            updateMetadataWhenPathUnchanged: updateMetadataWhenPathUnchanged,
+            updatedAtOverride: contentUpdatedAt
         )
     }
 
@@ -512,13 +514,14 @@ actor CheckpointRepository {
     private func saveRawCheckpointContentToStorage(
         snapshot: RawCheckpointContentSnapshot,
         content: Data,
-        updateMetadataWhenPathUnchanged: Bool = true
+        updateMetadataWhenPathUnchanged: Bool = true,
+        updatedAtOverride: Date? = nil
     ) async throws {
         let relativePath = try await FileStorageManager.shared.saveContent(
             content,
             fileID: snapshot.checkpointID.uuidString,
             type: .checkpoint,
-            updatedAt: snapshot.updatedAt
+            updatedAt: updatedAtOverride ?? snapshot.updatedAt
         )
 
         let context = PersistenceController.shared.newTaskContext()
@@ -530,6 +533,9 @@ actor CheckpointRepository {
                 return false
             }
             checkpoint.updateAfterSavingToStorage(filePath: relativePath)
+            if let updatedAtOverride {
+                checkpoint.updatedAt = updatedAtOverride
+            }
             try context.save()
             return true
         }
@@ -576,6 +582,95 @@ actor CheckpointRepository {
             file.updatedAt = .now
 
             try context.save()
+        }
+    }
+}
+
+/// Provider-neutral history for Cloud Storage documents. Checkpoint payloads
+/// remain device-managed just like Linked Folder history; provider APIs only
+/// synchronize the current document and are not treated as the history SoT.
+enum CloudStorageCheckpointStore {
+    static func recordUserEdit(
+        content: Data,
+        for reference: CloudStorageDocumentReference,
+        newCheckpoint: Bool
+    ) async throws {
+        try await LocalFileCheckpointStore.recordUserEdit(
+            content: content,
+            for: reference.checkpointURL,
+            newCheckpoint: newCheckpoint
+        )
+    }
+
+    @discardableResult
+    static func record(
+        content: Data,
+        for reference: CloudStorageDocumentReference,
+        source: FileCheckpointSource,
+        description: String?
+    ) async throws -> UUID {
+        let checkpointURL = reference.checkpointURL
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        return try await context.perform {
+            let checkpoint = LocalFileCheckpoint(context: context)
+            let checkpointID = UUID()
+            checkpoint.id = checkpointID
+            checkpoint.url = checkpointURL
+            checkpoint.updatedAt = .now
+            checkpoint.content = content
+            checkpoint.source = source.rawValue
+            checkpoint.historyDescription = description
+            context.insert(checkpoint)
+            try context.save()
+            return checkpointID
+        }
+    }
+
+    static func migrateIdentities(
+        _ change: CloudStorageItemIdentityChange
+    ) async throws {
+        let migrations = change.replacements.compactMap { oldItemID, item -> (URL, URL)? in
+            guard oldItemID != item.id else { return nil }
+            return (
+                CloudStorageDocumentReference.checkpointURL(
+                    locationID: change.location.id,
+                    itemID: oldItemID
+                ),
+                CloudStorageDocumentReference.checkpointURL(
+                    locationID: change.location.id,
+                    itemID: item.id
+                )
+            )
+        }
+        guard !migrations.isEmpty else { return }
+
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        try await context.perform {
+            for (oldURL, newURL) in migrations {
+                let request: NSFetchRequest<LocalFileCheckpoint> = LocalFileCheckpoint.fetchRequest()
+                request.predicate = NSPredicate(format: "url == %@", oldURL as NSURL)
+                try context.fetch(request).forEach { $0.url = newURL }
+            }
+            if context.hasChanges {
+                try context.save()
+            }
+        }
+    }
+
+    static func deleteCheckpoints(
+        for references: [CloudStorageDocumentReference]
+    ) async throws {
+        let checkpointURLs = references.map { $0.checkpointURL as NSURL }
+        guard !checkpointURLs.isEmpty else { return }
+
+        let context = PersistenceController.shared.container.newBackgroundContext()
+        try await context.perform {
+            let request: NSFetchRequest<LocalFileCheckpoint> = LocalFileCheckpoint.fetchRequest()
+            request.predicate = NSPredicate(format: "url IN %@", checkpointURLs)
+            try context.fetch(request).forEach { context.delete($0) }
+            if context.hasChanges {
+                try context.save()
+            }
         }
     }
 }

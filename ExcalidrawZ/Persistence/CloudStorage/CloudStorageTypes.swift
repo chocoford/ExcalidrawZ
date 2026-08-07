@@ -15,6 +15,17 @@ extension Notification.Name {
     static let cloudStorageConflictDidResolve = Notification.Name(
         "CloudStorageConflictDidResolve"
     )
+    static let cloudStorageItemIdentityDidChange = Notification.Name(
+        "CloudStorageItemIdentityDidChange"
+    )
+    static let cloudStorageDocumentsDidDelete = Notification.Name(
+        "CloudStorageDocumentsDidDelete"
+    )
+}
+
+struct CloudStorageItemIdentityChange: Sendable {
+    let location: CloudStorageLocation
+    let replacements: [CloudStorageItemID: CloudStorageItem]
 }
 
 struct CloudStorageProviderID: RawRepresentable, Codable, Hashable, Sendable {
@@ -30,6 +41,7 @@ extension CloudStorageProviderID {
     static let googleDrive = Self(rawValue: "google.drive")
     static let dropbox = Self(rawValue: "dropbox")
     static let box = Self(rawValue: "box")
+    static let webDAV = Self(rawValue: "webdav")
 
     var displayName: String {
         switch self {
@@ -37,6 +49,7 @@ extension CloudStorageProviderID {
             case .googleDrive: "Google Drive"
             case .dropbox: "Dropbox"
             case .box: "Box"
+            case .webDAV: "WebDAV"
             default: "Cloud Storage"
         }
     }
@@ -126,10 +139,38 @@ struct CloudStorageItemCapabilities: OptionSet, Codable, Hashable, Sendable {
     ]
 }
 
+enum CloudStorageConnectionMethod: String, Codable, Hashable, Sendable {
+    case externalAuthorization
+    case serverCredentials
+}
+
+struct CloudStorageServerCredentials: Sendable {
+    let serverURL: URL
+    let username: String
+    let password: String
+}
+
+enum CloudStorageConnectionInput: Sendable {
+    case serverCredentials(CloudStorageServerCredentials)
+}
+
 struct CloudStorageProviderDescriptor: Codable, Hashable, Sendable {
     let id: CloudStorageProviderID
     let displayName: String
     let capabilities: CloudStorageProviderCapabilities
+    let connectionMethod: CloudStorageConnectionMethod
+
+    init(
+        id: CloudStorageProviderID,
+        displayName: String,
+        capabilities: CloudStorageProviderCapabilities,
+        connectionMethod: CloudStorageConnectionMethod = .externalAuthorization
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.capabilities = capabilities
+        self.connectionMethod = connectionMethod
+    }
 }
 
 /// Public account metadata only. Authentication material belongs in the
@@ -262,13 +303,20 @@ struct CloudStorageDocumentReference: Codable, Hashable, Identifiable, Sendable 
     let lastKnownName: String
     let lastKnownModifiedAt: Date?
 
+    /// Keeps an already-open editor session stable when a local provisional
+    /// item is replaced by its provider-assigned remote identity. This is
+    /// intentionally excluded from persistence; a newly opened session starts
+    /// from the current canonical storage identity.
+    private var activeFileIDOverride: String? = nil
+
     init(
         locationID: UUID,
         providerID: CloudStorageProviderID,
         accountID: CloudStorageAccountID,
         itemID: CloudStorageItemID,
         lastKnownName: String,
-        lastKnownModifiedAt: Date? = nil
+        lastKnownModifiedAt: Date? = nil,
+        activeFileID: String? = nil
     ) {
         self.locationID = locationID
         self.providerID = providerID
@@ -276,6 +324,7 @@ struct CloudStorageDocumentReference: Codable, Hashable, Identifiable, Sendable 
         self.itemID = itemID
         self.lastKnownName = lastKnownName
         self.lastKnownModifiedAt = lastKnownModifiedAt
+        self.activeFileIDOverride = activeFileID
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -289,6 +338,45 @@ struct CloudStorageDocumentReference: Codable, Hashable, Identifiable, Sendable 
 
     var id: String {
         "\(providerID.rawValue):\(accountID.rawValue):\(locationID.uuidString):\(itemID.rawValue)"
+    }
+
+    var activeFileID: String {
+        activeFileIDOverride ?? id
+    }
+
+    /// Stable local-history identity for provider-backed documents. This is
+    /// deliberately independent from the cache path and display name so a
+    /// rename does not split one document's checkpoint history.
+    var checkpointURL: URL {
+        Self.checkpointURL(locationID: locationID, itemID: itemID)
+    }
+
+    static func checkpointURL(
+        locationID: UUID,
+        itemID: CloudStorageItemID
+    ) -> URL {
+        let encodedItemID = Data(itemID.rawValue.utf8)
+            .base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+        var components = URLComponents()
+        components.scheme = "excalidrawz-cloud-history"
+        components.host = locationID.uuidString.lowercased()
+        components.path = "/\(encodedItemID)"
+        return components.url!
+    }
+
+    func preservingActiveFileID(_ activeFileID: String) -> Self {
+        Self(
+            locationID: locationID,
+            providerID: providerID,
+            accountID: accountID,
+            itemID: itemID,
+            lastKnownName: lastKnownName,
+            lastKnownModifiedAt: lastKnownModifiedAt,
+            activeFileID: activeFileID
+        )
     }
 
     static func == (
@@ -384,7 +472,7 @@ enum CloudStorageAuthorizationStatus: Equatable, Sendable {
     case signedIn(accounts: [CloudStorageAccount])
 }
 
-enum CloudStorageOperation: String, Codable, Sendable {
+enum CloudStorageOperation: String, Codable, Equatable, Sendable {
     case authorize
     case browse
     case download
@@ -452,9 +540,14 @@ struct CloudStorageConflictResolutionResult: Sendable {
     let content: Data
 }
 
+enum CloudStoragePendingSyncDirection: Equatable, Sendable {
+    case upload
+    case download
+}
+
 enum CloudStorageFolderSyncState: Equatable, Sendable {
     case idle
-    case queued
+    case queued(CloudStoragePendingSyncDirection)
     case synchronizing
 }
 

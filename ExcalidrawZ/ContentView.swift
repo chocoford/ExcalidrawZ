@@ -104,6 +104,16 @@ struct ContentView: View {
             .onReceive(NotificationCenter.default.publisher(for: .toggleInspector)) { notification in
                 handleToggleInspector(notification)
             }
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: .cloudStorageItemIdentityDidChange
+                )
+            ) { notification in
+                guard let change = notification.object as? CloudStorageItemIdentityChange else {
+                    return
+                }
+                fileState.applyCloudStorageIdentityChange(change)
+            }
             .modifier(LockedContentEventModifier(fileState: fileState))
             .watch(value: fileState.currentActiveFile) { newValue in
                 // Going back to Home: nothing to inspect, so collapse the panel.
@@ -121,7 +131,7 @@ struct ContentView: View {
                 }
             }
             .watch(value: colorScheme) { newValue in
-                FileCoverCacheCoordinator.shared.scheduleLibraryPrewarm(colorScheme: newValue)
+                FileCoverCacheCoordinator.shared.scheduleRecentCoverPrewarm(colorScheme: newValue)
             }
             .watch(value: lockedContentState.filePreviewLockStateRevision) { _ in
                 FileCoverCacheCoordinator.shared.refreshLibraryCoversForLockStateChange(
@@ -172,7 +182,7 @@ struct ContentView: View {
                         context: viewContext
                     )
                     LibraryItemPreviewCoordinator.shared.register(fileState: fileState)
-                    FileCoverCacheCoordinator.shared.scheduleLibraryPrewarm(colorScheme: colorScheme)
+                    FileCoverCacheCoordinator.shared.scheduleRecentCoverPrewarm(colorScheme: colorScheme)
                 }
                 await prepare()
             }

@@ -14,19 +14,23 @@ final class CloudStorageSyncService {
     static let shared = CloudStorageSyncService()
 
     private let documentStore: CloudStorageDocumentStore
+    private let connectivity: CloudStorageConnectivityMonitor
     private let pollingIntervalNanoseconds: UInt64
     private let logger = Logger(label: "CloudStorageSyncService")
 
     private var serviceObserverIDs: Set<UUID> = []
     private var serviceTask: Task<Void, Never>?
     private var locationObserver: AnyCancellable?
+    private var connectivityObserver: AnyCancellable?
     private var observedLocationIDs: Set<UUID> = []
     private var locationSynchronizationTasks: [UUID: Task<Void, Never>] = [:]
     private var locationSynchronizationTaskIDs: [UUID: UUID] = [:]
+    private var pendingLocationSynchronizationIDs: Set<UUID> = []
     private var activeDocumentObservers: [String: Set<UUID>] = [:]
 
     private init() {
         self.documentStore = .shared
+        self.connectivity = .shared
         self.pollingIntervalNanoseconds = 20_000_000_000
     }
 
@@ -77,6 +81,7 @@ final class CloudStorageSyncService {
         connections: CloudStorageConnectionStore? = nil
     ) {
         let connections = connections ?? .shared
+        connectivity.startIfNeeded()
         documentStore.scheduleContentSynchronization(
             for: reference,
             connections: connections,
@@ -85,12 +90,52 @@ final class CloudStorageSyncService {
         )
     }
 
+    func enqueueMetadataSynchronization(
+        for location: CloudStorageLocation,
+        connections: CloudStorageConnectionStore? = nil
+    ) {
+        let connections = connections ?? .shared
+        connectivity.startIfNeeded()
+        requestSynchronization(
+            for: location,
+            connections: connections,
+            queueAfterActiveSynchronization: true
+        )
+    }
+
+    func removeConnection(
+        for location: CloudStorageLocation,
+        connections: CloudStorageConnectionStore? = nil
+    ) {
+        let connections = connections ?? .shared
+        cancelSynchronization(for: location.id)
+        documentStore.removeCachedState(for: location.id)
+        connections.removeLocation(location)
+    }
+
+    func disconnect(
+        _ account: CloudStorageAccount,
+        connections: CloudStorageConnectionStore? = nil
+    ) async throws {
+        let connections = connections ?? .shared
+        let locations = connections.locations.filter {
+            $0.providerID == account.providerID && $0.accountID == account.id
+        }
+        try await connections.disconnect(account)
+        for location in locations {
+            cancelSynchronization(for: location.id)
+            documentStore.removeCachedState(for: location.id)
+        }
+    }
+
     func prioritizeDocuments(
         in location: CloudStorageLocation,
         parentID: CloudStorageItemID,
         connections: CloudStorageConnectionStore? = nil
     ) async {
         let connections = connections ?? .shared
+        connectivity.startIfNeeded()
+        guard connectivity.canAttemptNetworkRequests else { return }
         guard await refreshForUserInitiatedSynchronization(
             location,
             connections: connections,
@@ -112,6 +157,8 @@ final class CloudStorageSyncService {
         limit: Int = 20
     ) async {
         let connections = connections ?? .shared
+        connectivity.startIfNeeded()
+        guard connectivity.canAttemptNetworkRequests else { return }
         let locations = connections.locations
         guard !locations.isEmpty else { return }
 
@@ -149,6 +196,7 @@ final class CloudStorageSyncService {
         connections: CloudStorageConnectionStore,
         reason: String
     ) async -> Bool {
+        guard connectivity.canAttemptNetworkRequests else { return false }
         do {
             _ = try await connections.ensureAccess(to: location)
         } catch CloudStorageError.authorizationCancelled {
@@ -173,6 +221,7 @@ final class CloudStorageSyncService {
         connections: CloudStorageConnectionStore
     ) {
         guard serviceTask == nil else { return }
+        connectivity.startIfNeeded()
 
         serviceTask = Task { @MainActor [weak self, weak connections] in
             guard let self, let connections else { return }
@@ -180,6 +229,7 @@ final class CloudStorageSyncService {
             await CloudStorageBootstrap.registerConfiguredProviders()
             await connections.refresh()
             self.observeLocationChanges(connections: connections)
+            self.observeConnectivity(connections: connections)
 
             while !Task.isCancelled {
                 for location in connections.locations {
@@ -196,6 +246,38 @@ final class CloudStorageSyncService {
                 }
             }
         }
+    }
+
+    private func observeConnectivity(
+        connections: CloudStorageConnectionStore
+    ) {
+        connectivityObserver = connectivity.$status
+            .removeDuplicates()
+            // The service loop already performs the initial synchronization.
+            // Skip CurrentValueSubject's replay so launch does not queue a
+            // second pass for every connected location.
+            .dropFirst()
+            .sink { [weak self, weak connections] status in
+                Task { @MainActor [weak self, weak connections] in
+                    guard let self, let connections else { return }
+                    switch status {
+                        case .available:
+                            self.documentStore.resumeQueuedContentSynchronizations()
+                            for location in connections.locations {
+                                self.requestSynchronization(
+                                    for: location,
+                                    connections: connections
+                                )
+                            }
+                        case .unavailable:
+                            for locationID in Array(self.locationSynchronizationTasks.keys) {
+                                self.cancelSynchronization(for: locationID)
+                            }
+                        case .unknown:
+                            break
+                    }
+                }
+            }
     }
 
     private func observeLocationChanges(
@@ -231,22 +313,35 @@ final class CloudStorageSyncService {
     private func cancelSynchronization(for locationID: UUID) {
         locationSynchronizationTasks.removeValue(forKey: locationID)?.cancel()
         locationSynchronizationTaskIDs.removeValue(forKey: locationID)
+        pendingLocationSynchronizationIDs.remove(locationID)
     }
 
     private func requestSynchronization(
         for location: CloudStorageLocation,
-        connections: CloudStorageConnectionStore
+        connections: CloudStorageConnectionStore,
+        queueAfterActiveSynchronization: Bool = false
     ) {
-        guard locationSynchronizationTasks[location.id] == nil else { return }
+        guard connectivity.canAttemptNetworkRequests else { return }
+        guard locationSynchronizationTasks[location.id] == nil else {
+            if queueAfterActiveSynchronization {
+                pendingLocationSynchronizationIDs.insert(location.id)
+            }
+            return
+        }
+        if let retryDate = documentStore.automaticRetryDate(for: location.id),
+           retryDate > Date() {
+            return
+        }
 
         let taskID = UUID()
         let task = Task { @MainActor [weak self, weak connections] in
             guard let self, let connections else { return }
             defer {
-                if self.locationSynchronizationTaskIDs[location.id] == taskID {
-                    self.locationSynchronizationTasks[location.id] = nil
-                    self.locationSynchronizationTaskIDs[location.id] = nil
-                }
+                self.finishSynchronization(
+                    for: location,
+                    taskID: taskID,
+                    connections: connections
+                )
             }
             guard !Task.isCancelled else { return }
 #if DEBUG
@@ -284,15 +379,29 @@ final class CloudStorageSyncService {
         locationSynchronizationTaskIDs[location.id] = taskID
     }
 
+    private func finishSynchronization(
+        for location: CloudStorageLocation,
+        taskID: UUID,
+        connections: CloudStorageConnectionStore
+    ) {
+        guard locationSynchronizationTaskIDs[location.id] == taskID else { return }
+        locationSynchronizationTasks[location.id] = nil
+        locationSynchronizationTaskIDs[location.id] = nil
+        guard pendingLocationSynchronizationIDs.remove(location.id) != nil else { return }
+        requestSynchronization(for: location, connections: connections)
+    }
+
     private func removeServiceObserver(_ observerID: UUID) {
         serviceObserverIDs.remove(observerID)
         guard serviceObserverIDs.isEmpty else { return }
         serviceTask?.cancel()
         serviceTask = nil
         locationObserver = nil
+        connectivityObserver = nil
         observedLocationIDs = []
         locationSynchronizationTasks.values.forEach { $0.cancel() }
         locationSynchronizationTasks = [:]
         locationSynchronizationTaskIDs = [:]
+        pendingLocationSynchronizationIDs = []
     }
 }
