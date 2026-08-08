@@ -57,41 +57,53 @@ extension LocalFolder {
     private struct StartAccessingSecurityScopedResourceError: LocalizedError {
         var errorDescription: String? { "Start accessing security scoped resource failed." }
     }
+
+    private var securityScopeRoot: LocalFolder {
+        var folder = self
+        while let parent = folder.parent {
+            folder = parent
+        }
+        return folder
+    }
+
+    private func resolvedAccessURLs() throws -> (target: URL, scope: URL) {
+        let root = securityScopeRoot
+        guard let scopeURL = try root.scopedURL else {
+            throw InvalidScopedURLError()
+        }
+
+        let targetURL: URL
+        if objectID == root.objectID {
+            targetURL = scopeURL
+        } else if let url {
+            targetURL = url
+        } else if let filePath {
+            targetURL = URL(fileURLWithPath: filePath)
+        } else {
+            throw InvalidScopedURLError()
+        }
+        return (targetURL, scopeURL)
+    }
+
     @discardableResult
     public func withSecurityScopedURL<T>(actions: (_ scopedURL: URL) throws -> T) throws -> T {
-        guard let scopedURL = try self.scopedURL else {
-            throw InvalidScopedURLError()
-        }
-        guard scopedURL.startAccessingSecurityScopedResource() else {
+        let urls = try resolvedAccessURLs()
+        guard urls.scope.startAccessingSecurityScopedResource() else {
             throw StartAccessingSecurityScopedResourceError()
         }
-        defer { scopedURL.stopAccessingSecurityScopedResource() }
-        
-        return try actions(scopedURL)
+        defer { urls.scope.stopAccessingSecurityScopedResource() }
+
+        return try actions(urls.target)
     }
-    
-    public func withSecurityScopedURL(actions: @escaping (_ scopedURL: URL) async -> Void) throws {
-        guard let scopedURL = try self.scopedURL else {
-            throw InvalidScopedURLError()
-        }
-        guard scopedURL.startAccessingSecurityScopedResource() else {
-            throw StartAccessingSecurityScopedResourceError()
-        }
-        Task {
-            defer { scopedURL.stopAccessingSecurityScopedResource() }
-            await actions(scopedURL)
-        }
-    }
+
     @discardableResult
     public func withSecurityScopedURL<T>(actions: @escaping (_ scopedURL: URL) async throws -> T) async throws -> T {
-        guard let scopedURL = try self.scopedURL else {
-            throw InvalidScopedURLError()
-        }
-        guard scopedURL.startAccessingSecurityScopedResource() else {
+        let urls = try resolvedAccessURLs()
+        guard urls.scope.startAccessingSecurityScopedResource() else {
             throw StartAccessingSecurityScopedResourceError()
         }
-        defer { scopedURL.stopAccessingSecurityScopedResource() }
-        return try await actions(scopedURL)
+        defer { urls.scope.stopAccessingSecurityScopedResource() }
+        return try await actions(urls.target)
     }
 
     static func withSecurityScopedAccessToContainingFolder<T>(
@@ -105,12 +117,24 @@ extension LocalFolder {
         return try await withSecurityScopedBookmark(bookmarkData, action: action)
     }
 
+    static func modificationDate(forLocalFileAt fileURL: URL) async throws -> Date? {
+        try await withSecurityScopedAccessToContainingFolder(for: fileURL) {
+            try fileURL.resourceValues(
+                forKeys: [.contentModificationDateKey]
+            ).contentModificationDate
+        }
+    }
+
     private static func securityScopedBookmarkData(forLocalFileAt fileURL: URL) async throws -> Data? {
         let filePath = fileURL.standardizedFileURL.path
         let context = PersistenceController.shared.newTaskContext()
 
         return try await context.perform {
             let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+            // The picker grant belongs to a top-level linked folder and already
+            // covers its descendants. Child bookmarks are navigation metadata;
+            // using the root avoids provider-specific descendant bookmark behavior.
+            request.predicate = NSPredicate(format: "parent == nil")
             let folders = try context.fetch(request)
 
             return folders.compactMap { folder -> (path: String, bookmarkData: Data)? in
@@ -270,17 +294,27 @@ extension LocalFolder {
     /// Check if folder path exists and is accessible
     /// - Returns: Result with success or error with localized description
     func checkPathExists() -> Result<Void, LocalFolderPathError> {
-        guard let url = self.url else {
-            return .failure(LocalFolderPathError(message: "This folder entry is invalid and should be removed."))
-        }
-
-        let fileManager = FileManager.default
-        var isDirectory: ObjCBool = false
-
-        if fileManager.fileExists(atPath: url.filePath, isDirectory: &isDirectory) && isDirectory.boolValue {
-            return .success(())
-        } else {
-            return .failure(LocalFolderPathError(message: "The folder \"\(url.lastPathComponent)\" could not be found. It may have been moved or deleted.\n\nPath: \(url.filePath)"))
+        do {
+            return try withSecurityScopedURL { url in
+                var isDirectory: ObjCBool = false
+                if FileManager.default.fileExists(
+                    atPath: url.filePath,
+                    isDirectory: &isDirectory
+                ), isDirectory.boolValue {
+                    return .success(())
+                }
+                return .failure(
+                    LocalFolderPathError(
+                        message: "The folder \"\(url.lastPathComponent)\" could not be found. It may have been moved or deleted.\n\nPath: \(url.filePath)"
+                    )
+                )
+            }
+        } catch {
+            return .failure(
+                LocalFolderPathError(
+                    message: error.localizedDescription
+                )
+            )
         }
     }
 }

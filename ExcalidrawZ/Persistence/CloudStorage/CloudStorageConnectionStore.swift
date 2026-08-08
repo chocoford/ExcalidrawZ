@@ -204,6 +204,11 @@ final class CloudStorageConnectionStore: ObservableObject {
             }
         }
 
+#if DEBUG
+        logger.debug(
+            "Starting interactive cloud storage authorization provider=\(location.providerID.rawValue) location=\(location.displayName) id=\(location.id) accountID=\(location.accountID)"
+        )
+#endif
         let account = try await connect(to: location.providerID)
         guard account.id == location.accountID else {
             accessFailureLocationIDs.insert(location.id)

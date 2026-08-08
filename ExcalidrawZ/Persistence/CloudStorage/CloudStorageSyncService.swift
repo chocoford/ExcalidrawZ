@@ -136,11 +136,45 @@ final class CloudStorageSyncService {
         let connections = connections ?? .shared
         connectivity.startIfNeeded()
         guard connectivity.canAttemptNetworkRequests else { return }
+        guard await documentStore.refresh(
+            location,
+            connections: connections,
+            force: true
+        ) else { return }
+        scheduleDocumentSynchronizations(
+            in: location,
+            parentID: parentID,
+            connections: connections
+        )
+    }
+
+    /// A user explicitly entered or retried a cloud location, so restoring
+    /// access may present the provider's authorization UI.
+    func prioritizeDocumentsAfterUserEntry(
+        in location: CloudStorageLocation,
+        parentID: CloudStorageItemID,
+        connections: CloudStorageConnectionStore? = nil
+    ) async {
+        let connections = connections ?? .shared
+        connectivity.startIfNeeded()
+        guard connectivity.canAttemptNetworkRequests else { return }
         guard await refreshForUserInitiatedSynchronization(
             location,
             connections: connections,
             reason: "folder"
         ) else { return }
+        scheduleDocumentSynchronizations(
+            in: location,
+            parentID: parentID,
+            connections: connections
+        )
+    }
+
+    private func scheduleDocumentSynchronizations(
+        in location: CloudStorageLocation,
+        parentID: CloudStorageItemID,
+        connections: CloudStorageConnectionStore
+    ) {
         documentStore.scheduleDocumentSynchronizations(
             in: location,
             parentID: parentID,
@@ -162,11 +196,13 @@ final class CloudStorageSyncService {
         let locations = connections.locations
         guard !locations.isEmpty else { return }
 
+        // Home appears automatically during launch. Refresh Recently without
+        // allowing a missing or expired credential to present OAuth UI.
         for location in locations {
-            _ = await refreshForUserInitiatedSynchronization(
+            _ = await documentStore.refresh(
                 location,
                 connections: connections,
-                reason: "recently"
+                force: true
             )
         }
 

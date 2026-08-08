@@ -302,6 +302,9 @@ private struct FileHomeItemContentView: View {
                 .clipShape(RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius))
             }
         }
+        .task(id: fileID) {
+            await refreshLocalModificationDate()
+        }
     }
     
     @ViewBuilder
@@ -391,6 +394,7 @@ private struct FileHomeItemContentView: View {
                                     Text(localUpdatedAt?.formatted() ?? String(localizable: .generalFileNeverModified))
                                         .lineLimit(1)
                                         .watch(value: updatedAt) { newValue in
+                                            if case .localFile = file { return }
                                             localUpdatedAt = newValue
                                         }
                                 case .location:
@@ -446,6 +450,11 @@ private struct FileHomeItemContentView: View {
 //                Rectangle().fill(.ultraThinMaterial)
 //            }
 //        }
+    }
+
+    private func refreshLocalModificationDate() async {
+        guard case .localFile(let url) = file else { return }
+        localUpdatedAt = try? await LocalFolder.modificationDate(forLocalFileAt: url)
     }
 
     @ViewBuilder

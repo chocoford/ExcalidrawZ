@@ -106,6 +106,14 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
                 DispatchQueue.main.async {
                     fileState.setActiveGroupIfNeeded(.cloudStorageFolder(.root(of: location)))
                     fileState.setActiveFile(nil)
+                    Task { @MainActor in
+                        await CloudStorageSyncService.shared
+                            .prioritizeDocumentsAfterUserEntry(
+                                in: location,
+                                parentID: location.rootItemID,
+                                connections: connections
+                            )
+                    }
                 }
             }
         )
@@ -291,6 +299,14 @@ private struct CloudStorageSidebarFolderRow: View {
                 DispatchQueue.main.async {
                     fileState.setActiveGroupIfNeeded(.cloudStorageFolder(reference))
                     fileState.setActiveFile(nil)
+                    Task { @MainActor in
+                        await CloudStorageSyncService.shared
+                            .prioritizeDocumentsAfterUserEntry(
+                                in: browser.location,
+                                parentID: folder.id,
+                                connections: connections
+                            )
+                    }
                 }
             }
         )

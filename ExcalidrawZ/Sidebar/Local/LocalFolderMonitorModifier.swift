@@ -15,6 +15,7 @@ import Logging
 struct LocalFolderMonitorModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
+    @Environment(\.scenePhase) private var scenePhase
     
     @StateObject private var localFolderState = LocalFolderState()
     
@@ -31,6 +32,7 @@ struct LocalFolderMonitorModifier: ViewModifier {
 
     @State private var eventStreamTask: Task<Void, Never>?
     @State private var registeredFolders: Set<NSManagedObjectID> = []
+    @State private var registeringFolders: Set<NSManagedObjectID> = []
     @State private var folderURLs: [NSManagedObjectID: URL] = [:]
 
     func body(content: Content) -> some View {
@@ -38,6 +40,10 @@ struct LocalFolderMonitorModifier: ViewModifier {
             .environmentObject(localFolderState)
             .watch(value: folders) { newValue in
                 handleFoldersObservation(folders: newValue)
+            }
+            .watch(value: scenePhase) { newValue in
+                guard newValue == .active else { return }
+                handleFoldersObservation(folders: folders)
             }
             .onAppear {
                 startListeningToFileChanges()
@@ -53,7 +59,9 @@ struct LocalFolderMonitorModifier: ViewModifier {
         let currentFolderIDs = Set(newValue.map { $0.objectID })
 
         // Find folders to add (in newValue but not in registeredFolders)
-        let folderIDsToAdd = currentFolderIDs.subtracting(registeredFolders)
+        let folderIDsToAdd = currentFolderIDs
+            .subtracting(registeredFolders)
+            .subtracting(registeringFolders)
 
         // Find folders to remove (in registeredFolders but not in newValue)
         let folderIDsToRemove = registeredFolders.subtracting(currentFolderIDs)
@@ -64,19 +72,22 @@ struct LocalFolderMonitorModifier: ViewModifier {
                 continue
             }
 
+            registeringFolders.insert(folderID)
             Task {
                 do {
                     try await folder.withSecurityScopedURL { scopedURL in
                         try await FileSyncCoordinator.shared.addFolder(at: scopedURL, options: .default)
                         await MainActor.run {
-                            // Store URL for future removal
                             folderURLs[folderID] = scopedURL
+                            registeredFolders.insert(folderID)
+                            registeringFolders.remove(folderID)
                         }
                         logger.info("Registered folder with FileSyncCoordinator: \(scopedURL.filePath)")
                     }
                 } catch {
                     logger.error("Failed to access security-scoped URL: \(error)")
                     await MainActor.run {
+                        registeringFolders.remove(folderID)
                         alertToast(error)
                     }
                 }
@@ -85,6 +96,7 @@ struct LocalFolderMonitorModifier: ViewModifier {
 
         // Unregister removed folders
         for folderID in folderIDsToRemove {
+            registeredFolders.remove(folderID)
             guard let url = folderURLs[folderID] else {
                 logger.warning("Cannot unregister folder - URL not found: \(folderID)")
                 continue
@@ -98,9 +110,6 @@ struct LocalFolderMonitorModifier: ViewModifier {
                 logger.info("Unregistered folder from FileSyncCoordinator: \(url.lastPathComponent)")
             }
         }
-
-        // Update registered folders set
-        registeredFolders = currentFolderIDs
     }
     
     /// Listen to FileSyncCoordinator events and forward to LocalFolderState

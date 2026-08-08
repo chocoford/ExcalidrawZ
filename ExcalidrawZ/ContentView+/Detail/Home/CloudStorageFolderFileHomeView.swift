@@ -186,7 +186,7 @@ struct CloudStorageFolderFileHomeView: View {
     private func retryButton(errorMessage: String) -> some View {
         Button {
             Task {
-                await CloudStorageSyncService.shared.prioritizeDocuments(
+                await CloudStorageSyncService.shared.prioritizeDocumentsAfterUserEntry(
                     in: folder.location,
                     parentID: folder.itemID,
                     connections: connections

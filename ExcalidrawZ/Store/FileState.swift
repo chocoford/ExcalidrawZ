@@ -14,8 +14,26 @@ import UniformTypeIdentifiers
 import ChocofordEssentials
 
 
+private final class SecurityScopedResourceLease {
+    let url: URL
+
+    init?(url: URL) {
+        guard url.startAccessingSecurityScopedResource() else { return nil }
+        self.url = url
+    }
+
+    deinit {
+        url.stopAccessingSecurityScopedResource()
+    }
+}
+
 final class FileState: ObservableObject {
     let logger = Logger(label: "FileState")
+
+    // Open-in-place URLs are not backed by a saved LocalFolder bookmark. Keep
+    // their security scope alive for this temporary workspace so asynchronous
+    // canvas reads and writes retain access to the provider-owned document.
+    private var openInPlaceSecurityScopeLeases: [URL: SecurityScopedResourceLease] = [:]
     
     var stateUpdateQueue: DispatchQueue = DispatchQueue(label: "StateUpdateQueue")
     
@@ -896,6 +914,24 @@ final class FileState: ObservableObject {
     @Published var selectedStartLocalFile: URL?
     
     @Published var temporaryFiles: [URL] = []
+
+    @MainActor
+    @discardableResult
+    func retainOpenInPlaceAccess(to url: URL) -> Bool {
+        let key = url.standardizedFileURL
+        if openInPlaceSecurityScopeLeases[key] != nil {
+            return true
+        }
+
+        guard let lease = SecurityScopedResourceLease(url: url) else {
+            logger.warning("Failed to retain open-in-place access: \(url.lastPathComponent)")
+            return false
+        }
+
+        openInPlaceSecurityScopeLeases[key] = lease
+        logger.debug("Retained open-in-place access: \(url.lastPathComponent)")
+        return true
+    }
     
     @Published var selectedTemporaryFiles: Set<URL> = []
     @Published var selectedStartTemporaryFile: URL?

@@ -215,6 +215,15 @@ struct OpenFromURLModifier: ViewModifier {
             onOpenLibraryFile(url)
             return
         }
+
+        // Files handed to the app through open-in-place do not have a saved
+        // LocalFolder bookmark. Retain their security scope for the temporary
+        // workspace before the asynchronous editor load begins.
+        if targetURL == url,
+           !fileState.retainOpenInPlaceAccess(to: url) {
+            alertToast(AppError.urlError(.startAccessingSecurityScopedResourceFailed))
+            return
+        }
         
         fileState.setActiveFile(.temporaryFile(targetURL))
         

@@ -32,6 +32,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
     @State private var lockedFileAccessRequest: LockedFileAccessRequest?
     @State private var existingRecoveryKeyLockRequest: LockedFileAccessRequest?
     @State private var isLockingFile = false
+    @State private var localFileUpdatedAt: Date?
 #if os(iOS)
     @AppStorage(ApplePencilDefaults.isFirstOpenPencilModeKey) private var isFirstOpenPencilMode = true
     @State private var isPencilModeTipsPresented = false
@@ -120,6 +121,13 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
         }
         .task(id: fileState.currentActiveFile?.id) {
             await lockedContentState.refresh(activeFile: fileState.currentActiveFile)
+            if case .localFile(let url) = fileState.currentActiveFile {
+                localFileUpdatedAt = try? await LocalFolder.modificationDate(
+                    forLocalFileAt: url
+                )
+            } else {
+                localFileUpdatedAt = nil
+            }
         }
 #if os(macOS)
         .watch(value: fileState.currentActiveFile?.id, initial: true) { previousActiveFileID, activeFileID in
@@ -583,11 +591,10 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                         }
                     case .localFile(let fileURL):
                         let filename = fileURL.deletingPathExtension().lastPathComponent
-                        let updatedAt = (try? FileManager.default.attributesOfItem(atPath: fileURL.filePath))?[.modificationDate] as? Date
                         VStack(alignment: .leading) {
                             Text(filename)
                                 .font(.headline)
-                            Text(updatedAt?.formatted() ?? String(localizable: .generalFileNeverModified))
+                            Text(localFileUpdatedAt?.formatted() ?? String(localizable: .generalFileNeverModified))
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }

@@ -167,14 +167,17 @@ struct LocalFileRowView: View {
     }
     
     private func updateModifiedDate() {
-        self.modifiedDate = .distantPast
-        do {
-            let attributes = try FileManager.default.attributesOfItem(atPath: file.filePath)
-            if let modifiedDate = attributes[FileAttributeKey.modificationDate] as? Date {
-                self.modifiedDate = modifiedDate
-            }
-        } catch {
-            DispatchQueue.main.async {
+        let file = self.file
+        Task {
+            do {
+                let modifiedDate = try await LocalFolder.modificationDate(
+                    forLocalFileAt: file
+                )
+                guard self.file == file else { return }
+                self.modifiedDate = modifiedDate ?? .distantPast
+            } catch {
+                guard self.file == file else { return }
+                self.modifiedDate = .distantPast
                 alertToast(error)
             }
         }
