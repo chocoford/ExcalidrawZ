@@ -8,7 +8,7 @@
 import SwiftUI
 
 #if os(iOS)
-/// A View only for showing syncing status
+/// Shows the active document's provider-specific synchronization status.
 @MainActor
 struct FileICloudSyncStatusIndicator: View {
     var file: FileState.ActiveFile
@@ -19,7 +19,10 @@ struct FileICloudSyncStatusIndicator: View {
     var body: some View {
         switch file {
             case .cloudStorageFile(let reference):
-                CloudStorageDocumentSyncIndicator(reference: reference)
+                CloudStorageDocumentSyncIndicator(
+                    reference: reference,
+                    presentation: .toolbar
+                )
 
             default:
                 iCloudStatusContent

@@ -76,6 +76,13 @@ final class CloudStorageFolderPickerModel: ObservableObject {
         }
     }
 
+    func cancelPendingRequests() {
+        prefetchTask?.cancel()
+        prefetchTask = nil
+        folderRequests.values.forEach { $0.cancel() }
+        folderRequests.removeAll()
+    }
+
     private func show(folder: CloudStorageItem, folders: [CloudStorageItem]) {
         withAnimation(.smooth(duration: 0.28)) {
             path.append(folder)
@@ -100,6 +107,8 @@ final class CloudStorageFolderPickerModel: ObservableObject {
 
         do {
             try await operation()
+        } catch is CancellationError {
+            return
         } catch {
             errorMessage = error.localizedDescription
         }

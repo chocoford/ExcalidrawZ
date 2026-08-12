@@ -115,6 +115,7 @@ struct ContentView: View {
                 fileState.applyCloudStorageIdentityChange(change)
             }
             .modifier(LockedContentEventModifier(fileState: fileState))
+            .modifier(ActiveFileAvailabilityModifier(fileState: fileState))
             .watch(value: fileState.currentActiveFile) { newValue in
                 // Going back to Home: nothing to inspect, so collapse the panel.
                 if newValue == nil, layoutState.isInspectorPresented {

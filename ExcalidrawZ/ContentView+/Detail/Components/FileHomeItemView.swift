@@ -369,9 +369,13 @@ private struct FileHomeItemContentView: View {
                             }
                             
                             if style == .file {
-                                FileICloudStatusIndicator(file: file)
-                                    .controlSize(.mini)
-                                    .foregroundStyle(.secondary)
+                                Color.clear
+                                    .frame(width: 16, height: 0)
+                                    .overlay {
+                                        FileICloudStatusIndicator(file: file)
+                                            .controlSize(.mini)
+                                            .foregroundStyle(.secondary)
+                                    }
                             }
 
                             if lockedContentState.previewLockState(for: file) == .temporarilyUnlocked {
@@ -530,6 +534,7 @@ private extension FileState.ActiveFile {
 
     static func abbreviatedPath(_ directoryURL: URL) -> String {
         let path = directoryURL.path(percentEncoded: false)
+#if os(macOS)
         let homePath = FileManager.default.homeDirectoryForCurrentUser.path(percentEncoded: false)
         if path == homePath {
             return "~"
@@ -537,6 +542,7 @@ private extension FileState.ActiveFile {
         if path.hasPrefix(homePath + "/") {
             return "~" + path.dropFirst(homePath.count)
         }
+#endif
         return path
     }
 }
@@ -580,7 +586,7 @@ private struct FileHomeItemContextMenuModifier: ViewModifier {
                         .modifier(CollaborationFileContextMenuModifier(file: collaborationFile))
                 case .cloudStorageFile(let reference):
                     content
-                        .modifier(CloudStorageFileContextMenuModifier(reference: reference))
+                        .modifier(CloudStorageFileActionsModifier(reference: reference))
             }
         }
     }

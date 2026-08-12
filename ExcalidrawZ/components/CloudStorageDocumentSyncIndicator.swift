@@ -7,9 +7,10 @@ import SwiftUI
 
 @MainActor
 struct CloudStorageDocumentSyncIndicator: View {
-    enum Presentation {
+    enum Presentation: Equatable {
         case sidebar
         case iconOnly
+        case toolbar
         case canvas
     }
 
@@ -27,21 +28,21 @@ struct CloudStorageDocumentSyncIndicator: View {
     @ViewBuilder
     var body: some View {
         ZStack {
-            if state.isVisiblyPresented {
+            if shouldPresentState {
                 if case .conflict = state, let onConflictSelected {
                     Button(action: onConflictSelected) {
                         visibleContent
                     }
                     .buttonStyle(.plain)
                     .statusPresentation(
-                        tint: state.tint,
+                        tint: presentationTint,
                         text: displayText,
                         transition: visibilityTransition
                     )
                 } else {
                     visibleContent
                         .statusPresentation(
-                            tint: state.tint,
+                            tint: presentationTint,
                             text: displayText,
                             transition: visibilityTransition
                         )
@@ -53,7 +54,7 @@ struct CloudStorageDocumentSyncIndicator: View {
 
     private var visibilityTransition: AnyTransition {
         switch presentation {
-            case .sidebar, .iconOnly:
+            case .sidebar, .iconOnly, .toolbar:
                 .identity
             case .canvas:
                 .asymmetric(
@@ -74,6 +75,10 @@ struct CloudStorageDocumentSyncIndicator: View {
             case .iconOnly:
                 statusIcon
                     .frame(width: 16, height: 16)
+
+            case .toolbar:
+                statusIcon
+                    .frame(width: 20, height: 20)
 
             case .canvas:
                 HStack(spacing: state.showsExpandedStatus ? 7 : 0) {
@@ -107,6 +112,9 @@ struct CloudStorageDocumentSyncIndicator: View {
         if isWaitingForConnection {
             Image(systemName: "wifi.slash")
                 .symbolRenderingMode(.hierarchical)
+        } else if presentation == .toolbar, isToolbarIdleState {
+            Image(systemName: "checkmark.icloud")
+                .symbolRenderingMode(.hierarchical)
         } else {
             switch state {
                 case .checking, .downloading(progress: nil), .uploading(progress: nil), .processing:
@@ -137,9 +145,49 @@ struct CloudStorageDocumentSyncIndicator: View {
         connectivity.status == .unavailable && state == .queued
     }
 
+    private var shouldPresentState: Bool {
+        if presentation == .toolbar {
+            return true
+        }
+        if presentation == .canvas, isQueuedDownload {
+            return false
+        }
+        return state.isVisiblyPresented
+    }
+
+    private var isToolbarIdleState: Bool {
+        switch state {
+            case .synced, .checking:
+                true
+            case .queued:
+                isQueuedDownload
+            case .local, .downloading, .uploading, .processing,
+                 .conflict, .failed:
+                false
+        }
+    }
+
+    private var pendingDirection: CloudStoragePendingSyncDirection? {
+        guard state == .queued else { return nil }
+        return documentStore.pendingSyncDirection(for: reference)
+    }
+
+    private var isQueuedDownload: Bool {
+        pendingDirection == .download
+    }
+
+    private var presentationTint: Color {
+        if isWaitingForConnection {
+            return .secondary
+        }
+        return presentation == .toolbar && isToolbarIdleState
+            ? .green
+            : state.tint
+    }
+
     private var statusSymbolName: String? {
         guard state == .queued else { return state.symbolName }
-        return documentStore.pendingSyncDirection(for: reference) == .upload
+        return pendingDirection == .upload
             ? "icloud.and.arrow.up"
             : "icloud.and.arrow.down"
     }
@@ -150,6 +198,9 @@ struct CloudStorageDocumentSyncIndicator: View {
                 localized: "cloudStorageStatusWaitingForConnection",
                 defaultValue: "Waiting for connection…"
             )
+        }
+        if presentation == .toolbar, isToolbarIdleState {
+            return String(localizable: .fileStatusDescriptionSynced)
         }
         return state.displayText
     }
@@ -170,10 +221,13 @@ private extension View {
 
 private extension CloudStorageDocumentSyncState {
     var isVisiblyPresented: Bool {
-        if case .synced = self {
-            return false
+        switch self {
+            case .synced, .checking:
+                false
+            case .local, .queued, .downloading, .uploading,
+                 .processing, .conflict, .failed:
+                true
         }
-        return true
     }
 
     var showsExpandedStatus: Bool {

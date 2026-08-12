@@ -25,6 +25,53 @@ struct TemporaryFileContextMenuModifier: ViewModifier {
     }
 }
 
+enum TemporaryFileActions {
+    @MainActor
+    static func close(_ files: Set<URL>, fileState: FileState) {
+        let filesToClose = Array(files)
+        guard !filesToClose.isEmpty else { return }
+
+        let currentActiveFile: URL? = if case .temporaryFile(let file) = fileState.currentActiveFile {
+            file
+        } else {
+            nil
+        }
+        let didCloseCurrent = currentActiveFile.map { filesToClose.contains($0) } ?? false
+
+        fileState.temporaryFiles.removeAll { files.contains($0) }
+        deleteAIConversations(for: filesToClose)
+
+        if didCloseCurrent {
+            if fileState.temporaryFiles.isEmpty {
+                fileState.currentActiveGroup = nil
+                fileState.setActiveFile(nil)
+            } else if let nextFile = fileState.temporaryFiles.first {
+                fileState.setActiveFile(.temporaryFile(nextFile))
+            }
+        }
+    }
+
+    private static func deleteAIConversations(for temporaryFiles: [URL]) {
+        Task.detached {
+            for file in temporaryFiles {
+                let scope = AIConversationFileScope(
+                    kind: .temporaryFile,
+                    id: file.absoluteString
+                )
+                do {
+                    try await PersistenceController.shared.aiConversationRepository
+                        .deleteConversations(forFileScope: scope)
+                    await AIChatPreferences.shared.deleteFileAccessOverride(for: scope)
+                } catch {
+                    temporaryFileMenuLogger.warning(
+                        "Failed to delete AI conversations for temporary file \(file): \(error)"
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 struct TemporaryFileMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -140,29 +187,7 @@ struct TemporaryFileMenuItems: View {
         Divider()
         
         Button {
-            let filesToClose = Array(files)
-            guard !filesToClose.isEmpty else { return }
-
-            let currentActiveFile: URL? = if case .temporaryFile(let file) = fileState.currentActiveFile {
-                file
-            } else {
-                nil
-            }
-            let didCloseCurrent = currentActiveFile.map { filesToClose.contains($0) } ?? false
-            
-            for file in filesToClose {
-                fileState.temporaryFiles.removeAll(where: { $0 == file })
-            }
-            deleteAIConversations(for: filesToClose)
-            
-            if didCloseCurrent {
-                if fileState.temporaryFiles.isEmpty {
-                    fileState.currentActiveGroup = nil
-                    fileState.setActiveFile(nil)
-                } else if let nextFile = fileState.temporaryFiles.first {
-                    fileState.setActiveFile(.temporaryFile(nextFile))
-                }
-            }
+            TemporaryFileActions.close(files, fileState: fileState)
         } label: {
             Label {
                 if #available(macOS 13.0, iOS 16.0, *), files.count > 1 {
@@ -174,26 +199,6 @@ struct TemporaryFileMenuItems: View {
                 }
             } icon: {
                 Image(systemSymbol: .xmarkCircle)
-            }
-        }
-    }
-
-    private func deleteAIConversations(for temporaryFiles: [URL]) {
-        Task.detached {
-            for file in temporaryFiles {
-                let scope = AIConversationFileScope(
-                    kind: .temporaryFile,
-                    id: file.absoluteString
-                )
-                do {
-                    try await PersistenceController.shared.aiConversationRepository
-                        .deleteConversations(
-                            forFileScope: scope
-                        )
-                    await AIChatPreferences.shared.deleteFileAccessOverride(for: scope)
-                } catch {
-                    temporaryFileMenuLogger.warning("Failed to delete AI conversations for temporary file \(file): \(error)")
-                }
             }
         }
     }

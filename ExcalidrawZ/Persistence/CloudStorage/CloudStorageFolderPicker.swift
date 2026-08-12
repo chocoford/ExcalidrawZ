@@ -54,6 +54,9 @@ struct CloudStorageFolderPicker: View {
         .task {
             await model.start()
         }
+        .onDisappear {
+            model.cancelPendingRequests()
+        }
 #if os(macOS)
         .frame(minWidth: 560, idealWidth: 680, minHeight: 480, idealHeight: 600)
 #endif
@@ -65,11 +68,15 @@ struct CloudStorageFolderPicker: View {
                 Text(navigationTitle)
                     .font(.headline)
                     .lineLimit(1)
+                    .truncationMode(.middle)
                 Text(context.account.displayName)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                    .truncationMode(.middle)
             }
+            .padding(.horizontal, 116)
+            .frame(maxWidth: .infinity)
 
             HStack(spacing: 8) {
                 Button {

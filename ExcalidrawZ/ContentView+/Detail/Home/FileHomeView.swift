@@ -21,7 +21,7 @@ struct GroupFileHomeView: View {
         self._files = FetchRequest<File>(
             sortDescriptors: ExcalidrawFileSortProvider.fileSortDescriptors(for: sortField),
             predicate: group.groupType == .trash
-            ? NSPredicate(format: "inTrash == true")
+            ? File.trashedPredicate
             : NSPredicate(format: "inTrash == false AND group == %@", group)
         )
     }
@@ -258,7 +258,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
         self._childGroups = FetchRequest<Group>(
             sortDescriptors: [NSSortDescriptor(keyPath: \Group.name, ascending: true)],
             predicate: group.groupType == .trash
-            ? nil
+            ? NSPredicate(value: false)
             : NSPredicate(format: "parent == %@", group)
         )
 

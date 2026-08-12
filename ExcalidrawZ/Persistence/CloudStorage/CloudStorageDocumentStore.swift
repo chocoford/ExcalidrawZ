@@ -150,6 +150,10 @@ final class CloudStorageDocumentStore: ObservableObject {
         itemsByLocationID[folder.location.id]?[folder.itemID]
     }
 
+    func hasLoadedMetadataIndex(for locationID: UUID) -> Bool {
+        itemsByLocationID[locationID] != nil
+    }
+
     /// Returns provider-neutral document identities from the device-local
     /// metadata index. This never performs network IO; consumers update when
     /// the synchronization service publishes a newer index.
@@ -233,8 +237,8 @@ final class CloudStorageDocumentStore: ObservableObject {
 
     func latestReference(
         for reference: CloudStorageDocumentReference
-    ) -> CloudStorageDocumentReference {
-        guard let item = item(for: reference) else { return reference }
+    ) -> CloudStorageDocumentReference? {
+        guard let item = item(for: reference) else { return nil }
         return CloudStorageDocumentReference(
             locationID: reference.locationID,
             providerID: reference.providerID,
@@ -360,7 +364,7 @@ final class CloudStorageDocumentStore: ObservableObject {
             )
             let documentState = syncState(for: reference)
             let folderState: CloudStorageFolderSyncState
-            if documentState.isActivelySynchronizing {
+            if documentState.isVisiblySynchronizing {
                 folderState = .synchronizing
             } else if documentState == .queued {
                 folderState = .queued(
@@ -655,7 +659,10 @@ final class CloudStorageDocumentStore: ObservableObject {
         )
         let needsSynchronization = state.dirtyItemIDs.contains(reference.itemID)
             || !cacheExists
-            || state.cachedRevisions[reference.itemID] != item.revision
+            || !Self.revisionsMatch(
+                cached: state.cachedRevisions[reference.itemID],
+                remote: item.revision
+            )
 
         if needsSynchronization {
             scheduleContentSynchronization(
@@ -805,7 +812,10 @@ final class CloudStorageDocumentStore: ObservableObject {
             guard !excludingDocumentIDs.contains(reference.id) else { continue }
 
             let cachedRevision = state.cachedRevisions[item.id]
-            if !cacheExists || cachedRevision != item.revision {
+            if !cacheExists || !Self.revisionsMatch(
+                cached: cachedRevision,
+                remote: item.revision
+            ) {
                 scheduleContentSynchronization(
                     for: reference,
                     connections: connections,
@@ -871,7 +881,10 @@ final class CloudStorageDocumentStore: ObservableObject {
             )
             let cacheURL = cachedDocumentURL(for: reference)
             if fileManager.fileExists(atPath: cacheURL.path),
-               state.cachedRevisions[reference.itemID] == remoteItem.revision {
+               Self.revisionsMatch(
+                   cached: state.cachedRevisions[reference.itemID],
+                   remote: remoteItem.revision
+               ) {
                 setSyncState(.synced(lastVerifiedAt: Date()), for: reference)
                 return nil
             }
@@ -1156,7 +1169,10 @@ final class CloudStorageDocumentStore: ObservableObject {
         if !checkingRemoteRevision,
            fileManager.fileExists(atPath: cacheURL.path),
            let indexedItem = state.items.first(where: { $0.id == reference.itemID }),
-           state.cachedRevisions[reference.itemID] == indexedItem.revision {
+           Self.revisionsMatch(
+               cached: state.cachedRevisions[reference.itemID],
+               remote: indexedItem.revision
+           ) {
             setSyncState(.synced(lastVerifiedAt: Date()), for: reference)
             return try Data(contentsOf: cacheURL)
         }
@@ -2909,6 +2925,14 @@ final class CloudStorageDocumentStore: ObservableObject {
             reference.itemID.isPendingLocalID ? .local : .queued,
             for: reference
         )
+    }
+
+    private static func revisionsMatch(
+        cached: String?,
+        remote: String?
+    ) -> Bool {
+        guard let cached, let remote else { return false }
+        return cached == remote
     }
 
     private func notifyDocumentContentDidChange(

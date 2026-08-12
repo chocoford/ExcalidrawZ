@@ -324,7 +324,7 @@ private struct DatabaseGroupsListView: View {
 
     @FetchRequest(
         sortDescriptors: [],
-        predicate: NSPredicate(format: "inTrash == YES")
+        predicate: File.trashedPredicate
     )
     private var trashedFiles: FetchedResults<File>
 
@@ -373,7 +373,7 @@ private struct DatabaseGroupsListView: View {
     private var displayedGroups: [Group] {
         groups
             .filter {
-                $0.groupType != .trash || ($0.groupType == .trash && trashedFilesCount > 0)
+                $0.groupType != .trash || trashedFilesCount > 0
             }
             .sorted { a, b in
                 a.groupType == .default && b.groupType != .default ||

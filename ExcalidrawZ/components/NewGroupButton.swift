@@ -24,11 +24,20 @@ struct NewGroupButton: View {
         
     var groupType: GroupType?
     var parentGroupID: NSManagedObjectID?
+    var cloudStorageParent: CloudStorageFolderReference?
+    var activatesCreatedGroup: Bool
     var label: (GroupType) -> AnyView
     
-    init(type: GroupType? = nil, parentID: NSManagedObjectID?) {
+    init(
+        type: GroupType? = nil,
+        parentID: NSManagedObjectID?,
+        cloudStorageParent: CloudStorageFolderReference? = nil,
+        activatesCreatedGroup: Bool = true
+    ) {
         self.groupType = type
         self.parentGroupID = parentID
+        self.cloudStorageParent = cloudStorageParent
+        self.activatesCreatedGroup = activatesCreatedGroup
         self.label = { type in
             switch type {
                 case .localFolder:
@@ -44,16 +53,23 @@ struct NewGroupButton: View {
     init<L: View>(
         type: GroupType? = nil,
         parentID: NSManagedObjectID?,
+        cloudStorageParent: CloudStorageFolderReference? = nil,
+        activatesCreatedGroup: Bool = true,
         @ViewBuilder label: @escaping (GroupType) -> L
     ) {
         self.groupType = type
         self.parentGroupID = parentID
+        self.cloudStorageParent = cloudStorageParent
+        self.activatesCreatedGroup = activatesCreatedGroup
         self.label = {
             AnyView(label($0))
         }
     }
     
     var currentGroupType: GroupType? {
+        if cloudStorageParent != nil {
+            return .cloudStorageFolder
+        }
         switch fileState.currentActiveGroup {
             case .localFolder:
                 return .localFolder
@@ -109,9 +125,7 @@ struct NewGroupButton: View {
             case .cloudStorageFolder:
                 Button {
                     guard !isCreatingCloudFolder else { return }
-                    guard case .cloudStorageFolder(let folder) = fileState.currentActiveGroup else {
-                        return
-                    }
+                    guard let folder = activeCloudStorageParent else { return }
                     newCloudFolderName = CloudStorageDocumentStore.shared.availableFolderName(
                         in: folder
                     )
@@ -137,11 +151,19 @@ struct NewGroupButton: View {
     }
 
     private var canCreateChildrenInActiveCloudFolder: Bool {
-        guard case .cloudStorageFolder(let folder) = fileState.currentActiveGroup else {
-            return false
-        }
+        guard let folder = activeCloudStorageParent else { return false }
         return cloudStorageDocumentStore.capabilities(for: folder)
             .contains(.createChildren)
+    }
+
+    private var activeCloudStorageParent: CloudStorageFolderReference? {
+        if let cloudStorageParent {
+            return cloudStorageParent
+        }
+        guard case .cloudStorageFolder(let folder) = fileState.currentActiveGroup else {
+            return nil
+        }
+        return folder
     }
 
     @ViewBuilder
@@ -151,9 +173,7 @@ struct NewGroupButton: View {
             createType: .localFolder
         ) { name in
             guard !isCreatingCloudFolder else { return }
-            guard case .cloudStorageFolder(let parent) = fileState.currentActiveGroup else {
-                return
-            }
+            guard let parent = activeCloudStorageParent else { return }
             isCreatingCloudFolder = true
             Task {
                 defer { isCreatingCloudFolder = false }
@@ -162,7 +182,9 @@ struct NewGroupButton: View {
                         named: name,
                         in: parent
                     )
-                    fileState.setActiveGroupIfNeeded(.cloudStorageFolder(folder))
+                    if activatesCreatedGroup {
+                        fileState.setActiveGroupIfNeeded(.cloudStorageFolder(folder))
+                    }
                 } catch {
                     alertToast(error)
                 }

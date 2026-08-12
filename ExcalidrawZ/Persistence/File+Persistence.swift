@@ -10,6 +10,15 @@ import SwiftUI
 import CoreData
 
 extension File {
+    /// Matches both the current trash flag and the legacy trash-group
+    /// representation that can briefly reappear during CloudKit imports.
+    static var trashedPredicate: NSPredicate {
+        NSPredicate(
+            format: "inTrash == YES OR group.type == %@",
+            Group.GroupType.trash.rawValue
+        )
+    }
+
     convenience init(
         id: UUID = UUID(),
         name: String,

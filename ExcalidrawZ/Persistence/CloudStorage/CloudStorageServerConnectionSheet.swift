@@ -116,6 +116,10 @@ struct CloudStorageServerConnectionSheet: View {
         ZStack {
             Text("Connect \(providerName)")
                 .font(.headline)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .padding(.horizontal, 72)
+                .frame(maxWidth: .infinity)
 
             HStack {
                 Button {

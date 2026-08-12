@@ -13,10 +13,56 @@ import CoreData
 
 // MARK: - Generic Browser Content View
 
+struct CompactBrowserCollectionView<Folder: Identifiable, FolderContent: View>: View {
+    @EnvironmentObject private var layoutState: LayoutState
+
+    let folders: [Folder]
+    let files: [FileState.ActiveFile]
+    let folderContent: (Folder) -> FolderContent
+
+    init(
+        folders: [Folder],
+        files: [FileState.ActiveFile],
+        @ViewBuilder folderContent: @escaping (Folder) -> FolderContent
+    ) {
+        self.folders = folders
+        self.files = files
+        self.folderContent = folderContent
+    }
+
+    private var columns: [GridItem] {
+        switch layoutState.compactBrowserLayout {
+            case .grid:
+                [GridItem(.adaptive(minimum: 100))]
+            case .list:
+                [GridItem(.flexible(minimum: 0, maximum: 1000))]
+        }
+    }
+
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: columns, spacing: 20) {
+                ForEach(folders) { folder in
+                    folderContent(folder)
+                }
+
+                ForEach(files) { file in
+                    FileHomeItemView(
+                        file: file,
+                        selectionSiblings: files
+                    )
+                    .fileHomeItemStyle(.file)
+                }
+            }
+            .padding()
+        }
+        .animation(.smooth, value: layoutState.compactBrowserLayout)
+    }
+}
+
 struct CompactBrowserContentView<HomeGroup: ExcalidrawGroup>: View {
     @Environment(\.isPresented) private var isPresented
     @Environment(\.scenePhase) private var scenePhase
-    @EnvironmentObject private var layoutState: LayoutState
     @EnvironmentObject private var fileState: FileState
     
     
@@ -35,7 +81,9 @@ struct CompactBrowserContentView<HomeGroup: ExcalidrawGroup>: View {
                  NSSortDescriptor(keyPath: \Group.rank, ascending: true),
                  NSSortDescriptor(keyPath: \Group.type, ascending: true),
             ],
-            predicate: NSPredicate(format: "parent == %@", group)
+            predicate: group.groupType == .trash
+                ? NSPredicate(value: false)
+                : NSPredicate(format: "parent == %@", group)
         )
     }
     
@@ -49,39 +97,18 @@ struct CompactBrowserContentView<HomeGroup: ExcalidrawGroup>: View {
         )
     }
     
-    var columns: [GridItem] {
-        switch layoutState.compactBrowserLayout {
-            case .grid:
-                [GridItem(.adaptive(minimum: 100))]
-            case .list:
-                [GridItem(.flexible(minimum: 0, maximum: 1000))]
-        }
-    }
-    
     var body: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: 20) {
-                ForEach(childGroups) { group in
-                    NavigationLink(value: group.objectID) {
-                        CompactFolderItemView(
-                            group: group
-                        )
-                    }
-                }
-
-                ForEach(files) { file in
-                    FileHomeItemView(
-                        file: file,
-                        selectionSiblings: files
-                    )
-                         .fileHomeItemStyle(.file)
-                }
+        CompactBrowserCollectionView(
+            folders: Array(childGroups),
+            files: files
+        ) { group in
+            NavigationLink(value: group.objectID) {
+                CompactFolderItemView(group: group)
             }
-            .padding()
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
-        .animation(.smooth, value: layoutState.compactBrowserLayout)
+        .navigationBarBackButtonHidden(fileState.currentActiveFile != nil)
         .watch(value: fileState.currentActiveFile) { activeFile in
             Task {
                 if activeFile == nil {
@@ -152,6 +179,7 @@ struct CompactBrowserContentView<HomeGroup: ExcalidrawGroup>: View {
 // MARK: - Group Browser View
 
 struct CompactGroupBrowserView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var fileState: FileState
 
@@ -166,7 +194,7 @@ struct CompactGroupBrowserView: View {
         self._files = FetchRequest(
             sortDescriptors: ExcalidrawFileSortProvider.fileSortDescriptors(for: sortField),
             predicate: group.groupType == .trash
-            ? NSPredicate(format: "inTrash == YES")
+            ? File.trashedPredicate
             : NSPredicate(format: "group == %@ AND inTrash == NO", group)
         )
     }
@@ -176,6 +204,12 @@ struct CompactGroupBrowserView: View {
             group: group,
             files: Array(files)
         )
+        .watch(value: files.count) { count in
+            guard group.groupType == .trash, count == 0 else { return }
+            fileState.setActiveFile(nil)
+            fileState.setActiveGroupIfNeeded(nil)
+            dismiss()
+        }
     }
 }
 

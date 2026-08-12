@@ -69,7 +69,7 @@ final class CloudStorageSidebarBrowserModel: ObservableObject {
             .map { states in
                 Set(states.compactMap { documentID, state -> String? in
                     guard documentID.contains(locationMarker) else { return nil }
-                    if state.isActivelySynchronizing {
+                    if state.isVisiblySynchronizing {
                         return "active:\(documentID)"
                     }
                     if state == .queued {

@@ -45,6 +45,8 @@ struct CloudStorageLocationActionsModifier: ViewModifier {
 
     let location: CloudStorageLocation
     let presentation: Presentation
+    let showsSelection: Bool
+    let showsSwipeActions: Bool
 
     enum Presentation {
         case contextMenu
@@ -53,25 +55,41 @@ struct CloudStorageLocationActionsModifier: ViewModifier {
 
     init(
         location: CloudStorageLocation,
-        presentation: Presentation = .contextMenu
+        presentation: Presentation = .contextMenu,
+        showsSelection: Bool = true,
+        showsSwipeActions: Bool = false
     ) {
         self.location = location
         self.presentation = presentation
+        self.showsSelection = showsSelection
+        self.showsSwipeActions = showsSwipeActions
     }
 
     @ViewBuilder
     func body(content: Content) -> some View {
         switch presentation {
             case .contextMenu:
-                content.contextMenu {
+                let menuContent = content.contextMenu {
                     removeConnectionButton
+                }
+
+                if showsSwipeActions {
+                    menuContent
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            removeConnectionButton
+                                .tint(.red)
+                        }
+                } else {
+                    menuContent
                 }
             case .fileHomeMenu:
                 Menu {
                     removeConnectionButton
 #if os(iOS)
-                    Divider()
-                    CloudStorageFileHomeSelectionMenuItem()
+                    if showsSelection {
+                        Divider()
+                        CloudStorageFileHomeSelectionMenuItem()
+                    }
 #endif
                 } label: {
                     content
@@ -88,7 +106,10 @@ struct CloudStorageLocationActionsModifier: ViewModifier {
     }
 
     private var removeActionTitle: String {
-        "Remove \(location.providerID.displayName) Connection"
+        String(
+            localized: "cloudStorageActionUnlink",
+            defaultValue: "Unlink"
+        )
     }
 
     private func removeConnection() {
@@ -111,7 +132,7 @@ struct CloudStorageLocationActionsModifier: ViewModifier {
     }
 }
 
-struct CloudStorageFileContextMenuModifier: ViewModifier {
+struct CloudStorageFileActionsModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.openURL) private var openURL
     @EnvironmentObject private var fileState: FileState
@@ -119,6 +140,20 @@ struct CloudStorageFileContextMenuModifier: ViewModifier {
     @ObservedObject private var documentStore = CloudStorageDocumentStore.shared
 
     let reference: CloudStorageDocumentReference
+    let presentation: Presentation
+
+    enum Presentation {
+        case contextMenu
+        case fileMenu
+    }
+
+    init(
+        reference: CloudStorageDocumentReference,
+        presentation: Presentation = .contextMenu
+    ) {
+        self.reference = reference
+        self.presentation = presentation
+    }
 
     @State private var isRenamePresented = false
     @State private var isDeletePresented = false
@@ -139,89 +174,122 @@ struct CloudStorageFileContextMenuModifier: ViewModifier {
         }
     }
 
+    @ViewBuilder
     func body(content: Content) -> some View {
-        content
-            .contextMenu {
-                Button {
-                    open()
-                } label: {
-                    Label(.localizable(.generalButtonOpen), systemSymbol: .arrowUpRightSquare)
-                }
-
-                if case .conflict = documentStore.syncState(for: reference) {
-                    Button {
-                        isConflictResolutionPresented = true
-                    } label: {
-                        Label(
-                            String(
-                                localized: "cloudStorageConflictResolveAction",
-                                defaultValue: "Resolve Conflict…"
-                            ),
-                            systemImage: "exclamationmark.triangle"
-                        )
+        switch presentation {
+            case .contextMenu:
+                withPresentations(
+                    content.contextMenu {
+                        fileActionItems
                     }
-                }
-
-                if selectedReferences.count == 1,
-                   selectedReferencesAllow(.rename) {
-                    Button {
-                        isRenamePresented = true
+                )
+            case .fileMenu:
+                withPresentations(
+                    Menu {
+                        fileActionItems
                     } label: {
-                        Label(.localizable(.sidebarFileRowContextMenuRename), systemSymbol: .pencil)
+                        content
                     }
-                }
+                )
+        }
+    }
 
-                if selectedReferencesAllow(.download) {
-                    Button {
-                        duplicateSelectedFiles()
-                    } label: {
-                        Label {
-                            if selectedReferences.count > 1 {
-                                Text(
-                                    localizable: .sidebarFileRowContextMenuDuplicateFiles(
-                                        selectedReferences.count
-                                    )
-                                )
-                            } else {
-                                Text(localizable: .sidebarFileRowContextMenuDuplicate)
-                            }
-                        } icon: {
-                            Image(systemSymbol: .plusSquareOnSquare)
-                        }
-                    }
-                }
+    @ViewBuilder
+    private var fileActionItems: some View {
+        if !isCurrentFile {
+            Button {
+                open()
+            } label: {
+                Label(.localizable(.generalButtonOpen), systemSymbol: .arrowUpRightSquare)
+            }
+        }
 
-                Divider()
+        if case .conflict = documentStore.syncState(for: reference) {
+            Button {
+                isConflictResolutionPresented = true
+            } label: {
+                Label(
+                    String(
+                        localized: "cloudStorageConflictResolveAction",
+                        defaultValue: "Resolve Conflict…"
+                    ),
+                    systemImage: "exclamationmark.triangle"
+                )
+            }
+        }
 
-                Button {
-                    revealInProvider()
-                } label: {
-                    Label(
-                        .localizable(
-                            .cloudStorageContextMenuShowInProvider(
-                                reference.providerID.displayName
+        if selectedReferences.count == 1,
+           selectedReferencesAllow(.rename) {
+            Button {
+                isRenamePresented = true
+            } label: {
+                Label(.localizable(.sidebarFileRowContextMenuRename), systemSymbol: .pencil)
+            }
+        }
+
+        if selectedReferencesAllow(.download) {
+            Button {
+                duplicateSelectedFiles()
+            } label: {
+                Label {
+                    if selectedReferences.count > 1 {
+                        Text(
+                            localizable: .sidebarFileRowContextMenuDuplicateFiles(
+                                selectedReferences.count
                             )
-                        ),
-                        systemImage: "safari"
-                    )
-                }
-
-                Button {
-                    copyRemoteLink()
-                } label: {
-                    Label(.localizable(.cloudStorageContextMenuCopyLink), systemImage: "link")
-                }
-
-                if selectedReferencesAllow(.delete) {
-                    Divider()
-
-                    Button(role: .destructive) {
-                        isDeletePresented = true
-                    } label: {
-                        Label(.localizable(.sidebarFileRowContextMenuDelete), systemSymbol: .trash)
+                        )
+                    } else {
+                        Text(localizable: .sidebarFileRowContextMenuDuplicate)
                     }
+                } icon: {
+                    Image(systemSymbol: .plusSquareOnSquare)
                 }
             }
+        }
+
+        Divider()
+
+        Button {
+            revealInProvider()
+        } label: {
+            Label(
+                .localizable(
+                    .cloudStorageContextMenuShowInProvider(
+                        reference.providerID.displayName
+                    )
+                ),
+                systemImage: "safari"
+            )
+        }
+
+        Button {
+            copyRemoteLink()
+        } label: {
+            Label(.localizable(.cloudStorageContextMenuCopyLink), systemImage: "link")
+        }
+
+        if selectedReferencesAllow(.delete) {
+            Divider()
+
+            Button(role: .destructive) {
+                isDeletePresented = true
+            } label: {
+                Label(.localizable(.sidebarFileRowContextMenuDelete), systemSymbol: .trash)
+            }
+        }
+    }
+
+    private var isCurrentFile: Bool {
+        guard case .cloudStorageFile(let activeReference) = fileState.currentActiveFile else {
+            return false
+        }
+        return activeReference == reference
+    }
+
+    private func withPresentations<PresentedContent: View>(
+        _ content: PresentedContent
+    ) -> some View {
+        content
             .modifier(
                 RenameSheetViewModifier(
                     isPresented: $isRenamePresented,
@@ -343,6 +411,7 @@ struct CloudStorageFolderActionsModifier: ViewModifier {
 
     let folder: CloudStorageFolderReference
     let presentation: Presentation
+    let showsSelection: Bool
 
     @State private var isRenamePresented = false
     @State private var isDeletePresented = false
@@ -356,10 +425,12 @@ struct CloudStorageFolderActionsModifier: ViewModifier {
 
     init(
         folder: CloudStorageFolderReference,
-        presentation: Presentation = .contextMenu
+        presentation: Presentation = .contextMenu,
+        showsSelection: Bool = true
     ) {
         self.folder = folder
         self.presentation = presentation
+        self.showsSelection = showsSelection
     }
 
     @ViewBuilder
@@ -376,8 +447,10 @@ struct CloudStorageFolderActionsModifier: ViewModifier {
                     Menu {
                         folderActionItems
 #if os(iOS)
-                        Divider()
-                        CloudStorageFileHomeSelectionMenuItem()
+                        if showsSelection {
+                            Divider()
+                            CloudStorageFileHomeSelectionMenuItem()
+                        }
 #endif
                     } label: {
                         content
@@ -546,9 +619,11 @@ struct CloudStorageFolderActionsModifier: ViewModifier {
                 let parent = documentStore.folderPath(for: folder)
                     .dropLast()
                     .last
+                guard await closeActiveFileIfContainedInFolder() else {
+                    return
+                }
                 try await documentStore.deleteFolder(folder)
-                if fileState.currentActiveGroup == .cloudStorageFolder(folder) {
-                    fileState.setActiveFile(nil)
+                if activeGroupIsContainedInFolder {
                     fileState.setActiveGroupIfNeeded(
                         parent.map(FileState.ActiveGroup.cloudStorageFolder)
                     )
@@ -556,6 +631,33 @@ struct CloudStorageFolderActionsModifier: ViewModifier {
             } catch {
                 alertToast(error)
             }
+        }
+    }
+
+    @MainActor
+    private func closeActiveFileIfContainedInFolder() async -> Bool {
+        guard case .cloudStorageFile(let activeReference) = fileState.currentActiveFile,
+              activeReference.locationID == folder.location.id else {
+            return true
+        }
+        let parentContainsFolder = documentStore.parentFolder(for: activeReference)
+            .map { parent in
+                documentStore.folderPath(for: parent).contains {
+                    $0.itemID == folder.itemID
+                }
+            } ?? false
+        guard parentContainsFolder || activeGroupIsContainedInFolder else { return true }
+        return await fileState.closeActiveFileIfDeleting(anyOf: [activeReference])
+    }
+
+    @MainActor
+    private var activeGroupIsContainedInFolder: Bool {
+        guard case .cloudStorageFolder(let activeFolder) = fileState.currentActiveGroup,
+              activeFolder.location.id == folder.location.id else {
+            return false
+        }
+        return documentStore.folderPath(for: activeFolder).contains {
+            $0.itemID == folder.itemID
         }
     }
 }

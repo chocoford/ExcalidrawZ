@@ -8,6 +8,16 @@
 
 import Foundation
 
+extension URLRequest {
+    /// Provider freshness checks must not be satisfied by URLSession's local
+    /// response cache. The document store owns its own revision-aware cache.
+    mutating func requireFreshCloudStorageResponse(forHTTPMethod method: String) {
+        guard method.uppercased() == "GET" else { return }
+        cachePolicy = .reloadIgnoringLocalCacheData
+        setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+    }
+}
+
 protocol CloudStorageProvider: Sendable {
     var descriptor: CloudStorageProviderDescriptor { get }
 

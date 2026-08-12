@@ -85,6 +85,26 @@ actor ExcalidrawViewportStateStore {
         return try Self.contentDataByRemovingViewport(from: data)
     }
 
+    /// Applies the viewport currently visible in the WebView to replacement
+    /// document data. This keeps a same-document refresh from jumping back to
+    /// the last debounced sidecar value.
+    func contentData(
+        _ data: Data,
+        preservingViewportFrom appState: ExcalidrawCore.JSONValue,
+        sidecarFileID: String?
+    ) throws -> Data? {
+        guard let viewport = try Self.viewport(
+            fromAppStateObject: appState.foundationObject
+        ) else {
+            return nil
+        }
+
+        if let sidecarFileID {
+            try save(viewport, fileID: sidecarFileID)
+        }
+        return try Self.contentDataByApplyingViewport(viewport, to: data)
+    }
+
     /// Preserves the source document's viewport while accepting all other
     /// appState changes from an editor running at a different offscreen size.
     func contentData(

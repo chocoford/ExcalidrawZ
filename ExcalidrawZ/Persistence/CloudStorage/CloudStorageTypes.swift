@@ -500,11 +500,14 @@ enum CloudStorageDocumentSyncState: Equatable, Sendable {
     case conflict
     case failed(operation: CloudStorageOperation, message: String)
 
-    var isActivelySynchronizing: Bool {
+    /// Work that represents an actual transfer or provider mutation. A
+    /// revision check is intentionally omitted so routine verification stays
+    /// visually quiet.
+    var isVisiblySynchronizing: Bool {
         switch self {
-            case .checking, .downloading, .uploading, .processing:
+            case .downloading, .uploading, .processing:
                 true
-            case .local, .queued, .synced, .conflict, .failed:
+            case .local, .queued, .checking, .synced, .conflict, .failed:
                 false
         }
     }

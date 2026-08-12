@@ -331,9 +331,20 @@ struct WebDAVResource: Sendable {
             createdAt: createdAt,
             modifiedAt: modifiedAt,
             remoteURL: canonicalURL,
-            revision: etag,
+            revision: contentRevision,
             capabilities: isCollection ? .writableFolder : .writableFile
         )
+    }
+
+    /// ETag is optional in WebDAV. A stable metadata fallback prevents
+    /// providers without ETags from redownloading unchanged files forever.
+    private var contentRevision: String? {
+        if let etag = etag?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !etag.isEmpty {
+            return etag
+        }
+        guard modifiedAt != nil || contentLength != nil else { return nil }
+        return "webdav:\(modifiedAt?.timeIntervalSince1970 ?? -1):\(contentLength ?? -1)"
     }
 }
 

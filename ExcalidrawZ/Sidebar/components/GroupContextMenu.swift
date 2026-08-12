@@ -12,6 +12,54 @@ import Logging
 
 private let groupContextMenuLogger = Logger(label: "GroupContextMenu")
 
+@MainActor
+private enum GroupDeletionAction {
+    static func perform(group: Group, fileState: FileState) async throws {
+        let groupObjectID = group.objectID
+        let groupType = group.groupType
+        let destinationGroup = group.parent.map(FileState.ActiveGroup.group)
+
+        if case .file(let file) = fileState.currentActiveFile,
+           contains(file: file, in: group, groupType: groupType) {
+            guard await fileState.requestActiveFileChange(nil) else { return }
+        }
+
+        if case .group(let activeGroup) = fileState.currentActiveGroup,
+           contains(group: activeGroup, inGroupTreeRootedAt: groupObjectID) {
+            fileState.currentActiveGroup = destinationGroup
+        }
+
+        try await PersistenceController.shared.groupRepository.delete(
+            groupObjectID: groupObjectID,
+            forcePermanently: false,
+            save: true
+        )
+    }
+
+    private static func contains(
+        file: File,
+        in group: Group,
+        groupType: Group.GroupType
+    ) -> Bool {
+        if groupType == .trash {
+            return file.inTrash || file.group?.groupType == .trash
+        }
+        return contains(group: file.group, inGroupTreeRootedAt: group.objectID)
+    }
+
+    private static func contains(
+        group: Group?,
+        inGroupTreeRootedAt rootObjectID: NSManagedObjectID
+    ) -> Bool {
+        var currentGroup = group
+        while let current = currentGroup {
+            if current.objectID == rootObjectID { return true }
+            currentGroup = current.parent
+        }
+        return false
+    }
+}
+
 struct GroupMenuProvider: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
@@ -31,7 +79,7 @@ struct GroupMenuProvider: View {
     
     init<Content: View>(
         group: Group,
-        content: @escaping (Triggers) -> Content
+        @ViewBuilder content: @escaping (Triggers) -> Content
     ) {
         self.group = group
         self._childrenGroups = FetchRequest(
@@ -136,31 +184,14 @@ struct GroupMenuProvider: View {
     }
     
     private func deleteGroup() {
-        let groupID = self.group.objectID
-        
-        if case .file(let file) = fileState.currentActiveFile,
-           file.group?.objectID == groupID {
-            fileState.setActiveFile(nil)
-        }
-        if case .group(let group) = fileState.currentActiveGroup,
-           group.objectID == groupID {
-            if let parent = group.parent {
-                fileState.currentActiveGroup = .group(parent)
-            } else {
-                fileState.currentActiveGroup = nil
-            }
-        }
-        
-        Task.detached {
-            // Handle empty trash action.
+        Task { @MainActor in
             do {
-                try await PersistenceController.shared.groupRepository.delete(
-                    groupObjectID: groupID,
-                    forcePermanently: false,
-                    save: true
+                try await GroupDeletionAction.perform(
+                    group: group,
+                    fileState: fileState
                 )
             } catch {
-                await alertToast(error)
+                alertToast(error)
             }
         }
     }
@@ -170,20 +201,27 @@ struct GroupContextMenuViewModifier: ViewModifier {
     
     var group: Group
     var canExpand: Bool
+    var showsSwipeActions: Bool
+    var onRequestDelete: (() -> Void)?
     
     init(
         group: Group,
         canExpand: Bool,
+        showsSwipeActions: Bool = false,
+        onRequestDelete: (() -> Void)? = nil,
     ) {
         self.group = group
         self.canExpand = canExpand
+        self.showsSwipeActions = showsSwipeActions
+        self.onRequestDelete = onRequestDelete
     }
     
+    @ViewBuilder
     func body(content: Content) -> some View {
         GroupMenuProvider(
             group: group
         ) { triggers in
-            content
+            let menuContent = content
                 .contextMenu {
                     GroupMenuItems(
                         group: group,
@@ -193,9 +231,108 @@ struct GroupContextMenuViewModifier: ViewModifier {
                     } onToogleCreateSubfolder: {
                         triggers.onToogleCreateSubfolder()
                     } onToggleDelete: {
-                        triggers.onToggleDelete()
+                        requestDelete(using: triggers)
                     }
                 }
+
+            if showsSwipeActions, group.groupType != .default {
+                menuContent
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button {
+                            requestDelete(using: triggers)
+                        } label: {
+                            Label(
+                                .localizable(
+                                    group.groupType == .trash
+                                        ? .sidebarGroupRowEmptyTrashButton
+                                        : .sidebarGroupRowDeleteButton
+                                ),
+                                systemSymbol: .trash
+                            )
+                        }
+                        .tint(.red)
+                    }
+            } else {
+                menuContent
+            }
+        }
+    }
+
+    private func requestDelete(using triggers: GroupMenuProvider.Triggers) {
+        if let onRequestDelete {
+            onRequestDelete()
+        } else {
+            triggers.onToggleDelete()
+        }
+    }
+}
+
+struct GroupDeletionConfirmationModifier: ViewModifier {
+    @Environment(\.alertToast) private var alertToast
+    @EnvironmentObject private var fileState: FileState
+
+    let group: Group
+    @Binding var selectedGroupObjectID: NSManagedObjectID?
+
+    private var isPresented: Binding<Bool> {
+        Binding {
+            selectedGroupObjectID == group.objectID
+        } set: { newValue in
+            if !newValue, selectedGroupObjectID == group.objectID {
+                selectedGroupObjectID = nil
+            }
+        }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .confirmationDialog(
+                confirmationTitle,
+                isPresented: isPresented
+            ) {
+                Button(
+                    confirmationButtonTitle,
+                    role: .destructive
+                ) {
+                    deletePendingGroup()
+                }
+            } message: {
+                Text(.localizable(.sidebarGroupRowDeleteMessage))
+            }
+    }
+
+    private var confirmationTitle: String {
+        if group.groupType == .trash {
+            return String(localizable: .sidebarGroupRowDeletePermanentlyConfirmTitle)
+        }
+        return String(
+            localizable: .sidebarGroupRowDeleteConfirmTitle(
+                group.name ?? String(localizable: .generalUntitled)
+            )
+        )
+    }
+
+    private var confirmationButtonTitle: String {
+        guard group.groupType != .trash else {
+            return String(localizable: .sidebarGroupRowEmptyTrashButton)
+        }
+        return String(localizable: .sidebarGroupRowDeleteButton)
+    }
+
+    @MainActor
+    private func deletePendingGroup() {
+        guard selectedGroupObjectID == group.objectID else { return }
+        selectedGroupObjectID = nil
+
+        Task { @MainActor in
+            do {
+                try await GroupDeletionAction.perform(
+                    group: group,
+                    fileState: fileState
+                )
+            } catch {
+                alertToast(error)
+            }
         }
     }
 }

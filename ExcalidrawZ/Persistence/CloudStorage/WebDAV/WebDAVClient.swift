@@ -463,6 +463,7 @@ struct WebDAVClient: Sendable {
     ) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = method
+        request.requireFreshCloudStorageResponse(forHTTPMethod: method)
         request.timeoutInterval = 60
         request.setValue("ExcalidrawZ WebDAV", forHTTPHeaderField: "User-Agent")
         if WebDAVURL.hasSameOrigin(url, as: credential.serverURL) {

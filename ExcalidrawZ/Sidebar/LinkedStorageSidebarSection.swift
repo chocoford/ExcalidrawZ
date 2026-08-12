@@ -4,24 +4,18 @@
 //
 
 import SwiftUI
-#if os(macOS)
-import AppKit
-#endif
 
 struct LinkedStorageSidebarSection: View {
     private enum SheetRoute: Identifiable {
         case serverCredentials(
             CloudStorageProviderDescriptor,
-            reconnecting: CloudStorageLocation?
+            reconnecting: CloudStorageLocation
         )
-        case folderPicker(CloudStorageFolderPickerContext)
 
         var id: String {
             switch self {
                 case .serverCredentials(let descriptor, let location):
-                    "credentials:\(descriptor.id.rawValue):\(location?.id.uuidString ?? "new")"
-                case .folderPicker(let context):
-                    "folder-picker:\(context.id.uuidString)"
+                    "credentials:\(descriptor.id.rawValue):\(location.id.uuidString)"
             }
         }
     }
@@ -32,7 +26,6 @@ struct LinkedStorageSidebarSection: View {
     @StateObject private var connections = CloudStorageConnectionStore.shared
     @State private var sheetRoute: SheetRoute?
     @State private var preparingProviderID: CloudStorageProviderID?
-    @State private var isImportLocalFolderDialogPresented = false
     @State private var isHovered = false
 
     private var locations: [CloudStorageLocation] {
@@ -95,35 +88,11 @@ struct LinkedStorageSidebarSection: View {
                 case .serverCredentials(let descriptor, let location):
                     CloudStorageServerConnectionSheet(
                         providerName: descriptor.displayName,
-                        connectedAccounts: location == nil
-                            ? connections.accounts(for: descriptor.id)
-                            : [],
-                        onSelectAccount: { account in
-                            try await preparePicker(
-                                providerID: descriptor.id,
-                                account: account
-                            )
-                        }
+                        connectedAccounts: []
                     ) { credentials in
-                        if let location {
-                            try await reconnect(
-                                location,
-                                using: .serverCredentials(credentials)
-                            )
-                        } else {
-                            try await selectLocation(
-                                with: descriptor.id,
-                                account: nil,
-                                connectionInput: .serverCredentials(credentials)
-                            )
-                        }
-                    }
-                case .folderPicker(let context):
-                    CloudStorageFolderPicker(context: context) { folder in
-                        connections.saveLocation(
-                            providerID: context.providerID,
-                            account: context.account,
-                            folder: folder
+                        try await reconnect(
+                            location,
+                            using: .serverCredentials(credentials)
                         )
                     }
             }
@@ -137,18 +106,17 @@ struct LinkedStorageSidebarSection: View {
 
             Spacer()
 
-            ZStack {
-                if isLoading {
+            LinkedStorageAddMenu { isAdding in
+                if isAdding || preparingProviderID != nil {
                     ProgressView()
                         .controlSize(.mini)
                 } else {
-                    storageMenu {
-                        Label("Add Storage", systemImage: "plus.circle.fill")
-                    }
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.borderless)
+                    Label("Add Storage", systemImage: "plus.circle.fill")
                 }
             }
+            .labelStyle(.iconOnly)
+            .buttonStyle(.borderless)
+            .disabled(preparingProviderID != nil)
             .opacity(isHovered || isLoading ? 1 : 0.4)
 #if os(macOS)
             .controlSize(.large)
@@ -169,7 +137,7 @@ struct LinkedStorageSidebarSection: View {
     private var emptyPlaceholder: some View {
         VStack(spacing: 12) {
             HStack(spacing: 10) {
-                localFolderIcon(size: 28)
+                LinkedStorageLocalFolderIcon(size: 28)
                     .frame(width: 32, height: 32)
 
                 ForEach(Self.supportedProviderIDs, id: \.self) { providerID in
@@ -185,8 +153,13 @@ struct LinkedStorageSidebarSection: View {
                 .padding(.horizontal)
 
             VStack(spacing: 6) {
-                storageMenu {
-                    Label("Add Storage", systemImage: "link.badge.plus")
+                LinkedStorageAddMenu { isAdding in
+                    if isAdding {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Label("Add Storage", systemImage: "link.badge.plus")
+                    }
                 }
                 .font(.footnote)
                 .modernButtonStyle(style: .glassProminent, shape: .modern)
@@ -217,31 +190,6 @@ struct LinkedStorageSidebarSection: View {
                 }
                 .modernButtonStyle(style: .borderless)
                 .padding()
-            }
-        }
-    }
-
-    private func addLocation(to providerID: CloudStorageProviderID) {
-        guard preparingProviderID == nil else { return }
-        if let descriptor = descriptor(for: providerID),
-           descriptor.connectionMethod == .serverCredentials {
-            sheetRoute = .serverCredentials(descriptor, reconnecting: nil)
-            return
-        }
-
-        preparingProviderID = providerID
-        Task {
-            defer { preparingProviderID = nil }
-            do {
-                try await selectLocation(
-                    with: providerID,
-                    account: connections.accounts(for: providerID).first,
-                    connectionInput: nil
-                )
-            } catch CloudStorageError.authorizationCancelled {
-                return
-            } catch {
-                alertToast(error)
             }
         }
     }
@@ -295,99 +243,6 @@ struct LinkedStorageSidebarSection: View {
         )
     }
 
-    private func selectLocation(
-        with providerID: CloudStorageProviderID,
-        account: CloudStorageAccount?,
-        connectionInput: CloudStorageConnectionInput?
-    ) async throws {
-        let selection = try await connections.selectLocation(
-            with: providerID,
-            account: account,
-            connectionInput: connectionInput
-        )
-        switch selection {
-            case .browse(let account):
-                try await preparePicker(providerID: providerID, account: account)
-            case .selected(let account, let folder):
-                connections.saveLocation(
-                    providerID: providerID,
-                    account: account,
-                    folder: folder
-                )
-                sheetRoute = nil
-        }
-    }
-
-    private func preparePicker(
-        providerID: CloudStorageProviderID,
-        account: CloudStorageAccount
-    ) async throws {
-        let session = try await connections.makeSession(
-            providerID: providerID,
-            account: account
-        )
-        sheetRoute = .folderPicker(
-            CloudStorageFolderPickerContext(
-                providerID: providerID,
-                providerName: descriptor(for: providerID)?.displayName ?? "Cloud Storage",
-                account: account,
-                session: session
-            )
-        )
-    }
-
-    @ViewBuilder
-    private func storageMenu<MenuLabel: View>(
-        @ViewBuilder label: () -> MenuLabel
-    ) -> some View {
-        Menu {
-            Button {
-                isImportLocalFolderDialogPresented = true
-            } label: {
-                HStack {
-                    localFolderIcon(size: 16)
-                    Text("Link Local Folder")
-                }
-            }
-
-            Section("Or Cloud Storage") {
-                ForEach(connections.providerDescriptors, id: \.id) { descriptor in
-                    Button {
-                        addLocation(to: descriptor.id)
-                    } label: {
-                        HStack {
-                            CloudStorageProviderIcon(providerID: descriptor.id, size: 16)
-                            Text(descriptor.displayName)
-                        }
-                    }
-                    .badge(menuBadge(for: descriptor))
-                }
-            }
-
-        } label: {
-            label()
-        }
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .modifier(ImportLocalFolderModifier(isPresented: $isImportLocalFolderDialogPresented))
-    }
-
-    private func menuBadge(
-        for descriptor: CloudStorageProviderDescriptor
-    ) -> Text? {
-        if descriptor.id == .webDAV {
-            return Text("Beta")
-                .foregroundColor(.yellow)
-                .bold()
-        }
-        if !connections.accounts(for: descriptor.id).isEmpty {
-            return Text("Connected")
-                .foregroundColor(.green)
-                .bold()
-        }
-        return nil
-    }
-
     private func descriptor(
         for providerID: CloudStorageProviderID
     ) -> CloudStorageProviderDescriptor? {
@@ -400,27 +255,5 @@ struct LinkedStorageSidebarSection: View {
         .dropbox,
         .webDAV,
     ]
-
-    @ViewBuilder
-    private func localFolderIcon(size: CGFloat) -> some View {
-#if os(macOS)
-        if let finderURL = NSWorkspace.shared.urlForApplication(
-            withBundleIdentifier: "com.apple.finder"
-        ) {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: finderURL.path))
-                .resizable()
-                .scaledToFit()
-                .frame(width: size, height: size)
-        } else {
-            Image(systemName: "folder.fill")
-                .font(.system(size: size, weight: .medium))
-                .foregroundStyle(.secondary)
-        }
-#else
-        Image(systemName: "folder.fill")
-            .font(.system(size: size, weight: .medium))
-            .foregroundStyle(.secondary)
-#endif
-    }
 
 }

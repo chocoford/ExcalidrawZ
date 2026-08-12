@@ -1,6 +1,29 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "cloudStorageActionUnlink": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlink"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消关联"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消連結"
+          }
+        }
+      }
+    },
     "cloudStorageContextMenuCopyLink": {
       "extractionState": "manual",
       "localizations": {

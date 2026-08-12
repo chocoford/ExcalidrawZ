@@ -38,11 +38,23 @@ struct FileEnumerator {
 
         while let fileURL = enumerator?.nextObject() as? URL {
             // Check if it's a regular file
-            let resourceValues = try fileURL.resourceValues(forKeys: [.isRegularFileKey])
+            let resourceValues: URLResourceValues
+            do {
+                resourceValues = try fileURL.resourceValues(forKeys: [.isRegularFileKey])
+            } catch where isFileNotFound(error) {
+                // The directory can change while it is being enumerated, such
+                // as when Empty Trash removes a checkpoint mid-scan.
+                continue
+            }
             guard resourceValues.isRegularFile == true else { continue }
 
             // Get metadata
-            let attributes = try fileManager.attributesOfItem(atPath: fileURL.filePath)
+            let attributes: [FileAttributeKey: Any]
+            do {
+                attributes = try fileManager.attributesOfItem(atPath: fileURL.filePath)
+            } catch where isFileNotFound(error) {
+                continue
+            }
             let modifiedAt = attributes[.modificationDate] as? Date ?? Date()
             let size = attributes[.size] as? Int64 ?? 0
 
@@ -97,7 +109,14 @@ struct FileEnumerator {
 
         while let fileURL = enumerator?.nextObject() as? URL {
             // Check if it's a regular file
-            let resourceValues = try fileURL.resourceValues(forKeys: [.isRegularFileKey])
+            let resourceValues: URLResourceValues
+            do {
+                resourceValues = try fileURL.resourceValues(forKeys: [.isRegularFileKey])
+            } catch where isFileNotFound(error) {
+                // Empty Trash can remove this item after the directory
+                // enumerator yielded its URL.
+                continue
+            }
             guard resourceValues.isRegularFile == true else { continue }
 
             #if os(iOS)
@@ -116,7 +135,12 @@ struct FileEnumerator {
             #endif
 
             // Get metadata
-            let attributes = try fileManager.attributesOfItem(atPath: fileURL.filePath)
+            let attributes: [FileAttributeKey: Any]
+            do {
+                attributes = try fileManager.attributesOfItem(atPath: fileURL.filePath)
+            } catch where isFileNotFound(error) {
+                continue
+            }
             let modifiedAt = attributes[.modificationDate] as? Date ?? Date()
             let size = attributes[.size] as? Int64 ?? 0
 
@@ -165,6 +189,19 @@ struct FileEnumerator {
         }
 
         return files
+    }
+
+    private func isFileNotFound(_ error: Error) -> Bool {
+        let error = error as NSError
+        if error.domain == NSCocoaErrorDomain,
+           [NSFileNoSuchFileError, NSFileReadNoSuchFileError].contains(error.code) {
+            return true
+        }
+        if let underlyingError = error.userInfo[NSUnderlyingErrorKey] as? NSError {
+            return underlyingError.domain == NSPOSIXErrorDomain
+                && underlyingError.code == 2
+        }
+        return false
     }
 
     /// Map ICloudFileStatus to SyncFileState.DownloadStatus

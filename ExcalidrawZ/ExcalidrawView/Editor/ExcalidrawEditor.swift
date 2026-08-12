@@ -56,6 +56,8 @@ struct ExcalidrawEditor: View {
     @State private var isLoadingFile = false
     @State private var loadingTask: Task<Void, Never>?
     @State private var cloudStorageRefreshTask: Task<Void, Never>?
+    @State private var cloudStorageRefreshTaskID: UUID?
+    @State private var cloudStorageRefreshBaselineFile: ExcalidrawFile?
     @State private var fileLoadRevealTask: Task<Void, Never>?
     @State private var recordVisitTask: Task<Void, Never>?
     @State private var documentLoadCompletion: ExcalidrawDocumentLoadCompletion?
@@ -153,6 +155,11 @@ struct ExcalidrawEditor: View {
         return reference
     }
 
+    private var activeCloudStorageSyncState: CloudStorageDocumentSyncState? {
+        guard case .cloudStorageFile(let reference) = activeFile else { return nil }
+        return cloudStorageDocumentStore.syncState(for: reference)
+    }
+
     private var shouldFloatNavigationToolbarOverCanvas: Bool {
 #if os(iOS)
         guard !usesCompactIOSAIChatSurfaces else { return false }
@@ -190,7 +197,7 @@ struct ExcalidrawEditor: View {
     /// flings it past an edge.
     @State private var editorContentSize: CGSize = .zero
 
-    var body: some View {
+    private var editorSurface: some View {
         ZStack(alignment: .topTrailing) {
             ZStack {
                 ExcalidrawCanvasView(
@@ -346,6 +353,10 @@ struct ExcalidrawEditor: View {
             }
         }
 #endif
+    }
+
+    private var editorWithActiveFileLifecycle: some View {
+        editorSurface
         // Cloud providers frequently refresh the active reference's name or
         // modified date. Those metadata-only replacements must not be treated
         // as a document switch and loaded into the WebView again.
@@ -354,9 +365,12 @@ struct ExcalidrawEditor: View {
 #if os(macOS)
             pendingCanvasFocusFileID = nil
 #endif
+            cloudStorageRefreshBaselineFile = nil
             noteOpenTransitionStarted(for: newFile)
             loadingTask?.cancel()
             cloudStorageRefreshTask?.cancel()
+            cloudStorageRefreshTask = nil
+            cloudStorageRefreshTaskID = nil
             prepareCanvasLoadingPresentation(for: newFile)
             isCloudStorageConflictBlockingEditor = false
             loadingTask = Task {
@@ -370,8 +384,19 @@ struct ExcalidrawEditor: View {
             focusPendingCanvasIfReady()
         }
 #endif
+    }
+
+    private var editorWithCloudStorageLifecycle: some View {
+        editorWithActiveFileLifecycle
         .watch(value: activeCloudStorageMetadataRevision) { _ in
-            refreshActiveCloudStorageMetadata()
+            guard refreshActiveCloudStorageMetadata() else { return }
+            refreshActiveCloudStorageDocument()
+        }
+        .watch(value: activeCloudStorageSyncState) { state in
+            guard let state,
+                  case .synced = state,
+                  let currentFile = excalidrawFile else { return }
+            cloudStorageRefreshBaselineFile = currentFile
         }
         .watch(value: activeCloudStorageConflictReference, initial: true) { _, reference in
             guard let reference else { return }
@@ -385,7 +410,9 @@ struct ExcalidrawEditor: View {
                 "Monitoring active cloud document fileID=\(reference.id)"
             )
 #endif
-            await CloudStorageSyncService.shared.monitorActiveDocument(reference)
+            await CloudStorageSyncService.shared.monitorActiveDocument(reference) {
+                refreshActiveCloudStorageDocument()
+            }
         }
         .onReceive(
             NotificationCenter.default.publisher(for: .activeCanvasFileDidRestore)
@@ -420,6 +447,7 @@ struct ExcalidrawEditor: View {
                         self.beginFileLoadRevealGuard(fileID: activeFileID)
                         self.canvasLoadingState = .loading
                         self.isCloudStorageConflictBlockingEditor = false
+                        self.cloudStorageRefreshBaselineFile = resolvedFile
                         self.excalidrawFile = resolvedFile
                     }
                 } catch {
@@ -427,6 +455,10 @@ struct ExcalidrawEditor: View {
                 }
             }
         }
+    }
+
+    private var editorWithDocumentLifecycle: some View {
+        editorWithCloudStorageLifecycle
         .watch(value: fileState.currentActiveFileIsInTrash) { _ in
             collapseCompactAISurfacesIfCurrentFileIsTrashed()
         }
@@ -451,7 +483,12 @@ struct ExcalidrawEditor: View {
             recordVisitTask = nil
             cloudStorageRefreshTask?.cancel()
             cloudStorageRefreshTask = nil
+            cloudStorageRefreshTaskID = nil
         }
+    }
+
+    var body: some View {
+        editorWithDocumentLifecycle
         .modifier(ExcalidrawEditorToolbarModifier())
         .onReceive(NotificationCenter.default.publisher(for: .pencilInteractionModeDidChange)) { notification in
             guard let mode = notification.object as? ToolState.PencilInteractionMode else { return }
@@ -491,9 +528,26 @@ struct ExcalidrawEditor: View {
         .environmentObject(toolState)
     }
 
-    private func refreshActiveCloudStorageMetadata() {
-        guard case .cloudStorageFile(let reference) = activeFile else { return }
-        let latestReference = cloudStorageDocumentStore.latestReference(for: reference)
+    @discardableResult
+    private func refreshActiveCloudStorageMetadata() -> Bool {
+        guard case .cloudStorageFile(let reference) = activeFile else {
+            return false
+        }
+        guard let latestReference = cloudStorageDocumentStore.latestReference(for: reference) else {
+            guard cloudStorageDocumentStore.hasLoadedMetadataIndex(
+                for: reference.locationID
+            ) else {
+                return true
+            }
+#if DEBUG
+            logger.debug(
+                "Active cloud document was removed remotely; discarding editor session itemID=\(reference.itemID.rawValue) revision=\(activeCloudStorageMetadataRevision)"
+            )
+#endif
+            fileState.discardAndCloseActiveFile()
+            fileState.resetSelections()
+            return false
+        }
         guard latestReference.lastKnownName != reference.lastKnownName
                 || latestReference.lastKnownModifiedAt != reference.lastKnownModifiedAt else {
 #if DEBUG
@@ -501,7 +555,7 @@ struct ExcalidrawEditor: View {
                 "Active cloud metadata unchanged itemID=\(reference.itemID.rawValue) name=\(reference.lastKnownName) revision=\(activeCloudStorageMetadataRevision)"
             )
 #endif
-            return
+            return true
         }
 #if DEBUG
         logger.debug(
@@ -509,6 +563,7 @@ struct ExcalidrawEditor: View {
         )
 #endif
         fileState.replaceCloudStorageDocumentReference(latestReference)
+        return true
     }
 
     private func prepareCanvasLoadingPresentation(for file: FileState.ActiveFile?) {
@@ -720,6 +775,7 @@ struct ExcalidrawEditor: View {
                 )
                 await MainActor.run {
                     guard self.activeFile?.id == activeFile.id else { return }
+                    self.cloudStorageRefreshBaselineFile = cachedFile
                     self.excalidrawFile = cachedFile
                 }
             } else {
@@ -753,6 +809,7 @@ struct ExcalidrawEditor: View {
             )
             await MainActor.run {
                 guard self.activeFile?.id == activeFile.id else { return }
+                self.cloudStorageRefreshBaselineFile = refreshedFile
                 self.excalidrawFile = refreshedFile
             }
         } catch {
@@ -765,8 +822,11 @@ struct ExcalidrawEditor: View {
         activeFile: FileState.ActiveFile,
         cachedFile: ExcalidrawFile
     ) {
-        cloudStorageRefreshTask?.cancel()
-        cloudStorageRefreshTask = Task {
+        guard cloudStorageRefreshTask == nil else { return }
+        let taskID = UUID()
+        cloudStorageRefreshTaskID = taskID
+        cloudStorageRefreshTask = Task { @MainActor in
+            defer { finishCloudStorageRefresh(taskID: taskID) }
             let store = CloudStorageDocumentStore.shared
             do {
                 guard let candidate = try await store.remoteContentCandidate(for: reference) else {
@@ -785,38 +845,40 @@ struct ExcalidrawEditor: View {
                     return
                 }
 
-                await MainActor.run {
-                    guard self.activeFile?.id == activeFile.id,
-                          let currentFile = self.excalidrawFile else {
-                        store.markLocal(for: reference)
-                        return
-                    }
-                    guard !self.hasPersistentCanvasChanges(
-                        in: currentFile,
-                        comparedTo: cachedFile
-                    ) else {
-                        self.logger.info(
-                            "Skipped refreshed cloud document because the local canvas changed: \(cloudStorageDocumentStore.displayName(for: reference))"
-                        )
-                        store.markConflict(for: reference)
-                        return
-                    }
+                guard self.activeFile?.id == activeFile.id,
+                      let currentFile = self.excalidrawFile else {
+                    store.markLocal(for: reference)
+                    return
+                }
+                guard !self.hasPersistentCanvasChanges(
+                    in: currentFile,
+                    comparedTo: cachedFile
+                ) else {
+                    self.logger.info(
+                        "Skipped refreshed cloud document because the local canvas changed: \(cloudStorageDocumentStore.displayName(for: reference))"
+                    )
+                    store.markConflict(for: reference)
+                    return
+                }
 
-                    do {
-                        guard try store.installRemoteContentCandidate(candidate, for: reference) else {
-                            return
-                        }
-                        self.excalidrawFile = refreshedFile
-                    } catch {
-                        store.reportSyncFailure(
-                            error,
-                            operation: .download,
-                            for: reference
-                        )
-                        self.logger.warning(
-                            "Failed to install refreshed cloud document: \(cloudStorageDocumentStore.displayName(for: reference)), error=\(error)"
-                        )
+                do {
+                    guard try store.installRemoteContentCandidate(candidate, for: reference) else {
+                        return
                     }
+                    self.logger.info(
+                        "Applying refreshed cloud document: \(cloudStorageDocumentStore.displayName(for: reference))"
+                    )
+                    self.cloudStorageRefreshBaselineFile = refreshedFile
+                    self.applyFileToEditorAndForceReload(refreshedFile)
+                } catch {
+                    store.reportSyncFailure(
+                        error,
+                        operation: .download,
+                        for: reference
+                    )
+                    self.logger.warning(
+                        "Failed to install refreshed cloud document: \(cloudStorageDocumentStore.displayName(for: reference)), error=\(error)"
+                    )
                 }
             } catch is CancellationError {
                 return
@@ -833,6 +895,13 @@ struct ExcalidrawEditor: View {
         }
     }
 
+    @MainActor
+    private func finishCloudStorageRefresh(taskID: UUID) {
+        guard cloudStorageRefreshTaskID == taskID else { return }
+        cloudStorageRefreshTask = nil
+        cloudStorageRefreshTaskID = nil
+    }
+
     private func cloudStorageFile(
         from content: Data,
         fileID: String
@@ -846,12 +915,27 @@ struct ExcalidrawEditor: View {
     }
 
     @MainActor
+    private func refreshActiveCloudStorageDocument() {
+        guard case .cloudStorageFile(let reference) = activeFile,
+              let activeFile,
+              let baselineFile = cloudStorageRefreshBaselineFile,
+              !isCloudStorageConflictBlockingEditor else { return }
+
+        scheduleCloudStorageRefresh(
+            reference,
+            activeFile: activeFile,
+            cachedFile: baselineFile
+        )
+    }
+
+    @MainActor
     private func prepareEditorForCloudStorageConflict(
         _ reference: CloudStorageDocumentReference
     ) {
         cancelFileLoadRevealGuard()
         cloudStorageRefreshTask?.cancel()
         cloudStorageRefreshTask = nil
+        cloudStorageRefreshTaskID = nil
         fileState.excalidrawWebCoordinator?.documentSyncController.resetFileLoadState()
         excalidrawFile = nil
         canvasLoadingState = .loading
@@ -869,6 +953,8 @@ struct ExcalidrawEditor: View {
 
         loadingTask?.cancel()
         cloudStorageRefreshTask?.cancel()
+        cloudStorageRefreshTask = nil
+        cloudStorageRefreshTaskID = nil
         fileState.excalidrawWebCoordinator?.documentSyncController.resetFileLoadState()
         cloudStorageConflictReference = nil
         fileState.discardAndCloseActiveFile()
@@ -993,8 +1079,7 @@ struct ExcalidrawEditor: View {
             }
             let file = try ExcalidrawFile(data: data, id: excalidrawFile?.id)
             await MainActor.run {
-                self.excalidrawFile = file
-                NotificationCenter.default.post(name: .forceReloadExcalidrawFile, object: nil)
+                self.applyFileToEditorAndForceReload(file)
             }
         } catch {
             alertToast(error)
@@ -1014,6 +1099,15 @@ struct ExcalidrawEditor: View {
         }
 
         return file.elements != currentFile.elements || file.appState != currentFile.appState
+    }
+
+    @MainActor
+    private func applyFileToEditorAndForceReload(_ file: ExcalidrawFile) {
+        excalidrawFile = file
+        NotificationCenter.default.post(
+            name: .forceReloadExcalidrawFile,
+            object: nil
+        )
     }
 
     private func applyExcalidrawFile(_ file: ExcalidrawFile?) {

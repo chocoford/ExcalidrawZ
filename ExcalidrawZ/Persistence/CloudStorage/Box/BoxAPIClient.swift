@@ -304,6 +304,7 @@ actor BoxAPIClient {
     private func authorizedRequest(url: URL, method: String) async throws -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = method
+        request.requireFreshCloudStorageResponse(forHTTPMethod: method)
         request.setValue(
             "Bearer \(try await tokenProvider.accessToken(for: accountID))",
             forHTTPHeaderField: "Authorization"

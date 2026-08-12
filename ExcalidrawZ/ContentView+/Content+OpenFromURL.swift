@@ -11,6 +11,9 @@ import WebKit
 import UniformTypeIdentifiers
 import Logging
 import Combine
+#if os(iOS)
+import MSAL
+#endif
 
 import ChocofordUI
 
@@ -131,6 +134,17 @@ struct OpenFromURLModifier: ViewModifier {
     
     // MARK: - Handle OpenURL
     private func onOpenURL(_ url: URL) {
+#if os(iOS)
+        if url.scheme?.hasPrefix("msauth.") == true {
+            let handled = MSALPublicClientApplication.handleMSALResponse(
+                url,
+                sourceApplication: nil
+            )
+            logger.debug("Handled Microsoft authentication callback: \(handled)")
+            return
+        }
+#endif
+
         if url.isFileURL {
             onOpenLocalFile(url)
         } else if url.scheme == "excalidrawz" {

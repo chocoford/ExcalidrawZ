@@ -53,9 +53,7 @@ struct GroupsView: View {
 
         self._files = FetchRequest(
             sortDescriptors: ExcalidrawFileSortProvider.fileSortDescriptors(for: sortField),
-            predicate: group.groupType == .trash ? NSPredicate(
-                format: "inTrash == YES"
-            ) : NSPredicate(
+            predicate: group.groupType == .trash ? File.trashedPredicate : NSPredicate(
                 format: "group == %@ AND inTrash == NO", group
             )
         )

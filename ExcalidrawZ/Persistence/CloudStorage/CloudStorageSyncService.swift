@@ -16,6 +16,7 @@ final class CloudStorageSyncService {
     private let documentStore: CloudStorageDocumentStore
     private let connectivity: CloudStorageConnectivityMonitor
     private let pollingIntervalNanoseconds: UInt64
+    private let activeDocumentPollingIntervalNanoseconds: UInt64
     private let logger = Logger(label: "CloudStorageSyncService")
 
     private var serviceObserverIDs: Set<UUID> = []
@@ -32,6 +33,7 @@ final class CloudStorageSyncService {
         self.documentStore = .shared
         self.connectivity = .shared
         self.pollingIntervalNanoseconds = 20_000_000_000
+        self.activeDocumentPollingIntervalNanoseconds = 10_000_000_000
     }
 
     /// Keeps the global service alive while at least one app scene is active.
@@ -53,10 +55,12 @@ final class CloudStorageSyncService {
     }
 
     /// Prevents the global cache updater from replacing a document currently
-    /// owned by an Editor. The Editor applies remote candidates after its own
-    /// unsaved-change and conflict checks.
+    /// owned by an Editor, while asking that Editor to perform a safe remote
+    /// check periodically. The Editor remains responsible for unsaved-change
+    /// and conflict checks before applying a candidate.
     func monitorActiveDocument(
-        _ reference: CloudStorageDocumentReference
+        _ reference: CloudStorageDocumentReference,
+        requestRefresh: @escaping @MainActor () -> Void
     ) async {
         let observerID = UUID()
         activeDocumentObservers[reference.id, default: []].insert(observerID)
@@ -68,8 +72,15 @@ final class CloudStorageSyncService {
         }
 
         do {
+            if connectivity.canAttemptNetworkRequests {
+                requestRefresh()
+            }
             while !Task.isCancelled {
-                try await Task.sleep(nanoseconds: 3_600_000_000_000)
+                try await Task.sleep(
+                    nanoseconds: activeDocumentPollingIntervalNanoseconds
+                )
+                guard connectivity.canAttemptNetworkRequests else { continue }
+                requestRefresh()
             }
         } catch {
             // Cancellation releases this Editor's active-document lease.

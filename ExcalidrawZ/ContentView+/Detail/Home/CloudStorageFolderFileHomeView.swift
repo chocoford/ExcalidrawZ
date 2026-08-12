@@ -206,7 +206,11 @@ struct CloudStorageFolderFileHomeView: View {
         HStack(spacing: 10) {
             NewFileButton(usesFileHomeOpenTransition: true)
 
-            NewGroupButton(parentID: nil)
+            NewGroupButton(
+                type: .cloudStorageFolder,
+                parentID: nil,
+                cloudStorageParent: folder
+            )
 
             Spacer()
         }

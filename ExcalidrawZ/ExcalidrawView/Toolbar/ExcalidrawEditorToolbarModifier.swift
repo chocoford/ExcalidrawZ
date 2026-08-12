@@ -246,7 +246,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
             }
         }
 
-        if fileState.currentActiveGroup != nil {
+        if fileState.currentActiveFile != nil || fileState.currentActiveGroup != nil {
             HStack {
                 NavigationBackButton()
                 title()
@@ -663,8 +663,14 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                         CollaborationFileMenu(file: collaborationFile) {
                             fileMenuLabel()
                         }
-                    case .cloudStorageFile:
-                        EmptyView()
+                    case .cloudStorageFile(let reference):
+                        fileMenuLabel()
+                            .modifier(
+                                CloudStorageFileActionsModifier(
+                                    reference: reference,
+                                    presentation: .fileMenu
+                                )
+                            )
                 }
             }
             .labelsHidden()

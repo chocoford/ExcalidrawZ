@@ -345,7 +345,7 @@ private struct CloudStorageSidebarFileRow: View {
                 )
             }
         }
-        .modifier(CloudStorageFileContextMenuModifier(reference: reference))
+        .modifier(CloudStorageFileActionsModifier(reference: reference))
         .id(SidebarActiveFileScrollTarget.cloudStorageFile(item.id))
     }
 

@@ -16,6 +16,7 @@ struct LocalFolderMonitorModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @Environment(\.scenePhase) private var scenePhase
+    @EnvironmentObject private var fileState: FileState
     
     @StateObject private var localFolderState = LocalFolderState()
     
@@ -148,6 +149,7 @@ struct LocalFolderMonitorModifier: ViewModifier {
                 
             case .deleted(let url):
                 logger.debug("File deleted: \(url.lastPathComponent)")
+                discardActiveSessionIfNeeded(for: url)
                 localFolderState.itemRemovedPublisher.send(path)
                 
             case .renamed(let oldURL, let newURL):
@@ -181,6 +183,16 @@ struct LocalFolderMonitorModifier: ViewModifier {
                     localFolderState.refreshFilesPublisher.send()
                 }
         }
+    }
+
+    @MainActor
+    private func discardActiveSessionIfNeeded(for deletedURL: URL) {
+        guard case .localFile(let activeURL) = fileState.currentActiveFile,
+              activeURL.standardizedFileURL == deletedURL.standardizedFileURL else {
+            return
+        }
+        fileState.discardAndCloseActiveFile()
+        fileState.resetSelections()
     }
     
     @MainActor
