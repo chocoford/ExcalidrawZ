@@ -1,5 +1,5 @@
-Nowość: Prezentacje na kanwie.
+Nowość: Połączona pamięć w chmurze.
 
-- Zamieniaj ramki kanwy w slajdy i prezentuj bezpośrednio z rysunku.
-- Przeciągaj slajdy, aby zmienić kolejność, i wybieraj przejścia zanikania, przesuwania lub powiększania z własnym czasem trwania.
-- Kolejność i przejścia są zapisywane osobno dla każdego rysunku i odświeżane po zmianie ramek.
+- Połącz OneDrive, Dropbox, Google Drive lub WebDAV (Beta) i przeglądaj rysunki razem z folderami lokalnymi.
+- Edytuj offline dzięki lokalnej pamięci podręcznej; zmiany zsynchronizują się automatycznie po odzyskaniu połączenia.
+- Śledź stan synchronizacji każdego pliku i porównuj podglądy lokalne oraz zdalne podczas rozwiązywania konfliktów.

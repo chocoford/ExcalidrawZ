@@ -1,5 +1,5 @@
-Nieuw: Canvaspresentaties.
+Nieuw: Gekoppelde cloudopslag.
 
-- Zet canvasframes om in dia’s en presenteer rechtstreeks vanuit je tekening.
-- Sleep om dia’s opnieuw te ordenen en kies fade-, schuif- of zoomovergangen met een aangepaste duur.
-- Volgorde en overgangen worden per tekening bewaard en vernieuwd wanneer frames veranderen.
+- Verbind OneDrive, Dropbox, Google Drive of WebDAV (bèta) en blader door tekeningen naast lokale mappen.
+- Werk offline verder met een lokale cache; wijzigingen synchroniseren automatisch zodra je weer verbinding hebt.
+- Volg de synchronisatiestatus per bestand en vergelijk lokale en externe voorbeelden bij conflicten.

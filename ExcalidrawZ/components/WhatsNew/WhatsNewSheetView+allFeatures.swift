@@ -17,25 +17,58 @@ import SFSafeSymbols
 extension WhatsNewView {
     @ViewBuilder
     func featuresContent() -> some View {
-        WhatsNewFeatureRow(
-            title: .localizable(.paywallFeaturePresentationTitle),
-            description: .localizable(.presentationWelcomeMessage),
-        ) {
-            Image(systemName: "rectangle.stack.badge.play")
-                .resizable()
-                .symbolRenderingMode(.hierarchical)
+        WhatsNewFeatureRow {
+            CloudStorageProviderIcon(providerID: .microsoftOneDrive, size: 40)
+        } content: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(verbatim: "OneDrive")
+                    .font(.headline)
+                Text(.localizable(.whatsNewOneDriveDescription))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
 
-#if os(macOS)
-        WhatsNewFeatureRow(
-            title: .localizable(.screenAnnotationTitle),
-            description: .localizable(.whatsNewScreenAnnotationDescription),
-        ) {
-            Image(systemName: "macwindow.and.pointer.arrow")
-                .resizable()
-                .symbolRenderingMode(.hierarchical)
+        WhatsNewFeatureRow {
+            CloudStorageProviderIcon(providerID: .dropbox, size: 40)
+        } content: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(verbatim: "Dropbox")
+                    .font(.headline)
+                Text(.localizable(.whatsNewDropboxDescription))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
-#endif
+
+        WhatsNewFeatureRow {
+            CloudStorageProviderIcon(providerID: .googleDrive, size: 40)
+        } content: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(verbatim: "Google Drive")
+                    .font(.headline)
+                Text(.localizable(.whatsNewGoogleDriveDescription))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+
+        WhatsNewFeatureRow {
+            CloudStorageProviderIcon(providerID: .webDAV, size: 40)
+        } content: {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(verbatim: "WebDAV")
+                        .font(.headline)
+                    Text(.localizable(.generalBadgeBeta))
+                        .font(.caption2.bold())
+                        .foregroundStyle(.orange)
+                }
+                Text(.localizable(.whatsNewWebDAVDescription))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     @ViewBuilder
@@ -47,6 +80,27 @@ extension WhatsNewView {
                         version: Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
                     ) {
                         featuresContent()
+                    }
+                    WhatsNewVersionSection(version: "v2.3.0") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.paywallFeaturePresentationTitle),
+                            description: .localizable(.presentationWelcomeMessage),
+                        ) {
+                            Image(systemName: "rectangle.stack.badge.play")
+                                .resizable()
+                                .symbolRenderingMode(.hierarchical)
+                        }
+
+#if os(macOS)
+                        WhatsNewFeatureRow(
+                            title: .localizable(.screenAnnotationTitle),
+                            description: .localizable(.whatsNewScreenAnnotationDescription),
+                        ) {
+                            Image(systemName: "macwindow.and.pointer.arrow")
+                                .resizable()
+                                .symbolRenderingMode(.hierarchical)
+                        }
+#endif
                     }
                     WhatsNewVersionSection(version: "v2.2.8") {
                         WhatsNewFeatureRow(

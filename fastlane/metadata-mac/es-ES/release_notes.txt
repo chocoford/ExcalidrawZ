@@ -1,6 +1,5 @@
-Presentamos Anotación en Pantalla y Presentaciones de lienzo.
+Presentamos el almacenamiento en la nube vinculado.
 
-- Dibuja sobre cualquier pantalla del Mac con las herramientas de Excalidraw, usando un fondo en vivo o congelado y una barra de herramientas que puedes mover entre pantallas.
-- Guarda la pantalla completa o un área seleccionada como contenido editable de Excalidraw, PNG/JPEG o en el portapapeles, con ajustes de calidad y destinos recientes.
-- Convierte los marcos del lienzo en diapositivas, reordénalos, elige transiciones de fundido, deslizamiento o zoom y presenta a pantalla completa.
-- Se ha mejorado el guardado en segundo plano, la continuidad de estilos y la fiabilidad de las presentaciones.
+- Conecta OneDrive, Dropbox, Google Drive o WebDAV (Beta) y explora tus dibujos junto con las carpetas locales.
+- Sigue editando sin conexión gracias a la caché local; los cambios se sincronizan automáticamente al reconectarte.
+- Consulta el estado de sincronización de cada archivo y compara las vistas previas local y remota al resolver conflictos.

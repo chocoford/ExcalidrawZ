@@ -1,5 +1,5 @@
-Découvrez les présentations de canevas.
+Découvrez le stockage cloud lié.
 
-- Transformez les cadres du canevas en diapositives et présentez directement depuis votre dessin.
-- Faites glisser les diapositives pour les réorganiser et choisissez des transitions en fondu, glissées ou zoomées avec une durée personnalisée.
-- L’ordre et les transitions sont enregistrés pour chaque dessin et se mettent à jour avec les cadres.
+- Connectez OneDrive, Dropbox, Google Drive ou WebDAV (bêta) et parcourez vos dessins avec vos dossiers locaux.
+- Continuez à modifier hors ligne grâce au cache local ; les changements se synchronisent automatiquement à la reconnexion.
+- Suivez l’état de chaque fichier et comparez les aperçus locaux et distants pour résoudre les conflits.

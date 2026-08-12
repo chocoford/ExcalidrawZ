@@ -1,3 +1,26 @@
+## 2.4.0
+
+#### Features
+
+- Added Linked Cloud Storage for OneDrive, Dropbox, Google Drive, and WebDAV (Beta), available across Mac, iPad, and iPhone alongside local linked folders.
+- Added offline-first cloud editing with an App-managed local cache, queued uploads, background synchronization, and automatic recovery when connectivity returns.
+- Added cloud conflict resolution with visual previews, allowing you to compare local and remote versions before choosing which one to keep.
+- Added cloud-aware file history, recent files, sync status, folder browsing, and file operations including create, rename, move, and delete.
+- Open cloud drawings can receive remote changes while preserving the current viewport, and drawings removed remotely close safely.
+
+#### Optimizations
+
+- Unified Linked Storage navigation, sorting, context menus, loading feedback, and file transitions across macOS and compact iOS layouts.
+- Renamed the built-in storage section to My Files for clearer behavior when iCloud Sync is unavailable or disabled.
+
+#### Bug fixed
+
+- Fixed external file and Linked Folder access on iOS, including temporary open-in-place files and security-scoped folder permissions.
+- Fixed Linked Folder names not updating after the source folder was renamed outside ExcalidrawZ.
+- Fixed Recently Deleted sometimes disappearing despite containing files and not fully emptying Trash.
+- Fixed toolbar reordering in iOS Settings.
+- Fixed Screen Annotation capture compatibility on macOS 15.
+
 ## 2.3.0
 
 #### Features

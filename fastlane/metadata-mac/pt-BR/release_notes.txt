@@ -1,6 +1,5 @@
-Apresentamos Anotação de Tela e Apresentações em Canvas.
+Apresentamos o armazenamento em nuvem vinculado.
 
-- Desenhe sobre qualquer tela do Mac com as ferramentas do Excalidraw, usando um fundo ao vivo ou congelado e uma barra de ferramentas que pode ser movida entre monitores.
-- Salve a tela inteira ou uma área selecionada como conteúdo editável do Excalidraw, PNG/JPEG ou na área de transferência, com predefinições de qualidade e destinos recentes.
-- Transforme quadros do canvas em slides, reorganize-os, escolha transições de fade, deslizamento ou zoom e apresente em tela cheia.
-- Melhoramos o salvamento em segundo plano, a continuidade dos estilos e a confiabilidade das apresentações.
+- Conecte OneDrive, Dropbox, Google Drive ou WebDAV (Beta) e navegue pelos desenhos junto com as pastas locais.
+- Continue editando offline com o cache local; as alterações são sincronizadas automaticamente ao reconectar.
+- Acompanhe o status de cada arquivo e compare prévias locais e remotas ao resolver conflitos.

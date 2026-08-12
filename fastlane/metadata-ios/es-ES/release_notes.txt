@@ -1,5 +1,5 @@
-Presentamos las Presentaciones de lienzo.
+Presentamos el almacenamiento en la nube vinculado.
 
-- Convierte los marcos del lienzo en diapositivas y presenta directamente desde tu dibujo.
-- Arrastra para reordenar las diapositivas y elige transiciones de fundido, deslizamiento o zoom con una duración personalizada.
-- El orden y las transiciones se guardan para cada dibujo y se actualizan al cambiar los marcos.
+- Conecta OneDrive, Dropbox, Google Drive o WebDAV (Beta) y explora tus dibujos junto con las carpetas locales.
+- Sigue editando sin conexión gracias a la caché local; los cambios se sincronizan automáticamente al reconectarte.
+- Consulta el estado de sincronización de cada archivo y compara las vistas previas local y remota al resolver conflictos.

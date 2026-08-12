@@ -1,5 +1,5 @@
-Apresentamos as Apresentações em Canvas.
+Apresentamos o armazenamento em nuvem vinculado.
 
-- Transforme quadros do canvas em slides e apresente diretamente do seu desenho.
-- Arraste para reorganizar os slides e escolha transições de fade, deslizamento ou zoom com duração personalizada.
-- A ordem e as transições são salvas para cada desenho e atualizadas quando os quadros mudam.
+- Conecte OneDrive, Dropbox, Google Drive ou WebDAV (Beta) e navegue pelos desenhos junto com as pastas locais.
+- Continue editando offline com o cache local; as alterações são sincronizadas automaticamente ao reconectar.
+- Acompanhe o status de cada arquivo e compare prévias locais e remotas ao resolver conflitos.

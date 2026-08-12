@@ -1,6 +1,5 @@
-Giới thiệu Chú thích màn hình và Trình bày canvas.
+Giới thiệu Lưu trữ đám mây được liên kết.
 
-- Vẽ trên bất kỳ màn hình Mac nào bằng các công cụ Excalidraw, sử dụng nền trực tiếp hoặc đóng băng và di chuyển thanh công cụ giữa các màn hình.
-- Lưu toàn màn hình hoặc vùng đã chọn dưới dạng nội dung Excalidraw có thể chỉnh sửa, PNG/JPEG hoặc vào bảng nhớ tạm, với các mức chất lượng và đích tệp gần đây.
-- Biến các khung canvas thành trang trình bày, sắp xếp lại, chọn hiệu ứng mờ dần, trượt hoặc thu phóng và trình bày toàn màn hình.
-- Cải thiện lưu trong nền, duy trì kiểu chú thích và độ ổn định của trình bày.
+- Kết nối OneDrive, Dropbox, Google Drive hoặc WebDAV (Beta) và duyệt bản vẽ cùng với thư mục cục bộ.
+- Tiếp tục chỉnh sửa ngoại tuyến bằng bộ nhớ đệm cục bộ; thay đổi tự động đồng bộ khi kết nối trở lại.
+- Theo dõi trạng thái từng tệp và so sánh bản xem trước cục bộ với từ xa khi xử lý xung đột.

@@ -1,5 +1,5 @@
-Introducing Canvas Presentations.
+Introducing Linked Cloud Storage.
 
-- Turn canvas frames into slides and present directly from your drawing.
-- Drag to reorder slides and choose fade, slide, or zoom transitions with custom timing.
-- Presentation order and transition settings are saved per drawing and refresh as your frames change.
+- Connect OneDrive, Dropbox, Google Drive, or WebDAV (Beta) and browse drawings alongside local folders.
+- Keep editing offline with a local cache; changes sync automatically when connection returns.
+- Follow per-file sync status and compare local and remote previews when resolving conflicts.
