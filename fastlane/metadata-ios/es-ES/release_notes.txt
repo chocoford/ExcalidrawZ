@@ -1,5 +1,6 @@
-Presentamos el almacenamiento en la nube vinculado.
+Una gran actualización para iPhone y iPad.
 
-- Conecta OneDrive, Dropbox, Google Drive o WebDAV (Beta) y explora tus dibujos junto con las carpetas locales.
-- Sigue editando sin conexión gracias a la caché local; los cambios se sincronizan automáticamente al reconectarte.
-- Consulta el estado de sincronización de cada archivo y compara las vistas previas local y remota al resolver conflictos.
+- Conecta OneDrive, Dropbox, Google Drive o WebDAV (Beta), edita desde la caché local y resuelve conflictos mediante vistas previas.
+- Convierte los marcos de Excalidraw en presentaciones a pantalla completa con diapositivas reordenables y transiciones de fundido, deslizamiento o zoom.
+- Explora los archivos multimedia del dibujo en una galería adaptable y elimina de forma segura los que no se usan o solo conserva el historial.
+- Mejoras en el acceso a carpetas vinculadas y archivos externos, la apertura y el cambio de archivos, el orden de la barra de herramientas y la persistencia de fuentes personalizadas.

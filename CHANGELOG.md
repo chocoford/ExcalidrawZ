@@ -3,10 +3,7 @@
 #### Features
 
 - Added Linked Cloud Storage for OneDrive, Dropbox, Google Drive, and WebDAV (Beta), available across Mac, iPad, and iPhone alongside local linked folders.
-- Added offline-first cloud editing with an App-managed local cache, queued uploads, background synchronization, and automatic recovery when connectivity returns.
 - Added cloud conflict resolution with visual previews, allowing you to compare local and remote versions before choosing which one to keep.
-- Added cloud-aware file history, recent files, sync status, folder browsing, and file operations including create, rename, move, and delete.
-- Open cloud drawings can receive remote changes while preserving the current viewport, and drawings removed remotely close safely.
 
 #### Optimizations
 

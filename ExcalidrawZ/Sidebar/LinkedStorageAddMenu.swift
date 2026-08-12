@@ -253,7 +253,9 @@ struct LinkedStorageLocalFolderIcon: View {
 
     private var fallbackIcon: some View {
         Image(systemName: "folder.fill")
-            .font(.system(size: size, weight: .medium))
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
             .foregroundStyle(.secondary)
     }
 }

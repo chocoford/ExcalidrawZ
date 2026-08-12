@@ -1,5 +1,6 @@
-Bağlı Bulut Depolama artık burada.
+iPhone ve iPad için büyük bir güncelleme.
 
-- OneDrive, Dropbox, Google Drive veya WebDAV (Beta) bağlayın ve çizimlerinize yerel klasörlerle birlikte göz atın.
-- Yerel önbellekle çevrimdışı düzenlemeye devam edin; bağlantı geri geldiğinde değişiklikler otomatik eşitlenir.
-- Dosya başına eşitleme durumunu izleyin ve çakışmaları çözerken yerel ve uzak önizlemeleri karşılaştırın.
+- OneDrive, Dropbox, Google Drive veya WebDAV (Beta) bağlayın, yerel önbellekten düzenleyin ve çakışmaları görsel önizlemelerle çözün.
+- Excalidraw çerçevelerini sıralanabilir slaytlar ve solma, kaydırma veya yakınlaştırma geçişleriyle tam ekran sunumlara dönüştürün.
+- Çizim medyasını duyarlı bir galeride görüntüleyin ve kullanılmayan ya da yalnızca dosya geçmişinde tutulan medyayı güvenle temizleyin.
+- Bağlı klasör ve harici dosya erişimi, dosya açma ve değiştirme, araç çubuğu sıralaması ve özel yazı tipi kalıcılığı iyileştirildi.

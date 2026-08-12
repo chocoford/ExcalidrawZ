@@ -1,5 +1,6 @@
-Giới thiệu Lưu trữ đám mây được liên kết.
+Bản cập nhật lớn dành cho iPhone và iPad.
 
-- Kết nối OneDrive, Dropbox, Google Drive hoặc WebDAV (Beta) và duyệt bản vẽ cùng với thư mục cục bộ.
-- Tiếp tục chỉnh sửa ngoại tuyến bằng bộ nhớ đệm cục bộ; thay đổi tự động đồng bộ khi kết nối trở lại.
-- Theo dõi trạng thái từng tệp và so sánh bản xem trước cục bộ với từ xa khi xử lý xung đột.
+- Kết nối OneDrive, Dropbox, Google Drive hoặc WebDAV (Beta), chỉnh sửa từ bộ nhớ đệm cục bộ và xử lý xung đột bằng bản xem trước trực quan.
+- Biến khung Excalidraw thành bản trình chiếu toàn màn hình với các trang có thể sắp xếp lại và hiệu ứng mờ dần, trượt hoặc thu phóng.
+- Duyệt phương tiện của bản vẽ trong thư viện thích ứng và dọn dẹp an toàn nội dung không dùng hoặc chỉ được Lịch sử tệp giữ lại.
+- Cải thiện quyền truy cập thư mục liên kết và tệp ngoài, mở và chuyển tệp, sắp xếp thanh công cụ và lưu giữ phông chữ tùy chỉnh.

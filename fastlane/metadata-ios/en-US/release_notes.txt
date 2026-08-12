@@ -1,5 +1,6 @@
-Introducing Linked Cloud Storage.
+A major update for iPhone and iPad.
 
-- Connect OneDrive, Dropbox, Google Drive, or WebDAV (Beta) and browse drawings alongside local folders.
-- Keep editing offline with a local cache; changes sync automatically when connection returns.
-- Follow per-file sync status and compare local and remote previews when resolving conflicts.
+- Connect OneDrive, Dropbox, Google Drive, or WebDAV (Beta), edit from a local cache, and resolve conflicts with visual previews.
+- Turn Excalidraw frames into full-screen presentations with reorderable slides and fade, slide, or zoom transitions.
+- Browse drawing media in a responsive gallery and safely clean up unused media or media retained by File History.
+- Improved Linked Folder and external-file access, file opening and switching, toolbar reordering, and custom-font persistence.

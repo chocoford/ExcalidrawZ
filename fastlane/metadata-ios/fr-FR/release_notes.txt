@@ -1,5 +1,6 @@
-Découvrez le stockage cloud lié.
+Une mise à jour majeure pour iPhone et iPad.
 
-- Connectez OneDrive, Dropbox, Google Drive ou WebDAV (bêta) et parcourez vos dessins avec vos dossiers locaux.
-- Continuez à modifier hors ligne grâce au cache local ; les changements se synchronisent automatiquement à la reconnexion.
-- Suivez l’état de chaque fichier et comparez les aperçus locaux et distants pour résoudre les conflits.
+- Connectez OneDrive, Dropbox, Google Drive ou WebDAV (bêta), modifiez depuis le cache local et résolvez les conflits grâce à des aperçus visuels.
+- Transformez les cadres Excalidraw en présentations plein écran avec des diapositives réorganisables et des transitions en fondu, glissement ou zoom.
+- Parcourez les médias du dessin dans une galerie adaptative et nettoyez en toute sécurité les médias inutilisés ou conservés uniquement par l’historique.
+- Amélioration des dossiers liés et fichiers externes, de l’ouverture et du changement de fichier, de l’ordre de la barre d’outils et de la conservation des polices personnalisées.
