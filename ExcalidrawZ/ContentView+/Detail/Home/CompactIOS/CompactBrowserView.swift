@@ -57,6 +57,8 @@ struct CompactBrowserCollectionView<Folder: Identifiable, FolderContent: View>: 
             .padding()
         }
         .animation(.smooth, value: layoutState.compactBrowserLayout)
+        .animation(.smooth(duration: 0.22), value: folders.map(\.id))
+        .animation(.smooth(duration: 0.22), value: files.map(\.id))
     }
 }
 
