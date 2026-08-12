@@ -112236,115 +112236,115 @@
         }
       }
     },
-    "sidebarGroupListSectionHeaderICloud": {
+    "sidebarGroupListSectionHeaderMyFiles": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "آي كلاود"
+            "value": "ملفاتي"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "Meine Dateien"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "My Files"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "Mis archivos"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "Mes fichiers"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "मेरी फ़ाइलें"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "I miei file"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "マイファイル"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "내 파일"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "Mijn bestanden"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "Moje pliki"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "Meus arquivos"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "Мои файлы"
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "ไฟล์ของฉัน"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "Dosyalarım"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "Tệp của tôi"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "我的文件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud"
+            "value": "我的檔案"
           }
         }
       }

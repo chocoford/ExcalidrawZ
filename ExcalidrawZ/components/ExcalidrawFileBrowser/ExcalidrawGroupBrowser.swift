@@ -26,7 +26,7 @@ struct ExcalidrawGroupBrowser: View {
 
                 // Database Groups
                 VStack(alignment: .leading, spacing: spacing) {
-                    Text(.localizable(.sidebarGroupListSectionHeaderICloud))
+                    Text(.localizable(.sidebarGroupListSectionHeaderMyFiles))
                         .font(.headline)
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(groups) { group in

@@ -100,12 +100,12 @@ struct GroupListView: View {
                             
                             Divider()
                             
-                            // iCloud
+                            // App-managed files, optionally synchronized through iCloud.
                             DatabaseGroupsListView(sortField: sortField, fileState: fileState)
                                 .modifier(
                                     ContentHeaderCreateButtonModifier(
                                         groupType: .group,
-                                        title: .localizable(.sidebarGroupListSectionHeaderICloud)
+                                        title: .localizable(.sidebarGroupListSectionHeaderMyFiles)
                                     )
                                 )
 
