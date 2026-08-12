@@ -46,6 +46,11 @@ struct LocalFolderMonitorModifier: ViewModifier {
                 guard newValue == .active else { return }
                 handleFoldersObservation(folders: folders)
             }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .localFolderResolvedLocationDidChange)
+            ) { notification in
+                handleResolvedLocationChange(notification)
+            }
             .onAppear {
                 startListeningToFileChanges()
             }
@@ -53,6 +58,36 @@ struct LocalFolderMonitorModifier: ViewModifier {
                 eventStreamTask?.cancel()
                 eventStreamTask = nil
             }
+    }
+
+    @MainActor
+    private func handleResolvedLocationChange(_ notification: Notification) {
+        guard let folderID = notification.object as? NSManagedObjectID,
+              let oldURL = notification.userInfo?[LocalFolderLocationChangeUserInfoKey.oldURL] as? URL,
+              let newURL = notification.userInfo?[LocalFolderLocationChangeUserInfoKey.newURL] as? URL else {
+            return
+        }
+
+        fileState.rebaseLinkedFolderSession(from: oldURL, to: newURL)
+
+        guard registeredFolders.contains(folderID) else { return }
+        Task {
+            await FileSyncCoordinator.shared.removeFolder(at: oldURL)
+            do {
+                try await FileSyncCoordinator.shared.addFolder(at: newURL, options: .default)
+                await MainActor.run {
+                    folderURLs[folderID] = newURL
+                }
+                logger.info("Re-registered renamed linked folder: \(newURL.filePath)")
+            } catch {
+                logger.error("Failed to re-register renamed linked folder: \(error)")
+                await MainActor.run {
+                    registeredFolders.remove(folderID)
+                    folderURLs.removeValue(forKey: folderID)
+                    alertToast(error)
+                }
+            }
+        }
     }
     
     private func handleFoldersObservation(folders newValue: FetchedResults<LocalFolder>) {

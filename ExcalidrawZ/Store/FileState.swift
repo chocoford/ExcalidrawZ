@@ -83,6 +83,39 @@ final class FileState: ObservableObject {
         currentActiveGroup = group
     }
 
+    /// Keeps an open local-file session attached when Finder renames or moves
+    /// the linked root folder and its bookmark resolves to the new location.
+    @MainActor
+    func rebaseLinkedFolderSession(from oldRootURL: URL, to newRootURL: URL) {
+        for index in activeFiles.indices {
+            guard let activeFile = activeFiles[index],
+                  case .localFile(let currentURL) = activeFile,
+                  let rebasedURL = currentURL.rebased(from: oldRootURL, to: newRootURL) else {
+                continue
+            }
+
+            let replacement = ActiveFile.localFile(rebasedURL)
+            if let didUpdate = didUpdateFileState.removeValue(forKey: activeFile) {
+                didUpdateFileState[replacement] = didUpdate
+            }
+            if let checkpointStartedAt = userCheckpointWindowStartedAt.removeValue(forKey: activeFile.id) {
+                userCheckpointWindowStartedAt[replacement.id] = checkpointStartedAt
+            }
+            activeFiles[index] = replacement
+        }
+
+        selectedLocalFiles = Set(selectedLocalFiles.map {
+            $0.rebased(from: oldRootURL, to: newRootURL) ?? $0
+        })
+        if let selectedStartLocalFile {
+            self.selectedStartLocalFile = selectedStartLocalFile.rebased(
+                from: oldRootURL,
+                to: newRootURL
+            ) ?? selectedStartLocalFile
+        }
+        resetCurrentFileChangesListener()
+    }
+
     /// Keeps per-window navigation consistent when a cloud location is
     /// removed from another scene, such as the macOS Settings window.
     @MainActor

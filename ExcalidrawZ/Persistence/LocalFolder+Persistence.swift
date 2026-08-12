@@ -10,7 +10,21 @@ import CoreData
 import SwiftUI
 import UniformTypeIdentifiers
 
+extension Notification.Name {
+    static let localFolderResolvedLocationDidChange = Notification.Name("localFolderResolvedLocationDidChange")
+}
+
+enum LocalFolderLocationChangeUserInfoKey {
+    static let oldURL = "oldURL"
+    static let newURL = "newURL"
+}
+
 extension LocalFolder {
+
+    struct ResolvedLocationChange: Sendable {
+        let oldURL: URL
+        let newURL: URL
+    }
 
 #if os(macOS)
     var bookmarkResolutionOptions: URL.BookmarkResolutionOptions {
@@ -26,14 +40,19 @@ extension LocalFolder {
     
     var scopedURL: URL? {
         get throws {
-            guard let bookmarkData else { return nil }
-            var isStale: Bool = false
-            return try URL(
-                resolvingBookmarkData: bookmarkData,
-                options: bookmarkResolutionOptions,
-                bookmarkDataIsStale: &isStale
-            )
+            try resolvedBookmark()?.url
         }
+    }
+
+    private func resolvedBookmark() throws -> (url: URL, isStale: Bool)? {
+        guard let bookmarkData else { return nil }
+        var isStale = false
+        let url = try URL(
+            resolvingBookmarkData: bookmarkData,
+            options: bookmarkResolutionOptions,
+            bookmarkDataIsStale: &isStale
+        )
+        return (url.standardizedFileURL, isStale)
     }
     
     public convenience init(url: URL, context: NSManagedObjectContext) throws {
@@ -51,6 +70,101 @@ extension LocalFolder {
     public override func willSave() {
         super.willSave()
         setPrimitiveValue(url?.filePath, forKey: #keyPath(LocalFolder.filePath))
+    }
+
+    /// Reconciles the persisted folder tree with the URL currently resolved by
+    /// the top-level security-scoped bookmark. Bookmarks can continue resolving
+    /// after a folder is renamed or moved, while the Core Data URL remains a
+    /// snapshot of the location that was originally linked.
+    @discardableResult
+    func refreshResolvedLocation(context: NSManagedObjectContext) throws -> ResolvedLocationChange? {
+        guard parent == nil, let resolved = try resolvedBookmark() else { return nil }
+
+        let oldURL = (url ?? filePath.map { URL(fileURLWithPath: $0) })?.standardizedFileURL
+        let locationChanged = oldURL != resolved.url
+        guard locationChanged || resolved.isStale else { return nil }
+
+        guard resolved.url.startAccessingSecurityScopedResource() else {
+            throw StartAccessingSecurityScopedResourceError()
+        }
+        defer { resolved.url.stopAccessingSecurityScopedResource() }
+
+        let change = try context.performAndWait { () throws -> ResolvedLocationChange? in
+            let previousURL = (self.url ?? self.filePath.map { URL(fileURLWithPath: $0) })?
+                .standardizedFileURL
+
+            if let previousURL, previousURL != resolved.url {
+                try self.rebasePersistedURLs(
+                    from: previousURL,
+                    to: resolved.url,
+                    context: context
+                )
+            } else {
+                self.url = resolved.url
+                self.filePath = resolved.url.filePath
+            }
+
+            self.bookmarkData = try resolved.url.bookmarkData(
+                options: self.bookmarkCreationOptions,
+                includingResourceValuesForKeys: [.nameKey],
+                relativeTo: nil
+            )
+
+            if context.hasChanges {
+                try context.save()
+            }
+
+            guard let previousURL, previousURL != resolved.url else { return nil }
+            return ResolvedLocationChange(oldURL: previousURL, newURL: resolved.url)
+        }
+
+        if let change {
+            let folderID = objectID
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .localFolderResolvedLocationDidChange,
+                    object: folderID,
+                    userInfo: [
+                        LocalFolderLocationChangeUserInfoKey.oldURL: change.oldURL,
+                        LocalFolderLocationChangeUserInfoKey.newURL: change.newURL,
+                    ]
+                )
+            }
+        }
+        return change
+    }
+
+    private func rebasePersistedURLs(
+        from oldRootURL: URL,
+        to newRootURL: URL,
+        context: NSManagedObjectContext
+    ) throws {
+        func updateFolder(_ folder: LocalFolder) {
+            if let sourceURL = folder.url ?? folder.filePath.map({ URL(fileURLWithPath: $0) }),
+               let destinationURL = sourceURL.rebased(from: oldRootURL, to: newRootURL) {
+                folder.url = destinationURL
+                folder.filePath = destinationURL.filePath
+            }
+            for case let child as LocalFolder in folder.children?.allObjects ?? [] {
+                updateFolder(child)
+            }
+        }
+        updateFolder(self)
+
+        let checkpointRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
+        for checkpoint in try context.fetch(checkpointRequest) {
+            if let sourceURL = checkpoint.url,
+               let destinationURL = sourceURL.rebased(from: oldRootURL, to: newRootURL) {
+                checkpoint.url = destinationURL
+            }
+        }
+
+        let existingMappings = ExcalidrawFile.localFileURLIDMapping
+        for (sourceURL, fileID) in existingMappings {
+            guard let destinationURL = sourceURL.rebased(from: oldRootURL, to: newRootURL) else { continue }
+            ExcalidrawFile.localFileURLIDMapping[sourceURL] = nil
+            ExcalidrawFile.localFileURLIDMapping[destinationURL] = fileID
+        }
     }
     
     private struct InvalidScopedURLError: Error {}
@@ -203,6 +317,7 @@ extension LocalFolder {
     }
     
     func refreshChildren(context: NSManagedObjectContext) throws {
+        try refreshResolvedLocation(context: context)
         try self.withSecurityScopedURL { url in
             let contents = try FileManager.default.contentsOfDirectory(
                 at: url,
