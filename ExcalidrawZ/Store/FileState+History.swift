@@ -96,7 +96,7 @@ extension FileState {
             case .cloudStorageFile(let reference):
                 let activeFile = ActiveFile.cloudStorageFile(reference)
                 let parsedFile = try ExcalidrawFile(data: content, id: activeFile.id)
-                let needsUpload = try await CloudStorageDocumentStore.shared.saveToLocalCache(
+                let needsUpload = try CloudStorageDocumentStore.shared.saveToLocalCache(
                     content,
                     for: reference
                 )
@@ -113,7 +113,7 @@ extension FileState {
                     )
                 }
                 if needsUpload {
-                    await CloudStorageSyncService.shared.enqueueUpload(for: reference)
+                    CloudStorageSyncService.shared.enqueueUpload(for: reference)
                 }
                 guard currentActiveFile?.id == activeFile.id else { return }
                 await excalidrawWebCoordinator?.loadFile(from: parsedFile, force: true)
