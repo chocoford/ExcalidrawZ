@@ -188,34 +188,41 @@ final class DropboxOAuthAuthenticator: NSObject, DropboxAuthenticating {
             )
         }
 
-        return try await withCheckedThrowingContinuation { continuation in
-            let session = ASWebAuthenticationSession(
-                url: authorizationURL,
-                callbackURLScheme: configuration.callbackURLScheme
-            ) { [weak self] callbackURL, error in
-                Task { @MainActor in
-                    self?.authenticationSession = nil
-                    if let callbackURL {
-                        continuation.resume(returning: callbackURL)
-                    } else if let error = error as? ASWebAuthenticationSessionError,
-                              error.code == .canceledLogin {
-                        continuation.resume(throwing: CloudStorageError.authorizationCancelled)
-                    } else {
-                        continuation.resume(throwing: CloudStorageError.transport(
-                            error?.localizedDescription
-                                ?? "Dropbox authorization did not return a result."
-                        ))
+        return try await withTaskCancellationHandler {
+            try Task.checkCancellation()
+            return try await withCheckedThrowingContinuation { continuation in
+                let session = ASWebAuthenticationSession(
+                    url: authorizationURL,
+                    callbackURLScheme: configuration.callbackURLScheme
+                ) { [weak self] callbackURL, error in
+                    Task { @MainActor in
+                        self?.authenticationSession = nil
+                        if let callbackURL {
+                            continuation.resume(returning: callbackURL)
+                        } else if let error = error as? ASWebAuthenticationSessionError,
+                                  error.code == .canceledLogin {
+                            continuation.resume(throwing: CloudStorageError.authorizationCancelled)
+                        } else {
+                            continuation.resume(throwing: CloudStorageError.transport(
+                                error?.localizedDescription
+                                    ?? "Dropbox authorization did not return a result."
+                            ))
+                        }
                     }
                 }
+                session.presentationContextProvider = self
+                session.prefersEphemeralWebBrowserSession = false
+                authenticationSession = session
+                if !session.start() {
+                    authenticationSession = nil
+                    continuation.resume(throwing: CloudStorageError.transport(
+                        "Unable to start Dropbox authorization."
+                    ))
+                }
             }
-            session.presentationContextProvider = self
-            session.prefersEphemeralWebBrowserSession = false
-            authenticationSession = session
-            if !session.start() {
-                authenticationSession = nil
-                continuation.resume(throwing: CloudStorageError.transport(
-                    "Unable to start Dropbox authorization."
-                ))
+        } onCancel: {
+            Task { @MainActor [weak self] in
+                self?.authenticationSession?.cancel()
             }
         }
     }

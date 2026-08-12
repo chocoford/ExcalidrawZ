@@ -19,7 +19,6 @@ final class CloudStorageSyncService {
     private let activeDocumentPollingIntervalNanoseconds: UInt64
     private let logger = Logger(label: "CloudStorageSyncService")
 
-    private var serviceObserverIDs: Set<UUID> = []
     private var serviceTask: Task<Void, Never>?
     private var locationObserver: AnyCancellable?
     private var connectivityObserver: AnyCancellable?
@@ -36,22 +35,15 @@ final class CloudStorageSyncService {
         self.activeDocumentPollingIntervalNanoseconds = 10_000_000_000
     }
 
-    /// Keeps the global service alive while at least one app scene is active.
-    func monitor(
-        connections: CloudStorageConnectionStore
-    ) async {
-        let observerID = UUID()
-        serviceObserverIDs.insert(observerID)
-        startIfNeeded(connections: connections)
-        defer { removeServiceObserver(observerID) }
+    /// Starts the process-wide synchronization service. Its task is owned by
+    /// the App rather than any WindowGroup, so closing the last window does not
+    /// suspend provider synchronization while the process remains alive.
+    func start() {
+        start(connections: .shared)
+    }
 
-        do {
-            while !Task.isCancelled {
-                try await Task.sleep(nanoseconds: 3_600_000_000_000)
-            }
-        } catch {
-            // Cancellation releases this scene's service lease.
-        }
+    func start(connections: CloudStorageConnectionStore) {
+        startIfNeeded(connections: connections)
     }
 
     /// Prevents the global cache updater from replacing a document currently
@@ -117,11 +109,11 @@ final class CloudStorageSyncService {
     func removeConnection(
         for location: CloudStorageLocation,
         connections: CloudStorageConnectionStore? = nil
-    ) {
+    ) async {
         let connections = connections ?? .shared
         cancelSynchronization(for: location.id)
-        documentStore.removeCachedState(for: location.id)
         connections.removeLocation(location)
+        await documentStore.removeCachedState(for: location.id)
     }
 
     func disconnect(
@@ -135,7 +127,7 @@ final class CloudStorageSyncService {
         try await connections.disconnect(account)
         for location in locations {
             cancelSynchronization(for: location.id)
-            documentStore.removeCachedState(for: location.id)
+            await documentStore.removeCachedState(for: location.id)
         }
     }
 
@@ -438,17 +430,4 @@ final class CloudStorageSyncService {
         requestSynchronization(for: location, connections: connections)
     }
 
-    private func removeServiceObserver(_ observerID: UUID) {
-        serviceObserverIDs.remove(observerID)
-        guard serviceObserverIDs.isEmpty else { return }
-        serviceTask?.cancel()
-        serviceTask = nil
-        locationObserver = nil
-        connectivityObserver = nil
-        observedLocationIDs = []
-        locationSynchronizationTasks.values.forEach { $0.cancel() }
-        locationSynchronizationTasks = [:]
-        locationSynchronizationTaskIDs = [:]
-        pendingLocationSynchronizationIDs = []
-    }
 }

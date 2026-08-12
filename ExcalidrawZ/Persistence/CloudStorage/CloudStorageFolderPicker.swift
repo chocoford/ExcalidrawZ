@@ -100,7 +100,10 @@ struct CloudStorageFolderPicker: View {
 
                 Spacer(minLength: 80)
 
-                Button("Choose") {
+                Button(String(
+                    localized: "cloudStorageFolderPickerChoose",
+                    defaultValue: "Choose"
+                )) {
                     guard let folder = model.currentFolder else { return }
                     onSelect(folder)
                     dismiss()
@@ -160,7 +163,10 @@ struct CloudStorageFolderPicker: View {
         VStack(spacing: 10) {
             ProgressView()
                 .controlSize(.small)
-            Text("Loading Folders")
+            Text(String(
+                localized: "cloudStorageFolderPickerLoading",
+                defaultValue: "Loading Folders"
+            ))
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }
@@ -172,9 +178,12 @@ struct CloudStorageFolderPicker: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 32, weight: .light))
                 .foregroundStyle(.secondary)
-            Text("Unable to Load Folders")
+            Text(String(
+                localized: "cloudStorageFolderPickerLoadFailed",
+                defaultValue: "Unable to Load Folders"
+            ))
                 .font(.headline)
-            Button("Try Again") {
+            Button(String(localizable: .generalButtonRetry)) {
                 Task { await model.start() }
             }
             .modernButtonStyle(style: .glass, size: .regular, shape: .modern)
@@ -223,9 +232,15 @@ struct CloudStorageFolderPicker: View {
             Image(systemName: "folder")
                 .font(.system(size: 36, weight: .light))
                 .foregroundStyle(.secondary)
-            Text("No Folders")
+            Text(String(
+                localized: "cloudStorageFolderPickerEmpty",
+                defaultValue: "No Folders"
+            ))
                 .font(.headline)
-            Text("Choose the current folder or go back.")
+            Text(String(
+                localized: "cloudStorageFolderPickerEmptyDescription",
+                defaultValue: "Choose the current folder or go back."
+            ))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

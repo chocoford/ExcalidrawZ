@@ -87,6 +87,10 @@ struct ExcalidrawZApp: App {
             return stdoutHandler
         }
         FeatureDiscoveryTips.configureIfAvailable()
+        // Cloud storage synchronization follows the process lifecycle, not a
+        // WindowGroup lifecycle. This also keeps queued offline work moving
+        // while the app has no open windows on macOS.
+        CloudStorageSyncService.shared.start()
 #if os(macOS)
         _ = ExcalidrawZMCPServerController.shared
 #endif
@@ -270,11 +274,6 @@ struct ExcalidrawZApp: App {
                     updateChecker.assignUpdater(updater: updaterController.updater)
 #endif
                     scheduleAIConversationCacheWarmupIfNeeded()
-                }
-                .task {
-                    await CloudStorageSyncService.shared.monitor(
-                        connections: .shared
-                    )
                 }
         }
         // prevent window being open by urls.

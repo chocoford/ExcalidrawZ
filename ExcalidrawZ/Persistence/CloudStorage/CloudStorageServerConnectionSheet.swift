@@ -42,28 +42,49 @@ struct CloudStorageServerConnectionSheet: View {
 
             Form {
                 Section {
-                    TextField("Server URL", text: $serverURL)
+                    TextField(String(
+                        localized: "cloudStorageServerURL",
+                        defaultValue: "Server URL"
+                    ), text: $serverURL)
 #if os(iOS)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
 #endif
                         .autocorrectionDisabled()
 
-                    TextField("Username", text: $username)
+                    TextField(String(
+                        localized: "cloudStorageUsername",
+                        defaultValue: "Username"
+                    ), text: $username)
 #if os(iOS)
                         .textInputAutocapitalization(.never)
 #endif
                         .autocorrectionDisabled()
 
-                    SecureField("Password or app password", text: $password)
+                    SecureField(String(
+                        localized: "cloudStoragePasswordOrAppPassword",
+                        defaultValue: "Password or app password"
+                    ), text: $password)
                 } header: {
-                    Text("WebDAV Account")
+                    Text(String(
+                        localized: "cloudStorageWebDAVAccount",
+                        defaultValue: "WebDAV Account"
+                    ))
                 } footer: {
                     VStack(alignment: .leading, spacing: 12) {
                         if let detectedServiceName {
-                            Text("Service: \(detectedServiceName)")
+                            Text(String(
+                                format: String(
+                                    localized: "cloudStorageDetectedServiceFormat",
+                                    defaultValue: "Service: %@"
+                                ),
+                                detectedServiceName
+                            ))
                         }
-                        Text("Enter the HTTPS site or WebDAV URL provided by your service. Nextcloud and ownCloud endpoints are discovered automatically. Credentials are stored only in this device's Keychain.")
+                        Text(String(
+                            localized: "cloudStorageWebDAVCredentialsDescription",
+                            defaultValue: "Enter the HTTPS site or WebDAV URL provided by your service. Nextcloud and ownCloud endpoints are discovered automatically. Credentials are stored only in this device's Keychain."
+                        ))
 
                         Button {
                             connect()
@@ -73,7 +94,16 @@ struct CloudStorageServerConnectionSheet: View {
                                     ProgressView()
                                         .controlSize(.small)
                                 }
-                                Text(isConnecting ? "Connecting" : "Connect")
+                                Text(isConnecting
+                                    ? String(
+                                        localized: "cloudStorageConnecting",
+                                        defaultValue: "Connecting"
+                                    )
+                                    : String(
+                                        localized: "cloudStorageConnect",
+                                        defaultValue: "Connect"
+                                    )
+                                )
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -88,9 +118,15 @@ struct CloudStorageServerConnectionSheet: View {
                             connectedAccountRow(account)
                         }
                     } header: {
-                        Text("Connected Accounts")
+                        Text(String(
+                            localized: "cloudStorageConnectedAccounts",
+                            defaultValue: "Connected Accounts"
+                        ))
                     } footer: {
-                        Text("Select an existing account to choose another linked folder.")
+                        Text(String(
+                            localized: "cloudStorageConnectedAccountsDescription",
+                            defaultValue: "Select an existing account to choose another linked folder."
+                        ))
                     }
                 }
 
@@ -114,7 +150,13 @@ struct CloudStorageServerConnectionSheet: View {
 
     private var header: some View {
         ZStack {
-            Text("Connect \(providerName)")
+            Text(String(
+                format: String(
+                    localized: "cloudStorageConnectProviderFormat",
+                    defaultValue: "Connect %@"
+                ),
+                providerName
+            ))
                 .font(.headline)
                 .lineLimit(1)
                 .truncationMode(.middle)

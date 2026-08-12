@@ -31,6 +31,7 @@ final class CloudStorageConnectionStore: ObservableObject {
     private var authorizationTasks: [
         CloudStorageProviderID: Task<CloudStorageAccount, Error>
     ] = [:]
+    private var authorizationTaskIDs: [CloudStorageProviderID: UUID] = [:]
 
     init(
         registry: CloudStorageProviderRegistry = .shared,
@@ -140,25 +141,62 @@ final class CloudStorageConnectionStore: ObservableObject {
         using connectionInput: CloudStorageConnectionInput?
     ) async throws -> CloudStorageAccount {
         if let authorizationTask = authorizationTasks[providerID] {
-            let account = try await authorizationTask.value
+            let account = try await awaitAuthorizationTask(
+                authorizationTask,
+                providerID: providerID,
+                taskID: authorizationTaskIDs[providerID]
+            )
             storeConnectedAccount(account)
             return account
         }
 
         let provider = try await registry.provider(withID: providerID)
+        let taskID = UUID()
         let authorizationTask = Task { @MainActor in
             try await provider.authorize(using: connectionInput)
         }
         authorizationTasks[providerID] = authorizationTask
+        authorizationTaskIDs[providerID] = taskID
         connectingProviderIDs.insert(providerID)
         defer {
-            authorizationTasks[providerID] = nil
-            connectingProviderIDs.remove(providerID)
+            if authorizationTaskIDs[providerID] == taskID {
+                authorizationTasks[providerID] = nil
+                authorizationTaskIDs[providerID] = nil
+                connectingProviderIDs.remove(providerID)
+            }
         }
 
-        let account = try await authorizationTask.value
+        let account = try await awaitAuthorizationTask(
+            authorizationTask,
+            providerID: providerID,
+            taskID: taskID
+        )
         storeConnectedAccount(account)
         return account
+    }
+
+    private func awaitAuthorizationTask(
+        _ authorizationTask: Task<CloudStorageAccount, Error>,
+        providerID: CloudStorageProviderID,
+        taskID: UUID?
+    ) async throws -> CloudStorageAccount {
+        try await withTaskCancellationHandler {
+            try await authorizationTask.value
+        } onCancel: {
+            Task { @MainActor [weak self] in
+                self?.cancelAuthorization(for: providerID, taskID: taskID)
+            }
+        }
+    }
+
+    private func cancelAuthorization(
+        for providerID: CloudStorageProviderID,
+        taskID: UUID?
+    ) {
+        guard authorizationTaskIDs[providerID] == taskID else { return }
+        authorizationTasks.removeValue(forKey: providerID)?.cancel()
+        authorizationTaskIDs.removeValue(forKey: providerID)
+        connectingProviderIDs.remove(providerID)
     }
 
     func selectLocation(

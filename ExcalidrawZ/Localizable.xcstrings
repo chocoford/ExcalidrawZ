@@ -1,6 +1,214 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "cloudStorageConnect": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Connect" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "连接" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連接" } }
+      }
+    },
+    "cloudStorageConnectedAccounts": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Connected Accounts" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已连接的帐户" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "已連接的帳戶" } }
+      }
+    },
+    "cloudStorageConnectedAccountsDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Select an existing account to choose another linked folder." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "选择现有帐户以关联另一个文件夹。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "選擇現有帳戶以連結另一個資料夾。" } }
+      }
+    },
+    "cloudStorageConnectedBadge": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Connected" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已连接" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "已連接" } }
+      }
+    },
+    "cloudStorageConnecting": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Connecting" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在连接" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在連接" } }
+      }
+    },
+    "cloudStorageConnectProviderFormat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Connect %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "连接 %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連接 %@" } }
+      }
+    },
+    "cloudStorageDetectedServiceFormat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Service: %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "服务：%@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "服務：%@" } }
+      }
+    },
+    "cloudStorageFolderPickerChoose": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Choose" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "选择" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "選擇" } }
+      }
+    },
+    "cloudStorageFolderPickerEmpty": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No Folders" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "没有文件夹" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "沒有資料夾" } }
+      }
+    },
+    "cloudStorageFolderPickerEmptyDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Choose the current folder or go back." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "选择当前文件夹，或返回上一级。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "選擇目前資料夾，或返回上一層。" } }
+      }
+    },
+    "cloudStorageFolderPickerLoadFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unable to Load Folders" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法加载文件夹" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "無法載入資料夾" } }
+      }
+    },
+    "cloudStorageFolderPickerLoading": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Loading Folders" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在加载文件夹" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在載入資料夾" } }
+      }
+    },
+    "cloudStorageNoExcalidrawFiles": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No Excalidraw Files" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "没有 Excalidraw 文件" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "沒有 Excalidraw 檔案" } }
+      }
+    },
+    "cloudStoragePasswordOrAppPassword": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Password or app password" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "密码或应用专用密码" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "密碼或應用程式專用密碼" } }
+      }
+    },
+    "cloudStorageServerURL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Server URL" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "服务器 URL" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "伺服器 URL" } }
+      }
+    },
+    "cloudStorageSignInReconnectFormat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Sign in to reconnect %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "登录以重新连接 %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "登入以重新連接 %@" } }
+      }
+    },
+    "cloudStorageUsername": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Username" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "用户名" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "使用者名稱" } }
+      }
+    },
+    "cloudStorageWebDAVAccount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "WebDAV Account" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "WebDAV 帐户" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "WebDAV 帳戶" } }
+      }
+    },
+    "cloudStorageWebDAVCredentialsDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Enter the HTTPS site or WebDAV URL provided by your service. Nextcloud and ownCloud endpoints are discovered automatically. Credentials are stored only in this device's Keychain." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "输入服务商提供的 HTTPS 站点或 WebDAV URL。Nextcloud 和 ownCloud 端点会被自动发现。凭据仅存储在此设备的钥匙串中。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "輸入服務商提供的 HTTPS 網站或 WebDAV URL。Nextcloud 和 ownCloud 端點會被自動探索。憑證僅儲存在此裝置的鑰匙圈中。" } }
+      }
+    },
+    "generalBadgeBeta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Beta" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "测试版" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "測試版" } }
+      }
+    },
+    "linkedStorageAddStorage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add Storage" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "添加存储位置" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "加入儲存位置" } }
+      }
+    },
+    "linkedStorageCloudStorageFallbackName": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Cloud Storage" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "云存储" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "雲端儲存" } }
+      }
+    },
+    "linkedStorageCloudStorageSection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Or Cloud Storage" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "或云存储" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "或雲端儲存" } }
+      }
+    },
+    "linkedStorageEmptyDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Link a local folder or cloud storage to browse drawings from one place." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "关联本地文件夹或云存储，在一处浏览所有绘图。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連結本機資料夾或雲端儲存，在一處瀏覽所有繪圖。" } }
+      }
+    },
+    "linkedStorageLinkLocalFolder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Link Local Folder" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "关联本地文件夹" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連結本機資料夾" } }
+      }
+    },
+    "linkedStorageTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Linked Storage" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "关联存储" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連結儲存空間" } }
+      }
+    },
     "cloudStorageActionUnlink": {
       "extractionState": "manual",
       "localizations": {

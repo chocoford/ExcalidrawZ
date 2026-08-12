@@ -43,36 +43,16 @@ struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
     }
 
     var body: some View {
-        Menu {
-            additionalContent()
-
-            Button {
-                isImportLocalFolderDialogPresented = true
-            } label: {
-                HStack {
-                    LinkedStorageLocalFolderIcon(size: 16)
-                    Text("Link Local Folder")
-                }
+        ZStack {
+            if isLoading {
+                label(true)
+                    .transition(.opacity)
+            } else {
+                addStorageMenu
+                    .transition(.opacity)
             }
-
-            Section("Or Cloud Storage") {
-                ForEach(connections.providerDescriptors, id: \.id) { descriptor in
-                    Button {
-                        addLocation(to: descriptor.id)
-                    } label: {
-                        HStack {
-                            CloudStorageProviderIcon(providerID: descriptor.id, size: 16)
-                            Text(descriptor.displayName)
-                        }
-                    }
-                    .badge(menuBadge(for: descriptor))
-                }
-            }
-        } label: {
-            label(isLoading)
         }
-        .menuIndicator(.hidden)
-        .disabled(isLoading)
+        .animation(.smooth, value: isLoading)
         .modifier(
             ImportLocalFolderModifier(
                 isPresented: $isImportLocalFolderDialogPresented
@@ -107,6 +87,44 @@ struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
                     }
             }
         }
+    }
+
+    private var addStorageMenu: some View {
+        Menu {
+            additionalContent()
+
+            Button {
+                isImportLocalFolderDialogPresented = true
+            } label: {
+                HStack {
+                    LinkedStorageLocalFolderIcon(size: 16)
+                    Text(String(
+                        localized: "linkedStorageLinkLocalFolder",
+                        defaultValue: "Link Local Folder"
+                    ))
+                }
+            }
+
+            Section(String(
+                localized: "linkedStorageCloudStorageSection",
+                defaultValue: "Or Cloud Storage"
+            )) {
+                ForEach(connections.providerDescriptors, id: \.id) { descriptor in
+                    Button {
+                        addLocation(to: descriptor.id)
+                    } label: {
+                        HStack {
+                            CloudStorageProviderIcon(providerID: descriptor.id, size: 16)
+                            Text(descriptor.displayName)
+                        }
+                    }
+                    .badge(menuBadge(for: descriptor))
+                }
+            }
+        } label: {
+            label(false)
+        }
+        .menuIndicator(.hidden)
     }
 
     private var isLoading: Bool {
@@ -172,7 +190,10 @@ struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
         sheetRoute = .folderPicker(
             CloudStorageFolderPickerContext(
                 providerID: providerID,
-                providerName: descriptor(for: providerID)?.displayName ?? "Cloud Storage",
+                providerName: descriptor(for: providerID)?.displayName ?? String(
+                    localized: "linkedStorageCloudStorageFallbackName",
+                    defaultValue: "Cloud Storage"
+                ),
                 account: account,
                 session: session
             )
@@ -183,12 +204,18 @@ struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
         for descriptor: CloudStorageProviderDescriptor
     ) -> Text? {
         if descriptor.id == .webDAV {
-            return Text("Beta")
+            return Text(String(
+                localized: "generalBadgeBeta",
+                defaultValue: "Beta"
+            ))
                 .foregroundColor(.yellow)
                 .bold()
         }
         if !connections.accounts(for: descriptor.id).isEmpty {
-            return Text("Connected")
+            return Text(String(
+                localized: "cloudStorageConnectedBadge",
+                defaultValue: "Connected"
+            ))
                 .foregroundColor(.green)
                 .bold()
         }

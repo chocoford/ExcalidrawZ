@@ -764,7 +764,7 @@ struct ExcalidrawEditor: View {
         activeFile: FileState.ActiveFile
     ) async throws {
         let store = CloudStorageDocumentStore.shared
-        let cachedContent = try store.cachedContent(for: reference)
+        let cachedContent = try await store.cachedContent(for: reference)
         let cachedFile: ExcalidrawFile?
 
         do {
@@ -783,7 +783,7 @@ struct ExcalidrawEditor: View {
             }
         } catch {
             cachedFile = nil
-            try? store.discardCachedContent(for: reference)
+            try? await store.discardCachedContent(for: reference)
             logger.warning(
                 "Failed to open cached cloud document; falling back to provider: \(cloudStorageDocumentStore.displayName(for: reference)), error=\(error)"
             )
@@ -862,7 +862,7 @@ struct ExcalidrawEditor: View {
                 }
 
                 do {
-                    guard try store.installRemoteContentCandidate(candidate, for: reference) else {
+                    guard try await store.installRemoteContentCandidate(candidate, for: reference) else {
                         return
                     }
                     self.logger.info(

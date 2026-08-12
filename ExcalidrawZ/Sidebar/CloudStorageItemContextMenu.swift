@@ -124,7 +124,7 @@ struct CloudStorageLocationActionsModifier: ViewModifier {
                 fileState.setActiveGroupIfNeeded(nil)
             }
             fileState.resetSelections()
-            CloudStorageSyncService.shared.removeConnection(
+            await CloudStorageSyncService.shared.removeConnection(
                 for: location,
                 connections: connections
             )

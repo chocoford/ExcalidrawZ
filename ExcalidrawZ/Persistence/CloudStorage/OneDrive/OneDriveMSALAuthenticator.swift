@@ -101,13 +101,20 @@ final class OneDriveMSALAuthenticator: OneDriveAuthenticating {
             webviewParameters: webParameters
         )
 
-        return try await withCheckedThrowingContinuation { continuation in
-            application.acquireToken(with: parameters) { result, error in
-                if let result {
-                    continuation.resume(returning: result)
-                } else {
-                    continuation.resume(throwing: Self.map(error))
+        return try await withTaskCancellationHandler {
+            try Task.checkCancellation()
+            return try await withCheckedThrowingContinuation { continuation in
+                application.acquireToken(with: parameters) { result, error in
+                    if let result {
+                        continuation.resume(returning: result)
+                    } else {
+                        continuation.resume(throwing: Self.map(error))
+                    }
                 }
+            }
+        } onCancel: {
+            Task { @MainActor in
+                _ = MSALPublicClientApplication.cancelCurrentWebAuthSession()
             }
         }
     }

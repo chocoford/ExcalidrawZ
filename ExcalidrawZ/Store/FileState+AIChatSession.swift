@@ -333,7 +333,7 @@ extension FileState {
            ) {
             return liveContent
         }
-        if let cachedContent = try CloudStorageDocumentStore.shared.cachedContent(
+        if let cachedContent = try await CloudStorageDocumentStore.shared.cachedContent(
             for: reference
         ) {
             return cachedContent

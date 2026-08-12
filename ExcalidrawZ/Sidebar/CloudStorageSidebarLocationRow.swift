@@ -63,7 +63,13 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
                             .frame(width: 12, height: 12)
                     }
                     .buttonStyle(.borderless)
-                    .help("Sign in to reconnect \(location.displayName)")
+                    .help(String(
+                        format: String(
+                            localized: "cloudStorageSignInReconnectFormat",
+                            defaultValue: "Sign in to reconnect %@"
+                        ),
+                        location.displayName
+                    ))
                 } else if connectivity.status == .unavailable {
                     Image(systemName: "wifi.slash")
                         .imageScale(.small)
@@ -186,13 +192,16 @@ private struct CloudStorageSidebarFolderContents: View {
                     statusRow {
                         ProgressView()
                             .controlSize(.mini)
-                        Text("Loading")
+                        Text(localizable: .generalLoading)
                     }
                 }
             } else if let items {
                 if items.isEmpty {
                     statusRow {
-                        Text("No Excalidraw Files")
+                        Text(String(
+                            localized: "cloudStorageNoExcalidrawFiles",
+                            defaultValue: "No Excalidraw Files"
+                        ))
                     }
                 } else {
                     ForEach(items) { item in

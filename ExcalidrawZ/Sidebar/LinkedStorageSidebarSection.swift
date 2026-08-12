@@ -101,7 +101,10 @@ struct LinkedStorageSidebarSection: View {
 
     private var header: some View {
         HStack {
-            Text("Linked Storage")
+            Text(String(
+                localized: "linkedStorageTitle",
+                defaultValue: "Linked Storage"
+            ))
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -111,7 +114,13 @@ struct LinkedStorageSidebarSection: View {
                     ProgressView()
                         .controlSize(.mini)
                 } else {
-                    Label("Add Storage", systemImage: "plus.circle.fill")
+                    Label(
+                        String(
+                            localized: "linkedStorageAddStorage",
+                            defaultValue: "Add Storage"
+                        ),
+                        systemImage: "plus.circle.fill"
+                    )
                 }
             }
             .labelStyle(.iconOnly)
@@ -146,7 +155,10 @@ struct LinkedStorageSidebarSection: View {
                 }
             }
 
-            Text("Link a local folder or cloud storage to browse drawings from one place.")
+            Text(String(
+                localized: "linkedStorageEmptyDescription",
+                defaultValue: "Link a local folder or cloud storage to browse drawings from one place."
+            ))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -158,7 +170,13 @@ struct LinkedStorageSidebarSection: View {
                         ProgressView()
                             .controlSize(.small)
                     } else {
-                        Label("Add Storage", systemImage: "link.badge.plus")
+                        Label(
+                            String(
+                                localized: "linkedStorageAddStorage",
+                                defaultValue: "Add Storage"
+                            ),
+                            systemImage: "link.badge.plus"
+                        )
                     }
                 }
                 .font(.footnote)

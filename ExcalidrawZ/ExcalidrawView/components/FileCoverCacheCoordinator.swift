@@ -647,7 +647,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
                         case .cloudStorageFile(let reference):
                             mediaHydrationFileObjectID = nil
                             let documentStore = CloudStorageDocumentStore.shared
-                            guard let content = try documentStore.cachedContent(for: reference) else {
+                            guard let content = try await documentStore.cachedContent(for: reference) else {
                                 return .completed
                             }
                             let contentWithViewport = try await ExcalidrawViewportStateStore.shared

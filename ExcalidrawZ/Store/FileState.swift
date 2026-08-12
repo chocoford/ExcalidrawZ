@@ -495,6 +495,7 @@ final class FileState: ObservableObject {
             userCheckpointWindowStartedAt.removeValue(forKey: newValue.id)
         }
         resetCurrentFileChangesListener()
+        releaseUnusedOpenInPlaceAccess()
     }
 
     var currentActiveFileIsInTrash: Bool {
@@ -946,7 +947,11 @@ final class FileState: ObservableObject {
     @Published var selectedLocalFiles: Set<URL> = []
     @Published var selectedStartLocalFile: URL?
     
-    @Published var temporaryFiles: [URL] = []
+    @Published var temporaryFiles: [URL] = [] {
+        didSet {
+            releaseUnusedOpenInPlaceAccess()
+        }
+    }
 
     @MainActor
     @discardableResult
@@ -964,6 +969,27 @@ final class FileState: ObservableObject {
         openInPlaceSecurityScopeLeases[key] = lease
         logger.debug("Retained open-in-place access: \(url.lastPathComponent)")
         return true
+    }
+
+    /// Releases provider-owned document access only after the URL has left
+    /// both the temporary workspace and the active editor session. Keeping the
+    /// active URL here is important because closing an editor can flush a final
+    /// write after its Temporary row has already been removed.
+    private func releaseUnusedOpenInPlaceAccess() {
+        var retainedURLs = Set(temporaryFiles.map(\.standardizedFileURL))
+        for activeFile in activeFiles.compactMap({ $0 }) {
+            if case .temporaryFile(let activeURL) = activeFile {
+                retainedURLs.insert(activeURL.standardizedFileURL)
+            }
+        }
+
+        let releasedURLs = openInPlaceSecurityScopeLeases.keys.filter {
+            !retainedURLs.contains($0)
+        }
+        for url in releasedURLs {
+            openInPlaceSecurityScopeLeases[url] = nil
+            logger.debug("Released open-in-place access: \(url.lastPathComponent)")
+        }
     }
     
     @Published var selectedTemporaryFiles: Set<URL> = []
