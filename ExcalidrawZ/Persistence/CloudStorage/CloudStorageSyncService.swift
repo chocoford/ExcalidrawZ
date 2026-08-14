@@ -266,7 +266,10 @@ final class CloudStorageSyncService {
             guard let self, let connections else { return }
 
             await CloudStorageBootstrap.registerConfiguredProviders()
-            await connections.refresh()
+            // A view may start refreshing accounts while providers are still
+            // being registered. Always take a fresh registry snapshot after
+            // bootstrap so a coalesced refresh cannot omit the last provider.
+            await connections.refresh(reloadAfterCurrent: true)
             self.observeLocationChanges(connections: connections)
             self.observeConnectivity(connections: connections)
 

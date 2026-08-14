@@ -45,10 +45,12 @@ final class CloudStorageConnectionStore: ObservableObject {
         )
     }
 
-    func refresh() async {
+    func refresh(reloadAfterCurrent: Bool = false) async {
         if let accountRefreshTask {
+            let currentTaskID = accountRefreshTaskID
             await accountRefreshTask.value
-            return
+            finishAccountRefreshTask(id: currentTaskID)
+            guard reloadAfterCurrent else { return }
         }
 
         let taskID = UUID()
@@ -59,11 +61,13 @@ final class CloudStorageConnectionStore: ObservableObject {
         accountRefreshTask = task
         accountRefreshTaskID = taskID
         await task.value
+        finishAccountRefreshTask(id: taskID)
+    }
 
-        if accountRefreshTaskID == taskID {
-            accountRefreshTask = nil
-            accountRefreshTaskID = nil
-        }
+    private func finishAccountRefreshTask(id taskID: UUID?) {
+        guard accountRefreshTaskID == taskID else { return }
+        accountRefreshTask = nil
+        accountRefreshTaskID = nil
     }
 
     private func performRefresh() async {
