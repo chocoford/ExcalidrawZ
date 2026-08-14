@@ -476,6 +476,9 @@ extension PromptInputView {
             case .collaborationFile(let file):
                 let scope = activeFile.aiConversationFileScope
                 return (scope.id, file.name, scope.kind.rawValue)
+            case .cloudStorageFile:
+                let scope = activeFile.aiConversationFileScope
+                return (scope.id, activeFile.name, scope.kind.rawValue)
         }
     }
 

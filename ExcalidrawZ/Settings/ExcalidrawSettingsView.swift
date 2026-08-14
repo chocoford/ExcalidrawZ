@@ -18,8 +18,20 @@ struct ExcalidrawSettingsView: View {
     @State private var editingToolbarToolOrder = ExcalidrawToolbarToolOrder()
     @State private var draggingToolbarTool: ExcalidrawTool?
     @State private var toolbarToolOrderApplyTask: Task<Void, Never>?
+#if os(iOS)
+    @State private var toolbarToolOrderEditMode: EditMode = .active
+#endif
 
     var body: some View {
+#if os(iOS)
+        settingsForm
+            .environment(\.editMode, $toolbarToolOrderEditMode)
+#else
+        settingsForm
+#endif
+    }
+
+    private var settingsForm: some View {
         SettingsFormContainer {
             content()
         }
@@ -53,10 +65,21 @@ struct ExcalidrawSettingsView: View {
     @ViewBuilder
     private func toolbarOrderSection() -> some View {
         Section {
+#if os(iOS)
             ForEach(editingToolbarToolOrder.tools, id: \.self) { tool in
                 ToolbarToolOrderRow(
                     tool: tool,
-                    shortcutLabel: editingToolbarToolOrder.shortcutLabel(for: tool)
+                    shortcutLabel: editingToolbarToolOrder.shortcutLabel(for: tool),
+                    showsDragHandle: false
+                )
+            }
+            .onMove(perform: moveToolbarTools)
+#else
+            ForEach(editingToolbarToolOrder.tools, id: \.self) { tool in
+                ToolbarToolOrderRow(
+                    tool: tool,
+                    shortcutLabel: editingToolbarToolOrder.shortcutLabel(for: tool),
+                    showsDragHandle: true
                 )
                 .onDrag {
                     draggingToolbarTool = tool
@@ -85,6 +108,7 @@ struct ExcalidrawSettingsView: View {
                     onCommit: finishToolbarToolOrderDrag
                 )
             )
+#endif
         } header: {
             HStack {
                 Text(localizable: .settingsExcalidrawToolbarOrderTitle)
@@ -107,6 +131,17 @@ struct ExcalidrawSettingsView: View {
             Text(localizable: .settingsExcalidrawToolbarOrderFooter)
         }
     }
+
+#if os(iOS)
+    private func moveToolbarTools(from offsets: IndexSet, to destination: Int) {
+        var updatedOrder = editingToolbarToolOrder
+        updatedOrder.move(from: offsets, to: destination)
+        withAnimation(.smooth) {
+            editingToolbarToolOrder = updatedOrder
+        }
+        applyToolbarToolOrderNow(updatedOrder)
+    }
+#endif
 
     private func finishToolbarToolOrderDrag() {
         draggingToolbarTool = nil
@@ -201,12 +236,13 @@ struct ExcalidrawSettingsView: View {
 private struct ToolbarToolOrderRow: View {
     let tool: ExcalidrawTool
     let shortcutLabel: String?
+    let showsDragHandle: Bool
 
     var body: some View {
         toolbarToolOrderRowContent(
             tool: tool,
             shortcutLabel: shortcutLabel,
-            showsDragHandle: true
+            showsDragHandle: showsDragHandle
         )
     }
 }

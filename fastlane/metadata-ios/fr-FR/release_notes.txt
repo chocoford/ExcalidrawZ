@@ -1,5 +1,6 @@
-Découvrez les présentations de canevas.
+Une mise à jour majeure pour iPhone et iPad.
 
-- Transformez les cadres du canevas en diapositives et présentez directement depuis votre dessin.
-- Faites glisser les diapositives pour les réorganiser et choisissez des transitions en fondu, glissées ou zoomées avec une durée personnalisée.
-- L’ordre et les transitions sont enregistrés pour chaque dessin et se mettent à jour avec les cadres.
+- Connectez OneDrive, Dropbox, Google Drive ou WebDAV (bêta), modifiez depuis le cache local et résolvez les conflits grâce à des aperçus visuels.
+- Transformez les cadres Excalidraw en présentations plein écran avec des diapositives réorganisables et des transitions en fondu, glissement ou zoom.
+- Parcourez les médias du dessin dans une galerie adaptative et nettoyez en toute sécurité les médias inutilisés ou conservés uniquement par l’historique.
+- Amélioration des dossiers liés et fichiers externes, de l’ouverture et du changement de fichier, de l’ordre de la barre d’outils et de la conservation des polices personnalisées.

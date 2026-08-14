@@ -202,6 +202,8 @@ struct SettingsView: View {
                 BackupsSettingsView()
             case .security:
                 SecuritySettingsView()
+            case .cloudStorage:
+                CloudStorageSettingsView()
             case .ai:
                 AISettingsView()
 #if os(macOS)
@@ -229,6 +231,7 @@ extension SettingsView {
         case medias
         case backups
         case security
+        case cloudStorage
         case ai
 #if os(macOS)
         case fonts
@@ -254,6 +257,8 @@ extension SettingsView {
                     return .localizable(.settingsBackupsName)
                 case .security:
                     return .localizable(.settingsSecurityName)
+                case .cloudStorage:
+                    return "Connected Accounts"
                 case .ai:
                     // TODO: localize once a key is added.
                     return "AI"
@@ -285,6 +290,8 @@ extension SettingsView {
                     return .clockArrowCirclepath
                 case .security:
                     return .lockShield
+                case .cloudStorage:
+                    return .externaldriveConnectedToLineBelow
                 case .ai:
                     return .sparkles
 #if os(macOS)
@@ -310,6 +317,7 @@ extension SettingsView {
                 case .medias: "medias"
                 case .backups: "backups"
                 case .security: "security"
+                case .cloudStorage: "cloudStorage"
                 case .ai: "ai"
 #if os(macOS)
                 case .fonts: "fonts"

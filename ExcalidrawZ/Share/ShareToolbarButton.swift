@@ -160,6 +160,15 @@ struct ShareToolbarButton: View {
                         data: content,
                         id: collaborationFile.id?.uuidString
                     )
+                case .cloudStorageFile(let reference):
+                    let content = try await CloudStorageDocumentStore.shared.content(
+                        for: reference,
+                        checkingRemoteRevision: false
+                    )
+                    self.shareFileState.currentSharedFile = try ExcalidrawFile(
+                        data: content,
+                        id: reference.id
+                    )
                 default:
                     break
             }

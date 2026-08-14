@@ -36,36 +36,21 @@ enum ScreenAnnotationCaptureService {
         let pixelWidth = Int(screen.frame.width * screen.backingScaleFactor)
         let pixelHeight = Int(screen.frame.height * screen.backingScaleFactor)
 
-        let image: CGImage
-        if #available(macOS 26.0, *) {
-            let configuration = SCScreenshotConfiguration()
-            configuration.width = pixelWidth
-            configuration.height = pixelHeight
-            configuration.showsCursor = false
-            configuration.ignoreShadows = false
-            configuration.ignoreClipping = false
+        // Keep the executable compatible with the app's macOS 13 deployment
+        // target. Referencing macOS 26's SCScreenshotConfiguration currently
+        // emits a strong Objective-C class symbol and makes dyld abort before
+        // launch on older systems, even when guarded by #available.
+        let configuration = SCStreamConfiguration()
+        configuration.width = pixelWidth
+        configuration.height = pixelHeight
+        configuration.showsCursor = false
+        configuration.ignoreShadowsDisplay = false
+        configuration.ignoreGlobalClipDisplay = false
 
-            let output = try await SCScreenshotManager.captureScreenshot(
-                contentFilter: filter,
-                configuration: configuration
-            )
-            guard let screenshot = output.sdrImage else {
-                return nil
-            }
-            image = screenshot
-        } else {
-            let configuration = SCStreamConfiguration()
-            configuration.width = pixelWidth
-            configuration.height = pixelHeight
-            configuration.showsCursor = false
-            configuration.ignoreShadowsDisplay = false
-            configuration.ignoreGlobalClipDisplay = false
-
-            image = try await SCScreenshotManager.captureImage(
-                contentFilter: filter,
-                configuration: configuration
-            )
-        }
+        let image = try await SCScreenshotManager.captureImage(
+            contentFilter: filter,
+            configuration: configuration
+        )
 
         return NSImage(cgImage: image, size: screen.frame.size)
     }

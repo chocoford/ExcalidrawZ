@@ -10,7 +10,21 @@ import CoreData
 import SwiftUI
 import UniformTypeIdentifiers
 
+extension Notification.Name {
+    static let localFolderResolvedLocationDidChange = Notification.Name("localFolderResolvedLocationDidChange")
+}
+
+enum LocalFolderLocationChangeUserInfoKey {
+    static let oldURL = "oldURL"
+    static let newURL = "newURL"
+}
+
 extension LocalFolder {
+
+    struct ResolvedLocationChange: Sendable {
+        let oldURL: URL
+        let newURL: URL
+    }
 
 #if os(macOS)
     var bookmarkResolutionOptions: URL.BookmarkResolutionOptions {
@@ -26,14 +40,19 @@ extension LocalFolder {
     
     var scopedURL: URL? {
         get throws {
-            guard let bookmarkData else { return nil }
-            var isStale: Bool = false
-            return try URL(
-                resolvingBookmarkData: bookmarkData,
-                options: bookmarkResolutionOptions,
-                bookmarkDataIsStale: &isStale
-            )
+            try resolvedBookmark()?.url
         }
+    }
+
+    private func resolvedBookmark() throws -> (url: URL, isStale: Bool)? {
+        guard let bookmarkData else { return nil }
+        var isStale = false
+        let url = try URL(
+            resolvingBookmarkData: bookmarkData,
+            options: bookmarkResolutionOptions,
+            bookmarkDataIsStale: &isStale
+        )
+        return (url.standardizedFileURL, isStale)
     }
     
     public convenience init(url: URL, context: NSManagedObjectContext) throws {
@@ -52,46 +71,153 @@ extension LocalFolder {
         super.willSave()
         setPrimitiveValue(url?.filePath, forKey: #keyPath(LocalFolder.filePath))
     }
+
+    /// Reconciles the persisted folder tree with the URL currently resolved by
+    /// the top-level security-scoped bookmark. Bookmarks can continue resolving
+    /// after a folder is renamed or moved, while the Core Data URL remains a
+    /// snapshot of the location that was originally linked.
+    @discardableResult
+    func refreshResolvedLocation(context: NSManagedObjectContext) throws -> ResolvedLocationChange? {
+        guard parent == nil, let resolved = try resolvedBookmark() else { return nil }
+
+        let oldURL = (url ?? filePath.map { URL(fileURLWithPath: $0) })?.standardizedFileURL
+        let locationChanged = oldURL != resolved.url
+        guard locationChanged || resolved.isStale else { return nil }
+
+        guard resolved.url.startAccessingSecurityScopedResource() else {
+            throw StartAccessingSecurityScopedResourceError()
+        }
+        defer { resolved.url.stopAccessingSecurityScopedResource() }
+
+        let change = try context.performAndWait { () throws -> ResolvedLocationChange? in
+            let previousURL = (self.url ?? self.filePath.map { URL(fileURLWithPath: $0) })?
+                .standardizedFileURL
+
+            if let previousURL, previousURL != resolved.url {
+                try self.rebasePersistedURLs(
+                    from: previousURL,
+                    to: resolved.url,
+                    context: context
+                )
+            } else {
+                self.url = resolved.url
+                self.filePath = resolved.url.filePath
+            }
+
+            self.bookmarkData = try resolved.url.bookmarkData(
+                options: self.bookmarkCreationOptions,
+                includingResourceValuesForKeys: [.nameKey],
+                relativeTo: nil
+            )
+
+            if context.hasChanges {
+                try context.save()
+            }
+
+            guard let previousURL, previousURL != resolved.url else { return nil }
+            return ResolvedLocationChange(oldURL: previousURL, newURL: resolved.url)
+        }
+
+        if let change {
+            let folderID = objectID
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .localFolderResolvedLocationDidChange,
+                    object: folderID,
+                    userInfo: [
+                        LocalFolderLocationChangeUserInfoKey.oldURL: change.oldURL,
+                        LocalFolderLocationChangeUserInfoKey.newURL: change.newURL,
+                    ]
+                )
+            }
+        }
+        return change
+    }
+
+    private func rebasePersistedURLs(
+        from oldRootURL: URL,
+        to newRootURL: URL,
+        context: NSManagedObjectContext
+    ) throws {
+        func updateFolder(_ folder: LocalFolder) {
+            if let sourceURL = folder.url ?? folder.filePath.map({ URL(fileURLWithPath: $0) }),
+               let destinationURL = sourceURL.rebased(from: oldRootURL, to: newRootURL) {
+                folder.url = destinationURL
+                folder.filePath = destinationURL.filePath
+            }
+            for case let child as LocalFolder in folder.children?.allObjects ?? [] {
+                updateFolder(child)
+            }
+        }
+        updateFolder(self)
+
+        let checkpointRequest = NSFetchRequest<LocalFileCheckpoint>(entityName: "LocalFileCheckpoint")
+        for checkpoint in try context.fetch(checkpointRequest) {
+            if let sourceURL = checkpoint.url,
+               let destinationURL = sourceURL.rebased(from: oldRootURL, to: newRootURL) {
+                checkpoint.url = destinationURL
+            }
+        }
+
+        let existingMappings = ExcalidrawFile.localFileURLIDMapping
+        for (sourceURL, fileID) in existingMappings {
+            guard let destinationURL = sourceURL.rebased(from: oldRootURL, to: newRootURL) else { continue }
+            ExcalidrawFile.localFileURLIDMapping[sourceURL] = nil
+            ExcalidrawFile.localFileURLIDMapping[destinationURL] = fileID
+        }
+    }
     
     private struct InvalidScopedURLError: Error {}
     private struct StartAccessingSecurityScopedResourceError: LocalizedError {
         var errorDescription: String? { "Start accessing security scoped resource failed." }
     }
+
+    private var securityScopeRoot: LocalFolder {
+        var folder = self
+        while let parent = folder.parent {
+            folder = parent
+        }
+        return folder
+    }
+
+    private func resolvedAccessURLs() throws -> (target: URL, scope: URL) {
+        let root = securityScopeRoot
+        guard let scopeURL = try root.scopedURL else {
+            throw InvalidScopedURLError()
+        }
+
+        let targetURL: URL
+        if objectID == root.objectID {
+            targetURL = scopeURL
+        } else if let url {
+            targetURL = url
+        } else if let filePath {
+            targetURL = URL(fileURLWithPath: filePath)
+        } else {
+            throw InvalidScopedURLError()
+        }
+        return (targetURL, scopeURL)
+    }
+
     @discardableResult
     public func withSecurityScopedURL<T>(actions: (_ scopedURL: URL) throws -> T) throws -> T {
-        guard let scopedURL = try self.scopedURL else {
-            throw InvalidScopedURLError()
-        }
-        guard scopedURL.startAccessingSecurityScopedResource() else {
+        let urls = try resolvedAccessURLs()
+        guard urls.scope.startAccessingSecurityScopedResource() else {
             throw StartAccessingSecurityScopedResourceError()
         }
-        defer { scopedURL.stopAccessingSecurityScopedResource() }
-        
-        return try actions(scopedURL)
+        defer { urls.scope.stopAccessingSecurityScopedResource() }
+
+        return try actions(urls.target)
     }
-    
-    public func withSecurityScopedURL(actions: @escaping (_ scopedURL: URL) async -> Void) throws {
-        guard let scopedURL = try self.scopedURL else {
-            throw InvalidScopedURLError()
-        }
-        guard scopedURL.startAccessingSecurityScopedResource() else {
-            throw StartAccessingSecurityScopedResourceError()
-        }
-        Task {
-            defer { scopedURL.stopAccessingSecurityScopedResource() }
-            await actions(scopedURL)
-        }
-    }
+
     @discardableResult
     public func withSecurityScopedURL<T>(actions: @escaping (_ scopedURL: URL) async throws -> T) async throws -> T {
-        guard let scopedURL = try self.scopedURL else {
-            throw InvalidScopedURLError()
-        }
-        guard scopedURL.startAccessingSecurityScopedResource() else {
+        let urls = try resolvedAccessURLs()
+        guard urls.scope.startAccessingSecurityScopedResource() else {
             throw StartAccessingSecurityScopedResourceError()
         }
-        defer { scopedURL.stopAccessingSecurityScopedResource() }
-        return try await actions(scopedURL)
+        defer { urls.scope.stopAccessingSecurityScopedResource() }
+        return try await actions(urls.target)
     }
 
     static func withSecurityScopedAccessToContainingFolder<T>(
@@ -105,12 +231,24 @@ extension LocalFolder {
         return try await withSecurityScopedBookmark(bookmarkData, action: action)
     }
 
+    static func modificationDate(forLocalFileAt fileURL: URL) async throws -> Date? {
+        try await withSecurityScopedAccessToContainingFolder(for: fileURL) {
+            try fileURL.resourceValues(
+                forKeys: [.contentModificationDateKey]
+            ).contentModificationDate
+        }
+    }
+
     private static func securityScopedBookmarkData(forLocalFileAt fileURL: URL) async throws -> Data? {
         let filePath = fileURL.standardizedFileURL.path
         let context = PersistenceController.shared.newTaskContext()
 
         return try await context.perform {
             let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+            // The picker grant belongs to a top-level linked folder and already
+            // covers its descendants. Child bookmarks are navigation metadata;
+            // using the root avoids provider-specific descendant bookmark behavior.
+            request.predicate = NSPredicate(format: "parent == nil")
             let folders = try context.fetch(request)
 
             return folders.compactMap { folder -> (path: String, bookmarkData: Data)? in
@@ -179,6 +317,7 @@ extension LocalFolder {
     }
     
     func refreshChildren(context: NSManagedObjectContext) throws {
+        try refreshResolvedLocation(context: context)
         try self.withSecurityScopedURL { url in
             let contents = try FileManager.default.contentsOfDirectory(
                 at: url,
@@ -270,17 +409,27 @@ extension LocalFolder {
     /// Check if folder path exists and is accessible
     /// - Returns: Result with success or error with localized description
     func checkPathExists() -> Result<Void, LocalFolderPathError> {
-        guard let url = self.url else {
-            return .failure(LocalFolderPathError(message: "This folder entry is invalid and should be removed."))
-        }
-
-        let fileManager = FileManager.default
-        var isDirectory: ObjCBool = false
-
-        if fileManager.fileExists(atPath: url.filePath, isDirectory: &isDirectory) && isDirectory.boolValue {
-            return .success(())
-        } else {
-            return .failure(LocalFolderPathError(message: "The folder \"\(url.lastPathComponent)\" could not be found. It may have been moved or deleted.\n\nPath: \(url.filePath)"))
+        do {
+            return try withSecurityScopedURL { url in
+                var isDirectory: ObjCBool = false
+                if FileManager.default.fileExists(
+                    atPath: url.filePath,
+                    isDirectory: &isDirectory
+                ), isDirectory.boolValue {
+                    return .success(())
+                }
+                return .failure(
+                    LocalFolderPathError(
+                        message: "The folder \"\(url.lastPathComponent)\" could not be found. It may have been moved or deleted.\n\nPath: \(url.filePath)"
+                    )
+                )
+            }
+        } catch {
+            return .failure(
+                LocalFolderPathError(
+                    message: error.localizedDescription
+                )
+            )
         }
     }
 }

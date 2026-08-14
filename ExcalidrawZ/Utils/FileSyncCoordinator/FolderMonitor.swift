@@ -270,6 +270,12 @@ actor MacOSFileSystemMonitor: FileSystemMonitorProtocol {
 
 #if os(iOS)
 actor IOSFileSystemMonitor: NSObject, FileSystemMonitorProtocol, NSFilePresenter {
+    private struct SecurityScopeError: LocalizedError {
+        var errorDescription: String? {
+            "Unable to access the linked folder. Please link the folder again."
+        }
+    }
+
     private let logger = Logger(label: "IOSFileSystemMonitor")
 
     private let folderURL: URL
@@ -296,8 +302,9 @@ actor IOSFileSystemMonitor: NSObject, FileSystemMonitorProtocol, NSFilePresenter
     func start() async throws {
         guard !isActive else { return }
 
-        // Access security scoped resource
-        _ = folderURL.startAccessingSecurityScopedResource()
+        guard folderURL.startAccessingSecurityScopedResource() else {
+            throw SecurityScopeError()
+        }
 
         // Register as file presenter
         NSFileCoordinator.addFilePresenter(self)

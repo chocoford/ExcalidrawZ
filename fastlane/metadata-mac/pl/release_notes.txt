@@ -1,6 +1,5 @@
-Nowość: Adnotacja ekranu i prezentacje na kanwie.
+Nowość: Połączona pamięć w chmurze.
 
-- Rysuj narzędziami Excalidraw po dowolnym ekranie Maca, korzystając z obrazu na żywo lub zatrzymanego i przenosząc pasek narzędzi między ekranami.
-- Zapisuj cały ekran lub wybrany obszar jako edytowalną zawartość Excalidraw, PNG/JPEG albo do schowka, z ustawieniami jakości i ostatnimi plikami docelowymi.
-- Zamieniaj ramki kanwy w slajdy, zmieniaj ich kolejność, wybieraj przejścia zanikania, przesuwania lub powiększania i prezentuj na pełnym ekranie.
-- Ulepszono zapisywanie w tle, zachowywanie stylu adnotacji i niezawodność prezentacji.
+- Połącz OneDrive, Dropbox, Google Drive lub WebDAV (Beta) i przeglądaj rysunki razem z folderami lokalnymi.
+- Edytuj offline dzięki lokalnej pamięci podręcznej; zmiany zsynchronizują się automatycznie po odzyskaniu połączenia.
+- Śledź stan synchronizacji każdego pliku i porównuj podglądy lokalne oraz zdalne podczas rozwiązywania konfliktów.

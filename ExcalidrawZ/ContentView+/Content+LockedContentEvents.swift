@@ -31,7 +31,7 @@ struct LockedContentEventModifier: ViewModifier {
 
     @MainActor
     private func handleLockedContentReset() {
-        fileState.setActiveFile(nil)
+        fileState.discardAndCloseActiveFile()
         fileState.resetSelections()
         lockedContentState.resetAll()
     }
@@ -46,7 +46,7 @@ struct LockedContentEventModifier: ViewModifier {
               case .file(let activeFile) = fileState.currentActiveFile,
               activeFile.objectID == deletedObjectID else { return }
 
-        fileState.setActiveFile(nil)
+        fileState.discardAndCloseActiveFile()
         fileState.resetSelections()
     }
 }

@@ -15,9 +15,16 @@ import SFSafeSymbols
 struct CompactBrowseRootView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var fileState: FileState
+    @StateObject private var cloudStorageConnections = CloudStorageConnectionStore.shared
 
     @FetchRequest
     private var groups: FetchedResults<Group>
+
+    @FetchRequest(
+        sortDescriptors: [],
+        predicate: File.trashedPredicate
+    )
+    private var trashedFiles: FetchedResults<File>
 
     init(sortField: ExcalidrawFileSortField = .updatedAt) {
         // Sort descriptors for groups
@@ -69,13 +76,24 @@ struct CompactBrowseRootView: View {
     @State private var isLocalSectionExpanded = true
 
     @State private var editMode: EditMode = .inactive
+    @State private var groupPendingDeletionID: NSManagedObjectID?
 
     @ViewBuilder
     private func content() -> some View {
         List {
+            if !fileState.temporaryFiles.isEmpty {
+                Section {
+                    ForEach(fileState.temporaryFiles, id: \.self) { file in
+                        TemporaryFileBrowseRow(file: file)
+                    }
+                } header: {
+                    Text(localizable: .sidebarGroupRowTitleTemporary)
+                }
+            }
+
             // iCloud Section
             expandableSection(isExpanded: $isICloudSectionExpanded) {
-                ForEach(groups) { group in
+                ForEach(displayedGroups) { group in
                     NavigationLink(value: group.objectID) {
                         Label {
                             Text(group.name ?? String(localizable: .generalUntitled))
@@ -90,12 +108,28 @@ struct CompactBrowseRootView: View {
 
                         }
                     }
+                    .modifier(
+                        GroupContextMenuViewModifier(
+                            group: group,
+                            canExpand: false,
+                            showsSwipeActions: true,
+                            onRequestDelete: {
+                                groupPendingDeletionID = group.objectID
+                            }
+                        )
+                    )
+                    .modifier(
+                        GroupDeletionConfirmationModifier(
+                            group: group,
+                            selectedGroupObjectID: $groupPendingDeletionID
+                        )
+                    )
                 }
             } header: {
                 Text("iCloud")
             }
 
-            // Local Folders Section
+            // Linked Storage Section
             expandableSection(isExpanded: $isLocalSectionExpanded) {
                 LocalFoldersProvider { folders in
                     ForEach(folders) { folder in
@@ -107,14 +141,51 @@ struct CompactBrowseRootView: View {
                                     .foregroundStyle(.gray)
                             }
                         }
+                        .modifier(
+                            LocalFolderContextMenuModifier(
+                                folder: folder,
+                                canExpand: false,
+                                showsSwipeActions: true
+                            )
+                        )
                     }
-                    
-                    if folders.isEmpty {
-                        LocalFolderEmptyPlaceholderView()
+
+                    ForEach(cloudStorageLocations) { location in
+                        let rootFolder = CloudStorageFolderReference.root(of: location)
+                        NavigationLink(value: rootFolder) {
+                            Label {
+                                Text(location.displayName)
+                            } icon: {
+                                CloudStorageProviderIcon(
+                                    providerID: location.providerID,
+                                    size: 20,
+                                    accountDisplayName: cloudStorageConnections
+                                        .account(for: location)?
+                                        .displayName
+                                )
+                            }
+                        }
+                        .modifier(
+                            CloudStorageLocationActionsModifier(
+                                location: location,
+                                showsSwipeActions: true
+                            )
+                        )
+                    }
+
+                    if folders.isEmpty, cloudStorageLocations.isEmpty {
+                        LinkedStorageAddMenu { isLoading in
+                            if isLoading {
+                                ProgressView()
+                                    .controlSize(.small)
+                            } else {
+                                Label("Add Storage", systemImage: "link.badge.plus")
+                            }
+                        }
                     }
                 }
             } header: {
-                Text(localizable: .localFoldersTitle)
+                Text("Linked Storage")
             }
         }
         .listStyle(.sidebar)
@@ -127,6 +198,28 @@ struct CompactBrowseRootView: View {
             } else {
                 navigationDestination(objectID)
             }
+        }
+        .navigationDestination(for: CloudStorageFolderReference.self) { folder in
+            if #available(iOS 18.0, *) {
+                CompactCloudStorageBrowserView(folder: folder)
+                    .environment(\.editMode, $editMode)
+                    .toolbarVisibility(editMode.isEditing ? .hidden : .visible, for: .tabBar)
+            } else {
+                CompactCloudStorageBrowserView(folder: folder)
+                    .environment(\.editMode, $editMode)
+            }
+        }
+    }
+
+    private var cloudStorageLocations: [CloudStorageLocation] {
+        cloudStorageConnections.locations.sorted {
+            $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+        }
+    }
+
+    private var displayedGroups: [Group] {
+        groups.filter {
+            $0.groupType != .trash || !trashedFiles.isEmpty
         }
     }
     
@@ -164,7 +257,6 @@ struct CompactBrowseRootView: View {
     }
     
     @State private var isCreateGroupDialogPresented = false
-    @State private var isImportLocalFolderDialogPresented = false
     
     @MainActor @ToolbarContentBuilder
     private func toolbarContent() -> some ToolbarContent {
@@ -173,27 +265,21 @@ struct CompactBrowseRootView: View {
         }
         
         ToolbarItemGroup(placement: .automatic) {
-            Menu {
-                SwiftUI.Group {
-                    Button {
-                        isCreateGroupDialogPresented.toggle()
-                    } label: {
-                        Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
-                    }
-                    
-                    Button {
-                        isImportLocalFolderDialogPresented.toggle()
-                    } label: {
-                        Label(
-                            .localizable(.sidebarGroupListButtonAddObservation),
-                            systemSymbol: .squareAndArrowDown
-                        )
-                    }
+            LinkedStorageAddMenu {
+                Button {
+                    isCreateGroupDialogPresented.toggle()
+                } label: {
+                    Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
                 }
                 .labelStyle(.titleAndIcon)
-            } label: {
-                Label(.localizable(.generalButtonMore), systemSymbol: .ellipsis)
-                    .labelStyle(.iconOnly)
+            } label: { isLoading in
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Label(.localizable(.generalButtonMore), systemSymbol: .ellipsis)
+                        .labelStyle(.iconOnly)
+                }
             }
             .modifier(
                 CreateGroupModifier(
@@ -201,14 +287,71 @@ struct CompactBrowseRootView: View {
                     parentGroupID: nil,
                 )
             )
-            .modifier(
-                ImportLocalFolderModifier(isPresented: $isImportLocalFolderDialogPresented)
-            )
+        }
+    }
+}
+
+private struct TemporaryFileBrowseRow: View {
+    @EnvironmentObject private var fileState: FileState
+    @EnvironmentObject private var fileHomeItemTransitionItemState: FileHomeItemTransitionItemState
+
+    let file: URL
+
+    private var fileID: String {
+        FileState.ActiveFile.temporaryFile(file).canonicalID
+    }
+
+    var body: some View {
+        Button {
+            fileState.setActiveFile(.temporaryFile(file))
+        } label: {
+            HStack(spacing: 12) {
+                ExcalidrawIconView()
+                    .frame(width: 20, height: 20)
+
+                Text(file.deletingPathExtension().lastPathComponent)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Spacer(minLength: 0)
+
+                Image(systemSymbol: .clock)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .background(alignment: .center) {
+            Color.clear
+                .frame(height: 0)
+                .anchorPreference(
+                    key: FileHomeItemPreferenceKey.self,
+                    value: .bounds
+                ) { value in
+                    fileHomeItemTransitionItemState.sourceFileID == fileID
+                        ? [FileHomeItemTransitionPreferenceID.source(for: fileID): value]
+                        : [:]
+                }
+        }
+        .opacity(fileHomeItemTransitionItemState.shouldHideItem == fileID ? 0 : 1)
+        .modifier(TemporaryFileContextMenuModifier(file: file))
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button {
+                TemporaryFileActions.close([file], fileState: fileState)
+            } label: {
+                Label(
+                    .localizable(.sidebarTemporaryFileRowContextMenuCloseFile),
+                    systemSymbol: .xmarkCircle
+                )
+            }
+            .tint(.red)
         }
     }
 }
 
 struct CompactBrowserDestinationView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.editMode) private var editMode
     
@@ -326,12 +469,12 @@ struct CompactBrowserDestinationView: View {
                             Section {
                                 LocalFolderMenuItems(
                                     folder: folder,
-                                    canExpand: false,
-                                    showsRemoveObservation: false
+                                    canExpand: false
                                 ) {
                                     triggers.onToogleCreateSubfolder()
                                 } onToggleRemoveObservation: {
                                     triggers.onToggleRemoveObservation()
+                                    dismiss()
                                 }
                                 .labelStyle(.titleAndIcon)
                             } header: {
@@ -469,6 +612,8 @@ struct CompactContentMoreMenu<HomeGroup: ExcalidrawGroup>: View {
                                         AnyView(Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .folderBadgePlus))
                                     case .group:
                                         AnyView(Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .folderBadgePlus))
+                                    case .cloudStorageFolder:
+                                        AnyView(Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .folderBadgePlus))
                                 }
                             }
                         }

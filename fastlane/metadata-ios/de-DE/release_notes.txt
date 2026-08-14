@@ -1,5 +1,6 @@
-Neu: Canvas-Präsentationen.
+Ein großes Update für iPhone und iPad.
 
-- Verwandle Canvas-Rahmen in Folien und präsentiere direkt aus deiner Zeichnung.
-- Ordne Folien per Drag-and-drop neu und wähle Überblend-, Schiebe- oder Zoomübergänge mit eigener Dauer.
-- Reihenfolge und Übergänge werden pro Zeichnung gespeichert und bei Änderungen an den Rahmen aktualisiert.
+- Verbinde OneDrive, Dropbox, Google Drive oder WebDAV (Beta), bearbeite Dateien aus dem lokalen Cache und löse Konflikte mithilfe visueller Vorschauen.
+- Verwandle Excalidraw-Frames in Vollbildpräsentationen mit sortierbaren Folien sowie Überblend-, Schiebe- und Zoomübergängen.
+- Durchsuche Zeichenmedien in einer responsiven Galerie und bereinige sicher ungenutzte oder nur vom Dateiverlauf benötigte Medien.
+- Verbesserter Zugriff auf verknüpfte Ordner und externe Dateien, zuverlässigeres Öffnen und Wechseln, anpassbare Werkzeugreihenfolge und dauerhaft gespeicherte eigene Schriften.

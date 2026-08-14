@@ -11,6 +11,9 @@ import WebKit
 import UniformTypeIdentifiers
 import Logging
 import Combine
+#if os(iOS)
+import MSAL
+#endif
 
 import ChocofordUI
 
@@ -131,6 +134,17 @@ struct OpenFromURLModifier: ViewModifier {
     
     // MARK: - Handle OpenURL
     private func onOpenURL(_ url: URL) {
+#if os(iOS)
+        if url.scheme?.hasPrefix("msauth.") == true {
+            let handled = MSALPublicClientApplication.handleMSALResponse(
+                url,
+                sourceApplication: nil
+            )
+            logger.debug("Handled Microsoft authentication callback: \(handled)")
+            return
+        }
+#endif
+
         if url.isFileURL {
             onOpenLocalFile(url)
         } else if url.scheme == "excalidrawz" {
@@ -213,6 +227,15 @@ struct OpenFromURLModifier: ViewModifier {
         // handle library file
         if utType == .excalidrawlibFile {
             onOpenLibraryFile(url)
+            return
+        }
+
+        // Files handed to the app through open-in-place do not have a saved
+        // LocalFolder bookmark. Retain their security scope for the temporary
+        // workspace before the asynchronous editor load begins.
+        if targetURL == url,
+           !fileState.retainOpenInPlaceAccess(to: url) {
+            alertToast(AppError.urlError(.startAccessingSecurityScopedResourceFailed))
             return
         }
         

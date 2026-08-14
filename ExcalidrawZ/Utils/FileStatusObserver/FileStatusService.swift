@@ -167,8 +167,8 @@ class FileStatusService {
         // Determine default status based on file type
         let defaultStatus: FileStatus
         switch file {
-            case .localFile, .temporaryFile:
-                // LocalFile and TemporaryFile always use local default (available, idle, local)
+            case .localFile, .temporaryFile, .cloudStorageFile:
+                // These files do not participate in the CoreData/iCloud status pipeline.
                 defaultStatus = .localFileDefault
             case .file, .collaborationFile:
                 // CoreData files use regular default

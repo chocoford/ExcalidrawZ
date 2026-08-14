@@ -46,7 +46,6 @@ struct InspectorPresentationModifier: ViewModifier {
     @EnvironmentObject private var lockedContentState: LockedContentStateStore
 
     @AppStorage(FloatingInspectorMetrics.widthStorageKey) private var floatingInspectorWidth = FloatingInspectorMetrics.defaultWidth
-    @ObservedObject private var presentationController = ExcalidrawPresentationController.shared
     @StateObject private var presentationModel = ExcalidrawPresentationModel()
     @State private var librariesToImport: [ExcalidrawLibrary] = []
 
@@ -82,6 +81,14 @@ struct InspectorPresentationModifier: ViewModifier {
     private var isCompactIOS: Bool {
 #if os(iOS)
         containerHorizontalSizeClass == .compact
+#else
+        false
+#endif
+    }
+
+    private var usesCompactInspectorSheet: Bool {
+#if os(iOS)
+        isCompactIOS && !shouldUseFloatingInspector
 #else
         false
 #endif
@@ -128,12 +135,11 @@ struct InspectorPresentationModifier: ViewModifier {
         // center should be the canvas's bottom-center, not the whole window's.
         .modifier(ExcalidrawLibraryImporter(items: $librariesToImport))
 #if os(iOS)
-        .fullScreenCover(item: $presentationController.session) { session in
-            ExcalidrawPresentationView(
-                session: session,
-                onDismiss: presentationController.dismiss
+        .modifier(
+            ExcalidrawPresentationCoverModifier(
+                isEnabled: !usesCompactInspectorSheet
             )
-        }
+        )
 #endif
         .watch(value: lockedContentState.activeFileLockState) { lockState in
             guard lockState == .locked,
@@ -182,6 +188,7 @@ struct InspectorPresentationModifier: ViewModifier {
                 case .preference, .search, .presentation:
                     CompactInspectorNavigationSheet(
                         title: inspectorTitle,
+                        usesLeadingCloseButton: layoutState.activeInspectorTab == .presentation,
                         onDismiss: {
                             layoutState.isInspectorPresented = false
                         }
@@ -189,6 +196,11 @@ struct InspectorPresentationModifier: ViewModifier {
                         inspectorContent()
                             .disabled(shouldDisableInspectorContent)
                     }
+#if os(iOS)
+                    // Present from the visible sheet. A cover attached to the
+                    // editor behind it cannot take over until the sheet closes.
+                    .modifier(ExcalidrawPresentationCoverModifier())
+#endif
                 default:
                     inspectorContent()
                         .disabled(shouldDisableInspectorContent)
@@ -377,6 +389,29 @@ struct InspectorPresentationModifier: ViewModifier {
     }
 }
 
+#if os(iOS)
+private struct ExcalidrawPresentationCoverModifier: ViewModifier {
+    @ObservedObject private var presentationController = ExcalidrawPresentationController.shared
+
+    var isEnabled = true
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content
+                .fullScreenCover(item: $presentationController.session) { session in
+                    ExcalidrawPresentationView(
+                        session: session,
+                        onDismiss: presentationController.dismiss
+                    )
+                }
+        } else {
+            content
+        }
+    }
+}
+#endif
+
 struct InspectorToolbarTitleLabel: View {
     let title: String
 
@@ -427,15 +462,18 @@ private struct FloatingInspectorResizeHandle: View {
 
 private struct CompactInspectorNavigationSheet<Content: View>: View {
     let title: String
+    let usesLeadingCloseButton: Bool
     let onDismiss: () -> Void
     private let content: Content
 
     init(
         title: String,
+        usesLeadingCloseButton: Bool = false,
         onDismiss: @escaping () -> Void,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
+        self.usesLeadingCloseButton = usesLeadingCloseButton
         self.onDismiss = onDismiss
         self.content = content()
     }
@@ -448,12 +486,22 @@ private struct CompactInspectorNavigationSheet<Content: View>: View {
                 .navigationBarTitleDisplayMode(.inline)
 #endif
                 .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(action: onDismiss) {
-                            Label(.localizable(.generalButtonDone), systemSymbol: .checkmark)
-                                .labelStyle(.iconOnly)
+                    if usesLeadingCloseButton {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(action: onDismiss) {
+                                Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
+                                    .labelStyle(.iconOnly)
+                            }
+                            .accessibilityLabel(Text(localizable: .generalButtonClose))
                         }
-                        .accessibilityLabel(Text(localizable: .generalButtonDone))
+                    } else {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button(action: onDismiss) {
+                                Label(.localizable(.generalButtonDone), systemSymbol: .checkmark)
+                                    .labelStyle(.iconOnly)
+                            }
+                            .accessibilityLabel(Text(localizable: .generalButtonDone))
+                        }
                     }
                 }
         }

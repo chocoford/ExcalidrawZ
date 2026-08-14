@@ -25,6 +25,7 @@ enum EditorRoute: Hashable {
 struct ExcalidrawEditor: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerSize) private var containerSize
 
@@ -36,6 +37,12 @@ struct ExcalidrawEditor: View {
     /// lives here rather than at the NavigationSplitView level.
     @EnvironmentObject var layoutState: LayoutState
     @EnvironmentObject private var lockedContentState: LockedContentStateStore
+#if os(macOS)
+    @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
+#endif
+
+    @ObservedObject private var cloudStorageConnections = CloudStorageConnectionStore.shared
+    @ObservedObject private var cloudStorageDocumentStore = CloudStorageDocumentStore.shared
 
     let logger = Logger(label: "ExcalidrawEditor")
 
@@ -48,12 +55,20 @@ struct ExcalidrawEditor: View {
     @State private var excalidrawFile: ExcalidrawFile?
     @State private var isLoadingFile = false
     @State private var loadingTask: Task<Void, Never>?
+    @State private var cloudStorageRefreshTask: Task<Void, Never>?
+    @State private var cloudStorageRefreshTaskID: UUID?
+    @State private var cloudStorageRefreshBaselineFile: ExcalidrawFile?
     @State private var fileLoadRevealTask: Task<Void, Never>?
     @State private var recordVisitTask: Task<Void, Never>?
     @State private var documentLoadCompletion: ExcalidrawDocumentLoadCompletion?
     @State private var measuredNativeViewportInsets: ExcalidrawNativeViewportInsets = .zero
+#if os(macOS)
+    @State private var pendingCanvasFocusFileID: String?
+#endif
 
     @State private var conflictFileURL: URL?
+    @State private var cloudStorageConflictReference: CloudStorageDocumentReference?
+    @State private var isCloudStorageConflictBlockingEditor = false
     @State private var isSyncing = false
 
     // MARK: - Smart Sync State
@@ -119,6 +134,32 @@ struct ExcalidrawEditor: View {
 #endif
     }
 
+    private var activeCloudStorageMetadataRevision: Int {
+        guard case .cloudStorageFile(let reference) = activeFile else { return 0 }
+        return cloudStorageDocumentStore.metadataRevision(for: reference.locationID)
+    }
+
+    private var activeCloudStorageMonitorID: String {
+        guard scenePhase == .active,
+              case .cloudStorageFile(let reference) = activeFile else {
+            return "inactive"
+        }
+        return reference.id
+    }
+
+    private var activeCloudStorageConflictReference: CloudStorageDocumentReference? {
+        guard case .cloudStorageFile(let reference) = activeFile,
+              case .conflict = cloudStorageDocumentStore.syncState(for: reference) else {
+            return nil
+        }
+        return reference
+    }
+
+    private var activeCloudStorageSyncState: CloudStorageDocumentSyncState? {
+        guard case .cloudStorageFile(let reference) = activeFile else { return nil }
+        return cloudStorageDocumentStore.syncState(for: reference)
+    }
+
     private var shouldFloatNavigationToolbarOverCanvas: Bool {
 #if os(iOS)
         guard !usesCompactIOSAIChatSurfaces else { return false }
@@ -156,7 +197,7 @@ struct ExcalidrawEditor: View {
     /// flings it past an edge.
     @State private var editorContentSize: CGSize = .zero
 
-    var body: some View {
+    private var editorSurface: some View {
         ZStack(alignment: .topTrailing) {
             ZStack {
                 ExcalidrawCanvasView(
@@ -177,7 +218,8 @@ struct ExcalidrawEditor: View {
                 .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
                 .excalidrawEditorOverlays(
                     loadingState: $canvasLoadingState,
-                    hasFile: localFileBinding.wrappedValue != nil
+                    hasFile: localFileBinding.wrappedValue != nil,
+                    keepsLoadingCoverPresented: isCloudStorageConflictBlockingEditor
                 )
                 .opacity(isInCollaborationSpace ? 0 : 1)
                 .allowsHitTesting(!isInCollaborationSpace && !isLoadingFile)
@@ -225,6 +267,21 @@ struct ExcalidrawEditor: View {
             AIChatIslandOverlay(canvasSize: editorContentSize)
 #endif
         }
+#if os(macOS)
+        .overlay(alignment: .bottomTrailing) {
+            if case .cloudStorageFile(let reference) = fileState.currentActiveFile {
+                CloudStorageDocumentSyncIndicator(
+                    reference: reference,
+                    presentation: .canvas,
+                    onConflictSelected: {
+                        cloudStorageConflictReference = reference
+                    }
+                )
+                .padding(.trailing, 8)
+                .padding(.bottom, 18)
+            }
+        }
+#endif
 //#if DEBUG
 //        .overlay(alignment: .bottomTrailing) {
 //#if os(iOS)
@@ -262,6 +319,14 @@ struct ExcalidrawEditor: View {
             )
         )
         .allowsHitTesting(interactionEnabled)
+        .sheet(item: $cloudStorageConflictReference) { reference in
+            CloudStorageConflictResolutionSheetView(
+                reference: reference,
+                onCancel: {
+                    cancelCloudStorageConflictResolution(for: reference)
+                }
+            )
+        }
         .observeExcalidrawFileStatus(
             for: activeFile,
             activeFileLockState: lockedContentState.activeFileLockState,
@@ -288,12 +353,65 @@ struct ExcalidrawEditor: View {
             }
         }
 #endif
-        .watch(value: activeFile) { (newFile: FileState.ActiveFile?) in
+    }
+
+    private var editorWithActiveFileLifecycle: some View {
+        editorSurface
+        // Cloud providers frequently refresh the active reference's name or
+        // modified date. Those metadata-only replacements must not be treated
+        // as a document switch and loaded into the WebView again.
+        .watch(value: activeFile?.id) { _ in
+            let newFile = activeFile
+#if os(macOS)
+            pendingCanvasFocusFileID = nil
+#endif
+            cloudStorageRefreshBaselineFile = nil
             noteOpenTransitionStarted(for: newFile)
             loadingTask?.cancel()
+            cloudStorageRefreshTask?.cancel()
+            cloudStorageRefreshTask = nil
+            cloudStorageRefreshTaskID = nil
+            prepareCanvasLoadingPresentation(for: newFile)
+            isCloudStorageConflictBlockingEditor = false
             loadingTask = Task {
                 await lockedContentState.prepareForActiveFileChange(to: newFile)
                 await loadExcalidrawFile(from: newFile)
+            }
+        }
+#if os(macOS)
+        .watch(value: fileHomeItemTransitionState.canShowItemContainerView) { isVisible in
+            guard !isVisible else { return }
+            focusPendingCanvasIfReady()
+        }
+#endif
+    }
+
+    private var editorWithCloudStorageLifecycle: some View {
+        editorWithActiveFileLifecycle
+        .watch(value: activeCloudStorageMetadataRevision) { _ in
+            guard refreshActiveCloudStorageMetadata() else { return }
+            refreshActiveCloudStorageDocument()
+        }
+        .watch(value: activeCloudStorageSyncState) { state in
+            guard let state,
+                  case .synced = state,
+                  let currentFile = excalidrawFile else { return }
+            cloudStorageRefreshBaselineFile = currentFile
+        }
+        .watch(value: activeCloudStorageConflictReference, initial: true) { _, reference in
+            guard let reference else { return }
+            prepareEditorForCloudStorageConflict(reference)
+        }
+        .task(id: activeCloudStorageMonitorID) {
+            guard scenePhase == .active,
+                  case .cloudStorageFile(let reference) = activeFile else { return }
+#if DEBUG
+            logger.debug(
+                "Monitoring active cloud document fileID=\(reference.id)"
+            )
+#endif
+            await CloudStorageSyncService.shared.monitorActiveDocument(reference) {
+                refreshActiveCloudStorageDocument()
             }
         }
         .onReceive(
@@ -306,6 +424,41 @@ struct ExcalidrawEditor: View {
             excalidrawFile = restoredFile
             lastEditTime = Date()
         }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .cloudStorageConflictDidResolve)
+        ) { notification in
+            guard let result = notification.object as? CloudStorageConflictResolutionResult,
+                  case .cloudStorageFile(let reference) = activeFile,
+                  reference == result.reference else { return }
+
+            cloudStorageConflictReference = nil
+            loadingTask?.cancel()
+            loadingTask = Task {
+                do {
+                    let activeFileID = reference.activeFileID
+                    let resolvedFile = try await cloudStorageFile(
+                        from: result.content,
+                        fileID: activeFileID
+                    )
+                    await MainActor.run {
+                        guard self.activeFile?.id == activeFileID else { return }
+                        self.fileState.excalidrawWebCoordinator?.documentSyncController
+                            .setTargetFileID(activeFileID)
+                        self.beginFileLoadRevealGuard(fileID: activeFileID)
+                        self.canvasLoadingState = .loading
+                        self.isCloudStorageConflictBlockingEditor = false
+                        self.cloudStorageRefreshBaselineFile = resolvedFile
+                        self.excalidrawFile = resolvedFile
+                    }
+                } catch {
+                    alertToast(error)
+                }
+            }
+        }
+    }
+
+    private var editorWithDocumentLifecycle: some View {
+        editorWithCloudStorageLifecycle
         .watch(value: fileState.currentActiveFileIsInTrash) { _ in
             collapseCompactAISurfacesIfCurrentFileIsTrashed()
         }
@@ -317,16 +470,25 @@ struct ExcalidrawEditor: View {
         }
         .task {
             noteOpenTransitionStarted(for: activeFile)
+            prepareCanvasLoadingPresentation(for: activeFile)
             await lockedContentState.prepareForActiveFileChange(to: activeFile)
             await loadExcalidrawFile(from: activeFile)
         }
         .onAppear {
             collapseCompactAISurfacesIfCurrentFileIsTrashed()
+            refreshActiveCloudStorageMetadata()
         }
         .onDisappear {
             recordVisitTask?.cancel()
             recordVisitTask = nil
+            cloudStorageRefreshTask?.cancel()
+            cloudStorageRefreshTask = nil
+            cloudStorageRefreshTaskID = nil
         }
+    }
+
+    var body: some View {
+        editorWithDocumentLifecycle
         .modifier(ExcalidrawEditorToolbarModifier())
         .onReceive(NotificationCenter.default.publisher(for: .pencilInteractionModeDidChange)) { notification in
             guard let mode = notification.object as? ToolState.PencilInteractionMode else { return }
@@ -366,6 +528,53 @@ struct ExcalidrawEditor: View {
         .environmentObject(toolState)
     }
 
+    @discardableResult
+    private func refreshActiveCloudStorageMetadata() -> Bool {
+        guard case .cloudStorageFile(let reference) = activeFile else {
+            return false
+        }
+        guard let latestReference = cloudStorageDocumentStore.latestReference(for: reference) else {
+            guard cloudStorageDocumentStore.hasLoadedMetadataIndex(
+                for: reference.locationID
+            ) else {
+                return true
+            }
+#if DEBUG
+            logger.debug(
+                "Active cloud document was removed remotely; discarding editor session itemID=\(reference.itemID.rawValue) revision=\(activeCloudStorageMetadataRevision)"
+            )
+#endif
+            fileState.discardAndCloseActiveFile()
+            fileState.resetSelections()
+            return false
+        }
+        guard latestReference.lastKnownName != reference.lastKnownName
+                || latestReference.lastKnownModifiedAt != reference.lastKnownModifiedAt else {
+#if DEBUG
+            logger.debug(
+                "Active cloud metadata unchanged itemID=\(reference.itemID.rawValue) name=\(reference.lastKnownName) revision=\(activeCloudStorageMetadataRevision)"
+            )
+#endif
+            return true
+        }
+#if DEBUG
+        logger.debug(
+            "Updating active cloud metadata itemID=\(reference.itemID.rawValue) name=\(reference.lastKnownName) -> \(latestReference.lastKnownName) revision=\(activeCloudStorageMetadataRevision)"
+        )
+#endif
+        fileState.replaceCloudStorageDocumentReference(latestReference)
+        return true
+    }
+
+    private func prepareCanvasLoadingPresentation(for file: FileState.ActiveFile?) {
+        switch file {
+            case .file, .localFile, .temporaryFile, .cloudStorageFile:
+                canvasLoadingState = .loading
+            case .collaborationFile, nil:
+                break
+        }
+    }
+
     private func collapseCompactAISurfacesIfCurrentFileIsTrashed() {
         guard fileState.currentActiveFileIsInTrash else { return }
         layoutState.isAIChatIslandMode = false
@@ -386,11 +595,52 @@ struct ExcalidrawEditor: View {
 
     private func revealLoadedFileAfterRender(fileID: String) {
         guard activeFile?.id == fileID else { return }
+        let shouldFocusCanvas = isLoadingFile
 
         fileLoadRevealTask?.cancel()
         isLoadingFile = false
         fileLoadRevealTask = nil
+
+#if os(macOS)
+        if shouldFocusCanvas {
+            pendingCanvasFocusFileID = fileID
+            focusPendingCanvasIfReady()
+        }
+#endif
     }
+
+#if os(macOS)
+    private func focusPendingCanvasIfReady() {
+        guard let fileID = pendingCanvasFocusFileID,
+              interactionEnabled,
+              activeFile?.id == fileID,
+              !isLoadingFile,
+              !fileHomeItemTransitionState.canShowItemContainerView,
+              !isCloudStorageConflictBlockingEditor,
+              let webView = fileState.excalidrawWebCoordinator?.webView else { return }
+
+        // Apply the responder change after SwiftUI commits the hero transition's
+        // hit-testing update. Until then the Home layer still owns keyboard focus.
+        DispatchQueue.main.async {
+            guard interactionEnabled,
+                  activeFile?.id == fileID,
+                  !isLoadingFile,
+                  !fileHomeItemTransitionState.canShowItemContainerView,
+                  !isCloudStorageConflictBlockingEditor else { return }
+            let didFocus = webView.window?.makeFirstResponder(webView) == true
+#if DEBUG
+            let responderType = webView.window?.firstResponder.map {
+                String(describing: type(of: $0))
+            } ?? "nil"
+            logger.debug(
+                "Focused canvas after file open id=\(fileID) success=\(didFocus) responder=\(responderType)"
+            )
+#endif
+            guard didFocus else { return }
+            pendingCanvasFocusFileID = nil
+        }
+    }
+#endif
 
     private func cancelFileLoadRevealGuard() {
         fileLoadRevealTask?.cancel()
@@ -430,11 +680,18 @@ struct ExcalidrawEditor: View {
             return
         }
 
+        if case .cloudStorageFile(let reference) = activeFile,
+           case .conflict = cloudStorageDocumentStore.syncState(for: reference) {
+            prepareEditorForCloudStorageConflict(reference)
+            return
+        }
+
         switch activeFile {
-            case .file(_), .localFile(_), .temporaryFile(_):
+            case .file(_), .localFile(_), .temporaryFile(_), .cloudStorageFile(_):
                 fileState.excalidrawWebCoordinator?.documentSyncController
                     .setTargetFileID(activeFile.id)
                 beginFileLoadRevealGuard(fileID: activeFile.id)
+                canvasLoadingState = .loading
             default:
                 cancelFileLoadRevealGuard()
                 fileState.excalidrawWebCoordinator?.documentSyncController.resetFileLoadState()
@@ -466,6 +723,12 @@ struct ExcalidrawEditor: View {
                         self.excalidrawFile = file
                     }
 
+                case .cloudStorageFile(let reference):
+                    try await loadCloudStorageFile(
+                        reference,
+                        activeFile: activeFile
+                    )
+
                 default:
                     await MainActor.run {
                         self.excalidrawFile = nil
@@ -488,10 +751,213 @@ struct ExcalidrawEditor: View {
             fileState.excalidrawWebCoordinator?.documentSyncController.setTargetFileID(nil)
             alertToast(error)
             await MainActor.run {
+                guard self.activeFile?.id == activeFile.id else { return }
                 cancelFileLoadRevealGuard()
                 self.excalidrawFile = nil
+                self.canvasLoadingState = .error(error)
             }
         }
+    }
+
+    private func loadCloudStorageFile(
+        _ reference: CloudStorageDocumentReference,
+        activeFile: FileState.ActiveFile
+    ) async throws {
+        let store = CloudStorageDocumentStore.shared
+        let cachedContent = try await store.cachedContent(for: reference)
+        let cachedFile: ExcalidrawFile?
+
+        do {
+            if let cachedContent {
+                cachedFile = try await cloudStorageFile(
+                    from: cachedContent,
+                    fileID: activeFile.id
+                )
+                await MainActor.run {
+                    guard self.activeFile?.id == activeFile.id else { return }
+                    self.cloudStorageRefreshBaselineFile = cachedFile
+                    self.excalidrawFile = cachedFile
+                }
+            } else {
+                cachedFile = nil
+            }
+        } catch {
+            cachedFile = nil
+            try? await store.discardCachedContent(for: reference)
+            logger.warning(
+                "Failed to open cached cloud document; falling back to provider: \(cloudStorageDocumentStore.displayName(for: reference)), error=\(error)"
+            )
+        }
+
+        if let cachedFile {
+            scheduleCloudStorageRefresh(
+                reference,
+                activeFile: activeFile,
+                cachedFile: cachedFile
+            )
+            return
+        }
+
+        do {
+            let refreshedContent = try await store.content(
+                for: reference,
+                checkingRemoteRevision: true
+            )
+            let refreshedFile = try await cloudStorageFile(
+                from: refreshedContent,
+                fileID: activeFile.id
+            )
+            await MainActor.run {
+                guard self.activeFile?.id == activeFile.id else { return }
+                self.cloudStorageRefreshBaselineFile = refreshedFile
+                self.excalidrawFile = refreshedFile
+            }
+        } catch {
+            throw error
+        }
+    }
+
+    private func scheduleCloudStorageRefresh(
+        _ reference: CloudStorageDocumentReference,
+        activeFile: FileState.ActiveFile,
+        cachedFile: ExcalidrawFile
+    ) {
+        guard cloudStorageRefreshTask == nil else { return }
+        let taskID = UUID()
+        cloudStorageRefreshTaskID = taskID
+        cloudStorageRefreshTask = Task { @MainActor in
+            defer { finishCloudStorageRefresh(taskID: taskID) }
+            let store = CloudStorageDocumentStore.shared
+            do {
+                guard let candidate = try await store.remoteContentCandidate(for: reference) else {
+                    return
+                }
+                guard !Task.isCancelled else {
+                    store.markLocal(for: reference)
+                    return
+                }
+                let refreshedFile = try await cloudStorageFile(
+                    from: candidate.data,
+                    fileID: activeFile.id
+                )
+                guard !Task.isCancelled else {
+                    store.markLocal(for: reference)
+                    return
+                }
+
+                guard self.activeFile?.id == activeFile.id,
+                      let currentFile = self.excalidrawFile else {
+                    store.markLocal(for: reference)
+                    return
+                }
+                guard !self.hasPersistentCanvasChanges(
+                    in: currentFile,
+                    comparedTo: cachedFile
+                ) else {
+                    self.logger.info(
+                        "Skipped refreshed cloud document because the local canvas changed: \(cloudStorageDocumentStore.displayName(for: reference))"
+                    )
+                    store.markConflict(for: reference)
+                    return
+                }
+
+                do {
+                    guard try await store.installRemoteContentCandidate(candidate, for: reference) else {
+                        return
+                    }
+                    self.logger.info(
+                        "Applying refreshed cloud document: \(cloudStorageDocumentStore.displayName(for: reference))"
+                    )
+                    self.cloudStorageRefreshBaselineFile = refreshedFile
+                    self.applyFileToEditorAndForceReload(refreshedFile)
+                } catch {
+                    store.reportSyncFailure(
+                        error,
+                        operation: .download,
+                        for: reference
+                    )
+                    self.logger.warning(
+                        "Failed to install refreshed cloud document: \(cloudStorageDocumentStore.displayName(for: reference)), error=\(error)"
+                    )
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                store.reportSyncFailure(
+                    error,
+                    operation: .download,
+                    for: reference
+                )
+                logger.warning(
+                    "Cloud refresh failed; continuing with cached document: \(cloudStorageDocumentStore.displayName(for: reference)), error=\(error)"
+                )
+            }
+        }
+    }
+
+    @MainActor
+    private func finishCloudStorageRefresh(taskID: UUID) {
+        guard cloudStorageRefreshTaskID == taskID else { return }
+        cloudStorageRefreshTask = nil
+        cloudStorageRefreshTaskID = nil
+    }
+
+    private func cloudStorageFile(
+        from content: Data,
+        fileID: String
+    ) async throws -> ExcalidrawFile {
+        let content = try await ExcalidrawViewportStateStore.shared
+            .contentDataByApplyingStoredViewport(
+                to: content,
+                fileID: fileID
+            )
+        return try ExcalidrawFile(data: content, id: fileID)
+    }
+
+    @MainActor
+    private func refreshActiveCloudStorageDocument() {
+        guard case .cloudStorageFile(let reference) = activeFile,
+              let activeFile,
+              let baselineFile = cloudStorageRefreshBaselineFile,
+              !isCloudStorageConflictBlockingEditor else { return }
+
+        scheduleCloudStorageRefresh(
+            reference,
+            activeFile: activeFile,
+            cachedFile: baselineFile
+        )
+    }
+
+    @MainActor
+    private func prepareEditorForCloudStorageConflict(
+        _ reference: CloudStorageDocumentReference
+    ) {
+        cancelFileLoadRevealGuard()
+        cloudStorageRefreshTask?.cancel()
+        cloudStorageRefreshTask = nil
+        cloudStorageRefreshTaskID = nil
+        fileState.excalidrawWebCoordinator?.documentSyncController.resetFileLoadState()
+        excalidrawFile = nil
+        canvasLoadingState = .loading
+        isLoadingFile = true
+        isCloudStorageConflictBlockingEditor = true
+        cloudStorageConflictReference = reference
+    }
+
+    @MainActor
+    private func cancelCloudStorageConflictResolution(
+        for reference: CloudStorageDocumentReference
+    ) {
+        guard case .cloudStorageFile(let activeReference) = activeFile,
+              activeReference == reference else { return }
+
+        loadingTask?.cancel()
+        cloudStorageRefreshTask?.cancel()
+        cloudStorageRefreshTask = nil
+        cloudStorageRefreshTaskID = nil
+        fileState.excalidrawWebCoordinator?.documentSyncController.resetFileLoadState()
+        cloudStorageConflictReference = nil
+        fileState.discardAndCloseActiveFile()
     }
 
     @MainActor
@@ -613,8 +1079,7 @@ struct ExcalidrawEditor: View {
             }
             let file = try ExcalidrawFile(data: data, id: excalidrawFile?.id)
             await MainActor.run {
-                self.excalidrawFile = file
-                NotificationCenter.default.post(name: .forceReloadExcalidrawFile, object: nil)
+                self.applyFileToEditorAndForceReload(file)
             }
         } catch {
             alertToast(error)
@@ -634,6 +1099,15 @@ struct ExcalidrawEditor: View {
         }
 
         return file.elements != currentFile.elements || file.appState != currentFile.appState
+    }
+
+    @MainActor
+    private func applyFileToEditorAndForceReload(_ file: ExcalidrawFile) {
+        excalidrawFile = file
+        NotificationCenter.default.post(
+            name: .forceReloadExcalidrawFile,
+            object: nil
+        )
     }
 
     private func applyExcalidrawFile(_ file: ExcalidrawFile?) {
@@ -696,8 +1170,8 @@ struct ExcalidrawEditor: View {
                 guard case .localFolder(let folder) = fileState.currentActiveGroup else { return .rejected }
                 logger.debug("Persisting local canvas update id=\(file.id) url=\(url.lastPathComponent) elements=\(file.elements.count)")
                 Task {
-                    try folder.withSecurityScopedURL { _ in
-                        do {
+                    do {
+                        try await folder.withSecurityScopedURL { _ in
                             let oldFile = try ExcalidrawFile(contentsOf: url)
                             if !hasPersistentCanvasChanges(in: file, comparedTo: oldFile) {
                                 return
@@ -707,9 +1181,9 @@ struct ExcalidrawEditor: View {
                                 with: file,
                                 context: viewContext
                             )
-                        } catch {
-                            alertToast(error)
                         }
+                    } catch {
+                        alertToast(error)
                     }
                 }
                 return .accepted
@@ -726,6 +1200,40 @@ struct ExcalidrawEditor: View {
                             to: url,
                             with: file,
                             context: viewContext
+                        )
+                    } catch {
+                        alertToast(error)
+                    }
+                }
+                return .accepted
+
+            case .cloudStorageFile(let reference):
+                if case .conflict = cloudStorageDocumentStore.syncState(for: reference) {
+                    logger.debug(
+                        "Rejected canvas update while cloud conflict is unresolved id=\(file.id)"
+                    )
+                    return .rejected
+                }
+                if let currentFile = excalidrawFile,
+                   !hasPersistentCanvasChanges(in: file, comparedTo: currentFile) {
+                    return .ignoredNoChanges
+                }
+                logger.debug(
+                    "Persisting cloud storage canvas update id=\(file.id) name=\(cloudStorageDocumentStore.displayName(for: reference)) elements=\(file.elements.count)"
+                )
+                Task {
+                    do {
+                        var file = file
+                        try file.updateContentFilesFromFiles()
+                        guard var content = file.content else { return }
+                        content = try await ExcalidrawViewportStateStore.shared
+                            .contentDataBySeparatingViewport(
+                                from: content,
+                                fileID: file.id
+                            )
+                        try await fileState.updateCloudStorageFile(
+                            reference,
+                            content: content
                         )
                     } catch {
                         alertToast(error)

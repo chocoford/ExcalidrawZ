@@ -1,6 +1,5 @@
-Arrivano Annotazione dello Schermo e Presentazioni della tela.
+Arriva l’archiviazione cloud collegata.
 
-- Disegna su qualsiasi schermo del Mac con gli strumenti di Excalidraw, usando uno sfondo in tempo reale o bloccato e una barra degli strumenti spostabile tra i display.
-- Salva l’intero schermo o un’area selezionata come contenuto Excalidraw modificabile, PNG/JPEG o negli appunti, con preset di qualità e destinazioni recenti.
-- Trasforma i frame della tela in diapositive, riordinali, scegli transizioni in dissolvenza, scorrimento o zoom e presenta a schermo intero.
-- Migliorati il salvataggio in background, la continuità degli stili e l’affidabilità delle presentazioni.
+- Connetti OneDrive, Dropbox, Google Drive o WebDAV (Beta) e sfoglia i disegni insieme alle cartelle locali.
+- Continua a modificare offline grazie alla cache locale; le modifiche si sincronizzano automaticamente quando torni online.
+- Controlla lo stato di ogni file e confronta le anteprime locali e remote durante la risoluzione dei conflitti.

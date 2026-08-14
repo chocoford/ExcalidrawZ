@@ -16,26 +16,11 @@ struct CollaborationRoomsList: View {
     @Binding var selections: Set<NSManagedObjectID>
     
     init(sortField: ExcalidrawFileSortField, selections: Binding<Set<NSManagedObjectID>>) {
-        let sortDescriptors: [SortDescriptor<CollaborationFile>] = {
-            switch sortField {
-                case .updatedAt:
-                    [
-                        SortDescriptor(\.visitedAt, order: .reverse),
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse)
-                    ]
-                case .name:
-                    [
-                        SortDescriptor(\.name, order: .reverse),
-                    ]
-                case .rank:
-                    [
-                        SortDescriptor(\.rank, order: .forward),
-                    ]
-            }
-        }()
         self._collaborationFiles = FetchRequest<CollaborationFile>(
-            sortDescriptors: sortDescriptors,
+            sortDescriptors: ExcalidrawFileSortProvider.collaborationFileSortDescriptors(
+                for: sortField,
+                prioritizesVisitedAt: true
+            ),
             animation: .smooth
         )
         self._selections = selections

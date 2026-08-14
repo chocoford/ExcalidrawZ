@@ -27,6 +27,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
 
     @Binding var loadingState: ExcalidrawCanvasView.LoadingState
     var hasFile: Bool
+    var keepsLoadingCoverPresented: Bool = false
 
     @State private var isLoadingOverlayPresented = false
     @State private var isProgressViewPresented = false
@@ -44,6 +45,9 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
                 .allowsHitTesting(!isLoadingOverlayPresented)
                 .watch(value: loadingState, initial: true) { _, newVal in
                     updateProgressPresentation(for: newVal)
+                }
+                .watch(value: keepsLoadingCoverPresented, initial: true) { _, _ in
+                    updateProgressPresentation(for: loadingState)
                 }
 
             if containerHorizontalSizeClass != .compact {
@@ -208,8 +212,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
     }
 
     private var loadingCoverImage: PlatformImage? {
-        guard hasFile,
-              let activeFile = fileState.currentActiveFile else {
+        guard let activeFile = fileState.currentActiveFile else {
             return nil
         }
         return FileItemPreviewCache.shared.getPreviewCache(
@@ -234,6 +237,15 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
         progressPresentationTask = nil
         loadingOverlayDismissTask?.cancel()
         loadingOverlayDismissTask = nil
+
+        if keepsLoadingCoverPresented {
+            if !isLoadingOverlayPresented {
+                captureLoadingCoverIfAvailable()
+            }
+            isProgressViewPresented = false
+            isLoadingOverlayPresented = true
+            return
+        }
 
         if case .error = loadingState {
             if !isLoadingOverlayPresented {
@@ -274,7 +286,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
     }
 
     private func captureLoadingCoverIfAvailable() {
-        guard loadingState == .loading || loadingState.isError,
+        guard loadingState == .loading || loadingState.isError || keepsLoadingCoverPresented,
               let fileID = fileState.currentActiveFile?.id,
               let image = loadingCoverImage else { return }
         loadingOverlayCover = LoadingOverlayCover(
@@ -398,11 +410,13 @@ extension View {
     /// Adds the editor's loading / empty / recover overlays around an `ExcalidrawCanvasView`.
     func excalidrawEditorOverlays(
         loadingState: Binding<ExcalidrawCanvasView.LoadingState>,
-        hasFile: Bool
+        hasFile: Bool,
+        keepsLoadingCoverPresented: Bool = false
     ) -> some View {
         modifier(ExcalidrawEditorOverlayModifier(
             loadingState: loadingState,
-            hasFile: hasFile
+            hasFile: hasFile,
+            keepsLoadingCoverPresented: keepsLoadingCoverPresented
         ))
     }
 }

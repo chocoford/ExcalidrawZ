@@ -73,6 +73,12 @@ enum CurrentExcalidrawDataResolver {
             case .localFile(let url), .temporaryFile(let url):
                 return try await FileSyncCoordinator.shared.openFile(url)
 
+            case .cloudStorageFile(let reference):
+                return try await CloudStorageDocumentStore.shared.content(
+                    for: reference,
+                    checkingRemoteRevision: false
+                )
+
             default:
                 return nil
         }

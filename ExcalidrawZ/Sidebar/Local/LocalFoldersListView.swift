@@ -15,13 +15,6 @@ import FSEventsWrapper
 
 
 struct LocalFoldersListView: View {
-    @AppStorage("ShowLocalFolderEmptyPlaceholder") private var showLocalFolderEmptyPlaceholder: Bool = true
-    
-    @Environment(\.managedObjectContext) private var viewContext
-    @Environment(\.alertToast) private var alertToast
-
-    @EnvironmentObject private var fileState: FileState
-    
     var showFiles: Bool
     
     init(
@@ -32,67 +25,85 @@ struct LocalFoldersListView: View {
 
     var body: some View {
         LocalFoldersProvider { folders in
-            LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(folders) { folder in
-                    VStack(alignment: .leading, spacing: 0) {
-                        // Local folder view
-                        Section {
-                            LocalFoldersView(
-                                folder: folder,
-                                sortField: fileState.sortField,
-                                showFiles: showFiles
-                            ) {
-                                // switch current folder first if necessary.
-                                if case .localFolder(let localFolder) = fileState.currentActiveGroup,
-                                   localFolder == folder {
-                                    guard let index = folders.firstIndex(of: folder) else {
-                                        return
-                                    }
-                                    if index == 0 {
-                                        if folders.count > 1 {
-                                            fileState.currentActiveGroup = .localFolder(folders[1])
-                                        } else {
-                                            fileState.currentActiveGroup = nil
-                                        }
-                                    } else {
-                                        fileState.currentActiveGroup = .localFolder(folders[0])
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                if showLocalFolderEmptyPlaceholder, folders.isEmpty, showFiles {
-                    LocalFolderEmptyPlaceholderView()
-                        .background {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 20)
-                                    .fill(.regularMaterial)
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(.secondary, lineWidth: 0.5)
-                            }
-                        }
-                        .padding(.vertical, 10)
-                        .transition(.scale(scale: 0, anchor: .topTrailing).combined(with: .opacity))
-                }
-            }
-            .animation(.smooth, value: showLocalFolderEmptyPlaceholder)
-            .onAppear {
-                for i in 0..<folders.count {
-                    do {
-                        try folders[i].refreshChildren(context: viewContext)
-                    } catch {
-                        alertToast(error)
-                    }
-                }
-#if DEBUG
-                showLocalFolderEmptyPlaceholder = true
-#endif
-            }
+            LocalFoldersListContent(
+                folders: folders,
+                showFiles: showFiles,
+                showsEmptyPlaceholder: true
+            )
         }
     }
-    
+}
+
+struct LocalFoldersListContent: View {
+    @AppStorage("ShowLocalFolderEmptyPlaceholder") private var showLocalFolderEmptyPlaceholder = true
+
+    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.alertToast) private var alertToast
+    @EnvironmentObject private var fileState: FileState
+
+    let folders: FetchedResults<LocalFolder>
+    let showFiles: Bool
+    let showsEmptyPlaceholder: Bool
+
+    var body: some View {
+        LazyVStack(alignment: .leading, spacing: 0) {
+            ForEach(folders) { folder in
+                Section {
+                    LocalFoldersView(
+                        folder: folder,
+                        sortField: fileState.sortField,
+                        showFiles: showFiles
+                    ) {
+                        handleSelectedFolderDeletion(folder)
+                    }
+                }
+            }
+
+            if showsEmptyPlaceholder,
+               showLocalFolderEmptyPlaceholder,
+               folders.isEmpty,
+               showFiles {
+                LocalFolderEmptyPlaceholderView()
+                    .background {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(.regularMaterial)
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(.secondary, lineWidth: 0.5)
+                        }
+                    }
+                    .padding(.vertical, 10)
+                    .transition(.scale(scale: 0, anchor: .topTrailing).combined(with: .opacity))
+            }
+        }
+        .animation(.smooth, value: showLocalFolderEmptyPlaceholder)
+        .onAppear {
+            for folder in folders {
+                do {
+                    try folder.refreshChildren(context: viewContext)
+                } catch {
+                    alertToast(error)
+                }
+            }
+#if DEBUG
+            showLocalFolderEmptyPlaceholder = true
+#endif
+        }
+    }
+
+    private func handleSelectedFolderDeletion(_ folder: LocalFolder) {
+        guard case .localFolder(let localFolder) = fileState.currentActiveGroup,
+              localFolder == folder,
+              let index = folders.firstIndex(of: folder) else {
+            return
+        }
+
+        if index == 0 {
+            fileState.currentActiveGroup = folders.count > 1 ? .localFolder(folders[1]) : nil
+        } else {
+            fileState.currentActiveGroup = .localFolder(folders[0])
+        }
+    }
 }
 
 

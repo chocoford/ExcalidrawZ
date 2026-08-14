@@ -84,8 +84,13 @@ actor FileSyncCoordinator {
             }
         )
         
-        folderMonitors[url] = monitor
-        try await monitor.start()
+        do {
+            try await monitor.start()
+            folderMonitors[url] = monitor
+        } catch {
+            await monitor.stop()
+            throw error
+        }
         
         logger.info("Successfully started monitoring folder: \(url.filePath)")
     }

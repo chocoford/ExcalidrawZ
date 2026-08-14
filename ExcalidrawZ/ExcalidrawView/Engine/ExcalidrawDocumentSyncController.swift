@@ -221,6 +221,7 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         validateCurrentParentFile: Bool = false
     ) async -> LoadOutcome {
         snapshotCoordinator.cancelPendingSnapshotCommits()
+        let shouldPreserveLiveViewport = force && currentLoadedFileID == fileID
 
         guard let (request, canvasToken) = beginCanvasFileLoad(
             fileID: fileID,
@@ -233,9 +234,10 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
             endStateChangeSuppression(canvasToken)
         }
 
-        let dataForLoad = await dataByApplyingLocalViewportIfNeeded(
+        let dataForLoad = await dataByPreparingViewportForLoad(
             data,
-            fileID: fileID
+            fileID: fileID,
+            preservingLiveViewport: shouldPreserveLiveViewport
         )
 
         let maxAttempts = 2
@@ -517,15 +519,32 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         return .init(documentData: try snapshot.documentData(), elements: nil, files: [:])
     }
 
-    private func dataByApplyingLocalViewportIfNeeded(
+    /// A same-document replacement keeps the WebView's live viewport for every
+    /// file source. Initial loads only apply a sidecar for sources whose
+    /// viewport is intentionally device-local.
+    private func dataByPreparingViewportForLoad(
         _ data: Data,
-        fileID: String
+        fileID: String,
+        preservingLiveViewport: Bool
     ) async -> Data {
-        guard await usesLocalViewportSidecar(fileID: fileID) else {
-            return data
-        }
+        let usesLocalViewportSidecar = await usesLocalViewportSidecar(fileID: fileID)
 
         do {
+            if preservingLiveViewport,
+               let core,
+               let appState = try? await core.getCurrentAppState(),
+               let dataWithLiveViewport = try await ExcalidrawViewportStateStore.shared.contentData(
+                    data,
+                    preservingViewportFrom: appState,
+                    sidecarFileID: usesLocalViewportSidecar ? fileID : nil
+               ) {
+                return dataWithLiveViewport
+            }
+
+            guard usesLocalViewportSidecar else {
+                return data
+            }
+
             return try await ExcalidrawViewportStateStore.shared.contentDataByApplyingStoredViewport(
                 to: data,
                 fileID: fileID
@@ -561,10 +580,10 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         await MainActor.run {
             guard core?.parent?.type == .normal,
                   let activeFile = core?.parent?.fileState.currentActiveFile,
-                  case .file(let file) = activeFile else {
+                  activeFile.usesLocalViewportSidecar else {
                 return false
             }
-            return file.id?.uuidString == fileID
+            return activeFile.id == fileID
         }
     }
 

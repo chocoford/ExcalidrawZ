@@ -93,6 +93,35 @@ extension FileState {
                     object: restoredFile
                 )
 
+            case .cloudStorageFile(let reference):
+                let activeFile = ActiveFile.cloudStorageFile(reference)
+                let parsedFile = try ExcalidrawFile(data: content, id: activeFile.id)
+                let needsUpload = try await CloudStorageDocumentStore.shared.saveToLocalCache(
+                    content,
+                    for: reference
+                )
+                do {
+                    _ = try await CloudStorageCheckpointStore.record(
+                        content: content,
+                        for: reference,
+                        source: .restorePost,
+                        description: nil
+                    )
+                } catch {
+                    logger.warning(
+                        "Failed to record cloud restore checkpoint for \(reference.lastKnownName): \(error.localizedDescription)"
+                    )
+                }
+                if needsUpload {
+                    CloudStorageSyncService.shared.enqueueUpload(for: reference)
+                }
+                guard currentActiveFile?.id == activeFile.id else { return }
+                await excalidrawWebCoordinator?.loadFile(from: parsedFile, force: true)
+                NotificationCenter.default.post(
+                    name: .activeCanvasFileDidRestore,
+                    object: parsedFile
+                )
+
             case .temporaryFile, nil:
                 throw AIChatEditError.unsupportedFile
         }

@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 struct FileICloudStatusIndicator: View {
     var file: FileState.ActiveFile
     
@@ -28,7 +29,21 @@ struct FileICloudStatusIndicator: View {
     
     @State private var fileStatus: FileStatus? = nil
 
+    @ViewBuilder
     var body: some View {
+        switch file {
+            case .cloudStorageFile(let reference):
+                CloudStorageDocumentSyncIndicator(reference: reference)
+
+            default:
+                iCloudStatusContent
+                    .bindFileStatus(for: file, status: $fileStatus)
+                    .symbolRenderingMode(.multicolor)
+                    .animation(.smooth, value: fileStatus?.iCloudStatus)
+        }
+    }
+
+    private var iCloudStatusContent: some View {
         ZStack {
             if #available(macOS 26.0, iOS 26.0, *) {
                 switch fileStatus?.iCloudStatus {
@@ -94,8 +109,5 @@ struct FileICloudStatusIndicator: View {
                 }
             }
         }
-        .bindFileStatus(for: file, status: $fileStatus)
-        .symbolRenderingMode(.multicolor)
-        .animation(.smooth, value: fileStatus?.iCloudStatus)
     }
 }

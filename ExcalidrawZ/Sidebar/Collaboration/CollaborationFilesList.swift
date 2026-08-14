@@ -35,25 +35,10 @@ struct CollaborationFilesContent: View {
     private var collaborationFiles: FetchedResults<CollaborationFile>
 
     init(sortField: ExcalidrawFileSortField) {
-        let sortDescriptors: [SortDescriptor<CollaborationFile>] = {
-            switch sortField {
-                case .updatedAt:
-                    [
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse)
-                    ]
-                case .name:
-                    [
-                        SortDescriptor(\.name, order: .reverse),
-                    ]
-                case .rank:
-                    [
-                        SortDescriptor(\.rank, order: .forward),
-                    ]
-            }
-        }()
         self._collaborationFiles = FetchRequest<CollaborationFile>(
-            sortDescriptors: sortDescriptors,
+            sortDescriptors: ExcalidrawFileSortProvider.collaborationFileSortDescriptors(
+                for: sortField
+            ),
             animation: .smooth
         )
     }

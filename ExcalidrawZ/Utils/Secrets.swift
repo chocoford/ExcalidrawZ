@@ -11,6 +11,8 @@ struct Secrets {
     static let shared = Secrets()
     
     let collabURL: URL
+    let oneDriveClientID: String?
+    let googleDriveClientID: String?
     
     private init() {
         guard let url = Bundle.main.url(forResource: "Secrets", withExtension: "plist"),
@@ -21,5 +23,14 @@ struct Secrets {
         
         let collabURL = URL(string: dict["COLLAB_URL"] as? String ?? "")!
         self.collabURL = collabURL
+        self.oneDriveClientID = (dict["ONEDRIVE_CLIENT_ID"] as? String)
+            .flatMap { $0.isEmpty ? nil : $0 }
+#if os(macOS)
+        self.googleDriveClientID = (dict["GOOGLE_DRIVE_MACOS_CLIENT_ID"] as? String)
+            .flatMap { $0.isEmpty ? nil : $0 }
+#else
+        self.googleDriveClientID = (dict["GOOGLE_DRIVE_IOS_CLIENT_ID"] as? String)
+            .flatMap { $0.isEmpty ? nil : $0 }
+#endif
     }
 }

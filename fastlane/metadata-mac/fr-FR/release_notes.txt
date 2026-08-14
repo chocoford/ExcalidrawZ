@@ -1,6 +1,5 @@
-Découvrez l’annotation d’écran et les présentations de canevas.
+Découvrez le stockage cloud lié.
 
-- Dessinez sur n’importe quel écran de votre Mac avec les outils Excalidraw, sur un arrière-plan en direct ou figé, et déplacez la barre d’outils entre vos écrans.
-- Enregistrez l’écran entier ou une zone sélectionnée comme contenu Excalidraw modifiable, en PNG/JPEG ou dans le presse-papiers, avec des préréglages de qualité et des destinations récentes.
-- Transformez les cadres du canevas en diapositives, réorganisez-les, choisissez des transitions en fondu, glissées ou zoomées, puis présentez en plein écran.
-- Amélioration de l’enregistrement en arrière-plan, de la continuité des styles et de la fiabilité des présentations.
+- Connectez OneDrive, Dropbox, Google Drive ou WebDAV (bêta) et parcourez vos dessins avec vos dossiers locaux.
+- Continuez à modifier hors ligne grâce au cache local ; les changements se synchronisent automatiquement à la reconnexion.
+- Suivez l’état de chaque fichier et comparez les aperçus locaux et distants pour résoudre les conflits.

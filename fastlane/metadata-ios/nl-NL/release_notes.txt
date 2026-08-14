@@ -1,5 +1,6 @@
-Nieuw: Canvaspresentaties.
+Een grote update voor iPhone en iPad.
 
-- Zet canvasframes om in dia’s en presenteer rechtstreeks vanuit je tekening.
-- Sleep om dia’s opnieuw te ordenen en kies fade-, schuif- of zoomovergangen met een aangepaste duur.
-- Volgorde en overgangen worden per tekening bewaard en vernieuwd wanneer frames veranderen.
+- Verbind OneDrive, Dropbox, Google Drive of WebDAV (bèta), bewerk vanuit de lokale cache en los conflicten op met visuele voorbeelden.
+- Zet Excalidraw-frames om in presentaties op volledig scherm met herschikbare dia's en fade-, schuif- of zoomovergangen.
+- Bekijk tekenmedia in een responsieve galerij en ruim ongebruikte media of media die alleen door de bestandsgeschiedenis worden bewaard veilig op.
+- Verbeterde toegang tot gekoppelde mappen en externe bestanden, openen en wisselen van bestanden, werkbalkvolgorde en opslag van aangepaste lettertypen.

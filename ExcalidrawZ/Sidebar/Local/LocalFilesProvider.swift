@@ -58,6 +58,7 @@ struct LocalFilesProvider<Content: View>: View {
     
     @State private var files: [URL] = []
     @State private var updateFlags: [URL : Date] = [:]
+    @State private var sortValues: [URL: ExcalidrawFileSortProvider.Values] = [:]
     @State private var didLoadInitialCache = false
     
 #if canImport(AppKit)
@@ -189,6 +190,21 @@ struct LocalFilesProvider<Content: View>: View {
                             
                             return false
                         })
+                    self.sortValues = Dictionary(
+                        uniqueKeysWithValues: files.map { file in
+                            let values = try? file.resourceValues(
+                                forKeys: [.contentModificationDateKey, .creationDateKey]
+                            )
+                            return (
+                                file,
+                                ExcalidrawFileSortProvider.Values(
+                                    name: file.deletingPathExtension().lastPathComponent,
+                                    updatedAt: values?.contentModificationDate,
+                                    createdAt: values?.creationDate
+                                )
+                            )
+                        }
+                    )
                     withAnimation {
                         self.files = files
                         self.sortFiles(field: self.sortField)
@@ -213,24 +229,12 @@ struct LocalFilesProvider<Content: View>: View {
     }
     
     private func sortFiles(field: ExcalidrawFileSortField) {
-        switch field {
-            case .updatedAt, .rank:
-                files.sort {
-                    // createdAt
-                    let lhsAttrs = try? FileManager.default.attributesOfItem(atPath: $0.filePath)
-                    let rhsAttrs = try? FileManager.default.attributesOfItem(atPath: $1.filePath)
-                    return (lhsAttrs?[.creationDate] as? Date) ?? .distantPast > (rhsAttrs?[.creationDate] as? Date) ?? .distantPast
-                }
-                files.sort {
-                    // updatedAt
-                    let lhsAttrs = try? FileManager.default.attributesOfItem(atPath: $0.filePath)
-                    let rhsAttrs = try? FileManager.default.attributesOfItem(atPath: $1.filePath)
-                    return (lhsAttrs?[.modificationDate] as? Date) ?? .distantPast > (rhsAttrs?[.modificationDate] as? Date) ?? .distantPast
-                }
-            case .name:
-                files.sort {
-                    $0.deletingPathExtension().lastPathComponent < $1.deletingPathExtension().lastPathComponent
-                }
+        files = ExcalidrawFileSortProvider.sorted(files, by: field) { file in
+            sortValues[file] ?? ExcalidrawFileSortProvider.Values(
+                name: file.deletingPathExtension().lastPathComponent,
+                updatedAt: nil,
+                createdAt: nil
+            )
         }
     }
     
@@ -274,10 +278,7 @@ struct LocalFilesProvider<Content: View>: View {
     private func handleItemUpdated(path: String) {
         guard let file = self.files.first(where: {$0.filePath == path}) else { return }
         self.updateFlags[file] = Date()
-        self.files.sort {
-            ((try? FileManager.default.attributesOfItem(atPath: $0.filePath)[FileAttributeKey.modificationDate]) as? Date) ?? .distantPast > ((try? FileManager.default.attributesOfItem(atPath: $1.filePath)[FileAttributeKey.modificationDate]) as? Date) ?? .distantPast
-        }
-        LocalFilesProviderCache.setFiles(files, for: folderCacheKey)
+        getFolderContents()
     }
     
     private func handleItemRenamed(path: String) {

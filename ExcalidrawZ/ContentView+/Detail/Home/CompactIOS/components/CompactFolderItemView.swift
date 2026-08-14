@@ -43,53 +43,8 @@ struct CompactFolderItemView: View {
         fileState.selectedGroups.contains(objectID)
     }
     
-    var layout: AnyLayout {
-        switch layoutState.compactBrowserLayout {
-            case .grid:
-                AnyLayout(VStackLayout(alignment: .center, spacing: 8))
-            case .list:
-                AnyLayout(HStackLayout(alignment: .center, spacing: 8))
-        }
-    }
-
     var body: some View {
-        layout {
-            // Folder icon area
-            Image(systemSymbol: type == .trash ? .trashFill : .folderFill)
-                .resizable()
-                .scaledToFit()
-                .foregroundStyle(Color.accentColor)
-                .padding(10)
-                .frame(
-                    width: layoutState.compactBrowserLayout == .grid ? nil : 80,
-                    height: layoutState.compactBrowserLayout == .grid ? 80 : nil,
-                )
-                .frame(maxWidth: layoutState.compactBrowserLayout == .grid ? .infinity : nil)
-
-            // Folder info
-            VStack(
-                alignment: layoutState.compactBrowserLayout == .grid ? .center : .leading,
-                spacing: 2
-            ) {
-                Text(name)
-                    .font(layoutState.compactBrowserLayout == .grid ? .caption : .body)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: layoutState.compactBrowserLayout == .grid ? .center : .leading
-                    )
-
-                Text(localizable: .homeGroupItemsFormatter(itemsCount))
-                    .font(layoutState.compactBrowserLayout == .grid ? .caption2 : .footnote)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 4)
-            
-            if layoutState.compactBrowserLayout == .list {
-                Spacer(minLength: 0)
-            }
-        }
+        CompactFolderItemLabel(name: name, type: type, itemsCount: itemsCount)
         .opacity(editMode?.wrappedValue.isEditing == true ? 0.7 : 1.0)
         .overlay(alignment: .center) {
             if editMode?.wrappedValue.isEditing == true {
@@ -117,6 +72,61 @@ struct CompactFolderItemView: View {
             fileState.selectedGroups.insertOrRemove(self.objectID)
         }, isEnabled: editMode?.wrappedValue.isEditing == true)
         .animation(.smooth, value: layoutState.compactBrowserLayout)
+    }
+}
+
+struct CompactFolderItemLabel: View {
+    @EnvironmentObject private var layoutState: LayoutState
+
+    let name: String
+    let type: Group.GroupType
+    let itemsCount: Int
+
+    private var layout: AnyLayout {
+        switch layoutState.compactBrowserLayout {
+            case .grid:
+                AnyLayout(VStackLayout(alignment: .center, spacing: 8))
+            case .list:
+                AnyLayout(HStackLayout(alignment: .center, spacing: 8))
+        }
+    }
+
+    var body: some View {
+        layout {
+            Image(systemSymbol: type == .trash ? .trashFill : .folderFill)
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(Color.accentColor)
+                .padding(10)
+                .frame(
+                    width: layoutState.compactBrowserLayout == .grid ? nil : 80,
+                    height: layoutState.compactBrowserLayout == .grid ? 80 : nil
+                )
+                .frame(maxWidth: layoutState.compactBrowserLayout == .grid ? .infinity : nil)
+
+            VStack(
+                alignment: layoutState.compactBrowserLayout == .grid ? .center : .leading,
+                spacing: 2
+            ) {
+                Text(name)
+                    .font(layoutState.compactBrowserLayout == .grid ? .caption : .body)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: layoutState.compactBrowserLayout == .grid ? .center : .leading
+                    )
+
+                Text(localizable: .homeGroupItemsFormatter(itemsCount))
+                    .font(layoutState.compactBrowserLayout == .grid ? .caption2 : .footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 4)
+
+            if layoutState.compactBrowserLayout == .list {
+                Spacer(minLength: 0)
+            }
+        }
     }
 }
 

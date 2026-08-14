@@ -333,7 +333,7 @@ final class ExcalidrawDocumentAppStateSnapshotSaver: @unchecked Sendable {
         fileID: String,
         target: FileState.CapturedCanvasSaveTarget
     ) async throws -> ExcalidrawCore.JSONValue {
-        guard case .libraryFile = target.kind else {
+        guard target.kind.usesLocalViewportSidecar else {
             return appState
         }
 
@@ -350,10 +350,10 @@ final class ExcalidrawDocumentAppStateSnapshotSaver: @unchecked Sendable {
         await MainActor.run {
             guard core.parent?.type == .normal,
                   let activeFile = core.parent?.fileState.currentActiveFile,
-                  case .file(let file) = activeFile else {
+                  activeFile.usesLocalViewportSidecar else {
                 return false
             }
-            return file.id?.uuidString == fileID
+            return activeFile.id == fileID
         }
     }
 
@@ -457,14 +457,7 @@ final class ExcalidrawDocumentAppStateSnapshotSaver: @unchecked Sendable {
     }
 
     private func nativeFileName(for target: FileState.CapturedCanvasSaveTarget) -> String? {
-        switch target.kind {
-            case .libraryFile(_, let fileName, _, _):
-                return fileName
-            case .localFile(let url, _, _):
-                return url.deletingPathExtension().lastPathComponent
-            case .collaborationFile(_, let fileName, _):
-                return fileName
-        }
+        target.kind.nativeFileName
     }
 
 }

@@ -181,7 +181,7 @@ extension PersistenceController {
     }
     func listTrashedFiles(context: NSManagedObjectContext) throws -> [File] {
         let fetchRequest = NSFetchRequest<File>(entityName: "File")
-        fetchRequest.predicate = NSPredicate(format: "inTrash == YES")
+        fetchRequest.predicate = File.trashedPredicate
         fetchRequest.sortDescriptors = [
             .init(key: "deletedAt", ascending: false)
         ]

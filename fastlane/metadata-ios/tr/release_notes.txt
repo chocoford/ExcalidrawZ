@@ -1,5 +1,6 @@
-Kanvas Sunumları artık burada.
+iPhone ve iPad için büyük bir güncelleme.
 
-- Kanvas çerçevelerini slaytlara dönüştürün ve doğrudan çiziminizden sunun.
-- Slaytları sürükleyerek yeniden sıralayın ve özel süreli solma, kayma veya yakınlaştırma geçişlerini seçin.
-- Sunum sırası ve geçiş ayarları her çizim için kaydedilir ve çerçeveler değiştikçe yenilenir.
+- OneDrive, Dropbox, Google Drive veya WebDAV (Beta) bağlayın, yerel önbellekten düzenleyin ve çakışmaları görsel önizlemelerle çözün.
+- Excalidraw çerçevelerini sıralanabilir slaytlar ve solma, kaydırma veya yakınlaştırma geçişleriyle tam ekran sunumlara dönüştürün.
+- Çizim medyasını duyarlı bir galeride görüntüleyin ve kullanılmayan ya da yalnızca dosya geçmişinde tutulan medyayı güvenle temizleyin.
+- Bağlı klasör ve harici dosya erişimi, dosya açma ve değiştirme, araç çubuğu sıralaması ve özel yazı tipi kalıcılığı iyileştirildi.

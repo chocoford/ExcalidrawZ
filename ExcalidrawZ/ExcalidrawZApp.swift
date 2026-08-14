@@ -87,6 +87,10 @@ struct ExcalidrawZApp: App {
             return stdoutHandler
         }
         FeatureDiscoveryTips.configureIfAvailable()
+        // Cloud storage synchronization follows the process lifecycle, not a
+        // WindowGroup lifecycle. This also keeps queued offline work moving
+        // while the app has no open windows on macOS.
+        CloudStorageSyncService.shared.start()
 #if os(macOS)
         _ = ExcalidrawZMCPServerController.shared
 #endif
@@ -228,8 +232,6 @@ struct ExcalidrawZApp: App {
     }
     // Can not run agent in a sandboxed app.
     // let service = SMAppService.agent(plistName: "com.chocoford.excalidraw.ExcalidrawServer.agent.plist")
-    
-    @Environment(\.scenePhase) var scenePhase
     
     @StateObject private var appPrefernece = AppPreference()
     @StateObject private var store = Store.shared

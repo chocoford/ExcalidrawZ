@@ -1,5 +1,6 @@
-Giới thiệu Trình bày canvas.
+Bản cập nhật lớn dành cho iPhone và iPad.
 
-- Biến các khung canvas thành trang trình bày và bắt đầu trình bày trực tiếp từ bản vẽ.
-- Kéo để sắp xếp lại các trang và chọn hiệu ứng mờ dần, trượt hoặc thu phóng với thời lượng tùy chỉnh.
-- Thứ tự và hiệu ứng chuyển tiếp được lưu riêng cho từng bản vẽ và làm mới khi các khung thay đổi.
+- Kết nối OneDrive, Dropbox, Google Drive hoặc WebDAV (Beta), chỉnh sửa từ bộ nhớ đệm cục bộ và xử lý xung đột bằng bản xem trước trực quan.
+- Biến khung Excalidraw thành bản trình chiếu toàn màn hình với các trang có thể sắp xếp lại và hiệu ứng mờ dần, trượt hoặc thu phóng.
+- Duyệt phương tiện của bản vẽ trong thư viện thích ứng và dọn dẹp an toàn nội dung không dùng hoặc chỉ được Lịch sử tệp giữ lại.
+- Cải thiện quyền truy cập thư mục liên kết và tệp ngoài, mở và chuyển tệp, sắp xếp thanh công cụ và lưu giữ phông chữ tùy chỉnh.

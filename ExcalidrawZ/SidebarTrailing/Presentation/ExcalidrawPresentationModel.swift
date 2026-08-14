@@ -388,7 +388,7 @@ final class ExcalidrawPresentationModel: ObservableObject {
                 .libraryFile(objectURI: file.objectID.uriRepresentation())
             case .collaborationFile(let file):
                 .collaborationFile(objectURI: file.objectID.uriRepresentation())
-            case .localFile, .temporaryFile, nil:
+            case .localFile, .temporaryFile, .cloudStorageFile, nil:
                 nil
         }
     }

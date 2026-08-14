@@ -1,5 +1,6 @@
-Nowość: Prezentacje na kanwie.
+Duża aktualizacja dla iPhone’a i iPada.
 
-- Zamieniaj ramki kanwy w slajdy i prezentuj bezpośrednio z rysunku.
-- Przeciągaj slajdy, aby zmienić kolejność, i wybieraj przejścia zanikania, przesuwania lub powiększania z własnym czasem trwania.
-- Kolejność i przejścia są zapisywane osobno dla każdego rysunku i odświeżane po zmianie ramek.
+- Połącz OneDrive, Dropbox, Google Drive lub WebDAV (Beta), edytuj z lokalnej pamięci podręcznej i rozwiązuj konflikty za pomocą podglądów.
+- Zamieniaj ramki Excalidraw w prezentacje pełnoekranowe z możliwością zmiany kolejności slajdów oraz przejściami zanikania, przesuwania i powiększania.
+- Przeglądaj multimedia rysunku w responsywnej galerii i bezpiecznie usuwaj nieużywane elementy lub zachowane tylko przez historię pliku.
+- Ulepszono dostęp do połączonych folderów i plików zewnętrznych, otwieranie i przełączanie plików, kolejność paska narzędzi oraz zachowywanie własnych czcionek.

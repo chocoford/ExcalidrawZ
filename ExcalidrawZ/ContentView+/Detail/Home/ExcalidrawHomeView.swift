@@ -33,6 +33,7 @@ struct ExcalidrawHomeView: View {
         case home
         case fileHome
         case localFileHome
+        case cloudStorageFileHome
         case temporaryFileHome
         case collaborationFileHome
     }
@@ -42,8 +43,10 @@ struct ExcalidrawHomeView: View {
     /// For transition
     @State private var currentGroups: [Group] = []
     @State private var currentFolders: [LocalFolder] = []
+    @State private var currentCloudFolders: [CloudStorageFolderReference] = []
     @State private var renderedGroups: [Group] = []
     @State private var renderedFolders: [LocalFolder] = []
+    @State private var renderedCloudFolders: [CloudStorageFolderReference] = []
     
     @State private var isTransitioning = false
     @State private var folderTransitionGeneration = 0
@@ -212,6 +215,45 @@ struct ExcalidrawHomeView: View {
                                 removal: .move(edge: .trailing)
                             )
                         )
+                case .cloudStorageFileHome:
+                        ZStack {
+                            ForEach(Array(renderedCloudFolders.enumerated()), id: \.element) { i, folder in
+                                CloudStorageFolderFileHomeView(folder: folder)
+                                    .opacity(
+                                        fileHomeItemTransitionState.canShowItemContainerView ||
+                                        fileState.currentActiveFile == nil
+                                        ? 1
+                                        : 0
+                                    )
+                                    .background {
+                                        ZStack {
+                                            if #available(macOS 14.0, iOS 17.0, *) {
+                                                Rectangle()
+                                                    .fill(.windowBackground)
+                                            } else {
+                                                Color.windowBackgroundColor
+                                            }
+                                        }
+                                        .shadow(
+                                            color: .gray.opacity(
+                                                isTransitioning && i == renderedCloudFolders.endIndex - 1
+                                                ? 0.3
+                                                : 0.0
+                                            ),
+                                            radius: 0,
+                                            x: -1
+                                        )
+                                    }
+                                    .transition(.move(edge: .trailing))
+                                    .zIndex(Double(i))
+                            }
+                        }
+                        .transition(
+                            .asymmetric(
+                                insertion: .move(edge: .trailing),
+                                removal: .move(edge: .trailing)
+                            )
+                        )
                 case .temporaryFileHome:
                         TemporaryFilesHomeView()
                             .opacity(
@@ -237,6 +279,8 @@ struct ExcalidrawHomeView: View {
             case .group(let newValue):
                 currentFolders.removeAll()
                 renderedFolders.removeAll()
+                currentCloudFolders.removeAll()
+                renderedCloudFolders.removeAll()
 
                 if currentGroups.isEmpty {
                     initCurrentGroups()
@@ -281,6 +325,8 @@ struct ExcalidrawHomeView: View {
             case .localFolder(let newValue):
                 currentGroups.removeAll()
                 renderedGroups.removeAll()
+                currentCloudFolders.removeAll()
+                renderedCloudFolders.removeAll()
 
                 if currentFolders.isEmpty {
                     initCurrentGroups()
@@ -323,6 +369,52 @@ struct ExcalidrawHomeView: View {
                     }
                 }
 
+            case .cloudStorageFolder(let newValue):
+                currentGroups.removeAll()
+                renderedGroups.removeAll()
+                currentFolders.removeAll()
+                renderedFolders.removeAll()
+
+                if currentCloudFolders.isEmpty {
+                    initCurrentGroups()
+                } else if currentCloudFolders.contains(newValue) {
+                    let index = currentCloudFolders.firstIndex(of: newValue)!
+                    let previousFolder = currentCloudFolders.last
+                    let targetFolders = Array(currentCloudFolders.prefix(upTo: index + 1))
+                    if previousFolder == newValue {
+                        currentCloudFolders = targetFolders
+                        renderedCloudFolders = Array(targetFolders.suffix(1))
+                    } else {
+                        startFolderTransition()
+                        if let previousFolder {
+                            renderedCloudFolders = [newValue, previousFolder]
+                        }
+                        withAnimation(.smooth(duration: folderNavigationTransitionDuration)) {
+                            currentCloudFolders = targetFolders
+                            renderedCloudFolders = [newValue]
+                        }
+                        resetFolderTransitionStateForCloudFolders()
+                    }
+                } else {
+                    let previousFolder = currentCloudFolders.last
+                    let targetFolders = CloudStorageDocumentStore.shared.folderPath(for: newValue)
+                    startFolderTransition()
+                    if let previousFolder {
+                        renderedCloudFolders = [previousFolder]
+                    }
+                    currentCloudFolders = targetFolders
+                    DispatchQueue.main.async {
+                        withAnimation(.smooth(duration: folderNavigationTransitionDuration)) {
+                            if let previousFolder {
+                                renderedCloudFolders = [previousFolder, newValue]
+                            } else {
+                                renderedCloudFolders = [newValue]
+                            }
+                        }
+                        resetFolderTransitionStateForCloudFolders()
+                    }
+                }
+
             default:
                 if lastHomeType == .fileHome,
                    !renderedGroups.isEmpty {
@@ -342,11 +434,22 @@ struct ExcalidrawHomeView: View {
                     }
                     resetHomeTransitionStateForFolders()
                     return
+                } else if lastHomeType == .cloudStorageFileHome,
+                          !renderedCloudFolders.isEmpty {
+                    startFolderTransition()
+                    currentCloudFolders.removeAll()
+                    withAnimation(.smooth(duration: folderNavigationTransitionDuration)) {
+                        updateLastHomeType()
+                    }
+                    resetHomeTransitionStateForCloudFolders()
+                    return
                 } else {
                     currentGroups.removeAll()
                     renderedGroups.removeAll()
                     currentFolders.removeAll()
                     renderedFolders.removeAll()
+                    currentCloudFolders.removeAll()
+                    renderedCloudFolders.removeAll()
                 }
         }
 
@@ -382,6 +485,15 @@ struct ExcalidrawHomeView: View {
         }
     }
 
+    private func resetFolderTransitionStateForCloudFolders() {
+        let generation = folderTransitionGeneration
+        DispatchQueue.main.asyncAfter(deadline: .now() + folderNavigationCleanupDelay) {
+            guard generation == folderTransitionGeneration else { return }
+            isTransitioning = false
+            renderedCloudFolders = Array(currentCloudFolders.suffix(1))
+        }
+    }
+
     private func resetHomeTransitionStateForGroups() {
         let generation = folderTransitionGeneration
         DispatchQueue.main.asyncAfter(deadline: .now() + folderNavigationCleanupDelay) {
@@ -399,6 +511,16 @@ struct ExcalidrawHomeView: View {
             isTransitioning = false
             currentFolders.removeAll()
             renderedFolders.removeAll()
+        }
+    }
+
+    private func resetHomeTransitionStateForCloudFolders() {
+        let generation = folderTransitionGeneration
+        DispatchQueue.main.asyncAfter(deadline: .now() + folderNavigationCleanupDelay) {
+            guard generation == folderTransitionGeneration else { return }
+            isTransitioning = false
+            currentCloudFolders.removeAll()
+            renderedCloudFolders.removeAll()
         }
     }
     
@@ -425,12 +547,18 @@ struct ExcalidrawHomeView: View {
                 }
                 currentFolders = parents.reversed()
                 renderedFolders = Array(currentFolders.suffix(1))
+
+            case .cloudStorageFolder(let folder):
+                currentCloudFolders = CloudStorageDocumentStore.shared.folderPath(for: folder)
+                renderedCloudFolders = Array(currentCloudFolders.suffix(1))
             
             default:
                 currentGroups.removeAll()
                 renderedGroups.removeAll()
                 currentFolders.removeAll()
                 renderedFolders.removeAll()
+                currentCloudFolders.removeAll()
+                renderedCloudFolders.removeAll()
                 break
         }
     }
@@ -442,6 +570,8 @@ struct ExcalidrawHomeView: View {
                 nextHomeType = .fileHome
             case .localFolder:
                 nextHomeType = .localFileHome
+            case .cloudStorageFolder:
+                nextHomeType = .cloudStorageFileHome
             case .temporary:
                 nextHomeType = .temporaryFileHome
             case .collaboration:

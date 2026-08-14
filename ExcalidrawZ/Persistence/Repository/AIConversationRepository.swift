@@ -17,6 +17,7 @@ struct AIConversationFileScope: Hashable, Sendable {
         case localFile
         case temporaryFile
         case collaborationFile
+        case cloudStorageFile
     }
 
     var kind: Kind

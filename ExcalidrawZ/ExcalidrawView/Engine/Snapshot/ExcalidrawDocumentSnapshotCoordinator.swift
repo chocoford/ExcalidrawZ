@@ -353,16 +353,18 @@ final class ExcalidrawDocumentSnapshotCoordinator: @unchecked Sendable {
     ) async throws -> ExcalidrawCore.ExcalidrawFileData {
         var fileDataForPersistence = fileData
 
-        if case .libraryFile(_, let fileName, _, _) = target.kind {
+        if target.kind.usesLocalViewportSidecar {
             fileDataForPersistence.documentData = try await ExcalidrawViewportStateStore.shared
                 .contentDataBySeparatingViewport(
                     from: fileDataForPersistence.documentData,
                     fileID: expectedFileID
                 )
-            fileDataForPersistence.documentData = try ExcalidrawDocumentAppStatePersistence.documentData(
-                fileDataForPersistence.documentData,
-                settingNativeFileName: fileName
-            )
+            if let fileName = target.kind.nativeFileName {
+                fileDataForPersistence.documentData = try ExcalidrawDocumentAppStatePersistence.documentData(
+                    fileDataForPersistence.documentData,
+                    settingNativeFileName: fileName
+                )
+            }
         }
 
         return fileDataForPersistence

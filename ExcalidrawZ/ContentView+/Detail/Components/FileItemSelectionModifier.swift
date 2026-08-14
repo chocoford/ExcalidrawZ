@@ -19,6 +19,10 @@ private extension FileState.ActiveFile {
     var temporaryFileURL: URL? {
         if case .temporaryFile(let url) = self { url } else { nil }
     }
+
+    var cloudStorageReference: CloudStorageDocumentReference? {
+        if case .cloudStorageFile(let reference) = self { reference } else { nil }
+    }
 }
 
 struct FileHomeItemSelectModifier: ViewModifier {
@@ -70,6 +74,15 @@ struct FileHomeItemSelectModifier: ViewModifier {
         if let url = file.temporaryFileURL { return [url] }
         return []
     }
+
+    var cloudStorageFileSiblings: [CloudStorageDocumentReference] {
+        let siblings: [CloudStorageDocumentReference] = selectionSiblings?.compactMap {
+            if case .cloudStorageFile(let reference) = $0 { reference } else { nil }
+        } ?? []
+        if !siblings.isEmpty { return siblings }
+        if let reference = file.cloudStorageReference { return [reference] }
+        return []
+    }
     
     var isSelected: Bool {
         switch file {
@@ -81,6 +94,8 @@ struct FileHomeItemSelectModifier: ViewModifier {
                 return fileState.selectedTemporaryFiles.contains(url)
             case .collaborationFile:
                 return false
+            case .cloudStorageFile(let reference):
+                return fileState.selectedCloudStorageFiles.contains(reference)
         }
     }
     
@@ -143,6 +158,8 @@ struct FileHomeItemSelectModifier: ViewModifier {
                 performTemporaryFileSelect(url)
             case .collaborationFile:
                 break
+            case .cloudStorageFile(let reference):
+                performCloudStorageFileSelect(reference)
         }
     }
 
@@ -250,6 +267,42 @@ struct FileHomeItemSelectModifier: ViewModifier {
         if editMode?.wrappedValue.isEditing == true {
             fileState.selectedTemporaryFiles = [url]
             fileState.selectedStartTemporaryFile = url
+        }
+#endif
+    }
+
+    private func performCloudStorageFileSelect(_ reference: CloudStorageDocumentReference) {
+#if os(macOS)
+        if NSEvent.modifierFlags.contains(.shift), canMultiSelect {
+            if fileState.selectedCloudStorageFiles.isEmpty {
+                fileState.selectedCloudStorageFiles.insert(reference)
+            } else {
+                let siblings = cloudStorageFileSiblings
+                guard let startFile = fileState.selectedStartCloudStorageFile,
+                      let startIdx = siblings.firstIndex(of: startFile),
+                      let endIdx = siblings.firstIndex(of: reference) else {
+                    return
+                }
+                let range = startIdx <= endIdx ? startIdx...endIdx : endIdx...startIdx
+                fileState.selectedCloudStorageFiles = Set(siblings[range])
+            }
+            if fileState.selectedStartCloudStorageFile == nil {
+                fileState.selectedStartCloudStorageFile = reference
+            }
+        } else if NSEvent.modifierFlags.contains(.command), canMultiSelect {
+            fileState.selectedCloudStorageFiles.insertOrRemove(reference)
+            fileState.selectedStartCloudStorageFile = reference
+        } else {
+            if !canMultiSelect {
+                fileState.resetSelections()
+            }
+            fileState.selectedCloudStorageFiles = [reference]
+            fileState.selectedStartCloudStorageFile = reference
+        }
+#else
+        if editMode?.wrappedValue.isEditing == true {
+            fileState.selectedCloudStorageFiles.insertOrRemove(reference)
+            fileState.selectedStartCloudStorageFile = reference
         }
 #endif
     }

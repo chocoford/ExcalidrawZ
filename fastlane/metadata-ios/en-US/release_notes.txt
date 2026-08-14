@@ -1,5 +1,6 @@
-Introducing Canvas Presentations.
+A major update for iPhone and iPad.
 
-- Turn canvas frames into slides and present directly from your drawing.
-- Drag to reorder slides and choose fade, slide, or zoom transitions with custom timing.
-- Presentation order and transition settings are saved per drawing and refresh as your frames change.
+- Connect OneDrive, Dropbox, Google Drive, or WebDAV (Beta), edit from a local cache, and resolve conflicts with visual previews.
+- Turn Excalidraw frames into full-screen presentations with reorderable slides and fade, slide, or zoom transitions.
+- Browse drawing media in a responsive gallery and safely clean up unused media or media retained by File History.
+- Improved Linked Folder and external-file access, file opening and switching, toolbar reordering, and custom-font persistence.

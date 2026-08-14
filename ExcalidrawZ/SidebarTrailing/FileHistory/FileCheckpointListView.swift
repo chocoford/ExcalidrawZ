@@ -29,6 +29,11 @@ struct FileHistoryInspectorContent: View {
                 FileCheckpointListView(localFile: url, presentation: presentation)
             case .collaborationFile(let collaborationFile):
                 FileCheckpointListView(file: collaborationFile, presentation: presentation)
+            case .cloudStorageFile(let reference):
+                FileCheckpointListView(
+                    cloudStorageFile: reference,
+                    presentation: presentation
+                )
             default:
                 EmptyView()
         }
@@ -114,6 +119,20 @@ struct FileCheckpointListView<Checkpoint: FileCheckpointRepresentable>: View {
         self._fileCheckpoints = FetchRequest(
             sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)],
             predicate: NSPredicate(format: "url == %@", localFile as NSURL)
+        )
+    }
+
+    init(
+        cloudStorageFile reference: CloudStorageDocumentReference,
+        presentation: FileCheckpointListPresentation = .inspectorList
+    ) where Checkpoint == LocalFileCheckpoint {
+        self.presentation = presentation
+        self._fileCheckpoints = FetchRequest(
+            sortDescriptors: [SortDescriptor(\.updatedAt, order: .reverse)],
+            predicate: NSPredicate(
+                format: "url == %@",
+                reference.checkpointURL as NSURL
+            )
         )
     }
     

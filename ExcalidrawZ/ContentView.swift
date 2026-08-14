@@ -31,6 +31,7 @@ struct ContentView: View {
     @EnvironmentObject private var aiChatState: AIChatState
     @EnvironmentObject private var lockedContentState: LockedContentStateStore
     @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
+    @ObservedObject private var cloudStorageConnections = CloudStorageConnectionStore.shared
     
     @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
     
@@ -103,7 +104,18 @@ struct ContentView: View {
             .onReceive(NotificationCenter.default.publisher(for: .toggleInspector)) { notification in
                 handleToggleInspector(notification)
             }
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: .cloudStorageItemIdentityDidChange
+                )
+            ) { notification in
+                guard let change = notification.object as? CloudStorageItemIdentityChange else {
+                    return
+                }
+                fileState.applyCloudStorageIdentityChange(change)
+            }
             .modifier(LockedContentEventModifier(fileState: fileState))
+            .modifier(ActiveFileAvailabilityModifier(fileState: fileState))
             .watch(value: fileState.currentActiveFile) { newValue in
                 // Going back to Home: nothing to inspect, so collapse the panel.
                 if newValue == nil, layoutState.isInspectorPresented {
@@ -120,11 +132,16 @@ struct ContentView: View {
                 }
             }
             .watch(value: colorScheme) { newValue in
-                FileCoverCacheCoordinator.shared.scheduleLibraryPrewarm(colorScheme: newValue)
+                FileCoverCacheCoordinator.shared.scheduleRecentCoverPrewarm(colorScheme: newValue)
             }
             .watch(value: lockedContentState.filePreviewLockStateRevision) { _ in
                 FileCoverCacheCoordinator.shared.refreshLibraryCoversForLockStateChange(
                     colorScheme: colorScheme
+                )
+            }
+            .task(id: connectedCloudStorageLocationIDs) {
+                await fileState.reconcileCloudStorageLocations(
+                    connectedCloudStorageLocationIDs
                 )
             }
             // Pre-select the chat conversation tied to the active file
@@ -166,10 +183,14 @@ struct ContentView: View {
                         context: viewContext
                     )
                     LibraryItemPreviewCoordinator.shared.register(fileState: fileState)
-                    FileCoverCacheCoordinator.shared.scheduleLibraryPrewarm(colorScheme: colorScheme)
+                    FileCoverCacheCoordinator.shared.scheduleRecentCoverPrewarm(colorScheme: colorScheme)
                 }
                 await prepare()
             }
+    }
+
+    private var connectedCloudStorageLocationIDs: Set<UUID> {
+        Set(cloudStorageConnections.locations.map(\.id))
     }
     
     @ViewBuilder

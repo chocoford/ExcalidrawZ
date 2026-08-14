@@ -16,6 +16,11 @@ enum FileHomeItemStyle {
     case file
 }
 
+enum FileHomeItemSubtitle {
+    case modifiedAt
+    case location
+}
+
 extension Notification.Name {
     static let filePreviewShouldRefresh = Notification.Name("FilePreviewShouldRefresh")
 }
@@ -55,27 +60,32 @@ struct FileHomeItemView: View {
     var filename: String { file.name ?? String(localizable: .generalUntitled) }
     var updatedAt: Date? { file.updatedAt }
     var customLabel: AnyView? = nil
+    var subtitle: FileHomeItemSubtitle
 
     init(
         file: FileState.ActiveFile,
         selectionSiblings: [FileState.ActiveFile]? = nil,
-        canMultiSelect: Bool = true
+        canMultiSelect: Bool = true,
+        subtitle: FileHomeItemSubtitle = .modifiedAt
     ) {
         self.file = file
         self.selectionSiblings = selectionSiblings
         self.canMultiSelect = canMultiSelect
+        self.subtitle = subtitle
     }
 
     init<Label: View>(
         file: FileState.ActiveFile,
         selectionSiblings: [FileState.ActiveFile]? = nil,
         canMultiSelect: Bool = true,
+        subtitle: FileHomeItemSubtitle = .modifiedAt,
         @ViewBuilder customLabel: () -> Label
     ) {
         self.init(
             file: file,
             selectionSiblings: selectionSiblings,
-            canMultiSelect: canMultiSelect
+            canMultiSelect: canMultiSelect,
+            subtitle: subtitle
         )
         self.customLabel = AnyView(customLabel())
     }
@@ -103,6 +113,7 @@ struct FileHomeItemView: View {
             FileHomeItemContentView(
                 style: config.style,
                 file: file,
+                subtitle: subtitle,
                 customLabel: customLabel
             )
 #if os(iOS)
@@ -237,6 +248,7 @@ private struct FileHomeItemContentView: View {
 
     var style: FileHomeItemStyle
     var file: FileState.ActiveFile
+    var subtitle: FileHomeItemSubtitle
     var customLabel: AnyView?
     
     var fileID: String { file.id }
@@ -247,10 +259,12 @@ private struct FileHomeItemContentView: View {
     init(
         style: FileHomeItemStyle,
         file: FileState.ActiveFile,
+        subtitle: FileHomeItemSubtitle,
         customLabel: AnyView?
     ) {
         self.style = style
         self.file = file
+        self.subtitle = subtitle
         self.customLabel = customLabel
         self._localUpdatedAt = State(initialValue: updatedAt)
     }
@@ -287,6 +301,9 @@ private struct FileHomeItemContentView: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius))
             }
+        }
+        .task(id: fileID) {
+            await refreshLocalModificationDate()
         }
     }
     
@@ -352,9 +369,13 @@ private struct FileHomeItemContentView: View {
                             }
                             
                             if style == .file {
-                                FileICloudStatusIndicator(file: file)
-                                    .controlSize(.mini)
-                                    .foregroundStyle(.secondary)
+                                Color.clear
+                                    .frame(width: 16, height: 0)
+                                    .overlay {
+                                        FileICloudStatusIndicator(file: file)
+                                            .controlSize(.mini)
+                                            .foregroundStyle(.secondary)
+                                    }
                             }
 
                             if lockedContentState.previewLockState(for: file) == .temporarilyUnlocked {
@@ -372,11 +393,19 @@ private struct FileHomeItemContentView: View {
                         )
                         
                         HStack {
-                            Text(localUpdatedAt?.formatted() ?? String(localizable: .generalFileNeverModified))
-                                .lineLimit(1)
-                                .watch(value: updatedAt) { newValue in
-                                    localUpdatedAt = newValue
-                                }
+                            switch subtitle {
+                                case .modifiedAt:
+                                    Text(localUpdatedAt?.formatted() ?? String(localizable: .generalFileNeverModified))
+                                        .lineLimit(1)
+                                        .watch(value: updatedAt) { newValue in
+                                            if case .localFile = file { return }
+                                            localUpdatedAt = newValue
+                                        }
+                                case .location:
+                                    Text(file.displayLocation)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                            }
                             
                             Spacer(minLength: 0)
                             
@@ -408,6 +437,8 @@ private struct FileHomeItemContentView: View {
                                     Image(systemSymbol: .clock)
                                 case .collaborationFile:
                                     Image(systemSymbol: .person3Fill)
+                                case .cloudStorageFile(let reference):
+                                    CloudStorageDocumentSyncIndicator(reference: reference)
                             }
                         }
                     }
@@ -423,6 +454,11 @@ private struct FileHomeItemContentView: View {
 //                Rectangle().fill(.ultraThinMaterial)
 //            }
 //        }
+    }
+
+    private func refreshLocalModificationDate() async {
+        guard case .localFile(let url) = file else { return }
+        localUpdatedAt = try? await LocalFolder.modificationDate(forLocalFileAt: url)
     }
 
     @ViewBuilder
@@ -458,6 +494,59 @@ private struct FileHomeItemContentView: View {
     }
 }
 
+@MainActor
+private extension FileState.ActiveFile {
+    var displayLocation: String {
+        switch self {
+            case .file(let file):
+                let groupNames = Self.groupPath(for: file.group)
+                return groupNames.isEmpty ? "/" : groupNames.joined(separator: " / ")
+            case .localFile(let url), .temporaryFile(let url):
+                return Self.abbreviatedPath(url.deletingLastPathComponent())
+            case .collaborationFile:
+                return String(localizable: .collaborationHomeTitle)
+            case .cloudStorageFile(let reference):
+                let documentStore = CloudStorageDocumentStore.shared
+                guard let parentFolder = documentStore.parentFolder(for: reference) else {
+                    return CloudStorageConnectionStore.shared.locations.first(where: {
+                        $0.id == reference.locationID
+                    })?.displayName ?? String(localizable: .generalUnknown)
+                }
+                let folderNames = documentStore.folderPath(for: parentFolder).map(\.name)
+                return folderNames.joined(separator: " / ")
+        }
+    }
+
+    static func groupPath(for group: Group?) -> [String] {
+        var names: [String] = []
+        var currentGroup = group
+        var visited = Set<NSManagedObjectID>()
+
+        while let group = currentGroup, !visited.contains(group.objectID) {
+            visited.insert(group.objectID)
+            if let name = group.name, !name.isEmpty {
+                names.append(name)
+            }
+            currentGroup = group.parent
+        }
+        return names.reversed()
+    }
+
+    static func abbreviatedPath(_ directoryURL: URL) -> String {
+        let path = directoryURL.path(percentEncoded: false)
+#if os(macOS)
+        let homePath = FileManager.default.homeDirectoryForCurrentUser.path(percentEncoded: false)
+        if path == homePath {
+            return "~"
+        }
+        if path.hasPrefix(homePath + "/") {
+            return "~" + path.dropFirst(homePath.count)
+        }
+#endif
+        return path
+    }
+}
+
 private struct FileHomeItemContextMenuModifier: ViewModifier {
     var file: FileState.ActiveFile
     var isMissing: Bool
@@ -478,6 +567,8 @@ private struct FileHomeItemContextMenuModifier: ViewModifier {
                     // Missing CollaborationFile no matter
                     content
                         .modifier(CollaborationFileContextMenuModifier(file: room))
+                case .cloudStorageFile:
+                    content
             }
         } else {
             switch file {
@@ -493,6 +584,9 @@ private struct FileHomeItemContextMenuModifier: ViewModifier {
                 case .collaborationFile(let collaborationFile):
                     content
                         .modifier(CollaborationFileContextMenuModifier(file: collaborationFile))
+                case .cloudStorageFile(let reference):
+                    content
+                        .modifier(CloudStorageFileActionsModifier(reference: reference))
             }
         }
     }
@@ -515,6 +609,8 @@ private struct FileHomeItemDragModifier: ViewModifier {
             case .collaborationFile(let collaborationFile):
                 content
                     .modifier(FileRowDragModifier(file: collaborationFile))
+            case .cloudStorageFile:
+                content
                 
         }
     }

@@ -128,3 +128,6 @@ scripts/
 Resources/scripts/
 Resources/scripts/**
 /ASO
+
+# Maintained as a separate private repository.
+/worker/

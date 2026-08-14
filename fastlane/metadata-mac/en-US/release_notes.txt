@@ -1,6 +1,5 @@
-Introducing Screen Annotation and Canvas Presentations.
+Introducing Linked Cloud Storage.
 
-- Draw over any Mac screen with Excalidraw tools, using a live or frozen background and a movable toolbar across displays.
-- Save the full screen or a selected region as editable Excalidraw content, PNG/JPEG, or to the clipboard, with quality presets and recent file destinations.
-- Turn canvas frames into slides, reorder them, choose fade, slide, or zoom transitions, and present full screen.
-- Improved background saving, annotation style continuity, and presentation reliability.
+- Connect OneDrive, Dropbox, Google Drive, or WebDAV (Beta) and browse drawings alongside local folders.
+- Keep editing offline with a local cache; changes sync automatically when connection returns.
+- Follow per-file sync status and compare local and remote previews when resolving conflicts.

@@ -25,7 +25,7 @@ struct LocalFolderMenuProvider: View {
 
     init<Content: View>(
         folder: LocalFolder,
-        content: @escaping (Triggers) -> Content
+        @ViewBuilder content: @escaping (Triggers) -> Content
     ) {
         self.folder = folder
         self.content = { AnyView(content($0)) }
@@ -147,13 +147,24 @@ struct LocalFolderContextMenuModifier: ViewModifier {
 
     var folder: LocalFolder
     var canExpand: Bool
+    var showsSwipeActions: Bool
+
+    init(
+        folder: LocalFolder,
+        canExpand: Bool,
+        showsSwipeActions: Bool = false
+    ) {
+        self.folder = folder
+        self.canExpand = canExpand
+        self.showsSwipeActions = showsSwipeActions
+    }
     
     @State private var isCreateSubfolderPresented = false
     @State private var newSubfolderName: String = String(localizable: .generalNewFolderName)
     
     func body(content: Content) -> some View {
         LocalFolderMenuProvider(folder: folder) { triggers in
-            content
+            let menuContent = content
                 .contextMenu {
                     LocalFolderMenuItems(
                         folder: folder,
@@ -165,6 +176,23 @@ struct LocalFolderContextMenuModifier: ViewModifier {
                     }
                     .labelStyle(.titleAndIcon)
                 }
+
+            if showsSwipeActions, folder.parent == nil {
+                menuContent
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button {
+                            triggers.onToggleRemoveObservation()
+                        } label: {
+                            Label(
+                                .localizable(.sidebarLocalFolderRowContextMenuRemoveObservation),
+                                systemSymbol: .trash
+                            )
+                        }
+                        .tint(.red)
+                    }
+            } else {
+                menuContent
+            }
         }
     }
 

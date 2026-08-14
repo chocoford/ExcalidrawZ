@@ -8,12 +8,31 @@
 import SwiftUI
 
 #if os(iOS)
-/// A View only for showing syncing status
+/// Shows the active document's provider-specific synchronization status.
+@MainActor
 struct FileICloudSyncStatusIndicator: View {
     var file: FileState.ActiveFile
     
     @State private var fileStatus: FileStatus? = nil
+
+    @ViewBuilder
     var body: some View {
+        switch file {
+            case .cloudStorageFile(let reference):
+                CloudStorageDocumentSyncIndicator(
+                    reference: reference,
+                    presentation: .toolbar
+                )
+
+            default:
+                iCloudStatusContent
+                    .bindFileStatus(for: file, status: $fileStatus)
+                    .symbolRenderingMode(.multicolor)
+                    .animation(.smooth, value: fileStatus?.iCloudStatus)
+        }
+    }
+
+    private var iCloudStatusContent: some View {
         ZStack {
             if #available(macOS 26.0, iOS 26.0, *) {
                 ZStack {
@@ -39,9 +58,6 @@ struct FileICloudSyncStatusIndicator: View {
                 }
             }
         }
-        .bindFileStatus(for: file, status: $fileStatus)
-        .symbolRenderingMode(.multicolor)
-        .animation(.smooth, value: fileStatus?.iCloudStatus)
     }
 }
 #endif

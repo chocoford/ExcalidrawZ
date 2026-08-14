@@ -1,5 +1,6 @@
-Apresentamos as Apresentações em Canvas.
+Uma grande atualização para iPhone e iPad.
 
-- Transforme quadros do canvas em slides e apresente diretamente do seu desenho.
-- Arraste para reorganizar os slides e escolha transições de fade, deslizamento ou zoom com duração personalizada.
-- A ordem e as transições são salvas para cada desenho e atualizadas quando os quadros mudam.
+- Conecte OneDrive, Dropbox, Google Drive ou WebDAV (Beta), edite pelo cache local e resolva conflitos com prévias visuais.
+- Transforme quadros do Excalidraw em apresentações em tela cheia com slides reordenáveis e transições de fade, deslizamento ou zoom.
+- Navegue pela mídia dos desenhos em uma galeria responsiva e remova com segurança itens não usados ou mantidos apenas pelo histórico de arquivos.
+- Melhorias no acesso a pastas vinculadas e arquivos externos, abertura e troca de arquivos, ordem da barra de ferramentas e persistência de fontes personalizadas.

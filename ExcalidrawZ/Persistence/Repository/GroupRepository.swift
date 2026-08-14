@@ -93,7 +93,7 @@ actor GroupRepository {
             if type == .trash {
                 // Empty trash: get all trashed files
                 let fetchRequest = NSFetchRequest<File>(entityName: "File")
-                fetchRequest.predicate = NSPredicate(format: "inTrash == YES")
+                fetchRequest.predicate = File.trashedPredicate
                 fileIDs = try context.fetch(fetchRequest).map { $0.objectID }
             } else {
                 // Get files in this group and subgroups
@@ -110,35 +110,41 @@ actor GroupRepository {
         }
 
         if groupType == .trash {
-            // Empty trash: permanently delete all trashed files
-            for fileObjectID in fileObjectIDs {
-                try await PersistenceController.shared.fileRepository.delete(
-                    fileObjectID: fileObjectID,
-                    forcePermanently: true,
-                    save: true
-                )
-            }
+            // Delete every metadata record in one transaction. Storage files
+            // and other side effects are cleaned independently afterward, so
+            // one already-missing file cannot leave the rest of Trash intact.
+            logger.info("Emptying trash with \(fileObjectIDs.count) file(s)")
+            try await PersistenceController.shared.fileRepository.delete(
+                fileObjectIDs: fileObjectIDs,
+                forcePermanently: true,
+                save: true
+            )
         } else {
             // Move files to default group and mark as deleted
             guard let defaultGroupObjectID = try await getDefaultGroupObjectID() else {
                 throw AppError.fileError(.notFound)
             }
 
-            // Move files to default group and delete them
-            for fileObjectID in fileObjectIDs {
-                try await context.perform {
-                    guard let file = context.object(with: fileObjectID) as? File,
-                          let defaultGroup = context.object(with: defaultGroupObjectID) as? Group else {
-                        return
+            // Move the files in one transaction before the source group is
+            // deleted, then mark them as trashed in FileRepository's context.
+            try await context.perform {
+                guard let defaultGroup = context.object(with: defaultGroupObjectID) as? Group else {
+                    throw AppError.fileError(.notFound)
+                }
+                for fileObjectID in fileObjectIDs {
+                    guard let file = context.object(with: fileObjectID) as? File else {
+                        continue
                     }
                     file.group = defaultGroup
-                    try context.save()
                 }
+                try context.save()
+            }
 
+            if !fileObjectIDs.isEmpty {
                 try await PersistenceController.shared.fileRepository.delete(
-                    fileObjectID: fileObjectID,
+                    fileObjectIDs: fileObjectIDs,
                     forcePermanently: forcePermanently,
-                    save: false
+                    save: true
                 )
             }
 

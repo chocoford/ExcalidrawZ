@@ -88,6 +88,13 @@ struct LocalFoldersProvider<Content: View>: View {
     @MainActor
     private func refreshFoldersContent() throws {
         for i in 0..<folders.count {
+            if let change = try folders[i].refreshResolvedLocation(context: viewContext),
+               let folderUrlBeforeResignKey {
+                self.folderUrlBeforeResignKey = folderUrlBeforeResignKey.rebased(
+                    from: change.oldURL,
+                    to: change.newURL
+                ) ?? folderUrlBeforeResignKey
+            }
             try folders[i].refreshChildren(context: viewContext)
         }
     }

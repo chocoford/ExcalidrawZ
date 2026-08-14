@@ -1,5 +1,6 @@
-Presentamos las Presentaciones de lienzo.
+Una gran actualización para iPhone y iPad.
 
-- Convierte los marcos del lienzo en diapositivas y presenta directamente desde tu dibujo.
-- Arrastra para reordenar las diapositivas y elige transiciones de fundido, deslizamiento o zoom con una duración personalizada.
-- El orden y las transiciones se guardan para cada dibujo y se actualizan al cambiar los marcos.
+- Conecta OneDrive, Dropbox, Google Drive o WebDAV (Beta), edita desde la caché local y resuelve conflictos mediante vistas previas.
+- Convierte los marcos de Excalidraw en presentaciones a pantalla completa con diapositivas reordenables y transiciones de fundido, deslizamiento o zoom.
+- Explora los archivos multimedia del dibujo en una galería adaptable y elimina de forma segura los que no se usan o solo conserva el historial.
+- Mejoras en el acceso a carpetas vinculadas y archivos externos, la apertura y el cambio de archivos, el orden de la barra de herramientas y la persistencia de fuentes personalizadas.

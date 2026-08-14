@@ -6,28 +6,12 @@
 //
 
 import SwiftUI
-import CoreData
 import ChocofordUI
 
 #if os(iOS)
 @available(iOS 26.0, *)
 struct CompactRecentlyView: View {
-    @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var layoutState: LayoutState
-
-    @FetchRequest
-    private var files: FetchedResults<File>
-
-    init() {
-        // Fetch all files not in trash
-        self._files = FetchRequest<File>(
-            sortDescriptors: [
-                SortDescriptor(\.updatedAt, order: .reverse),
-                SortDescriptor(\.createdAt, order: .reverse)
-            ],
-            predicate: NSPredicate(format: "inTrash == false AND group != nil")
-        )
-    }
     
     @State private var editMode: EditMode = .inactive
     
@@ -56,18 +40,19 @@ struct CompactRecentlyView: View {
     @ViewBuilder
     private func content() -> some View {
         NavigationStack {
-            ScrollView {
-                let activeFiles = files.map { FileState.ActiveFile.file($0) }
-
-                LazyVGrid(columns: columns, spacing: 16) {
-                    ForEach(activeFiles) { file in
-                        FileHomeItemView(
-                            file: file,
-                            selectionSiblings: activeFiles
-                        )
+            RecentlyFilesProvider { activeFiles in
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 16) {
+                        ForEach(activeFiles) { file in
+                            FileHomeItemView(
+                                file: file,
+                                selectionSiblings: activeFiles,
+                                subtitle: .location
+                            )
+                        }
                     }
+                    .padding(16)
                 }
-                .padding(16)
             }
             .navigationTitle(.localizable(.compactRecentlyTitle))
             .toolbar {

@@ -80,7 +80,7 @@ private struct IOSAutoSyncModifier: ViewModifier {
         switch activeFile {
             case .localFile(let url):
                 shouldSync = isICloudFile(url)
-            case .file, .collaborationFile, .temporaryFile, .none:
+            case .file, .collaborationFile, .temporaryFile, .cloudStorageFile, .none:
                 shouldSync = false
         }
         
@@ -126,7 +126,7 @@ private struct IOSAutoSyncModifier: ViewModifier {
                 case .localFile(let url):
                     latestData = try await FileSyncCoordinator.shared.openFile(url)
 
-                case .file, .collaborationFile, .temporaryFile:
+                case .file, .collaborationFile, .temporaryFile, .cloudStorageFile:
                     return
             }
         } catch {
@@ -165,7 +165,7 @@ private struct IOSAutoSyncModifier: ViewModifier {
                     )
                 }
 
-            case .file, .collaborationFile, .temporaryFile:
+            case .file, .collaborationFile, .temporaryFile, .cloudStorageFile:
                 return
         }
     }
@@ -181,7 +181,7 @@ private struct IOSAutoSyncModifier: ViewModifier {
                     FileStatusService.shared.markSyncCompleted(fileID: url.absoluteString)
                 }
 
-            case .file, .collaborationFile, .temporaryFile:
+            case .file, .collaborationFile, .temporaryFile, .cloudStorageFile:
                 return
         }
     }
