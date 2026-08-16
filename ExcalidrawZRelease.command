@@ -396,8 +396,8 @@ sparkle_menu() {
   local choice
 
   choice="$(select_option "Sparkle" \
-    "prepare|Prepare publish files|读取 archives-new 的最终 DMG，生成带 Sparkle 更新签名的 appcast 和本地化 release notes。" \
-    "verify|Prepare and verify GitHub asset|生成发布文件，并确认对应 GitHub Release DMG 已可下载。" \
+    "prepare|Prepare publish files|生成 Sparkle 发布文件，并同步更新 Landing Page 的公开版本与 DMG 链接。" \
+    "verify|Prepare and verify GitHub asset|生成发布文件、更新 Landing Page，并确认对应 GitHub Release DMG 已可下载。" \
     "notes|Generate release notes only|只从 macOS metadata 生成 HTML，并更新已有 appcast item。" \
     "back|Back")"
 
