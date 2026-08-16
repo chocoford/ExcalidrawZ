@@ -1,1 +1,0 @@
-schizzo,diagramma di flusso,mappa mentale,canvas,note,disegno,diagrammi,wireframe,Mermaid,Excalidraw

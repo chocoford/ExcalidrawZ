@@ -1,5 +1,0 @@
-Introducing Linked Cloud Storage.
-
-- Connect OneDrive, Dropbox, Google Drive, or WebDAV (Beta) and browse drawings alongside local folders.
-- Keep editing offline with a local cache; changes sync automatically when connection returns.
-- Follow per-file sync status and compare local and remote previews when resolving conflicts.

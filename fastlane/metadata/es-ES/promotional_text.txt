@@ -1,1 +1,0 @@
-Un cliente nativo de Excalidraw para Mac, iPad y iPhone, pensado para pizarras, diagramas, bocetos y notas visuales con estilo dibujado a mano.

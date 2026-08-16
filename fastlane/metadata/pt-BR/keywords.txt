@@ -1,1 +1,0 @@
-rascunho,fluxograma,mapa mental,tela,notas,desenho,diagramas,wireframe,Mermaid,Excalidraw

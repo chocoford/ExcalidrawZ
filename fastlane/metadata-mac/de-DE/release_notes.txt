@@ -1,5 +1,0 @@
-Neu: Verknüpfter Cloud-Speicher.
-
-- Verbinde OneDrive, Dropbox, Google Drive oder WebDAV (Beta) und durchsuche Zeichnungen zusammen mit lokalen Ordnern.
-- Arbeite dank lokalem Cache offline weiter; Änderungen werden nach der Wiederverbindung automatisch synchronisiert.
-- Verfolge den Synchronisierungsstatus pro Datei und vergleiche lokale und entfernte Vorschauen beim Lösen von Konflikten.
