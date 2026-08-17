@@ -12,6 +12,7 @@ fi
 
 PBX_PATH="ExcalidrawZ.xcodeproj/project.pbxproj"
 RELEASE_VERSION=""
+RELEASE_TAG=""
 PREVIEW_DEVICE=""
 PREVIEW_LOCALES=""
 UPLOAD_PROXY_PORT=""
@@ -201,6 +202,25 @@ read_release_version() {
   RELEASE_VERSION="$version"
 }
 
+read_release_tag() {
+  local default_tag="v$RELEASE_VERSION"
+  local tag
+
+  read "?GitHub Release tag [$default_tag]: " tag
+  if [[ -z "$tag" ]]; then
+    tag="$default_tag"
+  elif [[ "$tag" != v* ]]; then
+    tag="v$tag"
+  fi
+
+  if [[ ! "$tag" =~ '^v[A-Za-z0-9][A-Za-z0-9._-]*$' ]]; then
+    echo "GitHub Release tag 格式不正确，需要类似 v2.4.1 或 v2.4.1A"
+    return 1
+  fi
+
+  RELEASE_TAG="$tag"
+}
+
 read_upload_proxy_port() {
   local port
 
@@ -376,7 +396,12 @@ prepare_sparkle_release() {
   local -a args
 
   read_release_version || return 1
-  args=(mac prepare_sparkle_release "version:$RELEASE_VERSION")
+  read_release_tag || return 1
+  args=(
+    mac prepare_sparkle_release
+    "version:$RELEASE_VERSION"
+    "release_tag:$RELEASE_TAG"
+  )
   if [[ "$verify_asset" == "true" ]]; then
     args+=("verify_asset:true")
   fi
