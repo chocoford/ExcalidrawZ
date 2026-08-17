@@ -46,6 +46,13 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     DispatchQueue.main.async {
                         self.isDocumentLoaded = true
                     }
+                    Task { @MainActor in
+                        do {
+                            try await self.setNativeEyeDropperEnabled(true)
+                        } catch {
+                            self.logger.warning("Failed to enable native eye dropper: \(error)")
+                        }
+                    }
                     logger.debug("onload")
                 case .legacyNoop:
                     break
@@ -176,6 +183,11 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                 case .requestEditMathImage(let message):
                     DispatchQueue.main.async {
                         self.requestMathImageEdit(message.data)
+                    }
+
+                case .requestNativeEyeDropper(let message):
+                    Task { @MainActor in
+                        await self.nativeEyeDropper.request(message.data)
                     }
 
                 case .currentFileSaveStreamStarted(let message):
@@ -560,6 +572,9 @@ extension ExcalidrawCore {
         // Math
         case requestEditMathImage
 
+        // Native eye dropper
+        case requestNativeEyeDropper
+
         // Current file save stream
         case currentFileSaveStreamStarted
         case currentFileSaveStreamChunk
@@ -609,6 +624,9 @@ extension ExcalidrawCore {
 
         // Math
         case requestEditMathImage(RequestEditMathImageMessage)
+
+        // Native eye dropper
+        case requestNativeEyeDropper(RequestNativeEyeDropperMessage)
 
         // Current file save stream
         case currentFileSaveStreamStarted(CurrentFileSaveStreamStartedMessage)
@@ -713,6 +731,10 @@ extension ExcalidrawCore {
                 case .requestEditMathImage:
                     self = .requestEditMathImage(try RequestEditMathImageMessage(from: decoder))
 
+                // Native eye dropper
+                case .requestNativeEyeDropper:
+                    self = .requestNativeEyeDropper(try RequestNativeEyeDropperMessage(from: decoder))
+
                 // Current file save stream
                 case .currentFileSaveStreamStarted:
                     self = .currentFileSaveStreamStarted(try CurrentFileSaveStreamStartedMessage(from: decoder))
@@ -746,6 +768,11 @@ extension ExcalidrawCore {
     struct AICameraSessionMessage: AnyExcalidrawZMessage {
         var event: String
         var data: AICameraSessionInfo
+    }
+
+    struct RequestNativeEyeDropperMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: NativeEyeDropperRequest
     }
 
     struct CurrentFileSaveStreamStartedMessage: AnyExcalidrawZMessage {
