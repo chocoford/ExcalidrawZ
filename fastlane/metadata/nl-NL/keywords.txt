@@ -1,1 +1,0 @@
-schets,stroomdiagram,mindmap,canvas,notities,tekenen,diagram,wireframe,Mermaid,Excalidraw

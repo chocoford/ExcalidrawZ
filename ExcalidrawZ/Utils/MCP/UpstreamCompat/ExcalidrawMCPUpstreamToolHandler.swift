@@ -39,7 +39,7 @@ struct ExcalidrawMCPUpstreamToolHandler {
     ) async throws -> ExcalidrawMCPToolResult {
         switch name {
             case ExcalidrawMCPUpstreamContract.ToolName.readMe:
-                return ExcalidrawMCPToolResult(text: ExcalidrawMCPUpstreamRecall.cheatSheet)
+                return ExcalidrawMCPToolResult(text: ExcalidrawMCPBasicReadMeStore.currentReadMe)
             case ExcalidrawMCPUpstreamContract.ToolName.createView:
                 return try await createView(arguments: arguments)
             case ExcalidrawMCPUpstreamContract.ToolName.saveCheckpoint:

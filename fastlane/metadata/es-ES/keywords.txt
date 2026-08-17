@@ -1,1 +1,0 @@
-boceto,diagrama de flujo,mapa mental,lienzo,notas,dibujo,diagramas,wireframe,Mermaid,Excalidraw

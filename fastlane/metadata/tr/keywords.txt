@@ -1,1 +1,0 @@
-eskiz,akış şeması,zihin haritası,tuval,notlar,çizim,diyagram,wireframe,Mermaid,Excalidraw

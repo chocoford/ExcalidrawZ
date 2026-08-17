@@ -1,5 +1,0 @@
-Arriva l’archiviazione cloud collegata.
-
-- Connetti OneDrive, Dropbox, Google Drive o WebDAV (Beta) e sfoglia i disegni insieme alle cartelle locali.
-- Continua a modificare offline grazie alla cache locale; le modifiche si sincronizzano automaticamente quando torni online.
-- Controlla lo stato di ogni file e confronta le anteprime locali e remote durante la risoluzione dei conflitti.

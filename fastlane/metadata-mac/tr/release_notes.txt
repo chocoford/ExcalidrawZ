@@ -1,5 +1,0 @@
-Bağlı Bulut Depolama artık burada.
-
-- OneDrive, Dropbox, Google Drive veya WebDAV (Beta) bağlayın ve çizimlerinize yerel klasörlerle birlikte göz atın.
-- Yerel önbellekle çevrimdışı düzenlemeye devam edin; bağlantı geri geldiğinde değişiklikler otomatik eşitlenir.
-- Dosya başına eşitleme durumunu izleyin ve çakışmaları çözerken yerel ve uzak önizlemeleri karşılaştırın.

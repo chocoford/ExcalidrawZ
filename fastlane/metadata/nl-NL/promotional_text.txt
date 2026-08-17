@@ -1,1 +1,0 @@
-Een native Excalidraw-client voor Mac, iPad en iPhone, gemaakt voor handgetekende whiteboards, diagrammen, schetsen en visuele notities.

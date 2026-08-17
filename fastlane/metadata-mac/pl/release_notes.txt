@@ -1,5 +1,0 @@
-Nowość: Połączona pamięć w chmurze.
-
-- Połącz OneDrive, Dropbox, Google Drive lub WebDAV (Beta) i przeglądaj rysunki razem z folderami lokalnymi.
-- Edytuj offline dzięki lokalnej pamięci podręcznej; zmiany zsynchronizują się automatycznie po odzyskaniu połączenia.
-- Śledź stan synchronizacji każdego pliku i porównuj podglądy lokalne oraz zdalne podczas rozwiązywania konfliktów.

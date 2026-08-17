@@ -1,6 +1,0 @@
-Uma grande atualização para iPhone e iPad.
-
-- Conecte OneDrive, Dropbox, Google Drive ou WebDAV (Beta), edite pelo cache local e resolva conflitos com prévias visuais.
-- Transforme quadros do Excalidraw em apresentações em tela cheia com slides reordenáveis e transições de fade, deslizamento ou zoom.
-- Navegue pela mídia dos desenhos em uma galeria responsiva e remova com segurança itens não usados ou mantidos apenas pelo histórico de arquivos.
-- Melhorias no acesso a pastas vinculadas e arquivos externos, abertura e troca de arquivos, ordem da barra de ferramentas e persistência de fontes personalizadas.

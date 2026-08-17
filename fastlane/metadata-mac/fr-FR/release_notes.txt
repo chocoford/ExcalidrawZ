@@ -1,5 +1,0 @@
-Découvrez le stockage cloud lié.
-
-- Connectez OneDrive, Dropbox, Google Drive ou WebDAV (bêta) et parcourez vos dessins avec vos dossiers locaux.
-- Continuez à modifier hors ligne grâce au cache local ; les changements se synchronisent automatiquement à la reconnexion.
-- Suivez l’état de chaque fichier et comparez les aperçus locaux et distants pour résoudre les conflits.

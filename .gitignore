@@ -70,23 +70,8 @@ Carthage/Build/
 Dependencies/
 .accio/
 
-# fastlane
-#
-# It is recommended to not store the screenshots in the git repo.
-# Instead, use fastlane to re-generate the screenshots whenever they are needed.
-# For more information about the recommended setup visit:
-# https://docs.fastlane.tools/best-practices/source-control/#source-control
-
-fastlane/report.xml
-fastlane/Preview.html
-fastlane/screenshots/**/*.png
-fastlane/previews/assets/**/*.png
-fastlane/previews/output/**/*.png
-fastlane/test_output
-fastlane/.generated/
-fastlane/.env
-fastlane/.env.local
-fastlane/AuthKey_*.p8
+# App Store release automation and metadata are maintained locally.
+/fastlane/
 *.p8
 *.p12
 *.cer
@@ -123,8 +108,6 @@ ExcalidrawZ/SidebarTrailing/AIChat/**/*.json
 ExcalidrawZ/SidebarTrailing/AIChat/Prompts/
 ExcalidrawZ/Utils/MCP/Optimized/Resources/
 scripts/
-!fastlane/scripts/
-!fastlane/scripts/**
 Resources/scripts/
 Resources/scripts/**
 /ASO

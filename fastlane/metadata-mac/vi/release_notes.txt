@@ -1,5 +1,0 @@
-Giới thiệu Lưu trữ đám mây được liên kết.
-
-- Kết nối OneDrive, Dropbox, Google Drive hoặc WebDAV (Beta) và duyệt bản vẽ cùng với thư mục cục bộ.
-- Tiếp tục chỉnh sửa ngoại tuyến bằng bộ nhớ đệm cục bộ; thay đổi tự động đồng bộ khi kết nối trở lại.
-- Theo dõi trạng thái từng tệp và so sánh bản xem trước cục bộ với từ xa khi xử lý xung đột.

@@ -1,3 +1,15 @@
+## 2.4.1
+
+#### Features
+
+- Added native system color picking for Excalidraw's eyedropper on Mac, iPad, and iPhone.
+- Added a Basic MCP ReadMe editor in AI Settings, including an option to restore the upstream default.
+
+#### Bug fixed
+
+- Fixed connected cloud storage not refreshing reliably after app launch.
+- Fixed WebDAV occasionally missing from the Add Storage menu after launch.
+
 ## 2.4.0
 
 #### Features

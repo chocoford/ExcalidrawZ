@@ -1,1 +1,0 @@
-Natywny klient Excalidraw na Maca, iPada i iPhone'a do ręcznie rysowanych tablic, diagramów, szkiców i notatek wizualnych.

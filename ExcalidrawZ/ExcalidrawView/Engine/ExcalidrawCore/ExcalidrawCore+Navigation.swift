@@ -94,6 +94,9 @@ extension ExcalidrawCore: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         logger.debug("didStartProvisionalNavigation")
         self.parent?.loadingState = .loading
+        Task { @MainActor in
+            self.nativeEyeDropper.invalidate()
+        }
         DispatchQueue.main.async {
             self.isNavigating = true
             self.isDocumentLoaded = false

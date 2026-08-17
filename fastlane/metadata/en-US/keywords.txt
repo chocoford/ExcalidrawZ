@@ -1,1 +1,0 @@
-sketch,flowchart,mindmap,canvas,notes,drawing,diagramming,wireframe,excalidraw,mermaid,hand-drawn

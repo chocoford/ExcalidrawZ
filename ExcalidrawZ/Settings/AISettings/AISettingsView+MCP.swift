@@ -70,6 +70,10 @@ extension AISettingsView {
 
             mcpServiceModeRow
 
+            if displayedMCPServiceMode == .basic {
+                mcpBasicReadMeRow
+            }
+
             if usesCompactSettingsLayout {
                 compactMCPStatusRow
             } else {
@@ -151,6 +155,84 @@ extension AISettingsView {
         .mcpServiceModePickerShape()
         .fixedSize(horizontal: true, vertical: true)
         .id(mcpServiceModePickerID)
+    }
+
+    @ViewBuilder
+    var mcpBasicReadMeRow: some View {
+        HStack(spacing: 16) {
+            Label {
+                Text(verbatim: "ReadMe")
+            } icon: {
+                Image(systemSymbol: .docText)
+            }
+
+            Spacer(minLength: 16)
+
+            Button {
+                mcpBasicReadMeDraft = ExcalidrawMCPBasicReadMeStore.currentReadMe
+                isPresentingMCPBasicReadMeEditor = true
+            } label: {
+                Label(.localizable(.toolbarEdit), systemSymbol: .pencil)
+            }
+        }
+    }
+
+    @ViewBuilder
+    var mcpBasicReadMeEditorSheet: some View {
+        VStack(spacing: 0) {
+            mcpBasicReadMeEditorHeader
+
+            TextEditor(text: $mcpBasicReadMeDraft)
+                .font(.system(.body, design: .monospaced))
+                .scrollContentBackground(.hidden)
+                .background {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.secondary.opacity(0.08))
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.10))
+                }
+                .padding(.horizontal, 18)
+                .padding(.bottom, 18)
+        }
+        .mcpBasicReadMeEditorSheetFrame()
+    }
+
+    @ViewBuilder
+    var mcpBasicReadMeEditorHeader: some View {
+        ZStack {
+            Text(verbatim: "\(mcpServiceModeTitle(for: .basic)) MCP ReadMe")
+                .font(.headline)
+                .lineLimit(1)
+
+            HStack(spacing: 10) {
+                mcpSheetCloseButton {
+                    isPresentingMCPBasicReadMeEditor = false
+                }
+
+                Spacer(minLength: 16)
+
+                Button {
+                    mcpBasicReadMeDraft = ExcalidrawMCPBasicReadMeStore.defaultReadMe
+                } label: {
+                    Label(.localizable(.settingsAIMCPReadMeRestoreDefault), systemSymbol: .arrowCounterclockwise)
+                }
+                .disabled(mcpBasicReadMeDraft == ExcalidrawMCPBasicReadMeStore.defaultReadMe)
+
+                Button {
+                    ExcalidrawMCPBasicReadMeStore.save(mcpBasicReadMeDraft)
+                    isPresentingMCPBasicReadMeEditor = false
+                } label: {
+                    Text(localizable: .generalButtonDone)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(mcpBasicReadMeDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
     }
 
     @ViewBuilder
@@ -538,7 +620,10 @@ extension AISettingsView {
         Binding(
             get: { displayedMCPServiceMode },
             set: { mode in
-                selectMCPServiceMode(mode)
+                Task { @MainActor in
+                    await Task.yield()
+                    selectMCPServiceMode(mode)
+                }
             }
         )
     }
@@ -969,6 +1054,15 @@ private extension View {
     func mcpConnectionGuideSheetFrame() -> some View {
 #if os(macOS)
         self.frame(minWidth: 520, idealWidth: 620, minHeight: 320, idealHeight: 420)
+#else
+        self
+#endif
+    }
+
+    @ViewBuilder
+    func mcpBasicReadMeEditorSheetFrame() -> some View {
+#if os(macOS)
+        self.frame(minWidth: 640, idealWidth: 760, minHeight: 480, idealHeight: 640)
 #else
         self
 #endif

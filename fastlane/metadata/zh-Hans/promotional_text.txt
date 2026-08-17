@@ -1,1 +1,0 @@
-在 Mac、iPad 和 iPhone 上使用原生 Excalidraw 画布，绘制手绘风格白板、流程图、架构图、草图笔记，并支持 iCloud 同步与导入导出。

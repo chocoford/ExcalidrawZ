@@ -36,6 +36,8 @@ struct AISettingsView: View {
     @State var didCopyAIAccountID: Bool = false
     @State var isPresentingMCPConnectionGuide: Bool = false
     @State var isPresentingMCPServiceModeHelp: Bool = false
+    @State var isPresentingMCPBasicReadMeEditor: Bool = false
+    @State var mcpBasicReadMeDraft: String = ""
     @State var selectedMCPConnectionGuideTab: MCPConnectionGuideTab = .claude
     @State var mcpServiceModePickerID = UUID()
     @State var isPresentingAIEnableConsent: Bool = false
@@ -127,6 +129,9 @@ struct AISettingsView: View {
         }
         .sheet(isPresented: $isPresentingMCPServiceModeHelp) {
             mcpServiceModeHelpSheet
+        }
+        .sheet(isPresented: $isPresentingMCPBasicReadMeEditor) {
+            mcpBasicReadMeEditorSheet
         }
         .watch(value: router.pendingAISettingsRoute) {
             consumePendingAISettingsRoute()
