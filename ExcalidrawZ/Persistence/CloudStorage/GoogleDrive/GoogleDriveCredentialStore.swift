@@ -13,8 +13,8 @@ struct GoogleDriveCredential: Codable, Sendable {
     let accessToken: String
     let refreshToken: String
     let expiresAt: Date
-    /// Nil identifies credentials created before ExcalidrawZ requested full
-    /// Drive access. Those credentials must be upgraded interactively.
+    /// Nil or a different Drive scope identifies credentials that must be
+    /// replaced interactively before they can be used by the current flow.
     let grantedScopes: Set<String>?
 
     var hasRequiredScope: Bool {

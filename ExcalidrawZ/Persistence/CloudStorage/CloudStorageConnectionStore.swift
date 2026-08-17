@@ -251,7 +251,20 @@ final class CloudStorageConnectionStore: ObservableObject {
             "Starting interactive cloud storage authorization provider=\(location.providerID.rawValue) location=\(location.displayName) id=\(location.id) accountID=\(location.accountID)"
         )
 #endif
-        let account = try await connect(to: location.providerID)
+        let provider = try await registry.provider(withID: location.providerID)
+        let accountHint = account(for: location)
+        let account: CloudStorageAccount
+        if provider.requiresLocationSelectionForReauthorization {
+            connectingProviderIDs.insert(location.providerID)
+            defer { connectingProviderIDs.remove(location.providerID) }
+            account = try await provider.reauthorizeAccess(
+                to: location,
+                accountHint: accountHint
+            )
+            storeConnectedAccount(account)
+        } else {
+            account = try await connect(to: location.providerID)
+        }
         guard account.id == location.accountID else {
             accessFailureLocationIDs.insert(location.id)
             publishAuthenticationRequirements()

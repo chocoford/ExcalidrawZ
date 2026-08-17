@@ -214,7 +214,6 @@ struct CloudStorageFolderFileHomeView: View {
 
             Spacer()
         }
-        .disabled(!documentStore.capabilities(for: folder).contains(.createChildren))
 #if os(iOS)
         .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
 #else

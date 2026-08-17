@@ -137993,6 +137993,52 @@
         }
       }
     },
+    "whatsNewCloudStorageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": { "stringUnit": { "state": "translated", "value": "اربط OneDrive وDropbox وخدمات WebDAV لتصفح ملفات Excalidraw وتحريرها والحفاظ على مزامنتها." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Verbinde OneDrive, Dropbox und WebDAV-Dienste, um Excalidraw-Dateien zu durchsuchen, zu bearbeiten und zu synchronisieren." } },
+        "en": { "stringUnit": { "state": "translated", "value": "Connect OneDrive, Dropbox, and WebDAV services to browse, edit, and keep your Excalidraw files in sync." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Conecta OneDrive, Dropbox y servicios WebDAV para explorar, editar y mantener sincronizados tus archivos de Excalidraw." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Connectez OneDrive, Dropbox et des services WebDAV pour parcourir, modifier et synchroniser vos fichiers Excalidraw." } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Excalidraw फ़ाइलें ब्राउज़, संपादित और सिंक रखने के लिए OneDrive, Dropbox और WebDAV सेवाएँ कनेक्ट करें।" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Connetti OneDrive, Dropbox e servizi WebDAV per sfogliare, modificare e sincronizzare i file Excalidraw." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "OneDrive、Dropbox、WebDAVサービスに接続し、Excalidrawファイルを参照、編集、同期できます。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "OneDrive, Dropbox 및 WebDAV 서비스를 연결하여 Excalidraw 파일을 탐색, 편집 및 동기화하세요." } },
+        "nl": { "stringUnit": { "state": "translated", "value": "Verbind OneDrive, Dropbox en WebDAV-diensten om Excalidraw-bestanden te bekijken, bewerken en synchroniseren." } },
+        "pl": { "stringUnit": { "state": "translated", "value": "Połącz OneDrive, Dropbox i usługi WebDAV, aby przeglądać, edytować i synchronizować pliki Excalidraw." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Conecte OneDrive, Dropbox e serviços WebDAV para navegar, editar e manter seus arquivos do Excalidraw sincronizados." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Подключайте OneDrive, Dropbox и сервисы WebDAV, чтобы просматривать, редактировать и синхронизировать файлы Excalidraw." } },
+        "th": { "stringUnit": { "state": "translated", "value": "เชื่อมต่อ OneDrive, Dropbox และบริการ WebDAV เพื่อเรียกดู แก้ไข และซิงค์ไฟล์ Excalidraw ของคุณ" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Excalidraw dosyalarınıza göz atmak, düzenlemek ve eşitlemek için OneDrive, Dropbox ve WebDAV hizmetlerini bağlayın." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Kết nối OneDrive, Dropbox và các dịch vụ WebDAV để duyệt, chỉnh sửa và đồng bộ tệp Excalidraw." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "连接 OneDrive、Dropbox 和 WebDAV 服务，浏览、编辑并同步你的 Excalidraw 文件。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連接 OneDrive、Dropbox 和 WebDAV 服務，瀏覽、編輯並同步你的 Excalidraw 檔案。" } }
+      }
+    },
+    "whatsNewCloudStorageTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": { "stringUnit": { "state": "translated", "value": "التخزين السحابي" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Cloud-Speicher" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Cloud Storage" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Almacenamiento en la nube" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Stockage cloud" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "क्लाउड स्टोरेज" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Archiviazione cloud" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "クラウドストレージ" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "클라우드 저장소" } },
+        "nl": { "stringUnit": { "state": "translated", "value": "Cloudopslag" } },
+        "pl": { "stringUnit": { "state": "translated", "value": "Pamięć w chmurze" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Armazenamento em nuvem" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Облачное хранилище" } },
+        "th": { "stringUnit": { "state": "translated", "value": "พื้นที่จัดเก็บบนคลาวด์" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Bulut Depolama" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Lưu trữ đám mây" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "云存储" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "雲端儲存空間" } }
+      }
+    },
     "whatsNewDropboxDescription": {
       "extractionState": "manual",
       "localizations": {
@@ -138037,6 +138083,52 @@
         "vi": { "stringUnit": { "state": "translated", "value": "Liên kết thư mục Google Drive để quản lý tệp Excalidraw trên các thiết bị." } },
         "zh-Hans": { "stringUnit": { "state": "translated", "value": "关联 Google Drive 文件夹，在不同设备间管理 Excalidraw 文件。" } },
         "zh-Hant": { "stringUnit": { "state": "translated", "value": "連結 Google Drive 資料夾，在不同裝置間管理 Excalidraw 檔案。" } }
+      }
+    },
+    "whatsNewNativeColorPickerDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": { "stringUnit": { "state": "translated", "value": "اختر الألوان من أي مكان على الشاشة باستخدام أداة القطّارة الأصلية على Mac وiPad وiPhone." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Wähle Farben mit der systemeigenen Pipette direkt vom Bildschirm auf Mac, iPad und iPhone aus." } },
+        "en": { "stringUnit": { "state": "translated", "value": "Pick colors from anywhere on screen with the native eyedropper on Mac, iPad, and iPhone." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Elige colores de cualquier parte de la pantalla con el cuentagotas nativo en Mac, iPad y iPhone." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Prélevez des couleurs n'importe où à l'écran avec la pipette native sur Mac, iPad et iPhone." } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Mac, iPad और iPhone पर नेटिव आईड्रॉपर से स्क्रीन पर कहीं से भी रंग चुनें।" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Scegli i colori da qualsiasi punto dello schermo con il contagocce nativo su Mac, iPad e iPhone." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Mac、iPad、iPhoneのネイティブスポイトで、画面上のどこからでも色を選択できます。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Mac, iPad 및 iPhone의 기본 스포이트로 화면 어디에서나 색상을 선택하세요." } },
+        "nl": { "stringUnit": { "state": "translated", "value": "Kies kleuren overal op het scherm met de systeemeigen pipet op Mac, iPad en iPhone." } },
+        "pl": { "stringUnit": { "state": "translated", "value": "Pobieraj kolory z dowolnego miejsca na ekranie za pomocą systemowej pipety na Macu, iPadzie i iPhonie." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Escolha cores em qualquer lugar da tela com o conta-gotas nativo no Mac, iPad e iPhone." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Выбирайте цвета в любой точке экрана с помощью системной пипетки на Mac, iPad и iPhone." } },
+        "th": { "stringUnit": { "state": "translated", "value": "เลือกสีจากที่ใดก็ได้บนหน้าจอด้วยเครื่องมือดูดสีของระบบบน Mac, iPad และ iPhone" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Mac, iPad ve iPhone'daki yerel damlalıkla ekranın herhangi bir yerinden renk seçin." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Chọn màu ở bất kỳ đâu trên màn hình bằng công cụ hút màu hệ thống trên Mac, iPad và iPhone." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "使用系统原生吸管，直接从 Mac、iPad 和 iPhone 屏幕的任意位置选取颜色。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "使用系統原生滴管，直接從 Mac、iPad 和 iPhone 螢幕的任意位置選取顏色。" } }
+      }
+    },
+    "whatsNewNativeColorPickerTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": { "stringUnit": { "state": "translated", "value": "منتقي الألوان الأصلي" } },
+        "de": { "stringUnit": { "state": "translated", "value": "System-Farbwähler" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Native Color Picker" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Selector de color nativo" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Sélecteur de couleurs natif" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "नेटिव रंग चयनकर्ता" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Selettore colore nativo" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ネイティブカラーピッカー" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "기본 색상 선택기" } },
+        "nl": { "stringUnit": { "state": "translated", "value": "Systeemkleurkiezer" } },
+        "pl": { "stringUnit": { "state": "translated", "value": "Systemowy próbnik kolorów" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Seletor de cores nativo" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Системная пипетка" } },
+        "th": { "stringUnit": { "state": "translated", "value": "ตัวเลือกสีของระบบ" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Yerel Renk Seçici" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Bộ chọn màu hệ thống" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "原生取色器" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "原生取色器" } }
       }
     },
     "whatsNewOneDriveDescription": {

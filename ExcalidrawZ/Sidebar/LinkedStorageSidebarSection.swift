@@ -269,7 +269,6 @@ struct LinkedStorageSidebarSection: View {
 
     private static let supportedProviderIDs: [CloudStorageProviderID] = [
         .microsoftOneDrive,
-        .googleDrive,
         .dropbox,
         .webDAV,
     ]

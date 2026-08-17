@@ -6,7 +6,7 @@
 import Foundation
 
 struct GoogleDriveConfiguration: Sendable {
-    static let driveScope = "https://www.googleapis.com/auth/drive"
+    static let driveScope = "https://www.googleapis.com/auth/drive.file"
 
     let clientID: String
     let redirectURI: URL

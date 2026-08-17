@@ -198,6 +198,19 @@ final class CloudStorageDocumentStore: ObservableObject {
         return item(for: folder)?.effectiveCapabilities ?? .writableFolder
     }
 
+    func canCreateFolder(
+        in folder: CloudStorageFolderReference,
+        connections: CloudStorageConnectionStore? = nil
+    ) -> Bool {
+        guard capabilities(for: folder).contains(.createChildren) else {
+            return false
+        }
+        let connections = connections ?? .shared
+        return connections.providerDescriptors.first(where: {
+            $0.id == folder.location.providerID
+        })?.capabilities.contains(.createFolder) == true
+    }
+
     func remoteURL(
         for reference: CloudStorageDocumentReference,
         connections: CloudStorageConnectionStore? = nil
@@ -1580,11 +1593,9 @@ final class CloudStorageDocumentStore: ObservableObject {
     ) async throws -> CloudStorageFolderReference {
         let connections = connections ?? .shared
         ensureLocationStateLoaded(folder.location.id)
-        try Self.require(
-            .createChildren,
-            in: capabilities(for: folder),
-            operation: .createFolder
-        )
+        guard canCreateFolder(in: folder, connections: connections) else {
+            throw CloudStorageError.unsupportedOperation(.createFolder)
+        }
         let item = Self.pendingItem(
             name: name,
             kind: .folder,

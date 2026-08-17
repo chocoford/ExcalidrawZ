@@ -14,7 +14,7 @@
 
 #### Features
 
-- Added Linked Cloud Storage for OneDrive, Dropbox, Google Drive, and WebDAV (Beta), available across Mac, iPad, and iPhone alongside local linked folders.
+- Added Linked Cloud Storage for OneDrive, Dropbox, and WebDAV (Beta), available across Mac, iPad, and iPhone alongside local linked folders.
 - Added cloud conflict resolution with visual previews, allowing you to compare local and remote versions before choosing which one to keep.
 
 #### Optimizations

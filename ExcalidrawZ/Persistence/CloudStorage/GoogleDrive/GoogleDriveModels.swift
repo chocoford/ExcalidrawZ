@@ -11,10 +11,10 @@ struct GoogleDriveFile: Decodable, Sendable {
     struct Capabilities: Decodable, Sendable {
         let canDownload: Bool?
         let canAddChildren: Bool?
-        let canEdit: Bool?
+        let canModifyContent: Bool?
         let canRename: Bool?
         let canMoveItemWithinDrive: Bool?
-        let canDelete: Bool?
+        let canTrash: Bool?
     }
 
     let id: String
@@ -63,10 +63,10 @@ struct GoogleDriveFile: Decodable, Sendable {
         var result: CloudStorageItemCapabilities = []
         if capabilities.canDownload == true { result.insert(.download) }
         if capabilities.canAddChildren == true { result.insert(.createChildren) }
-        if capabilities.canEdit == true { result.insert(.updateContent) }
+        if capabilities.canModifyContent == true { result.insert(.updateContent) }
         if capabilities.canRename == true { result.insert(.rename) }
         if capabilities.canMoveItemWithinDrive == true { result.insert(.move) }
-        if capabilities.canDelete == true { result.insert(.delete) }
+        if capabilities.canTrash == true { result.insert(.delete) }
         if isFolder { result.remove(.download) }
         return result
     }
