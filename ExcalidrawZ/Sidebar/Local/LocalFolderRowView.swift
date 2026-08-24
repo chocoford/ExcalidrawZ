@@ -62,14 +62,7 @@ struct LocalFolderRowView: View {
     @ViewBuilder
     private func content() -> some View {
         if folderStructStyle == .disclosureGroup {
-            HStack(spacing: 6) {
-                Image(systemSymbol: .folderFill)
-                    .foregroundStyle(Color(red: 12/255.0, green: 157/255.0, blue: 229/255.0))
-                Text(folder.url?.lastPathComponent ?? String(localizable: .generalUnknown))
-            }
-            .lineLimit(1)
-            .truncationMode(.middle)
-            .contentShape(Rectangle())
+            folderLabel
         } else {
             Button {
                 // Check if folder path exists using shared method
@@ -84,17 +77,23 @@ struct LocalFolderRowView: View {
                     showFolderNotFoundAlert = true
                 }
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemSymbol: .folderFill)
-                        .foregroundStyle(Color(red: 12/255.0, green: 157/255.0, blue: 229/255.0))
-                    Text(folder.url?.lastPathComponent ?? String(localizable: .generalUnknown))
-                }
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .contentShape(Rectangle())
+                folderLabel
             }
             .buttonStyle(.excalidrawSidebarRow(isSelected: isSelected, isMultiSelected: false))
         }
+    }
+
+    private var folderLabel: some View {
+        HStack(spacing: 6) {
+            Image(systemSymbol: .folderFill)
+                .foregroundStyle(Color(red: 12/255.0, green: 157/255.0, blue: 229/255.0))
+            Text(folder.url?.lastPathComponent ?? String(localizable: .generalUnknown))
+            Spacer(minLength: 0)
+            LocalFolderAvailabilityIndicator(folder: folder)
+        }
+        .lineLimit(1)
+        .truncationMode(.middle)
+        .contentShape(Rectangle())
     }
     
 }

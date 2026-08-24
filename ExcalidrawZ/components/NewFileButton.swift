@@ -210,7 +210,6 @@ struct NewFileButton: View {
                             }
                             await MainActor.run {
                                 localFolderState.itemCreatedPublisher.send(url.filePath)
-
                                 if usesFileHomeOpenTransition {
                                     fileState.setActiveFile(.localFile(url))
                                 }

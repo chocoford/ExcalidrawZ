@@ -87,7 +87,7 @@ struct LocalFilesProvider<Content: View>: View {
                         getFolderContents()
                         if fileState.currentActiveFile == nil || {
                             if case .localFile(let localFile) = fileState.currentActiveFile {
-                                return localFile.deletingLastPathComponent() != folder.url
+                                return !isDirectChildOfCurrentFolder(localFile)
                             } else {
                                 return true
                             }
@@ -108,7 +108,7 @@ struct LocalFilesProvider<Content: View>: View {
                 sortFiles(field: newValue)
             }
             .onReceive(localFolderState.itemCreatedPublisher) { path in
-                getFolderContents()
+                handleItemCreated(path: path)
             }
             .onReceive(localFolderState.itemRemovedPublisher) { path in
                 handleItemRemoved(path: path)
@@ -124,10 +124,13 @@ struct LocalFilesProvider<Content: View>: View {
             }
             .onReceive(localFolderState.refreshFilesPublisher) { _ in
                 getFolderContents()
-                if case .localFile(let file) = fileState.currentActiveFile,
-                   !files.contains(file) {
-                    fileState.setActiveFile(nil)
-                }
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .localFolderAvailabilityDidChange)
+            ) { notification in
+                guard let folderID = notification.object as? NSManagedObjectID,
+                      folderID == folder.objectID else { return }
+                getFolderContents()
             }
     }
 
@@ -158,18 +161,18 @@ struct LocalFilesProvider<Content: View>: View {
         DispatchQueue.main.async {
             do {
                 try folder.withSecurityScopedURL { folderURL in
-                    let contents = try FileManager.default.contentsOfDirectory(
+                    guard let contents = try LocalFolder.materializedDirectoryContents(
                         at: folderURL,
                         includingPropertiesForKeys: [
-                            .nameKey, 
-                            .contentModificationDateKey, 
+                            .nameKey,
+                            .contentModificationDateKey,
                             .creationDateKey,
                             .ubiquitousItemDownloadingStatusKey,
                             .isUbiquitousItemKey
                         ],
                         options: [.skipsSubdirectoryDescendants]
-                    )
-                    let files = contents
+                    ) else { return }
+                    var files = contents
                         .filter({
                             $0.pathExtension == "excalidraw"
                             || ($0.pathExtension == "svg" && $0.deletingPathExtension().pathExtension == "excalidraw")
@@ -190,6 +193,19 @@ struct LocalFilesProvider<Content: View>: View {
                             
                             return false
                         })
+
+                    // File Provider-backed folders may return a URL instance
+                    // that differs from the one used to create and open the
+                    // file even though both identify the same path. Keep the
+                    // active URL as the list identity so sidebar selection,
+                    // cover keys, and editor saves stay attached to one file.
+                    if case .localFile(let activeURL) = fileState.currentActiveFile {
+                        files = files.map { listedURL in
+                            listedURL.hasSameFileSystemPath(as: activeURL)
+                                ? activeURL
+                                : listedURL
+                        }
+                    }
                     self.sortValues = Dictionary(
                         uniqueKeysWithValues: files.map { file in
                             let values = try? file.resourceValues(
@@ -209,14 +225,6 @@ struct LocalFilesProvider<Content: View>: View {
                         self.files = files
                         self.sortFiles(field: self.sortField)
                         LocalFilesProviderCache.setFiles(self.files, for: folderCacheKey)
-                        
-                        if case .localFolder(let folder) = fileState.currentActiveGroup,
-                           folder == self.folder,
-                           case .localFile(let currentFile) = fileState.currentActiveFile {
-                            if !files.contains(currentFile) {
-                                fileState.setActiveFile(nil)
-                            }
-                        }
                     }
                     self.updateFlags = files.map {
                         [$0 : Date()]
@@ -236,6 +244,32 @@ struct LocalFilesProvider<Content: View>: View {
                 createdAt: nil
             )
         }
+    }
+
+    private func handleItemCreated(path: String) {
+        let fileURL = URL(fileURLWithPath: path)
+        guard isDirectChildOfCurrentFolder(fileURL) else { return }
+
+        if !files.contains(where: { $0.hasSameFileSystemPath(as: fileURL) }) {
+            let values = try? fileURL.resourceValues(
+                forKeys: [.contentModificationDateKey, .creationDateKey]
+            )
+            sortValues[fileURL] = ExcalidrawFileSortProvider.Values(
+                name: fileURL.deletingPathExtension().lastPathComponent,
+                updatedAt: values?.contentModificationDate,
+                createdAt: values?.creationDate
+            )
+            files.append(fileURL)
+            sortFiles(field: sortField)
+            updateFlags[fileURL] = Date()
+            LocalFilesProviderCache.setFiles(files, for: folderCacheKey)
+        }
+    }
+
+    private func isDirectChildOfCurrentFolder(_ fileURL: URL) -> Bool {
+        guard let folderPath = folder.filePath else { return false }
+        let folderURL = URL(fileURLWithPath: folderPath, isDirectory: true)
+        return fileURL.deletingLastPathComponent().hasSameFileSystemPath(as: folderURL)
     }
     
     private func handleItemRemoved(path: String) {

@@ -24,4 +24,14 @@ extension URL {
         guard !relativePath.isEmpty else { return newRootURL.standardizedFileURL }
         return newRootURL.standardizedFileURL.appendingPathComponent(relativePath)
     }
+
+    func hasSameFileSystemPath(as other: URL) -> Bool {
+        standardizedFileURL.path == other.standardizedFileURL.path
+    }
+
+    func isContained(in directoryURL: URL) -> Bool {
+        let path = standardizedFileURL.path
+        let directoryPath = directoryURL.standardizedFileURL.path
+        return path == directoryPath || path.hasPrefix(directoryPath + "/")
+    }
 }

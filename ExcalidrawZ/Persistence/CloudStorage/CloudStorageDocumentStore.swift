@@ -116,6 +116,9 @@ final class CloudStorageDocumentStore: ObservableObject {
     private var replayingMetadataOperationIDs: Set<UUID> = []
     private var remoteContentMutationGeneration: UInt64 = 0
     private var remoteContentMutationGenerationByItem: [MetadataMutationKey: UInt64] = [:]
+    private var itemIdentityAliasesByLocationID: [
+        UUID: [CloudStorageItemID: CloudStorageItemID]
+    ] = [:]
     private var resolvingConflictDocumentIDs: Set<String> = []
     private var activeLocalCacheMutationCounts: [String: Int] = [:]
 
@@ -256,14 +259,44 @@ final class CloudStorageDocumentStore: ObservableObject {
     func latestReference(
         for reference: CloudStorageDocumentReference
     ) -> CloudStorageDocumentReference? {
-        guard let item = item(for: reference) else { return nil }
+        let resolvedReference = resolvingCurrentIdentity(for: reference)
+        guard let item = item(for: resolvedReference) else { return nil }
+        return CloudStorageDocumentReference(
+            locationID: resolvedReference.locationID,
+            providerID: resolvedReference.providerID,
+            accountID: resolvedReference.accountID,
+            itemID: resolvedReference.itemID,
+            lastKnownName: item.name,
+            lastKnownModifiedAt: item.modifiedAt,
+            activeFileID: reference.activeFileID
+        )
+    }
+
+    /// Resolves a provisional local-first identity after its provider assigns
+    /// the remote item ID. The notification normally updates active sessions,
+    /// but a very fast create can complete before the new file is activated.
+    func resolvingCurrentIdentity(
+        for reference: CloudStorageDocumentReference
+    ) -> CloudStorageDocumentReference {
+        let aliases = itemIdentityAliasesByLocationID[reference.locationID] ?? [:]
+        var itemID = reference.itemID
+        var visited = Set<CloudStorageItemID>()
+        while visited.insert(itemID).inserted, let replacement = aliases[itemID] {
+            itemID = replacement
+        }
+
+        guard itemID != reference.itemID,
+              let item = itemsByLocationID[reference.locationID]?[itemID] else {
+            return reference
+        }
         return CloudStorageDocumentReference(
             locationID: reference.locationID,
             providerID: reference.providerID,
             accountID: reference.accountID,
-            itemID: reference.itemID,
+            itemID: item.id,
             lastKnownName: item.name,
-            lastKnownModifiedAt: item.modifiedAt
+            lastKnownModifiedAt: item.modifiedAt,
+            activeFileID: reference.activeFileID
         )
     }
 
@@ -1789,6 +1822,7 @@ final class CloudStorageDocumentStore: ObservableObject {
         errorsByLocationID.removeValue(forKey: locationID)
         automaticRetryDatesByLocationID.removeValue(forKey: locationID)
         processingFolderIDsByLocationID.removeValue(forKey: locationID)
+        itemIdentityAliasesByLocationID.removeValue(forKey: locationID)
         remoteContentMutationGenerationByItem = remoteContentMutationGenerationByItem.filter {
             $0.key.locationID != locationID
         }
@@ -2691,10 +2725,28 @@ final class CloudStorageDocumentStore: ObservableObject {
 
         apply(state, to: locationID)
         try persist(state, for: locationID)
+        recordIdentityAliases(replacements, locationID: locationID)
         recordRemoteContentMutation(locationID: locationID, itemID: updatedItem.id)
         return Dictionary(uniqueKeysWithValues: replacements.compactMap { oldID, newID in
             state.items.first(where: { $0.id == newID }).map { (oldID, $0) }
         })
+    }
+
+    private func recordIdentityAliases(
+        _ replacements: [CloudStorageItemID: CloudStorageItemID],
+        locationID: UUID
+    ) {
+        var aliases = itemIdentityAliasesByLocationID[locationID] ?? [:]
+        for (oldID, newID) in replacements where oldID != newID {
+            let chainedAliases = aliases.compactMap { alias, target in
+                target == oldID ? alias : nil
+            }
+            for alias in chainedAliases {
+                aliases[alias] = newID
+            }
+            aliases[oldID] = newID
+        }
+        itemIdentityAliasesByLocationID[locationID] = aliases
     }
 
     private static func replacingItemIdentity(

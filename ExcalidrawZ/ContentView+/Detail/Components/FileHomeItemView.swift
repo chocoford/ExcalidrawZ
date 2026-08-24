@@ -501,8 +501,14 @@ private extension FileState.ActiveFile {
             case .file(let file):
                 let groupNames = Self.groupPath(for: file.group)
                 return groupNames.isEmpty ? "/" : groupNames.joined(separator: " / ")
-            case .localFile(let url), .temporaryFile(let url):
+            case .localFile(let url):
+                return Self.linkedFolderPath(for: url)
+            case .temporaryFile(let url):
+#if os(iOS)
+                return url.deletingLastPathComponent().lastPathComponent
+#else
                 return Self.abbreviatedPath(url.deletingLastPathComponent())
+#endif
             case .collaborationFile:
                 return String(localizable: .collaborationHomeTitle)
             case .cloudStorageFile(let reference):
@@ -530,6 +536,20 @@ private extension FileState.ActiveFile {
             currentGroup = group.parent
         }
         return names.reversed()
+    }
+
+    static func linkedFolderPath(for fileURL: URL) -> String {
+        let directoryURL = fileURL.deletingLastPathComponent().standardizedFileURL
+        let context = PersistenceController.shared.container.viewContext
+        guard let folder = try? LocalFolder.rootFolder(containing: directoryURL, in: context),
+              let rootURL = folder.filePath.map({
+                  URL(fileURLWithPath: $0, isDirectory: true).standardizedFileURL
+              }) else {
+            return directoryURL.lastPathComponent
+        }
+
+        let relativeComponents = directoryURL.pathComponents.dropFirst(rootURL.pathComponents.count)
+        return ([rootURL.lastPathComponent] + Array(relativeComponents)).joined(separator: " / ")
     }
 
     static func abbreviatedPath(_ directoryURL: URL) -> String {

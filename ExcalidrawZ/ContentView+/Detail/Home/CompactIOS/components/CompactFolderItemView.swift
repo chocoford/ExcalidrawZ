@@ -19,12 +19,14 @@ struct CompactFolderItemView: View {
     var name: String
     var type: Group.GroupType
     var itemsCount: Int
+    var localFolder: LocalFolder?
     
     init<HomeGroup: ExcalidrawGroup>(group: HomeGroup) {
         self.objectID = group.objectID
         self.name = group.name ?? String(localizable: .generalUntitled)
         self.type = group.groupType
         self.itemsCount = group.filesCount + group.subgroupsCount
+        self.localFolder = group as? LocalFolder
     }
 
     init(
@@ -37,6 +39,7 @@ struct CompactFolderItemView: View {
         self.name = name
         self.type = type
         self.itemsCount = itemsCount
+        self.localFolder = nil
     }
     
     var isSelected: Bool {
@@ -66,6 +69,12 @@ struct CompactFolderItemView: View {
                                 .animation(.default, value: isSelected)
                         }
                     }
+            }
+        }
+        .overlay(alignment: .topTrailing) {
+            if let localFolder {
+                LocalFolderAvailabilityIndicator(folder: localFolder)
+                    .padding(8)
             }
         }
         .simultaneousGesture(TapGesture().onEnded { _ in

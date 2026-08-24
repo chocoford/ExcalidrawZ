@@ -716,7 +716,7 @@ struct ExcalidrawEditor: View {
                     }
 
                 case .temporaryFile(let url):
-                    let data = try await FileSyncCoordinator.shared.openFile(url)
+                    let data = try await fileState.readTemporaryFileContent(at: url)
                     let file = try ExcalidrawFile(data: data, id: activeFile.id)
                     await MainActor.run {
                         guard self.activeFile?.id == activeFile.id else { return }
@@ -1192,7 +1192,8 @@ struct ExcalidrawEditor: View {
                 logger.debug("Persisting temporary canvas update id=\(file.id) url=\(url.lastPathComponent) elements=\(file.elements.count)")
                 Task {
                     do {
-                        let oldFile = try ExcalidrawFile(contentsOf: url)
+                        let oldContent = try await fileState.readTemporaryFileContent(at: url)
+                        let oldFile = try ExcalidrawFile(data: oldContent, id: file.id)
                         if !hasPersistentCanvasChanges(in: file, comparedTo: oldFile) {
                             return
                         }

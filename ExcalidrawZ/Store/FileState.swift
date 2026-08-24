@@ -13,27 +13,10 @@ import UniformTypeIdentifiers
 @preconcurrency import CoreData
 import ChocofordEssentials
 
-
-private final class SecurityScopedResourceLease {
-    let url: URL
-
-    init?(url: URL) {
-        guard url.startAccessingSecurityScopedResource() else { return nil }
-        self.url = url
-    }
-
-    deinit {
-        url.stopAccessingSecurityScopedResource()
-    }
-}
-
 final class FileState: ObservableObject {
     let logger = Logger(label: "FileState")
 
-    // Open-in-place URLs are not backed by a saved LocalFolder bookmark. Keep
-    // their security scope alive for this temporary workspace so asynchronous
-    // canvas reads and writes retain access to the provider-owned document.
-    private var openInPlaceSecurityScopeLeases: [URL: SecurityScopedResourceLease] = [:]
+    private let openInPlaceAccessStore = OpenInPlaceAccessStore()
     
     var stateUpdateQueue: DispatchQueue = DispatchQueue(label: "StateUpdateQueue")
     
@@ -495,7 +478,6 @@ final class FileState: ObservableObject {
             userCheckpointWindowStartedAt.removeValue(forKey: newValue.id)
         }
         resetCurrentFileChangesListener()
-        releaseUnusedOpenInPlaceAccess()
     }
 
     var currentActiveFileIsInTrash: Bool {
@@ -689,6 +671,14 @@ final class FileState: ObservableObject {
         _ file: ActiveFile?,
         generation: Int
     ) async -> Bool {
+        let file = if case .cloudStorageFile(let reference) = file {
+            ActiveFile.cloudStorageFile(
+                CloudStorageDocumentStore.shared.resolvingCurrentIdentity(for: reference)
+            )
+        } else {
+            file
+        }
+
         if aiChatSession != nil, currentActiveFile != file {
             activeFileSwitchBlockedReason = .aiGenerationInProgress
             activeFileSwitchBlockedToken += 1
@@ -775,9 +765,21 @@ final class FileState: ObservableObject {
                     }
 
                     do {
+                        let parentURL = url.deletingLastPathComponent().standardizedFileURL
+                        if case .localFolder(let activeFolder) = currentActiveGroup,
+                           let activeFolderPath = activeFolder.filePath,
+                           URL(fileURLWithPath: activeFolderPath).standardizedFileURL.path
+                            == parentURL.path {
+                            expandToGroup(activeFolder.objectID)
+                            return
+                        }
+
                         let folders = try await context.perform {
                             let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                            fetchRequest.predicate = NSPredicate(format: "url == %@", url.deletingLastPathComponent() as NSURL)
+                            fetchRequest.predicate = NSPredicate(
+                                format: "filePath == %@",
+                                parentURL.path
+                            )
                             fetchRequest.fetchLimit = 1
                             return try context.fetch(fetchRequest)
                         }
@@ -849,9 +851,7 @@ final class FileState: ObservableObject {
                         return
                     }
 
-                    if !temporaryFiles.contains(where: {$0 == url}) {
-                        temporaryFiles.append(url)
-                    }
+                    registerTemporaryFile(url)
                     setActiveGroupIfNeeded(.temporary)
                 }
             case .collaborationFile(let room):
@@ -949,46 +949,66 @@ final class FileState: ObservableObject {
     
     @Published var temporaryFiles: [URL] = [] {
         didSet {
-            releaseUnusedOpenInPlaceAccess()
+            updateOpenInPlaceOwnership(from: oldValue, to: temporaryFiles)
         }
     }
 
     @MainActor
-    @discardableResult
-    func retainOpenInPlaceAccess(to url: URL) -> Bool {
+    func prepareOpenInPlaceAccess(to url: URL) async throws {
         let key = url.standardizedFileURL
-        if openInPlaceSecurityScopeLeases[key] != nil {
-            return true
+        let wasRegistered = temporaryFiles.contains {
+            $0.standardizedFileURL == key
         }
+        registerTemporaryFile(url)
 
-        guard let lease = SecurityScopedResourceLease(url: url) else {
-            logger.warning("Failed to retain open-in-place access: \(url.lastPathComponent)")
-            return false
+        do {
+            try await openInPlaceAccessStore.prepareAccess(to: url)
+        } catch {
+            if !wasRegistered {
+                temporaryFiles.removeAll { $0.standardizedFileURL == key }
+            }
+            throw error
         }
-
-        openInPlaceSecurityScopeLeases[key] = lease
-        logger.debug("Retained open-in-place access: \(url.lastPathComponent)")
-        return true
     }
 
-    /// Releases provider-owned document access only after the URL has left
-    /// both the temporary workspace and the active editor session. Keeping the
-    /// active URL here is important because closing an editor can flush a final
-    /// write after its Temporary row has already been removed.
-    private func releaseUnusedOpenInPlaceAccess() {
-        var retainedURLs = Set(temporaryFiles.map(\.standardizedFileURL))
-        for activeFile in activeFiles.compactMap({ $0 }) {
-            if case .temporaryFile(let activeURL) = activeFile {
-                retainedURLs.insert(activeURL.standardizedFileURL)
-            }
+    @MainActor
+    func registerTemporaryFile(_ url: URL) {
+        let key = url.standardizedFileURL
+        guard !temporaryFiles.contains(where: { $0.standardizedFileURL == key }) else {
+            return
         }
+        temporaryFiles.append(url)
+    }
 
-        let releasedURLs = openInPlaceSecurityScopeLeases.keys.filter {
-            !retainedURLs.contains($0)
+    @MainActor
+    func readTemporaryFileContent(at url: URL) async throws -> Data {
+        if let content = openInPlaceAccessStore.content(for: url) {
+            return content
         }
-        for url in releasedURLs {
-            openInPlaceSecurityScopeLeases[url] = nil
-            logger.debug("Released open-in-place access: \(url.lastPathComponent)")
+        return try await FileSyncCoordinator.shared.openFileWithActiveSecurityScope(url)
+    }
+
+    /// A directly opened document is owned by its Temporary workspace, not by
+    /// the currently visible editor. Keep its UIDocument session alive while
+    /// the row exists so returning from the editor does not revoke access.
+    private func updateOpenInPlaceOwnership(from oldURLs: [URL], to newURLs: [URL]) {
+        let oldKeys = Set(oldURLs.map(\.standardizedFileURL))
+        let newKeys = Set(newURLs.map(\.standardizedFileURL))
+        let addedKeys = newKeys.subtracting(oldKeys)
+        let removedKeys = oldKeys.subtracting(newKeys)
+
+        guard !addedKeys.isEmpty || !removedKeys.isEmpty else { return }
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let currentKeys = Set(self.temporaryFiles.map(\.standardizedFileURL))
+
+            for url in addedKeys where currentKeys.contains(url) {
+                self.openInPlaceAccessStore.retainAccess(to: url)
+            }
+            for url in removedKeys where !currentKeys.contains(url) {
+                self.openInPlaceAccessStore.releaseAccess(to: url)
+            }
         }
     }
     
@@ -1713,10 +1733,15 @@ final class FileState: ObservableObject {
         var excalidrawFile = excalidrawFile
         try excalidrawFile.updateContentFilesFromFiles()
 
-        // Use FileCoordinator for safe atomic write
         guard let data = excalidrawFile.content else { return }
-        try await FileCoordinator.shared.coordinatedWrite(url: url, data: data)
-        Self.touchLocalFileModificationDate(url, logger: logger)
+        let savedThroughDocumentSession = try await openInPlaceAccessStore.save(data, to: url)
+        if !savedThroughDocumentSession {
+            // Linked Folder files retain a folder-scoped bookmark and continue
+            // to use coordinated URL access. Directly opened iOS documents are
+            // saved by their UIDocument session instead.
+            try await FileCoordinator.shared.coordinatedWrite(url: url, data: data)
+            Self.touchLocalFileModificationDate(url, logger: logger)
+        }
 
         // Skip checkpoint writes entirely while an automated mutation session
         // is active — file content still saves, history doesn't. Mirrors the

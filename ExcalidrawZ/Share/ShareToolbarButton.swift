@@ -152,7 +152,11 @@ struct ShareToolbarButton: View {
                         }
                     }
                 case .temporaryFile(let url):
-                    self.shareFileState.currentSharedFile = try ExcalidrawFile(contentsOf: url)
+                    let content = try await fileState.readTemporaryFileContent(at: url)
+                    self.shareFileState.currentSharedFile = try ExcalidrawFile(
+                        data: content,
+                        id: fileState.currentActiveFile?.id
+                    )
                     
                 case .collaborationFile(let collaborationFile):
                     let content = try await collaborationFile.loadContent()
