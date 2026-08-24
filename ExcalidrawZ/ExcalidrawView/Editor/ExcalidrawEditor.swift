@@ -123,6 +123,15 @@ struct ExcalidrawEditor: View {
         }
     }
 
+    /// Collaboration rooms own their WebView and live synchronization. Feeding
+    /// their iCloud snapshot through the normal editor reload path can interrupt
+    /// the room while it is connecting.
+    private var externallyObservedDocument: FileState.ActiveFile? {
+        guard let activeFile else { return nil }
+        guard case .collaborationFile = activeFile else { return activeFile }
+        return nil
+    }
+
     private var usesCompactIOSAIChatSurfaces: Bool {
 #if os(iOS)
         ExcalidrawToolbarLayoutPolicy.usesCompactIOSBottomToolbar(
@@ -219,6 +228,7 @@ struct ExcalidrawEditor: View {
                 .excalidrawEditorOverlays(
                     loadingState: $canvasLoadingState,
                     hasFile: localFileBinding.wrappedValue != nil,
+                    fileID: activeFile?.id,
                     keepsLoadingCoverPresented: isCloudStorageConflictBlockingEditor
                 )
                 .opacity(isInCollaborationSpace ? 0 : 1)
@@ -328,7 +338,7 @@ struct ExcalidrawEditor: View {
             )
         }
         .observeExcalidrawFileStatus(
-            for: activeFile,
+            for: externallyObservedDocument,
             activeFileLockState: lockedContentState.activeFileLockState,
             conflictFileURL: $conflictFileURL,
         ) { latestData, onDone in
@@ -344,7 +354,7 @@ struct ExcalidrawEditor: View {
         }
 #if os(iOS)
         .applyIOSAutoSync(
-            activeFile: activeFile,
+            activeFile: externallyObservedDocument,
             activeFileLockState: lockedContentState.activeFileLockState,
             localFileBinding: localFileBinding
         ) { latestData in
@@ -371,6 +381,7 @@ struct ExcalidrawEditor: View {
             cloudStorageRefreshTask?.cancel()
             cloudStorageRefreshTask = nil
             cloudStorageRefreshTaskID = nil
+            cancelPendingCloudUpdate()
             prepareCanvasLoadingPresentation(for: newFile)
             isCloudStorageConflictBlockingEditor = false
             loadingTask = Task {
@@ -481,6 +492,7 @@ struct ExcalidrawEditor: View {
         .onDisappear {
             recordVisitTask?.cancel()
             recordVisitTask = nil
+            cancelPendingCloudUpdate()
             cloudStorageRefreshTask?.cancel()
             cloudStorageRefreshTask = nil
             cloudStorageRefreshTaskID = nil
@@ -983,6 +995,10 @@ struct ExcalidrawEditor: View {
     }
     
     private func handleLatestData(_ latestData: Data) {
+        guard let targetFileID = externallyObservedDocument?.id else {
+            logger.debug("Ignored external document update outside the normal editor")
+            return
+        }
         guard lockedContentState.activeFileLockState != .locked else {
             logger.info("Ignored cloud update while active file is locked")
             return
@@ -999,12 +1015,16 @@ struct ExcalidrawEditor: View {
             // User is idle, apply cloud update immediately
             logger.info("User idle, applying cloud update immediately")
             cloudSyncTask?.cancel()  // Cancel any pending task
+            latestCloudData = nil
             isSyncing = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 isSyncing = false
             }
-            Task {
-                await pullUpdatingFromCloud(latestData: latestData)
+            cloudSyncTask = Task {
+                await pullUpdatingFromCloud(
+                    latestData: latestData,
+                    expectedFileID: targetFileID
+                )
             }
         } else {
             // User is actively editing, defer cloud update and wait for idle
@@ -1027,13 +1047,15 @@ struct ExcalidrawEditor: View {
                     await MainActor.run {
                         self.logger.info("Wait task: User became idle, applying deferred cloud update")
                         self.latestCloudData = nil
-                        self.cloudSyncTask = nil
                         self.isSyncing = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                             self.isSyncing = false
                         }
                     }
-                    await pullUpdatingFromCloud(latestData: stillCloudData)
+                    await pullUpdatingFromCloud(
+                        latestData: stillCloudData,
+                        expectedFileID: targetFileID
+                    )
                 } else {
                     await MainActor.run {
                         self.cloudSyncTask = nil
@@ -1041,6 +1063,13 @@ struct ExcalidrawEditor: View {
                 }
             }
         }
+    }
+
+    private func cancelPendingCloudUpdate() {
+        cloudSyncTask?.cancel()
+        cloudSyncTask = nil
+        latestCloudData = nil
+        isSyncing = false
     }
 
     private func latestLocalCanvasEditTime() -> Date? {
@@ -1057,7 +1086,19 @@ struct ExcalidrawEditor: View {
         }
     }
 
-    private func pullUpdatingFromCloud(latestData: Data) async {
+    private func pullUpdatingFromCloud(
+        latestData: Data,
+        expectedFileID: String? = nil
+    ) async {
+        guard let targetFile = externallyObservedDocument else {
+            logger.debug("Skipped cloud pull outside the normal editor")
+            return
+        }
+        let targetFileID = expectedFileID ?? targetFile.id
+        guard targetFile.id == targetFileID else {
+            logger.debug("Skipped stale cloud pull target=\(targetFileID) active=\(targetFile.id)")
+            return
+        }
         guard lockedContentState.activeFileLockState != .locked else {
             self.logger.info("Skipped cloud pull while active file is locked")
             return
@@ -1066,24 +1107,33 @@ struct ExcalidrawEditor: View {
         self.logger.info("pullUpdatingFromCloud")
         do {
             let data: Data
-            if let activeFile,
-               case .file = activeFile,
-               let fileID = excalidrawFile?.id {
+            if case .file = targetFile {
                 data = try await ExcalidrawViewportStateStore.shared
                     .contentDataByApplyingStoredViewport(
                         to: latestData,
-                        fileID: fileID
+                        fileID: targetFileID
                     )
             } else {
                 data = latestData
             }
-            let file = try ExcalidrawFile(data: data, id: excalidrawFile?.id)
+            guard !Task.isCancelled else { return }
+            let file = try ExcalidrawFile(data: data, id: targetFileID)
             await MainActor.run {
+                guard !Task.isCancelled,
+                      self.externallyObservedDocument?.id == targetFileID else { return }
+                if let currentFile = self.excalidrawFile,
+                   !self.hasPersistentCanvasChanges(in: file, comparedTo: currentFile) {
+                    self.logger.debug("Ignored duplicate cloud document update id=\(targetFileID)")
+                    return
+                }
                 self.applyFileToEditorAndForceReload(file)
             }
         } catch {
+            guard !Task.isCancelled,
+                  externallyObservedDocument?.id == targetFileID else { return }
             alertToast(error)
             await MainActor.run {
+                guard self.externallyObservedDocument?.id == targetFileID else { return }
                 self.excalidrawFile = nil
             }
         }
@@ -1106,7 +1156,7 @@ struct ExcalidrawEditor: View {
         excalidrawFile = file
         NotificationCenter.default.post(
             name: .forceReloadExcalidrawFile,
-            object: nil
+            object: file.id
         )
     }
 

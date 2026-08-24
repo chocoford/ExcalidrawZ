@@ -1,3 +1,11 @@
+## 2.4.2
+
+#### Bug fixed
+
+- Fixed remaining permission errors when opening external drawings from Files, reopening them from Temporary, or accessing Linked Folders on iPhone and iPad.
+- Fixed Linked Folders on iPhone and iPad failing to refresh while File Provider content was still downloading, with clearer availability feedback.
+- Fixed collaboration rooms on iPhone and iPad occasionally remaining stuck on the loading screen.
+
 ## 2.4.1
 
 #### Features
