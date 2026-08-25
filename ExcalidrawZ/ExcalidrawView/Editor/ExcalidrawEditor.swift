@@ -1217,11 +1217,10 @@ struct ExcalidrawEditor: View {
                 return .accepted
 
             case .localFile(let url):
-                guard case .localFolder(let folder) = fileState.currentActiveGroup else { return .rejected }
                 logger.debug("Persisting local canvas update id=\(file.id) url=\(url.lastPathComponent) elements=\(file.elements.count)")
                 Task {
                     do {
-                        try await folder.withSecurityScopedURL { _ in
+                        try await LocalFolder.withSecurityScopedAccessToContainingFolder(for: url) {
                             let oldFile = try ExcalidrawFile(contentsOf: url)
                             if !hasPersistentCanvasChanges(in: file, comparedTo: oldFile) {
                                 return

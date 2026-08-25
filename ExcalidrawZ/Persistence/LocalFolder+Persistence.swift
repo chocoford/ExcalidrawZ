@@ -324,6 +324,25 @@ extension LocalFolder {
             .folder
     }
 
+    static func deepestFolder(
+        containingLocalFileAt fileURL: URL,
+        in context: NSManagedObjectContext
+    ) throws -> LocalFolder? {
+        let parentURL = fileURL.deletingLastPathComponent().standardizedFileURL
+        let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+
+        return try context.fetch(request)
+            .compactMap { folder -> (folder: LocalFolder, url: URL)? in
+                guard let folderPath = folder.filePath else { return nil }
+                let folderURL = URL(fileURLWithPath: folderPath, isDirectory: true)
+                    .standardizedFileURL
+                guard parentURL.isContained(in: folderURL) else { return nil }
+                return (folder, folderURL)
+            }
+            .max { $0.url.path.count < $1.url.path.count }?
+            .folder
+    }
+
     private static func securityScopedBookmarkData(forLocalFileAt fileURL: URL) async throws -> Data? {
         let context = PersistenceController.shared.newTaskContext()
 

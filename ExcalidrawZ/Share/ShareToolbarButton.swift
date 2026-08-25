@@ -48,14 +48,14 @@ struct ShareToolbarButton: View {
 #endif
 
     private var isShareDisabled: Bool {
-        if fileState.currentActiveFile == nil {
+        guard let activeFile = fileState.currentActiveFile else {
             return true
         }
         if fileState.activeCollaborationFileIsLoading {
             return true
         }
-        if case .group(let group) = fileState.currentActiveGroup {
-            return group.groupType == .trash
+        if case .file(let file) = activeFile {
+            return file.inTrash
         }
         return false
     }
@@ -146,11 +146,12 @@ struct ShareToolbarButton: View {
                     )
                     self.shareFileState.currentSharedFile = excalidrawFile
                 case .localFile(let url):
-                    if case .localFolder(let folder) = fileState.currentActiveGroup {
-                        try await folder.withSecurityScopedURL { (_: URL) async throws -> Void in
-                            self.shareFileState.currentSharedFile = try ExcalidrawFile(contentsOf: url)
-                        }
+                    let excalidrawFile = try await LocalFolder.withSecurityScopedAccessToContainingFolder(
+                        for: url
+                    ) {
+                        try ExcalidrawFile(contentsOf: url)
                     }
+                    self.shareFileState.currentSharedFile = excalidrawFile
                 case .temporaryFile(let url):
                     let content = try await fileState.readTemporaryFileContent(at: url)
                     self.shareFileState.currentSharedFile = try ExcalidrawFile(

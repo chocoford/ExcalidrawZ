@@ -774,20 +774,16 @@ final class FileState: ObservableObject {
                             return
                         }
 
-                        let folders = try await context.perform {
-                            let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                            fetchRequest.predicate = NSPredicate(
-                                format: "filePath == %@",
-                                parentURL.path
+                        let folder = try await context.perform {
+                            try LocalFolder.deepestFolder(
+                                containingLocalFileAt: url,
+                                in: context
                             )
-                            fetchRequest.fetchLimit = 1
-                            return try context.fetch(fetchRequest)
                         }
-                        if let folder = folders.first {
+                        if let folder {
                             setActiveGroupIfNeeded(.localFolder(folder))
                             expandToGroup(folder.objectID)
                         } else {
-                            // Handle case where local folder is not found
                             setActiveGroupIfNeeded(nil)
                         }
                     } catch {}
