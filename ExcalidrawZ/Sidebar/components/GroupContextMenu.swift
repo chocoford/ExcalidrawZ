@@ -347,6 +347,7 @@ struct GroupMenuItems: View {
     var onToggleRename: () -> Void
     var onToogleCreateSubfolder: () -> Void
     var onToggleDelete: () -> Void
+    var onImportFiles: (() -> Void)?
     
     
     @FetchRequest
@@ -357,13 +358,15 @@ struct GroupMenuItems: View {
         canExpand: Bool,
         onToggleRename: @escaping () -> Void,
         onToogleCreateSubfolder: @escaping () -> Void,
-        onToggleDelete: @escaping () -> Void
+        onToggleDelete: @escaping () -> Void,
+        onImportFiles: (() -> Void)? = nil
     ) {
         self.group = group
         self.canExpand = canExpand
         self.onToggleRename = onToggleRename
         self.onToogleCreateSubfolder = onToogleCreateSubfolder
         self.onToggleDelete = onToggleDelete
+        self.onImportFiles = onImportFiles
         
         self._childrenGroups = FetchRequest(
             sortDescriptors: [SortDescriptor(\Group.name, order: .forward)],
@@ -381,89 +384,122 @@ struct GroupMenuItems: View {
     
     var body: some View {
         if group.groupType != .trash {
-            Button {
-                onToggleRename()
-            } label: {
-                if #available(macOS 13.0, *) {
-                    Label(
-                        .localizable(.sidebarGroupRowContextMenuRename),
-                        systemSymbol: .pencilLine
-                    )
-                } else {
-                    // Fallback on earlier versions
-                    Label(.localizable(.sidebarGroupRowContextMenuRename), systemSymbol: .pencil)
-                }
-            }
-            
-            Button {
-                onToogleCreateSubfolder()
-            } label: {
-                Label(.localizable(.sidebarGroupRowContextMenuAddSubgroup), systemSymbol: .folderBadgePlus)
-            }
-            
-            if canExpand, !childrenGroups.isEmpty {
+            Section {
                 Button {
-                    self.expandAllSubGroups(group.objectID)
-                } label: {
-                    Label(.localizable(.sidebarGroupRowContextMenuExpandAll), systemSymbol: .squareFillTextGrid1x2)
-                }
-            }
-            
-            if group.groupType != .default {
-                Menu {
-                    if self.group.parent != nil {
-                        Button {
-                            performGroupMoveAction(source: self.group.objectID, target: nil)
-                        } label: {
-                            Text(.localizable(.sidebarGroupRowContextMenuMoveToTopLevel))
-                        }
-                        
-                        Divider()
-                    }
-                    
-                    ForEach(Array(topLevelGroups.filter({$0.groupType != .trash}))) { group in
-                        MoveToGroupMenu(
-                            destination: group,
-                            sourceGroup: self.group,
-                            childrenSortKey: \Group.name,
-                            canMoveToParentGroup: false
-                        ) {
-                            performGroupMoveAction(source: self.group.objectID, target: $0)
-                        }
-                    }
+                    onToogleCreateSubfolder()
                 } label: {
                     Label(
-                        .localizable(.generalMoveTo),
-                        systemSymbol: .trayAndArrowUp
+                        .localizable(.sidebarGroupRowContextMenuAddSubgroup),
+                        systemSymbol: .folderBadgePlus
                     )
+                }
+
+                if let onImportFiles {
+                    Button {
+                        onImportFiles()
+                    } label: {
+                        Label(
+                            .localizable(.menubarButtonImport),
+                            systemSymbol: .squareAndArrowDown
+                        )
+                    }
+                }
+            }
+
+            Section {
+                Button {
+                    onToggleRename()
+                } label: {
+                    if #available(macOS 13.0, *) {
+                        Label(
+                            .localizable(.sidebarGroupRowContextMenuRename),
+                            systemSymbol: .pencilLine
+                        )
+                    } else {
+                        Label(
+                            .localizable(.sidebarGroupRowContextMenuRename),
+                            systemSymbol: .pencil
+                        )
+                    }
+                }
+
+                if canExpand, !childrenGroups.isEmpty {
+                    Button {
+                        self.expandAllSubGroups(group.objectID)
+                    } label: {
+                        Label(
+                            .localizable(.sidebarGroupRowContextMenuExpandAll),
+                            systemSymbol: .squareFillTextGrid1x2
+                        )
+                    }
+                }
+
+                if group.groupType != .default {
+                    Menu {
+                        if self.group.parent != nil {
+                            Button {
+                                performGroupMoveAction(source: self.group.objectID, target: nil)
+                            } label: {
+                                Text(.localizable(.sidebarGroupRowContextMenuMoveToTopLevel))
+                            }
+
+                            Divider()
+                        }
+
+                        ForEach(Array(topLevelGroups.filter({$0.groupType != .trash}))) { group in
+                            MoveToGroupMenu(
+                                destination: group,
+                                sourceGroup: self.group,
+                                childrenSortKey: \Group.name,
+                                canMoveToParentGroup: false
+                            ) {
+                                performGroupMoveAction(source: self.group.objectID, target: $0)
+                            }
+                        }
+                    } label: {
+                        Label(
+                            .localizable(.generalMoveTo),
+                            systemSymbol: .trayAndArrowUp
+                        )
+                    }
                 }
             }
         }
-        
-        SensoryFeedbackButton {
-            try copyEntityURLToClipboard(objectID: group.objectID)
-            alertToast(
-                .init(
-                    displayMode: .hud,
-                    type: .complete(.green),
-                    title: String(localizable: .exportActionCopied)
+
+        Section {
+            SensoryFeedbackButton {
+                try copyEntityURLToClipboard(objectID: group.objectID)
+                alertToast(
+                    .init(
+                        displayMode: .hud,
+                        type: .complete(.green),
+                        title: String(localizable: .exportActionCopied)
+                    )
                 )
-            )
-        } label: {
-            Label(.localizable(.sidebarGroupRowContextMenuCopyGroupLink), systemSymbol: .link)
-        }
-        
-        if group.groupType != .default {
-            Button(role: .destructive) {
-                onToggleDelete()
             } label: {
-                if group.groupType == .trash {
-                    Label(.localizable(.sidebarGroupRowContextMenuEmptyTrash), systemSymbol: .trash)
-                } else {
-                    Label(
-                        .localizable(.sidebarGroupRowContextMenuDelete),
-                        systemSymbol: .trash
-                    )
+                Label(
+                    .localizable(.sidebarGroupRowContextMenuCopyGroupLink),
+                    systemSymbol: .link
+                )
+            }
+        }
+
+        if group.groupType != .default {
+            Section {
+                Button(role: .destructive) {
+                    onToggleDelete()
+                } label: {
+                    if group.groupType == .trash {
+                        Label(
+                            .localizable(.sidebarGroupRowContextMenuEmptyTrash),
+                            systemSymbol: .trash
+                        )
+                    } else {
+                        Label(
+                            .localizable(.sidebarGroupRowContextMenuDelete),
+                            systemSymbol: .trash
+                        )
+                    }
                 }
             }
         }

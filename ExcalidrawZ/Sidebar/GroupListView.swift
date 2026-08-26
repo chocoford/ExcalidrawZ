@@ -420,7 +420,6 @@ fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
     }
     
     @State private var isImportLocalFolderDialogPresented = false
-    @State private var isImportFilesDialogPresented = false
     @State private var isCreateGroupDialogPresented = false
     @State private var isHovered = false
 
@@ -448,36 +447,20 @@ fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
                         Button {
                              isImportLocalFolderDialogPresented.toggle()
                         } label: {
-                            Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .plusCircleFill)
+                            SidebarSectionAddIcon(
+                                accessibilityLabel: Text(.localizable(.fileHomeButtonCreateNewFolder))
+                            )
                         }
                         // Two file importers can not be called in same place
                         .modifier(ImportLocalFolderModifier(isPresented: $isImportLocalFolderDialogPresented))
                     case .group:
-                        Menu {
-                            SwiftUI.Group {
-                                Button {
-                                    isCreateGroupDialogPresented.toggle()
-                                } label: {
-                                    Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
-                                }
-
-                                // New: Use fileImporter for cross-platform support
-                                Button {
-                                    isImportFilesDialogPresented.toggle()
-                                } label: {
-                                    Label(
-                                        .localizable(.menubarButtonImport),
-                                        systemSymbol: .squareAndArrowDown
-                                    )
-                                }
-                            }
-                            .labelStyle(.titleAndIcon)
+                        Button {
+                            isCreateGroupDialogPresented.toggle()
                         } label: {
-                            Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
+                            SidebarSectionAddIcon(
+                                accessibilityLabel: Text(.localizable(.fileHomeButtonCreateNewGroup))
+                            )
                         }
-                        .menuIndicator(.hidden)
-                        .fixedSize()
-                        .modifier(ImportFilesModifier(isPresented: $isImportFilesDialogPresented))
                         .modifier(
                             CreateGroupModifier(
                                 isPresented: $isCreateGroupDialogPresented,
@@ -492,47 +475,16 @@ fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
             .controlSize(.large)
             .padding(.trailing, 2)
 #endif
-#if os(iOS)
-            .tint(.secondary)
-#endif
             .labelStyle(.iconOnly)
             .buttonStyle(.borderless)
             .opacity(isHovered ? 1 : 0.4)
         }
+        .frame(maxWidth: .infinity)
         .font(.callout.bold())
         .animation(.smooth, value: isHovered)
 
     }
     
-}
-
-struct ImportFilesModifier: ViewModifier {
-    @Binding var isImportFilesDialogPresented: Bool
-    
-    init(isPresented: Binding<Bool>) {
-        self._isImportFilesDialogPresented = isPresented
-    }
-    
-    func body(content: Content) -> some View {
-        content
-            .fileImporterWithAlert(
-                isPresented: $isImportFilesDialogPresented,
-                allowedContentTypes: [
-                    .init(filenameExtension: "excalidraw") ?? .excalidrawFile,
-                    .excalidrawPNG,
-                    .excalidrawSVG,
-                    .png,
-                    .svg,
-                    .folder  // Also allow directory selection
-                ],
-                allowsMultipleSelection: true
-            ) { urls in
-                NotificationCenter.default.post(
-                    name: .shouldHandleImport,
-                    object: urls
-                )
-            }
-    }
 }
 
 struct ImportLocalFolderModifier: ViewModifier {

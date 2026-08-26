@@ -293,6 +293,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     @State private var contentHeight: CGFloat = 0
     
     @State private var isCreateGroupDialogPresented: Bool = false
+    @State private var isImportFilesDialogPresented = false
     
 #if os(iOS)
     @State private var editMode: EditMode = .inactive
@@ -466,17 +467,17 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                             }
                         }
 #endif
-                        
+
                         GroupMenuItems(
                             group: group,
-                            canExpand: false
-                        ) {
-                            triggers.onToggleRename()
-                        } onToogleCreateSubfolder: {
-                            triggers.onToogleCreateSubfolder()
-                        } onToggleDelete: {
-                            triggers.onToggleDelete()
-                        }
+                            canExpand: false,
+                            onToggleRename: triggers.onToggleRename,
+                            onToogleCreateSubfolder: triggers.onToogleCreateSubfolder,
+                            onToggleDelete: triggers.onToggleDelete,
+                            onImportFiles: group.groupType == .trash
+                                ? nil
+                                : { isImportFilesDialogPresented.toggle() }
+                        )
                     } label: {
 #if os(iOS)
                         Label(
@@ -489,6 +490,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
 #endif
                     }
                 }
+                .modifier(ImportFilesModifier(isPresented: $isImportFilesDialogPresented))
             } else if let folder = group as? LocalFolder {
                 LocalFolderMenuProvider(folder: folder) { triggers in
                     Menu {

@@ -42,6 +42,17 @@ enum FileHomeItemTransitionPreferenceID {
     }
 }
 
+private struct FileHomeItemTransitionSourceEnabledKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    var fileHomeItemTransitionSourceEnabled: Bool {
+        get { self[FileHomeItemTransitionSourceEnabledKey.self] }
+        set { self[FileHomeItemTransitionSourceEnabledKey.self] = newValue }
+    }
+}
+
 struct FileHomeItemView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.managedObjectContext) var viewContext
@@ -238,6 +249,7 @@ struct FileHomeItemView: View {
 private struct FileHomeItemContentView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.fileHomeItemTransitionSourceEnabled) private var transitionSourceEnabled
 #if os(iOS)
     @Environment(\.editMode) var editMode
 #endif
@@ -323,7 +335,7 @@ private struct FileHomeItemContentView: View {
         .background {
             Color.clear
                 .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
-                    fileHomeItemTransitionItemState.sourceFileID == fileID
+                    transitionSourceEnabled && fileHomeItemTransitionItemState.sourceFileID == fileID
                     ? [FileHomeItemTransitionPreferenceID.source(for: fileID): value]
                     : [:]
                 }

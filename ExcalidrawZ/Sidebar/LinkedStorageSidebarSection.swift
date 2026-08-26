@@ -79,6 +79,7 @@ struct LinkedStorageSidebarSection: View {
                         .transition(.scale(scale: 0, anchor: .topTrailing).combined(with: .opacity))
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
             .onHover { isHovered = $0 }
             .animation(.smooth, value: showEmptyPlaceholder)
@@ -114,12 +115,11 @@ struct LinkedStorageSidebarSection: View {
                     ProgressView()
                         .controlSize(.mini)
                 } else {
-                    Label(
-                        String(
+                    SidebarSectionAddIcon(
+                        accessibilityLabel: Text(String(
                             localized: "linkedStorageAddStorage",
                             defaultValue: "Add Storage"
-                        ),
-                        systemImage: "plus.circle.fill"
+                        ))
                     )
                 }
             }
@@ -132,10 +132,8 @@ struct LinkedStorageSidebarSection: View {
             .padding(.trailing, 2)
 #endif
         }
+        .frame(maxWidth: .infinity)
         .font(.callout.bold())
-#if os(iOS)
-        .tint(.secondary)
-#endif
         .animation(.smooth, value: isHovered)
     }
 

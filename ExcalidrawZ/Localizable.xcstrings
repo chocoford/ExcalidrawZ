@@ -100474,6 +100474,684 @@
         }
       }
     },
+    "settingsCloudStorageDisconnectAction": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "断开连接"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "斷開連接"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قطع الاتصال"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trennen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconectar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déconnecter"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अलग करें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnetti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切断"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "연결 해제"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ontkoppelen"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozłącz"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconectar"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отключить"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ตัดการเชื่อมต่อ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlantıyı Kes"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngắt kết nối"
+          }
+        }
+      }
+    },
+    "settingsCloudStorageDisconnectDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnecting removes this account, its linked folders, and local caches from ExcalidrawZ. Files stored in the cloud are not deleted."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "断开连接将从 ExcalidrawZ 中移除此帐户、其链接文件夹以及本地缓存。存储在云中的文件不会被删除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "斷開連接將移除此帳戶、其鏈接的資料夾和本地緩存從 ExcalidrawZ 中。存儲在雲端的文件不會被刪除。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قطع الاتصال يزيل هذا الحساب والمجلدات المرتبطة به والذاكرة المؤقتة المحلية من ExcalidrawZ. الملفات المخزنة في السحابة لن تُحذف."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Trennen entfernt dieses Konto, seine verlinkten Ordner und lokale Caches von ExcalidrawZ. In der Cloud gespeicherte Dateien werden nicht gelöscht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconectar elimina esta cuenta, sus carpetas vinculadas y las cachés locales de ExcalidrawZ. Los archivos almacenados en la nube no se eliminan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La déconnexion supprime ce compte, ses dossiers liés et les caches locaux d'ExcalidrawZ. Les fichiers stockés dans le cloud ne sont pas supprimés."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अलग करने से इस खाते, इसके लिंक किए गए फ़ोल्डर्स और स्थानीय कैश को ExcalidrawZ से हटा दिया जाएगा। क्लाउड में संग्रहीत फ़ाइलें मिटाई नहीं जाएंगी।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La disconnessione rimuove questo account, le sue cartelle collegate e le cache locali da ExcalidrawZ. I file memorizzati nel cloud non vengono eliminati."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切断すると、このアカウント、そのリンクされたフォルダー、そしてローカルキャッシュがExcalidrawZから削除されます。クラウドに保存されているファイルは削除されません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "연결 해제를 통해 이 계정, 연결된 폴더 및 ExcalidrawZ의 로컬 캐시가 제거됩니다. 클라우드에 저장된 파일은 삭제되지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het ontkoppelen verwijdert dit account, de gekoppelde mappen en lokale caches van ExcalidrawZ. Bestanden die in de cloud zijn opgeslagen, worden niet verwijderd."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozłączenie usunie to konto, powiązane foldery i lokalne pamięci podręczne z ExcalidrawZ. Pliki przechowywane w chmurze nie zostaną usunięte."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconectar remove esta conta, suas pastas vinculadas e caches locais do ExcalidrawZ. Os arquivos armazenados na nuvem não serão excluídos."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отключение удаляет эту учетную запись, связанные папки и локальные кэши из ExcalidrawZ. Файлы, хранящиеся в облаке, не удаляются."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การตัดการเชื่อมต่อจะลบบัญชีนี้ โฟลเดอร์ที่เชื่อมโยง และแคชในเครื่องออกจาก ExcalidrawZ ไฟล์ที่จัดเก็บในคลาวด์จะไม่ถูกลบ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlantıyı kesmek, bu hesabı, bağlı klasörlerini ve ExcalidrawZ'deki yerel önbellekleri kaldırır. Bulutta depolanan dosyalar silinmez."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Việc ngắt kết nối sẽ xóa tài khoản này, các thư mục liên kết của nó và bộ nhớ cache cục bộ khỏi ExcalidrawZ. Các tệp lưu trữ trên đám mây sẽ không bị xóa."
+          }
+        }
+      }
+    },
+    "settingsCloudStorageDisconnectMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect %@ from %@? All linked folders for this account will be removed from ExcalidrawZ."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从 %@ 断开连接 %@？此帐户的所有链接文件夹将从 ExcalidrawZ 中移除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確定要從 %@ 斷開連接 %@ 嗎？此帳戶的所有鏈接資料夾將從 ExcalidrawZ 中移除。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قطع الاتصال %@ من %@؟ سوف تُزال جميع المجلدات المرتبطة بهذا الحساب من ExcalidrawZ."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto %@ von %@ trennen? Alle verlinkten Ordner für dieses Konto werden von ExcalidrawZ entfernt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Desconectar %@ de %@? Todas las carpetas vinculadas a esta cuenta serán eliminadas de ExcalidrawZ."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déconnecter %@ de %@ ? Tous les dossiers liés à ce compte seront supprimés d'ExcalidrawZ."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ को %@ से अलग करें? इस खाते के लिए सभी लिंक किए गए फ़ोल्डर्स ExcalidrawZ से हटा दिए जाएंगे।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnettere %@ da %@? Tutte le cartelle collegate a questo account verranno rimosse da ExcalidrawZ."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@を%@から切断しますか？このアカウントのすべてのリンクされたフォルダーがExcalidrawZから削除されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@을(를) %@에서 연결 해제하시겠습니까? 이 계정에 대한 모든 연결 폴더가 ExcalidrawZ에서 제거됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ontkoppel %@ van %@? Alle gekoppelde mappen voor dit account worden verwijderd uit ExcalidrawZ."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czy odłączyć %@ od %@? Wszystkie powiązane foldery dla tego konta zostaną usunięte z ExcalidrawZ."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconectar %@ de %@? Todas as pastas vinculadas a esta conta serão removidas do ExcalidrawZ."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отключить %@ от %@? Все связанные папки для этой учетной записи будут удалены из ExcalidrawZ."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ตัดการเชื่อมต่อ %@ จาก %@? โฟลเดอร์ที่เชื่อมโยงทั้งหมดสำหรับบัญชีนี้จะถูกลบออกจาก ExcalidrawZ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@'yı %@'dan ayırmak istiyor musunuz? Bu hesap için tüm bağlı klasörler ExcalidrawZ'den kaldırılacaktır."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngắt kết nối %@ khỏi %@? Tất cả các thư mục liên kết cho tài khoản này sẽ bị xóa khỏi ExcalidrawZ."
+          }
+        }
+      }
+    },
+    "settingsCloudStorageDisconnectTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect Account?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "断开帐户？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "斷開帳戶連接？"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هل تريد قطع الاتصال بالحساب؟"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto trennen?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Desconectar Cuenta?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déconnecter le compte ?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "खाता अलग करें?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnetti Account?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アカウントを切断しますか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계정 연결 해제?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account ontkoppelen?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czy odłączyć konto?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconectar Conta?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отключить учетную запись?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ตัดการเชื่อมต่อบัญชี?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesabı Bağlantısını Kesmek Mi?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngắt kết nối tài khoản?"
+          }
+        }
+      }
+    },
+    "settingsCloudStorageNoConnectedAccounts": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Connected Accounts"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有连接的帐户"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有已連接的帳戶"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا توجد حسابات متصلة"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine verbundenen Konten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay Cuentas Conectadas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun compte connecté"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कोई जुड़े हुए खाते नहीं"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun Account Connesso"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接続されたアカウントはありません"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "연결된 계정이 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen verbonden accounts"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak połączonych kont"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhuma Conta Conectada"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нет подключенных учетных записей"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่มีบัญชีที่เชื่อมต่อ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlı Hesap Yok"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có tài khoản nào được kết nối"
+          }
+        }
+      }
+    },
+    "settingsCloudStorageNoConnectedAccountsDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect a cloud storage provider from Linked Storage in the sidebar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从侧边栏的链接存储中连接一个云存储提供商。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從側邊欄的鏈接存儲中連接一個雲存儲提供商。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قم بتوصيل مزود تخزين سحابي من التخزين المرتبط في شريط الجانب."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinden Sie einen Cloud-Speicheranbieter über den verlinkten Speicher in der Seitenleiste."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conecta un proveedor de almacenamiento en la nube desde Almacenamiento Vinculado en la barra lateral."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez un fournisseur de stockage cloud dans le stockage lié dans la barre latérale."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "साइडबार में लिंक किए गए स्टोरेज से एक क्लाउड स्टोरेज प्रदाता कनेक्ट करें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collega un fornitore di cloud storage da Storage Collegato nella barra laterale."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サイドバーのリンクストレージからクラウドストレージプロバイダーを接続してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "사이드바의 연결된 저장소에서 클라우드 저장소 제공업체를 연결하십시오."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbind een cloudopslagprovider via Verbonden Opslag in de zijbalk."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podłącz dostawcę pamięci w chmurze z powiązanej pamięci w pasku bocznym."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conecte um provedor de armazenamento em nuvem a partir do Armazenamento Vinculado na barra lateral."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключите облачного хранилища в разделе Связанные хранилища в боковом меню."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เชื่อมต่อผู้ให้บริการพื้นที่จัดเก็บคลาวด์จากพื้นที่จัดเก็บที่เชื่อมโยงในแถบด้านข้าง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yan paneldeki Bağlı Depolama'dan bir bulut depolama sağlayıcısını bağlayın."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết nối một nhà cung cấp lưu trữ đám mây từ Lưu trữ liên kết trong thanh bên."
+          }
+        }
+      }
+    },
     "settingsExcalidraw": {
       "extractionState": "manual",
       "localizations": {
@@ -137996,185 +138674,905 @@
     "whatsNewCloudStorageDescription": {
       "extractionState": "manual",
       "localizations": {
-        "ar": { "stringUnit": { "state": "translated", "value": "اربط OneDrive وDropbox وخدمات WebDAV لتصفح ملفات Excalidraw وتحريرها والحفاظ على مزامنتها." } },
-        "de": { "stringUnit": { "state": "translated", "value": "Verbinde OneDrive, Dropbox und WebDAV-Dienste, um Excalidraw-Dateien zu durchsuchen, zu bearbeiten und zu synchronisieren." } },
-        "en": { "stringUnit": { "state": "translated", "value": "Connect OneDrive, Dropbox, and WebDAV services to browse, edit, and keep your Excalidraw files in sync." } },
-        "es": { "stringUnit": { "state": "translated", "value": "Conecta OneDrive, Dropbox y servicios WebDAV para explorar, editar y mantener sincronizados tus archivos de Excalidraw." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Connectez OneDrive, Dropbox et des services WebDAV pour parcourir, modifier et synchroniser vos fichiers Excalidraw." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Excalidraw फ़ाइलें ब्राउज़, संपादित और सिंक रखने के लिए OneDrive, Dropbox और WebDAV सेवाएँ कनेक्ट करें।" } },
-        "it": { "stringUnit": { "state": "translated", "value": "Connetti OneDrive, Dropbox e servizi WebDAV per sfogliare, modificare e sincronizzare i file Excalidraw." } },
-        "ja": { "stringUnit": { "state": "translated", "value": "OneDrive、Dropbox、WebDAVサービスに接続し、Excalidrawファイルを参照、編集、同期できます。" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "OneDrive, Dropbox 및 WebDAV 서비스를 연결하여 Excalidraw 파일을 탐색, 편집 및 동기화하세요." } },
-        "nl": { "stringUnit": { "state": "translated", "value": "Verbind OneDrive, Dropbox en WebDAV-diensten om Excalidraw-bestanden te bekijken, bewerken en synchroniseren." } },
-        "pl": { "stringUnit": { "state": "translated", "value": "Połącz OneDrive, Dropbox i usługi WebDAV, aby przeglądać, edytować i synchronizować pliki Excalidraw." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Conecte OneDrive, Dropbox e serviços WebDAV para navegar, editar e manter seus arquivos do Excalidraw sincronizados." } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Подключайте OneDrive, Dropbox и сервисы WebDAV, чтобы просматривать, редактировать и синхронизировать файлы Excalidraw." } },
-        "th": { "stringUnit": { "state": "translated", "value": "เชื่อมต่อ OneDrive, Dropbox และบริการ WebDAV เพื่อเรียกดู แก้ไข และซิงค์ไฟล์ Excalidraw ของคุณ" } },
-        "tr": { "stringUnit": { "state": "translated", "value": "Excalidraw dosyalarınıza göz atmak, düzenlemek ve eşitlemek için OneDrive, Dropbox ve WebDAV hizmetlerini bağlayın." } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Kết nối OneDrive, Dropbox và các dịch vụ WebDAV để duyệt, chỉnh sửa và đồng bộ tệp Excalidraw." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "连接 OneDrive、Dropbox 和 WebDAV 服务，浏览、编辑并同步你的 Excalidraw 文件。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連接 OneDrive、Dropbox 和 WebDAV 服務，瀏覽、編輯並同步你的 Excalidraw 檔案。" } }
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اربط OneDrive وDropbox وخدمات WebDAV لتصفح ملفات Excalidraw وتحريرها والحفاظ على مزامنتها."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinde OneDrive, Dropbox und WebDAV-Dienste, um Excalidraw-Dateien zu durchsuchen, zu bearbeiten und zu synchronisieren."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect OneDrive, Dropbox, and WebDAV services to browse, edit, and keep your Excalidraw files in sync."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conecta OneDrive, Dropbox y servicios WebDAV para explorar, editar y mantener sincronizados tus archivos de Excalidraw."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez OneDrive, Dropbox et des services WebDAV pour parcourir, modifier et synchroniser vos fichiers Excalidraw."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excalidraw फ़ाइलें ब्राउज़, संपादित और सिंक रखने के लिए OneDrive, Dropbox और WebDAV सेवाएँ कनेक्ट करें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connetti OneDrive, Dropbox e servizi WebDAV per sfogliare, modificare e sincronizzare i file Excalidraw."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OneDrive、Dropbox、WebDAVサービスに接続し、Excalidrawファイルを参照、編集、同期できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OneDrive, Dropbox 및 WebDAV 서비스를 연결하여 Excalidraw 파일을 탐색, 편집 및 동기화하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbind OneDrive, Dropbox en WebDAV-diensten om Excalidraw-bestanden te bekijken, bewerken en synchroniseren."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz OneDrive, Dropbox i usługi WebDAV, aby przeglądać, edytować i synchronizować pliki Excalidraw."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conecte OneDrive, Dropbox e serviços WebDAV para navegar, editar e manter seus arquivos do Excalidraw sincronizados."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключайте OneDrive, Dropbox и сервисы WebDAV, чтобы просматривать, редактировать и синхронизировать файлы Excalidraw."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เชื่อมต่อ OneDrive, Dropbox และบริการ WebDAV เพื่อเรียกดู แก้ไข และซิงค์ไฟล์ Excalidraw ของคุณ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excalidraw dosyalarınıza göz atmak, düzenlemek ve eşitlemek için OneDrive, Dropbox ve WebDAV hizmetlerini bağlayın."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết nối OneDrive, Dropbox và các dịch vụ WebDAV để duyệt, chỉnh sửa và đồng bộ tệp Excalidraw."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接 OneDrive、Dropbox 和 WebDAV 服务，浏览、编辑并同步你的 Excalidraw 文件。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連接 OneDrive、Dropbox 和 WebDAV 服務，瀏覽、編輯並同步你的 Excalidraw 檔案。"
+          }
+        }
       }
     },
     "whatsNewCloudStorageTitle": {
       "extractionState": "manual",
       "localizations": {
-        "ar": { "stringUnit": { "state": "translated", "value": "التخزين السحابي" } },
-        "de": { "stringUnit": { "state": "translated", "value": "Cloud-Speicher" } },
-        "en": { "stringUnit": { "state": "translated", "value": "Cloud Storage" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Almacenamiento en la nube" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Stockage cloud" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "क्लाउड स्टोरेज" } },
-        "it": { "stringUnit": { "state": "translated", "value": "Archiviazione cloud" } },
-        "ja": { "stringUnit": { "state": "translated", "value": "クラウドストレージ" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "클라우드 저장소" } },
-        "nl": { "stringUnit": { "state": "translated", "value": "Cloudopslag" } },
-        "pl": { "stringUnit": { "state": "translated", "value": "Pamięć w chmurze" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Armazenamento em nuvem" } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Облачное хранилище" } },
-        "th": { "stringUnit": { "state": "translated", "value": "พื้นที่จัดเก็บบนคลาวด์" } },
-        "tr": { "stringUnit": { "state": "translated", "value": "Bulut Depolama" } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Lưu trữ đám mây" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "云存储" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "雲端儲存空間" } }
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التخزين السحابي"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud-Speicher"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud Storage"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Almacenamiento en la nube"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stockage cloud"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "क्लाउड स्टोरेज"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archiviazione cloud"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クラウドストレージ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "클라우드 저장소"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloudopslag"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pamięć w chmurze"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Armazenamento em nuvem"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Облачное хранилище"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "พื้นที่จัดเก็บบนคลาวด์"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulut Depolama"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu trữ đám mây"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "云存储"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "雲端儲存空間"
+          }
+        }
       }
     },
     "whatsNewDropboxDescription": {
       "extractionState": "manual",
       "localizations": {
-        "ar": { "stringUnit": { "state": "translated", "value": "اربط مجلدات Dropbox وتصفح رسوماتك وحررها ونظمها من ExcalidrawZ." } },
-        "de": { "stringUnit": { "state": "translated", "value": "Verknüpfe Dropbox-Ordner und durchsuche, bearbeite und organisiere deine Zeichnungen in ExcalidrawZ." } },
-        "en": { "stringUnit": { "state": "translated", "value": "Link Dropbox folders and browse, edit, and organize your drawings from ExcalidrawZ." } },
-        "es": { "stringUnit": { "state": "translated", "value": "Vincula carpetas de Dropbox y explora, edita y organiza tus dibujos desde ExcalidrawZ." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Liez des dossiers Dropbox et parcourez, modifiez et organisez vos dessins depuis ExcalidrawZ." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Dropbox फ़ोल्डर लिंक करें और ExcalidrawZ से अपने ड्रॉइंग ब्राउज़, संपादित और व्यवस्थित करें।" } },
-        "it": { "stringUnit": { "state": "translated", "value": "Collega le cartelle Dropbox e sfoglia, modifica e organizza i disegni da ExcalidrawZ." } },
-        "ja": { "stringUnit": { "state": "translated", "value": "Dropboxフォルダをリンクし、ExcalidrawZから描画を参照、編集、整理できます。" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "Dropbox 폴더를 연결하고 ExcalidrawZ에서 드로잉을 탐색, 편집 및 정리하세요." } },
-        "nl": { "stringUnit": { "state": "translated", "value": "Koppel Dropbox-mappen en blader, bewerk en orden je tekeningen vanuit ExcalidrawZ." } },
-        "pl": { "stringUnit": { "state": "translated", "value": "Połącz foldery Dropbox oraz przeglądaj, edytuj i organizuj rysunki w ExcalidrawZ." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Vincule pastas do Dropbox e navegue, edite e organize seus desenhos pelo ExcalidrawZ." } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Подключайте папки Dropbox и просматривайте, редактируйте и упорядочивайте рисунки в ExcalidrawZ." } },
-        "th": { "stringUnit": { "state": "translated", "value": "เชื่อมโยงโฟลเดอร์ Dropbox แล้วเรียกดู แก้ไข และจัดระเบียบภาพวาดจาก ExcalidrawZ" } },
-        "tr": { "stringUnit": { "state": "translated", "value": "Dropbox klasörlerini bağlayın; çizimlerinize ExcalidrawZ üzerinden göz atın, düzenleyin ve organize edin." } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Liên kết thư mục Dropbox và duyệt, chỉnh sửa, sắp xếp bản vẽ từ ExcalidrawZ." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "关联 Dropbox 文件夹，直接在 ExcalidrawZ 中浏览、编辑和整理绘图。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連結 Dropbox 資料夾，直接在 ExcalidrawZ 中瀏覽、編輯與整理繪圖。" } }
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اربط مجلدات Dropbox وتصفح رسوماتك وحررها ونظمها من ExcalidrawZ."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verknüpfe Dropbox-Ordner und durchsuche, bearbeite und organisiere deine Zeichnungen in ExcalidrawZ."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Dropbox folders and browse, edit, and organize your drawings from ExcalidrawZ."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vincula carpetas de Dropbox y explora, edita y organiza tus dibujos desde ExcalidrawZ."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liez des dossiers Dropbox et parcourez, modifiez et organisez vos dessins depuis ExcalidrawZ."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dropbox फ़ोल्डर लिंक करें और ExcalidrawZ से अपने ड्रॉइंग ब्राउज़, संपादित और व्यवस्थित करें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collega le cartelle Dropbox e sfoglia, modifica e organizza i disegni da ExcalidrawZ."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dropboxフォルダをリンクし、ExcalidrawZから描画を参照、編集、整理できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dropbox 폴더를 연결하고 ExcalidrawZ에서 드로잉을 탐색, 편집 및 정리하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koppel Dropbox-mappen en blader, bewerk en orden je tekeningen vanuit ExcalidrawZ."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz foldery Dropbox oraz przeglądaj, edytuj i organizuj rysunki w ExcalidrawZ."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vincule pastas do Dropbox e navegue, edite e organize seus desenhos pelo ExcalidrawZ."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключайте папки Dropbox и просматривайте, редактируйте и упорядочивайте рисунки в ExcalidrawZ."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เชื่อมโยงโฟลเดอร์ Dropbox แล้วเรียกดู แก้ไข และจัดระเบียบภาพวาดจาก ExcalidrawZ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dropbox klasörlerini bağlayın; çizimlerinize ExcalidrawZ üzerinden göz atın, düzenleyin ve organize edin."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liên kết thư mục Dropbox và duyệt, chỉnh sửa, sắp xếp bản vẽ từ ExcalidrawZ."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关联 Dropbox 文件夹，直接在 ExcalidrawZ 中浏览、编辑和整理绘图。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連結 Dropbox 資料夾，直接在 ExcalidrawZ 中瀏覽、編輯與整理繪圖。"
+          }
+        }
       }
     },
     "whatsNewGoogleDriveDescription": {
       "extractionState": "manual",
       "localizations": {
-        "ar": { "stringUnit": { "state": "translated", "value": "اربط مجلدات Google Drive لإدارة ملفات Excalidraw عبر أجهزتك." } },
-        "de": { "stringUnit": { "state": "translated", "value": "Verknüpfe Google Drive-Ordner, um Excalidraw-Dateien auf deinen Geräten zu verwalten." } },
-        "en": { "stringUnit": { "state": "translated", "value": "Link Google Drive folders to manage Excalidraw files across your devices." } },
-        "es": { "stringUnit": { "state": "translated", "value": "Vincula carpetas de Google Drive para administrar archivos de Excalidraw en todos tus dispositivos." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Liez des dossiers Google Drive pour gérer vos fichiers Excalidraw sur tous vos appareils." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "अपने डिवाइसों पर Excalidraw फ़ाइलें प्रबंधित करने के लिए Google Drive फ़ोल्डर लिंक करें।" } },
-        "it": { "stringUnit": { "state": "translated", "value": "Collega le cartelle Google Drive per gestire i file Excalidraw su tutti i tuoi dispositivi." } },
-        "ja": { "stringUnit": { "state": "translated", "value": "Google Driveフォルダをリンクして、複数のデバイスでExcalidrawファイルを管理できます。" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "Google Drive 폴더를 연결하여 여러 기기에서 Excalidraw 파일을 관리하세요." } },
-        "nl": { "stringUnit": { "state": "translated", "value": "Koppel Google Drive-mappen om Excalidraw-bestanden op al je apparaten te beheren." } },
-        "pl": { "stringUnit": { "state": "translated", "value": "Połącz foldery Google Drive, aby zarządzać plikami Excalidraw na wszystkich urządzeniach." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Vincule pastas do Google Drive para gerenciar arquivos do Excalidraw em seus dispositivos." } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Подключайте папки Google Drive для управления файлами Excalidraw на разных устройствах." } },
-        "th": { "stringUnit": { "state": "translated", "value": "เชื่อมโยงโฟลเดอร์ Google Drive เพื่อจัดการไฟล์ Excalidraw บนอุปกรณ์ต่างๆ" } },
-        "tr": { "stringUnit": { "state": "translated", "value": "Excalidraw dosyalarını cihazlarınızda yönetmek için Google Drive klasörlerini bağlayın." } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Liên kết thư mục Google Drive để quản lý tệp Excalidraw trên các thiết bị." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "关联 Google Drive 文件夹，在不同设备间管理 Excalidraw 文件。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連結 Google Drive 資料夾，在不同裝置間管理 Excalidraw 檔案。" } }
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اربط مجلدات Google Drive لإدارة ملفات Excalidraw عبر أجهزتك."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verknüpfe Google Drive-Ordner, um Excalidraw-Dateien auf deinen Geräten zu verwalten."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Google Drive folders to manage Excalidraw files across your devices."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vincula carpetas de Google Drive para administrar archivos de Excalidraw en todos tus dispositivos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liez des dossiers Google Drive pour gérer vos fichiers Excalidraw sur tous vos appareils."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अपने डिवाइसों पर Excalidraw फ़ाइलें प्रबंधित करने के लिए Google Drive फ़ोल्डर लिंक करें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collega le cartelle Google Drive per gestire i file Excalidraw su tutti i tuoi dispositivi."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Driveフォルダをリンクして、複数のデバイスでExcalidrawファイルを管理できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive 폴더를 연결하여 여러 기기에서 Excalidraw 파일을 관리하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koppel Google Drive-mappen om Excalidraw-bestanden op al je apparaten te beheren."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz foldery Google Drive, aby zarządzać plikami Excalidraw na wszystkich urządzeniach."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vincule pastas do Google Drive para gerenciar arquivos do Excalidraw em seus dispositivos."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключайте папки Google Drive для управления файлами Excalidraw на разных устройствах."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เชื่อมโยงโฟลเดอร์ Google Drive เพื่อจัดการไฟล์ Excalidraw บนอุปกรณ์ต่างๆ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excalidraw dosyalarını cihazlarınızda yönetmek için Google Drive klasörlerini bağlayın."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liên kết thư mục Google Drive để quản lý tệp Excalidraw trên các thiết bị."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关联 Google Drive 文件夹，在不同设备间管理 Excalidraw 文件。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連結 Google Drive 資料夾，在不同裝置間管理 Excalidraw 檔案。"
+          }
+        }
       }
     },
     "whatsNewNativeColorPickerDescription": {
       "extractionState": "manual",
       "localizations": {
-        "ar": { "stringUnit": { "state": "translated", "value": "اختر الألوان من أي مكان على الشاشة باستخدام أداة القطّارة الأصلية على Mac وiPad وiPhone." } },
-        "de": { "stringUnit": { "state": "translated", "value": "Wähle Farben mit der systemeigenen Pipette direkt vom Bildschirm auf Mac, iPad und iPhone aus." } },
-        "en": { "stringUnit": { "state": "translated", "value": "Pick colors from anywhere on screen with the native eyedropper on Mac, iPad, and iPhone." } },
-        "es": { "stringUnit": { "state": "translated", "value": "Elige colores de cualquier parte de la pantalla con el cuentagotas nativo en Mac, iPad y iPhone." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Prélevez des couleurs n'importe où à l'écran avec la pipette native sur Mac, iPad et iPhone." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Mac, iPad और iPhone पर नेटिव आईड्रॉपर से स्क्रीन पर कहीं से भी रंग चुनें।" } },
-        "it": { "stringUnit": { "state": "translated", "value": "Scegli i colori da qualsiasi punto dello schermo con il contagocce nativo su Mac, iPad e iPhone." } },
-        "ja": { "stringUnit": { "state": "translated", "value": "Mac、iPad、iPhoneのネイティブスポイトで、画面上のどこからでも色を選択できます。" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "Mac, iPad 및 iPhone의 기본 스포이트로 화면 어디에서나 색상을 선택하세요." } },
-        "nl": { "stringUnit": { "state": "translated", "value": "Kies kleuren overal op het scherm met de systeemeigen pipet op Mac, iPad en iPhone." } },
-        "pl": { "stringUnit": { "state": "translated", "value": "Pobieraj kolory z dowolnego miejsca na ekranie za pomocą systemowej pipety na Macu, iPadzie i iPhonie." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Escolha cores em qualquer lugar da tela com o conta-gotas nativo no Mac, iPad e iPhone." } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Выбирайте цвета в любой точке экрана с помощью системной пипетки на Mac, iPad и iPhone." } },
-        "th": { "stringUnit": { "state": "translated", "value": "เลือกสีจากที่ใดก็ได้บนหน้าจอด้วยเครื่องมือดูดสีของระบบบน Mac, iPad และ iPhone" } },
-        "tr": { "stringUnit": { "state": "translated", "value": "Mac, iPad ve iPhone'daki yerel damlalıkla ekranın herhangi bir yerinden renk seçin." } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Chọn màu ở bất kỳ đâu trên màn hình bằng công cụ hút màu hệ thống trên Mac, iPad và iPhone." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "使用系统原生吸管，直接从 Mac、iPad 和 iPhone 屏幕的任意位置选取颜色。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "使用系統原生滴管，直接從 Mac、iPad 和 iPhone 螢幕的任意位置選取顏色。" } }
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر الألوان من أي مكان على الشاشة باستخدام أداة القطّارة الأصلية على Mac وiPad وiPhone."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle Farben mit der systemeigenen Pipette direkt vom Bildschirm auf Mac, iPad und iPhone aus."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick colors from anywhere on screen with the native eyedropper on Mac, iPad, and iPhone."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige colores de cualquier parte de la pantalla con el cuentagotas nativo en Mac, iPad y iPhone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prélevez des couleurs n'importe où à l'écran avec la pipette native sur Mac, iPad et iPhone."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac, iPad और iPhone पर नेटिव आईड्रॉपर से स्क्रीन पर कहीं से भी रंग चुनें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli i colori da qualsiasi punto dello schermo con il contagocce nativo su Mac, iPad e iPhone."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac、iPad、iPhoneのネイティブスポイトで、画面上のどこからでも色を選択できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac, iPad 및 iPhone의 기본 스포이트로 화면 어디에서나 색상을 선택하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies kleuren overal op het scherm met de systeemeigen pipet op Mac, iPad en iPhone."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pobieraj kolory z dowolnego miejsca na ekranie za pomocą systemowej pipety na Macu, iPadzie i iPhonie."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha cores em qualquer lugar da tela com o conta-gotas nativo no Mac, iPad e iPhone."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбирайте цвета в любой точке экрана с помощью системной пипетки на Mac, iPad и iPhone."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เลือกสีจากที่ใดก็ได้บนหน้าจอด้วยเครื่องมือดูดสีของระบบบน Mac, iPad และ iPhone"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac, iPad ve iPhone'daki yerel damlalıkla ekranın herhangi bir yerinden renk seçin."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn màu ở bất kỳ đâu trên màn hình bằng công cụ hút màu hệ thống trên Mac, iPad và iPhone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用系统原生吸管，直接从 Mac、iPad 和 iPhone 屏幕的任意位置选取颜色。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用系統原生滴管，直接從 Mac、iPad 和 iPhone 螢幕的任意位置選取顏色。"
+          }
+        }
       }
     },
     "whatsNewNativeColorPickerTitle": {
       "extractionState": "manual",
       "localizations": {
-        "ar": { "stringUnit": { "state": "translated", "value": "منتقي الألوان الأصلي" } },
-        "de": { "stringUnit": { "state": "translated", "value": "System-Farbwähler" } },
-        "en": { "stringUnit": { "state": "translated", "value": "Native Color Picker" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Selector de color nativo" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Sélecteur de couleurs natif" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "नेटिव रंग चयनकर्ता" } },
-        "it": { "stringUnit": { "state": "translated", "value": "Selettore colore nativo" } },
-        "ja": { "stringUnit": { "state": "translated", "value": "ネイティブカラーピッカー" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "기본 색상 선택기" } },
-        "nl": { "stringUnit": { "state": "translated", "value": "Systeemkleurkiezer" } },
-        "pl": { "stringUnit": { "state": "translated", "value": "Systemowy próbnik kolorów" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Seletor de cores nativo" } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Системная пипетка" } },
-        "th": { "stringUnit": { "state": "translated", "value": "ตัวเลือกสีของระบบ" } },
-        "tr": { "stringUnit": { "state": "translated", "value": "Yerel Renk Seçici" } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Bộ chọn màu hệ thống" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "原生取色器" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "原生取色器" } }
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "منتقي الألوان الأصلي"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System-Farbwähler"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Native Color Picker"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selector de color nativo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sélecteur de couleurs natif"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नेटिव रंग चयनकर्ता"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selettore colore nativo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ネイティブカラーピッカー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기본 색상 선택기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Systeemkleurkiezer"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Systemowy próbnik kolorów"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seletor de cores nativo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Системная пипетка"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ตัวเลือกสีของระบบ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yerel Renk Seçici"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ chọn màu hệ thống"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原生取色器"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原生取色器"
+          }
+        }
       }
     },
     "whatsNewOneDriveDescription": {
       "extractionState": "manual",
       "localizations": {
-        "ar": { "stringUnit": { "state": "translated", "value": "اربط مجلدات OneDrive وافتح ملفات Excalidraw وعدّلها واحتفظ بمزامنتها." } },
-        "de": { "stringUnit": { "state": "translated", "value": "Verknüpfe OneDrive-Ordner und öffne, bearbeite und synchronisiere deine Excalidraw-Dateien." } },
-        "en": { "stringUnit": { "state": "translated", "value": "Link OneDrive folders and open, edit, and keep your Excalidraw files in sync." } },
-        "es": { "stringUnit": { "state": "translated", "value": "Vincula carpetas de OneDrive y abre, edita y mantén sincronizados tus archivos de Excalidraw." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Liez des dossiers OneDrive et ouvrez, modifiez et synchronisez vos fichiers Excalidraw." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "OneDrive फ़ोल्डर लिंक करें और अपनी Excalidraw फ़ाइलें खोलें, संपादित करें और सिंक रखें।" } },
-        "it": { "stringUnit": { "state": "translated", "value": "Collega le cartelle OneDrive e apri, modifica e mantieni sincronizzati i file Excalidraw." } },
-        "ja": { "stringUnit": { "state": "translated", "value": "OneDriveフォルダをリンクし、Excalidrawファイルを開いて編集し、同期を保てます。" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "OneDrive 폴더를 연결하고 Excalidraw 파일을 열고 편집하며 동기화하세요." } },
-        "nl": { "stringUnit": { "state": "translated", "value": "Koppel OneDrive-mappen en open, bewerk en synchroniseer je Excalidraw-bestanden." } },
-        "pl": { "stringUnit": { "state": "translated", "value": "Połącz foldery OneDrive oraz otwieraj, edytuj i synchronizuj pliki Excalidraw." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Vincule pastas do OneDrive e abra, edite e mantenha seus arquivos do Excalidraw sincronizados." } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Подключайте папки OneDrive, открывайте и редактируйте файлы Excalidraw и поддерживайте их синхронизацию." } },
-        "th": { "stringUnit": { "state": "translated", "value": "เชื่อมโยงโฟลเดอร์ OneDrive แล้วเปิด แก้ไข และซิงค์ไฟล์ Excalidraw ของคุณ" } },
-        "tr": { "stringUnit": { "state": "translated", "value": "OneDrive klasörlerini bağlayın; Excalidraw dosyalarınızı açın, düzenleyin ve eşitlenmiş tutun." } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Liên kết thư mục OneDrive để mở, chỉnh sửa và đồng bộ các tệp Excalidraw." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "关联 OneDrive 文件夹，打开、编辑并同步你的 Excalidraw 文件。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連結 OneDrive 資料夾，開啟、編輯並同步你的 Excalidraw 檔案。" } }
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اربط مجلدات OneDrive وافتح ملفات Excalidraw وعدّلها واحتفظ بمزامنتها."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verknüpfe OneDrive-Ordner und öffne, bearbeite und synchronisiere deine Excalidraw-Dateien."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link OneDrive folders and open, edit, and keep your Excalidraw files in sync."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vincula carpetas de OneDrive y abre, edita y mantén sincronizados tus archivos de Excalidraw."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liez des dossiers OneDrive et ouvrez, modifiez et synchronisez vos fichiers Excalidraw."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OneDrive फ़ोल्डर लिंक करें और अपनी Excalidraw फ़ाइलें खोलें, संपादित करें और सिंक रखें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collega le cartelle OneDrive e apri, modifica e mantieni sincronizzati i file Excalidraw."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OneDriveフォルダをリンクし、Excalidrawファイルを開いて編集し、同期を保てます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OneDrive 폴더를 연결하고 Excalidraw 파일을 열고 편집하며 동기화하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koppel OneDrive-mappen en open, bewerk en synchroniseer je Excalidraw-bestanden."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz foldery OneDrive oraz otwieraj, edytuj i synchronizuj pliki Excalidraw."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vincule pastas do OneDrive e abra, edite e mantenha seus arquivos do Excalidraw sincronizados."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключайте папки OneDrive, открывайте и редактируйте файлы Excalidraw и поддерживайте их синхронизацию."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เชื่อมโยงโฟลเดอร์ OneDrive แล้วเปิด แก้ไข และซิงค์ไฟล์ Excalidraw ของคุณ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OneDrive klasörlerini bağlayın; Excalidraw dosyalarınızı açın, düzenleyin ve eşitlenmiş tutun."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liên kết thư mục OneDrive để mở, chỉnh sửa và đồng bộ các tệp Excalidraw."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关联 OneDrive 文件夹，打开、编辑并同步你的 Excalidraw 文件。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連結 OneDrive 資料夾，開啟、編輯並同步你的 Excalidraw 檔案。"
+          }
+        }
       }
     },
     "whatsNewWebDAVDescription": {
       "extractionState": "manual",
       "localizations": {
-        "ar": { "stringUnit": { "state": "translated", "value": "اربط خدمات WebDAV المتوافقة، بما فيها Nextcloud وownCloud وNutstore وغيرها." } },
-        "de": { "stringUnit": { "state": "translated", "value": "Verbinde kompatible WebDAV-Dienste, darunter Nextcloud, ownCloud, Nutstore und weitere." } },
-        "en": { "stringUnit": { "state": "translated", "value": "Connect compatible WebDAV services, including Nextcloud, ownCloud, Nutstore, and more." } },
-        "es": { "stringUnit": { "state": "translated", "value": "Conecta servicios WebDAV compatibles, incluidos Nextcloud, ownCloud, Nutstore y otros." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Connectez des services WebDAV compatibles, notamment Nextcloud, ownCloud, Nutstore et plus encore." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Nextcloud, ownCloud, Nutstore और अन्य संगत WebDAV सेवाएँ कनेक्ट करें।" } },
-        "it": { "stringUnit": { "state": "translated", "value": "Connetti servizi WebDAV compatibili, tra cui Nextcloud, ownCloud, Nutstore e altri." } },
-        "ja": { "stringUnit": { "state": "translated", "value": "Nextcloud、ownCloud、Nutstoreなど、互換性のあるWebDAVサービスに接続できます。" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "Nextcloud, ownCloud, Nutstore 등 호환되는 WebDAV 서비스에 연결하세요." } },
-        "nl": { "stringUnit": { "state": "translated", "value": "Verbind compatibele WebDAV-diensten, waaronder Nextcloud, ownCloud, Nutstore en meer." } },
-        "pl": { "stringUnit": { "state": "translated", "value": "Połącz zgodne usługi WebDAV, w tym Nextcloud, ownCloud, Nutstore i inne." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Conecte serviços WebDAV compatíveis, incluindo Nextcloud, ownCloud, Nutstore e outros." } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Подключайте совместимые сервисы WebDAV, включая Nextcloud, ownCloud, Nutstore и другие." } },
-        "th": { "stringUnit": { "state": "translated", "value": "เชื่อมต่อบริการ WebDAV ที่รองรับ รวมถึง Nextcloud, ownCloud, Nutstore และอื่นๆ" } },
-        "tr": { "stringUnit": { "state": "translated", "value": "Nextcloud, ownCloud, Nutstore ve daha fazlası dahil uyumlu WebDAV hizmetlerine bağlanın." } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Kết nối các dịch vụ WebDAV tương thích, gồm Nextcloud, ownCloud, Nutstore và nhiều dịch vụ khác." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "连接兼容的 WebDAV 服务，包括 Nextcloud、ownCloud、坚果云等。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連接相容的 WebDAV 服務，包括 Nextcloud、ownCloud、Nutstore 等。" } }
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اربط خدمات WebDAV المتوافقة، بما فيها Nextcloud وownCloud وNutstore وغيرها."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinde kompatible WebDAV-Dienste, darunter Nextcloud, ownCloud, Nutstore und weitere."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect compatible WebDAV services, including Nextcloud, ownCloud, Nutstore, and more."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conecta servicios WebDAV compatibles, incluidos Nextcloud, ownCloud, Nutstore y otros."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez des services WebDAV compatibles, notamment Nextcloud, ownCloud, Nutstore et plus encore."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextcloud, ownCloud, Nutstore और अन्य संगत WebDAV सेवाएँ कनेक्ट करें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connetti servizi WebDAV compatibili, tra cui Nextcloud, ownCloud, Nutstore e altri."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextcloud、ownCloud、Nutstoreなど、互換性のあるWebDAVサービスに接続できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextcloud, ownCloud, Nutstore 등 호환되는 WebDAV 서비스에 연결하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbind compatibele WebDAV-diensten, waaronder Nextcloud, ownCloud, Nutstore en meer."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz zgodne usługi WebDAV, w tym Nextcloud, ownCloud, Nutstore i inne."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conecte serviços WebDAV compatíveis, incluindo Nextcloud, ownCloud, Nutstore e outros."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключайте совместимые сервисы WebDAV, включая Nextcloud, ownCloud, Nutstore и другие."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เชื่อมต่อบริการ WebDAV ที่รองรับ รวมถึง Nextcloud, ownCloud, Nutstore และอื่นๆ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextcloud, ownCloud, Nutstore ve daha fazlası dahil uyumlu WebDAV hizmetlerine bağlanın."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết nối các dịch vụ WebDAV tương thích, gồm Nextcloud, ownCloud, Nutstore và nhiều dịch vụ khác."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接兼容的 WebDAV 服务，包括 Nextcloud、ownCloud、坚果云等。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連接相容的 WebDAV 服務，包括 Nextcloud、ownCloud、Nutstore 等。"
+          }
+        }
       }
     },
     "whatsNewCanvasPreferencesDescription": {

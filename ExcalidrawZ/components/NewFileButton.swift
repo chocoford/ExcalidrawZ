@@ -20,8 +20,6 @@ struct NewFileButton: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @Environment(\.alert) private var alert
-    @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
-
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var collaborationState: CollaborationState
@@ -44,52 +42,15 @@ struct NewFileButton: View {
     @State private var window: UIWindow?
 #endif
     
-    @State private var isFileImporterPresented = false
-    
     @FetchRequest(sortDescriptors: [])
     private var collaborationFiles: FetchedResults<CollaborationFile>
     
     var body: some View {
-#if os(iOS)
-        if canShowImportButton, containerHorizontalSizeClass != .compact {
-            Button {
-                isFileImporterPresented.toggle()
-            } label: {
-                Label(.localizable(.menubarButtonImport), systemSymbol: .squareAndArrowDown)
-            }
-            .fileImporter(
-                isPresented: $isFileImporterPresented,
-                allowedContentTypes: [.excalidrawFile],
-                allowsMultipleSelection: true
-            ) { result in
-                if case .success(let urls) = result {
-                    // Should hanlde here...
-                    Task.detached {
-                        do {
-                            try await fileState.importFiles(urls)
-                        } catch {
-                            await alertToast(error)
-                        }
-                    }
-                } else if case .failure(let error) = result {
-                    alertToast(error)
-                }
-            }
-        }
-#endif
-        
         if fileState.isInCollaborationSpace {
             collaborationNewButton()
         } else {
             localNewButton()
         }
-    }
-    
-    private var canShowImportButton: Bool {
-        guard case .group(let group) = fileState.currentActiveGroup else {
-            return false
-        }
-        return group.groupType != .trash
     }
 
     @ViewBuilder

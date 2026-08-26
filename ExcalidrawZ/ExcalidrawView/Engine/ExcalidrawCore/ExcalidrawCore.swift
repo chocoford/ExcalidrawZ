@@ -279,12 +279,16 @@ extension ExcalidrawCore {
         var didLogWait = false
 
         while true {
-            let coreLoading = self.isLoading || self.isNavigating || !self.isDocumentLoaded
+            // Collaboration keeps `isLoading` true until the room opens. A new room,
+            // however, must load its initial document before `openCollabMode()` runs.
+            // Document readiness therefore depends only on WebView navigation and the
+            // JS onload signal, not on the broader loading state used by the UI.
+            let documentLoading = self.isNavigating || !self.isDocumentLoaded
             let webLoading = await self.webView.isLoading
             let initialMediaLoading = parent != nil
                 && !hasInjectIndexedDBData
 
-            if !coreLoading && !webLoading && !initialMediaLoading {
+            if !documentLoading && !webLoading && !initialMediaLoading {
                 return true
             }
 
@@ -293,14 +297,14 @@ extension ExcalidrawCore {
             }
 
             if Date() >= deadline {
-                if !coreLoading && !webLoading && initialMediaLoading {
+                if !documentLoading && !webLoading && initialMediaLoading {
                     logger.warning(
                         "Timed out waiting for initial media injection before loading file \(fileID); continuing with available media"
                     )
                     return true
                 }
                 logger.warning(
-                    "Timed out waiting to load file \(fileID). coreLoading=\(coreLoading) webLoading=\(webLoading) initialMediaLoading=\(initialMediaLoading)"
+                    "Timed out waiting to load file \(fileID). documentLoading=\(documentLoading) webLoading=\(webLoading) initialMediaLoading=\(initialMediaLoading)"
                 )
                 return false
             }
