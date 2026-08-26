@@ -49,14 +49,72 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         isHandlingApplicationTermination = true
+        showSavingPanel()
         Task { @MainActor in
             defer {
                 isHandlingApplicationTermination = false
             }
             await prepareForApplicationTermination()
+            closeSavingPanel()
             sender.reply(toApplicationShouldTerminate: true)
         }
         return .terminateLater
+    }
+
+    // MARK: - Saving panel shown while flushing state at quit
+    private var savingPanel: NSWindow?
+
+    private func showSavingPanel() {
+        guard savingPanel == nil else { return }
+
+        let panel = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 260, height: 96),
+            styleMask: [.titled, .fullSizeContentView, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        panel.titleVisibility = .hidden
+        panel.titlebarAppearsTransparent = true
+        panel.standardWindowButton(.closeButton)?.isHidden = true
+        panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        panel.standardWindowButton(.zoomButton)?.isHidden = true
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.level = .floating
+        panel.collectionBehavior = [.canJoinAllSpaces, .ignoresCycle]
+
+        let effect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 260, height: 96))
+        effect.material = .hudWindow
+        effect.blendingMode = .behindWindow
+        effect.state = .active
+
+        let spinner = NSProgressIndicator()
+        spinner.style = .spinning
+        spinner.controlSize = .regular
+        spinner.startAnimation(nil)
+
+        let label = NSTextField(labelWithString: "Saving changes…")
+        label.font = .systemFont(ofSize: 13, weight: .medium)
+
+        let stack = NSStackView(views: [spinner, label])
+        stack.orientation = .horizontal
+        stack.spacing = 12
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        effect.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.centerXAnchor.constraint(equalTo: effect.centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: effect.centerYAnchor)
+        ])
+
+        panel.contentView = effect
+        panel.center()
+        panel.makeKeyAndOrderFront(nil)
+        savingPanel = panel
+    }
+
+    private func closeSavingPanel() {
+        savingPanel?.orderOut(nil)
+        savingPanel = nil
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

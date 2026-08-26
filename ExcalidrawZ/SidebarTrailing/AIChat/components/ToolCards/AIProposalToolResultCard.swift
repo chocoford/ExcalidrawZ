@@ -106,34 +106,26 @@ struct AIProposalToolResultCard: View {
 
 #if os(macOS)
     private func makeProposalDragItemProvider() -> NSItemProvider {
-        let itemProvider = NSItemProvider()
-        itemProvider.registerDataRepresentation(
-            forTypeIdentifier: UTType.excalidrawlibJSON.identifier,
-            visibility: .ownProcess
-        ) { completion in
-            do {
-                let library = ExcalidrawLibrary(
-                    type: "excalidrawlib",
-                    version: 2,
-                    source: "https://excalidraw.com",
-                    libraryItems: [
-                        ExcalidrawLibrary.Item(
-                            id: UUID().uuidString,
-                            status: .published,
-                            createdAt: Date(),
-                            name: String(localizable: .aiProposalDragName),
-                            elements: artifact.visibleElements
-                        )
-                    ]
+        // Eager data: lazy promises (registerDataRepresentation) deadlock
+        // CFPasteboardResolveAllPromisedData at app quit.
+        let library = ExcalidrawLibrary(
+            type: "excalidrawlib",
+            version: 2,
+            source: "https://excalidraw.com",
+            libraryItems: [
+                ExcalidrawLibrary.Item(
+                    id: UUID().uuidString,
+                    status: .published,
+                    createdAt: Date(),
+                    name: String(localizable: .aiProposalDragName),
+                    elements: artifact.visibleElements
                 )
-                let data = Data(try library.jsonStringified().utf8)
-                completion(data, nil)
-            } catch {
-                completion(nil, error)
-            }
-            return Progress(totalUnitCount: 1)
+            ]
+        )
+        guard let data = (try? library.jsonStringified().data(using: .utf8)) as NSData? else {
+            return NSItemProvider()
         }
-        return itemProvider
+        return NSItemProvider(item: data, typeIdentifier: UTType.excalidrawlibJSON.identifier)
     }
 #endif
 
