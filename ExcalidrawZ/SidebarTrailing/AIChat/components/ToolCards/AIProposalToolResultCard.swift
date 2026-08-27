@@ -106,8 +106,6 @@ struct AIProposalToolResultCard: View {
 
 #if os(macOS)
     private func makeProposalDragItemProvider() -> NSItemProvider {
-        // Eager data: lazy promises (registerDataRepresentation) deadlock
-        // CFPasteboardResolveAllPromisedData at app quit.
         let library = ExcalidrawLibrary(
             type: "excalidrawlib",
             version: 2,
@@ -122,10 +120,16 @@ struct AIProposalToolResultCard: View {
                 )
             ]
         )
-        guard let data = (try? library.jsonStringified().data(using: .utf8)) as NSData? else {
+        do {
+            let data = Data(try library.jsonStringified().utf8)
+            return NSItemProvider(
+                item: data as NSData,
+                typeIdentifier: UTType.excalidrawlibJSON.identifier
+            )
+        } catch {
+            alertToast(error)
             return NSItemProvider()
         }
-        return NSItemProvider(item: data, typeIdentifier: UTType.excalidrawlibJSON.identifier)
     }
 #endif
 

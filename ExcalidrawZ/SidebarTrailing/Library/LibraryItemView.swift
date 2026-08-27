@@ -60,17 +60,7 @@ struct LibraryItemView: View {
 #if os(macOS)
         content()
             .onDrag {
-                // Eager data: lazy promises (registerDataRepresentation) deadlock
-                // CFPasteboardResolveAllPromisedData at app quit.
-                var data: NSData?
-                viewContext.performAndWait {
-                    data = (try? item.excalidrawLibrary.jsonStringified().data(using: .utf8)) as NSData?
-                }
-                if let data {
-                    return NSItemProvider(item: data, typeIdentifier: UTType.excalidrawlibJSON.identifier)
-                } else {
-                    return NSItemProvider()
-                }
+                makeLibraryItemDragProvider()
             }
             .modifier(LibraryItemContentBackgroundModifier())
             .simultaneousGesture(TapGesture(count: 2).onEnded {
@@ -110,6 +100,33 @@ struct LibraryItemView: View {
         }
 #endif
     }
+
+#if os(macOS)
+    private func makeLibraryItemDragProvider() -> NSItemProvider {
+        var result: Result<Data, Error>?
+        viewContext.performAndWait {
+            result = Result {
+                let json = try item.excalidrawLibrary.jsonStringified()
+                return Data(json.utf8)
+            }
+        }
+
+        guard let result else {
+            return NSItemProvider()
+        }
+
+        switch result {
+            case .success(let data):
+                return NSItemProvider(
+                    item: data as NSData,
+                    typeIdentifier: UTType.excalidrawlibJSON.identifier
+                )
+            case .failure(let error):
+                alertToast(error)
+                return NSItemProvider()
+        }
+    }
+#endif
     
     @ViewBuilder
     private func content() -> some View {

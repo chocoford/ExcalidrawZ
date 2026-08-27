@@ -32,6 +32,9 @@ struct ContentView: View {
     @EnvironmentObject private var lockedContentState: LockedContentStateStore
     @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
     @ObservedObject private var cloudStorageConnections = CloudStorageConnectionStore.shared
+#if os(macOS)
+    @ObservedObject private var applicationTerminationPresentation = ApplicationTerminationPresentationCoordinator.shared
+#endif
     
     @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
     
@@ -86,6 +89,17 @@ struct ContentView: View {
             .swiftyAlert(logs: true)
             .bindWindow($window)
 #if os(macOS)
+            .sheet(isPresented: applicationTerminationSheetBinding) {
+                ApplicationTerminationSheet(
+                    stage: applicationTerminationPresentation.stage,
+                    cancelAction: {
+                        applicationTerminationPresentation.cancelTermination()
+                    },
+                    forceQuitAction: {
+                        applicationTerminationPresentation.forceQuit()
+                    }
+                )
+            }
             .task(id: window?.windowNumber) {
                 guard let window else { return }
                 ScreenAnnotationController.shared.register(
@@ -186,6 +200,18 @@ struct ContentView: View {
             }
     }
 
+#if os(macOS)
+    private var applicationTerminationSheetBinding: Binding<Bool> {
+        Binding(
+            get: {
+                guard let window else { return false }
+                return applicationTerminationPresentation.targetWindowNumber == window.windowNumber
+            },
+            set: { _ in }
+        )
+    }
+#endif
+
     private var connectedCloudStorageLocationIDs: Set<UUID> {
         Set(cloudStorageConnections.locations.map(\.id))
     }
@@ -258,6 +284,85 @@ struct ContentView: View {
         try? await fileState.mergeDefaultGroupAndTrashIfNeeded(context: viewContext)
     }
 }
+
+#if os(macOS)
+private struct ApplicationTerminationSheet: View {
+    let stage: ApplicationTerminationStage
+    let cancelAction: () -> Void
+    let forceQuitAction: () -> Void
+
+    @State private var forceQuitDelayRemaining = 3
+
+    var body: some View {
+        VStack(spacing: 20) {
+            ProgressView()
+                .controlSize(.small)
+
+            VStack(spacing: 6) {
+                Text(.localizable(.applicationTerminationTitle))
+                    .font(.headline)
+
+                stageDescription
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            HStack {
+                Spacer()
+
+                Button(.localizable(.generalButtonCancel), action: cancelAction)
+                    .keyboardShortcut(.cancelAction)
+                    .modernButtonStyle(
+                        style: .glass,
+                        size: .regular,
+                        shape: .capsule
+                    )
+
+                Button(
+                    .localizable(.applicationTerminationForceQuitButton),
+                    role: .destructive,
+                    action: forceQuitAction
+                )
+                .disabled(forceQuitDelayRemaining > 0)
+                .modernButtonStyle(
+                    style: .glassProminent,
+                    size: .regular,
+                    shape: .capsule
+                )
+                .tint(.red)
+            }
+        }
+        .padding(24)
+        .frame(width: 360)
+        .interactiveDismissDisabled()
+        .task {
+            forceQuitDelayRemaining = 3
+            while forceQuitDelayRemaining > 0 {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard !Task.isCancelled else { return }
+                forceQuitDelayRemaining -= 1
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var stageDescription: some View {
+        switch stage {
+            case .screenAnnotationSaves:
+                Text(.localizable(.applicationTerminationStageScreenAnnotationSaves))
+            case .backgroundDocumentOperations:
+                Text(.localizable(.applicationTerminationStageBackgroundDocumentOperations))
+            case .currentDrawing:
+                Text(.localizable(.applicationTerminationStageCurrentDrawing))
+            case .applicationData:
+                Text(.localizable(.applicationTerminationStageApplicationData))
+            case .backup:
+                Text(.localizable(.applicationTerminationStageBackup))
+        }
+    }
+}
+#endif
 
 private struct ActiveFileSwitchBlockedToastModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast

@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UniformTypeIdentifiers
 import ChocofordUI
 
 protocol FlexibleItem {
@@ -161,15 +160,6 @@ struct FlexibleSplitView<Item: FlexibleItem, ID: Hashable & Transferable>: View 
                     .foregroundStyle(.primary)
             }
             .contentShape(Rectangle())
-#if os(macOS)
-            // .draggable leaves lazy pasteboard promises that deadlock CFPasteboardResolveAllPromisedData on quit; onDrag carries eager data
-            .onDrag {
-                NSItemProvider(
-                    item: String(describing: item[keyPath: itemID]) as NSString,
-                    typeIdentifier: UTType.plainText.identifier
-                )
-            }
-#else
             .draggable(item[keyPath: itemID]) {
                 Text(item.title)
                     .fixedSize()
@@ -177,7 +167,6 @@ struct FlexibleSplitView<Item: FlexibleItem, ID: Hashable & Transferable>: View 
                     .padding(40)
                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
             }
-#endif
             .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { _ in
                 if self.draggedItemID != item[keyPath: itemID] {
                     self.draggedItemID = item[keyPath: itemID]

@@ -53,18 +53,9 @@ struct ExportFileView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(height: 80)
-#if os(macOS)
-                            // .draggable leaves lazy pasteboard promises that deadlock CFPasteboardResolveAllPromisedData on quit; onDrag carries an eager file URL
                             .onDrag {
-                                let url = (try? file.fileURL()) ?? URL(fileURLWithPath: "/dev/null")
-                                return NSItemProvider(
-                                    item: url.dataRepresentation as NSData,
-                                    typeIdentifier: UTType.fileURL.identifier
-                                )
+                                makeFileDragItemProvider()
                             }
-#else
-                            .draggable(file)
-#endif
                             .padding()
                     } else {
                         Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
@@ -113,6 +104,22 @@ struct ExportFileView: View {
             }
         }
     }
+
+#if os(macOS)
+    @available(macOS 13.0, *)
+    private func makeFileDragItemProvider() -> NSItemProvider {
+        do {
+            let url = try file.fileURL()
+            return NSItemProvider(
+                item: url.dataRepresentation as NSData,
+                typeIdentifier: UTType.fileURL.identifier
+            )
+        } catch {
+            alertToast(error)
+            return NSItemProvider()
+        }
+    }
+#endif
     
     @ViewBuilder
     private func actionsView() -> some View {
