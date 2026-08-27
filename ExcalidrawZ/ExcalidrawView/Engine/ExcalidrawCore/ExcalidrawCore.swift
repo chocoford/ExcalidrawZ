@@ -171,6 +171,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
 #endif
         self.webView.navigationDelegate = self
         self.webView.uiDelegate = self
+        self.webView.excalidrawCore = self
         
 #if os(iOS)
         let pencilInteraction = UIPencilInteraction()

@@ -20,6 +20,7 @@ import UIKit
 
 class ExcalidrawWebView: WKWebView {
     var shouldHandleInput = true
+    weak var excalidrawCore: ExcalidrawCore?
     var nativeInteractionEnabled = true {
         didSet {
             guard nativeInteractionEnabled != oldValue else { return }
@@ -271,6 +272,58 @@ private final class ExcalidrawIndirectScrollForwarder: NSObject, UIGestureRecogn
 extension Notification.Name {
     static let forceReloadExcalidrawFile = Notification.Name("ForceReloadExcalidrawFile")
 }
+
+#if os(macOS)
+extension ExcalidrawWebView {
+    private var libraryPasteboardType: NSPasteboard.PasteboardType {
+        NSPasteboard.PasteboardType(UTType.excalidrawlibJSON.identifier)
+    }
+
+    private func libraryDragData(from pasteboard: NSPasteboard) -> Data? {
+        if let data = pasteboard.data(forType: libraryPasteboardType), !data.isEmpty { return data }
+        if let type = pasteboard.types?.first(where: { $0.rawValue.lowercased().contains("excalidrawlib") }),
+           let data = pasteboard.data(forType: type), !data.isEmpty { return data }
+        return nil
+    }
+
+    override func wantsPeriodicDraggingUpdates() -> Bool { false }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        (excalidrawCore != nil && libraryDragData(from: sender.draggingPasteboard) != nil) ? .copy : []
+    }
+
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        (excalidrawCore != nil && libraryDragData(from: sender.draggingPasteboard) != nil) ? .copy : []
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard let core = excalidrawCore,
+              let data = libraryDragData(from: sender.draggingPasteboard) else { return false }
+        let dropPoint = self.convert(sender.draggingLocation, from: nil)
+        Task { await Self.insertLibraryData(data, core: core, dropPoint: dropPoint) }
+        return true
+    }
+
+    private static var lastDrop: (hash: Int, date: Date)?
+
+    private static func insertLibraryData(_ data: Data, core: ExcalidrawCore, dropPoint: CGPoint) async {
+        let hash = data.hashValue
+        if let last = lastDrop, last.hash == hash, Date().timeIntervalSince(last.date) < 1 { return }
+        lastDrop = (hash, Date())
+        do {
+            let library = try JSONDecoder().decode(ExcalidrawLibrary.self, from: data)
+            let sourceElements = library.libraryItems.flatMap { $0.elements }
+            guard !sourceElements.isEmpty else { return }
+            let scenePoint = try? await core.sceneCoords(for: dropPoint)
+            let placement: LibraryItemCanvasElementPreprocessor.Placement =
+                scenePoint.map { .center(x: $0.x, y: $0.y) } ?? .original
+            try await core.addElements(
+                LibraryItemCanvasElementPreprocessor.prepare(elements: sourceElements, placement: placement)
+            )
+        } catch {}
+    }
+}
+#endif
 
 
 /// Minimal wrapper to bridge WKWebView to SwiftUI
