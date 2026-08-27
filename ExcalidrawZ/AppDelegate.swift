@@ -35,9 +35,66 @@ final class ApplicationTerminationCanvasFlushCoordinator {
     }
 }
 
+@MainActor
+final class ApplicationTerminationPresentationCoordinator: ObservableObject {
+    static let shared = ApplicationTerminationPresentationCoordinator()
+
+    @Published private(set) var targetWindowNumber: Int?
+    @Published private(set) var stage: ApplicationTerminationStage = .screenAnnotationSaves
+
+    private var cancelAction: (() -> Void)?
+    private var forceQuitAction: (() -> Void)?
+
+    private init() {}
+
+    func update(stage: ApplicationTerminationStage) {
+        self.stage = stage
+    }
+
+    func present(
+        on windowNumber: Int,
+        cancelAction: @escaping () -> Void,
+        forceQuitAction: @escaping () -> Void
+    ) {
+        self.cancelAction = cancelAction
+        self.forceQuitAction = forceQuitAction
+        targetWindowNumber = windowNumber
+    }
+
+    func dismiss() {
+        targetWindowNumber = nil
+        cancelAction = nil
+        forceQuitAction = nil
+    }
+
+    func cancelTermination() {
+        let action = cancelAction
+        dismiss()
+        action?()
+    }
+
+    func forceQuit() {
+        let action = forceQuitAction
+        dismiss()
+        action?()
+    }
+}
+
+enum ApplicationTerminationStage {
+    case screenAnnotationSaves
+    case backgroundDocumentOperations
+    case currentDrawing
+    case applicationData
+    case backup
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     let logger = Logger(label: "AppDelegate")
     private var isHandlingApplicationTermination = false
+    private var terminationTask: Task<Void, Never>?
+    private var terminationPresentationTask: Task<Void, Never>?
+
+    private static let terminationPresentationDelay: UInt64 = 600_000_000
     
     func applicationWillTerminate(_ notification: Notification) {
         PersistenceController.shared.save()
@@ -49,14 +106,70 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         isHandlingApplicationTermination = true
-        Task { @MainActor in
-            defer {
-                isHandlingApplicationTermination = false
-            }
+        scheduleTerminationSheetIfNeeded(for: sender)
+        terminationTask = Task { @MainActor [weak self, weak sender] in
+            guard let self, let sender else { return }
             await prepareForApplicationTermination()
-            sender.reply(toApplicationShouldTerminate: true)
+            guard !Task.isCancelled, isHandlingApplicationTermination else {
+                return
+            }
+            finishTerminationRequest(sender, shouldTerminate: true)
         }
         return .terminateLater
+    }
+
+    @MainActor
+    private func scheduleTerminationSheetIfNeeded(for application: NSApplication) {
+        guard application.isActive,
+              let window = application.mainWindow,
+              window.isVisible,
+              !window.isMiniaturized else {
+            return
+        }
+
+        let windowNumber = window.windowNumber
+        terminationPresentationTask = Task { @MainActor [weak self, weak application] in
+            try? await Task.sleep(nanoseconds: Self.terminationPresentationDelay)
+            guard let self,
+                  let application,
+                  !Task.isCancelled,
+                  isHandlingApplicationTermination,
+                  application.isActive,
+                  let targetWindow = application.windows.first(where: {
+                      $0.windowNumber == windowNumber
+                  }),
+                  targetWindow.isVisible,
+                  !targetWindow.isMiniaturized else {
+                return
+            }
+
+            ApplicationTerminationPresentationCoordinator.shared.present(
+                on: windowNumber,
+                cancelAction: { [weak self, weak application] in
+                    guard let self, let application else { return }
+                    self.finishTerminationRequest(application, shouldTerminate: false)
+                },
+                forceQuitAction: { [weak self, weak application] in
+                    guard let self, let application else { return }
+                    self.finishTerminationRequest(application, shouldTerminate: true)
+                }
+            )
+        }
+    }
+
+    @MainActor
+    private func finishTerminationRequest(
+        _ application: NSApplication,
+        shouldTerminate: Bool
+    ) {
+        guard isHandlingApplicationTermination else { return }
+        terminationPresentationTask?.cancel()
+        terminationPresentationTask = nil
+        terminationTask?.cancel()
+        terminationTask = nil
+        ApplicationTerminationPresentationCoordinator.shared.dismiss()
+        isHandlingApplicationTermination = false
+        application.reply(toApplicationShouldTerminate: shouldTerminate)
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -65,11 +178,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func prepareForApplicationTermination() async {
+        guard !Task.isCancelled else { return }
+        updateTerminationStage(.screenAnnotationSaves)
         await ScreenAnnotationSaveTaskManager.shared.waitUntilIdle()
+        guard !Task.isCancelled else { return }
+        updateTerminationStage(.backgroundDocumentOperations)
         await OffscreenExcalidrawEditor.waitForPendingOperations()
+        guard !Task.isCancelled else { return }
+        updateTerminationStage(.currentDrawing)
         await ApplicationTerminationCanvasFlushCoordinator.shared.flushPendingCanvasSnapshot()
+        guard !Task.isCancelled else { return }
+        updateTerminationStage(.applicationData)
         PersistenceController.shared.save()
+        guard !Task.isCancelled else { return }
+        updateTerminationStage(.backup)
         await backupFilesBeforeTermination()
+    }
+
+    @MainActor
+    private func updateTerminationStage(_ stage: ApplicationTerminationStage) {
+        guard isHandlingApplicationTermination else { return }
+        ApplicationTerminationPresentationCoordinator.shared.update(stage: stage)
     }
 
     @MainActor

@@ -106,34 +106,30 @@ struct AIProposalToolResultCard: View {
 
 #if os(macOS)
     private func makeProposalDragItemProvider() -> NSItemProvider {
-        let itemProvider = NSItemProvider()
-        itemProvider.registerDataRepresentation(
-            forTypeIdentifier: UTType.excalidrawlibJSON.identifier,
-            visibility: .ownProcess
-        ) { completion in
-            do {
-                let library = ExcalidrawLibrary(
-                    type: "excalidrawlib",
-                    version: 2,
-                    source: "https://excalidraw.com",
-                    libraryItems: [
-                        ExcalidrawLibrary.Item(
-                            id: UUID().uuidString,
-                            status: .published,
-                            createdAt: Date(),
-                            name: String(localizable: .aiProposalDragName),
-                            elements: artifact.visibleElements
-                        )
-                    ]
+        let library = ExcalidrawLibrary(
+            type: "excalidrawlib",
+            version: 2,
+            source: "https://excalidraw.com",
+            libraryItems: [
+                ExcalidrawLibrary.Item(
+                    id: UUID().uuidString,
+                    status: .published,
+                    createdAt: Date(),
+                    name: String(localizable: .aiProposalDragName),
+                    elements: artifact.visibleElements
                 )
-                let data = Data(try library.jsonStringified().utf8)
-                completion(data, nil)
-            } catch {
-                completion(nil, error)
-            }
-            return Progress(totalUnitCount: 1)
+            ]
+        )
+        do {
+            let data = Data(try library.jsonStringified().utf8)
+            return NSItemProvider(
+                item: data as NSData,
+                typeIdentifier: UTType.excalidrawlibJSON.identifier
+            )
+        } catch {
+            alertToast(error)
+            return NSItemProvider()
         }
-        return itemProvider
     }
 #endif
 

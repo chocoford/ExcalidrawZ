@@ -53,7 +53,9 @@ struct ExportFileView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(height: 80)
-                            .draggable(file)
+                            .onDrag {
+                                makeFileDragItemProvider()
+                            }
                             .padding()
                     } else {
                         Image(nsImage: NSWorkspace.shared.icon(for: .excalidrawFile))
@@ -102,6 +104,22 @@ struct ExportFileView: View {
             }
         }
     }
+
+#if os(macOS)
+    @available(macOS 13.0, *)
+    private func makeFileDragItemProvider() -> NSItemProvider {
+        do {
+            let url = try file.fileURL()
+            return NSItemProvider(
+                item: url.dataRepresentation as NSData,
+                typeIdentifier: UTType.fileURL.identifier
+            )
+        } catch {
+            alertToast(error)
+            return NSItemProvider()
+        }
+    }
+#endif
     
     @ViewBuilder
     private func actionsView() -> some View {

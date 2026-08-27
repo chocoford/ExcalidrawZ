@@ -60,24 +60,7 @@ struct LibraryItemView: View {
 #if os(macOS)
         content()
             .onDrag {
-                let itemProvider = NSItemProvider()
-                itemProvider.registerDataRepresentation(
-                    forTypeIdentifier: UTType.excalidrawlibJSON.identifier,
-                    visibility: .ownProcess
-                ) { completion in
-                    viewContext.perform {
-                        do {
-                            let item = item.excalidrawLibrary
-                            let data = try item.jsonStringified().data(using: .utf8)
-                            completion(data, nil)
-                        } catch {
-                            alertToast(error)
-                            completion(nil, error)
-                        }
-                    }
-                    return Progress(totalUnitCount: 100)
-                }
-                return itemProvider
+                makeLibraryItemDragProvider()
             }
             .modifier(LibraryItemContentBackgroundModifier())
             .simultaneousGesture(TapGesture(count: 2).onEnded {
@@ -117,6 +100,33 @@ struct LibraryItemView: View {
         }
 #endif
     }
+
+#if os(macOS)
+    private func makeLibraryItemDragProvider() -> NSItemProvider {
+        var result: Result<Data, Error>?
+        viewContext.performAndWait {
+            result = Result {
+                let json = try item.excalidrawLibrary.jsonStringified()
+                return Data(json.utf8)
+            }
+        }
+
+        guard let result else {
+            return NSItemProvider()
+        }
+
+        switch result {
+            case .success(let data):
+                return NSItemProvider(
+                    item: data as NSData,
+                    typeIdentifier: UTType.excalidrawlibJSON.identifier
+                )
+            case .failure(let error):
+                alertToast(error)
+                return NSItemProvider()
+        }
+    }
+#endif
     
     @ViewBuilder
     private func content() -> some View {
