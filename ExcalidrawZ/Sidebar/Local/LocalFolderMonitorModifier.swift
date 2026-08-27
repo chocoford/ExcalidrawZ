@@ -71,10 +71,16 @@ struct LocalFolderMonitorModifier: ViewModifier {
         fileState.rebaseLinkedFolderSession(from: oldURL, to: newURL)
 
         guard registeredFolders.contains(folderID) else { return }
+        let resolvedObject = try? viewContext.existingObject(with: folderID)
+        let bookmarkData = (resolvedObject as? LocalFolder)?.bookmarkData
         Task {
             await FileSyncCoordinator.shared.removeFolder(at: oldURL)
             do {
-                try await FileSyncCoordinator.shared.addFolder(at: newURL, options: .default)
+                try await FileSyncCoordinator.shared.addFolder(
+                    at: newURL,
+                    options: .default,
+                    securityScopeBookmarkData: bookmarkData
+                )
                 await MainActor.run {
                     folderURLs[folderID] = newURL
                 }
@@ -108,11 +114,16 @@ struct LocalFolderMonitorModifier: ViewModifier {
                 continue
             }
 
+            let bookmarkData = folder.bookmarkData
             registeringFolders.insert(folderID)
             Task {
                 do {
                     try await folder.withSecurityScopedURL { scopedURL in
-                        try await FileSyncCoordinator.shared.addFolder(at: scopedURL, options: .default)
+                        try await FileSyncCoordinator.shared.addFolder(
+                            at: scopedURL,
+                            options: .default,
+                            securityScopeBookmarkData: bookmarkData
+                        )
                         await MainActor.run {
                             folderURLs[folderID] = scopedURL
                             registeredFolders.insert(folderID)

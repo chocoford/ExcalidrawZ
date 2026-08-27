@@ -420,7 +420,6 @@ fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
     }
     
     @State private var isImportLocalFolderDialogPresented = false
-    @State private var isImportFilesDialogPresented = false
     @State private var isCreateGroupDialogPresented = false
     @State private var isHovered = false
 
@@ -448,36 +447,20 @@ fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
                         Button {
                              isImportLocalFolderDialogPresented.toggle()
                         } label: {
-                            Label(.localizable(.fileHomeButtonCreateNewFolder), systemSymbol: .plusCircleFill)
+                            SidebarSectionAddIcon(
+                                accessibilityLabel: Text(.localizable(.fileHomeButtonCreateNewFolder))
+                            )
                         }
                         // Two file importers can not be called in same place
                         .modifier(ImportLocalFolderModifier(isPresented: $isImportLocalFolderDialogPresented))
                     case .group:
-                        Menu {
-                            SwiftUI.Group {
-                                Button {
-                                    isCreateGroupDialogPresented.toggle()
-                                } label: {
-                                    Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
-                                }
-
-                                // New: Use fileImporter for cross-platform support
-                                Button {
-                                    isImportFilesDialogPresented.toggle()
-                                } label: {
-                                    Label(
-                                        .localizable(.menubarButtonImport),
-                                        systemSymbol: .squareAndArrowDown
-                                    )
-                                }
-                            }
-                            .labelStyle(.titleAndIcon)
+                        Button {
+                            isCreateGroupDialogPresented.toggle()
                         } label: {
-                            Label(.localizable(.fileHomeButtonCreateNewGroup), systemSymbol: .plusCircleFill)
+                            SidebarSectionAddIcon(
+                                accessibilityLabel: Text(.localizable(.fileHomeButtonCreateNewGroup))
+                            )
                         }
-                        .menuIndicator(.hidden)
-                        .fixedSize()
-                        .modifier(ImportFilesModifier(isPresented: $isImportFilesDialogPresented))
                         .modifier(
                             CreateGroupModifier(
                                 isPresented: $isCreateGroupDialogPresented,
@@ -492,13 +475,11 @@ fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
             .controlSize(.large)
             .padding(.trailing, 2)
 #endif
-#if os(iOS)
-            .tint(.secondary)
-#endif
             .labelStyle(.iconOnly)
             .buttonStyle(.borderless)
             .opacity(isHovered ? 1 : 0.4)
         }
+        .frame(maxWidth: .infinity)
         .font(.callout.bold())
         .animation(.smooth, value: isHovered)
 
@@ -506,37 +487,7 @@ fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
     
 }
 
-struct ImportFilesModifier: ViewModifier {
-    @Binding var isImportFilesDialogPresented: Bool
-    
-    init(isPresented: Binding<Bool>) {
-        self._isImportFilesDialogPresented = isPresented
-    }
-    
-    func body(content: Content) -> some View {
-        content
-            .fileImporterWithAlert(
-                isPresented: $isImportFilesDialogPresented,
-                allowedContentTypes: [
-                    .init(filenameExtension: "excalidraw") ?? .excalidrawFile,
-                    .excalidrawPNG,
-                    .excalidrawSVG,
-                    .png,
-                    .svg,
-                    .folder  // Also allow directory selection
-                ],
-                allowsMultipleSelection: true
-            ) { urls in
-                NotificationCenter.default.post(
-                    name: .shouldHandleImport,
-                    object: urls
-                )
-            }
-    }
-}
-
 struct ImportLocalFolderModifier: ViewModifier {
-    @Environment(\.alert) private var alert
     @Environment(\.alertToast) private var alertToast
     
     @Binding var isImportLocalFolderDialogPresented: Bool
@@ -556,74 +507,38 @@ struct ImportLocalFolderModifier: ViewModifier {
             }
     }
     
-    private struct FolderTooLargeError: LocalizedError {
-        var errorDescription: String? {
-            .init(localizable: .sidebarLocalFolderTooLargeAlertDescription)
-        }
-    }
-    
     private func importLocalFolders(urls: [URL]) {
         let context = PersistenceController.shared.container.newBackgroundContext()
         Task.detached {
             do {
-                let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                let folders = try context.fetch(request)
-                
-                for url in urls where folders.contains(where: { $0.url == url }) == false {
-                    guard url.startAccessingSecurityScopedResource() else { continue }
+                for url in urls {
+                    guard url.startAccessingSecurityScopedResource() else {
+                        throw AppError.urlError(.startAccessingSecurityScopedResourceFailed)
+                    }
                     defer { url.stopAccessingSecurityScopedResource() }
-                    
-                    guard let enumerator = FileManager.default.enumerator(
-                        at: url,
-                        includingPropertiesForKeys: [.isDirectoryKey, .nameKey, .isHiddenKey]
-                    ) else {
-                        return
-                    }
-                    
-                    var urls: [URL] = []
-                    var count = 0
-                    while let itemURL = enumerator.nextObject() as? URL {
-                        let resourceValues = try? itemURL.resourceValues(forKeys: [.isDirectoryKey, .isHiddenKey])
-                        let isHidden = resourceValues?.isHidden ?? false
-                        let isDirectory = resourceValues?.isDirectory ?? false
-                        
-                        if isHidden {
-                            if isDirectory {
-                                enumerator.skipDescendants()
-                            }
-                            continue
-                        }
-                        
-                        urls.append(itemURL)
-                        if isDirectory {
-                            count += 1
-                        }
-                    }
-                    
-                    if count > 1000 {
-                        await MainActor.run {
-                            alert(
-                                title: .init(localizable: .sidebarLocalFolderTooLargeAlertTitle),
-                                error: FolderTooLargeError()
+
+                    try await context.perform {
+                        let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                        request.predicate = NSPredicate(
+                            format: "parent == nil AND filePath == %@",
+                            url.standardizedFileURL.filePath
+                        )
+                        request.fetchLimit = 1
+                        if let existing = try context.fetch(request).first {
+                            // Re-linking is also the recovery path for an old
+                            // or provider-invalidated bookmark.
+                            existing.url = url.standardizedFileURL
+                            existing.filePath = url.standardizedFileURL.filePath
+                            existing.bookmarkData = try url.bookmarkData(
+                                options: existing.bookmarkCreationOptions,
+                                includingResourceValuesForKeys: [.nameKey],
+                                relativeTo: nil
                             )
+                            try context.save()
+                            return
                         }
-                        return
-                    }
-                    
-                    try await context.perform { [urls] in
-                        let localFolder = try LocalFolder(url: url, context: context)
-                        context.insert(localFolder)
-                        try localFolder.refreshChildren(context: context)
-                        // create checkpoints for every file in folder
-                        for url in urls {
-                            if url.pathExtension == "excalidraw" {
-                                let checkpoint = LocalFileCheckpoint(context: context)
-                                checkpoint.url = url
-                                checkpoint.content = try Data(contentsOf: url)
-                                checkpoint.updatedAt = .now
-                                context.insert(checkpoint)
-                            }
-                        }
+
+                        _ = try LocalFolder(url: url, context: context)
                         try context.save()
                     }
                 }

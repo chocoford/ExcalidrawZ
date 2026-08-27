@@ -292,6 +292,7 @@ struct CompactBrowseRootView: View {
 }
 
 private struct TemporaryFileBrowseRow: View {
+    @Environment(\.fileHomeItemTransitionSourceEnabled) private var transitionSourceEnabled
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var fileHomeItemTransitionItemState: FileHomeItemTransitionItemState
 
@@ -329,7 +330,7 @@ private struct TemporaryFileBrowseRow: View {
                     key: FileHomeItemPreferenceKey.self,
                     value: .bounds
                 ) { value in
-                    fileHomeItemTransitionItemState.sourceFileID == fileID
+                    transitionSourceEnabled && fileHomeItemTransitionItemState.sourceFileID == fileID
                         ? [FileHomeItemTransitionPreferenceID.source(for: fileID): value]
                         : [:]
                 }
@@ -559,13 +560,11 @@ struct CompactContentMoreMenu<HomeGroup: ExcalidrawGroup>: View {
     
     init(group: HomeGroup) {
         self.group = group
-        self.capability = Set(
-            [
-                .select,
-                .createGroup,
-                .importFiles,
-            ]
-        )
+        var capability: Set<Capability> = [.select, .createGroup]
+        if let group = group as? Group, group.groupType != .trash {
+            capability.insert(.importFiles)
+        }
+        self.capability = capability
     }
     
     init() where HomeGroup == Group {

@@ -197,7 +197,9 @@ actor GoogleDriveAPIClient {
         named name: String,
         in parentID: CloudStorageItemID
     ) async throws {
-        let escapedName = name.replacingOccurrences(of: "'", with: "\\'")
+        let escapedName = name
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "'", with: "\\'")
         let response: GoogleDriveFileList = try await get(
             configuration.apiBaseURL.appending(path: "files"),
             queryItems: commonQueryItems + [

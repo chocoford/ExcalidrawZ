@@ -93,17 +93,26 @@ struct ItemDropFallbackModifier: ViewModifier {
 
 struct ItemDropGlobalFallbackModifier: ViewModifier {
     @EnvironmentObject private var dragState: ItemDragState
+#if os(macOS)
+    @State private var mouseMovedMonitor: Any?
+#endif
     
     func body(content: Content) -> some View {
         content
 #if os(macOS)
             .onAppear {
-                NSEvent.addLocalMonitorForEvents(matching: .mouseMoved) { event in
+                guard mouseMovedMonitor == nil else { return }
+                mouseMovedMonitor = NSEvent.addLocalMonitorForEvents(matching: .mouseMoved) { event in
                     if dragState.hasAnyDragState {
                         dragState.reset()
                     }
                     return event
                 }
+            }
+            .onDisappear {
+                guard let mouseMovedMonitor else { return }
+                NSEvent.removeMonitor(mouseMovedMonitor)
+                self.mouseMovedMonitor = nil
             }
 #endif // os(macOS)
     }

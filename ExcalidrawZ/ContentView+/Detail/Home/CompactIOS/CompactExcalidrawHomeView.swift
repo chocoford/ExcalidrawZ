@@ -12,6 +12,13 @@ import ChocofordUI
 #if os(iOS)
 @available(iOS 26.0, *)
 struct CompactExcalidrawHomeView: View {
+    private enum HomeTab: Hashable {
+        case recently
+        case collaboration
+        case browse
+        case search
+    }
+
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var layoutState: LayoutState
     @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
@@ -22,6 +29,7 @@ struct CompactExcalidrawHomeView: View {
 
     @State private var searchText = ""
     @State private var navigationPath: [EditorRoute] = []
+    @State private var selectedTab: HomeTab = .recently
 
     
     var body: some View {
@@ -57,27 +65,55 @@ struct CompactExcalidrawHomeView: View {
                 }
             }
             
-            TabView {
-                Tab(.localizable(.compactRecentlyTitle), systemImage: SFSymbol.clockFill.rawValue) {
+            TabView(selection: $selectedTab) {
+                Tab(
+                    .localizable(.compactRecentlyTitle),
+                    systemImage: SFSymbol.clockFill.rawValue,
+                    value: HomeTab.recently
+                ) {
                     CompactRecentlyView()
+                        .environment(
+                            \.fileHomeItemTransitionSourceEnabled,
+                            selectedTab == .recently
+                        )
                         .onAppear {
                             fileState.currentActiveGroup = nil
                         }
                 }
-                Tab(.localizable(.collaborationHomeTitle), systemImage: SFSymbol.person3Fill.rawValue) {
+                Tab(
+                    .localizable(.collaborationHomeTitle),
+                    systemImage: SFSymbol.person3Fill.rawValue,
+                    value: HomeTab.collaboration
+                ) {
                     CompactCollaborationHomeView()
+                        .environment(
+                            \.fileHomeItemTransitionSourceEnabled,
+                            selectedTab == .collaboration
+                        )
                         .onAppear {
                             fileState.currentActiveGroup = .collaboration
                         }
                 }
-                Tab(.localizable(.compactBrowserTitle), systemImage: SFSymbol.folderFill.rawValue) {
+                Tab(
+                    .localizable(.compactBrowserTitle),
+                    systemImage: SFSymbol.folderFill.rawValue,
+                    value: HomeTab.browse
+                ) {
                     CompactBrowseRootView()
+                        .environment(
+                            \.fileHomeItemTransitionSourceEnabled,
+                            selectedTab == .browse
+                        )
                         .onAppear {
                             fileState.currentActiveGroup = nil
                         }
                 }
-                Tab(role: .search) {
+                Tab(value: HomeTab.search, role: .search) {
                     CompactSearchFilesView()
+                        .environment(
+                            \.fileHomeItemTransitionSourceEnabled,
+                            selectedTab == .search
+                        )
                         .onAppear {
                             fileState.currentActiveGroup = nil
                         }

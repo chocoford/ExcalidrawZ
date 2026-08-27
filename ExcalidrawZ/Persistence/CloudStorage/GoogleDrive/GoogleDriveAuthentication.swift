@@ -12,8 +12,14 @@ protocol GoogleDriveAccessTokenProviding: Sendable {
 protocol GoogleDriveAuthenticating: GoogleDriveAccessTokenProviding {
     func accounts() async throws -> [CloudStorageAccount]
     func authorize() async throws -> CloudStorageAccount
-    func accountWithRequiredScope(
-        accountHint: CloudStorageAccount?
-    ) async throws -> CloudStorageAccount
+    func authorizeAndSelectFolder(
+        accountHint: CloudStorageAccount?,
+        folderIDHint: CloudStorageItemID?
+    ) async throws -> GoogleDriveFolderAuthorization
     func signOut(accountID: CloudStorageAccountID) async throws
+}
+
+struct GoogleDriveFolderAuthorization: Sendable {
+    let account: CloudStorageAccount
+    let folderID: CloudStorageItemID
 }

@@ -86,21 +86,17 @@ final class ExcalidrawNativeEyeDropperCoordinator: NSObject {
 #if os(macOS)
         let sampler = NSColorSampler()
         colorSampler = sampler
-        sampler.show { [weak self] color in
-            Task { @MainActor in
-                guard let self,
-                      self.activeRequest?.requestId == request.requestId else {
-                    return
-                }
-                self.colorSampler = nil
-                guard let color,
-                      let hex = Self.sRGBHex(color) else {
-                    await self.complete(.cancelled(requestId: request.requestId))
-                    return
-                }
-                await self.complete(.selected(requestId: request.requestId, color: hex))
-            }
+        let color = await sampler.sample()
+        guard activeRequest?.requestId == request.requestId else {
+            return
         }
+        colorSampler = nil
+        guard let color,
+              let hex = Self.sRGBHex(color) else {
+            await complete(.cancelled(requestId: request.requestId))
+            return
+        }
+        await complete(.selected(requestId: request.requestId, color: hex))
 #elseif os(iOS)
         guard let presenter = presentationViewController() else {
             core?.logger.warning("Unable to present native eye dropper without an active view controller")

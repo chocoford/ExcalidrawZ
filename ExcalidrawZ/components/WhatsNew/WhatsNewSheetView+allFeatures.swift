@@ -9,6 +9,7 @@
 //  2. Move the previous featuresContent() rows into allFeaturesList() as a
 //     dedicated WhatsNewVersionSection.
 //  3. Keep version sections flat; do not extract per-version helper views.
+//  4. Do not archive rows marked as a current-release recap.
 //
 
 import SwiftUI
@@ -17,57 +18,23 @@ import SFSafeSymbols
 extension WhatsNewView {
     @ViewBuilder
     func featuresContent() -> some View {
-        WhatsNewFeatureRow {
-            CloudStorageProviderIcon(providerID: .microsoftOneDrive, size: 40)
-        } content: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(verbatim: "OneDrive")
-                    .font(.headline)
-                Text(.localizable(.whatsNewOneDriveDescription))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewNativeColorPickerTitle),
+            description: .localizable(.whatsNewNativeColorPickerDescription),
+        ) {
+            Image(systemName: "eyedropper")
+                .resizable()
+                .symbolRenderingMode(.hierarchical)
         }
 
-        WhatsNewFeatureRow {
-            CloudStorageProviderIcon(providerID: .dropbox, size: 40)
-        } content: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(verbatim: "Dropbox")
-                    .font(.headline)
-                Text(.localizable(.whatsNewDropboxDescription))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-
-        WhatsNewFeatureRow {
-            CloudStorageProviderIcon(providerID: .googleDrive, size: 40)
-        } content: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(verbatim: "Google Drive")
-                    .font(.headline)
-                Text(.localizable(.whatsNewGoogleDriveDescription))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-
-        WhatsNewFeatureRow {
-            CloudStorageProviderIcon(providerID: .webDAV, size: 40)
-        } content: {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(verbatim: "WebDAV")
-                        .font(.headline)
-                    Text(.localizable(.generalBadgeBeta))
-                        .font(.caption2.bold())
-                        .foregroundStyle(.orange)
-                }
-                Text(.localizable(.whatsNewWebDAVDescription))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+        // Recaps the 2.4.0 release for current users; do not archive with 2.4.1.
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewCloudStorageTitle),
+            description: .localizable(.whatsNewCloudStorageDescription),
+        ) {
+            Image(systemName: "externaldrive.connected.to.line.below")
+                .resizable()
+                .symbolRenderingMode(.hierarchical)
         }
     }
 
@@ -80,6 +47,48 @@ extension WhatsNewView {
                         version: Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
                     ) {
                         featuresContent()
+                    }
+                    WhatsNewVersionSection(version: "v2.4.0") {
+                        WhatsNewFeatureRow {
+                            CloudStorageProviderIcon(providerID: .microsoftOneDrive, size: 40)
+                        } content: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(verbatim: "OneDrive")
+                                    .font(.headline)
+                                Text(.localizable(.whatsNewOneDriveDescription))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        WhatsNewFeatureRow {
+                            CloudStorageProviderIcon(providerID: .dropbox, size: 40)
+                        } content: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(verbatim: "Dropbox")
+                                    .font(.headline)
+                                Text(.localizable(.whatsNewDropboxDescription))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        WhatsNewFeatureRow {
+                            CloudStorageProviderIcon(providerID: .webDAV, size: 40)
+                        } content: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(spacing: 6) {
+                                    Text(verbatim: "WebDAV")
+                                        .font(.headline)
+                                    Text(.localizable(.generalBadgeBeta))
+                                        .font(.caption2.bold())
+                                        .foregroundStyle(.orange)
+                                }
+                                Text(.localizable(.whatsNewWebDAVDescription))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                     WhatsNewVersionSection(version: "v2.3.0") {
                         WhatsNewFeatureRow(

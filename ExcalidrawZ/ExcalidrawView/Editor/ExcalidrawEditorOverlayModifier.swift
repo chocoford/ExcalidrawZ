@@ -27,6 +27,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
 
     @Binding var loadingState: ExcalidrawCanvasView.LoadingState
     var hasFile: Bool
+    var fileID: String?
     var keepsLoadingCoverPresented: Bool = false
 
     @State private var isLoadingOverlayPresented = false
@@ -129,7 +130,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
             Button {
                 NotificationCenter.default.post(
                     name: .forceReloadExcalidrawFile,
-                    object: nil
+                    object: fileID
                 )
             } label: {
                 Label(.localizable(.generalButtonRetry), systemSymbol: .arrowClockwise)
@@ -411,11 +412,13 @@ extension View {
     func excalidrawEditorOverlays(
         loadingState: Binding<ExcalidrawCanvasView.LoadingState>,
         hasFile: Bool,
+        fileID: String?,
         keepsLoadingCoverPresented: Bool = false
     ) -> some View {
         modifier(ExcalidrawEditorOverlayModifier(
             loadingState: loadingState,
             hasFile: hasFile,
+            fileID: fileID,
             keepsLoadingCoverPresented: keepsLoadingCoverPresented
         ))
     }

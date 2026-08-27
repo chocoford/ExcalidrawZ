@@ -136,22 +136,27 @@ struct CreateGroupSheetView: View {
     @FocusState private var isFieldFocused: Bool
     
     var body: some View {
-        if #available(macOS 13.0, *) {
+        SwiftUI.Group {
+            if #available(macOS 13.0, *) {
 #if os(iOS)
-            if containerHorizontalSizeClass == .compact {
-                NavigationStack {
+                if containerHorizontalSizeClass == .compact {
+                    NavigationStack {
+                        content()
+                    }
+                } else {
                     content()
                 }
+#else
+                content()
+#endif
             } else {
                 content()
+                    .frame(width: 400)
             }
-#else
-            content()
-#endif
-        } else {
-            content()
-                .frame(width: 400)
         }
+        // A presenting button can carry an environment-based style (for
+        // example File Home's glass quick actions) into the sheet.
+        .buttonStyle(.automatic)
     }
     
 

@@ -84,6 +84,9 @@ struct OpenFromURLModifier: ViewModifier {
             .onOpenURL { url in
                 onOpenURL(url)
             }
+            .onReceive(NotificationCenter.default.publisher(for: .didOpenFromUrls)) { notification in
+                handleOpenFromURLs(notification)
+            }
             .onReceive(NotificationCenter.default.publisher(for: .shouldOpenExternalURL)) { notification in
                 guard let url = notification.object as? URL else { return }
 #if os(macOS)
@@ -133,6 +136,27 @@ struct OpenFromURLModifier: ViewModifier {
     }
     
     // MARK: - Handle OpenURL
+    private func handleOpenFromURLs(_ notification: Notification) {
+        guard let urls = notification.object as? [URL], !urls.isEmpty else {
+            return
+        }
+
+        Task { @MainActor in
+            for url in urls {
+                do {
+                    try await fileState.prepareOpenInPlaceAccess(to: url)
+                } catch {
+                    alertToast(error)
+                }
+            }
+
+            if fileState.currentActiveFile == nil,
+               let firstURL = urls.first(where: fileState.temporaryFiles.contains) {
+                fileState.setActiveFile(.temporaryFile(firstURL))
+            }
+        }
+    }
+
     private func onOpenURL(_ url: URL) {
 #if os(iOS)
         if url.scheme?.hasPrefix("msauth.") == true {
@@ -230,17 +254,36 @@ struct OpenFromURLModifier: ViewModifier {
             return
         }
 
-        // Files handed to the app through open-in-place do not have a saved
-        // LocalFolder bookmark. Retain their security scope for the temporary
-        // workspace before the asynchronous editor load begins.
-        if targetURL == url,
-           !fileState.retainOpenInPlaceAccess(to: url) {
-            alertToast(AppError.urlError(.startAccessingSecurityScopedResourceFailed))
-            return
+        if targetURL == url {
+            Task { @MainActor in
+                do {
+                    try await fileState.prepareOpenInPlaceAccess(to: targetURL)
+                    activateTemporaryFile(
+                        at: targetURL,
+                        imageSendToNewFile: imageSendToNewFile,
+                        context: context
+                    )
+                } catch {
+                    alertToast(error)
+                }
+            }
+        } else {
+            activateTemporaryFile(
+                at: targetURL,
+                imageSendToNewFile: imageSendToNewFile,
+                context: context
+            )
         }
-        
+    }
+
+    private func activateTemporaryFile(
+        at targetURL: URL,
+        imageSendToNewFile: (Data, UTType)?,
+        context: NSManagedObjectContext
+    ) {
+        fileState.registerTemporaryFile(targetURL)
         fileState.setActiveFile(.temporaryFile(targetURL))
-        
+
         if let imageSendToNewFile {
             Task {
                 // Wait for boot
@@ -270,19 +313,20 @@ struct OpenFromURLModifier: ViewModifier {
         }
 
         // save a checkpoint immediately.
-        Task.detached {
+        Task {
             do {
+                let content = try await fileState.readTemporaryFileContent(at: targetURL)
                 try await context.perform {
                     let newCheckpoint = LocalFileCheckpoint(context: context)
                     newCheckpoint.url = targetURL
                     newCheckpoint.updatedAt = .now
-                    newCheckpoint.content = try Data(contentsOf: targetURL)
+                    newCheckpoint.content = content
                     
                     context.insert(newCheckpoint)
                     try context.save()
                 }
             } catch {
-                await alertToast(error)
+                alertToast(error)
             }
         }
     }

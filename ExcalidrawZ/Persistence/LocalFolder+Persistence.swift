@@ -34,6 +34,8 @@ extension LocalFolder {
         [.withSecurityScope]
     }
 #elseif os(iOS)
+    // iOS document-picker bookmarks implicitly start their ephemeral security
+    // scope when resolved. The matching stop happens after each operation.
     var bookmarkResolutionOptions: URL.BookmarkResolutionOptions { [] }
     var bookmarkCreationOptions: URL.BookmarkCreationOptions { [] }
 #endif
@@ -80,14 +82,12 @@ extension LocalFolder {
     func refreshResolvedLocation(context: NSManagedObjectContext) throws -> ResolvedLocationChange? {
         guard parent == nil, let resolved = try resolvedBookmark() else { return nil }
 
+        try Self.beginResolvedBookmarkAccess(to: resolved.url)
+        defer { resolved.url.stopAccessingSecurityScopedResource() }
+
         let oldURL = (url ?? filePath.map { URL(fileURLWithPath: $0) })?.standardizedFileURL
         let locationChanged = oldURL != resolved.url
         guard locationChanged || resolved.isStale else { return nil }
-
-        guard resolved.url.startAccessingSecurityScopedResource() else {
-            throw StartAccessingSecurityScopedResourceError()
-        }
-        defer { resolved.url.stopAccessingSecurityScopedResource() }
 
         let change = try context.performAndWait { () throws -> ResolvedLocationChange? in
             let previousURL = (self.url ?? self.filePath.map { URL(fileURLWithPath: $0) })?
@@ -172,6 +172,70 @@ extension LocalFolder {
         var errorDescription: String? { "Start accessing security scoped resource failed." }
     }
 
+    private static func beginSecurityScopedAccess(to url: URL) throws {
+        guard url.startAccessingSecurityScopedResource() else {
+            throw StartAccessingSecurityScopedResourceError()
+        }
+    }
+
+    private static func beginResolvedBookmarkAccess(to url: URL) throws {
+#if os(macOS)
+        try beginSecurityScopedAccess(to: url)
+#elseif os(iOS)
+        // Resolving the document-picker bookmark starts access implicitly.
+        // Calling startAccessing again can return false even though the URL is
+        // accessible, so the resolved scope is balanced only by stop below.
+#endif
+    }
+
+    private static func isPendingUbiquitousDownload(_ url: URL) -> Bool {
+        let values = try? url.resourceValues(forKeys: [
+            .isUbiquitousItemKey,
+            .ubiquitousItemDownloadingStatusKey,
+        ])
+        return values?.isUbiquitousItem == true
+            && values?.ubiquitousItemDownloadingStatus == .notDownloaded
+    }
+
+    /// Returns nil while a File Provider-backed directory is still being
+    /// materialized. Callers must preserve their current UI or Core Data tree
+    /// instead of interpreting that state as an empty directory.
+    static func materializedDirectoryContents(
+        at url: URL,
+        includingPropertiesForKeys keys: [URLResourceKey]?,
+        options: FileManager.DirectoryEnumerationOptions = []
+    ) throws -> [URL]? {
+#if os(iOS)
+        if isPendingUbiquitousDownload(url) {
+            try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+            return nil
+        }
+#endif
+
+        var contents = try FileManager.default.contentsOfDirectory(
+            at: url,
+            includingPropertiesForKeys: keys,
+            options: options
+        )
+
+#if os(iOS)
+        // Some File Provider implementations transiently return an empty first
+        // enumeration immediately after a bookmark is restored.
+        if contents.isEmpty {
+            contents = try FileManager.default.contentsOfDirectory(
+                at: url,
+                includingPropertiesForKeys: keys,
+                options: options
+            )
+            if contents.isEmpty, isPendingUbiquitousDownload(url) {
+                try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+                return nil
+            }
+        }
+#endif
+        return contents
+    }
+
     private var securityScopeRoot: LocalFolder {
         var folder = self
         while let parent = folder.parent {
@@ -202,9 +266,7 @@ extension LocalFolder {
     @discardableResult
     public func withSecurityScopedURL<T>(actions: (_ scopedURL: URL) throws -> T) throws -> T {
         let urls = try resolvedAccessURLs()
-        guard urls.scope.startAccessingSecurityScopedResource() else {
-            throw StartAccessingSecurityScopedResourceError()
-        }
+        try Self.beginResolvedBookmarkAccess(to: urls.scope)
         defer { urls.scope.stopAccessingSecurityScopedResource() }
 
         return try actions(urls.target)
@@ -213,9 +275,7 @@ extension LocalFolder {
     @discardableResult
     public func withSecurityScopedURL<T>(actions: @escaping (_ scopedURL: URL) async throws -> T) async throws -> T {
         let urls = try resolvedAccessURLs()
-        guard urls.scope.startAccessingSecurityScopedResource() else {
-            throw StartAccessingSecurityScopedResourceError()
-        }
+        try Self.beginResolvedBookmarkAccess(to: urls.scope)
         defer { urls.scope.stopAccessingSecurityScopedResource() }
         return try await actions(urls.target)
     }
@@ -228,7 +288,13 @@ extension LocalFolder {
             return try await action()
         }
 
-        return try await withSecurityScopedBookmark(bookmarkData, action: action)
+        do {
+            return try await withSecurityScopedBookmark(bookmarkData, action: action)
+        } catch is StartAccessingSecurityScopedResourceError {
+            // A direct Files open can provide a valid file-scoped grant even
+            // when the saved containing-folder bookmark is unavailable.
+            return try await action()
+        }
     }
 
     static func modificationDate(forLocalFileAt fileURL: URL) async throws -> Date? {
@@ -239,33 +305,52 @@ extension LocalFolder {
         }
     }
 
+    static func rootFolder(
+        containing url: URL,
+        in context: NSManagedObjectContext
+    ) throws -> LocalFolder? {
+        let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+        request.predicate = NSPredicate(format: "parent == nil")
+
+        return try context.fetch(request)
+            .compactMap { folder -> (folder: LocalFolder, rootURL: URL)? in
+                guard let folderPath = folder.filePath else { return nil }
+                let rootURL = URL(fileURLWithPath: folderPath, isDirectory: true)
+                    .standardizedFileURL
+                guard url.isContained(in: rootURL) else { return nil }
+                return (folder, rootURL)
+            }
+            .max { $0.rootURL.path.count < $1.rootURL.path.count }?
+            .folder
+    }
+
+    static func deepestFolder(
+        containingLocalFileAt fileURL: URL,
+        in context: NSManagedObjectContext
+    ) throws -> LocalFolder? {
+        let parentURL = fileURL.deletingLastPathComponent().standardizedFileURL
+        let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+
+        return try context.fetch(request)
+            .compactMap { folder -> (folder: LocalFolder, url: URL)? in
+                guard let folderPath = folder.filePath else { return nil }
+                let folderURL = URL(fileURLWithPath: folderPath, isDirectory: true)
+                    .standardizedFileURL
+                guard parentURL.isContained(in: folderURL) else { return nil }
+                return (folder, folderURL)
+            }
+            .max { $0.url.path.count < $1.url.path.count }?
+            .folder
+    }
+
     private static func securityScopedBookmarkData(forLocalFileAt fileURL: URL) async throws -> Data? {
-        let filePath = fileURL.standardizedFileURL.path
         let context = PersistenceController.shared.newTaskContext()
 
         return try await context.perform {
-            let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
             // The picker grant belongs to a top-level linked folder and already
             // covers its descendants. Child bookmarks are navigation metadata;
             // using the root avoids provider-specific descendant bookmark behavior.
-            request.predicate = NSPredicate(format: "parent == nil")
-            let folders = try context.fetch(request)
-
-            return folders.compactMap { folder -> (path: String, bookmarkData: Data)? in
-                guard let folderPath = folder.filePath,
-                      let bookmarkData = folder.bookmarkData else {
-                    return nil
-                }
-
-                let standardizedFolderPath = URL(fileURLWithPath: folderPath).standardizedFileURL.path
-                guard Self.filePath(filePath, isContainedInFolderPath: standardizedFolderPath) else {
-                    return nil
-                }
-
-                return (standardizedFolderPath, bookmarkData)
-            }
-            .max { $0.path.count < $1.path.count }?
-            .bookmarkData
+            return try rootFolder(containing: fileURL, in: context)?.bookmarkData
         }
     }
 
@@ -285,16 +370,10 @@ extension LocalFolder {
             bookmarkDataIsStale: &isStale
         )
 
-        guard scopedURL.startAccessingSecurityScopedResource() else {
-            throw StartAccessingSecurityScopedResourceError()
-        }
+        try beginResolvedBookmarkAccess(to: scopedURL)
         defer { scopedURL.stopAccessingSecurityScopedResource() }
 
         return try await action()
-    }
-
-    private static func filePath(_ filePath: String, isContainedInFolderPath folderPath: String) -> Bool {
-        filePath == folderPath || filePath.hasPrefix(folderPath + "/")
     }
 
     private static func localFolder(
@@ -316,13 +395,16 @@ extension LocalFolder {
         return child
     }
     
-    func refreshChildren(context: NSManagedObjectContext) throws {
+    func refreshChildren(
+        context: NSManagedObjectContext,
+        recursively: Bool = true
+    ) throws {
         try refreshResolvedLocation(context: context)
         try self.withSecurityScopedURL { url in
-            let contents = try FileManager.default.contentsOfDirectory(
+            guard let contents = try Self.materializedDirectoryContents(
                 at: url,
                 includingPropertiesForKeys: [.nameKey, .isHiddenKey]
-            )
+            ) else { return }
             try context.performAndWait {
                 let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
                 fetchRequest.predicate = NSPredicate(format: "parent = %@", self)
@@ -357,8 +439,10 @@ extension LocalFolder {
                     try deleteLocalFolder(folder, context: context)
                 }
                 
-                for case let subfolder as LocalFolder in self.children?.allObjects ?? [] {
-                    try subfolder.refreshChildren(context: context)
+                if recursively {
+                    for case let subfolder as LocalFolder in self.children?.allObjects ?? [] {
+                        try subfolder.refreshChildren(context: context)
+                    }
                 }
                 
                 try context.save()

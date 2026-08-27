@@ -20,6 +20,7 @@ extension URLRequest {
 
 protocol CloudStorageProvider: Sendable {
     var descriptor: CloudStorageProviderDescriptor { get }
+    var requiresLocationSelectionForReauthorization: Bool { get }
 
     func authorizationStatus() async -> CloudStorageAuthorizationStatus
     func authorize() async throws -> CloudStorageAccount
@@ -28,6 +29,10 @@ protocol CloudStorageProvider: Sendable {
     ) async throws -> CloudStorageAccount
     func makeSession(for account: CloudStorageAccount) async throws -> any CloudStorageSession
     func signOut(accountID: CloudStorageAccountID) async throws
+    func reauthorizeAccess(
+        to location: CloudStorageLocation,
+        accountHint: CloudStorageAccount?
+    ) async throws -> CloudStorageAccount
 
     /// Begins the provider's preferred root-selection flow. Most providers
     /// authenticate first and then use ExcalidrawZ's folder browser. Providers
@@ -48,6 +53,18 @@ enum CloudStorageLocationSelection: Sendable {
 }
 
 extension CloudStorageProvider {
+    var requiresLocationSelectionForReauthorization: Bool { false }
+
+    /// Reauthorizes a persisted location whose credential can no longer be
+    /// restored. Providers with resource-scoped authorization can override
+    /// this to ask the user to grant the original root again.
+    func reauthorizeAccess(
+        to location: CloudStorageLocation,
+        accountHint: CloudStorageAccount?
+    ) async throws -> CloudStorageAccount {
+        try await authorize()
+    }
+
     func authorize(
         using connectionInput: CloudStorageConnectionInput?
     ) async throws -> CloudStorageAccount {

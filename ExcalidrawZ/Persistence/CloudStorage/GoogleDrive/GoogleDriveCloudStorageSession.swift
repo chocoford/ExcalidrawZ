@@ -8,10 +8,14 @@ import Foundation
 actor GoogleDriveCloudStorageSession: CloudStorageSession {
     nonisolated let providerID = CloudStorageProviderID.googleDrive
     nonisolated let account: CloudStorageAccount
-    nonisolated let capabilities: CloudStorageProviderCapabilities = .readWrite
+    nonisolated let capabilities: CloudStorageProviderCapabilities = [
+        .createFile,
+        .updateFile,
+        .moveItem,
+        .deleteItem,
+    ]
 
     private let client: GoogleDriveAPIClient
-
     init(
         account: CloudStorageAccount,
         tokenProvider: any GoogleDriveAccessTokenProviding,

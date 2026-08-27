@@ -95,9 +95,6 @@ struct ContentView: View {
             }
 #endif
             .containerSizeClassInjection()
-            .onReceive(NotificationCenter.default.publisher(for: .didOpenFromUrls)) { notification in
-                handleOpenFromURLs(notification)
-            }
             .onReceive(NotificationCenter.default.publisher(for: .toggleSidebar)) { notification in
                 handleToggleSidebar(notification)
             }
@@ -213,18 +210,6 @@ struct ContentView: View {
             ContentViewModern()
         } else {
             ContentViewLagacy()
-        }
-    }
-    
-    private func handleOpenFromURLs(_ notification: Notification) {
-        if let urls = notification.object as? [URL], !urls.isEmpty {
-            fileState.temporaryFiles.append(contentsOf: urls)
-            fileState.temporaryFiles = Array(Set(fileState.temporaryFiles))
-            if fileState.currentActiveFile == nil || fileState.currentActiveGroup != .temporary {
-                fileState.setActiveFile(
-                    .localFile(fileState.temporaryFiles.first!)
-                )
-            }
         }
     }
     
