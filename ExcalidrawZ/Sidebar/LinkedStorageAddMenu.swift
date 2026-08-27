@@ -109,7 +109,7 @@ struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
                 localized: "linkedStorageCloudStorageSection",
                 defaultValue: "Or Cloud Storage"
             )) {
-                ForEach(connections.providerDescriptors, id: \.id) { descriptor in
+                ForEach(availableProviderDescriptors, id: \.id) { descriptor in
                     Button {
                         addLocation(to: descriptor.id)
                     } label: {
@@ -129,6 +129,10 @@ struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
 
     private var isLoading: Bool {
         preparingProviderID != nil || !connections.connectingProviderIDs.isEmpty
+    }
+
+    private var availableProviderDescriptors: [CloudStorageProviderDescriptor] {
+        connections.providerDescriptors.filter { $0.id != .googleDrive }
     }
 
     private func addLocation(to providerID: CloudStorageProviderID) {

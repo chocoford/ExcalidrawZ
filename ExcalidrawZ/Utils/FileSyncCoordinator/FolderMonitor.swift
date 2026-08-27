@@ -26,6 +26,7 @@ actor FolderMonitor {
     private let logger = Logger(label: "FolderMonitor")
 
     let folderURL: URL
+    private let securityScopeBookmarkData: Data?
     let options: FolderSyncOptions
     let onFileEvent: (FileEvent) async -> Void
 
@@ -42,10 +43,12 @@ actor FolderMonitor {
 
     init(
         folderURL: URL,
+        securityScopeBookmarkData: Data? = nil,
         options: FolderSyncOptions,
         onFileEvent: @escaping (FileEvent) async -> Void
     ) {
         self.folderURL = folderURL
+        self.securityScopeBookmarkData = securityScopeBookmarkData
         self.options = options
         self.onFileEvent = onFileEvent
     }
@@ -111,6 +114,7 @@ actor FolderMonitor {
         #elseif os(iOS)
         fileSystemMonitor = IOSFileSystemMonitor(
             folderURL: folderURL,
+            securityScopeBookmarkData: securityScopeBookmarkData,
             options: options,
             onEvent: { [weak self] event in
                 await self?.onFileEvent(event)
@@ -279,6 +283,7 @@ actor IOSFileSystemMonitor: NSObject, FileSystemMonitorProtocol, NSFilePresenter
     private let logger = Logger(label: "IOSFileSystemMonitor")
 
     private let folderURL: URL
+    private let securityScopeBookmarkData: Data?
     private let options: FolderSyncOptions
     private let onEvent: (FileEvent) async -> Void
 
@@ -287,13 +292,16 @@ actor IOSFileSystemMonitor: NSObject, FileSystemMonitorProtocol, NSFilePresenter
     nonisolated var presentedItemOperationQueue: OperationQueue { OperationQueue.main }
 
     private var isActive = false
+    private var securityScopedURL: URL?
 
     init(
         folderURL: URL,
+        securityScopeBookmarkData: Data?,
         options: FolderSyncOptions,
         onEvent: @escaping (FileEvent) async -> Void
     ) {
         self.folderURL = folderURL
+        self.securityScopeBookmarkData = securityScopeBookmarkData
         self.options = options
         self.onEvent = onEvent
         super.init()
@@ -302,8 +310,21 @@ actor IOSFileSystemMonitor: NSObject, FileSystemMonitorProtocol, NSFilePresenter
     func start() async throws {
         guard !isActive else { return }
 
-        guard folderURL.startAccessingSecurityScopedResource() else {
-            throw SecurityScopeError()
+        if let securityScopeBookmarkData {
+            var isStale = false
+            // Resolving a document-picker bookmark on iOS implicitly starts
+            // security-scoped access. Retain that resolved URL for the entire
+            // lifetime of the file presenter and balance it in stop().
+            securityScopedURL = try URL(
+                resolvingBookmarkData: securityScopeBookmarkData,
+                options: [],
+                bookmarkDataIsStale: &isStale
+            )
+        } else {
+            guard folderURL.startAccessingSecurityScopedResource() else {
+                throw SecurityScopeError()
+            }
+            securityScopedURL = folderURL
         }
 
         // Register as file presenter
@@ -315,7 +336,8 @@ actor IOSFileSystemMonitor: NSObject, FileSystemMonitorProtocol, NSFilePresenter
         guard isActive else { return }
 
         NSFileCoordinator.removeFilePresenter(self)
-        folderURL.stopAccessingSecurityScopedResource()
+        securityScopedURL?.stopAccessingSecurityScopedResource()
+        securityScopedURL = nil
         isActive = false
     }
 

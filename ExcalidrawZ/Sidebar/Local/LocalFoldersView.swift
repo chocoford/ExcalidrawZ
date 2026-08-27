@@ -96,6 +96,9 @@ struct LocalFoldersView: View {
         } message: {
             Text(folderNotFoundMessage)
         }
+        .task(id: folder.objectID) {
+            await refreshImmediateChildren()
+        }
     }
     
     var dragItemURL: URL? {
@@ -251,6 +254,23 @@ struct LocalFoldersView: View {
             }
         }
     }
+
+    private func refreshImmediateChildren() async {
+        let folderID = folder.objectID
+        let context = PersistenceController.shared.newTaskContext()
+
+        do {
+            try await context.perform {
+                guard let folder = try context.existingObject(with: folderID) as? LocalFolder else {
+                    return
+                }
+                try folder.refreshChildren(context: context, recursively: false)
+            }
+        } catch is CancellationError {
+            return
+        } catch {
+            alertToast(error)
+        }
+    }
     
 }
-

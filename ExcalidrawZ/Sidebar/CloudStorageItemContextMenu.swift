@@ -408,6 +408,7 @@ struct CloudStorageFolderActionsModifier: ViewModifier {
     @EnvironmentObject private var fileState: FileState
 
     @ObservedObject private var documentStore = CloudStorageDocumentStore.shared
+    @ObservedObject private var connections = CloudStorageConnectionStore.shared
 
     let folder: CloudStorageFolderReference
     let presentation: Presentation
@@ -475,7 +476,7 @@ struct CloudStorageFolderActionsModifier: ViewModifier {
             }
         }
 
-        if capabilities.contains(.createChildren) {
+        if documentStore.canCreateFolder(in: folder, connections: connections) {
             Button {
                 newFolderName = documentStore.availableFolderName(in: folder)
                 isCreateFolderPresented = true

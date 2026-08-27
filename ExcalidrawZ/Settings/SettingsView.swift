@@ -258,7 +258,7 @@ extension SettingsView {
                 case .security:
                     return .localizable(.settingsSecurityName)
                 case .cloudStorage:
-                    return "Connected Accounts"
+                    return .localizable(.cloudStorageConnectedAccounts)
                 case .ai:
                     // TODO: localize once a key is added.
                     return "AI"

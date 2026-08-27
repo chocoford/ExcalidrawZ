@@ -57,7 +57,11 @@ actor FileSyncCoordinator {
     ///   - url: The folder URL to monitor
     ///   - options: Configuration options
     /// - Throws: FolderError if folder is invalid or inaccessible
-    func addFolder(at url: URL, options: FolderSyncOptions) async throws {
+    func addFolder(
+        at url: URL,
+        options: FolderSyncOptions,
+        securityScopeBookmarkData: Data? = nil
+    ) async throws {
         // Validate URL
         guard url.isFileURL else {
             throw FolderError.invalidFolder
@@ -78,6 +82,7 @@ actor FileSyncCoordinator {
         // Create and start monitor
         let monitor = FolderMonitor(
             folderURL: url,
+            securityScopeBookmarkData: securityScopeBookmarkData,
             options: options,
             onFileEvent: { [weak self] event in
                 await self?.handleFileEvent(event)
@@ -222,11 +227,26 @@ actor FileSyncCoordinator {
     /// - Returns: File data
     /// - Throws: FileCoordinatorError if unable to open file
     func openFile(_ url: URL) async throws -> Data {
-        let fileCoordinator = self.fileCoordinator
         return try await LocalFolder.withSecurityScopedAccessToContainingFolder(for: url) {
-            try await fileCoordinator.coordinatedRead(url: url) { coordinatedURL in
-                try Data(contentsOf: coordinatedURL)
-            }
+            try await self.openAccessibleFile(url)
+        }
+    }
+
+    /// Opens a URL whose file-scoped security grant is already retained by
+    /// the caller, such as a document delivered through SwiftUI `onOpenURL`.
+    /// Do not resolve a containing Linked Folder bookmark for these files: it
+    /// may be stale and is unrelated to the direct grant.
+    func openFileWithActiveSecurityScope(_ url: URL) async throws -> Data {
+        try await openAccessibleFile(url)
+    }
+
+    private func openAccessibleFile(_ url: URL) async throws -> Data {
+        if let status = try? await ICloudStatusChecker.shared.checkStatus(for: url),
+           status == .notDownloaded || status == .outdated || status.isInProgress {
+            try await fileCoordinator.downloadFile(url: url)
+        }
+        return try await fileCoordinator.coordinatedRead(url: url) { coordinatedURL in
+            try Data(contentsOf: coordinatedURL)
         }
     }
 

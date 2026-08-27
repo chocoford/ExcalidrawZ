@@ -197,19 +197,21 @@ struct CompactCloudStorageBrowserView: View {
                         Label(.localizable(.librariesButtonSelect), systemSymbol: .checkmarkCircle)
                     }
 
-                    Button {
-                        newFolderName = documentStore.availableFolderName(in: folder)
-                        isCreateFolderPresented = true
-                    } label: {
-                        Label(
-                            .localizable(.fileHomeButtonCreateNewFolder),
-                            systemSymbol: .folderBadgePlus
-                        )
+                    if documentStore.canCreateFolder(
+                        in: folder,
+                        connections: connections
+                    ) {
+                        Button {
+                            newFolderName = documentStore.availableFolderName(in: folder)
+                            isCreateFolderPresented = true
+                        } label: {
+                            Label(
+                                .localizable(.fileHomeButtonCreateNewFolder),
+                                systemSymbol: .folderBadgePlus
+                            )
+                        }
+                        .disabled(isCreatingFolder)
                     }
-                    .disabled(
-                        isCreatingFolder
-                            || !documentStore.capabilities(for: folder).contains(.createChildren)
-                    )
                 }
 
                 Section {

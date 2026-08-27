@@ -90,25 +90,21 @@ struct ExcalidrawZSidebarRowModifier: ViewModifier {
 }
 
 
-struct ExcalidrawZSidebarRowButtonStyle: PrimitiveButtonStyle {
+struct ExcalidrawZSidebarRowButtonStyle: ButtonStyle {
     var isSelected: Bool
     var isMultiSelected: Bool
     
     func makeBody(configuration: Configuration) -> some View {
-        PrimitiveButtonWrapper {
-            configuration.trigger()
-        } content: { isPressed in
-            configuration.label
-                .modifier(ExcalidrawZSidebarRowModifier(
-                    isSelected: isSelected,
-                    isMultiSelected: isMultiSelected,
-                    isPressed: isPressed
-                ))
-        }
+        configuration.label
+            .modifier(ExcalidrawZSidebarRowModifier(
+                isSelected: isSelected,
+                isMultiSelected: isMultiSelected,
+                isPressed: configuration.isPressed
+            ))
     }
 }
  
-extension PrimitiveButtonStyle where Self == ExcalidrawZSidebarRowButtonStyle {
+extension ButtonStyle where Self == ExcalidrawZSidebarRowButtonStyle {
     static func excalidrawSidebarRow(
         isSelected: Bool,
         isMultiSelected: Bool

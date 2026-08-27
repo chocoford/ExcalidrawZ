@@ -51,14 +51,10 @@ extension FileState {
                 )
 
             case .localFile(let fileURL):
-                guard case .localFolder(let folder) = currentActiveGroup else {
-                    throw AIChatEditError.unsupportedFile
-                }
-
                 let activeFile = ActiveFile.localFile(fileURL)
                 let parsedFile = try ExcalidrawFile(data: content, id: activeFile.id)
 
-                try await folder.withSecurityScopedURL { _ in
+                try await LocalFolder.withSecurityScopedAccessToContainingFolder(for: fileURL) {
                     try await FileCoordinator.shared.coordinatedWrite(url: fileURL, data: content)
                     Self.touchLocalFileModificationDate(fileURL, logger: self.logger)
                 }

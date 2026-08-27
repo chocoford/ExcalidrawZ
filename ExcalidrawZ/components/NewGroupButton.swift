@@ -15,6 +15,7 @@ struct NewGroupButton: View {
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
     @ObservedObject private var cloudStorageDocumentStore = CloudStorageDocumentStore.shared
+    @ObservedObject private var cloudStorageConnections = CloudStorageConnectionStore.shared
 
     enum GroupType {
         case localFolder
@@ -123,37 +124,38 @@ struct NewGroupButton: View {
                     label(.localFolder)
                 }
             case .cloudStorageFolder:
-                Button {
-                    guard !isCreatingCloudFolder else { return }
-                    guard let folder = activeCloudStorageParent else { return }
-                    newCloudFolderName = CloudStorageDocumentStore.shared.availableFolderName(
-                        in: folder
-                    )
-                    isCreateCloudFolderDialogPresented = true
-                } label: {
-                    ZStack {
-                        label(.cloudStorageFolder)
-                            .opacity(isCreatingCloudFolder ? 0 : 1)
+                if canCreateFolderInActiveCloudFolder {
+                    Button {
+                        guard !isCreatingCloudFolder else { return }
+                        guard let folder = activeCloudStorageParent else { return }
+                        newCloudFolderName = CloudStorageDocumentStore.shared.availableFolderName(
+                            in: folder
+                        )
+                        isCreateCloudFolderDialogPresented = true
+                    } label: {
+                        ZStack {
+                            label(.cloudStorageFolder)
+                                .opacity(isCreatingCloudFolder ? 0 : 1)
 
-                        if isCreatingCloudFolder {
-                            ProgressView()
-                                .controlSize(.small)
+                            if isCreatingCloudFolder {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
                         }
                     }
+                    .disabled(isCreatingCloudFolder)
                 }
-                .disabled(
-                    isCreatingCloudFolder
-                        || !canCreateChildrenInActiveCloudFolder
-                )
             default:
                 EmptyView()
         }
     }
 
-    private var canCreateChildrenInActiveCloudFolder: Bool {
+    private var canCreateFolderInActiveCloudFolder: Bool {
         guard let folder = activeCloudStorageParent else { return false }
-        return cloudStorageDocumentStore.capabilities(for: folder)
-            .contains(.createChildren)
+        return cloudStorageDocumentStore.canCreateFolder(
+            in: folder,
+            connections: cloudStorageConnections
+        )
     }
 
     private var activeCloudStorageParent: CloudStorageFolderReference? {

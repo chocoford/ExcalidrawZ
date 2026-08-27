@@ -7,15 +7,27 @@ import Foundation
 import Logging
 
 struct GoogleDriveCloudStorageProvider: CloudStorageProvider {
+    // `drive.file` only exposes items selected through Picker or created by
+    // ExcalidrawZ. Selecting a folder does not recursively grant its existing
+    // descendants, so this provider must not advertise full folder semantics.
+    private static let driveFileCapabilities: CloudStorageProviderCapabilities = [
+        .createFile,
+        .updateFile,
+        .moveItem,
+        .deleteItem,
+    ]
+
     let descriptor = CloudStorageProviderDescriptor(
         id: .googleDrive,
         displayName: "Google Drive",
-        capabilities: .readWrite
+        capabilities: driveFileCapabilities
     )
 
     private let authenticator: any GoogleDriveAuthenticating
     private let configuration: GoogleDriveConfiguration
     private let logger = Logger(label: "GoogleDriveCloudStorageProvider")
+
+    let requiresLocationSelectionForReauthorization = true
 
     init(
         authenticator: any GoogleDriveAuthenticating,
@@ -42,8 +54,34 @@ struct GoogleDriveCloudStorageProvider: CloudStorageProvider {
     func selectLocation(
         for account: CloudStorageAccount?
     ) async throws -> CloudStorageLocationSelection {
-        let account = try await authenticator.accountWithRequiredScope(accountHint: account)
-        return .browse(account: account)
+        let selection = try await authenticator.authorizeAndSelectFolder(
+            accountHint: account,
+            folderIDHint: nil
+        )
+        let session = try await makeSession(for: selection.account)
+        let folder = try await session.item(for: selection.folderID)
+        guard folder.kind == .folder else {
+            throw CloudStorageError.invalidProviderResponse(
+                "Google Picker did not return a folder."
+            )
+        }
+        return .selected(account: selection.account, folder: folder)
+    }
+
+    func reauthorizeAccess(
+        to location: CloudStorageLocation,
+        accountHint: CloudStorageAccount?
+    ) async throws -> CloudStorageAccount {
+        let selection = try await authenticator.authorizeAndSelectFolder(
+            accountHint: accountHint,
+            folderIDHint: location.rootItemID
+        )
+        guard selection.folderID == location.rootItemID else {
+            throw CloudStorageError.invalidProviderResponse(
+                "Select the Google Drive folder previously linked to ExcalidrawZ."
+            )
+        }
+        return selection.account
     }
 
     func makeSession(for account: CloudStorageAccount) async throws -> any CloudStorageSession {

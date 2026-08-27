@@ -18,6 +18,7 @@ struct HomeFolderItemView: View {
     var name: String
     var itemsCount: Int
     var isLoading = false
+    var localFolder: LocalFolder?
     
     @State private var isHovered = false
     
@@ -43,6 +44,9 @@ struct HomeFolderItemView: View {
             }
                    
             Spacer()
+            if let localFolder {
+                LocalFolderAvailabilityIndicator(folder: localFolder)
+            }
             if isLoading {
                 ProgressView()
                     .controlSize(.mini)

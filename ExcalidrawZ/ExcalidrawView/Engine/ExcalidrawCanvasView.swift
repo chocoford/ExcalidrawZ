@@ -120,7 +120,9 @@ struct ExcalidrawCanvasView: View {
 #endif
             .onReceive(
                 NotificationCenter.default.publisher(for: .forceReloadExcalidrawFile)
-            ) { _ in
+            ) { notification in
+                guard let targetFileID = notification.object as? String,
+                      file?.id == targetFileID else { return }
                 let targetFile = file
                 Task {
                     await excalidrawCore.documentSyncController.load(targetFile, force: true)

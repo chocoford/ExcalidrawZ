@@ -1,3 +1,19 @@
+## 2.4.3
+
+#### Bug fixed
+
+- Fixed remaining permission errors when opening external drawings from Files, reopening them from Temporary, or accessing Linked Folders on iPhone and iPad.
+- Fixed Linked Folders on iPhone and iPad failing to refresh while File Provider content was still downloading, with clearer availability feedback.
+- Fixed collaboration rooms on iPhone and iPad occasionally remaining stuck on the loading screen.
+- Fixed Linked Folder drawings sometimes losing their containing folder context, which could affect sharing and return navigation.
+- Fixed iPad Sidebar scrolling not responding when a gesture started over a folder row.
+- Fixed iPad file transitions using a matching item from an inactive tab.
+- Fixed a macOS drag-and-drop event monitor remaining registered after its view disappeared.
+
+#### Optimizations
+
+- Refined File Home and group menus on Mac and iPad, including group-specific imports and consistent Sidebar section controls.
+
 ## 2.4.1
 
 #### Features
@@ -14,7 +30,7 @@
 
 #### Features
 
-- Added Linked Cloud Storage for OneDrive, Dropbox, Google Drive, and WebDAV (Beta), available across Mac, iPad, and iPhone alongside local linked folders.
+- Added Linked Cloud Storage for OneDrive, Dropbox, and WebDAV (Beta), available across Mac, iPad, and iPhone alongside local linked folders.
 - Added cloud conflict resolution with visual previews, allowing you to compare local and remote versions before choosing which one to keep.
 
 #### Optimizations

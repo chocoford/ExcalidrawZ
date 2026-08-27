@@ -32,22 +32,23 @@ struct CloudStorageSettingsView: View {
                     }
                 }
             } header: {
-                Text("Connected Accounts")
+                Text(.localizable(.cloudStorageConnectedAccounts))
             } footer: {
-                Text("Disconnecting removes this account, its linked folders, and local caches from ExcalidrawZ. Files stored in the cloud are not deleted.")
+                Text(.localizable(.settingsCloudStorageDisconnectDescription))
             }
         }
-        .navigationTitle("Connected Accounts")
+        .navigationTitle(.localizable(.cloudStorageConnectedAccounts))
         .task {
             await connections.refresh()
         }
         .alert(item: $disconnectRequest) { entry in
             Alert(
-                title: Text("Disconnect Account?"),
-                message: Text(
-                    "Disconnect \(entry.account.displayName) from \(entry.providerName)? All linked folders for this account will be removed from ExcalidrawZ."
-                ),
-                primaryButton: .destructive(Text("Disconnect")) {
+                title: Text(.localizable(.settingsCloudStorageDisconnectTitle)),
+                message: Text(.localizable(.settingsCloudStorageDisconnectMessage(
+                    entry.account.displayName,
+                    entry.providerName
+                ))),
+                primaryButton: .destructive(Text(.localizable(.settingsCloudStorageDisconnectAction))) {
                     disconnect(entry)
                 },
                 secondaryButton: .cancel()
@@ -70,9 +71,9 @@ struct CloudStorageSettingsView: View {
                 .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("No Connected Accounts")
+                Text(.localizable(.settingsCloudStorageNoConnectedAccounts))
                     .font(.headline)
-                Text("Connect a cloud storage provider from Linked Storage in the sidebar.")
+                Text(.localizable(.settingsCloudStorageNoConnectedAccountsDescription))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -106,7 +107,7 @@ struct CloudStorageSettingsView: View {
                 ProgressView()
                     .controlSize(.small)
             } else {
-                Button("Disconnect", role: .destructive) {
+                Button(.localizable(.settingsCloudStorageDisconnectAction), role: .destructive) {
                     disconnectRequest = entry
                 }
                 .buttonStyle(.bordered)

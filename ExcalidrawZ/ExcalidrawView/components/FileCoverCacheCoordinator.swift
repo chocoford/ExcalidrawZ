@@ -634,7 +634,12 @@ final class FileCoverCacheCoordinator: ObservableObject {
 
                         case .temporaryFile(let url):
                             mediaHydrationFileObjectID = nil
-                            excalidrawFile = try ExcalidrawFile(contentsOf: url)
+                            guard let fileState else { return .retry }
+                            let content = try await fileState.readTemporaryFileContent(at: url)
+                            excalidrawFile = try ExcalidrawFile(
+                                data: content,
+                                id: activeFile.id
+                            )
 
                         case .collaborationFile(let collaborationFile):
                             mediaHydrationFileObjectID = nil

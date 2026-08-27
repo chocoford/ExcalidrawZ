@@ -42,6 +42,17 @@ enum FileHomeItemTransitionPreferenceID {
     }
 }
 
+private struct FileHomeItemTransitionSourceEnabledKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    var fileHomeItemTransitionSourceEnabled: Bool {
+        get { self[FileHomeItemTransitionSourceEnabledKey.self] }
+        set { self[FileHomeItemTransitionSourceEnabledKey.self] = newValue }
+    }
+}
+
 struct FileHomeItemView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.managedObjectContext) var viewContext
@@ -238,6 +249,7 @@ struct FileHomeItemView: View {
 private struct FileHomeItemContentView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.fileHomeItemTransitionSourceEnabled) private var transitionSourceEnabled
 #if os(iOS)
     @Environment(\.editMode) var editMode
 #endif
@@ -323,7 +335,7 @@ private struct FileHomeItemContentView: View {
         .background {
             Color.clear
                 .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
-                    fileHomeItemTransitionItemState.sourceFileID == fileID
+                    transitionSourceEnabled && fileHomeItemTransitionItemState.sourceFileID == fileID
                     ? [FileHomeItemTransitionPreferenceID.source(for: fileID): value]
                     : [:]
                 }
@@ -501,8 +513,14 @@ private extension FileState.ActiveFile {
             case .file(let file):
                 let groupNames = Self.groupPath(for: file.group)
                 return groupNames.isEmpty ? "/" : groupNames.joined(separator: " / ")
-            case .localFile(let url), .temporaryFile(let url):
+            case .localFile(let url):
+                return Self.linkedFolderPath(for: url)
+            case .temporaryFile(let url):
+#if os(iOS)
+                return url.deletingLastPathComponent().lastPathComponent
+#else
                 return Self.abbreviatedPath(url.deletingLastPathComponent())
+#endif
             case .collaborationFile:
                 return String(localizable: .collaborationHomeTitle)
             case .cloudStorageFile(let reference):
@@ -530,6 +548,20 @@ private extension FileState.ActiveFile {
             currentGroup = group.parent
         }
         return names.reversed()
+    }
+
+    static func linkedFolderPath(for fileURL: URL) -> String {
+        let directoryURL = fileURL.deletingLastPathComponent().standardizedFileURL
+        let context = PersistenceController.shared.container.viewContext
+        guard let folder = try? LocalFolder.rootFolder(containing: directoryURL, in: context),
+              let rootURL = folder.filePath.map({
+                  URL(fileURLWithPath: $0, isDirectory: true).standardizedFileURL
+              }) else {
+            return directoryURL.lastPathComponent
+        }
+
+        let relativeComponents = directoryURL.pathComponents.dropFirst(rootURL.pathComponents.count)
+        return ([rootURL.lastPathComponent] + Array(relativeComponents)).joined(separator: " / ")
     }
 
     static func abbreviatedPath(_ directoryURL: URL) -> String {

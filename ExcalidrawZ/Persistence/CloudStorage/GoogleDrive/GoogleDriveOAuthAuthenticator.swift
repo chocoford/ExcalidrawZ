@@ -36,6 +36,7 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
 
     func accounts() async throws -> [CloudStorageAccount] {
         try credentialStore.credentials()
+            .filter(\.hasRequiredScope)
             .map(\.cloudStorageAccount)
             .sorted {
                 $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
@@ -43,18 +44,32 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
     }
 
     func authorize() async throws -> CloudStorageAccount {
-        try await performAuthorization(accountHint: nil)
+        try await performAuthorization(
+            accountHint: nil,
+            pickerMode: .none,
+            folderIDHint: nil
+        ).account
     }
 
-    func accountWithRequiredScope(
-        accountHint: CloudStorageAccount?
-    ) async throws -> CloudStorageAccount {
-        if let accountHint,
-           let credential = try credentialStore.credential(for: accountHint.id),
-           credential.hasRequiredScope {
-            return credential.cloudStorageAccount
+    func authorizeAndSelectFolder(
+        accountHint: CloudStorageAccount?,
+        folderIDHint: CloudStorageItemID? = nil
+    ) async throws -> GoogleDriveFolderAuthorization {
+        // Every Google OnePick invocation requires a consent prompt. Keep root
+        // selection to one round; granting more files must be a separate action.
+        let result = try await performAuthorization(
+            accountHint: accountHint,
+            pickerMode: .folder,
+            folderIDHint: folderIDHint
+        )
+        guard let folderID = result.pickedItemIDs.first else {
+            throw CloudStorageError.authorizationCancelled
         }
-        return try await performAuthorization(accountHint: accountHint)
+
+        return GoogleDriveFolderAuthorization(
+            account: result.account,
+            folderID: folderID
+        )
     }
 
     func accessToken(for accountID: CloudStorageAccountID) async throws -> String {
@@ -127,14 +142,18 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
     }
 
     private func performAuthorization(
-        accountHint: CloudStorageAccount?
-    ) async throws -> CloudStorageAccount {
+        accountHint: CloudStorageAccount?,
+        pickerMode: PickerMode,
+        folderIDHint: CloudStorageItemID?
+    ) async throws -> AuthorizationResult {
         let state = UUID().uuidString
         let verifier = try Self.makeCodeVerifier()
         let callbackURL = try await authenticate(
             state: state,
             codeChallenge: Self.codeChallenge(for: verifier),
-            accountHint: accountHint
+            accountHint: accountHint,
+            pickerMode: pickerMode,
+            folderIDHint: folderIDHint
         )
         let values = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false)?.queryItems ?? []
         guard values.first(where: { $0.name == "state" })?.value == state else {
@@ -151,6 +170,15 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
                 "Google authorization did not return an authorization code."
             )
         }
+        let pickedItemIDs = values
+            .first(where: { $0.name == "picked_file_ids" })?
+            .value?
+            .split(separator: ",")
+            .map { CloudStorageItemID(rawValue: String($0)) }
+            ?? []
+        if case .folder = pickerMode, pickedItemIDs.isEmpty {
+            throw CloudStorageError.authorizationCancelled
+        }
 
         let token = try await requestToken(parameters: [
             "client_id": configuration.clientID,
@@ -162,9 +190,25 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
         let user = try await currentUser(accessToken: token.accessToken)
         let accountID = CloudStorageAccountID(rawValue: user.permissionId)
         let existingCredential = try credentialStore.credential(for: accountID)
-        guard let refreshToken = token.refreshToken ?? existingCredential?.refreshToken else {
+        let reusableRefreshToken = existingCredential?.hasRequiredScope == true
+            ? existingCredential?.refreshToken
+            : nil
+        guard let refreshToken = token.refreshToken ?? reusableRefreshToken else {
             throw CloudStorageError.invalidProviderResponse(
                 "Google authorization did not return a refresh token. Revoke ExcalidrawZ access in your Google Account and try again."
+            )
+        }
+        let grantedScopeValue = values.first(where: { $0.name == "scope" })?.value
+            ?? GoogleDriveConfiguration.driveScope
+        let grantedScopes = Set(
+            grantedScopeValue
+                .replacingOccurrences(of: "+", with: " ")
+                .split(whereSeparator: { $0.isWhitespace })
+                .map(String.init)
+        )
+        guard grantedScopes.contains(GoogleDriveConfiguration.driveScope) else {
+            throw CloudStorageError.invalidProviderResponse(
+                "Google authorization did not grant access to files selected for ExcalidrawZ."
             )
         }
         let credential = GoogleDriveCredential(
@@ -174,16 +218,21 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
             accessToken: token.accessToken,
             refreshToken: refreshToken,
             expiresAt: Date().addingTimeInterval(token.expiresIn),
-            grantedScopes: [GoogleDriveConfiguration.driveScope]
+            grantedScopes: grantedScopes
         )
         try credentialStore.save(credential)
-        return credential.cloudStorageAccount
+        return AuthorizationResult(
+            account: credential.cloudStorageAccount,
+            pickedItemIDs: pickedItemIDs
+        )
     }
 
     private func authenticate(
         state: String,
         codeChallenge: String,
-        accountHint: CloudStorageAccount?
+        accountHint: CloudStorageAccount?,
+        pickerMode: PickerMode,
+        folderIDHint: CloudStorageItemID?
     ) async throws -> URL {
         guard var components = URLComponents(
             url: configuration.authorizationURL,
@@ -205,6 +254,22 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
             URLQueryItem(name: "code_challenge_method", value: "S256"),
             URLQueryItem(name: "state", value: state),
         ]
+        switch pickerMode {
+        case .none:
+            break
+        case .folder:
+            queryItems.append(contentsOf: [
+                URLQueryItem(name: "trigger_onepick", value: "true"),
+                URLQueryItem(name: "allow_folder_selection", value: "true"),
+                URLQueryItem(name: "allow_multiple", value: "false"),
+                URLQueryItem(name: "mimetypes", value: GoogleDriveFile.folderMIMEType),
+            ])
+            if let folderIDHint {
+                queryItems.append(
+                    URLQueryItem(name: "file_ids", value: folderIDHint.rawValue)
+                )
+            }
+        }
         if let loginHint = accountHint?.emailAddress {
             queryItems.append(URLQueryItem(name: "login_hint", value: loginHint))
         }
@@ -333,6 +398,16 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
     nonisolated private static func codeChallenge(for verifier: String) -> String {
         Data(SHA256.hash(data: Data(verifier.utf8))).base64URLEncodedString()
     }
+}
+
+private struct AuthorizationResult {
+    let account: CloudStorageAccount
+    let pickedItemIDs: [CloudStorageItemID]
+}
+
+private enum PickerMode {
+    case none
+    case folder
 }
 
 extension GoogleDriveOAuthAuthenticator: ASWebAuthenticationPresentationContextProviding {

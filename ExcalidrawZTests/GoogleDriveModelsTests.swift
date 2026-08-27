@@ -7,10 +7,10 @@ import XCTest
 @testable import ExcalidrawZ
 
 final class GoogleDriveModelsTests: XCTestCase {
-    func testUsesFullDriveScopeForFolderConnections() {
+    func testUsesPerFileDriveScope() {
         XCTAssertEqual(
             GoogleDriveConfiguration.driveScope,
-            "https://www.googleapis.com/auth/drive"
+            "https://www.googleapis.com/auth/drive.file"
         )
     }
 
@@ -26,6 +26,34 @@ final class GoogleDriveModelsTests: XCTestCase {
         let credential = try JSONDecoder().decode(GoogleDriveCredential.self, from: data)
 
         XCTAssertFalse(credential.hasRequiredScope)
+    }
+
+    func testFullDriveCredentialRequiresScopeReplacement() {
+        let credential = GoogleDriveCredential(
+            accountID: "account-1",
+            displayName: "Example",
+            emailAddress: nil,
+            accessToken: "access-token",
+            refreshToken: "refresh-token",
+            expiresAt: .distantFuture,
+            grantedScopes: ["https://www.googleapis.com/auth/drive"]
+        )
+
+        XCTAssertFalse(credential.hasRequiredScope)
+    }
+
+    func testDriveFileCredentialHasRequiredScope() {
+        let credential = GoogleDriveCredential(
+            accountID: "account-1",
+            displayName: "Example",
+            emailAddress: nil,
+            accessToken: "access-token",
+            refreshToken: "refresh-token",
+            expiresAt: .distantFuture,
+            grantedScopes: [GoogleDriveConfiguration.driveScope]
+        )
+
+        XCTAssertTrue(credential.hasRequiredScope)
     }
 
     func testUsesReverseClientIDCallbackConvention() {
@@ -59,10 +87,10 @@ final class GoogleDriveModelsTests: XCTestCase {
               "capabilities": {
                 "canDownload": true,
                 "canAddChildren": false,
-                "canEdit": true,
+                "canModifyContent": true,
                 "canRename": true,
                 "canMoveItemWithinDrive": true,
-                "canDelete": true
+                "canTrash": true
               },
               "trashed": false
             }
@@ -91,10 +119,10 @@ final class GoogleDriveModelsTests: XCTestCase {
               "capabilities": {
                 "canDownload": true,
                 "canAddChildren": true,
-                "canEdit": true,
+                "canModifyContent": true,
                 "canRename": true,
                 "canMoveItemWithinDrive": true,
-                "canDelete": true
+                "canTrash": true
               },
               "trashed": false
             }
@@ -107,6 +135,31 @@ final class GoogleDriveModelsTests: XCTestCase {
         XCTAssertEqual(item.kind, .folder)
         XCTAssertFalse(item.effectiveCapabilities.contains(.download))
         XCTAssertTrue(item.effectiveCapabilities.contains(.createChildren))
+    }
+
+    func testMapsCapabilitiesToTheOperationsActuallyUsedByTheClient() throws {
+        let data = Data(
+            """
+            {
+              "id": "file-1",
+              "name": "Drawing.excalidraw",
+              "mimeType": "application/octet-stream",
+              "capabilities": {
+                "canEdit": true,
+                "canModifyContent": false,
+                "canDelete": true,
+                "canTrash": false
+              },
+              "trashed": false
+            }
+            """.utf8
+        )
+
+        let file = try JSONDecoder.googleDriveDecoder().decode(GoogleDriveFile.self, from: data)
+        let capabilities = file.cloudStorageItem.effectiveCapabilities
+
+        XCTAssertFalse(capabilities.contains(.updateContent))
+        XCTAssertFalse(capabilities.contains(.delete))
     }
 
     func testContentChecksumTakesPriorityOverMetadataVersion() throws {
