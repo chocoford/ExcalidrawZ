@@ -11,9 +11,23 @@ import CoreData
 
 extension ExcalidrawCore: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, preferences: WKWebpagePreferences) async -> (WKNavigationActionPolicy, WKWebpagePreferences) {
-        return (.allow, preferences)
+        return (navigationPolicy(for: navigationAction), preferences)
     }
+
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
+        return navigationPolicy(for: navigationAction)
+    }
+
+    private func navigationPolicy(for navigationAction: WKNavigationAction) -> WKNavigationActionPolicy {
+#if os(macOS)
+        if let url = navigationAction.request.url,
+           url.isFileURL,
+           url.pathExtension.caseInsensitiveCompare("excalidrawlibjson") == .orderedSame,
+           url.pathComponents.contains(where: { $0.hasPrefix("WebKitDropDestination-") }) {
+            logger.warning("Blocked unintended WebKit navigation for dropped library item: \(url.lastPathComponent)")
+            return .cancel
+        }
+#endif
         return .allow
     }
     
