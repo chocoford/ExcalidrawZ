@@ -47,42 +47,6 @@ extension ExcalidrawCore {
         return try decodeJavaScriptResult(result, as: CanvasPoint.self)
     }
 
-    /// Convert a point in the web view's local coordinate space (AppKit origin,
-    /// bottom-left) to Excalidraw scene coordinates. Excalidraw's DOM-origin is
-    /// top-left, so the y axis is flipped before conversion.
-    @MainActor
-    func sceneCoords(for localPoint: CGPoint) async throws -> CanvasPoint {
-        guard !self.webView.isLoading else {
-            throw InvalidJavaScriptResult()
-        }
-        let width = self.webView.bounds.width
-        let height = self.webView.bounds.height
-        let domX = localPoint.x
-        let domY = height - localPoint.y
-        let result = try await webView.callAsyncJavaScript(
-            """
-            const api = window.excalidrawZHelper?._api;
-            if (!api) {
-                throw new Error("sceneCoords: excalidrawAPI not ready");
-            }
-            const appState = api.getAppState();
-            const zoom = appState.zoom?.value ?? 1;
-            return JSON.stringify({
-                x: \(Self.javascriptNumber(domX)) / zoom - appState.scrollX,
-                y: \(Self.javascriptNumber(domY)) / zoom - appState.scrollY,
-            });
-            """,
-            arguments: [:],
-            contentWorld: .page
-        )
-        return try decodeJavaScriptResult(result, as: CanvasPoint.self)
-    }
-
-    private static func javascriptNumber(_ value: CGFloat) -> String {
-        let number = Double(value)
-        return number.isFinite ? String(number) : "0"
-    }
-
     @MainActor
     func setCamera(_ camera: CameraPatch) async throws {
         guard !self.webView.isLoading else { return }
