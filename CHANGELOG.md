@@ -1,3 +1,10 @@
+## 2.4.4
+
+#### Bug fixed
+
+- Fixed Excalidraw Library items occasionally replacing the canvas and leaving it stuck on Loading when dragged onto the canvas.
+- Fixed ExcalidrawZ occasionally hanging while quitting after drag-and-drop interactions, with clearer progress and a guarded Force Quit option when termination takes unusually long.
+
 ## 2.4.3
 
 #### Bug fixed
