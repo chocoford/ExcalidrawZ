@@ -1,0 +1,42 @@
+<Window
+  x:Class="ExcalidrawZ.App.MainWindow"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="using:Microsoft.UI.Xaml.Controls">
+
+  <Grid x:Name="RootGrid" RowDefinitions="Auto,*">
+    <Grid
+      Grid.Row="0"
+      Padding="12,8"
+      Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+      ColumnDefinitions="Auto,Auto,16,*,Auto">
+      <Button
+        x:Name="OpenButton"
+        Grid.Column="0"
+        Click="OpenButton_Click"
+        IsEnabled="False">
+        Open…
+      </Button>
+      <Button
+        x:Name="SaveButton"
+        Grid.Column="1"
+        Margin="8,0,0,0"
+        Click="SaveButton_Click"
+        IsEnabled="False">
+        Save
+      </Button>
+      <TextBlock
+        Grid.Column="3"
+        VerticalAlignment="Center"
+        Text="{x:Bind ViewModel.DocumentName, Mode=OneWay}"
+        TextTrimming="CharacterEllipsis" />
+      <TextBlock
+        Grid.Column="4"
+        VerticalAlignment="Center"
+        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+        Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" />
+    </Grid>
+
+    <controls:WebView2 x:Name="CanvasWebView" Grid.Row="1" />
+  </Grid>
+</Window>

@@ -1,0 +1,11 @@
+{
+  "protocolVersion": 1,
+  "messageId": "8dd00a0e-a525-4b97-8176-a1c3e1ab003c",
+  "event": "canvas.ready",
+  "payload": {
+    "capabilities": [
+      "document.open",
+      "document.requestSnapshot"
+    ]
+  }
+}

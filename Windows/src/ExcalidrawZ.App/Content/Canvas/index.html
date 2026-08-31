@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ExcalidrawZ Canvas Bridge Harness</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: Canvas;
+        color: CanvasText;
+      }
+
+      main {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 100vh;
+        padding: 24px;
+        gap: 16px;
+      }
+
+      header {
+        max-width: 760px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 22px;
+      }
+
+      p {
+        margin: 0;
+        color: GrayText;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 420px;
+        resize: none;
+        padding: 16px;
+        border: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
+        border-radius: 8px;
+        background: color-mix(in srgb, Canvas 96%, CanvasText);
+        color: CanvasText;
+        font: 13px/1.5 "Cascadia Code", Consolas, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Canvas bridge harness</h1>
+        <p>
+          This temporary page validates WebView2 messaging, file open/save, keyboard input,
+          and IME behavior before the bundled Excalidraw runtime is connected.
+        </p>
+      </header>
+      <textarea id="documentEditor" spellcheck="false" aria-label="Excalidraw document JSON"></textarea>
+    </main>
+
+    <script>
+      (() => {
+        "use strict";
+
+        const protocolVersion = 1;
+        const editor = document.querySelector("#documentEditor");
+        let currentDocument = {
+          type: "excalidraw",
+          version: 2,
+          source: "https://excalidrawz.com",
+          elements: [],
+          appState: {},
+          files: {},
+        };
+
+        const post = (event, payload, correlationId) => {
+          const message = {
+            protocolVersion,
+            messageId: crypto.randomUUID(),
+            event,
+            payload,
+          };
+
+          if (correlationId) {
+            message.correlationId = correlationId;
+          }
+
+          window.chrome.webview.postMessage(message);
+        };
+
+        const render = () => {
+          editor.value = JSON.stringify(currentDocument, null, 2);
+        };
+
+        const readEditor = () => {
+          const parsed = JSON.parse(editor.value);
+          if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+            throw new Error("The document root must be a JSON object.");
+          }
+          return parsed;
+        };
+
+        window.chrome.webview.addEventListener("message", (event) => {
+          const message = event.data;
+          if (!message || message.protocolVersion !== protocolVersion) {
+            post("bridge.error", { message: "Unsupported native bridge message." });
+            return;
+          }
+
+          switch (message.event) {
+            case "document.open":
+              currentDocument = message.payload.document;
+              render();
+              post("document.changed", { isDirty: false });
+              break;
+
+            case "document.requestSnapshot":
+              try {
+                currentDocument = readEditor();
+                post("document.snapshot", { document: currentDocument }, message.messageId);
+              } catch (error) {
+                post("bridge.error", { message: error.message }, message.messageId);
+              }
+              break;
+
+            case "canvas.setTheme":
+              document.documentElement.style.colorScheme = message.payload.theme;
+              break;
+
+            default:
+              post("bridge.error", { message: `Unknown native event: ${message.event}` });
+          }
+        });
+
+        editor.addEventListener("input", () => {
+          post("document.changed", { isDirty: true });
+        });
+
+        render();
+        post("canvas.ready", {
+          capabilities: ["document.open", "document.requestSnapshot", "ime-test"],
+        });
+      })();
+    </script>
+  </body>
+</html>
