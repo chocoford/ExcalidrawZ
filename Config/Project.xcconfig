@@ -1,2 +1,4 @@
 
+APP_GROUP_IDENTIFIER = group.com.chocoford.excalidraw
+
 #include? "Overrides.xcconfig"
