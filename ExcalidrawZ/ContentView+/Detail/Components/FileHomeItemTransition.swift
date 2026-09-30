@@ -120,6 +120,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
     }
 
     @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject var fileState: FileState
     
     var openDuration: Double = 0.5
@@ -167,6 +168,13 @@ struct FileHomeItemTransitionModifier: ViewModifier {
             }
             .environmentObject(state)
             .environmentObject(itemState)
+            .onAppear {
+                restorePresentationStateIfNeeded()
+            }
+            .watch(value: scenePhase) { newValue in
+                guard newValue == .active else { return }
+                restorePresentationStateIfNeeded()
+            }
             .watch(value: fileState.currentActiveFile) { newValue in
                 let oldValue = self.file
                 transitionRevision += 1
@@ -261,6 +269,41 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                     itemState.setSourceFileID(nil)
                 }
             }
+    }
+
+    private func restorePresentationStateIfNeeded() {
+        let hasActiveFile = fileState.currentActiveFile != nil
+        let hasInconsistentPresentation = file != fileState.currentActiveFile
+            || state.canShowExcalidrawCanvas != hasActiveFile
+            || state.canShowItemContainerView == hasActiveFile
+
+        guard phase != .idle || hasInconsistentPresentation else {
+            return
+        }
+
+        transitionRevision += 1
+        completePendingFileCloseTransition()
+
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            if let activeFile = fileState.currentActiveFile {
+                file = activeFile
+                show = false
+                animateFlag = true
+                state.canShowExcalidrawCanvas = true
+                state.canShowItemContainerView = false
+            } else {
+                file = nil
+                show = true
+                animateFlag = false
+                state.canShowExcalidrawCanvas = false
+                state.canShowItemContainerView = true
+            }
+            itemState.setSourceFileID(nil)
+            itemState.setShouldHideItem(nil)
+            phase = .idle
+        }
     }
 
     private func beginOpenTransition(

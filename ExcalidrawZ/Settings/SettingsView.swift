@@ -61,10 +61,9 @@ struct SettingsView: View {
     }
 #endif
     
-    @ViewBuilder
-    private func content() -> some View {
+    private func content() -> AnyView {
         if #available(macOS 14.0, iOS 17.0, *) {
-            NavigationSplitView {
+            return AnyView(NavigationSplitView {
                 sidebar
 #if os(macOS)
                     .toolbar(removing: .sidebarToggle)
@@ -72,10 +71,10 @@ struct SettingsView: View {
                     .navigationTitle(.localizable(.settingsNavigationTitle))
             } detail: {
                 detail(for: selection)
-            }
+            })
             
         } else if #available(macOS 13.0, *) {
-            NavigationSplitView {
+            return AnyView(NavigationSplitView {
                 sidebar
 #if os(macOS)
                     .background(
@@ -89,8 +88,9 @@ struct SettingsView: View {
 #if os(macOS)
             .removeSettingsSidebarToggle()
 #endif
+            )
         } else {
-            HStack(spacing: 0) {
+            return AnyView(HStack(spacing: 0) {
                 sidebar
 #if os(macOS)
                     .visualEffect(material: .sidebar)
@@ -102,7 +102,7 @@ struct SettingsView: View {
                 if selection == nil {
                     selection = .general
                 }
-            }
+            })
         }
     }
     

@@ -259,6 +259,7 @@
 		3966046E2D096D7700870AC9 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Engine/Snapshot/ExcalidrawDocumentAppStatePersistence.swift,
 				NativeRenderer/ExcalidrawImageRenderer_File.swift,
 				NativeRenderer/ExcalidrawRenderer.swift,
 			);

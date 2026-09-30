@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 import Combine
 import CoreData
 #if os(macOS)

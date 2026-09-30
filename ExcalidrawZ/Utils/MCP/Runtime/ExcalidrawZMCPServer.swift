@@ -59,9 +59,9 @@ final class ExcalidrawZMCPServer {
         let data = try value.mcpJSONData()
         return HTTPResponse(
             statusCode: statusCode,
-            headers: [
+            headers: HTTPHeaders([
                 .contentType: "application/json; charset=utf-8"
-            ],
+            ]),
             body: data
         )
     }
@@ -74,7 +74,7 @@ private struct ExcalidrawMCPHTTPHandler: HTTPHandler {
         guard request.method == .POST else {
             return HTTPResponse(
                 statusCode: .methodNotAllowed,
-                headers: [.contentType: "text/plain; charset=utf-8"],
+                headers: HTTPHeaders([.contentType: "text/plain; charset=utf-8"]),
                 body: Data("Use POST /mcp for MCP JSON-RPC requests.".utf8)
             )
         }
@@ -104,9 +104,9 @@ private struct ExcalidrawMCPHTTPHandler: HTTPHandler {
     ) throws -> HTTPResponse {
         HTTPResponse(
             statusCode: statusCode,
-            headers: [
+            headers: HTTPHeaders([
                 .contentType: "application/json; charset=utf-8"
-            ],
+            ]),
             body: try response.mcpJSONData()
         )
     }

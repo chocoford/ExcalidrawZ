@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 #if os(macOS)
 import AppKit
 #elseif os(iOS)

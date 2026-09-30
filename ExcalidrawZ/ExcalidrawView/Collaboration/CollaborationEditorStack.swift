@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import CoreData
+import SwiftyAlert
 
 extension Notification.Name {
     static let onCreateCollaborationRoom = Notification.Name("OnCreateCollaborationRoom")
@@ -74,4 +76,3 @@ struct CollaborationEditorStack: View {
         .environmentObject(FileState())
         .frame(width: 500)
 }
-

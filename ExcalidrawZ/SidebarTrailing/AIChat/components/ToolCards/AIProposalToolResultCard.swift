@@ -11,6 +11,7 @@ import Foundation
 import LLMCore
 import SFSafeSymbols
 import SwiftUI
+import SwiftyAlert
 import UniformTypeIdentifiers
 
 struct AIProposalToolResultCard: View {

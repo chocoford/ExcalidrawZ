@@ -10,8 +10,8 @@ struct CloudStorageServerConnectionSheet: View {
 
     let providerName: String
     let connectedAccounts: [CloudStorageAccount]
-    let onSelectAccount: (CloudStorageAccount) async throws -> Void
-    let onConnect: (CloudStorageServerCredentials) async throws -> Void
+    let onSelectAccount: @MainActor (CloudStorageAccount) async throws -> Void
+    let onConnect: @MainActor (CloudStorageServerCredentials) async throws -> Void
 
     @State private var serverURL = "https://"
     @State private var username = ""
@@ -24,8 +24,8 @@ struct CloudStorageServerConnectionSheet: View {
     init(
         providerName: String,
         connectedAccounts: [CloudStorageAccount] = [],
-        onSelectAccount: @escaping (CloudStorageAccount) async throws -> Void = { _ in },
-        onConnect: @escaping (CloudStorageServerCredentials) async throws -> Void
+        onSelectAccount: @escaping @MainActor (CloudStorageAccount) async throws -> Void = { _ in },
+        onConnect: @escaping @MainActor (CloudStorageServerCredentials) async throws -> Void
     ) {
         self.providerName = providerName
         self.connectedAccounts = connectedAccounts

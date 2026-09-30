@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 
 struct CollaborationFileMenuProvider: View {
     @Environment(\.alertToast) private var alertToast

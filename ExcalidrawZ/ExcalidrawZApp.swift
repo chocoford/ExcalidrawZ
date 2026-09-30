@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import CoreData
 import Logging
 #if os(macOS)
 import KeyboardShortcuts

@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 
 struct CloudStorageSettingsView: View {
     private struct AccountEntry: Identifiable {

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 import CoreData
 
 import SFSafeSymbols
@@ -252,6 +253,15 @@ struct LibraryView: View {
 #endif
     }
 
+    private var showsLegacyBottomBar: Bool {
+#if os(macOS)
+        if #available(macOS 26.0, *) { return false }
+        return true
+#else
+        return false
+#endif
+    }
+
     @ViewBuilder
     private func content() -> some View {
         if libraries.isEmpty {
@@ -265,7 +275,7 @@ struct LibraryView: View {
                 VStack(spacing: 0) {
                     scrollContent()
                     
-                    if #available(macOS 26.0, *) { } else {
+                    if showsLegacyBottomBar {
                         Divider()
                         
                         bottomBar()
