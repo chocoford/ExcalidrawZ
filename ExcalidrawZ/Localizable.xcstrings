@@ -150559,6 +150559,18 @@
           }
         }
       }
+    },
+    "menubarViewerFollowEditor": {
+      "comment": "View menu toggle: the Viewer window pans/zooms with the editor",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viewer Follows Editor"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

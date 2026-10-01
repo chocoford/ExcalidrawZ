@@ -19,12 +19,23 @@ final class ViewerMirrorController: ObservableObject {
 
     @Published private(set) var session: ViewerMirrorSession?
 
+    /// Follow mode: the Viewer pans/zooms with the editor. Off lets the
+    /// presenter zoom in privately while the Viewer holds its view.
+    @Published var isFollowingCamera: Bool {
+        didSet {
+            UserDefaults.standard.set(isFollowingCamera, forKey: Self.followDefaultsKey)
+            session?.isFollowingCamera = isFollowingCamera
+        }
+    }
+
+    private static let followDefaultsKey = "ViewerFollowsEditorCamera"
     private let logger = Logger(label: "ViewerMirrorController")
     /// Registered editor cores, most recently key (or registered) first.
     private var editors: [WeakEditor] = []
     private var keyWindowCancellable: AnyCancellable?
 
     private init() {
+        isFollowingCamera = UserDefaults.standard.object(forKey: Self.followDefaultsKey) as? Bool ?? true
         keyWindowCancellable = NotificationCenter.default
             .publisher(for: NSWindow.didBecomeKeyNotification)
             .compactMap { $0.object as? NSWindow }
@@ -47,7 +58,7 @@ final class ViewerMirrorController: ObservableObject {
 
     func viewerDidAppear() {
         if session == nil {
-            session = ViewerMirrorSession { [weak self] in
+            session = ViewerMirrorSession(isFollowingCamera: isFollowingCamera) { [weak self] in
                 self?.currentEditorCore
             }
         }

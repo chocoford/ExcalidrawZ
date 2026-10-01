@@ -10,7 +10,9 @@
 import Foundation
 
 enum ViewerMirrorScripts {
-    /// Hides every piece of Excalidraw UI in the Viewer and makes the page inert.
+    /// Hides every piece of Excalidraw UI in the Viewer. While following the
+    /// editor the page is also inert (`excalidrawz-viewer-inert`); when the
+    /// presenter holds the view, pan/zoom gestures are allowed through.
     /// Injected as a user script at document end.
     static let viewerChromeStyle = """
     (() => {
@@ -22,12 +24,21 @@ enum ViewerMirrorScripts {
         .excalidraw .welcome-screen-center {
           display: none !important;
         }
-        body {
+        html.excalidrawz-viewer-inert body {
           pointer-events: none;
         }
       `;
       document.head.appendChild(style);
+      document.documentElement.classList.add("excalidrawz-viewer-inert");
     })();
+    """
+
+    /// Toggles whether the Viewer accepts pointer input.
+    ///
+    /// Arguments: `inert: Bool`.
+    static let viewerSetInert = """
+    document.documentElement.classList.toggle("excalidrawz-viewer-inert", inert);
+    return true;
     """
 
     /// Puts the Viewer page into view + zen mode and stops it from reporting
@@ -230,9 +241,21 @@ enum ViewerMirrorScripts {
         Object.assign(appStateUpdate, delta.prefs);
     }
     if (followCamera && delta.camera) {
-        appStateUpdate.scrollX = delta.camera.scrollX;
-        appStateUpdate.scrollY = delta.camera.scrollY;
-        appStateUpdate.zoom = { value: delta.camera.zoom };
+        // The Viewer window rarely matches the editor's size, so instead of
+        // copying scroll/zoom verbatim, show the same scene rectangle the
+        // editor shows, scaled to fit (letterboxed) and centred.
+        const source = delta.camera;
+        const target = api.getAppState();
+        const targetWidth = Number(target.width) || window.innerWidth;
+        const targetHeight = Number(target.height) || window.innerHeight;
+        const sceneWidth = Math.max(source.width / source.zoom, 1);
+        const sceneHeight = Math.max(source.height / source.zoom, 1);
+        const sceneCenterX = -source.scrollX + sceneWidth / 2;
+        const sceneCenterY = -source.scrollY + sceneHeight / 2;
+        const zoom = Math.min(targetWidth / sceneWidth, targetHeight / sceneHeight);
+        appStateUpdate.scrollX = targetWidth / 2 / zoom - sceneCenterX;
+        appStateUpdate.scrollY = targetHeight / 2 / zoom - sceneCenterY;
+        appStateUpdate.zoom = { value: zoom };
     }
     if (Object.keys(appStateUpdate).length > 0) {
         api.updateScene({ appState: appStateUpdate, captureUpdate: "NEVER" });

@@ -35,7 +35,11 @@ final class ViewerMirrorSession: ObservableObject {
     private var lastSyncAt = Date.distantPast
     private var isClosed = false
 
-    init(editorProvider: @escaping () -> ExcalidrawCore?) {
+    init(
+        isFollowingCamera: Bool,
+        editorProvider: @escaping () -> ExcalidrawCore?
+    ) {
+        self.isFollowingCamera = isFollowingCamera
         self.editorProvider = editorProvider
 
         core.webView.configuration.userContentController.addUserScript(
@@ -64,12 +68,34 @@ final class ViewerMirrorSession: ObservableObject {
 
         $isFollowingCamera
             .dropFirst()
+            .removeDuplicates()
             .sink { [weak self] isFollowing in
+                self?.applyInteractivity(isFollowing: isFollowing)
                 guard isFollowing else { return }
+                // Re-send the camera: force a full delta so the editor's
+                // camera key is reset.
                 self?.needsFullSync = true
                 self?.requestSync()
             }
             .store(in: &viewerCancellables)
+    }
+
+    /// While following, the Viewer ignores pointer input; when the presenter
+    /// holds the view they can pan/zoom it directly (view mode allows that).
+    private func applyInteractivity(isFollowing: Bool) {
+        guard isViewerReady else { return }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                _ = try await self.core.webView.callAsyncJavaScript(
+                    ViewerMirrorScripts.viewerSetInert,
+                    arguments: ["inert": isFollowing],
+                    contentWorld: .page
+                )
+            } catch {
+                self.logger.warning("Failed to update viewer interactivity: \(error)")
+            }
+        }
     }
 
     /// Re-resolves the editor to mirror. Safe to call often; it only
@@ -190,6 +216,11 @@ final class ViewerMirrorSession: ObservableObject {
                 _ = try await core.webView.callAsyncJavaScript(
                     ViewerMirrorScripts.viewerPrepare,
                     arguments: [:],
+                    contentWorld: .page
+                )
+                _ = try await core.webView.callAsyncJavaScript(
+                    ViewerMirrorScripts.viewerSetInert,
+                    arguments: ["inert": isFollowingCamera],
                     contentWorld: .page
                 )
                 isViewerPrepared = true

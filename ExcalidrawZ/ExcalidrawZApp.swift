@@ -380,6 +380,8 @@ struct ExcalidrawZApp: App {
                     Text(.localizable(.menubarOpenViewerWindow))
                 }
                 .keyboardShortcut("V", modifiers: [.command, .shift])
+
+                ViewerFollowEditorCommand()
             }
 
             CommandGroup(after: .help) {
