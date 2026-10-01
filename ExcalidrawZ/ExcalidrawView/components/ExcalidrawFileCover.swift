@@ -150,6 +150,7 @@ final class FileItemPreviewCache: NSCache<NSString, PlatformImage> {
     }
 
     private func moveRetainedPreviewToEnd(forKey key: String) {
+        guard retainedOrder.last != key else { return }
         retainedOrder.removeAll { $0 == key }
         retainedOrder.append(key)
     }
@@ -235,7 +236,7 @@ struct ExcalidrawFileCover: View {
     
     let cache = FileItemPreviewCache.shared
     
-    @State private var coverImage: Image? = nil
+    @State private var coverImage: PlatformImage? = nil
     
     var body: some View {
         previewContent
@@ -249,6 +250,9 @@ struct ExcalidrawFileCover: View {
                 updateCoverFromCache()
             }
             .watch(value: refreshToken ?? "default") { _ in
+                updateCoverFromCache()
+            }
+            .watch(value: fileID) { _ in
                 updateCoverFromCache()
             }
             .onReceive(
@@ -273,7 +277,7 @@ struct ExcalidrawFileCover: View {
     private var previewContent: some View {
         ZStack {
             if let coverImage {
-                coverImage
+                Image(platformImage: coverImage)
                     .resizable()
             } else if let cachedImage {
                 cachedImage
@@ -316,7 +320,10 @@ struct ExcalidrawFileCover: View {
             return false
         }
 
-        coverImage = Image(platformImage: image)
+        // Lazy grids can invoke onAppear again for an already displayed cover.
+        if coverImage !== image {
+            coverImage = image
+        }
         return true
     }
 

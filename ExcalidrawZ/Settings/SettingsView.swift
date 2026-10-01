@@ -73,7 +73,7 @@ struct SettingsView: View {
                 detail(for: selection)
             })
             
-        } else if #available(macOS 13.0, *) {
+        } else {
             return AnyView(NavigationSplitView {
                 sidebar
 #if os(macOS)
@@ -89,20 +89,6 @@ struct SettingsView: View {
             .removeSettingsSidebarToggle()
 #endif
             )
-        } else {
-            return AnyView(HStack(spacing: 0) {
-                sidebar
-#if os(macOS)
-                    .visualEffect(material: .sidebar)
-#endif
-                    .frame(width: 200)
-                detail(for: selection)
-            }
-            .onAppear {
-                if selection == nil {
-                    selection = .general
-                }
-            })
         }
     }
     

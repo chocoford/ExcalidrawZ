@@ -54,15 +54,9 @@ extension EnvironmentValues {
 }
 
 struct FileHomeItemView: View {
-    @Environment(\.colorScheme) var colorScheme
-    @Environment(\.managedObjectContext) var viewContext
-    @Environment(\.isEnabled) private var isEnabled
 #if os(iOS)
     @Environment(\.editMode) private var editMode
 #endif
-    
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject private var fileHomeItemTransitionItemState: FileHomeItemTransitionItemState
     
     var file: FileState.ActiveFile
     var selectionSiblings: [FileState.ActiveFile]?
@@ -102,8 +96,6 @@ struct FileHomeItemView: View {
     }
     
 
-    @State private var isHovered = false
-
     static let roundedCornerRadius: CGFloat = 12
 
     var config = Config()
@@ -136,67 +128,14 @@ struct FileHomeItemView: View {
                 }
             }
 #endif
-            .background {
-                if config.style == .card {
-                    if #available(macOS 26.0, iOS 26.0, *) {
-                        RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
-                            .fill(
-                                colorScheme == .light
-                                ? AnyShapeStyle(HierarchicalShapeStyle.secondary)
-                                : AnyShapeStyle(Color.clear)
-                            )
-                            .glassEffect(.clear, in: .rect(cornerRadius: 12))
-                            .shadow(
-                                color: colorScheme == .light
-                                ? Color.gray.opacity(0.33)
-                                : Color.black.opacity(0.33),
-                                radius: isHovered
-                                ? colorScheme == .light ? 2 : 6
-                                : 0
-                            )
-                    } else {
-                        RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
-                            .fill(.background)
-                            .shadow(
-                                color: colorScheme == .light
-                                ? Color.gray.opacity(0.33)
-                                : Color.black.opacity(0.33),
-                                radius: isHovered
-                                ? colorScheme == .light ? 2 : 6
-                                : 0
-                            )
-                    }
-                }
-            }
             .contentShape(Rectangle())
-#if os(macOS)
-            .simultaneousGesture(TapGesture(count: 2).onEnded {
-                if FileStatusService.shared.statusBox(for: file).status.contentAvailability == .missing {
-                    if case .collaborationFile = file {
-                        openFile()
-                    } else {
-                        triggers.onToggleTryToRecover()
-                    }
-                } else {
-                    openFile()
-                }
-            })
-#elseif os(iOS)
-            .simultaneousGesture(
-                TapGesture().onEnded {
-                    if FileStatusService.shared.statusBox(for: file).status.contentAvailability == .missing {
-                        if case .collaborationFile = file {
-                            openFile()
-                        } else {
-                            triggers.onToggleTryToRecover()
-                        }
-                    } else {
-                        openFile()
-                    }
-                },
-                isEnabled: editMode?.wrappedValue.isEditing != true
+            .modifier(FileHomeItemAppearanceModifier(style: config.style))
+            .modifier(
+                FileHomeItemOpenModifier(
+                    file: file,
+                    onRecover: triggers.onToggleTryToRecover
+                )
             )
-#endif
             .modifier(
                 FileHomeItemSelectModifier(
                     file: file,
@@ -205,19 +144,9 @@ struct FileHomeItemView: View {
                     style: config.style
                 )
             )
-            .onHover {
-                isHovered = $0
-            }
             .modifier(FileHomeItemDragModifier(file: file))
-            .opacity(fileHomeItemTransitionItemState.shouldHideItem == fileID ? 0 : 1)
-            .animation(.smooth(duration: 0.2), value: isHovered)
+            .modifier(FileHomeItemTransitionVisibilityModifier(fileID: fileID))
         }
-    }
-
-
-    private func openFile() {
-        guard isEnabled else { return }
-        fileState.setActiveFile(file)
     }
 
     @ViewBuilder
@@ -246,16 +175,141 @@ struct FileHomeItemView: View {
     }
 }
 
+// Hover only changes the chrome. Keep its state away from the cover, labels,
+// context menus, and selection providers so pointer updates don't rebuild them.
+private struct FileHomeItemAppearanceModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var isHovered = false
+
+    var style: FileHomeItemStyle
+
+    func body(content: Content) -> some View {
+        if style == .card {
+            content
+                .background {
+                    background
+                        .allowsHitTesting(false)
+                }
+                .onHover { hovered in
+                    guard isHovered != hovered else { return }
+                    isHovered = hovered
+                }
+                .animation(.smooth(duration: 0.2), value: isHovered)
+        } else {
+            content
+        }
+    }
+
+    @ViewBuilder
+    private var background: some View {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius)
+                .fill(
+                    colorScheme == .light
+                    ? AnyShapeStyle(HierarchicalShapeStyle.secondary)
+                    : AnyShapeStyle(Color.clear)
+                )
+                .glassEffect(.clear, in: .rect(cornerRadius: 12))
+                .shadow(
+                    color: colorScheme == .light
+                    ? Color.gray.opacity(0.33)
+                    : Color.black.opacity(0.33),
+                    radius: isHovered
+                    ? colorScheme == .light ? 2 : 6
+                    : 0
+                )
+        } else {
+            RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius)
+                .fill(.background)
+                .shadow(
+                    color: colorScheme == .light
+                    ? Color.gray.opacity(0.33)
+                    : Color.black.opacity(0.33),
+                    radius: isHovered
+                    ? colorScheme == .light ? 2 : 6
+                    : 0
+                )
+        }
+    }
+}
+
+private struct FileHomeItemOpenModifier: ViewModifier {
+    @Environment(\.isEnabled) private var isEnabled
+#if os(iOS)
+    @Environment(\.editMode) private var editMode
+#endif
+    @EnvironmentObject private var fileState: FileState
+
+    var file: FileState.ActiveFile
+    var onRecover: () -> Void
+
+    func body(content: Content) -> some View {
+#if os(macOS)
+        content.simultaneousGesture(TapGesture(count: 2).onEnded {
+            openOrRecoverFile()
+        })
+#elseif os(iOS)
+        content.simultaneousGesture(
+            TapGesture().onEnded {
+                openOrRecoverFile()
+            },
+            isEnabled: editMode?.wrappedValue.isEditing != true
+        )
+#endif
+    }
+
+    private func openOrRecoverFile() {
+        if FileStatusService.shared.statusBox(for: file).status.contentAvailability == .missing {
+            if case .collaborationFile = file {
+                openFile()
+            } else {
+                onRecover()
+            }
+        } else {
+            openFile()
+        }
+    }
+
+    private func openFile() {
+        guard isEnabled else { return }
+        fileState.setActiveFile(file)
+    }
+}
+
+private struct FileHomeItemTransitionVisibilityModifier: ViewModifier {
+    @EnvironmentObject private var transitionState: FileHomeItemTransitionItemState
+
+    var fileID: String
+
+    func body(content: Content) -> some View {
+        content.opacity(transitionState.shouldHideItem == fileID ? 0 : 1)
+    }
+}
+
+private struct FileHomeItemTransitionSource: View {
+    @Environment(\.fileHomeItemTransitionSourceEnabled) private var isEnabled
+    @EnvironmentObject private var transitionState: FileHomeItemTransitionItemState
+
+    var fileID: String
+
+    var body: some View {
+        if isEnabled && transitionState.sourceFileID == fileID {
+            Color.clear
+                .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
+                    [FileHomeItemTransitionPreferenceID.source(for: fileID): value]
+                }
+                .allowsHitTesting(false)
+        }
+    }
+}
+
 private struct FileHomeItemContentView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
-    @Environment(\.colorScheme) var colorScheme
-    @Environment(\.fileHomeItemTransitionSourceEnabled) private var transitionSourceEnabled
 #if os(iOS)
     @Environment(\.editMode) var editMode
 #endif
 
     @EnvironmentObject private var layoutState: LayoutState
-    @EnvironmentObject private var fileHomeItemTransitionItemState: FileHomeItemTransitionItemState
     @EnvironmentObject private var lockedContentState: LockedContentStateStore
 
     var style: FileHomeItemStyle
@@ -265,7 +319,15 @@ private struct FileHomeItemContentView: View {
     
     var fileID: String { file.id }
     var filename: String { file.name ?? String(localizable: .generalUntitled) }
-    var updatedAt: Date? { file.updatedAt }
+    private var updatedAt: Date? {
+        switch file {
+            case .localFile, .temporaryFile:
+                // URL metadata is loaded by the task, never while evaluating the view.
+                return nil
+            default:
+                return file.updatedAt
+        }
+    }
     var fileType: UTType { file.fileType }
     
     init(
@@ -285,9 +347,6 @@ private struct FileHomeItemContentView: View {
     
     @available(macOS 13.0, *)
     var layout: AnyLayout {
-        if style == .card {
-            return AnyLayout(VStackLayout(alignment: .center, spacing: 0))
-        }
         switch layoutState.compactBrowserLayout {
             case .grid:
                 return AnyLayout(VStackLayout(alignment: .center, spacing: 0))
@@ -298,15 +357,16 @@ private struct FileHomeItemContentView: View {
     
     var body: some View {
         SwiftUI.Group {
-            if #available(macOS 13.0, *) {
+            if style == .card {
+                VStack(alignment: .center, spacing: 0) {
+                    content()
+                }
+                .clipShape(RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius))
+            } else if #available(macOS 13.0, *) {
                 layout {
                      content()
                 }
-                .clipShape(
-                    style == .file
-                    ? AnyShape(Rectangle())
-                    : AnyShape(RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius))
-                )
+                .clipShape(Rectangle())
             } else {
                 VStack(spacing :0) {
                     content()
@@ -333,17 +393,13 @@ private struct FileHomeItemContentView: View {
                 .apply(coverImageClip)
         }
         .background {
-            Color.clear
-                .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
-                    transitionSourceEnabled && fileHomeItemTransitionItemState.sourceFileID == fileID
-                    ? [FileHomeItemTransitionPreferenceID.source(for: fileID): value]
-                    : [:]
-                }
+            FileHomeItemTransitionSource(fileID: fileID)
         }
         .overlay {
             if style == .file {
                 RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius)
                     .stroke(.secondary, lineWidth: 0.5)
+                    .allowsHitTesting(false)
             }
         }
         .padding(.horizontal, style == .file && layoutState.compactBrowserLayout == .list ? 10 : 0)
@@ -410,8 +466,12 @@ private struct FileHomeItemContentView: View {
                                     Text(localUpdatedAt?.formatted() ?? String(localizable: .generalFileNeverModified))
                                         .lineLimit(1)
                                         .watch(value: updatedAt) { newValue in
-                                            if case .localFile = file { return }
-                                            localUpdatedAt = newValue
+                                            switch file {
+                                                case .localFile, .temporaryFile:
+                                                    break
+                                                default:
+                                                    localUpdatedAt = newValue
+                                            }
                                         }
                                 case .location:
                                     Text(file.displayLocation)
@@ -469,8 +529,20 @@ private struct FileHomeItemContentView: View {
     }
 
     private func refreshLocalModificationDate() async {
-        guard case .localFile(let url) = file else { return }
-        localUpdatedAt = try? await LocalFolder.modificationDate(forLocalFileAt: url)
+        let date: Date?
+        switch file {
+            case .localFile(let url):
+                date = try? await LocalFolder.modificationDate(forLocalFileAt: url)
+            case .temporaryFile(let url):
+                date = await Task.detached(priority: .utility) {
+                    try? url.resourceValues(forKeys: [.contentModificationDateKey])
+                        .contentModificationDate
+                }.value
+            default:
+                return
+        }
+        guard !Task.isCancelled else { return }
+        localUpdatedAt = date
     }
 
     @ViewBuilder

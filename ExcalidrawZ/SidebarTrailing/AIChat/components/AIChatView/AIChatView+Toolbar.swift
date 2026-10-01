@@ -60,64 +60,85 @@ extension AIChatView {
 #endif
     }
 
-    @ViewBuilder
     private var aiChatMoreMenu: some View {
         Menu {
-            Button {} label: {
-                Label(.localizable(.aiChatButtonCreditsCount(creditsDisplayText)),
-                    systemSymbol: .sparkles
-                )
-            }
-            .disabled(true)
-
-            Divider()
-
-            Button {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    isShowingWelcomeManually = true
-                }
-            } label: {
-                Label(.localizable(.aiChatButtonShowWelcome), systemSymbol: .sparkles)
-            }
-
-#if os(macOS)
-            if #available(macOS 14.0, *) {
-                OpenMCPSettingsMenuItem(deepLinkTo: .ai)
-                OpenSettingsMenuItem(deepLinkTo: .ai, aiSettingsRoute: .settings)
-            } else {
-                // Pre-`openSettings` env fallback — NSApp.sendAction path.
-                Button {
-                    presentMCPSettings()
-                } label: {
-                    Label(.localizable(.aiChatButtonMCPSettings), systemSymbol: .serverRack)
-                }
-
-                Button {
-                    presentAISettings()
-                } label: {
-                    Label(.localizable(.generalButtonSettings), systemSymbol: .gearshape)
-                }
-            }
-#else
-            Button {
-                presentAISettings()
-            } label: {
-                Label(.localizable(.generalButtonSettings), systemSymbol: .gearshape)
-            }
-#endif
-
-            Divider()
-
-            Button(role: .destructive) {
-                isConfirmingClear = true
-            } label: {
-                Label(.localizable(.aiChatButtonClearChat), systemSymbol: .trash)
-            }
-            .disabled(fileState.aiChatConversationID == nil)
+            // Explicit sibling views avoid ContentBuilder inferring TupleContent.
+            TupleView((
+                aiChatCreditsMenuItem,
+                Divider(),
+                aiChatWelcomeMenuItem,
+                aiChatSettingsMenuItems,
+                Divider(),
+                aiChatClearMenuItem
+            ))
         } label: {
             Label(.localizable(.generalButtonMore), systemSymbol: .ellipsis)
         }
         .menuIndicator(.hidden)
+    }
+
+    private var aiChatCreditsMenuItem: some View {
+        Button {} label: {
+            Label(.localizable(.aiChatButtonCreditsCount(creditsDisplayText)),
+                  systemSymbol: .sparkles)
+        }
+        .disabled(true)
+    }
+
+    private var aiChatWelcomeMenuItem: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                isShowingWelcomeManually = true
+            }
+        } label: {
+            Label(.localizable(.aiChatButtonShowWelcome), systemSymbol: .sparkles)
+        }
+    }
+
+    private var aiChatSettingsMenuItems: some View {
+#if os(macOS)
+        // Use ordinary control flow and erase the macOS 14-only types before returning.
+        if #available(macOS 14.0, *) {
+            return AnyView(TupleView((
+                OpenMCPSettingsMenuItem(deepLinkTo: .ai),
+                OpenSettingsMenuItem(deepLinkTo: .ai, aiSettingsRoute: .settings)
+            )))
+        } else {
+            return AnyView(TupleView((
+                aiChatMCPSettingsMenuItem,
+                aiChatAISettingsMenuItem
+            )))
+        }
+#else
+        return aiChatAISettingsMenuItem
+#endif
+    }
+
+#if os(macOS)
+    private var aiChatMCPSettingsMenuItem: some View {
+        Button {
+            presentMCPSettings()
+        } label: {
+            Label(.localizable(.aiChatButtonMCPSettings), systemSymbol: .serverRack)
+        }
+    }
+#endif
+
+    private var aiChatAISettingsMenuItem: some View {
+        Button {
+            presentAISettings()
+        } label: {
+            Label(.localizable(.generalButtonSettings), systemSymbol: .gearshape)
+        }
+    }
+
+    private var aiChatClearMenuItem: some View {
+        Button(role: .destructive) {
+            isConfirmingClear = true
+        } label: {
+            Label(.localizable(.aiChatButtonClearChat), systemSymbol: .trash)
+        }
+        .disabled(fileState.aiChatConversationID == nil)
     }
 
     @ViewBuilder

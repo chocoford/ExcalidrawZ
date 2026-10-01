@@ -24,6 +24,7 @@ struct FileHomeItemLockPreviewModifier: ViewModifier {
         return content
             .overlay {
                 previewContent(for: lockState)
+                    .allowsHitTesting(false)
             }
             .overlay {
                 if let lockOverlayState {
@@ -33,6 +34,7 @@ struct FileHomeItemLockPreviewModifier: ViewModifier {
                         iconSize: iconSize
                     )
                     .transition(.opacity.combined(with: .scale(scale: 0.985)))
+                    .allowsHitTesting(false)
                 }
             }
             .animation(.smooth(duration: 0.26), value: lockOverlayState)

@@ -140,10 +140,16 @@ struct FileHomeItemTransitionModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background {
-                Color.clear
-                    .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
-                        [FileHomeItemTransitionPreferenceID.destination: value]
-                    }
+                // A destination anchor is only consumed during a hero
+                // transition. Keep the content hierarchy stable while removing
+                // this preference producer from ordinary home scrolling.
+                if phase != .idle {
+                    Color.clear
+                        .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
+                            [FileHomeItemTransitionPreferenceID.destination: value]
+                        }
+                        .allowsHitTesting(false)
+                }
             }
             .overlayPreferenceValue(FileHomeItemPreferenceKey.self) { value in
                 let viewportDestinationAnchor = value[FileHomeItemTransitionPreferenceID.viewportDestination]

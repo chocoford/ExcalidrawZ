@@ -127,6 +127,7 @@ struct FileHomeItemSelectModifier: ViewModifier {
                                 .animation(.default, value: isSelected)
                         }
                     }
+                        .allowsHitTesting(false)
             }
         }
 #endif
@@ -144,6 +145,7 @@ struct FileHomeItemSelectModifier: ViewModifier {
                         : cardNotSelectedStyle,
                         lineWidth: 0.5
                     )
+                    .allowsHitTesting(false)
             }
         }
     }

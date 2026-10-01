@@ -291,16 +291,23 @@ final class LockedContentStateStore: ObservableObject {
         let didChangeUnlockSession = noteUnlockSessionActiveIfNeeded(for: lockState)
 
         let storedLockState = storedLockState(for: lockState)
-        fileLockStates[fileID] = storedLockState
-        if lockState == .plaintext || lockState == .temporarilyUnlocked {
+        // Identical @Published writes would invalidate all observing file cards.
+        if fileLockStates[fileID] != storedLockState {
+            fileLockStates[fileID] = storedLockState
+        }
+        if (lockState == .plaintext || lockState == .temporarilyUnlocked),
+           unlockFailedFileIDs.contains(fileID) {
             unlockFailedFileIDs.remove(fileID)
         }
 
         if activeFileID == fileID {
-            activeFileLockState = displayLockState(
+            let displayState = displayLockState(
                 forStoredLockState: storedLockState,
                 fileID: fileID
             )
+            if activeFileLockState != displayState {
+                activeFileLockState = displayState
+            }
         }
 
         if !didChangeUnlockSession {

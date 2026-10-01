@@ -63,8 +63,7 @@ struct FileHomeContainer: View {
         self.content = AnyView(content())
     }
     
-    @State private var scrollViewHeight: CGFloat = 0
-    @State private var contentHeight: CGFloat = 0
+    @State private var placeholderContentHeight: CGFloat = 0
     @State private var activeFileScrollTask: Task<Void, Never>?
 
     private let activeFilePreparationDelay: Duration = .milliseconds(50)
@@ -94,13 +93,25 @@ struct FileHomeContainer: View {
     }
 
     private var scrollView: some View {
+        GeometryReader { viewport in
+            scrollView(viewportHeight: viewport.size.height)
+        }
+    }
+
+    private func scrollView(viewportHeight: CGFloat) -> some View {
         ScrollView {
             VStack(spacing: 0) {
-                content
-                    .readHeight($contentHeight)
+                if config.isPlaceholderPresented {
+                    content
+                        .readHeight($placeholderContentHeight)
+                } else {
+                    content
+                }
 
                 Color.clear
-                    .frame(height: max(0, scrollViewHeight - contentHeight))
+                    .frame(height: config.isPlaceholderPresented
+                           ? max(0, viewportHeight - placeholderContentHeight)
+                           : 0)
                     .overlay(alignment: .top) {
                         if config.isPlaceholderPresented {
                             LazyVGrid(
@@ -160,12 +171,14 @@ struct FileHomeContainer: View {
                         }
                     }
             }
+            // Lazy grids refine their estimated height while scrolling. Don't
+            // feed that height into parent state just to fill the empty space.
+            .frame(minHeight: viewportHeight, alignment: .top)
             .padding(.bottom, 30)
             .background {
                 config.contentBackground
             }
         }
-        .readHeight($scrollViewHeight)
     }
 
     private func prepareActiveFileForCloseTransition(
@@ -291,9 +304,6 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     
     @State private var selection: String?
     
-    @State private var scrollViewHeight: CGFloat = 0
-    @State private var contentHeight: CGFloat = 0
-    
     @State private var isCreateGroupDialogPresented: Bool = false
     @State private var isImportFilesDialogPresented = false
     
@@ -325,7 +335,6 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     private func content() -> some View {
         FileHomeContainer {
             containerContent()
-                .readHeight($contentHeight)
         }
         .showPlaceholder(files.isEmpty, itemWidth: fileItemWidth)
         .contentBackground {
@@ -339,7 +348,6 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                     HomeFolderItemDropModifier(group: group)
                 )
         }
-        .readHeight($scrollViewHeight)
 #if os(iOS)
         .overlay(alignment: .bottom) {
             if #available(iOS 18.0, *), editMode.isEditing == true {

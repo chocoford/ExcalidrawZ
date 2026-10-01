@@ -21,6 +21,7 @@ struct LibrarySectionHeader: View {
     @State private var isEditLibrarySheetPresented: Bool = false
     @State private var isRemoveLibraryConfimationPresented: Bool = false
     @State private var isFileExporterPresented: Bool = false
+    @State private var exportDocument: ExcalidrawlibFile?
 
     @State private var nameID: TimeInterval = .zero
     
@@ -70,13 +71,11 @@ struct LibrarySectionHeader: View {
         }
         .fileExporter(
             isPresented: $isFileExporterPresented,
-            document: ExcalidrawlibFile(
-                data: try? JSONEncoder().encode(ExcalidrawLibrary(library: library)),
-                filename: library.name
-            ),
+            document: exportDocument,
             contentType: .excalidrawlibFile,
             defaultFilename: library.name
         ) { result in
+            exportDocument = nil
             switch result {
                 case .success:
                     alertToast(.init(displayMode: .hud, type: .complete(.green), title: "Export Library done"))
@@ -125,7 +124,11 @@ struct LibrarySectionHeader: View {
         Divider()
         
         Button {
-            isFileExporterPresented.toggle()
+            exportDocument = ExcalidrawlibFile(
+                data: try? JSONEncoder().encode(ExcalidrawLibrary(library: library)),
+                filename: library.name
+            )
+            isFileExporterPresented = true
         } label: {
             Label(.localizable(.librariesButtonExportLibrary), systemSymbol: .squareAndArrowUp)
         }
@@ -189,4 +192,3 @@ struct LibrarySectionHeader: View {
         }
     }
 }
-

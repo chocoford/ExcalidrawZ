@@ -43,6 +43,7 @@ struct LibraryView: View {
     @State private var isRemoveAllConfirmationPresented: Bool = false
     @State private var isRemoveSelectionsConfirmationPresented: Bool = false
     @State private var isFileExporterPresented: Bool = false
+    @State private var exportDocuments: [ExcalidrawlibFile] = []
     
     @State private var inSelectionMode: Bool = false
     @State private var selectedItems = Set<LibraryItem>()
@@ -143,11 +144,10 @@ struct LibraryView: View {
         }
         .fileExporter(
             isPresented: $isFileExporterPresented,
-            documents: libraries.compactMap{
-                (try? JSONEncoder().encode(ExcalidrawLibrary(library: $0)), $0.name)
-            }.map{ ExcalidrawlibFile(data: $0.0, filename: $0.1) },
+            documents: exportDocuments,
             contentType: .excalidrawlibFile
         ) { result in
+            exportDocuments = []
             switch result {
                 case .success:
                     alertToast(.init(displayMode: .hud, type: .complete(.green), title: String(localizable: .librariesExportLibraryDone)))
@@ -547,7 +547,7 @@ struct LibraryView: View {
             importButton()
             
             Button {
-                isFileExporterPresented.toggle()
+                prepareLibraryExport()
             } label: {
                 Label(.localizable(.librariesButtonExportAll), systemSymbol: .squareAndArrowUp)
             }
@@ -568,6 +568,18 @@ struct LibraryView: View {
                 Label(.localizable(.librariesButtonRemoveAll), systemSymbol: .trash)
             }
         }
+    }
+
+    private func prepareLibraryExport() {
+        // Keep export serialization out of body, including while the inspector
+        // is hidden. Each export gets a fresh snapshot of the current libraries.
+        exportDocuments = libraries.map { library in
+            ExcalidrawlibFile(
+                data: try? JSONEncoder().encode(ExcalidrawLibrary(library: library)),
+                filename: library.name
+            )
+        }
+        isFileExporterPresented = true
     }
     
     @ViewBuilder

@@ -660,6 +660,15 @@ final class CloudStorageDocumentStore: ObservableObject {
         )
     }
 
+    /// A local-only stamp also detects pending edits before their remote upload.
+    func previewContentRevision(for reference: CloudStorageDocumentReference) async -> String? {
+        guard !invalidatedLocationIDs.contains(reference.locationID),
+              let date = try? await cacheIO.modificationDate(at: cachedDocumentURL(for: reference)) else {
+            return nil
+        }
+        return String(date.timeIntervalSince1970)
+    }
+
     /// Starts provider synchronization without making the caller wait for
     /// authentication, metadata checks, downloads, or dirty upload retries.
     func scheduleContentSynchronization(
