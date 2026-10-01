@@ -5,6 +5,7 @@
 //  Created by Chocoford on 5/2/26.
 //
 
+import Foundation
 import SwiftUI
 import WebKit
 import Combine
@@ -304,12 +305,125 @@ struct ExcalidrawViewRepresentable {
 #if os(macOS)
 extension ExcalidrawViewRepresentable: NSViewRepresentable {
     
-    func makeNSView(context: Context) -> ExcalidrawWebView {
-        makeExcalidrawWebView(context: context)
+    func makeNSView(context: Context) -> ExcalidrawCanvasHostView {
+        let host = ExcalidrawCanvasHostView()
+        host.attach(makeExcalidrawWebView(context: context))
+        return host
     }
     
-    func updateNSView(_ nsView: ExcalidrawWebView, context: Context) {
-        updateExcalidrawWebView(nsView, context: context)
+    func updateNSView(_ host: ExcalidrawCanvasHostView, context: Context) {
+        let webView = context.coordinator.webView
+        host.attach(webView)
+        updateExcalidrawWebView(webView, context: context)
+    }
+
+    func sizeThatFits(
+        _ proposal: ProposedViewSize,
+        nsView: ExcalidrawCanvasHostView,
+        context: Context
+    ) -> CGSize? {
+        // Always answer probes here, including unspecified/infinite proposals.
+        // Returning nil would delegate sizing back to the native Auto Layout subtree.
+        nsView.sizeForProposal(proposal)
+    }
+
+    static func dismantleNSView(_ host: ExcalidrawCanvasHostView, coordinator: ExcalidrawCore) {
+        host.detach()
+    }
+}
+
+final class ExcalidrawCanvasHostView: NSView {
+    private weak var attachedWebView: ExcalidrawWebView?
+    private var isViewportUpdateScheduled = false
+
+    override var isFlipped: Bool { true }
+
+    func sizeForProposal(_ proposal: ProposedViewSize) -> CGSize {
+        func dimension(_ proposed: CGFloat?, fallback: CGFloat) -> CGFloat {
+            if let proposed, proposed.isFinite {
+                return max(0, proposed)
+            }
+            return fallback.isFinite ? max(0, fallback) : 0
+        }
+
+        // Sizing is a read-only operation; it must not query fittingSize or
+        // lay out WebKit at the minimum/ideal/maximum measurement sizes.
+        return CGSize(
+            width: dimension(proposal.width, fallback: bounds.width),
+            height: dimension(proposal.height, fallback: bounds.height)
+        )
+    }
+
+    func attach(_ webView: ExcalidrawWebView) {
+        guard attachedWebView !== webView || webView.superview !== self else { return }
+        detach()
+        webView.removeFromSuperview()
+        // NavigationSplitView temporarily lays out its native subtree at the
+        // minimum size while measuring. Neither constraints nor autoresizing
+        // may forward those intermediate frames to WebKit's web process.
+        autoresizesSubviews = false
+        webView.translatesAutoresizingMaskIntoConstraints = true
+        webView.autoresizingMask = []
+        addSubview(webView)
+        attachedWebView = webView
+        scheduleViewportUpdate()
+    }
+
+    func detach() {
+        if attachedWebView?.superview === self {
+            attachedWebView?.removeFromSuperview()
+        }
+        attachedWebView = nil
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard let hitView = super.hitTest(point), hitView !== self else { return nil }
+        return hitView
+    }
+
+    override var frame: NSRect {
+        didSet {
+            if frame.size != oldValue.size { scheduleViewportUpdate() }
+        }
+    }
+
+    override var bounds: NSRect {
+        didSet {
+            if bounds != oldValue { scheduleViewportUpdate() }
+        }
+    }
+
+    override func layout() {
+        super.layout()
+        scheduleViewportUpdate()
+    }
+
+    private func scheduleViewportUpdate() {
+        guard attachedWebView != nil, !isViewportUpdateScheduled else { return }
+        isViewportUpdateScheduled = true
+        // Read bounds when the block runs, not when it is scheduled: a minimum
+        // size probe and the actual layout can both happen in the same turn.
+        // Common modes also execute while AppKit tracks a window resize.
+        RunLoop.main.perform(inModes: [.common]) { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.isViewportUpdateScheduled = false
+                self.updateWebViewport()
+            }
+        }
+    }
+
+    private func updateWebViewport() {
+        guard let webView = attachedWebView, webView.superview === self,
+              bounds.width.isFinite, bounds.height.isFinite,
+              bounds.width > 0, bounds.height > 0 else { return }
+        guard webView.frame != bounds else { return }
+        webView.frame = bounds
+    }
+
+    override func viewDidEndLiveResize() {
+        super.viewDidEndLiveResize()
+        updateWebViewport()
     }
 }
 #elseif os(iOS)
