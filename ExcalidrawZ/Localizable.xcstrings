@@ -150535,6 +150535,30 @@
           }
         }
       }
+    },
+    "menubarOpenViewerWindow": {
+      "comment": "View menu item that opens the read-only Viewer window",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Viewer Window"
+          }
+        }
+      }
+    },
+    "viewerWindowTitle": {
+      "comment": "Title of the read-only canvas mirror window",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viewer"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

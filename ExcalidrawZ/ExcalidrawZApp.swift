@@ -75,6 +75,9 @@ struct ExcalidrawZApp: App {
 #if os(macOS) && !APP_STORE
     private let updaterController: SPUStandardUpdaterController
 #endif
+#if os(macOS)
+    @Environment(\.openWindow) private var openWindow
+#endif
     init() {
         // Configure logging level
         LoggingSystem.bootstrap { label in
@@ -370,8 +373,15 @@ struct ExcalidrawZApp: App {
                     Text(.localizable(.menubarToggleShare))
                 }
                 .keyboardShortcut("S", modifiers: [.command, .shift])
+
+                Button {
+                    openWindow(id: ViewerMirrorController.windowID)
+                } label: {
+                    Text(.localizable(.menubarOpenViewerWindow))
+                }
+                .keyboardShortcut("V", modifiers: [.command, .shift])
             }
-            
+
             CommandGroup(after: .help) {
                 Button {
                     NotificationCenter.default.post(name: .toggleWhatsNewSheet, object: nil)
@@ -393,6 +403,13 @@ struct ExcalidrawZApp: App {
         
 #if os(macOS)
         // documentGroup()
+
+        // Read-only mirror of the editor canvas for a second display.
+        Window(Text(.localizable(.viewerWindowTitle)), id: ViewerMirrorController.windowID) {
+            ViewerWindowView()
+                .preferredColorScheme(appPrefernece.appearance.colorScheme)
+        }
+        .defaultSize(width: 960, height: 600)
 
         Settings {
             SettingsView()
