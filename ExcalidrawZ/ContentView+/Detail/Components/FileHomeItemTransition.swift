@@ -136,10 +136,17 @@ struct FileHomeItemTransitionModifier: ViewModifier {
     
     @StateObject private var state = FileHomeItemTransitionState()
     @StateObject private var itemState = FileHomeItemTransitionItemState()
+#if os(macOS)
+    @StateObject private var nativeBridge = FileHomeNativeTransitionBridge()
+#endif
     
     func body(content: Content) -> some View {
         content
             .background {
+#if os(macOS)
+                FileHomeNativeTransitionProbe(bridge: nativeBridge)
+                    .allowsHitTesting(false)
+#endif
                 // A destination anchor is only consumed during a hero
                 // transition. Keep the content hierarchy stable while removing
                 // this preference producer from ordinary home scrolling.
@@ -155,25 +162,29 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                 let viewportDestinationAnchor = value[FileHomeItemTransitionPreferenceID.viewportDestination]
                 let fallbackDestinationAnchor = value[FileHomeItemTransitionPreferenceID.destination]
 
-                if let activeFile = file,// ?? fileState.currentActiveFile,
-                   let sAnchor: Anchor<CGRect> = value[FileHomeItemTransitionPreferenceID.source(for: activeFile.canonicalID)],
+                if let activeFile = file,
                    let dAnchor: Anchor<CGRect> = viewportDestinationAnchor ?? fallbackDestinationAnchor {
-                    GeometryReader { geomerty in
+                    let sAnchor = value[FileHomeItemTransitionPreferenceID.source(for: activeFile.canonicalID)]
+                    let nativeSourceRect = nativeSourceRect(for: activeFile.canonicalID)
+                    if sAnchor != nil || nativeSourceRect != nil {
                         FileHomeItemHeroLayer(
                             file: activeFile,
                             show: show,
                             animateFlag: animateFlag,
                             sourceAnchor: sAnchor,
+                            sourceRect: nativeSourceRect,
                             destinationAnchor: dAnchor,
                             usesExactViewportDestination: viewportDestinationAnchor != nil
                         )
                         .transition(.identity)
-                        // .id(currentItem.id) // <-- important, cannot be `currentItem`
                     }
                 }
             }
             .environmentObject(state)
             .environmentObject(itemState)
+#if os(macOS)
+            .environment(\.fileHomeNativeTransitionBridge, nativeBridge)
+#endif
             .onAppear {
                 restorePresentationStateIfNeeded()
             }
@@ -183,6 +194,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
             }
             .watch(value: fileState.currentActiveFile) { newValue in
                 let oldValue = self.file
+                prepareNativeSource(for: newValue?.canonicalID ?? oldValue?.canonicalID)
                 transitionRevision += 1
                 let revision = transitionRevision
    
@@ -273,8 +285,23 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                 } else {
                     self.file = newValue
                     itemState.setSourceFileID(nil)
+                    prepareNativeSource(for: nil)
                 }
             }
+    }
+
+    private func nativeSourceRect(for fileID: String) -> CGRect? {
+#if os(macOS)
+        return nativeBridge.sourceRect(for: fileID)
+#else
+        return nil
+#endif
+    }
+
+    private func prepareNativeSource(for fileID: String?) {
+#if os(macOS)
+        nativeBridge.activeFileID = fileID
+#endif
     }
 
     private func restorePresentationStateIfNeeded() {
@@ -288,6 +315,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
         }
 
         transitionRevision += 1
+        prepareNativeSource(for: nil)
         completePendingFileCloseTransition()
 
         var transaction = Transaction()
@@ -365,6 +393,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
     }
 
     private func completeOpenTransition() {
+        prepareNativeSource(for: nil)
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
@@ -377,6 +406,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
     }
 
     private func completeDismissTransition() {
+        prepareNativeSource(for: nil)
         completePendingFileCloseTransition()
         var transaction = Transaction()
         transaction.disablesAnimations = true
@@ -407,7 +437,8 @@ struct FileHomeItemHeroLayer: View {
     var file: FileState.ActiveFile
     var show: Bool
     var isAnimating: Bool
-    var sourceAnchor: Anchor<CGRect>
+    var sourceAnchor: Anchor<CGRect>?
+    var sourceRect: CGRect?
     var destinationAnchor: Anchor<CGRect>
     var usesExactViewportDestination: Bool
 
@@ -415,7 +446,8 @@ struct FileHomeItemHeroLayer: View {
         file: FileState.ActiveFile,
         show: Bool,
         animateFlag: Bool,
-        sourceAnchor: Anchor<CGRect>,
+        sourceAnchor: Anchor<CGRect>?,
+        sourceRect: CGRect? = nil,
         destinationAnchor: Anchor<CGRect>,
         usesExactViewportDestination: Bool
     ) {
@@ -423,6 +455,7 @@ struct FileHomeItemHeroLayer: View {
         self.show = show
         self.isAnimating = animateFlag
         self.sourceAnchor = sourceAnchor
+        self.sourceRect = sourceRect
         self.destinationAnchor = destinationAnchor
         self.usesExactViewportDestination = usesExactViewportDestination
     }
@@ -451,22 +484,19 @@ struct FileHomeItemHeroLayer: View {
     
     var body: some View {
         GeometryReader { geomerty in
-            let sRect = geomerty[sourceAnchor]
-            let dRect = geomerty[destinationAnchor]
-            let adjustedDRect = adjustedDestinationRect(
-                dRect,
-                in: geomerty
-            )
-            
-            FileHomeItemHeroSurface(
-                show: show,
-                progress: isAnimating ? 1 : 0,
-                sourceRect: sRect,
-                destinationRect: adjustedDRect,
-                lockState: lockState,
-                platformImage: platformImage,
-                background: background
-            )
+            if let sRect = sourceAnchor.map({ geomerty[$0] }) ?? sourceRect {
+                let dRect = geomerty[destinationAnchor]
+                let adjustedDRect = adjustedDestinationRect(dRect, in: geomerty)
+                FileHomeItemHeroSurface(
+                    show: show,
+                    progress: isAnimating ? 1 : 0,
+                    sourceRect: sRect,
+                    destinationRect: adjustedDRect,
+                    lockState: lockState,
+                    platformImage: platformImage,
+                    background: background
+                )
+            }
         }
     }
 

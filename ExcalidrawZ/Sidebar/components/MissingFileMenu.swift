@@ -15,31 +15,31 @@ import Logging
 
 private let missingFileMenuLogger = Logger(label: "MissingFileMenu")
 
-struct MissingFileMenuProvider: View {
+struct MissingFileMenuTriggers {
+    var onToggleTryToRecover: () -> Void
+    var onToggleDelete: () -> Void
+}
+
+struct MissingFileMenuProvider<Content: View>: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
+    @Environment(\.fileHomeSheetPresentation) private var sheetPresentation
     @EnvironmentObject var fileState: FileState
     
 
     var file: FileState.ActiveFile?
-    var content: (Triggers) -> AnyView
+    var content: (MissingFileMenuTriggers) -> Content
 
-    init<Content: View>(
+    init(
         file: FileState.ActiveFile?,
-        content: @escaping (Triggers) -> Content
+        content: @escaping (MissingFileMenuTriggers) -> Content
     ) {
         self.file = file
-        self.content = { AnyView(content($0)) }
+        self.content = content
     }
     
-    struct Triggers {
-        var onToggleTryToRecover: () -> Void
-        var onToggleDelete: () -> Void
-    }
-    
-    
-    var triggers: Triggers {
-        Triggers {
+    var triggers: MissingFileMenuTriggers {
+        MissingFileMenuTriggers {
             tryToRecoverFiles()
         } onToggleDelete: {
             deleteFiles(files: Array(files))
@@ -74,14 +74,7 @@ struct MissingFileMenuProvider: View {
     }
 
     var body: some View {
-        content(triggers)
-            .sheet(item: $checkpointRecoveryData) { data in
-                CheckpointRecoverySheet(
-                    file: data.file,
-                    checkpoints: data.checkpoints
-                )
-                .swiftyAlert()
-            }
+        contentWithRecoverySheet
             .confirmationDialog(
                 String(localizable: .missingFileMenuCannotRecoverAlertButtonDelete),
                 isPresented: $showNoRecoveryDialog,
@@ -96,6 +89,19 @@ struct MissingFileMenuProvider: View {
             } message: {
                 Text(localizable: .missingFileMenuCannotRecoverAlertMessage)
             }
+    }
+
+    @ViewBuilder
+    private var contentWithRecoverySheet: some View {
+        if sheetPresentation != nil {
+            content(triggers)
+        } else {
+            content(triggers)
+                .sheet(item: $checkpointRecoveryData) { data in
+                    CheckpointRecoverySheet(file: data.file, checkpoints: data.checkpoints)
+                        .swiftyAlert()
+                }
+        }
     }
 
     private func tryToRecoverFiles() {
@@ -147,10 +153,11 @@ struct MissingFileMenuProvider: View {
                             showNoRecoveryDialog = true
                         } else {
                             // Checkpoints available - show recovery sheet
-                            checkpointRecoveryData = CheckpointRecoveryData(
-                                file: file,
-                                checkpoints: checkpoints
-                            )
+                            if let sheetPresentation {
+                                sheetPresentation.presentRecovery(file: file, checkpoints: checkpoints)
+                            } else {
+                                checkpointRecoveryData = CheckpointRecoveryData(file: file, checkpoints: checkpoints)
+                            }
                         }
                     } catch {
                         // Failed to fetch checkpoints - show deletion dialog

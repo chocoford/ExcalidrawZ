@@ -49,11 +49,14 @@ struct CloudStorageFolderFileHomeView: View {
     }
 
     private var content: some View {
-        FileHomeContainer {
-            containerContent
-        }
-        .showPlaceholder(items?.isEmpty == true, itemWidth: fileItemWidth)
-        .contentBackground {
+        FileHomeGridContainer(
+            files: files,
+            itemWidth: fileItemWidth,
+            contentRevision: documentStore.metadataRevision(for: folder.location.id),
+            showsPlaceholder: items?.isEmpty == true
+        ) {
+            containerHeader
+        } background: {
             Color.clear
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -90,7 +93,7 @@ struct CloudStorageFolderFileHomeView: View {
 #endif
     }
 
-    private var containerContent: some View {
+    private var containerHeader: some View {
         VStack(spacing: 30) {
             header
                 .padding(.horizontal, 20)
@@ -98,7 +101,7 @@ struct CloudStorageFolderFileHomeView: View {
             quickActions
                 .padding(.horizontal, 30)
 
-            groupsAndFiles
+            childFolderGrid
                 .padding(.horizontal, 30)
         }
         .padding(.top, parentFolders.isEmpty ? 36 : 15)
@@ -272,7 +275,7 @@ struct CloudStorageFolderFileHomeView: View {
     }
 
     @ViewBuilder
-    private var groupsAndFiles: some View {
+    private var childFolderGrid: some View {
         LazyVGrid(
             columns: [
                 .init(
@@ -319,12 +322,6 @@ struct CloudStorageFolderFileHomeView: View {
         .watch(value: fileState.selectedCloudStorageFiles.isEmpty) { isEmpty in
             if !isEmpty { selection = nil }
         }
-
-        FileHomeFilesGrid(
-            files: files,
-            itemWidth: fileItemWidth,
-            contentRevision: documentStore.metadataRevision(for: folder.location.id)
-        )
     }
 
     private func deleteSelectedFiles() {

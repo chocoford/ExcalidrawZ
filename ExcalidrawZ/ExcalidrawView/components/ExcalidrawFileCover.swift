@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Foundation
+import Combine
 import ChocofordUI
 
 #if canImport(UIKit)
@@ -191,7 +192,7 @@ struct ExcalidrawFileCover: View {
     @Environment(\.colorScheme) var colorScheme
     
     // Support two initialization modes
-    private enum Source {
+    fileprivate enum Source {
         case activeFile(FileState.ActiveFile)
         case excalidrawFile(ExcalidrawFile)
     }
@@ -234,10 +235,54 @@ struct ExcalidrawFileCover: View {
         }
     }
     
-    let cache = FileItemPreviewCache.shared
-    
-    @State private var coverImage: PlatformImage? = nil
-    
+    var body: some View {
+        ExcalidrawFileCoverImage(
+            source: source,
+            fileID: fileID,
+            colorScheme: colorScheme,
+            refreshToken: refreshToken,
+            allowsGeneration: allowsGeneration,
+            generationPriority: generationPriority
+        )
+        .id(FileItemPreviewCache.cacheKey(forID: fileID, colorScheme: colorScheme))
+    }
+}
+
+/// Keyed by file and appearance, so a warm cover starts with the cached pixels
+/// rather than inserting them with an onAppear state change.
+private struct ExcalidrawFileCoverImage: View {
+    let source: ExcalidrawFileCover.Source
+    let fileID: String
+    let colorScheme: ColorScheme
+    let refreshToken: String?
+    let allowsGeneration: Bool
+    let generationPriority: FileCoverCacheCoordinator.Priority
+
+    private let cache = FileItemPreviewCache.shared
+    private let updateEvents: AnyPublisher<FileCoverUpdateEvents.Event, Never>
+    @State private var coverImage: PlatformImage?
+
+    init(
+        source: ExcalidrawFileCover.Source,
+        fileID: String,
+        colorScheme: ColorScheme,
+        refreshToken: String?,
+        allowsGeneration: Bool,
+        generationPriority: FileCoverCacheCoordinator.Priority
+    ) {
+        self.source = source
+        self.fileID = fileID
+        self.colorScheme = colorScheme
+        self.refreshToken = refreshToken
+        self.allowsGeneration = allowsGeneration
+        self.generationPriority = generationPriority
+        self.updateEvents = FileCoverUpdateEvents.shared.publisher(for: fileID)
+        self._coverImage = State(initialValue: FileItemPreviewCache.shared.getPreviewCache(
+            forID: fileID,
+            colorScheme: colorScheme
+        ))
+    }
+
     var body: some View {
         previewContent
             .apply { view in
@@ -246,30 +291,16 @@ struct ExcalidrawFileCover: View {
             .onAppear {
                 updateCoverFromCache()
             }
-            .watch(value: colorScheme) { _ in
-                updateCoverFromCache()
-            }
             .watch(value: refreshToken ?? "default") { _ in
                 updateCoverFromCache()
             }
-            .watch(value: fileID) { _ in
-                updateCoverFromCache()
-            }
-            .onReceive(
-                NotificationCenter.default.publisher(for: .filePreviewShouldRefresh)
-            ) { notification in
-                guard let fileID = notification.object as? String,
-                      self.fileID == fileID else { return }
-
-                requestCoverRefresh(forceRefresh: true)
-            }
-            .onReceive(
-                NotificationCenter.default.publisher(for: .filePreviewDidUpdate)
-            ) { notification in
-                guard let fileID = notification.object as? String,
-                      self.fileID == fileID else { return }
-
-                updateCoverFromCache(requestIfMissing: false)
+            .onReceive(updateEvents) { event in
+                switch event {
+                    case .refreshRequested:
+                        requestCoverRefresh(forceRefresh: true)
+                    case .imageUpdated:
+                        updateCoverFromCache(requestIfMissing: false)
+                }
             }
     }
     
@@ -279,9 +310,6 @@ struct ExcalidrawFileCover: View {
             if let coverImage {
                 Image(platformImage: coverImage)
                     .resizable()
-            } else if let cachedImage {
-                cachedImage
-                    .resizable()
             } else {
                 Rectangle()
                     .fill(Color.secondary.opacity(colorScheme == .dark ? 0.08 : 0.06))
@@ -289,20 +317,13 @@ struct ExcalidrawFileCover: View {
         }
     }
 
-    private var cachedImage: Image? {
-        guard let image = cache.getPreviewCache(forID: fileID, colorScheme: colorScheme) else {
-            return nil
-        }
-        return Image(platformImage: image)
-    }
-    
     @ViewBuilder
     private func applyListeners<V: View>(to view: V) -> some View {
         switch source {
             case .activeFile(let file):
                 // Apply all listeners for ActiveFile
                 view
-                    .observeFileStatus(for: file) { status in
+                    .observeFileStatus(for: file, onlyICloudStatusChanges: true) { status in
 #if os(macOS)
                         if status.iCloudStatus == .outdated {
                             self.requestCoverRefresh(forceRefresh: true)
@@ -329,7 +350,7 @@ struct ExcalidrawFileCover: View {
 
     private func updateCoverFromCache(requestIfMissing: Bool = true) {
         if !showCachedCoverIfAvailable() {
-            coverImage = nil
+            if coverImage != nil { coverImage = nil }
             if requestIfMissing {
                 requestCoverRefresh(
                     forceRefresh: false,
@@ -360,6 +381,64 @@ struct ExcalidrawFileCover: View {
             priority: priority,
             forceRefresh: forceRefresh
         )
+    }
+}
+
+/// Displays cached pixels without the production cover's status listeners,
+/// refresh subscriptions, lock animations or JavaScript generation requests.
+struct CachedFileCover: View {
+    let file: FileState.ActiveFile
+    let colorScheme: ColorScheme
+
+    var body: some View {
+        FilePreviewLockStateReader(file: file) { lockState in
+            if let lockState, lockState != .locked {
+                CachedFileCoverImage(file: file, colorScheme: colorScheme)
+            } else {
+                Color.clear
+            }
+        }
+    }
+}
+
+/// Cached pixels for a caller that already gates display on protection state.
+/// Keeping this leaf free of store subscriptions avoids observing the same
+/// lock state a second time inside the lock preview.
+struct CachedFileCoverImage: View {
+    let file: FileState.ActiveFile
+    let colorScheme: ColorScheme
+    private let cacheKey: NSString
+    @State private var image: PlatformImage?
+
+    init(file: FileState.ActiveFile, colorScheme: ColorScheme) {
+        self.file = file
+        self.colorScheme = colorScheme
+        let key = FileItemPreviewCache.cacheKey(forID: file.canonicalID, colorScheme: colorScheme)
+        self.cacheKey = key
+        // The caller keys this subtree by file and appearance so SwiftUI seeds
+        // a fresh image state when either changes. This lookup is memory-only.
+        self._image = State(initialValue: FileItemPreviewCache.shared.object(forKey: key))
+    }
+
+    var body: some View {
+        Color.clear
+            .overlay {
+                if let image {
+                    Image(platformImage: image)
+                        .resizable()
+                        .scaledToFill()
+                }
+            }
+            .clipped()
+            .task(id: cacheKey) {
+                guard image == nil else { return }
+                let cachedImage = await FileCoverCacheCoordinator.shared.loadCachedPreview(
+                    for: file,
+                    colorScheme: colorScheme
+                )
+                guard !Task.isCancelled, image !== cachedImage else { return }
+                image = cachedImage
+            }
     }
 }
 

@@ -9,7 +9,6 @@ import SwiftUI
 import CoreData
 import SwiftyAlert
 import ChocofordUI
-import SmoothGradient
 
 struct GroupFileHomeView: View {
     var group: Group
@@ -50,191 +49,6 @@ struct LocalFolderFileHomeView: View {
         }
     }
 }
-
-struct FileHomeContainer: View {
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
-    
-    var content: AnyView
-    
-    init<Content: View>(
-        @ViewBuilder content: () -> Content
-    ) {
-        self.content = AnyView(content())
-    }
-    
-    @State private var placeholderContentHeight: CGFloat = 0
-    @State private var activeFileScrollTask: Task<Void, Never>?
-
-    private let activeFilePreparationDelay: Duration = .milliseconds(50)
-    
-    var config = Config()
-    
-    var body: some View {
-        ScrollViewReader { proxy in
-            scrollView
-                .watch(value: fileState.currentActiveFile, initial: true) { _, activeFile in
-                    prepareActiveFileForCloseTransition(activeFile, using: proxy)
-                }
-                .watch(
-                    value: fileHomeItemTransitionState.canShowItemContainerView,
-                    initial: true
-                ) { _, isVisible in
-                    guard !isVisible else { return }
-                    prepareActiveFileForCloseTransition(
-                        fileState.currentActiveFile,
-                        using: proxy
-                    )
-                }
-                .onDisappear {
-                    activeFileScrollTask?.cancel()
-                }
-        }
-    }
-
-    private var scrollView: some View {
-        GeometryReader { viewport in
-            scrollView(viewportHeight: viewport.size.height)
-        }
-    }
-
-    private func scrollView(viewportHeight: CGFloat) -> some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                if config.isPlaceholderPresented {
-                    content
-                        .readHeight($placeholderContentHeight)
-                } else {
-                    content
-                }
-
-                Color.clear
-                    .frame(height: config.isPlaceholderPresented
-                           ? max(0, viewportHeight - placeholderContentHeight)
-                           : 0)
-                    .overlay(alignment: .top) {
-                        if config.isPlaceholderPresented {
-                            LazyVGrid(
-                                columns: [
-                                    .init(
-                                        .adaptive(
-                                            minimum: config.itemWidth,
-                                            maximum: config.itemWidth * 2 - 0.1
-                                        ),
-                                        spacing: 20
-                                    )
-                                ],
-                                spacing: 20
-                            ) {
-                                ForEach(0..<30) { _ in
-                                    FileHomeItemView.placeholder()
-                                }
-                            }
-                            .padding(.horizontal, 30)
-                        }
-                    }
-                    .mask {
-                        if config.isPlaceholderPresented {
-                            if #available(macOS 14.0, iOS 17.0, *) {
-                                Rectangle()
-                                    .fill(
-                                        SmoothLinearGradient(
-                                            from: Color.white,
-                                            to: Color.white.opacity(0.0),
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                    )
-                            } else {
-                                Rectangle()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [.white, .white.opacity(0.0)],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                    )
-                            }
-                        } else {
-                            Color.clear
-                        }
-                    }
-                    .overlay {
-                        if config.isPlaceholderPresented {
-                            if #available(macOS 14.0, iOS 17.0, *) {
-                                Text(localizable: .homeNoFilesPlaceholder)
-                                    .foregroundStyle(.placeholder)
-                            } else {
-                                Text(localizable: .homeNoFilesPlaceholder)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-            }
-            // Lazy grids refine their estimated height while scrolling. Don't
-            // feed that height into parent state just to fill the empty space.
-            .frame(minHeight: viewportHeight, alignment: .top)
-            .padding(.bottom, 30)
-            .background {
-                config.contentBackground
-            }
-        }
-    }
-
-    private func prepareActiveFileForCloseTransition(
-        _ activeFile: FileState.ActiveFile?,
-        using proxy: ScrollViewProxy
-    ) {
-        activeFileScrollTask?.cancel()
-        guard let activeFile,
-              !fileHomeItemTransitionState.canShowItemContainerView else {
-            return
-        }
-
-        let targetID = activeFile.id
-        activeFileScrollTask = Task { @MainActor in
-            await Task.yield()
-            try? await Task.sleep(for: activeFilePreparationDelay)
-            guard !Task.isCancelled,
-                  fileState.currentActiveFile?.id == targetID,
-                  !fileHomeItemTransitionState.canShowItemContainerView else {
-                return
-            }
-
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                // No anchor means SwiftUI performs only the scrolling needed
-                // to reveal the item; already-visible cards stay in place.
-                proxy.scrollTo(targetID)
-            }
-        }
-    }
-    
-    
-    class Config {
-        var contentBackground: AnyView?
-        var isPlaceholderPresented: Bool = false
-        var itemWidth: CGFloat = 240
-    }
-    
-    @MainActor
-    func contentBackground<Background: View>(
-        @ViewBuilder background: () -> Background
-    ) -> Self {
-        config.contentBackground = AnyView(background())
-        return self
-    }
-    
-    @MainActor
-    func showPlaceholder(_ isPresented: Bool, itemWidth: CGFloat) -> Self {
-        config.isPlaceholderPresented = isPresented
-        config.itemWidth = itemWidth
-        return self
-    }
-
-}
-
 
 struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -333,11 +147,13 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     
     @ViewBuilder
     private func content() -> some View {
-        FileHomeContainer {
-            containerContent()
-        }
-        .showPlaceholder(files.isEmpty, itemWidth: fileItemWidth)
-        .contentBackground {
+        FileHomeGridContainer(
+            files: files,
+            itemWidth: fileItemWidth,
+            showsPlaceholder: files.isEmpty
+        ) {
+            containerHeader()
+        } background: {
             Color.clear // .opacity(0.2)
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -448,13 +264,13 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     }
     
     @ViewBuilder
-    private func containerContent() -> some View {
+    private func containerHeader() -> some View {
         VStack(spacing: 30) {
             header()
                 .padding(.horizontal, 20)
             quickActions()
                 .padding(.horizontal, 30)
-            groupsAndFiles()
+            childFolderGrid()
                 .padding(.horizontal, 30)
         }
         .padding(.top, parentGroups.isEmpty ? 36 : 15)
@@ -574,7 +390,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     }
     
     @ViewBuilder
-    private func groupsAndFiles() -> some View {
+    private func childFolderGrid() -> some View {
         if let group = self.group as? Group, group.groupType == .trash {} else {
             // Groups
             LazyVGrid(
@@ -627,65 +443,6 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
 #if os(macOS)
             .animation(.smooth, value: Array(childGroups))
 #endif
-        }
-        FileHomeFilesGrid(files: files, itemWidth: fileItemWidth)
-    }
-}
-
-struct FileHomeFilesGrid: View {
-    let files: [FileState.ActiveFile]
-    let itemWidth: CGFloat
-    /// Invalidates the grid value when a source changes presentation metadata
-    /// without changing any stable file identities.
-    let contentRevision: Int
-
-    init(
-        files: [FileState.ActiveFile],
-        itemWidth: CGFloat,
-        contentRevision: Int = 0
-    ) {
-        self.files = files
-        self.itemWidth = itemWidth
-        self.contentRevision = contentRevision
-    }
-
-    var body: some View {
-        LazyVGrid(
-            columns: [
-                .init(
-                    .adaptive(
-                        minimum: itemWidth,
-                        maximum: itemWidth * 2 - 0.1
-                    ),
-                    spacing: 20
-                )
-            ],
-            spacing: 20
-        ) {
-            ForEach(files) { file in
-                FileHomeItemView(
-                    file: file,
-                    selectionSiblings: files
-                )
-                .id(file.fileHomeItemContentID)
-            }
-        }
-        .animation(.smooth(duration: 0.22), value: files.map(\.id))
-    }
-}
-
-private extension FileState.ActiveFile {
-    /// Remote metadata can change without changing a cloud document's stable
-    /// identity. Include its presentation snapshot in the row identity so
-    /// SwiftUI refreshes that row without treating the editor as a new file.
-    var fileHomeItemContentID: String {
-        switch self {
-            case .cloudStorageFile(let reference):
-                let modifiedAt = reference.lastKnownModifiedAt?
-                    .timeIntervalSinceReferenceDate ?? 0
-                return "\(id):\(reference.lastKnownName):\(modifiedAt)"
-            default:
-                return id
         }
     }
 }

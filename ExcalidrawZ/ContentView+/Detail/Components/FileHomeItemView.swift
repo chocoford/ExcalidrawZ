@@ -21,6 +21,21 @@ enum FileHomeItemSubtitle {
     case location
 }
 
+enum FileHomeItemInteractionMode: Equatable {
+    case interactive
+    case displayOnly
+    /// Original card content without the action, availability or transition wrappers.
+    case presentationOnly
+
+    /// Set to .displayOnly to compare scrolling without the card action tree.
+    static let gridDiagnosticMode: Self = .interactive
+}
+
+enum FileHomeItemCoverMode {
+    case standard
+    case cachedOnly
+}
+
 extension Notification.Name {
     static let filePreviewShouldRefresh = Notification.Name("FilePreviewShouldRefresh")
 }
@@ -46,11 +61,45 @@ private struct FileHomeItemTransitionSourceEnabledKey: EnvironmentKey {
     static let defaultValue = true
 }
 
+private struct FileHomeItemHoverEffectsEnabledKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+private struct FileHomeItemHoverAnimationsEnabledKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+private struct FileHomeItemHoverSuppressedKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
 extension EnvironmentValues {
+    var fileHomeItemHoverEffectsEnabled: Bool {
+        get { self[FileHomeItemHoverEffectsEnabledKey.self] }
+        set { self[FileHomeItemHoverEffectsEnabledKey.self] = newValue }
+    }
+
+    var fileHomeItemHoverAnimationsEnabled: Bool {
+        get { self[FileHomeItemHoverAnimationsEnabledKey.self] }
+        set { self[FileHomeItemHoverAnimationsEnabledKey.self] = newValue }
+    }
+
+    var fileHomeItemHoverSuppressed: Bool {
+        get { self[FileHomeItemHoverSuppressedKey.self] }
+        set { self[FileHomeItemHoverSuppressedKey.self] = newValue }
+    }
+
     var fileHomeItemTransitionSourceEnabled: Bool {
         get { self[FileHomeItemTransitionSourceEnabledKey.self] }
         set { self[FileHomeItemTransitionSourceEnabledKey.self] = newValue }
     }
+}
+
+/// Pointer changes during scrolling must not invalidate the SwiftUI view.
+/// Read this snapshot only when hover effects are restored at idle.
+@MainActor
+final class FileHomeItemPointerHoverState {
+    var isInside = false
 }
 
 struct FileHomeItemView: View {
@@ -66,17 +115,23 @@ struct FileHomeItemView: View {
     var updatedAt: Date? { file.updatedAt }
     var customLabel: AnyView? = nil
     var subtitle: FileHomeItemSubtitle
+    var interactionMode: FileHomeItemInteractionMode
+    var coverMode: FileHomeItemCoverMode
 
     init(
         file: FileState.ActiveFile,
         selectionSiblings: [FileState.ActiveFile]? = nil,
         canMultiSelect: Bool = true,
-        subtitle: FileHomeItemSubtitle = .modifiedAt
+        subtitle: FileHomeItemSubtitle = .modifiedAt,
+        interactionMode: FileHomeItemInteractionMode = .interactive,
+        coverMode: FileHomeItemCoverMode = .standard
     ) {
         self.file = file
         self.selectionSiblings = selectionSiblings
         self.canMultiSelect = canMultiSelect
         self.subtitle = subtitle
+        self.interactionMode = interactionMode
+        self.coverMode = coverMode
     }
 
     init<Label: View>(
@@ -84,13 +139,17 @@ struct FileHomeItemView: View {
         selectionSiblings: [FileState.ActiveFile]? = nil,
         canMultiSelect: Bool = true,
         subtitle: FileHomeItemSubtitle = .modifiedAt,
+        interactionMode: FileHomeItemInteractionMode = .interactive,
+        coverMode: FileHomeItemCoverMode = .standard,
         @ViewBuilder customLabel: () -> Label
     ) {
         self.init(
             file: file,
             selectionSiblings: selectionSiblings,
             canMultiSelect: canMultiSelect,
-            subtitle: subtitle
+            subtitle: subtitle,
+            interactionMode: interactionMode,
+            coverMode: coverMode
         )
         self.customLabel = AnyView(customLabel())
     }
@@ -100,36 +159,58 @@ struct FileHomeItemView: View {
 
     var config = Config()
 
+    @ViewBuilder
     var body: some View {
+        if interactionMode == .presentationOnly {
+            presentation
+                .allowsHitTesting(false)
+        } else {
+            statusAwareContent
+                .allowsHitTesting(interactionMode == .interactive)
+        }
+    }
+
+    private var statusAwareContent: some View {
         FileStatusProvider(file: file) { status in
-            content()
-                .modifier(MissingFileHomeItemViewModifier(isActive: status?.contentAvailability == .missing))
-                .contentShape(Rectangle())
-                .modifier(FileHomeItemContextMenuModifier(file: file, isMissing: status?.contentAvailability == .missing))
+            if interactionMode == .interactive {
+                interactiveContent()
+                    .modifier(MissingFileHomeItemViewModifier(isActive: status?.contentAvailability == .missing))
+                    .contentShape(Rectangle())
+                    .modifier(FileHomeItemContextMenuModifier(file: file, isMissing: status?.contentAvailability == .missing))
+            } else {
+                presentation
+                    .modifier(FileHomeItemSelectionAppearanceModifier(style: config.style, isSelected: false))
+                    .modifier(FileHomeItemTransitionVisibilityModifier(fileID: fileID))
+                    .modifier(MissingFileHomeItemViewModifier(isActive: status?.contentAvailability == .missing))
+            }
         }
     }
     
-    @ViewBuilder
-    private func content() -> some View {
-        MissingFileMenuProvider(file: file) { triggers in
-         
-            FileHomeItemContentView(
-                style: config.style,
-                file: file,
-                subtitle: subtitle,
-                customLabel: customLabel
-            )
+    private var presentation: some View {
+        FileHomeItemContentView(
+            style: config.style,
+            file: file,
+            subtitle: subtitle,
+            customLabel: customLabel,
+            coverMode: coverMode,
+            showsTransitionSource: interactionMode != .presentationOnly
+        )
 #if os(iOS)
-            .overlay {
-                if editMode?.wrappedValue.isEditing == true, config.style == .card {
-                    RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
-                        .fill(.gray)
-                        .opacity(0.5)
-                }
+        .overlay {
+            if editMode?.wrappedValue.isEditing == true, config.style == .card {
+                RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+                    .fill(.gray)
+                    .opacity(0.5)
             }
+        }
 #endif
+        .modifier(FileHomeItemAppearanceModifier(style: config.style))
+    }
+
+    private func interactiveContent() -> some View {
+        MissingFileMenuProvider(file: file) { triggers in
+            presentation
             .contentShape(Rectangle())
-            .modifier(FileHomeItemAppearanceModifier(style: config.style))
             .modifier(
                 FileHomeItemOpenModifier(
                     file: file,
@@ -164,14 +245,15 @@ struct FileHomeItemView: View {
     }
 
     
-    class Config {
+    struct Config {
         var style: FileHomeItemStyle = .card
     }
     
     @MainActor
     public func fileHomeItemStyle(_ style: FileHomeItemStyle) -> FileHomeItemView {
-        self.config.style = style
-        return self
+        var view = self
+        view.config.style = style
+        return view
     }
 }
 
@@ -179,9 +261,14 @@ struct FileHomeItemView: View {
 // context menus, and selection providers so pointer updates don't rebuild them.
 private struct FileHomeItemAppearanceModifier: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.fileHomeItemHoverEffectsEnabled) private var hoverEffectsEnabled
+    @Environment(\.fileHomeItemHoverAnimationsEnabled) private var hoverAnimationsEnabled
+    @Environment(\.fileHomeItemHoverSuppressed) private var hoverSuppressed
     @State private var isHovered = false
+    @State private var pointerHoverState = FileHomeItemPointerHoverState()
 
     var style: FileHomeItemStyle
+    private var showsHoverShadow: Bool { hoverEffectsEnabled && !hoverSuppressed && isHovered }
 
     func body(content: Content) -> some View {
         if style == .card {
@@ -189,14 +276,40 @@ private struct FileHomeItemAppearanceModifier: ViewModifier {
                 .background {
                     background
                         .allowsHitTesting(false)
+                        .animation(
+                            hoverAnimationsEnabled ? .smooth(duration: 0.2) : nil,
+                            value: showsHoverShadow
+                        )
                 }
-                .onHover { hovered in
-                    guard isHovered != hovered else { return }
-                    isHovered = hovered
+                .apply { view in
+                    if hoverEffectsEnabled {
+                        view.onHover { hovered in
+                            pointerHoverState.isInside = hovered
+                            guard !hoverSuppressed else { return }
+                            updateHovered(hovered)
+                        }
+                    } else {
+                        view
+                    }
                 }
-                .animation(.smooth(duration: 0.2), value: isHovered)
+                .watch(value: hoverSuppressed) { _, suppressed in
+                    updateHovered(!suppressed && pointerHoverState.isInside)
+                }
+                .onDisappear {
+                    pointerHoverState.isInside = false
+                    updateHovered(false, animated: false)
+                }
         } else {
             content
+        }
+    }
+
+    private func updateHovered(_ hovered: Bool, animated: Bool = true) {
+        guard isHovered != hovered else { return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = !animated || hoverSuppressed || !hoverAnimationsEnabled
+        withTransaction(transaction) {
+            isHovered = hovered
         }
     }
 
@@ -212,22 +325,18 @@ private struct FileHomeItemAppearanceModifier: ViewModifier {
                 .glassEffect(.clear, in: .rect(cornerRadius: 12))
                 .shadow(
                     color: colorScheme == .light
-                    ? Color.gray.opacity(0.33)
-                    : Color.black.opacity(0.33),
-                    radius: isHovered
-                    ? colorScheme == .light ? 2 : 6
-                    : 0
+                        ? Color.gray.opacity(0.33)
+                        : Color.black.opacity(0.33),
+                    radius: showsHoverShadow ? (colorScheme == .light ? 2 : 6) : 0
                 )
         } else {
             RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius)
                 .fill(.background)
                 .shadow(
                     color: colorScheme == .light
-                    ? Color.gray.opacity(0.33)
-                    : Color.black.opacity(0.33),
-                    radius: isHovered
-                    ? colorScheme == .light ? 2 : 6
-                    : 0
+                        ? Color.gray.opacity(0.33)
+                        : Color.black.opacity(0.33),
+                    radius: showsHoverShadow ? (colorScheme == .light ? 2 : 6) : 0
                 )
         }
     }
@@ -289,10 +398,29 @@ private struct FileHomeItemTransitionVisibilityModifier: ViewModifier {
 private struct FileHomeItemTransitionSource: View {
     @Environment(\.fileHomeItemTransitionSourceEnabled) private var isEnabled
     @EnvironmentObject private var transitionState: FileHomeItemTransitionItemState
+#if os(macOS)
+    @Environment(\.fileHomeNativeTransitionBridge) private var nativeBridge
+    @Environment(\.fileHomeUsesNativeTransitionSource) private var usesNativeSource
+#endif
 
     var fileID: String
+    var nativeFileID: String? = nil
 
     var body: some View {
+#if os(macOS)
+        if isEnabled, usesNativeSource, let nativeBridge {
+            FileHomeNativeTransitionProbe(bridge: nativeBridge, fileID: nativeFileID ?? fileID)
+                .allowsHitTesting(false)
+        } else {
+            anchorSource
+        }
+#else
+        anchorSource
+#endif
+    }
+
+    @ViewBuilder
+    private var anchorSource: some View {
         if isEnabled && transitionState.sourceFileID == fileID {
             Color.clear
                 .anchorPreference(key: FileHomeItemPreferenceKey.self, value: .bounds) { value in
@@ -310,12 +438,13 @@ private struct FileHomeItemContentView: View {
 #endif
 
     @EnvironmentObject private var layoutState: LayoutState
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
 
     var style: FileHomeItemStyle
     var file: FileState.ActiveFile
     var subtitle: FileHomeItemSubtitle
     var customLabel: AnyView?
+    var coverMode: FileHomeItemCoverMode
+    var showsTransitionSource: Bool
     
     var fileID: String { file.id }
     var filename: String { file.name ?? String(localizable: .generalUntitled) }
@@ -334,12 +463,16 @@ private struct FileHomeItemContentView: View {
         style: FileHomeItemStyle,
         file: FileState.ActiveFile,
         subtitle: FileHomeItemSubtitle,
-        customLabel: AnyView?
+        customLabel: AnyView?,
+        coverMode: FileHomeItemCoverMode,
+        showsTransitionSource: Bool
     ) {
         self.style = style
         self.file = file
         self.subtitle = subtitle
         self.customLabel = customLabel
+        self.coverMode = coverMode
+        self.showsTransitionSource = showsTransitionSource
         self._localUpdatedAt = State(initialValue: updatedAt)
     }
     
@@ -387,13 +520,16 @@ private struct FileHomeItemContentView: View {
                 .modifier(
                     FileHomeItemLockPreviewModifier(
                         file: file,
-                        iconSize: lockOverlayIconSize
+                        iconSize: lockOverlayIconSize,
+                        coverMode: coverMode
                     )
                 )
                 .apply(coverImageClip)
         }
         .background {
-            FileHomeItemTransitionSource(fileID: fileID)
+            if showsTransitionSource {
+                FileHomeItemTransitionSource(fileID: fileID, nativeFileID: file.canonicalID)
+            }
         }
         .overlay {
             if style == .file {
@@ -428,37 +564,42 @@ private struct FileHomeItemContentView: View {
                         ? .center
                         : .leading
                     ) {
-                        HStack {
-                            Text(filename)
-                                .lineLimit(1)
-                            if fileType == .excalidrawPNG || fileType == .excalidrawSVG {
-                                Image(systemSymbol: .photo)
-                                    .foregroundStyle(.secondary)
-                            }
-                            
-                            if style == .file {
-                                Color.clear
-                                    .frame(width: 16, height: 0)
-                                    .overlay {
-                                        FileICloudStatusIndicator(file: file)
-                                            .controlSize(.mini)
-                                            .foregroundStyle(.secondary)
-                                    }
-                            }
+                        // The cover resolves protection metadata. The title only observes
+                        // the same per-file state, without starting another refresh task.
+                        FilePreviewLockStateReader(file: file, requestsMetadataIfUnknown: false) { lockState in
+                            HStack {
+                                Text(filename)
+                                    .lineLimit(1)
+                                if fileType == .excalidrawPNG || fileType == .excalidrawSVG {
+                                    Image(systemSymbol: .photo)
+                                        .foregroundStyle(.secondary)
+                                }
 
-                            if lockedContentState.previewLockState(for: file) == .temporarilyUnlocked {
-                                Spacer()
-                                Image(systemName: LockedContentSymbols.keyShield)
-                                    .transition(.scale(scale: 0.92).combined(with: .opacity))
+                                if style == .file {
+                                    Color.clear
+                                        .frame(width: 16, height: 0)
+                                        .overlay {
+                                            FileICloudStatusIndicator(file: file)
+                                                .controlSize(.mini)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                }
+
+                                if lockState == .temporarilyUnlocked {
+                                    Spacer()
+                                    Image(systemName: LockedContentSymbols.keyShield)
+                                        .transition(.scale(scale: 0.92).combined(with: .opacity))
+                                }
                             }
+                            .font(
+                                containerHorizontalSizeClass == .regular
+                                ? .headline.weight(.semibold)
+                                : style == .file && layoutState.compactBrowserLayout == .list
+                                ? .body.weight(.regular)
+                                : .caption.weight(.semibold)
+                            )
+                            .animation(.smooth(duration: 0.22), value: lockState)
                         }
-                        .font(
-                            containerHorizontalSizeClass == .regular
-                            ? .headline.weight(.semibold)
-                            : style == .file && layoutState.compactBrowserLayout == .list
-                            ? .body.weight(.regular)
-                            : .caption.weight(.semibold)
-                        )
                         
                         HStack {
                             switch subtitle {
@@ -517,7 +658,6 @@ private struct FileHomeItemContentView: View {
                 }
             }
         }
-        .animation(.smooth(duration: 0.22), value: lockedContentState.previewLockState(for: file))
         .padding(.horizontal, containerHorizontalSizeClass == .regular ? 8 : 6)
         .padding(.vertical, containerHorizontalSizeClass == .regular ? 8 : 6)
         // Costing too much performance

@@ -9,35 +9,46 @@ import SwiftUI
 import SwiftyAlert
 import CoreData
 
-struct FileMenuProvider: View {
+struct FileMenuTriggers {
+    var onToggleRename: () -> Void
+    var onTogglePermanentlyDelete: () -> Void
+}
+
+struct FileMenuProvider<Content: View>: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
+    @Environment(\.fileHomeSheetPresentation) private var sheetPresentation
     
     var file: File?
     var fileState: FileState
-    var content: (Triggers) -> AnyView
+    var content: (FileMenuTriggers) -> Content
 
-    init<Content: View>(
+    init(
         file: File?,
         fileState: FileState,
-        content: @escaping (Triggers) -> Content
+        content: @escaping (FileMenuTriggers) -> Content
     ) {
         self.file = file
         self.fileState = fileState
-        self.content = { AnyView(content($0)) }
-    }
-    
-    struct Triggers {
-        var onToggleRename: () -> Void
-        var onTogglePermanentlyDelete: () -> Void
+        self.content = content
     }
     
     @State private var isRenameSheetPresented = false
     @State private var isPermanentlyDeleteAlertPresented = false
     
-    var triggers: Triggers {
-        Triggers {
-            isRenameSheetPresented.toggle()
+    var triggers: FileMenuTriggers {
+        FileMenuTriggers {
+            if let sheetPresentation {
+                guard let file = files.first else { return }
+                let fileID = file.objectID
+                let fileState = self.fileState
+                let viewContext = self.viewContext
+                sheetPresentation.presentRename(name: file.name ?? "") { newName in
+                    fileState.renameFile(fileID, context: viewContext, newName: newName)
+                }
+            } else {
+                isRenameSheetPresented.toggle()
+            }
         } onTogglePermanentlyDelete: {
             isPermanentlyDeleteAlertPresented.toggle()
         }
@@ -54,20 +65,7 @@ struct FileMenuProvider: View {
     }
     
     var body: some View {
-        content(triggers)
-            .modifier(
-                RenameSheetViewModifier(
-                    isPresented: $isRenameSheetPresented,
-                    name: self.files.first?.name ?? ""
-                ) {
-                    guard let file = self.files.first else { return }
-                    fileState.renameFile(
-                        file.objectID,
-                        context: viewContext,
-                        newName: $0
-                    )
-                }
-            )
+        contentWithRenameSheet
             .confirmationDialog(
                 String(localizable: .sidebarFileRowDeletePermanentlyAlertTitle(files.first?.name ?? "")),
                 isPresented: $isPermanentlyDeleteAlertPresented
@@ -80,6 +78,28 @@ struct FileMenuProvider: View {
             } message: {
                 Text(.localizable(.generalCannotUndoMessage))
             }
+    }
+
+    @ViewBuilder
+    private var contentWithRenameSheet: some View {
+        if sheetPresentation != nil {
+            content(triggers)
+        } else {
+            content(triggers)
+                .modifier(
+                    RenameSheetViewModifier(
+                        isPresented: $isRenameSheetPresented,
+                        name: self.files.first?.name ?? ""
+                    ) {
+                        guard let file = self.files.first else { return }
+                        fileState.renameFile(
+                            file.objectID,
+                            context: viewContext,
+                            newName: $0
+                        )
+                    }
+                )
+        }
     }
 
     private func deleteFilePermanently() {

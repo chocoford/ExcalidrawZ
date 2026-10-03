@@ -14,12 +14,34 @@ struct LockedContentAutomaticUnlockRequest: Equatable, Sendable {
     let token: UUID
 }
 
+/// The observable surface used by one file preview, independently of editor
+/// state and other files resolving their protection metadata.
+@MainActor
+final class FilePreviewLockState: ObservableObject {
+    @Published private(set) var value: FileContentLockState?
+
+    init(_ value: FileContentLockState?) {
+        self.value = value
+    }
+
+    func update(_ value: FileContentLockState?) {
+        guard self.value != value else { return }
+        self.value = value
+    }
+}
+
 @MainActor
 final class LockedContentStateStore: ObservableObject {
     @Published private(set) var activeFileLockState: FileContentLockState = .plaintext
     @Published private(set) var automaticUnlockRequest: LockedContentAutomaticUnlockRequest?
     @Published private(set) var filePreviewLockStateRevision = 0
     @Published private var fileLockStates: [String: FileContentLockState] = [:]
+    // Preview views retain their own state. Offscreen previews need not stay
+    // alive merely because the app retains its protection metadata cache.
+    private let previewStates = NSMapTable<NSString, FilePreviewLockState>(
+        keyOptions: .strongMemory,
+        valueOptions: .weakMemory
+    )
 
     private struct ManagedFileReference {
         let objectID: NSManagedObjectID
@@ -53,6 +75,16 @@ final class LockedContentStateStore: ObservableObject {
             return nil
         }
         return displayLockState(forStoredLockState: lockState, fileID: file.id)
+    }
+
+    func previewState(for file: FileState.ActiveFile) -> FilePreviewLockState {
+        let key = file.id as NSString
+        if let state = previewStates.object(forKey: key) {
+            return state
+        }
+        let state = FilePreviewLockState(previewLockState(for: file))
+        previewStates.setObject(state, forKey: key)
+        return state
     }
 
     func prepareForActiveFileChange(to activeFile: FileState.ActiveFile?) async {
@@ -89,6 +121,7 @@ final class LockedContentStateStore: ObservableObject {
 
     func removeDeletedFile(fileID: String) {
         let hadPreviewLockState = fileLockStates.removeValue(forKey: fileID) != nil
+        updatePreviewLockState(fileID: fileID)
 
         if activeFileID == fileID {
             activeFileID = nil
@@ -114,6 +147,7 @@ final class LockedContentStateStore: ObservableObject {
     func markUnlockFailed(fileID: String) {
         let previousDisplayLockState = displayLockStateIfKnown(for: fileID)
         unlockFailedFileIDs.insert(fileID)
+        updatePreviewLockState(fileID: fileID)
 
         if activeFileID == fileID {
             activeFileLockState = .locked
@@ -228,6 +262,7 @@ final class LockedContentStateStore: ObservableObject {
         automaticUnlockRequest = nil
         let didChangeUnlockSession = setHasActiveUnlockSession(false)
         unlockFailedFileIDs.removeAll()
+        updateAllPreviewLockStates()
         idleRelockTask?.cancel()
         idleRelockTask = nil
         if hadPreviewLockState, !didChangeUnlockSession {
@@ -299,6 +334,7 @@ final class LockedContentStateStore: ObservableObject {
            unlockFailedFileIDs.contains(fileID) {
             unlockFailedFileIDs.remove(fileID)
         }
+        updatePreviewLockState(fileID: fileID)
 
         if activeFileID == fileID {
             let displayState = displayLockState(
@@ -359,12 +395,25 @@ final class LockedContentStateStore: ObservableObject {
     private func setHasActiveUnlockSession(_ isActive: Bool) -> Bool {
         guard hasActiveUnlockSession != isActive else { return false }
         hasActiveUnlockSession = isActive
+        updateAllPreviewLockStates()
         noteFilePreviewLockStateChanged()
         return true
     }
 
     private func noteFilePreviewLockStateChanged() {
         filePreviewLockStateRevision &+= 1
+    }
+
+    private func updatePreviewLockState(fileID: String) {
+        previewStates.object(forKey: fileID as NSString)?
+            .update(displayLockStateIfKnown(for: fileID))
+    }
+
+    private func updateAllPreviewLockStates() {
+        for case let fileID as NSString in previewStates.keyEnumerator().allObjects {
+            previewStates.object(forKey: fileID)?
+                .update(displayLockStateIfKnown(for: fileID as String))
+        }
     }
 
     private func scheduleIdleRelock() {

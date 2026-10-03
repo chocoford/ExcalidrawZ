@@ -171,6 +171,43 @@ final class FileCoverCacheCoordinator: ObservableObject {
         self.context = context
     }
 
+    /// Restores cached pixels for the File Home image diagnostic. Cache misses
+    /// never enter the generation queue or publish a cover-refresh notification.
+    func loadCachedPreview(
+        for file: FileState.ActiveFile,
+        colorScheme: ColorScheme
+    ) async -> PlatformImage? {
+        let source = Source.activeFile(file)
+        if case .file = file,
+           let lockedContentState,
+           lockedContentState.previewLockState(for: file) == nil {
+            await lockedContentState.refresh(file: file)
+        }
+        guard !Task.isCancelled, !shouldSkipLockedSource(source) else { return nil }
+
+        let cacheKey = FileItemPreviewCache.cacheKey(forID: file.canonicalID, colorScheme: colorScheme)
+        if let image = cache.object(forKey: cacheKey) { return image }
+
+        let generation = cacheGenerations[cacheKey as String, default: 0]
+        guard let revision = await diskRevision(for: source) else { return nil }
+        await diskMutationTask?.value
+        guard !Task.isCancelled,
+              let thumbnail = await diskCache.load(
+                key: cacheKey as String,
+                revision: revision,
+                maxPixelSize: source.thumbnailMaxPixelSize
+              ),
+              await diskRevision(for: source) == revision,
+              !Task.isCancelled,
+              generation == cacheGenerations[cacheKey as String, default: 0],
+              !shouldSkipLockedSource(source) else { return nil }
+
+        if let image = cache.object(forKey: cacheKey) { return image }
+        let image = platformImage(from: thumbnail)
+        cache.setObject(image, forKey: cacheKey, cost: thumbnail.memoryCost)
+        return image
+    }
+
     func request(
         source: Source,
         colorScheme: ColorScheme,
@@ -325,16 +362,20 @@ final class FileCoverCacheCoordinator: ObservableObject {
     }
 
     private func publish(_ thumbnail: FileCoverThumbnail, forID id: String, cacheKey: String) {
+        let image = platformImage(from: thumbnail)
+        cache.setObject(image, forKey: cacheKey as NSString, cost: thumbnail.memoryCost)
+        NotificationCenter.default.post(name: .filePreviewDidUpdate, object: id)
+    }
+
+    private func platformImage(from thumbnail: FileCoverThumbnail) -> PlatformImage {
 #if os(macOS)
-        let image = NSImage(
+        NSImage(
             cgImage: thumbnail.image,
             size: CGSize(width: CGFloat(thumbnail.image.width), height: CGFloat(thumbnail.image.height))
         )
 #else
-        let image = UIImage(cgImage: thumbnail.image)
+        UIImage(cgImage: thumbnail.image)
 #endif
-        cache.setObject(image, forKey: cacheKey as NSString, cost: thumbnail.memoryCost)
-        NotificationCenter.default.post(name: .filePreviewDidUpdate, object: id)
     }
 
     private func allowsDiskPersistence(for source: Source) -> Bool {

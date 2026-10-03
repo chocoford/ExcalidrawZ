@@ -9,46 +9,79 @@ import SwiftUI
 import ChocofordUI
 
 struct FileHomeItemLockPreviewModifier: ViewModifier {
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
+    let file: FileState.ActiveFile
+    let iconSize: CGFloat
+    var coverMode: FileHomeItemCoverMode = .standard
+
+    func body(content: Content) -> some View {
+        content.overlay {
+            FilePreviewLockStateReader(file: file) { lockState in
+                FileHomeItemLockPreview(
+                    file: file,
+                    iconSize: iconSize,
+                    coverMode: coverMode,
+                    lockState: lockState
+                )
+            }
+            .allowsHitTesting(false)
+        }
+    }
+}
+
+private struct FileHomeItemLockPreview: View {
+    @Environment(\.colorScheme) private var colorScheme
 
     let file: FileState.ActiveFile
     let iconSize: CGFloat
+    let coverMode: FileHomeItemCoverMode
+    let lockState: FileContentLockState?
 
     @State private var lockOverlayState: FileContentLockState?
     @State private var lockOverlayTask: Task<Void, Never>?
-    @State private var hasResolvedLockState = false
+    @State private var observedLockState: FileContentLockState?
 
-    func body(content: Content) -> some View {
-        let lockState = lockedContentState.previewLockState(for: file)
+    init(
+        file: FileState.ActiveFile,
+        iconSize: CGFloat,
+        coverMode: FileHomeItemCoverMode,
+        lockState: FileContentLockState?
+    ) {
+        self.file = file
+        self.iconSize = iconSize
+        self.coverMode = coverMode
+        self.lockState = lockState
+        // A warm preview starts in its resting state, without an onAppear
+        // write followed by another update just to initialize its overlay.
+        self._lockOverlayState = State(initialValue: lockState == .locked ? .locked : nil)
+        self._observedLockState = State(initialValue: lockState)
+    }
 
-        return content
-            .overlay {
-                previewContent(for: lockState)
-                    .allowsHitTesting(false)
-            }
+    var body: some View {
+        previewContent
             .overlay {
                 if let lockOverlayState {
                     LockedFilePreviewPlaceholder(
                         lockState: lockOverlayState,
                         showsIcon: true,
-                        iconSize: iconSize
+                        iconSize: iconSize,
+                        // The locked base already draws this background. Only
+                        // an unlock transition needs it above a visible cover.
+                        showsBackground: lockState != .locked
                     )
                     .transition(.opacity.combined(with: .scale(scale: 0.985)))
                     .allowsHitTesting(false)
                 }
             }
             .animation(.smooth(duration: 0.26), value: lockOverlayState)
-            .task(id: file.id) {
-                guard lockedContentState.previewLockState(for: file) == nil else { return }
-                await lockedContentState.refresh(file: file)
-            }
             .onAppear {
-                hasResolvedLockState = lockState != nil
+                guard observedLockState != lockState || lockOverlayState != restingOverlayState else { return }
+                observedLockState = lockState
                 setLockOverlayState(for: lockState, animated: false)
             }
             .watch(value: lockState) { newValue in
-                let shouldAnimate = hasResolvedLockState
-                hasResolvedLockState = newValue != nil
+                guard observedLockState != newValue else { return }
+                let shouldAnimate = observedLockState != nil
+                observedLockState = newValue
                 setLockOverlayState(for: newValue, animated: shouldAnimate)
             }
             .onDisappear {
@@ -56,20 +89,34 @@ struct FileHomeItemLockPreviewModifier: ViewModifier {
             }
     }
 
+    private var restingOverlayState: FileContentLockState? {
+        lockState == .locked ? .locked : nil
+    }
+
     @ViewBuilder
-    private func previewContent(for lockState: FileContentLockState?) -> some View {
-        if lockState == .locked {
+    private var previewContent: some View {
+        if lockState == nil || lockState == .locked {
             LockedFilePreviewPlaceholder()
         } else if let lockState {
-            ExcalidrawFileCover(
-                file: file,
-                refreshToken: coverRefreshToken(for: lockState),
-                allowsGeneration: true
-            )
-            .scaledToFill()
+            coverContent(for: lockState)
             .allowsHitTesting(false)
-        } else {
-            LockedFilePreviewPlaceholder()
+        }
+    }
+
+    @ViewBuilder
+    private func coverContent(for lockState: FileContentLockState) -> some View {
+        switch coverMode {
+            case .standard:
+                ExcalidrawFileCover(
+                    file: file,
+                    refreshToken: coverRefreshToken(for: lockState),
+                    allowsGeneration: true
+                )
+                .scaledToFill()
+            case .cachedOnly:
+                // CachedFileCover scales its image inside the proposed bounds.
+                CachedFileCoverImage(file: file, colorScheme: colorScheme)
+                    .id(FileItemPreviewCache.cacheKey(forID: file.canonicalID, colorScheme: colorScheme))
         }
     }
 
@@ -81,12 +128,19 @@ struct FileHomeItemLockPreviewModifier: ViewModifier {
         lockOverlayTask?.cancel()
 
         guard let lockState else {
-            lockOverlayState = nil
+            if lockOverlayState != nil { lockOverlayState = nil }
             return
         }
 
         guard animated else {
-            lockOverlayState = lockState == .locked ? .locked : nil
+            let nextOverlayState: FileContentLockState? = lockState == .locked ? .locked : nil
+            if lockOverlayState != nextOverlayState {
+                var transaction = Transaction(animation: nil)
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    lockOverlayState = nextOverlayState
+                }
+            }
             return
         }
 
@@ -129,34 +183,64 @@ struct FileHomeItemLockPreviewModifier: ViewModifier {
     }
 }
 
+/// Diagnostic counterpart with the same resting cover and lock appearance,
+/// without overlay state, animation tasks or appearance callbacks.
+struct FileHomeItemStaticLockPreviewModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let file: FileState.ActiveFile
+    let iconSize: CGFloat
+
+    func body(content: Content) -> some View {
+        content.overlay {
+            FilePreviewLockStateReader(file: file) { lockState in
+                if lockState == nil || lockState == .locked {
+                    LockedFilePreviewPlaceholder(
+                        showsIcon: lockState == .locked,
+                        iconSize: iconSize
+                    )
+                } else {
+                    CachedFileCoverImage(file: file, colorScheme: colorScheme)
+                        .id(FileItemPreviewCache.cacheKey(forID: file.canonicalID, colorScheme: colorScheme))
+                }
+            }
+            .allowsHitTesting(false)
+        }
+    }
+}
+
 struct LockedFilePreviewPlaceholder: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var lockState: FileContentLockState = .locked
     var showsIcon = false
     var iconSize: CGFloat = 34
+    var showsBackground = true
 
     var body: some View {
         ZStack {
-            Rectangle()
-                .fill(baseColor)
+            if showsBackground {
+                Rectangle()
+                    .fill(baseColor)
 
-            Rectangle()
-                .fill(.ultraThickMaterial)
+                Rectangle()
+                    .fill(.ultraThickMaterial)
 
-            LinearGradient(
-                colors: [
-                    .clear,
-                    Color.black.opacity(colorScheme == .dark ? 0.16 : 0.08)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        Color.black.opacity(colorScheme == .dark ? 0.16 : 0.08)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
 
             if showsIcon {
                 lockIcon
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var baseColor: Color {

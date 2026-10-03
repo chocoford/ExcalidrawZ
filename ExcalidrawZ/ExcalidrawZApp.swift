@@ -263,6 +263,7 @@ struct ExcalidrawZApp: App {
                 .environmentObject(store)
                 .environmentObject(aiChatState)
                 .environmentObject(lockedContentState)
+                .environment(\.filePreviewLockStateStore, lockedContentState)
                 .llmProvider(state: llmState, client: .shared)
                 .lockedContentAutoRelock(lockedContentState: lockedContentState)
                 .onAppear {
@@ -404,6 +405,7 @@ struct ExcalidrawZApp: App {
                 .environmentObject(appPrefernece)
                 .environmentObject(store)
                 .environmentObject(lockedContentState)
+                .environment(\.filePreviewLockStateStore, lockedContentState)
                 .llmProvider(state: llmState, client: .shared)
 #if !APP_STORE
                 .environmentObject(updateChecker)

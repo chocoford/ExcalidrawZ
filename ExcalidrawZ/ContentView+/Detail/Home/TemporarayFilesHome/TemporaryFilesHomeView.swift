@@ -16,7 +16,12 @@ struct TemporaryFilesHomeView: View {
     var files: [URL] { fileState.temporaryFiles }
     
     var body: some View {
-        FileHomeContainer {
+        FileHomeGridContainer(
+            files: files.map { FileState.ActiveFile.temporaryFile($0) },
+            itemWidth: fileItemWidth,
+            bottomPadding: 60,
+            animatesChanges: false
+        ) {
             // Header
             HStack {
                 Text(.localizable(.sidebarGroupRowTitleTemporary))
@@ -38,28 +43,7 @@ struct TemporaryFilesHomeView: View {
             }
             .padding(.top, 36)
             .padding(.horizontal, 30)
-
-            let activeFiles = files.map { FileState.ActiveFile.temporaryFile($0) }
-
-            // Files
-            LazyVGrid(
-                columns: [
-                    .init(.adaptive(minimum: fileItemWidth, maximum: fileItemWidth * 2 - 0.1), spacing: 20)
-                ],
-                spacing: 20
-            ) {
-                ForEach(activeFiles) { file in
-                    FileHomeItemView(
-                        file: file,
-                        selectionSiblings: activeFiles
-                    )
-                    .id(file.id)
-                }
-                
-            }
-            .padding(30)
-        }
-        .contentBackground {
+        } background: {
             Color.clear
                 .contentShape(Rectangle())
                 .onTapGesture {
