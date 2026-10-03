@@ -102,6 +102,7 @@ Config/Overrides.xcconfig
 Config/Secrets.plist
 PRIVATE_TIPS.md
 CLAUDE.md
+/docs/
 ExcalidrawZUIPlayground
 ExcalidrawZ/**/*.md
 ExcalidrawZ/SidebarTrailing/AIChat/**/*.json
