@@ -48,6 +48,7 @@ struct LocalFilesListView: View {
                 }
 #endif
         }
+        .suppressSidebarHoverWhileScrolling()
     }
 }
 

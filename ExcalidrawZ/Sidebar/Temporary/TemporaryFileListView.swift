@@ -40,6 +40,7 @@ struct TemporaryFileListView: View {
             }
 #endif
         }
+        .suppressSidebarHoverWhileScrolling()
     }
 }
 
