@@ -34,10 +34,17 @@ struct ExcalidrawServerLogger: Logging {
 }
 
 class ExcalidrawServer {
+    // Bind to IPv4 loopback to match the WebView URLs and prevent LAN access.
     #if DEBUG
-    let server = HTTPServer(port: 8486, logger: ExcalidrawServerLogger())
+    let server = HTTPServer(
+        address: try! .inet(ip4: "127.0.0.1", port: 8486),
+        logger: ExcalidrawServerLogger()
+    )
     #else
-    let server = HTTPServer(port: 8487, logger: ExcalidrawServerLogger())
+    let server = HTTPServer(
+        address: try! .inet(ip4: "127.0.0.1", port: 8487),
+        logger: ExcalidrawServerLogger()
+    )
     #endif
     init(autoStart: Bool = true) {
         if isPreview { return }

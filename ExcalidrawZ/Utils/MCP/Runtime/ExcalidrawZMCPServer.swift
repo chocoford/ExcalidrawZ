@@ -7,6 +7,7 @@
 
 import Foundation
 import FlyingFox
+import FlyingSocks
 
 final class ExcalidrawZMCPServer {
     static let defaultPort: UInt16 = 8490
@@ -23,7 +24,11 @@ final class ExcalidrawZMCPServer {
     ) {
         self.port = port
         self.router = router
-        self.server = HTTPServer(port: port, logger: ExcalidrawServerLogger())
+        // Keep MCP accessible only through the local endpoint exposed in Settings.
+        self.server = HTTPServer(
+            address: try! .inet(ip4: "127.0.0.1", port: port),
+            logger: ExcalidrawServerLogger()
+        )
     }
 
     func start() async throws {

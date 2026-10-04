@@ -130,10 +130,38 @@ Welcome to my [Discord server](https://discord.gg/aCv6w4HxDg) to share suggestio
 ## Development Guide
 
 - The Excalidraw core used by ExcalidrawZ is also open-source. You can find it [here](https://github.com/chocoford/excalidraw/tree/ExcalidrawZ-core).
-- Before you start coding, add your own `Overrides.xcconfig` in `ExcalidrawZ/Config` and populate it with:
+
+### Signing configuration
+
+Create `Config/Overrides.xcconfig` relative to the repository root, alongside `Config/Project.xcconfig`:
 
 ```xcconfig
-DEVELOPMENT_TEAM = <YOUR_DEVELOPMENT_TEAM_FOR_DEBUG>;
-ICLOUD_CONTAINER = <YOUR_ICLOUD_CONTAINER_IDENTIFIER_FOR_DEBUG>;
-APP_GROUP_IDENTIFIER = <YOUR_APP_GROUP_IDENTIFIER_FOR_DEBUG>;
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
+ICLOUD_CONTAINER = iCloud.com.yourname.ExcalidrawZ
+APP_GROUP_IDENTIFIER = group.com.yourname.ExcalidrawZ
 ```
+
+Replace these example values with identifiers registered to your Apple Developer team. The shared configuration leaves `DEVELOPMENT_TEAM` empty; set your team in the local overrides. The app and QuickLook extension must use the same App Group. All targets, including the extension and tests, inherit the team from `Config/Project.xcconfig`, which includes your local overrides. These overrides apply to all build configurations.
+
+### Runtime configuration
+
+Create `Config/Secrets.plist` relative to the repository root. The project already references this file and includes it in both app targets' resources. The app's configuration loader stops with `Unable to load Secrets.plist` if the file is missing or invalid.
+
+For local drawing development, this minimal configuration is sufficient:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>COLLAB_URL</key>
+    <string>https://example.com</string>
+</dict>
+</plist>
+```
+
+`COLLAB_URL` must be a valid absolute URL. The example URL is a placeholder for local drawing work; to test collaboration, replace it with the URL of your deployed collaboration-enabled Excalidraw web client.
+
+Optional string keys are `ONEDRIVE_CLIENT_ID`, `GOOGLE_DRIVE_MACOS_CLIENT_ID`, and `GOOGLE_DRIVE_IOS_CLIENT_ID`. Configure your own OAuth client IDs when developing the corresponding integrations.
+
+`Config/Overrides.xcconfig` and `Config/Secrets.plist` are ignored by Git and should stay local.
