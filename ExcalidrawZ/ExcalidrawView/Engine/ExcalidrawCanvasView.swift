@@ -109,61 +109,7 @@ struct ExcalidrawCanvasView: View {
     // MARK: - Body
     
     var body: some View {
-        ExcalidrawViewRepresentable(nativeInteractionEnabled: interactionEnabled)
-            .modifier(MediaItemSyncModifier())
-            .modifier(MathImageEditSheetViewModifier(coordinator: excalidrawCore, onError: onError))
-            .environmentObject(excalidrawCore)
-#if os(macOS)
-            .onWindowEvent(.didBecomeKey) { _ in
-                applyColorMode()
-            }
-#endif
-            .onReceive(
-                NotificationCenter.default.publisher(for: .forceReloadExcalidrawFile)
-            ) { notification in
-                guard let targetFileID = notification.object as? String,
-                      file?.id == targetFileID else { return }
-                let targetFile = file
-                Task {
-                    await excalidrawCore.documentSyncController.load(targetFile, force: true)
-                }
-            }
-            .onReceive(
-                NotificationCenter.default.publisher(for: .captureCurrentDrawingSettings)
-            ) { _ in
-                Task {
-                    await captureCurrentDrawingSettings()
-                }
-            }
-            .watch(value: interactionEnabled) { enabled in
-                updateToolStateCoordinatorBinding(isEnabled: enabled)
-                Task {
-                    try? await excalidrawCore.toggleWebPointerEvents(enabled: enabled)
-                }
-            }
-            .watch(value: file?.id) { _ in
-                handleFileChange(file)
-            }
-            .watch(value: colorScheme) { newValue in
-                // self.logger.info("color scheme changed: \(newValue)")
-                // will trigger when ios move app to background
-                applyColorMode(colorScheme: newValue)
-            }
-            .watch(value: appPreference.excalidrawAppearance) { _ in
-                applyColorMode()
-            }
-            .watch(value: addedFontsData) { _ in
-                applyFonts()
-            }
-            .watch(value: nativeViewportInsets, initial: true) { _, _ in
-                applyNativeViewportInsets()
-            }
-            .watch(value: loadingState) { state in
-                if state == .loaded {
-                    applyAllSettings()
-                    applyNativeViewportInsets()
-                }
-            }
+        canvasWithSettings
             .watch(value: scenePhase) { scenePhase in
 #if os(iOS)
                 if scenePhase == .active {
@@ -197,20 +143,94 @@ struct ExcalidrawCanvasView: View {
             }
 #endif
             .onAppear {
-                setupCore()
-#if os(macOS)
-                if type == .normal {
-                    ViewerMirrorController.shared.register(editor: excalidrawCore)
-                }
-#endif
-                updateToolStateCoordinatorBinding(isEnabled: interactionEnabled)
+                handleAppear()
             }
             .onDisappear {
-                clearToolStateCoordinatorBindingIfNeeded()
-#if os(macOS)
-                ViewerMirrorController.shared.unregister(editor: excalidrawCore)
-#endif
+                handleDisappear()
             }
+    }
+
+    private var canvasContent: some View {
+        ExcalidrawViewRepresentable(nativeInteractionEnabled: interactionEnabled)
+            .modifier(MediaItemSyncModifier())
+            .modifier(MathImageEditSheetViewModifier(coordinator: excalidrawCore, onError: onError))
+            .environmentObject(excalidrawCore)
+#if os(macOS)
+            .onWindowEvent(.didBecomeKey) { _ in
+                applyColorMode()
+            }
+#endif
+    }
+
+    private var canvasWithDocumentUpdates: some View {
+        canvasContent
+            .onReceive(
+                NotificationCenter.default.publisher(for: .forceReloadExcalidrawFile)
+            ) { notification in
+                guard let targetFileID = notification.object as? String,
+                      file?.id == targetFileID else { return }
+                let targetFile = file
+                Task {
+                    await excalidrawCore.documentSyncController.load(targetFile, force: true)
+                }
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .captureCurrentDrawingSettings)
+            ) { _ in
+                Task {
+                    await captureCurrentDrawingSettings()
+                }
+            }
+            .watch(value: interactionEnabled) { enabled in
+                updateToolStateCoordinatorBinding(isEnabled: enabled)
+                Task {
+                    try? await excalidrawCore.toggleWebPointerEvents(enabled: enabled)
+                }
+            }
+            .watch(value: file?.id) { _ in
+                handleFileChange(file)
+            }
+    }
+
+    private var canvasWithSettings: some View {
+        canvasWithDocumentUpdates
+            .watch(value: colorScheme) { newValue in
+                applyColorMode(colorScheme: newValue)
+            }
+            .watch(value: appPreference.excalidrawAppearance) { _ in
+                applyColorMode()
+            }
+            .watch(value: addedFontsData) { _ in
+                applyFonts()
+            }
+            .watch(value: nativeViewportInsets, initial: true) { _, _ in
+                applyNativeViewportInsets()
+            }
+            .watch(value: loadingState) { state in
+                if state == .loaded {
+                    applyAllSettings()
+                    applyNativeViewportInsets()
+                }
+            }
+    }
+
+    // MARK: - Lifecycle Methods
+
+    private func handleAppear() {
+        setupCore()
+#if os(macOS)
+        if type == .normal {
+            ViewerMirrorController.shared.register(editor: excalidrawCore)
+        }
+#endif
+        updateToolStateCoordinatorBinding(isEnabled: interactionEnabled)
+    }
+
+    private func handleDisappear() {
+        clearToolStateCoordinatorBindingIfNeeded()
+#if os(macOS)
+        ViewerMirrorController.shared.unregister(editor: excalidrawCore)
+#endif
     }
     
     // MARK: - Setup Methods
