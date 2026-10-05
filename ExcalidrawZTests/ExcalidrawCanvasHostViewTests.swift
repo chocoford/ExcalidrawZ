@@ -132,12 +132,41 @@ final class ExcalidrawCanvasHostViewTests: XCTestCase {
         let point = NSPoint(x: 400, y: 300)
         XCTAssertNotNil(host.hitTest(point))
 
-        webView.nativeInteractionEnabled = false
-        webView.isHidden = true
+        webView.updateNativeInteraction(enabled: false)
+        // Input stops immediately, while AppKit visibility waits until the
+        // representable's current SwiftUI update has finished.
+        XCTAssertFalse(webView.nativeInteractionEnabled)
+        XCTAssertFalse(webView.isHidden)
         XCTAssertNil(host.hitTest(point))
+
+        flushViewportUpdates()
+        XCTAssertTrue(webView.isHidden)
 
         host.detach()
         XCTAssertNil(host.hitTest(point))
+    }
+
+    @MainActor
+    func testPendingVisibilityUpdateUsesTheLatestInteractionState() async {
+        let webView = makeWebView()
+
+        webView.updateNativeInteraction(enabled: false)
+        webView.updateNativeInteraction(enabled: true)
+        flushViewportUpdates()
+        XCTAssertFalse(webView.isHidden)
+
+        webView.updateNativeInteraction(enabled: false)
+        flushViewportUpdates()
+        XCTAssertTrue(webView.isHidden)
+
+        webView.updateNativeInteraction(enabled: true)
+        webView.updateNativeInteraction(enabled: false)
+        flushViewportUpdates()
+        XCTAssertTrue(webView.isHidden)
+
+        webView.updateNativeInteraction(enabled: true)
+        flushViewportUpdates()
+        XCTAssertFalse(webView.isHidden)
     }
 
     @MainActor

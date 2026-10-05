@@ -29,6 +29,9 @@ class ExcalidrawWebView: WKWebView {
 #endif
         }
     }
+#if os(macOS)
+    private var isVisibilityUpdateScheduled = false
+#endif
 #if os(iOS)
     private var indirectScrollForwarder: ExcalidrawIndirectScrollForwarder?
 #endif
@@ -57,6 +60,35 @@ class ExcalidrawWebView: WKWebView {
     }
     
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func updateNativeInteraction(enabled: Bool) {
+        nativeInteractionEnabled = enabled
+#if os(macOS)
+        scheduleVisibilityUpdate()
+#elseif os(iOS)
+        isHidden = !enabled
+        isUserInteractionEnabled = enabled
+#endif
+    }
+
+#if os(macOS)
+    private func scheduleVisibilityUpdate() {
+        guard !isVisibilityUpdateScheduled,
+              isHidden != !nativeInteractionEnabled else { return }
+        isVisibilityUpdateScheduled = true
+        // Hiding a focused NSView navigates the key-view loop and can query
+        // SwiftUI layout. Defer it beyond updateNSView to avoid re-entering
+        // AttributeGraph, and read the latest state if the file changed again.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.isVisibilityUpdateScheduled = false
+            let shouldHide = !self.nativeInteractionEnabled
+            guard self.isHidden != shouldHide else { return }
+            self.isHidden = shouldHide
+        }
+    }
+#endif
+
 #if canImport(UIKit)
     override var safeAreaInsets: UIEdgeInsets { .zero }
 #endif
@@ -281,20 +313,12 @@ struct ExcalidrawViewRepresentable {
     
     func makeExcalidrawWebView(context: Context) -> ExcalidrawWebView {
         let webView = context.coordinator.webView
-        updateNativeInteraction(enabled: nativeInteractionEnabled, webView: webView)
+        webView.updateNativeInteraction(enabled: nativeInteractionEnabled)
         return webView
     }
     
     func updateExcalidrawWebView(_ webView: ExcalidrawWebView, context: Context) {
-        updateNativeInteraction(enabled: nativeInteractionEnabled, webView: webView)
-    }
-
-    private func updateNativeInteraction(enabled: Bool, webView: ExcalidrawWebView) {
-        webView.nativeInteractionEnabled = enabled
-        webView.isHidden = !enabled
-#if os(iOS)
-        webView.isUserInteractionEnabled = enabled
-#endif
+        webView.updateNativeInteraction(enabled: nativeInteractionEnabled)
     }
     
     func makeCoordinator() -> ExcalidrawCore {
