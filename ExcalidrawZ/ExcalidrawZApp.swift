@@ -375,13 +375,12 @@ struct ExcalidrawZApp: App {
                 .keyboardShortcut("S", modifiers: [.command, .shift])
 
                 Button {
+                    ViewerMirrorController.shared.prepareForOpeningViewer()
                     openWindow(id: ViewerMirrorController.windowID)
                 } label: {
                     Text(.localizable(.menubarOpenViewerWindow))
                 }
                 .keyboardShortcut("V", modifiers: [.command, .shift])
-
-                ViewerFollowEditorCommand()
             }
 
             CommandGroup(after: .help) {
@@ -411,6 +410,7 @@ struct ExcalidrawZApp: App {
             ViewerWindowView()
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
         }
+        .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 960, height: 600)
 
         Settings {

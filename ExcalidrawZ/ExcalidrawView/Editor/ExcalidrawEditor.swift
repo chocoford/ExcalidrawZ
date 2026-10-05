@@ -279,17 +279,24 @@ struct ExcalidrawEditor: View {
         }
 #if os(macOS)
         .overlay(alignment: .bottomTrailing) {
-            if case .cloudStorageFile(let reference) = fileState.currentActiveFile {
-                CloudStorageDocumentSyncIndicator(
-                    reference: reference,
-                    presentation: .canvas,
-                    onConflictSelected: {
-                        cloudStorageConflictReference = reference
-                    }
-                )
-                .padding(.trailing, 8)
-                .padding(.bottom, 18)
+            VStack(alignment: .trailing, spacing: 8) {
+                if activeFile != nil, !isInCollaborationSpace, !isLoadingFile {
+                    ViewerEditorControls()
+                        .padding(.trailing, 16)
+                }
+
+                if case .cloudStorageFile(let reference) = fileState.currentActiveFile {
+                    CloudStorageDocumentSyncIndicator(
+                        reference: reference,
+                        presentation: .canvas,
+                        onConflictSelected: {
+                            cloudStorageConflictReference = reference
+                        }
+                    )
+                    .padding(.trailing, 8)
+                }
             }
+            .padding(.bottom, 18)
         }
 #endif
 //#if DEBUG

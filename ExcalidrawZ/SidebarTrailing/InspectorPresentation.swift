@@ -417,7 +417,7 @@ struct InspectorToolbarTitleLabel: View {
 
     var body: some View {
         Text(title)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.primary)
             .font(.headline)
             .padding(.horizontal, 8)
     }

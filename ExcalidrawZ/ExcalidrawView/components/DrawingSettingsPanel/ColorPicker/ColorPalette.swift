@@ -21,6 +21,16 @@ struct ColorPalette {
         "#f08c00"   // yellow[8]
     ]
 
+    /// Representative cursor hues from Excalidraw's `getClientColor()` in
+    /// packages/excalidraw/clients.ts: HSL saturation 100%, lightness 83%, hue steps of 10°.
+    static let collaboratorQuickPicks: [String] = [
+        "#ffa8a8",  // hue 0°
+        "#ffe2a8",  // hue 40°
+        "#a8ffa8",  // hue 120°
+        "#a8e2ff",  // hue 200°
+        "#e2a8ff"   // hue 280°
+    ]
+
     /// Background colors: transparent, red[2], green[2], blue[2], yellow[2]
     /// These are the default colors shown in the quick pick bar for background
     static let backgroundQuickPicks: [String] = [

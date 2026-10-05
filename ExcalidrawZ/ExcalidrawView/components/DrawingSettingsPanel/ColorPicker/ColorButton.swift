@@ -15,17 +15,20 @@ struct ColorButton: View {
     let color: String
     let isSelected: Bool
     let size: CGFloat
+    let adaptsToDarkMode: Bool
     let action: () -> Void
 
     init(
         color: String,
         isSelected: Bool,
         size: CGFloat = 28,
+        adaptsToDarkMode: Bool = true,
         action: @escaping () -> Void
     ) {
         self.color = color
         self.isSelected = isSelected
         self.size = size
+        self.adaptsToDarkMode = adaptsToDarkMode
         self.action = action
     }
 
@@ -72,7 +75,7 @@ struct ColorButton: View {
             .fill(Color(hexString: color))
             .frame(width: size, height: size)
             .apply { content in
-                if colorScheme == .dark {
+                if adaptsToDarkMode && colorScheme == .dark {
                     content
                         .colorInvert()
                         .hueRotation(Angle(degrees: 180))

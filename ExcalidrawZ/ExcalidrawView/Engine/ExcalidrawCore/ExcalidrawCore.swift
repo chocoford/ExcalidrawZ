@@ -46,9 +46,6 @@ class ExcalidrawCore: NSObject, ObservableObject {
     @Published private(set) var cameraState = CameraState()
     @Published private(set) var selectedElementIDs: [String] = []
     @Published private(set) var contentChangeToken = 0
-    /// Bumped whenever the Viewer mirror subscription reports a scene change.
-    /// Unlike `contentChangeToken` this is not throttled on the JS side.
-    @Published private(set) var viewerMirrorDirtyToken = 0
 
     var downloadCache: [String : Data] = [:]
     var downloads: [URLRequest : URL] = [:]
@@ -68,11 +65,6 @@ class ExcalidrawCore: NSObject, ObservableObject {
     @MainActor
     func noteAcceptedContentChange() {
         contentChangeToken &+= 1
-    }
-
-    @MainActor
-    func noteViewerMirrorDirty() {
-        viewerMirrorDirtyToken &+= 1
     }
 
     // Track loaded MediaItem IDs for re-injection detection

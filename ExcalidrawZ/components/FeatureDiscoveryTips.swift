@@ -42,6 +42,15 @@ enum FeatureDiscoveryTips {
         UserDefaults.standard.set(true, forKey: resetPendingDefaultsKey)
     }
 
+    @MainActor
+    static func didOpenViewer() {
+#if canImport(TipKit)
+        if #available(macOS 14.0, iOS 17.0, *) {
+            ViewerWindowDiscoveryTip().invalidate(reason: .actionPerformed)
+        }
+#endif
+    }
+
 #if canImport(TipKit)
     @available(macOS 14.0, iOS 17.0, *)
     private static func resetDatastoreBeforeConfigureIfNeeded() {
@@ -60,6 +69,7 @@ enum FeatureDiscoveryTips {
 enum FeatureDiscoveryTipKind {
     case aiFileVisibility
     case lockFile
+    case viewerWindow
 }
 
 struct FeatureDiscoveryTipModifier: ViewModifier {
@@ -76,6 +86,8 @@ struct FeatureDiscoveryTipModifier: ViewModifier {
                         content.popoverTip(AIFileVisibilityDiscoveryTip())
                     case .lockFile:
                         content.popoverTip(LockFileDiscoveryTip())
+                    case .viewerWindow:
+                        content.popoverTip(ViewerWindowDiscoveryTip())
                 }
             } else {
                 content
@@ -117,6 +129,25 @@ private struct LockFileDiscoveryTip: Tip {
 
     var image: Image? {
         Image(systemName: "lock.shield")
+    }
+}
+
+@available(macOS 14.0, iOS 17.0, *)
+private struct ViewerWindowDiscoveryTip: Tip {
+    var title: Text {
+        Text(.localizable(.featureTipsViewerWindowTitle))
+    }
+
+    var message: Text? {
+        Text(.localizable(.featureTipsViewerWindowMessage))
+    }
+
+    var image: Image? {
+        Image(systemName: "macwindow.on.rectangle")
+    }
+
+    var options: [Option] {
+        MaxDisplayCount(1)
     }
 }
 #endif

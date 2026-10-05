@@ -11,15 +11,21 @@ import ChocofordUI
 /// Full color picker popover showing all color families and shades
 struct FullColorPicker: View {
     var selectedColor: String
+    let supportsOpacity: Bool
+    let adaptsToDarkMode: Bool
     var onSelect: (String) -> Void
     var footer: AnyView
     
     init<Content: View>(
         selectedColor: String,
+        supportsOpacity: Bool = true,
+        adaptsToDarkMode: Bool = true,
         onSelect: @escaping (String) -> Void,
         @ViewBuilder footer: () -> Content = { EmptyView() }
     ) {
         self.selectedColor = selectedColor
+        self.supportsOpacity = supportsOpacity
+        self.adaptsToDarkMode = adaptsToDarkMode
         self.onSelect = onSelect
         self.footer = AnyView(footer())
     }
@@ -65,19 +71,24 @@ struct FullColorPicker: View {
 
     // MARK: - Base Colors Grid
 
+    private var colorFamilies: [(name: String, shades: [String])] {
+        ColorPalette.fullPalette.filter { supportsOpacity || $0.name != "transparent" }
+    }
+
     @ViewBuilder
     private var baseColorsGrid: some View {
         let columns = Array(repeating: GridItem(.fixed(30), spacing: 6), count: 5)
 
         LazyVGrid(columns: columns, spacing: 6) {
-            ForEach(ColorPalette.fullPalette.indices, id: \.self) { index in
-                let colorFamily = ColorPalette.fullPalette[index]
+            ForEach(colorFamilies.indices, id: \.self) { index in
+                let colorFamily = colorFamilies[index]
                 let baseColor = ColorPalette.getBaseColor(for: colorFamily)
 
                 ColorButton(
                     color: baseColor,
                     isSelected: selectedColor == baseColor,
-                    size: 30
+                    size: 30,
+                    adaptsToDarkMode: adaptsToDarkMode
                 ) {
                     selectedColorFamily = colorFamily
                     onSelect(baseColor)
@@ -99,7 +110,8 @@ struct FullColorPicker: View {
                 ColorButton(
                     color: shade,
                     isSelected: selectedColor == shade,
-                    size: 30
+                    size: 30,
+                    adaptsToDarkMode: adaptsToDarkMode
                 ) {
                     onSelect(shade)
                 }

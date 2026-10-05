@@ -190,8 +190,19 @@ struct ExcalidrawCanvasView: View {
             .task {
                 await listenToErrors()
             }
+#if os(macOS)
+            .watch(value: fileState.currentActiveFile?.id) { _ in
+                guard type == .normal else { return }
+                ViewerMirrorController.shared.editorDocumentDidChange(excalidrawCore)
+            }
+#endif
             .onAppear {
                 setupCore()
+#if os(macOS)
+                if type == .normal {
+                    ViewerMirrorController.shared.register(editor: excalidrawCore)
+                }
+#endif
                 updateToolStateCoordinatorBinding(isEnabled: interactionEnabled)
             }
             .onDisappear {
@@ -217,9 +228,6 @@ struct ExcalidrawCanvasView: View {
                 exportState.excalidrawWebCoordinator = excalidrawCore
                 fileState.excalidrawWebCoordinator = excalidrawCore
                 canvasPreferencesState.coordinator = excalidrawCore
-#if os(macOS)
-                ViewerMirrorController.shared.register(editor: excalidrawCore)
-#endif
             case .collaboration:
                 exportState.excalidrawCollaborationWebCoordinator = excalidrawCore
                 fileState.excalidrawCollaborationWebCoordinator = excalidrawCore
@@ -292,6 +300,13 @@ struct ExcalidrawCanvasView: View {
         guard type == .normal else { return }
 
         for await event in excalidrawCore.documentSyncController.loadEvents {
+            // Reuse the existing stream consumer; adding another would consume
+            // events needed by the canvas loading state.
+#if os(macOS)
+            await MainActor.run {
+                ViewerMirrorController.shared.editorDocumentDidChange(excalidrawCore)
+            }
+#endif
             switch event {
                 case .started(let fileID):
                     let isCurrent = await MainActor.run { file?.id == fileID }
