@@ -15,6 +15,14 @@
 			</array>
 			<key>CFBundleTypeName</key>
 			<string>excalidraw</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ExcalidrawDocument.icns</string>
+			<key>CFBundleTypeIconFiles</key>
+			<array>
+				<string>ExcalidrawDocument-64.png</string>
+				<string>ExcalidrawDocument-128.png</string>
+				<string>ExcalidrawDocument-320.png</string>
+			</array>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
@@ -142,8 +150,14 @@
 			</array>
 			<key>UTTypeDescription</key>
 			<string>Excalidraw File</string>
-			<key>UTTypeIcons</key>
-			<dict/>
+			<key>UTTypeIconFile</key>
+			<string>ExcalidrawDocument.icns</string>
+			<key>UTTypeIconFiles</key>
+			<array>
+				<string>ExcalidrawDocument-64.png</string>
+				<string>ExcalidrawDocument-128.png</string>
+				<string>ExcalidrawDocument-320.png</string>
+			</array>
 			<key>UTTypeIdentifier</key>
 			<string>com.chocoford.excalidrawFile</string>
 			<key>UTTypeTagSpecification</key>
@@ -279,8 +293,14 @@
 			</array>
 			<key>UTTypeDescription</key>
 			<string>Excalidraw File</string>
-			<key>UTTypeIcons</key>
-			<dict/>
+			<key>UTTypeIconFile</key>
+			<string>ExcalidrawDocument.icns</string>
+			<key>UTTypeIconFiles</key>
+			<array>
+				<string>ExcalidrawDocument-64.png</string>
+				<string>ExcalidrawDocument-128.png</string>
+				<string>ExcalidrawDocument-320.png</string>
+			</array>
 			<key>UTTypeIdentifier</key>
 			<string>com.chocoford.excalidrawFile</string>
 			<key>UTTypeTagSpecification</key>

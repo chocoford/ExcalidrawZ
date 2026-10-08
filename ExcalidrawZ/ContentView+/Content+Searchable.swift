@@ -549,18 +549,24 @@ fileprivate struct SearchItemRow: View {
         self.isSelected = isSelected
     }
     
-    @State private var icon: Image?
-    @State private var isLoading = true
-    
     @State private var isHovered = false
+
+    private var icon: Image {
+        if let image {
+            return Image(platformImage: image)
+        } else if #available(macOS 15.0, iOS 18.0, *) {
+            return Image(systemSymbol: .document)
+        } else {
+            return Image(systemSymbol: .doc)
+        }
+    }
     
     var body: some View {
         HStack(spacing: 10) {
-            if #available(macOS 15.0, iOS 18.0, *) {
-                icon ?? Image(systemSymbol: .document)
-            } else {
-                icon ?? Image(systemSymbol: .doc)
-            }
+            icon
+                .resizable()
+                .scaledToFit()
+                .frame(width: 32, height: 40)
             VStack(alignment: .leading, spacing: 6) {
                 Text(title).font(.headline)
                 Text(subtitle).font(.footnote)
@@ -586,17 +592,6 @@ fileprivate struct SearchItemRow: View {
         .onHover { isHovered in
             withAnimation {
                 self.isHovered = isHovered
-            }
-        }
-        .opacity(icon == nil ? 0 : 1)
-        .onAppear {
-            guard let image else { return }
-            Task.detached { [image] in
-                let image = Image(platformImage: image)
-                await MainActor.run {
-                    self.icon = image
-                    isLoading = false
-                }
             }
         }
     }

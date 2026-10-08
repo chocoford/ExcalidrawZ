@@ -317,7 +317,7 @@ struct InspectorPresentationModifier: ViewModifier {
     private func floatingInspectorPanelContent() -> some View {
         if shouldUseFloatingNavigationInspectorContent {
             floatingNavigationInspectorContent()
-        } else if floatingInspectorContentHasOwnTitle {
+        } else if floatingInspectorContentHasOwnNavigationStack {
             inspectorContent()
                 .disabled(shouldDisableInspectorContent)
         } else {
@@ -331,14 +331,17 @@ struct InspectorPresentationModifier: ViewModifier {
     }
 
     private var shouldUseFloatingNavigationInspectorContent: Bool {
+#if os(iOS)
+        // Compact file history already owns a NavigationStack.
+        !floatingInspectorContentHasOwnNavigationStack
+#else
         switch layoutState.activeInspectorTab {
-            case .aiChat, .library, .presentation:
+            case .aiChat, .library, .presentation, .history:
                 true
-            case .history:
-                !isCompactIOS
             default:
                 false
         }
+#endif
     }
 
     @ViewBuilder
@@ -353,7 +356,7 @@ struct InspectorPresentationModifier: ViewModifier {
         }
     }
 
-    private var floatingInspectorContentHasOwnTitle: Bool {
+    private var floatingInspectorContentHasOwnNavigationStack: Bool {
 #if os(iOS)
         layoutState.activeInspectorTab == .history && isCompactIOS
 #else
@@ -363,24 +366,6 @@ struct InspectorPresentationModifier: ViewModifier {
 
     @ViewBuilder
     private func floatingInspectorTitle() -> some View {
-#if os(iOS)
-        if #available(iOS 26.0, *),
-           layoutState.activeInspectorTab == .aiChat {
-            InspectorToolbarTitleLabel(title: inspectorTitle)
-                .frame(maxWidth: .infinity)
-                .padding(.top, 8)
-                .padding(.bottom, 7)
-                .padding(.horizontal, 10)
-        } else {
-            defaultFloatingInspectorTitle()
-        }
-#else
-        defaultFloatingInspectorTitle()
-#endif
-    }
-
-    @ViewBuilder
-    private func defaultFloatingInspectorTitle() -> some View {
         Text(inspectorTitle)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity)

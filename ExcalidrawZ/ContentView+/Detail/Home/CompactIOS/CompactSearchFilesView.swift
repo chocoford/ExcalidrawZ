@@ -8,11 +8,7 @@
 import SwiftUI
 
 struct CompactSearchFilesView: View {
-    @EnvironmentObject private var layoutState: LayoutState
-
-    
-    @State private var searchText: String = ""
-    
+    @Binding var searchText: String
     
     var columns: [GridItem] {
         [
@@ -39,7 +35,6 @@ struct CompactSearchFilesView: View {
                         .padding(16)
                     }
                 }
-                .searchable(text: $searchText)
                 .navigationTitle(.localizable(.compactSearchTitle))
                 .toolbar {
 #if os(iOS)
@@ -49,6 +44,7 @@ struct CompactSearchFilesView: View {
 #endif
                 }
             }
+            .searchable(text: $searchText)
         }
     }
 }
@@ -64,5 +60,5 @@ struct CompactSearchFilesResultView: View {
     }
 }
 #Preview {
-    CompactSearchFilesView()
+    CompactSearchFilesView(searchText: .constant(""))
 }

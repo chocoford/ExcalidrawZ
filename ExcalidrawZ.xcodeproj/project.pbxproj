@@ -105,6 +105,14 @@
 		39FD00013012100000C10001 /* MSAL in Frameworks */ = {isa = PBXBuildFile; productRef = 39FD00013012100000C10004 /* MSAL */; };
 		39FD00013012100000C10002 /* MSAL in Frameworks */ = {isa = PBXBuildFile; productRef = 39FD00013012100000C10005 /* MSAL */; };
 		9009E9B6D7F84E138B7BDA37 /* MathRendering in Resources */ = {isa = PBXBuildFile; fileRef = 54A01A9B81924C01A4E4216B /* MathRendering */; };
+		FEF74DCD7CE44B70BD733EC3 /* ExcalidrawDocument-64.png in Resources */ = {isa = PBXBuildFile; fileRef = 7254AFB37AB04433805E3415 /* ExcalidrawDocument-64.png */; };
+		E30B1C5288C94624A0E32DAD /* ExcalidrawDocument-128.png in Resources */ = {isa = PBXBuildFile; fileRef = 5E9D2823B4FB4F209959038D /* ExcalidrawDocument-128.png */; };
+		21DFD6DCDF034C198AFD1605 /* ExcalidrawDocument-320.png in Resources */ = {isa = PBXBuildFile; fileRef = CCB2D0B79C584A4C90DEAB52 /* ExcalidrawDocument-320.png */; };
+		1D0245AC32C045FFA0F7FE34 /* ExcalidrawDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = A537CFEF92184BFBBDB31B77 /* ExcalidrawDocument.icns */; };
+		23611917B50E4D6492E0C43C /* ExcalidrawDocument-64.png in Resources */ = {isa = PBXBuildFile; fileRef = 7254AFB37AB04433805E3415 /* ExcalidrawDocument-64.png */; };
+		F5C0E6110E1145449AEDEAD2 /* ExcalidrawDocument-128.png in Resources */ = {isa = PBXBuildFile; fileRef = 5E9D2823B4FB4F209959038D /* ExcalidrawDocument-128.png */; };
+		DF1B60C713C340BEAC2947FA /* ExcalidrawDocument-320.png in Resources */ = {isa = PBXBuildFile; fileRef = CCB2D0B79C584A4C90DEAB52 /* ExcalidrawDocument-320.png */; };
+		7E21756455434E8EAB04D9D3 /* ExcalidrawDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = A537CFEF92184BFBBDB31B77 /* ExcalidrawDocument.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -197,6 +205,11 @@
 		39ED18532D3FDE1C00E437A0 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		500E089B2CF1BFB600392CC2 /* Project.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Project.xcconfig; sourceTree = "<group>"; };
 		54A01A9B81924C01A4E4216B /* MathRendering */ = {isa = PBXFileReference; lastKnownFileType = folder; path = MathRendering; sourceTree = "<group>"; };
+		696BD9A2A68E4CB29F5404B1 /* ExcalidrawDocument.svg */ = {isa = PBXFileReference; lastKnownFileType = image.svg; path = "ExcalidrawDocument.svg"; sourceTree = "<group>"; };
+		7254AFB37AB04433805E3415 /* ExcalidrawDocument-64.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "ExcalidrawDocument-64.png"; sourceTree = "<group>"; };
+		5E9D2823B4FB4F209959038D /* ExcalidrawDocument-128.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "ExcalidrawDocument-128.png"; sourceTree = "<group>"; };
+		CCB2D0B79C584A4C90DEAB52 /* ExcalidrawDocument-320.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "ExcalidrawDocument-320.png"; sourceTree = "<group>"; };
+		A537CFEF92184BFBBDB31B77 /* ExcalidrawDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "ExcalidrawDocument.icns"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -573,6 +586,7 @@
 		397E468529599DA0003B824B /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				12CAF44FA6504A02A3E745CF /* DocumentIcons */,
 				39ED18482D3FCECB00E437A0 /* Videos */,
 				39AF4DE02D0611E0009126C4 /* CHANGELOG.md */,
 				397E468629599DD3003B824B /* FakeDrop.js */,
@@ -594,6 +608,18 @@
 				39B69A2D2D8422F0003369E8 /* Secrets.plist */,
 			);
 			path = Config;
+			sourceTree = "<group>";
+		};
+		12CAF44FA6504A02A3E745CF /* DocumentIcons */ = {
+			isa = PBXGroup;
+			children = (
+				696BD9A2A68E4CB29F5404B1 /* ExcalidrawDocument.svg */,
+				7254AFB37AB04433805E3415 /* ExcalidrawDocument-64.png */,
+				5E9D2823B4FB4F209959038D /* ExcalidrawDocument-128.png */,
+				CCB2D0B79C584A4C90DEAB52 /* ExcalidrawDocument-320.png */,
+				A537CFEF92184BFBBDB31B77 /* ExcalidrawDocument.icns */,
+			);
+			path = DocumentIcons;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -870,6 +896,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				23611917B50E4D6492E0C43C /* ExcalidrawDocument-64.png in Resources */,
+				F5C0E6110E1145449AEDEAD2 /* ExcalidrawDocument-128.png in Resources */,
+				DF1B60C713C340BEAC2947FA /* ExcalidrawDocument-320.png in Resources */,
+				7E21756455434E8EAB04D9D3 /* ExcalidrawDocument.icns in Resources */,
 				3963A0782C6C7EAA00472AE7 /* excalidraw-latest in Resources */,
 				39ED18552D3FDE1C00E437A0 /* Localizable.xcstrings in Resources */,
 				39B2F0732D9D6AAC00B6CB47 /* Secrets.plist in Resources */,
@@ -890,6 +920,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FEF74DCD7CE44B70BD733EC3 /* ExcalidrawDocument-64.png in Resources */,
+				E30B1C5288C94624A0E32DAD /* ExcalidrawDocument-128.png in Resources */,
+				21DFD6DCDF034C198AFD1605 /* ExcalidrawDocument-320.png in Resources */,
+				1D0245AC32C045FFA0F7FE34 /* ExcalidrawDocument.icns in Resources */,
 				396661302C665D4300F863BC /* excalidraw-latest in Resources */,
 				39ED18542D3FDE1C00E437A0 /* Localizable.xcstrings in Resources */,
 				397E468729599DD4003B824B /* FakeDrop.js in Resources */,
