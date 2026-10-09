@@ -110,6 +110,9 @@ struct ExcalidrawCanvasView: View {
     
     var body: some View {
         ExcalidrawViewRepresentable(nativeInteractionEnabled: interactionEnabled)
+#if os(macOS)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+#endif
             .modifier(MediaItemSyncModifier())
             .modifier(MathImageEditSheetViewModifier(coordinator: excalidrawCore, onError: onError))
             .environmentObject(excalidrawCore)

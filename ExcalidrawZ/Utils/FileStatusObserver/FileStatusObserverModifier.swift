@@ -18,11 +18,16 @@ extension View {
     @ViewBuilder
     func observeFileStatus(
         for activeFile: FileState.ActiveFile?,
+        onlyICloudStatusChanges: Bool = false,
         onChange: @escaping (FileStatus) -> Void
     ) -> some View {
         background {
             if let activeFile {
-                FileStatusObserverView(file: activeFile, onChange: onChange)
+                FileStatusObserverView(
+                    file: activeFile,
+                    onlyICloudStatusChanges: onlyICloudStatusChanges,
+                    onChange: onChange
+                )
             }
         }
     }
@@ -38,48 +43,92 @@ extension View {
     }
 }
 
-struct FileStatusProvider: View {
+struct FileStatusProvider<Content: View>: View {
+    private let fileStatusBox: FileStatusBox?
+    private let content: (FileStatus?) -> Content
 
-    var file: FileState.ActiveFile?
-    var content: (FileStatus?) -> AnyView
-
-    init<Content: View>(
+    init(
         file: FileState.ActiveFile?,
         @ViewBuilder content: @escaping (FileStatus?) -> Content
     ) {
-        self.file = file
-        self.content = {
-            AnyView(content($0))
+        if let file {
+            self.fileStatusBox = FileStatusService.shared.statusBox(for: file)
+        } else {
+            self.fileStatusBox = nil
         }
+        self.content = content
     }
 
-    @State private var fileStatus: FileStatus?
+    @ViewBuilder
+    var body: some View {
+        if let fileStatusBox {
+            FileStatusProviderContent(fileStatusBox: fileStatusBox, content: content)
+        } else {
+            content(nil)
+        }
+    }
+}
+
+/// Read the existing per-file state directly. No mirrored @State, initial
+/// publisher callback or transparent observer background is needed here.
+private struct FileStatusProviderContent<Content: View>: View {
+    @ObservedObject var fileStatusBox: FileStatusBox
+    let content: (FileStatus?) -> Content
 
     var body: some View {
-        content(fileStatus)
-            .bindFileStatus(for: file, status: $fileStatus)
+        content(fileStatusBox.status)
     }
 }
 
 private struct FileStatusObserverView: View {
-    @ObservedObject private var fileStatusBox: FileStatusBox
+    private let fileStatusBox: FileStatusBox
+    private let onlyICloudStatusChanges: Bool
     var file: FileState.ActiveFile
     var onChange: (FileStatus) -> Void
 
-    init(file: FileState.ActiveFile, onChange: @escaping (FileStatus) -> Void) {
+    init(
+        file: FileState.ActiveFile,
+        onlyICloudStatusChanges: Bool,
+        onChange: @escaping (FileStatus) -> Void
+    ) {
         self.file = file
         self.fileStatusBox = FileStatusService.shared.statusBox(for: file)
+        self.onlyICloudStatusChanges = onlyICloudStatusChanges
         self.onChange = onChange
     }
 
-    @State private var oldValue: FileStatus?
+    // Callback bookkeeping does not affect rendering. Keep it in a stable
+    // reference so receiving an initial status doesn't invalidate this view.
+    @State private var deliveryState = FileStatusDeliveryState()
 
     var body: some View {
         Color.clear
             .onReceive(fileStatusBox.$status) { newValue in
-                guard oldValue != newValue else { return }
+                guard deliveryState.shouldDeliver(
+                    newValue,
+                    fileID: file.id,
+                    onlyICloudStatusChanges: onlyICloudStatusChanges
+                ) else { return }
                 onChange(newValue)
-                oldValue = newValue
             }
+    }
+}
+
+private final class FileStatusDeliveryState {
+    private var fileID: String?
+    private var status: FileStatus?
+
+    func shouldDeliver(
+        _ newStatus: FileStatus,
+        fileID newFileID: String,
+        onlyICloudStatusChanges: Bool
+    ) -> Bool {
+        let changed = onlyICloudStatusChanges
+            ? status?.iCloudStatus != newStatus.iCloudStatus
+            : status != newStatus
+        guard fileID != newFileID || changed else { return false }
+        fileID = newFileID
+        status = newStatus
+        return true
     }
 }

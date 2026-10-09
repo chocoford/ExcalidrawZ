@@ -11,6 +11,7 @@ import LLMCore
 import LLMKit
 import SFSafeSymbols
 import SwiftUI
+import SwiftyAlert
 
 struct AIChatView: View {
     @EnvironmentObject var layoutState: LayoutState

@@ -97,8 +97,26 @@ final class AppPreference: ObservableObject {
             }
         }
     }
-    @AppStorage("appearance") var appearance: Appearance = .auto
+    @AppStorage("appearance") private var storedAppearance: Appearance = .auto
     @AppStorage("excalidrawAppearance") var excalidrawAppearance: Appearance = .auto
+
+    var appearance: Appearance {
+        get { storedAppearance }
+        set {
+            guard storedAppearance != newValue else { return }
+            objectWillChange.send()
+            storedAppearance = newValue
+            SharedAppAppearanceStore.save(
+                SharedAppAppearance(rawValue: newValue.rawValue) ?? .auto
+            )
+        }
+    }
+
+    init() {
+        SharedAppAppearanceStore.save(
+            SharedAppAppearance(rawValue: storedAppearance.rawValue) ?? .auto
+        )
+    }
     
     var appearanceBinding: Binding<ColorScheme?> {
         Binding {

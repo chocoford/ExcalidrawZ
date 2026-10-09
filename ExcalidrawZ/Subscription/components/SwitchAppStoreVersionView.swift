@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 import ChocofordUI
 import SwiftyAlert
@@ -51,8 +52,10 @@ struct SwitchAppStoreVersionView: View {
             .background {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color(hexString: "#f57c00").opacity(0.6))
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(hexString: "#ffb74d"))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(hexString: "#ffb74d"))
+                    }
             }
             
             GeometryReader { geometry in
@@ -102,19 +105,7 @@ struct SwitchAppStoreVersionView: View {
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .background {
-                        if #available(macOS 14.0, *) {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(.thinMaterial)
-                                .stroke(.separator, lineWidth: 0.5)
-                        } else {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(.thinMaterial)
-                                
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(.separator, lineWidth: 0.5)
-                            }
-                        }
+                        migrationStepBackground
                     }
                     
                     // Step 2
@@ -155,21 +146,7 @@ struct SwitchAppStoreVersionView: View {
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .background {
-                        ZStack {
-                            if #available(macOS 14.0, *) {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(.thinMaterial)
-                                    .stroke(.separator, lineWidth: 0.5)
-                            } else {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(.thinMaterial)
-                                    
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(.separator, lineWidth: 0.5)
-                                }
-                            }
-                        }
+                        migrationStepBackground
                     }
                 }
                 .buttonStyle(.borderedProminent)
@@ -183,6 +160,15 @@ struct SwitchAppStoreVersionView: View {
             }
             .buttonStyle(.borderless)
         }
+    }
+
+    private var migrationStepBackground: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .fill(.thinMaterial)
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(.separator, lineWidth: 0.5)
+            }
     }
 }
 

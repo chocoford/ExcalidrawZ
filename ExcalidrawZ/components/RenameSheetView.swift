@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct RenameSheetViewModifier: ViewModifier {
-    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
-    
     @Binding var isPresented: Bool
     var name: String
     var callback: (_ newName: String) -> Void
@@ -17,37 +15,41 @@ struct RenameSheetViewModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: $isPresented) {
-                if #available(iOS 18.0, *), containerHorizontalSizeClass == .compact {
-                    RenameSheetView(text: name) { newName in
-                        callback(newName)
-                    }
-                } else if #available(macOS 26.0, iOS 26.0, *) {
-                    RenameSheetView(text: name) { newName in
-                        callback(newName)
-                    }
-                } else if #available(iOS 18.0, macOS 13.0, *) {
-                    RenameSheetView(text: name) { newName in
-                        callback(newName)
-                    }
-                    .frame(width: 300, height: 140)
-                    .scrollDisabled(true)
-#if canImport(UIKit)
-                    .presentationSizing(.fitted)
-                    .presentationDragIndicator(.hidden)
-                    .presentationCompactAdaptation(.sheet)
-#endif
-                } else {
-                    RenameSheetView(text: name) { newName in
-                        callback(newName)
-                    }
-#if canImport(UIKit)
-                    .presentationDetents([.height(180)])
-                    .presentationDragIndicator(containerHorizontalSizeClass == .compact ? .visible : .hidden)
-#elseif os(macOS)
-                    .frame(width: 300)
-#endif
-                }
+                RenameSheetContent(text: name, onConfirm: callback)
             }
+    }
+}
+
+/// Shared by local sheet attachments and the file home's sheet presenter.
+struct RenameSheetContent: View {
+    @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+
+    var text: String
+    var onConfirm: (String) -> Void
+
+    var body: some View {
+        if #available(iOS 18.0, *), containerHorizontalSizeClass == .compact {
+            RenameSheetView(text: text, onConfirm: onConfirm)
+        } else if #available(macOS 26.0, iOS 26.0, *) {
+            RenameSheetView(text: text, onConfirm: onConfirm)
+        } else if #available(iOS 18.0, macOS 13.0, *) {
+            RenameSheetView(text: text, onConfirm: onConfirm)
+                .frame(width: 300, height: 140)
+                .scrollDisabled(true)
+#if canImport(UIKit)
+                .presentationSizing(.fitted)
+                .presentationDragIndicator(.hidden)
+                .presentationCompactAdaptation(.sheet)
+#endif
+        } else {
+            RenameSheetView(text: text, onConfirm: onConfirm)
+#if canImport(UIKit)
+                .presentationDetents([.height(180)])
+                .presentationDragIndicator(containerHorizontalSizeClass == .compact ? .visible : .hidden)
+#elseif os(macOS)
+                .frame(width: 300)
+#endif
+        }
     }
 }
 

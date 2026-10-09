@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import CoreData
+import SwiftyAlert
 
 struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
     @Environment(\.alertToast) private var alertToast

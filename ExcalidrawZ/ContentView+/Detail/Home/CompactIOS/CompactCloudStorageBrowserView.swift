@@ -5,6 +5,7 @@
 
 import ChocofordUI
 import SwiftUI
+import SwiftyAlert
 
 #if os(iOS)
 struct CompactCloudStorageBrowserView: View {

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 
 struct ContentViewLagacy: View {
     @Environment(\.alertToast) var alertToast

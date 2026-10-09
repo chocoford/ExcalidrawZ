@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 import CoreData
 import UniformTypeIdentifiers
 
@@ -273,7 +274,8 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
     ) {
         // guard itemID != draggedObjectID else { return }
         Task { [context, allFiles] in
-            let reindexFileID: UUID? = try await context.perform {
+            do {
+                let reindexFileID: UUID? = try await context.perform {
                 guard let draggedFile = context.object(with: draggedObjectID) as? DragFile else {
                     return nil
                 }
@@ -373,12 +375,15 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
                 try context.save()
                 return (draggedFile as? File)?.id
             }
-            if let reindexFileID {
-                await PersistenceController.shared.spotlightIndexingService.indexFile(id: reindexFileID)
-            }
-            
-            await MainActor.run {
-                completionHandler?()
+                if let reindexFileID {
+                    await PersistenceController.shared.spotlightIndexingService.indexFile(id: reindexFileID)
+                }
+
+                await MainActor.run {
+                    completionHandler?()
+                }
+            } catch {
+                alertToast(error)
             }
         }
     }

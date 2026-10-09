@@ -266,6 +266,20 @@ extension ExcalidrawCore {
         colorScheme: ColorScheme? = nil,
         timeoutNanoseconds: UInt64 = 8_000_000_000
     ) async throws -> PlatformImage {
+        let data = try await exportViewportPreviewPNGData(
+            sceneData: sceneData, colorScheme: colorScheme,
+            timeoutNanoseconds: timeoutNanoseconds
+        )
+        guard let image = PlatformImage(data: data) else { throw InvalidJavaScriptResult() }
+        return image
+    }
+
+    @MainActor
+    func exportViewportPreviewPNGData(
+        sceneData: Data,
+        colorScheme: ColorScheme? = nil,
+        timeoutNanoseconds: UInt64 = 8_000_000_000
+    ) async throws -> Data {
         guard isReadyForPreviewExport else {
             throw ExcalidrawPreviewExportError.notReady(previewExportReadinessSummary)
         }
@@ -286,10 +300,7 @@ extension ExcalidrawCore {
                 colorScheme: colorScheme
             )
         }
-        guard let image = PlatformImage(data: result.data) else {
-            throw InvalidJavaScriptResult()
-        }
-        return image
+        return result.data
     }
 
     func exportElementsToSVGData(

@@ -6,8 +6,14 @@
 //
 
 import CoreData
+import Foundation
 import Logging
 import SwiftUI
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
 
 extension Notification.Name {
     static let filePreviewDidUpdate = Notification.Name("FilePreviewDidUpdate")
@@ -91,11 +97,15 @@ final class FileCoverCacheCoordinator: ObservableObject {
     private var cacheGenerations: [String: UInt64] = [:]
     private var nextSequence = 0
     private var processingTask: Task<Void, Never>?
+    private var diskLookupTasks: [String: Task<Void, Never>] = [:]
+    private var diskLookupPriorities: [String: Priority] = [:]
+    private var diskMutationTask: Task<Void, Never>?
     private var prewarmTask: Task<Void, Never>?
     private var currentColorScheme: ColorScheme = .light
     private var lastRecentlyVisiblePrewarmKey: CoverPrewarmKey?
 
     private let cache = FileItemPreviewCache.shared
+    private let diskCache = FileCoverDiskCache.shared
     private let logger = Logger(label: "FileCoverCacheCoordinator")
     private let maximumRetryCount = 8
     private var cloudStorageContentObserver: NSObjectProtocol?
@@ -161,6 +171,43 @@ final class FileCoverCacheCoordinator: ObservableObject {
         self.context = context
     }
 
+    /// Restores cached pixels for the File Home image diagnostic. Cache misses
+    /// never enter the generation queue or publish a cover-refresh notification.
+    func loadCachedPreview(
+        for file: FileState.ActiveFile,
+        colorScheme: ColorScheme
+    ) async -> PlatformImage? {
+        let source = Source.activeFile(file)
+        if case .file = file,
+           let lockedContentState,
+           lockedContentState.previewLockState(for: file) == nil {
+            await lockedContentState.refresh(file: file)
+        }
+        guard !Task.isCancelled, !shouldSkipLockedSource(source) else { return nil }
+
+        let cacheKey = FileItemPreviewCache.cacheKey(forID: file.canonicalID, colorScheme: colorScheme)
+        if let image = cache.object(forKey: cacheKey) { return image }
+
+        let generation = cacheGenerations[cacheKey as String, default: 0]
+        guard let revision = await diskRevision(for: source) else { return nil }
+        await diskMutationTask?.value
+        guard !Task.isCancelled,
+              let thumbnail = await diskCache.load(
+                key: cacheKey as String,
+                revision: revision,
+                maxPixelSize: source.thumbnailMaxPixelSize
+              ),
+              await diskRevision(for: source) == revision,
+              !Task.isCancelled,
+              generation == cacheGenerations[cacheKey as String, default: 0],
+              !shouldSkipLockedSource(source) else { return nil }
+
+        if let image = cache.object(forKey: cacheKey) { return image }
+        let image = platformImage(from: thumbnail)
+        cache.setObject(image, forKey: cacheKey, cost: thumbnail.memoryCost)
+        return image
+    }
+
     func request(
         source: Source,
         colorScheme: ColorScheme,
@@ -179,6 +226,31 @@ final class FileCoverCacheCoordinator: ObservableObject {
             return
         }
 
+        if forceRefresh {
+            cacheGenerations[cacheKey, default: 0] &+= 1
+            cancelDiskLookup(forKey: cacheKey)
+            removeDiskPreview(forKey: cacheKey)
+        } else if !queuedKeys.contains(cacheKey), !inFlightKeys.contains(cacheKey) {
+            restorePersistedPreview(
+                source: source, colorScheme: colorScheme,
+                priority: priority, cacheKey: cacheKey
+            )
+            return
+        }
+
+        requestGeneration(
+            source: source, colorScheme: colorScheme, priority: priority,
+            forceRefresh: forceRefresh, cacheKey: cacheKey
+        )
+    }
+
+    private func requestGeneration(
+        source: Source,
+        colorScheme: ColorScheme,
+        priority: Priority,
+        forceRefresh: Bool,
+        cacheKey: String
+    ) {
         if let existingJob = queue.first(where: { $0.cacheKey == cacheKey }) {
             let shouldReplace = forceRefresh || priority.rawValue > existingJob.priority.rawValue
             guard shouldReplace else { return }
@@ -208,6 +280,168 @@ final class FileCoverCacheCoordinator: ObservableObject {
             cacheKey: cacheKey,
             retryCount: 0
         )
+    }
+
+    private func restorePersistedPreview(
+        source: Source, colorScheme: ColorScheme, priority: Priority, cacheKey: String
+    ) {
+        if diskLookupTasks[cacheKey] != nil {
+            if priority.rawValue > diskLookupPriorities[cacheKey, default: .background].rawValue {
+                diskLookupPriorities[cacheKey] = priority
+            }
+            return
+        }
+        let generation = cacheGenerations[cacheKey, default: 0]
+        diskLookupPriorities[cacheKey] = priority
+        diskLookupTasks[cacheKey] = Task { @MainActor [weak self] in
+            guard let self else { return }
+            // Cache reads run independently of the JS queue and its readiness wait.
+            if case .activeFile(let file) = source, case .file = file,
+               let lockedContentState, lockedContentState.previewLockState(for: file) == nil {
+                await lockedContentState.refresh(file: file)
+            }
+            let revision = await diskRevision(for: source)
+            await diskMutationTask?.value
+            let thumbnail: FileCoverThumbnail?
+            if let revision {
+                thumbnail = await diskCache.load(
+                    key: cacheKey, revision: revision,
+                    maxPixelSize: source.thumbnailMaxPixelSize
+                )
+            } else {
+                thumbnail = nil
+            }
+            let currentRevision = thumbnail == nil ? nil : await diskRevision(for: source)
+            guard !Task.isCancelled,
+                  generation == cacheGenerations[cacheKey, default: 0] else { return }
+            let resolvedPriority = diskLookupPriorities.removeValue(forKey: cacheKey) ?? priority
+            diskLookupTasks[cacheKey] = nil
+            guard !shouldSkipLockedSource(source) else { return }
+
+            if let thumbnail, currentRevision == revision {
+                publish(thumbnail, forID: source.id, cacheKey: cacheKey)
+                logger.debug("Restored persisted preview for \(source.id)")
+            } else {
+                requestGeneration(
+                    source: source, colorScheme: colorScheme, priority: resolvedPriority,
+                    forceRefresh: false, cacheKey: cacheKey
+                )
+            }
+        }
+    }
+
+    private func cancelDiskLookup(forKey key: String) {
+        diskLookupTasks.removeValue(forKey: key)?.cancel()
+        diskLookupPriorities.removeValue(forKey: key)
+    }
+
+    private func removeDiskPreview(forKey key: String) {
+        let previousMutation = diskMutationTask
+        let diskCache = diskCache
+        // Keep invalidation and later writes in request order, including refresh races.
+        diskMutationTask = Task {
+            await previousMutation?.value
+            await diskCache.remove(key: key)
+        }
+    }
+
+    private func persist(
+        _ thumbnail: FileCoverThumbnail, source: Source,
+        cacheKey: String, revision: String?, generation: UInt64
+    ) {
+        guard let revision else { return }
+        let previousMutation = diskMutationTask
+        diskMutationTask = Task { @MainActor [weak self] in
+            await previousMutation?.value
+            guard let self, generation == cacheGenerations[cacheKey, default: 0],
+                  allowsDiskPersistence(for: source) else { return }
+            if !(await diskCache.store(thumbnail, key: cacheKey, revision: revision)) {
+                logger.debug("Could not persist preview for \(source.id)")
+            }
+        }
+    }
+
+    private func publish(_ thumbnail: FileCoverThumbnail, forID id: String, cacheKey: String) {
+        let image = platformImage(from: thumbnail)
+        cache.setObject(image, forKey: cacheKey as NSString, cost: thumbnail.memoryCost)
+        NotificationCenter.default.post(name: .filePreviewDidUpdate, object: id)
+    }
+
+    private func platformImage(from thumbnail: FileCoverThumbnail) -> PlatformImage {
+#if os(macOS)
+        NSImage(
+            cgImage: thumbnail.image,
+            size: CGSize(width: CGFloat(thumbnail.image.width), height: CGFloat(thumbnail.image.height))
+        )
+#else
+        UIImage(cgImage: thumbnail.image)
+#endif
+    }
+
+    private func allowsDiskPersistence(for source: Source) -> Bool {
+        // In-memory decrypted scenes and checkpoint previews have no durable
+        // source revision. Protected library files must never leave plaintext PNGs.
+        guard case .activeFile(let file) = source else { return false }
+        if case .file = file {
+            return lockedContentState?.previewLockState(for: file) == .plaintext
+        }
+        return true
+    }
+
+    private func diskRevision(for source: Source) async -> String? {
+        guard allowsDiskPersistence(for: source), case .activeFile(let activeFile) = source else {
+            return nil
+        }
+        let contentRevision: String
+        switch activeFile {
+            case .file(let file):
+                let updatedAt = file.updatedAt?.timeIntervalSince1970 ?? 0
+                var storageRevision = "coreData"
+                if let path = file.filePath,
+                   let url = try? await FileStorageManager.shared.getFileURL(relativePath: path) {
+                    storageRevision = await diskCache.fileRevision(at: url) ?? "unavailable"
+                }
+                contentRevision = "library:\(updatedAt):\(storageRevision)"
+            case .localFile(let url):
+                let diskCache = diskCache
+                let revision = try? await LocalFolder.withSecurityScopedAccessToContainingFolder(for: url) {
+                    await diskCache.fileRevision(at: url)
+                }
+                guard let revision else { return nil }
+                contentRevision = "local:\(revision)"
+            case .temporaryFile(let url):
+                guard let revision = await diskCache.fileRevision(at: url) else { return nil }
+                contentRevision = "temporary:\(revision)"
+            case .collaborationFile(let file):
+                contentRevision = "collaboration:\(file.updatedAt?.timeIntervalSince1970 ?? 0)"
+            case .cloudStorageFile(let reference):
+                guard let revision = await CloudStorageDocumentStore.shared.previewContentRevision(for: reference) else {
+                    return nil
+                }
+                contentRevision = "cloud:\(revision)"
+        }
+        let viewportRevision = activeFile.usesLocalViewportSidecar
+            ? await ExcalidrawViewportStateStore.shared.previewRevision(fileID: activeFile.id)
+            : "embedded"
+        return "\(contentRevision):viewport:\(viewportRevision)"
+    }
+
+    private func removePersistedPreviews(forID id: String) {
+        for scheme in [ColorScheme.light, .dark] {
+            let key = FileItemPreviewCache.cacheKey(forID: id, colorScheme: scheme) as String
+            cacheGenerations[key, default: 0] &+= 1
+            cancelDiskLookup(forKey: key)
+            removeDiskPreview(forKey: key)
+        }
+    }
+
+    private func invalidateOtherAppearance(forID id: String, colorScheme: ColorScheme) {
+        let otherScheme: ColorScheme = colorScheme == .light ? .dark : .light
+        let key = FileItemPreviewCache.cacheKey(forID: id, colorScheme: otherScheme) as String
+        cache.removeObject(forKey: key as NSString)
+        cacheGenerations[key, default: 0] &+= 1
+        cancelDiskLookup(forKey: key)
+        removeDiskPreview(forKey: key)
     }
 
     private func enqueue(
@@ -251,13 +485,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
         for activeFile: FileState.ActiveFile,
         priority: Priority = .userInitiated
     ) {
-        let otherColorScheme: ColorScheme = currentColorScheme == .light
-            ? .dark
-            : .light
-        cache.removePreviewCache(
-            forID: activeFile.canonicalID,
-            colorScheme: otherColorScheme
-        )
+        invalidateOtherAppearance(forID: activeFile.canonicalID, colorScheme: currentColorScheme)
         request(
             activeFile: activeFile,
             colorScheme: currentColorScheme,
@@ -372,9 +600,11 @@ final class FileCoverCacheCoordinator: ObservableObject {
                 let activeFile = FileState.ActiveFile.file(file)
                 switch lockedContentState.previewLockState(for: activeFile) {
                     case .locked:
+                        removePersistedPreviews(forID: activeFile.canonicalID)
                         continue
 
                     case .temporarilyUnlocked:
+                        removePersistedPreviews(forID: activeFile.canonicalID)
                         request(
                             activeFile: activeFile,
                             colorScheme: colorScheme,
@@ -400,6 +630,8 @@ final class FileCoverCacheCoordinator: ObservableObject {
 
     func cacheCurrentViewportPreview(for activeFile: FileState.ActiveFile) async {
         let source = Source.activeFile(activeFile)
+        let colorScheme = currentColorScheme
+        let cacheKey = FileItemPreviewCache.cacheKey(forID: source.id, colorScheme: colorScheme) as String
         let coordinator: ExcalidrawCanvasView.Coordinator? = {
             if case .collaborationFile = activeFile {
                 return fileState?.excalidrawCollaborationWebCoordinator
@@ -420,24 +652,27 @@ final class FileCoverCacheCoordinator: ObservableObject {
         }
 
         do {
-            let image = try await coordinator.exportCurrentViewportToPNG()
-            guard let thumbnail = makeThumbnail(
-                from: image,
+            cacheGenerations[cacheKey, default: 0] &+= 1
+            let generation = cacheGenerations[cacheKey, default: 0]
+            cancelDiskLookup(forKey: cacheKey)
+            let result = try await coordinator.exportCurrentViewportToPNGData()
+            let revision = await diskRevision(for: source)
+            guard let thumbnail = await diskCache.thumbnail(
+                from: result.data,
                 maxPixelSize: source.thumbnailMaxPixelSize
             ) else {
                 logger.warning("Failed to downsample current viewport preview for \(activeFile.canonicalID)")
                 return
             }
-            let cacheKey = FileItemPreviewCache.cacheKey(
-                forID: activeFile.canonicalID,
-                colorScheme: currentColorScheme
-            )
-            cache.setObject(thumbnail, forKey: cacheKey)
+            guard generation == cacheGenerations[cacheKey, default: 0],
+                  !shouldSkipLockedSource(source),
+                  (!requiresLoadedFileMatch || coordinator.documentSyncController.currentLoadedFileID == activeFile.id) else {
+                return
+            }
+            publish(thumbnail, forID: source.id, cacheKey: cacheKey)
+            invalidateOtherAppearance(forID: source.id, colorScheme: colorScheme)
+            persist(thumbnail, source: source, cacheKey: cacheKey, revision: revision, generation: generation)
             logger.debug("Cached current viewport preview for \(activeFile.canonicalID)")
-            NotificationCenter.default.post(
-                name: .filePreviewDidUpdate,
-                object: activeFile.canonicalID
-            )
         } catch {
             logger.debug("Failed to cache current viewport preview for \(activeFile.canonicalID): \(error)")
         }
@@ -703,9 +938,10 @@ final class FileCoverCacheCoordinator: ObservableObject {
 
             guard !Task.isCancelled else { return .completed }
 
-            let image: PlatformImage
+            let revision = await diskRevision(for: job.source)
+            let png: Data
             do {
-                image = try await exportViewportPreview(
+                png = try await exportViewportPreview(
                     for: excalidrawFile,
                     colorScheme: job.colorScheme,
                     coordinator: coordinator
@@ -721,8 +957,8 @@ final class FileCoverCacheCoordinator: ObservableObject {
                 return .completed
             }
 
-            let thumbnail = makeThumbnail(
-                from: image,
+            let thumbnail = await diskCache.thumbnail(
+                from: png,
                 maxPixelSize: job.source.thumbnailMaxPixelSize
             )
             guard let thumbnail else {
@@ -730,12 +966,15 @@ final class FileCoverCacheCoordinator: ObservableObject {
                 return .completed
             }
 
-            cache.setObject(thumbnail, forKey: job.cacheKey as NSString)
+            guard !Task.isCancelled,
+                  job.cacheGeneration == cacheGenerations[job.cacheKey, default: 0],
+                  !shouldSkipLockedSource(job.source) else { return .completed }
+            publish(thumbnail, forID: job.source.id, cacheKey: job.cacheKey)
+            if await diskRevision(for: job.source) == revision {
+                persist(thumbnail, source: job.source, cacheKey: job.cacheKey,
+                        revision: revision, generation: job.cacheGeneration)
+            }
             logger.debug("Cached generated preview for \(job.source.id)")
-            NotificationCenter.default.post(
-                name: .filePreviewDidUpdate,
-                object: job.source.id
-            )
             return .completed
         } catch {
             guard !Task.isCancelled else { return .completed }
@@ -821,6 +1060,8 @@ final class FileCoverCacheCoordinator: ObservableObject {
                 colorScheme: colorScheme
             ) as String
             cacheGenerations[cacheKey, default: 0] &+= 1
+            cancelDiskLookup(forKey: cacheKey)
+            removeDiskPreview(forKey: cacheKey)
             queue.removeAll { $0.cacheKey == cacheKey }
             queuedKeys.remove(cacheKey)
             requestedKeys.remove(cacheKey)
@@ -832,13 +1073,13 @@ final class FileCoverCacheCoordinator: ObservableObject {
         for excalidrawFile: ExcalidrawFile,
         colorScheme: ColorScheme,
         coordinator: ExcalidrawCanvasView.Coordinator
-    ) async throws -> PlatformImage {
+    ) async throws -> Data {
         var exportFile = excalidrawFile
         if exportFile.content != nil {
             try exportFile.updateContentFilesFromFiles()
         }
         let sceneData = try exportFile.content ?? JSONEncoder().encode(exportFile)
-        return try await coordinator.exportViewportPreviewToPNG(
+        return try await coordinator.exportViewportPreviewPNGData(
             sceneData: sceneData,
             colorScheme: colorScheme
         )
@@ -901,26 +1142,6 @@ final class FileCoverCacheCoordinator: ObservableObject {
             logger.warning("Failed to hydrate media for preview \(excalidrawFile.id): \(error)")
             return excalidrawFile
         }
-    }
-
-    private func makeThumbnail(
-        from image: PlatformImage,
-        maxPixelSize: CGFloat
-    ) -> PlatformImage? {
-        guard let cgThumb = image.downsampledCGImage(maxPixelSize: maxPixelSize) else {
-            return nil
-        }
-#if canImport(UIKit)
-        return UIImage(cgImage: cgThumb)
-#elseif canImport(AppKit)
-        return NSImage(
-            cgImage: cgThumb,
-            size: CGSize(
-                width: CGFloat(cgThumb.width),
-                height: CGFloat(cgThumb.height)
-            )
-        )
-#endif
     }
 }
 

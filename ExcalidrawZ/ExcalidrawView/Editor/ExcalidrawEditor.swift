@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 import Combine
 import CoreData
 #if os(macOS)
@@ -1297,6 +1298,88 @@ struct ExcalidrawEditor: View {
     }
 }
 
+#if os(macOS)
+private struct NativeViewportInsetsMeasurementView: NSViewRepresentable {
+    @Binding var insets: ExcalidrawNativeViewportInsets
+
+    func makeNSView(context: Context) -> MeasurementView {
+        let view = MeasurementView()
+        updateNSView(view, context: context)
+        return view
+    }
+
+    func updateNSView(_ nsView: MeasurementView, context: Context) {
+        nsView.onInsetsChanged = { newInsets in
+            guard insets != newInsets else { return }
+            insets = newInsets
+        }
+        nsView.scheduleInsetsUpdate()
+    }
+
+    static func dismantleNSView(_ nsView: MeasurementView, coordinator: ()) {
+        nsView.stopObserving()
+    }
+
+    final class MeasurementView: NSView {
+        var onInsetsChanged: (@MainActor (ExcalidrawNativeViewportInsets) -> Void)?
+        private var windowLayoutObservation: NSKeyValueObservation?
+        private var resizeEndObservation: NSObjectProtocol?
+
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            removeWindowObservers()
+            if let window {
+                windowLayoutObservation = window.observe(
+                    \.contentLayoutRect,
+                    options: [.new]
+                ) { [weak self] _, _ in
+                    self?.scheduleInsetsUpdate()
+                }
+                resizeEndObservation = NotificationCenter.default.addObserver(
+                    forName: NSWindow.didEndLiveResizeNotification,
+                    object: window,
+                    queue: .main
+                ) { [weak self] _ in
+                    self?.scheduleInsetsUpdate()
+                }
+            }
+            scheduleInsetsUpdate()
+        }
+
+        nonisolated func scheduleInsetsUpdate() {
+            // Publish after layout, using the current geometry instead of a captured frame.
+            Task { @MainActor [weak self] in
+                guard let self,
+                      let window,
+                      !window.inLiveResize else { return }
+                // NSHostingView may still have an intermediate layout frame.
+                // Derive the content height from the window's own geometry.
+                let contentRect = window.contentRect(
+                    forFrameRect: NSRect(origin: .zero, size: window.frame.size)
+                )
+                let topInset = max(0, contentRect.maxY - window.contentLayoutRect.maxY)
+                onInsetsChanged?(ExcalidrawNativeViewportInsets(top: topInset))
+            }
+        }
+
+        func stopObserving() {
+            removeWindowObservers()
+            onInsetsChanged = nil
+        }
+
+        private func removeWindowObservers() {
+            windowLayoutObservation?.invalidate()
+            windowLayoutObservation = nil
+            if let resizeEndObservation {
+                NotificationCenter.default.removeObserver(resizeEndObservation)
+            }
+            resizeEndObservation = nil
+        }
+    }
+}
+#else
 private struct NativeViewportInsetsMeasurementView: View {
     @Binding var insets: ExcalidrawNativeViewportInsets
 
@@ -1318,29 +1401,40 @@ private struct NativeViewportInsetsMeasurementView: View {
         .allowsHitTesting(false)
     }
 }
+#endif
 
 #if os(macOS)
 private struct WindowDragRegion: NSViewRepresentable {
-    func makeNSView(context: Context) -> DragView {
-        DragView()
+    func makeNSView(context: Context) -> ExcalidrawWindowDragView {
+        ExcalidrawWindowDragView()
     }
 
-    func updateNSView(_ nsView: DragView, context: Context) {}
+    func updateNSView(_ nsView: ExcalidrawWindowDragView, context: Context) {}
+}
 
-    final class DragView: NSView {
-        override var mouseDownCanMoveWindow: Bool { true }
+final class ExcalidrawWindowDragView: NSView {
+    override var mouseDownCanMoveWindow: Bool { true }
 
-        override func hitTest(_ point: NSPoint) -> NSView? {
-            bounds.contains(point) ? self : nil
-        }
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        // AppKit passes a point in the superview's coordinates. Let it handle
+        // conversion, flipped views and hidden views before checking the toolbar.
+        guard let hitView = super.hitTest(point),
+              let superview,
+              let window else { return nil }
 
-        override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
-            true
-        }
+        let pointInWindow = superview.convert(point, to: nil)
+        // Read the current window geometry for every event, including live resize.
+        // Even an oversized SwiftUI frame must not consume clicks in the canvas.
+        guard pointInWindow.y >= window.contentLayoutRect.maxY else { return nil }
+        return hitView
+    }
 
-        override func mouseDown(with event: NSEvent) {
-            window?.performDrag(with: event)
-        }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        window?.performDrag(with: event)
     }
 }
 #endif

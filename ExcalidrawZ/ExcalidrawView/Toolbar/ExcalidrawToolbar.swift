@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 
 import SFSafeSymbols
 import ChocofordUI
@@ -141,6 +142,11 @@ struct ExcalidrawToolbar: View {
     }
     
     @State private var lastActivatedSecondaryTool: ExcalidrawTool?
+
+    private var usesSystemGlassToolbar: Bool {
+        if #available(macOS 26.0, iOS 26.0, *) { return true }
+        return false
+    }
     
     @ViewBuilder
     private func segmentedPicker(
@@ -174,20 +180,10 @@ struct ExcalidrawToolbar: View {
                 }
             }())
             .background {
-                if #available(macOS 26.0, iOS 26.0, *) {
-                    
-                } else if #available(macOS 14.0, iOS 17.0, *) {
-                    RoundedRectangle(cornerRadius: size / 1.6)
-                        .fill(.regularMaterial)
-                        .stroke(.separator, lineWidth: 0.5)
-                } else {
-                    RoundedRectangle(cornerRadius: size / 1.6)
-                        .fill(.regularMaterial)
-                }
+                segmentedPickerBackground(size: size)
             }
-            if #available(macOS 26.0, iOS 26.0, *) {
-                
-            } else if !secondaryPickerItems.isEmpty,
+            if !usesSystemGlassToolbar,
+               !secondaryPickerItems.isEmpty,
                       sizeClass != .expanded,
                       let tool = toolState.activatedTool {
                 secondaryPickerItemsMenu(
@@ -199,20 +195,7 @@ struct ExcalidrawToolbar: View {
                 .padding(size / 3)
                 .background {
                     let isSelected = toolState.activatedTool != nil && secondaryPickerItems.contains(toolState.activatedTool!)
-                    if #available(macOS 14.0, iOS 17.0, *) {
-                        RoundedRectangle(cornerRadius: size / 1.6)
-                            .fill(
-                                isSelected ? AnyShapeStyle(Color.accentColor.secondary) : AnyShapeStyle(Material.regularMaterial)
-                            )
-                            .stroke(.separator, lineWidth: 0.5)
-                    } else {
-                        RoundedRectangle(cornerRadius: size / 1.6)
-                            .fill(
-                                isSelected ? AnyShapeStyle(Color.accentColor.opacity(0.3)) : AnyShapeStyle(Material.regularMaterial)
-                            )
-                        RoundedRectangle(cornerRadius: size / 1.6)
-                            .stroke(.secondary, lineWidth: 0.5)
-                    }
+                    secondaryPickerBackground(size: size, isSelected: isSelected)
                 }
                 .watch(value: toolState.activatedTool) { newValue in
                     if let newValue, secondaryPickerItems.contains(newValue) {
@@ -228,6 +211,46 @@ struct ExcalidrawToolbar: View {
                 0
             }
         }())
+    }
+
+    private func segmentedPickerBackground(size: CGFloat) -> AnyView {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            return AnyView(EmptyView())
+        } else if #available(macOS 14.0, iOS 17.0, *) {
+            return AnyView(
+                RoundedRectangle(cornerRadius: size / 1.6)
+                    .fill(.regularMaterial)
+                    .stroke(.separator, lineWidth: 0.5)
+            )
+        } else {
+            return AnyView(
+                RoundedRectangle(cornerRadius: size / 1.6)
+                    .fill(.regularMaterial)
+            )
+        }
+    }
+
+    private func secondaryPickerBackground(size: CGFloat, isSelected: Bool) -> AnyView {
+        if #available(macOS 14.0, iOS 17.0, *) {
+            return AnyView(
+                RoundedRectangle(cornerRadius: size / 1.6)
+                    .fill(
+                        isSelected ? AnyShapeStyle(Color.accentColor.secondary) : AnyShapeStyle(Material.regularMaterial)
+                    )
+                    .stroke(.separator, lineWidth: 0.5)
+            )
+        } else {
+            return AnyView(
+                ZStack {
+                    RoundedRectangle(cornerRadius: size / 1.6)
+                        .fill(
+                            isSelected ? AnyShapeStyle(Color.accentColor.opacity(0.3)) : AnyShapeStyle(Material.regularMaterial)
+                        )
+                    RoundedRectangle(cornerRadius: size / 1.6)
+                        .stroke(.secondary, lineWidth: 0.5)
+                }
+            )
+        }
     }
     
     @ViewBuilder

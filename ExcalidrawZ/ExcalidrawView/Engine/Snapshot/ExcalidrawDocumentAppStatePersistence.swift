@@ -46,16 +46,18 @@ enum ExcalidrawDocumentAppStatePersistence {
         _ documentData: Data,
         settingNativeFileName nativeFileName: String?
     ) throws -> Data {
-        guard let nativeFileName, !nativeFileName.isEmpty else {
-            return documentData
-        }
-
         guard var documentObject = try JSONSerialization.jsonObject(with: documentData) as? [String: Any] else {
             return documentData
         }
 
         var appState = documentObject["appState"] as? [String: Any] ?? [:]
-        appState["name"] = nativeFileName
+        // Collaboration presence is runtime-only. Upstream Excalidraw strips
+        // it from file exports; retaining a bridged Map as `{}` breaks clients
+        // that expect restored collaborators to be a Map/array-like value.
+        appState.removeValue(forKey: "collaborators")
+        if let nativeFileName, !nativeFileName.isEmpty {
+            appState["name"] = nativeFileName
+        }
         documentObject["appState"] = appState
 
         return try JSONSerialization.data(withJSONObject: documentObject)

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 import CoreData
 
 import ChocofordUI
@@ -47,6 +48,7 @@ struct LocalFilesListView: View {
                 }
 #endif
         }
+        .suppressSidebarHoverWhileScrolling()
     }
 }
 

@@ -10,9 +10,9 @@ import ChocofordUI
 
 struct HomeFolderItemView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var dragState: ItemDragState
-
+    @Environment(\.fileHomeItemHoverEffectsEnabled) private var hoverEffectsEnabled
+    @Environment(\.fileHomeItemHoverAnimationsEnabled) private var hoverAnimationsEnabled
+    @Environment(\.fileHomeItemHoverSuppressed) private var hoverSuppressed
     var isSelected: Bool
     var isHighlighted: Bool
     var name: String
@@ -21,6 +21,8 @@ struct HomeFolderItemView: View {
     var localFolder: LocalFolder?
     
     @State private var isHovered = false
+    @State private var pointerHoverState = FileHomeItemPointerHoverState()
+    private var showsHoverShadow: Bool { hoverEffectsEnabled && !hoverSuppressed && isHovered }
     
     var body: some View {
         HStack(spacing: 10) {
@@ -61,7 +63,17 @@ struct HomeFolderItemView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .contentShape(Rectangle())
-        .onHover { isHovered = $0 }
+        .apply { view in
+            if hoverEffectsEnabled {
+                view.onHover { hovered in
+                    pointerHoverState.isInside = hovered
+                    guard !hoverSuppressed else { return }
+                    updateHovered(hovered)
+                }
+            } else {
+                view
+            }
+        }
         .background {
             ZStack {
                 if #available(macOS 26.0, iOS 26.0, *) {
@@ -81,11 +93,9 @@ struct HomeFolderItemView: View {
                         .glassEffect(.clear, in: .rect(cornerRadius: 12))
                         .shadow(
                             color: colorScheme == .light
-                            ? Color.gray.opacity(0.33)
-                            : Color.black.opacity(0.33),
-                            radius: isHovered
-                            ? colorScheme == .light ? 2 : 6
-                            : 0
+                                ? Color.gray.opacity(0.33)
+                                : Color.black.opacity(0.33),
+                            radius: showsHoverShadow ? (colorScheme == .light ? 2 : 6) : 0
                         )
                     
                 } else {
@@ -97,9 +107,9 @@ struct HomeFolderItemView: View {
                         )
                         .shadow(
                             color: colorScheme == .light
-                            ? Color.gray.opacity(0.2)
-                            : Color.black.opacity(0.2),
-                            radius: isHovered ? 4 : 0
+                                ? Color.gray.opacity(0.2)
+                                : Color.black.opacity(0.2),
+                            radius: showsHoverShadow ? 4 : 0
                         )
                     
                     let nonSelectedStrokeStyle = if #available(macOS 12.0, iOS 17.0, *) {
@@ -116,8 +126,27 @@ struct HomeFolderItemView: View {
                         )
                 }
             }
+            .animation(
+                hoverAnimationsEnabled ? .smooth(duration: 0.2) : nil,
+                value: showsHoverShadow
+            )
         }
-        .animation(.smooth(duration: 0.2), value: isHovered)
+        .watch(value: hoverSuppressed) { _, suppressed in
+            updateHovered(!suppressed && pointerHoverState.isInside)
+        }
+        .onDisappear {
+            pointerHoverState.isInside = false
+            updateHovered(false, animated: false)
+        }
+    }
+
+    private func updateHovered(_ hovered: Bool, animated: Bool = true) {
+        guard isHovered != hovered else { return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = !animated || hoverSuppressed || !hoverAnimationsEnabled
+        withTransaction(transaction) {
+            isHovered = hovered
+        }
     }
 }
 

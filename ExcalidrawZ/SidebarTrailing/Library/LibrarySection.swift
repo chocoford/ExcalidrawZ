@@ -33,7 +33,7 @@ struct LibrarySectionContent: View {
         self.allLibraries = allLibraries
         self.library = library
         self.selections = selections
-        self.isExpanded = isExpanded
+        self._isExpanded = State(initialValue: isExpanded)
         self.searchQuery = searchQuery
         self._items = FetchRequest(
             sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],

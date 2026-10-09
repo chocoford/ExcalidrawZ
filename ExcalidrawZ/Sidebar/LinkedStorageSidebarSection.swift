@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 
 struct LinkedStorageSidebarSection: View {
     private enum SheetRoute: Identifiable {
@@ -22,11 +23,15 @@ struct LinkedStorageSidebarSection: View {
 
     @Environment(\.alertToast) private var alertToast
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.sidebarHoverSuppressed) private var hoverSuppressed
+    @Environment(\.sidebarHoverAnimationsEnabled) private var hoverAnimationsEnabled
     @AppStorage("ShowLinkedStorageEmptyPlaceholder") private var showEmptyPlaceholder = true
     @StateObject private var connections = CloudStorageConnectionStore.shared
     @State private var sheetRoute: SheetRoute?
     @State private var preparingProviderID: CloudStorageProviderID?
     @State private var isHovered = false
+
+    private var showsHover: Bool { !hoverSuppressed && isHovered }
 
     private var locations: [CloudStorageLocation] {
         connections.locations.sorted { lhs, rhs in
@@ -81,7 +86,7 @@ struct LinkedStorageSidebarSection: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
-            .onHover { isHovered = $0 }
+            .trackSidebarHover($isHovered)
             .animation(.smooth, value: showEmptyPlaceholder)
         }
         .sheet(item: $sheetRoute) { route in
@@ -126,7 +131,11 @@ struct LinkedStorageSidebarSection: View {
             .labelStyle(.iconOnly)
             .buttonStyle(.borderless)
             .disabled(preparingProviderID != nil)
-            .opacity(isHovered || isLoading ? 1 : 0.4)
+            .opacity(showsHover || isLoading ? 1 : 0.4)
+            .animation(
+                hoverAnimationsEnabled && !hoverSuppressed ? .smooth : nil,
+                value: showsHover
+            )
 #if os(macOS)
             .controlSize(.large)
             .padding(.trailing, 2)
@@ -134,7 +143,6 @@ struct LinkedStorageSidebarSection: View {
         }
         .frame(maxWidth: .infinity)
         .font(.callout.bold())
-        .animation(.smooth, value: isHovered)
     }
 
     private var isLoading: Bool {

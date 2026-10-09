@@ -25,6 +25,61 @@ private extension FileState.ActiveFile {
     }
 }
 
+/// Shared card chrome without registering any selection gestures.
+struct FileHomeItemSelectionAppearanceModifier: ViewModifier {
+#if os(iOS)
+    @Environment(\.editMode) private var editMode
+#endif
+    var style: FileHomeItemStyle
+    var isSelected: Bool
+
+    func body(content: Content) -> some View {
+        content
+#if os(iOS)
+        .overlay {
+            if editMode?.wrappedValue.isEditing == true {
+                Circle()
+                    .stroke(.white)
+                    .frame(width: 20, height: 20)
+                    .background {
+                        if #available(iOS 26.0, macOS 26.0, *) {
+                            Image(systemSymbol: .checkmarkCircleFill)
+                                .resizable()
+                                .scaledToFit()
+                                .symbolRenderingMode(.multicolor)
+                                .symbolEffect(.drawOn, options: .speed(2), isActive: !isSelected)
+                        } else {
+                            Image(systemSymbol: .checkmarkCircleFill)
+                                .resizable()
+                                .scaledToFit()
+                                .opacity(isSelected ? 1 : 0)
+                                .animation(.default, value: isSelected)
+                        }
+                    }
+                    .allowsHitTesting(false)
+            }
+        }
+#endif
+        .overlay {
+            let cardNotSelectedStyle = if #available(macOS 12.0, iOS 17.0, *) {
+                AnyShapeStyle(SeparatorShapeStyle())
+            } else {
+                AnyShapeStyle(HierarchicalShapeStyle.secondary)
+            }
+            if style == .card {
+                RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius)
+                    .stroke(
+                        isSelected
+                        ? AnyShapeStyle(Color.accentColor)
+                        : cardNotSelectedStyle,
+                        lineWidth: 0.5
+                    )
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+}
+
 struct FileHomeItemSelectModifier: ViewModifier {
 #if os(iOS)
     @Environment(\.editMode) private var editMode
@@ -106,46 +161,7 @@ struct FileHomeItemSelectModifier: ViewModifier {
                     performSelect()
                 }
             )
-#if os(iOS)
-        .overlay {
-            if editMode?.wrappedValue.isEditing == true {
-                Circle()
-                    .stroke(.white)
-                    .frame(width: 20, height: 20)
-                    .background {
-                        if #available(iOS 26.0, macOS 26.0, *) {
-                            Image(systemSymbol: .checkmarkCircleFill)
-                                .resizable()
-                                .scaledToFit()
-                                .symbolRenderingMode(.multicolor)
-                                .symbolEffect(.drawOn, options: .speed(2), isActive: !isSelected)
-                        } else {
-                            Image(systemSymbol: .checkmarkCircleFill)
-                                .resizable()
-                                .scaledToFit()
-                                .opacity(isSelected ? 1 : 0)
-                                .animation(.default, value: isSelected)
-                        }
-                    }
-            }
-        }
-#endif
-        .overlay {
-            let cardNotSelectedStyle = if #available(macOS 12.0, iOS 17.0, *) {
-                AnyShapeStyle(SeparatorShapeStyle())
-            } else {
-                AnyShapeStyle(HierarchicalShapeStyle.secondary)
-            }
-            if style == .card {
-                RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius)
-                    .stroke(
-                        isSelected
-                        ? AnyShapeStyle(Color.accentColor)
-                        : cardNotSelectedStyle,
-                        lineWidth: 0.5
-                    )
-            }
-        }
+            .modifier(FileHomeItemSelectionAppearanceModifier(style: style, isSelected: isSelected))
     }
 
     private func performSelect() {
