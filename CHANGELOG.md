@@ -1,3 +1,20 @@
+## 2.4.5
+
+#### Optimizations
+
+- Cached drawing covers between app launches and reduced unnecessary file browser updates.
+- Improved scrolling in large file groups and the Sidebar on macOS.
+- Added dedicated Excalidraw document icons and made macOS Quick Look previews follow the app's appearance setting.
+- Refined Search layouts on iPhone and iPad, unified iPad inspector navigation, and improved spacing in the iPhone AI Chat input controls.
+- Dropbox connections are now available to all users.
+
+#### Bug fixed
+
+- Fixed macOS canvas sizing and drawing controls becoming unresponsive after resizing a window.
+- Improved canvas recovery after returning to the app or a web content process interruption.
+- Fixed SwiftUI update cycles when closing a drawing on macOS.
+- Preserved exported file names and improved compatibility with Obsidian and other Excalidraw apps.
+
 ## 2.4.4
 
 #### Bug fixed

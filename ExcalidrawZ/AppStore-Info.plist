@@ -2,10 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>ExcalidrawZAppGroupIdentifier</key>
-	<string>$(APP_GROUP_IDENTIFIER)</string>
-	<key>NSScreenCaptureUsageDescription</key>
-	<string>ExcalidrawZ uses screen capture to freeze the current screen for annotation.</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -13,8 +9,6 @@
 			<array>
 				<string>excalidraw</string>
 			</array>
-			<key>CFBundleTypeName</key>
-			<string>Excalidraw file</string>
 			<key>CFBundleTypeIconFile</key>
 			<string>ExcalidrawDocument.icns</string>
 			<key>CFBundleTypeIconFiles</key>
@@ -23,6 +17,8 @@
 				<string>ExcalidrawDocument-128.png</string>
 				<string>ExcalidrawDocument-320.png</string>
 			</array>
+			<key>CFBundleTypeName</key>
+			<string>Excalidraw file</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
@@ -114,11 +110,15 @@
 			</array>
 		</dict>
 	</array>
+	<key>ExcalidrawZAppGroupIdentifier</key>
+	<string>$(APP_GROUP_IDENTIFIER)</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>msauthv2</string>
 		<string>msauthv3</string>
 	</array>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>ExcalidrawZ uses screen capture to freeze the current screen for annotation.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>com.apple.corespotlightitem</string>
