@@ -199,6 +199,9 @@ struct ExcalidrawCanvasView: View {
             }
             .onDisappear {
                 clearToolStateCoordinatorBindingIfNeeded()
+#if os(macOS)
+                ViewerMirrorController.shared.unregister(editor: excalidrawCore)
+#endif
             }
     }
     
@@ -217,6 +220,9 @@ struct ExcalidrawCanvasView: View {
                 exportState.excalidrawWebCoordinator = excalidrawCore
                 fileState.excalidrawWebCoordinator = excalidrawCore
                 canvasPreferencesState.coordinator = excalidrawCore
+#if os(macOS)
+                ViewerMirrorController.shared.register(editor: excalidrawCore)
+#endif
             case .collaboration:
                 exportState.excalidrawCollaborationWebCoordinator = excalidrawCore
                 fileState.excalidrawCollaborationWebCoordinator = excalidrawCore
