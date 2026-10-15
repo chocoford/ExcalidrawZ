@@ -114,6 +114,10 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     }
                 case .onElementsChanged:
                     break
+                case .onViewerMirrorDirty:
+                    DispatchQueue.main.async {
+                        self.noteViewerMirrorDirty()
+                    }
                 case .onCameraChanged(let message):
                     DispatchQueue.main.async {
                         self.updateCameraState(message.data)
@@ -548,6 +552,7 @@ extension ExcalidrawCore {
         case didSelectElements
         case didUnselectAllElements
         case onElementsChanged
+        case onViewerMirrorDirty
         case onCameraChanged
         case onAICameraSessionStarted
         case onAICameraSessionUpdated
@@ -601,6 +606,7 @@ extension ExcalidrawCore {
         case didSelectElements(DidSelectElementsMessage)
         case didUnselectAllElements
         case onElementsChanged(ElementsChangedMessage)
+        case onViewerMirrorDirty
         case onCameraChanged(CameraChangedMessage)
         case onAICameraSessionStarted(AICameraSessionMessage)
         case onAICameraSessionUpdated(AICameraSessionMessage)
@@ -694,6 +700,8 @@ extension ExcalidrawCore {
                     self = .didUnselectAllElements
                 case .onElementsChanged:
                     self = .onElementsChanged(try ElementsChangedMessage(from: decoder))
+                case .onViewerMirrorDirty:
+                    self = .onViewerMirrorDirty
                 case .onCameraChanged:
                     self = .onCameraChanged(try CameraChangedMessage(from: decoder))
                 case .onAICameraSessionStarted:
