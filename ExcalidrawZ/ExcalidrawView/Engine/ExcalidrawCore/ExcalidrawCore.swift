@@ -46,7 +46,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     @Published private(set) var cameraState = CameraState()
     @Published private(set) var selectedElementIDs: [String] = []
     @Published private(set) var contentChangeToken = 0
-    
+
     var downloadCache: [String : Data] = [:]
     var downloads: [URLRequest : URL] = [:]
     
