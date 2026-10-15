@@ -26,7 +26,6 @@ struct DropboxConfiguration: Sendable {
         scopes: [String] = [
             "account_info.read",
             "files.metadata.read",
-            "files.metadata.write",
             "files.content.read",
             "files.content.write",
         ]

@@ -1,2 +1,6 @@
+// Set the signing team in the local Overrides.xcconfig.
+DEVELOPMENT_TEAM =
+APP_GROUP_IDENTIFIER = group.com.chocoford.excalidraw
 
+// Local settings take precedence over the defaults above.
 #include? "Overrides.xcconfig"

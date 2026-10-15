@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 import CoreData
 import WebKit
 import UniformTypeIdentifiers

@@ -52,6 +52,15 @@ actor ExcalidrawViewportStateStore {
 
     private init() {}
 
+    /// Identical viewport saves must not invalidate a persisted cover.
+    func previewRevision(fileID: String) -> String {
+        guard let viewport = try? load(fileID: fileID) else { return "none" }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        guard let data = try? encoder.encode(viewport) else { return "none" }
+        return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
     func contentDataByApplyingStoredViewport(
         to data: Data,
         fileID: String

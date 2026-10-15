@@ -7,6 +7,7 @@
 
 import Foundation
 import FlyingFox
+import FlyingSocks
 
 final class ExcalidrawZMCPServer {
     static let defaultPort: UInt16 = 8490
@@ -23,7 +24,11 @@ final class ExcalidrawZMCPServer {
     ) {
         self.port = port
         self.router = router
-        self.server = HTTPServer(port: port, logger: ExcalidrawServerLogger())
+        // Keep MCP accessible only through the local endpoint exposed in Settings.
+        self.server = HTTPServer(
+            address: try! .inet(ip4: "127.0.0.1", port: port),
+            logger: ExcalidrawServerLogger()
+        )
     }
 
     func start() async throws {
@@ -59,9 +64,9 @@ final class ExcalidrawZMCPServer {
         let data = try value.mcpJSONData()
         return HTTPResponse(
             statusCode: statusCode,
-            headers: [
+            headers: HTTPHeaders([
                 .contentType: "application/json; charset=utf-8"
-            ],
+            ]),
             body: data
         )
     }
@@ -74,7 +79,7 @@ private struct ExcalidrawMCPHTTPHandler: HTTPHandler {
         guard request.method == .POST else {
             return HTTPResponse(
                 statusCode: .methodNotAllowed,
-                headers: [.contentType: "text/plain; charset=utf-8"],
+                headers: HTTPHeaders([.contentType: "text/plain; charset=utf-8"]),
                 body: Data("Use POST /mcp for MCP JSON-RPC requests.".utf8)
             )
         }
@@ -104,9 +109,9 @@ private struct ExcalidrawMCPHTTPHandler: HTTPHandler {
     ) throws -> HTTPResponse {
         HTTPResponse(
             statusCode: statusCode,
-            headers: [
+            headers: HTTPHeaders([
                 .contentType: "application/json; charset=utf-8"
-            ],
+            ]),
             body: try response.mcpJSONData()
         )
     }

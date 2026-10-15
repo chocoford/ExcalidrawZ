@@ -109,7 +109,7 @@ struct CompactExcalidrawHomeView: View {
                         }
                 }
                 Tab(value: HomeTab.search, role: .search) {
-                    CompactSearchFilesView()
+                    CompactSearchFilesView(searchText: $searchText)
                         .environment(
                             \.fileHomeItemTransitionSourceEnabled,
                             selectedTab == .search
@@ -119,7 +119,7 @@ struct CompactExcalidrawHomeView: View {
                         }
                 }
             }
-            .searchToolbarBehavior(.automatic)
+            .tabViewSearchActivation(.searchTabSelection)
             .opacity(fileHomeItemTransitionState.canShowItemContainerView ? 1 : 0)
             .allowsHitTesting(fileHomeItemTransitionState.canShowItemContainerView)
             .modifier(CompactExcalidrawHomeTabBarAccessoryViewModifier())

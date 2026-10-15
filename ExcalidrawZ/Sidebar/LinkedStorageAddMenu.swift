@@ -4,30 +4,32 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 #if os(macOS)
 import AppKit
 #endif
 
 /// Shared entry point for linking local folders and provider-backed storage.
 /// It owns the complete connection flow so Sidebar and compact Browse stay aligned.
-struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
-    private enum SheetRoute: Identifiable {
-        case serverCredentials(CloudStorageProviderDescriptor)
-        case folderPicker(CloudStorageFolderPickerContext)
+private enum LinkedStorageSheetRoute: Identifiable {
+    case serverCredentials(CloudStorageProviderDescriptor)
+    case folderPicker(CloudStorageFolderPickerContext)
 
-        var id: String {
-            switch self {
-                case .serverCredentials(let descriptor):
-                    "credentials:\(descriptor.id.rawValue)"
-                case .folderPicker(let context):
-                    "folder-picker:\(context.id.uuidString)"
-            }
+    var id: String {
+        switch self {
+            case .serverCredentials(let descriptor):
+                "credentials:\(descriptor.id.rawValue)"
+            case .folderPicker(let context):
+                "folder-picker:\(context.id.uuidString)"
         }
     }
+}
+
+struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
 
     @Environment(\.alertToast) private var alertToast
     @StateObject private var connections = CloudStorageConnectionStore.shared
-    @State private var sheetRoute: SheetRoute?
+    @State private var sheetRoute: LinkedStorageSheetRoute?
     @State private var preparingProviderID: CloudStorageProviderID?
     @State private var isImportLocalFolderDialogPresented = false
 
@@ -64,17 +66,21 @@ struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
                     CloudStorageServerConnectionSheet(
                         providerName: descriptor.displayName,
                         connectedAccounts: connections.accounts(for: descriptor.id),
-                        onSelectAccount: { account in
-                            try await preparePicker(
+                        onSelectAccount: { [connections, sheetRoute = $sheetRoute] account in
+                            try await LinkedStorageConnectionFlow.preparePicker(
                                 providerID: descriptor.id,
-                                account: account
+                                account: account,
+                                connections: connections,
+                                sheetRoute: sheetRoute
                             )
                         }
-                    ) { credentials in
-                        try await selectLocation(
+                    ) { [connections, sheetRoute = $sheetRoute] credentials in
+                        try await LinkedStorageConnectionFlow.selectLocation(
                             with: descriptor.id,
                             account: nil,
-                            connectionInput: .serverCredentials(credentials)
+                            connectionInput: .serverCredentials(credentials),
+                            connections: connections,
+                            sheetRoute: sheetRoute
                         )
                     }
                 case .folderPicker(let context):
@@ -144,13 +150,15 @@ struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
         }
 
         preparingProviderID = providerID
-        Task {
+        Task { [connections, sheetRoute = $sheetRoute] in
             defer { preparingProviderID = nil }
             do {
-                try await selectLocation(
+                try await LinkedStorageConnectionFlow.selectLocation(
                     with: providerID,
                     account: connections.accounts(for: providerID).first,
-                    connectionInput: nil
+                    connectionInput: nil,
+                    connections: connections,
+                    sheetRoute: sheetRoute
                 )
             } catch CloudStorageError.authorizationCancelled {
                 return
@@ -158,50 +166,6 @@ struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
                 alertToast(error)
             }
         }
-    }
-
-    private func selectLocation(
-        with providerID: CloudStorageProviderID,
-        account: CloudStorageAccount?,
-        connectionInput: CloudStorageConnectionInput?
-    ) async throws {
-        let selection = try await connections.selectLocation(
-            with: providerID,
-            account: account,
-            connectionInput: connectionInput
-        )
-        switch selection {
-            case .browse(let account):
-                try await preparePicker(providerID: providerID, account: account)
-            case .selected(let account, let folder):
-                connections.saveLocation(
-                    providerID: providerID,
-                    account: account,
-                    folder: folder
-                )
-                sheetRoute = nil
-        }
-    }
-
-    private func preparePicker(
-        providerID: CloudStorageProviderID,
-        account: CloudStorageAccount
-    ) async throws {
-        let session = try await connections.makeSession(
-            providerID: providerID,
-            account: account
-        )
-        sheetRoute = .folderPicker(
-            CloudStorageFolderPickerContext(
-                providerID: providerID,
-                providerName: descriptor(for: providerID)?.displayName ?? String(
-                    localized: "linkedStorageCloudStorageFallbackName",
-                    defaultValue: "Cloud Storage"
-                ),
-                account: account,
-                session: session
-            )
-        )
     }
 
     private func menuBadge(
@@ -232,6 +196,62 @@ struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
         connections.providerDescriptors.first { $0.id == providerID }
     }
 
+}
+
+@MainActor
+private enum LinkedStorageConnectionFlow {
+    static func selectLocation(
+        with providerID: CloudStorageProviderID,
+        account: CloudStorageAccount?,
+        connectionInput: CloudStorageConnectionInput?,
+        connections: CloudStorageConnectionStore,
+        sheetRoute: Binding<LinkedStorageSheetRoute?>
+    ) async throws {
+        let selection = try await connections.selectLocation(
+            with: providerID,
+            account: account,
+            connectionInput: connectionInput
+        )
+        switch selection {
+            case .browse(let account):
+                try await preparePicker(
+                    providerID: providerID,
+                    account: account,
+                    connections: connections,
+                    sheetRoute: sheetRoute
+                )
+            case .selected(let account, let folder):
+                connections.saveLocation(
+                    providerID: providerID,
+                    account: account,
+                    folder: folder
+                )
+                sheetRoute.wrappedValue = nil
+        }
+    }
+
+    static func preparePicker(
+        providerID: CloudStorageProviderID,
+        account: CloudStorageAccount,
+        connections: CloudStorageConnectionStore,
+        sheetRoute: Binding<LinkedStorageSheetRoute?>
+    ) async throws {
+        let session = try await connections.makeSession(
+            providerID: providerID,
+            account: account
+        )
+        sheetRoute.wrappedValue = .folderPicker(
+            CloudStorageFolderPickerContext(
+                providerID: providerID,
+                providerName: connections.providerDescriptors.first(where: { $0.id == providerID })?.displayName ?? String(
+                    localized: "linkedStorageCloudStorageFallbackName",
+                    defaultValue: "Cloud Storage"
+                ),
+                account: account,
+                session: session
+            )
+        )
+    }
 }
 
 struct LinkedStorageLocalFolderIcon: View {

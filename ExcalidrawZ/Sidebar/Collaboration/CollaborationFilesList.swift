@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import CoreData
+import SwiftyAlert
 
 import ChocofordUI
 
@@ -24,6 +26,7 @@ struct CollaborationFilesList: View {
             ScrollView {
                 CollaborationFilesContent(sortField: sortField)
             }
+            .suppressSidebarHoverWhileScrolling()
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 12)

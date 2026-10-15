@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 import UniformTypeIdentifiers
 
 protocol SidebarRowDropable: DropDelegate { }

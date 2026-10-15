@@ -15,8 +15,6 @@ struct LocalFileDragModifier: ViewModifier {
 
     init(file: URL) { self.file = file }
 
-    @State private var isDragging = false
-
     func body(content: Content) -> some View {
         content
 #if os(macOS)
@@ -24,7 +22,6 @@ struct LocalFileDragModifier: ViewModifier {
 #endif
             .onDrag {
                 let url = file
-                withAnimation { isDragging = true }
                 sidebarDragState.currentDragItem = .localFile(url)
                 return NSItemProvider(
                     item: url.dataRepresentation as NSData,

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 
 struct MenuBarImportHandlerModifier: ViewModifier {
     @Environment(\.alert) private var alert

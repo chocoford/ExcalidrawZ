@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 
 struct PrintModifier: ViewModifier {
     @Environment(\.alertToast) var alertToast

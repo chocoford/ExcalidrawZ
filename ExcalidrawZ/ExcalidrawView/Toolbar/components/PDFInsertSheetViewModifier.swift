@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 
 struct PDFInsertSheetViewModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast

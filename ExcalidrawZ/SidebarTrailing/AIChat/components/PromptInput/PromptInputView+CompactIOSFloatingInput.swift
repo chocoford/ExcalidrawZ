@@ -303,7 +303,7 @@ extension PromptInputView {
 
     @ViewBuilder
     var compactIOSFloatingInlineSettings: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 7) {
             compactIOSFloatingFileAccessButton
 
             compactIOSFloatingModelPicker

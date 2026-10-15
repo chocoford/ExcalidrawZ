@@ -48,8 +48,6 @@ struct FileRowButton: View {
         self.onTap = onTap
     }
     
-    @State private var isHovered = false
-    
     var body: some View {
         label
             .modifier(
@@ -66,4 +64,3 @@ struct FileRowButton: View {
             )
     }
 }
-

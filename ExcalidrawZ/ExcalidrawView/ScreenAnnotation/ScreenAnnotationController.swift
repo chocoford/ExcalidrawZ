@@ -2,6 +2,7 @@
 import AppKit
 import KeyboardShortcuts
 import SwiftUI
+import CoreData
 
 extension KeyboardShortcuts.Name {
     static let toggleScreenAnnotation = Self(

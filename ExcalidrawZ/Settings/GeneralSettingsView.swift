@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 import ChocofordUI
 #if os(macOS)
 import AppKit

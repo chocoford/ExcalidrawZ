@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import CoreData
+import SwiftyAlert
 
 import ChocofordUI
 
@@ -137,31 +139,30 @@ struct ShareToolbarButton: View {
     private func performShareFile() async {
         do {
             await syncCurrentCanvasBeforeSharingIfNeeded()
-            switch fileState.currentActiveFile {
+            guard let activeFile = fileState.currentActiveFile else { return }
+            var sharedFile: ExcalidrawFile?
+            switch activeFile {
                 case .file(let file):
                     let content = try await file.loadContent()
-                    let excalidrawFile = try ExcalidrawFile(
+                    sharedFile = try ExcalidrawFile(
                         data: content,
                         id: file.id?.uuidString
                     )
-                    self.shareFileState.currentSharedFile = excalidrawFile
                 case .localFile(let url):
-                    let excalidrawFile = try await LocalFolder.withSecurityScopedAccessToContainingFolder(
+                    sharedFile = try await LocalFolder.withSecurityScopedAccessToContainingFolder(
                         for: url
                     ) {
                         try ExcalidrawFile(contentsOf: url)
                     }
-                    self.shareFileState.currentSharedFile = excalidrawFile
                 case .temporaryFile(let url):
                     let content = try await fileState.readTemporaryFileContent(at: url)
-                    self.shareFileState.currentSharedFile = try ExcalidrawFile(
+                    sharedFile = try ExcalidrawFile(
                         data: content,
-                        id: fileState.currentActiveFile?.id
+                        id: activeFile.id
                     )
-                    
                 case .collaborationFile(let collaborationFile):
                     let content = try await collaborationFile.loadContent()
-                    self.shareFileState.currentSharedFile = try ExcalidrawFile(
+                    sharedFile = try ExcalidrawFile(
                         data: content,
                         id: collaborationFile.id?.uuidString
                     )
@@ -170,13 +171,14 @@ struct ShareToolbarButton: View {
                         for: reference,
                         checkingRemoteRevision: false
                     )
-                    self.shareFileState.currentSharedFile = try ExcalidrawFile(
+                    sharedFile = try ExcalidrawFile(
                         data: content,
                         id: reference.id
                     )
-                default:
-                    break
             }
+            guard var sharedFile else { return }
+            sharedFile.name = activeFile.name
+            self.shareFileState.currentSharedFile = sharedFile
         } catch {
             alertToast(error)
         }

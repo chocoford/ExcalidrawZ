@@ -7,6 +7,7 @@
 
 #if os(iOS)
 import SwiftUI
+import SwiftyAlert
 import UniformTypeIdentifiers
 import PhotosUI
 

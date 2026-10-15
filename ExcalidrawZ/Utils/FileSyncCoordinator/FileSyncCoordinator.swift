@@ -208,8 +208,8 @@ actor FileSyncCoordinator {
         AsyncStream { continuation in
             self.eventContinuation = continuation
 
-            continuation.onTermination = { @Sendable _ in
-                Task { [weak self] in
+            continuation.onTermination = { @Sendable [weak self] _ in
+                Task {
                     await self?.clearEventContinuation()
                 }
             }

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 import CoreData
 
 import ChocofordEssentials
@@ -130,6 +131,7 @@ struct GroupListView: View {
                             }
                     }
                 }
+                .suppressSidebarHoverWhileScrolling()
                 .readHeight($scrollViewHeight)
                 .onReceive(NotificationCenter.default.publisher(for: .shouldExpandGroup)) { output in
                     guard let targetGroupID = output.object as? NSManagedObjectID else { return }
@@ -406,6 +408,8 @@ private struct DatabaseGroupsListView: View {
 fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
     @Environment(\.alert) private var alert
     @Environment(\.alertToast) private var alertToast
+    @Environment(\.sidebarHoverSuppressed) private var hoverSuppressed
+    @Environment(\.sidebarHoverAnimationsEnabled) private var hoverAnimationsEnabled
 
     
     var groupType: NewGroupButton.GroupType
@@ -423,6 +427,7 @@ fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
     @State private var isCreateGroupDialogPresented = false
     @State private var isHovered = false
 
+    private var showsHover: Bool { !hoverSuppressed && isHovered }
     
     func body(content: Content) -> some View {
         VStack(spacing: 0) {
@@ -430,7 +435,7 @@ fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
             content
         }
         .contentShape(Rectangle())
-        .onHover { isHovered = $0 }
+        .trackSidebarHover($isHovered)
     }
     
     @ViewBuilder
@@ -477,11 +482,14 @@ fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
 #endif
             .labelStyle(.iconOnly)
             .buttonStyle(.borderless)
-            .opacity(isHovered ? 1 : 0.4)
+            .opacity(showsHover ? 1 : 0.4)
+            .animation(
+                hoverAnimationsEnabled && !hoverSuppressed ? .smooth : nil,
+                value: showsHover
+            )
         }
         .frame(maxWidth: .infinity)
         .font(.callout.bold())
-        .animation(.smooth, value: isHovered)
 
     }
     

@@ -9,6 +9,9 @@ import SwiftUI
 import ChocofordUI
 
 struct ExcalidrawZSidebarRowModifier: ViewModifier {
+    @Environment(\.sidebarHoverSuppressed) private var hoverSuppressed
+    @Environment(\.sidebarHoverAnimationsEnabled) private var hoverAnimationsEnabled
+
     var isSelected: Bool
     var isMultiSelected: Bool
     var isPressed: Bool = false
@@ -16,7 +19,7 @@ struct ExcalidrawZSidebarRowModifier: ViewModifier {
     @State private var isHovered = false
 
     private var isActive: Bool {
-        isHovered || isSelected || isPressed
+        (!hoverSuppressed && isHovered) || isSelected || isPressed
     }
 
     private var cornerRadius: CGFloat {
@@ -34,10 +37,14 @@ struct ExcalidrawZSidebarRowModifier: ViewModifier {
         }
         .padding(6)
         .contentShape(Rectangle())
-        .onHover { hovering in
-            self.isHovered = hovering
+        .trackSidebarHover($isHovered)
+        .background {
+            rowBackground
+                .animation(
+                    hoverAnimationsEnabled && !hoverSuppressed ? .easeInOut(duration: 0.16) : nil,
+                    value: isActive
+                )
         }
-        .background(rowBackground)
         .padding(.vertical, {
             if #available(macOS 26.0, iOS 26.0, *) {
                 1
@@ -56,7 +63,6 @@ struct ExcalidrawZSidebarRowModifier: ViewModifier {
                 }
             }
         }
-        .animation(.easeInOut(duration: 0.16), value: isActive)
     }
 
     @ViewBuilder
@@ -72,7 +78,7 @@ struct ExcalidrawZSidebarRowModifier: ViewModifier {
                     .glassEffect(
                         Glass.regular
                             .tint(tint)
-                            .interactive(),
+                            .interactive(!hoverSuppressed),
                         in: Capsule()
                     )
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))

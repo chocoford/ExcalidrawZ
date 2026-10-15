@@ -2,14 +2,20 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSScreenCaptureUsageDescription</key>
-	<string>ExcalidrawZ uses screen capture to freeze the current screen for annotation.</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
 				<string>excalidraw</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>ExcalidrawDocument.icns</string>
+			<key>CFBundleTypeIconFiles</key>
+			<array>
+				<string>ExcalidrawDocument-64.png</string>
+				<string>ExcalidrawDocument-128.png</string>
+				<string>ExcalidrawDocument-320.png</string>
 			</array>
 			<key>CFBundleTypeName</key>
 			<string>Excalidraw file</string>
@@ -104,11 +110,15 @@
 			</array>
 		</dict>
 	</array>
+	<key>ExcalidrawZAppGroupIdentifier</key>
+	<string>$(APP_GROUP_IDENTIFIER)</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>msauthv2</string>
 		<string>msauthv3</string>
 	</array>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>ExcalidrawZ uses screen capture to freeze the current screen for annotation.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>com.apple.corespotlightitem</string>
@@ -128,8 +138,14 @@
 			</array>
 			<key>UTTypeDescription</key>
 			<string>Excalidraw File</string>
-			<key>UTTypeIcons</key>
-			<dict/>
+			<key>UTTypeIconFile</key>
+			<string>ExcalidrawDocument.icns</string>
+			<key>UTTypeIconFiles</key>
+			<array>
+				<string>ExcalidrawDocument-64.png</string>
+				<string>ExcalidrawDocument-128.png</string>
+				<string>ExcalidrawDocument-320.png</string>
+			</array>
 			<key>UTTypeIdentifier</key>
 			<string>com.chocoford.excalidrawFile</string>
 			<key>UTTypeTagSpecification</key>
@@ -265,8 +281,14 @@
 			</array>
 			<key>UTTypeDescription</key>
 			<string>Excalidraw File</string>
-			<key>UTTypeIcons</key>
-			<dict/>
+			<key>UTTypeIconFile</key>
+			<string>ExcalidrawDocument.icns</string>
+			<key>UTTypeIconFiles</key>
+			<array>
+				<string>ExcalidrawDocument-64.png</string>
+				<string>ExcalidrawDocument-128.png</string>
+				<string>ExcalidrawDocument-320.png</string>
+			</array>
 			<key>UTTypeIdentifier</key>
 			<string>com.chocoford.excalidrawFile</string>
 			<key>UTTypeTagSpecification</key>

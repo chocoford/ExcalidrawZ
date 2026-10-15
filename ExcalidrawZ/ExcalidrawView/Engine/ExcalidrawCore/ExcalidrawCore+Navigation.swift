@@ -122,4 +122,18 @@ extension ExcalidrawCore: WKNavigationDelegate {
         self.parent?.loadingState = .error(error)
         self.publishError(error)
     }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        logger.warning("Web content process terminated; reloading Excalidraw")
+        parent?.loadingState = .loading
+        isNavigating = true
+        isDocumentLoaded = false
+        documentSyncController.resetFileLoadState()
+
+        // Reloading drives the normal navigation/readiness pipeline. Once JS
+        // signals onload, ExcalidrawCanvasView restores the active document.
+        if webView.reload() == nil {
+            refresh()
+        }
+    }
 }

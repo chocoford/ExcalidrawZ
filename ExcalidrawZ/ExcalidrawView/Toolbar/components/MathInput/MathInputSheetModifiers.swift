@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyAlert
 
 #if canImport(AppKit)
 import AppKit

@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import CoreData
 
 extension FetchedResults: @retroactive Equatable where Result: Equatable {
     public static func == (lhs: FetchedResults, rhs: FetchedResults) -> Bool {

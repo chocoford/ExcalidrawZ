@@ -318,6 +318,11 @@ extension UIImage {
     }
     
     public class func icon(forFileURL fileURL: URL, preferredSize: FileIconSize = .smallest) -> UIImage {
+        if fileURL.pathExtension.lowercased() == "excalidraw",
+           let image = excalidrawDocumentIcon(preferredSize: preferredSize) {
+            return image
+        }
+
         let myInteractionController = UIDocumentInteractionController(url: fileURL)
         let allIcons = myInteractionController.icons
         
@@ -337,6 +342,16 @@ extension UIImage {
         let fileName = (baseName as NSString).appendingPathExtension(pathExtension) ?? baseName
         return icon(forFileNamed: fileName, preferredSize: preferredSize)
     }
+
+    private class func excalidrawDocumentIcon(preferredSize: FileIconSize) -> UIImage? {
+        let resourceName: String
+        switch preferredSize {
+            case .smallest: resourceName = "ExcalidrawDocument-128"
+            case .largest: resourceName = "ExcalidrawDocument-320"
+        }
+        // Use the bundled icon even when iOS resolves the document to a generic JSON icon.
+        return UIImage(named: resourceName)
+    }
 }
 
 import MobileCoreServices
@@ -354,16 +369,18 @@ extension FileManager {
 
 extension UIImage {
     public class func icon(forUTI utiString: String, preferredSize: FileIconSize = .smallest) -> UIImage? {
+        if utiString == UTType.excalidrawFile.identifier,
+           let image = excalidrawDocumentIcon(preferredSize: preferredSize) {
+            return image
+        }
+
         guard let fileExtension = FileManager.default.fileExtension(forUTI: utiString) else {
             return nil
         }
         return icon(forPathExtension: fileExtension, preferredSize: preferredSize)
     }
     public class func icon(for type: UTType, preferredSize: FileIconSize = .smallest) -> UIImage? {
-        guard let fileExtension = FileManager.default.fileExtension(forUTI: type.identifier) else {
-            return nil
-        }
-        return icon(forPathExtension: fileExtension, preferredSize: preferredSize)
+        return icon(forUTI: type.identifier, preferredSize: preferredSize)
     }
 }
 #endif

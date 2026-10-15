@@ -44,6 +44,15 @@ extension ExcalidrawFile: FileDocument {
             self.content = try JSONSerialization.data(withJSONObject: contentObject)
         }
     }
+
+    mutating func prepareContentForExport(fileName: String?) throws {
+        guard let content else { return }
+        self.content = try ExcalidrawDocumentAppStatePersistence.documentData(
+            content,
+            settingNativeFileName: fileName
+        )
+        self.name = fileName
+    }
 }
 
 

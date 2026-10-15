@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import CoreData
+import SwiftyAlert
 
 struct ArchiveRoomModifier: ViewModifier {
     @Binding var collaborationFile: CollaborationFile?

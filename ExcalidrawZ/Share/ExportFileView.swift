@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import CoreData
+import SwiftyAlert
 import ChocofordUI
 import UniformTypeIdentifiers
 
@@ -19,6 +21,9 @@ struct ExportFileView: View {
     
     init(file: ExcalidrawFile, dismissAction: (() -> Void)? = nil) {
         self.file = file
+        self._fileName = State(
+            initialValue: file.name ?? String(localizable: .newFileNamePlaceholder)
+        )
         if let dismissAction {
             self._dismissAction = dismissAction
         }
@@ -91,14 +96,14 @@ struct ExportFileView: View {
             }
         }
         .task {
-            saveFileToTemp()
-            fileName = file.name ?? String(localizable: .newFileNamePlaceholder)
             do {
                 var fileDocument = file
                 try await fileDocument.syncFiles(context: viewContext)
+                try fileDocument.prepareContentForExport(fileName: fileName)
                 await MainActor.run {
                     self.fileDocument = fileDocument
                 }
+                try await saveFileToTemp(fileDocument)
             } catch {
                 alertToast(error)
             }
@@ -214,39 +219,27 @@ struct ExportFileView: View {
     }
     
     
-    func saveFileToTemp() {
-        Task {
-            do {
-                let fileManager: FileManager = FileManager.default
-                let directory: URL = try getTempDirectory()
-                let fileExtension = "excalidraw"
-                let filename = (file.name ?? String(localizable: .newFileNamePlaceholder)) + ".\(fileExtension)"
-                let url = directory.appendingPathComponent(filename, conformingTo: .fileURL)
-                if fileManager.fileExists(atPath: url.absoluteString) {
-                    try fileManager.removeItem(at: url)
-                }
+    private func saveFileToTemp(_ file: ExcalidrawFile) async throws {
+        let fileManager: FileManager = FileManager.default
+        let directory: URL = try getTempDirectory()
+        let filename = fileName + ".excalidraw"
+        let url = directory.appendingPathComponent(filename, conformingTo: .fileURL)
+        if fileManager.fileExists(atPath: url.filePath) {
+            try fileManager.removeItem(at: url)
+        }
 
-                var excalidrawFile = file
-                try await excalidrawFile.syncFiles(context: viewContext)
-                guard let fileData = excalidrawFile.content else {
-                    struct NoContentError: LocalizedError {
-                        var errorDescription: String? {
-                            "The file has no data."
-                        }
-                    }
-                    throw NoContentError()
-                }
-
-                fileManager.createFile(atPath: url.filePath, contents: fileData)
-                
-                await MainActor.run {
-                    fileURL = url
-                }
-            } catch {
-                await MainActor.run {
-                    alertToast(error)
+        guard let fileData = file.content else {
+            struct NoContentError: LocalizedError {
+                var errorDescription: String? {
+                    "The file has no data."
                 }
             }
+            throw NoContentError()
+        }
+
+        try fileData.write(to: url, options: .atomic)
+        await MainActor.run {
+            fileURL = url
         }
     }
 }
