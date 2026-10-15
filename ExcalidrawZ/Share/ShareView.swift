@@ -98,7 +98,7 @@ struct ShareView: View {
         var preferredSheetHeight: CGFloat {
             switch self {
                 case .exportImage:
-                    return 482
+                    return 530
                 case .exportFile:
                     return 250
                 case .archive:

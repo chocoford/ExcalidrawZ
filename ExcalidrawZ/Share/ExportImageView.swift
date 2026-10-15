@@ -14,6 +14,7 @@ import WebKit
 struct ExportImageView: View {
 #if canImport(AppKit)
     typealias PlatformImage = NSImage
+    private let macOSContentWidth: CGFloat = 340
     private let macOSPreviewSectionHeight: CGFloat = 160
     private let macOSActionsSectionHeight: CGFloat = 36
 #elseif canImport(UIKit)
@@ -113,14 +114,12 @@ struct ExportImageView: View {
     
     var body: some View {
         ShareSubViewContainer(dismiss: dismiss) {
-            SwiftUI.Group {
-#if os(macOS)
-                Center {
-                    content
+            if #available(macOS 26.0, iOS 26.0, *) {
+                GlassEffectContainer(spacing: 4) {
+                    platformContent
                 }
-#else
-                iOSContent()
-#endif
+            } else {
+                platformContent
             }
         }
         .task(id: renderOptions) {
@@ -134,6 +133,17 @@ struct ExportImageView: View {
             loadingImage = true
             exportState.status = .notRequested
         }
+    }
+
+    @ViewBuilder
+    private var platformContent: some View {
+#if os(macOS)
+        Center {
+            content
+        }
+#else
+        iOSContent()
+#endif
     }
     
     @ViewBuilder
@@ -153,6 +163,9 @@ struct ExportImageView: View {
                     .foregroundColor(.red)
             }
         }
+#if os(macOS)
+        .frame(width: macOSContentWidth)
+#endif
     }
     
     
@@ -262,69 +275,54 @@ struct ExportImageView: View {
     
     @ViewBuilder
     private var fileInfoView: some View {
-        VStack {
+        VStack(spacing: 12) {
             imageNameField()
             
-            HStack {
-                exportImageSettingItems()
-            }
-            .controlSize(horizontalSizeClass == .compact ? .mini : .regular)
+            exportImageSettingItems()
+                .controlSize(horizontalSizeClass == .compact ? .mini : .regular)
         }
         .font(horizontalSizeClass == .compact ? .footnote : .body)
         .animation(.default, value: keepEditable)
-        .padding(.horizontal, 48)
     }
     
     
     @ViewBuilder
     private func imageNameField() -> some View {
-        HStack(alignment: .center, spacing: 4) {
-            // File name
-            Color.clear.frame(height: 30)
-                .overlay {
-                    TextField("", text: $fileName)
-                        .textFieldStyle(.roundedBorder)
-                }
-            
-            HStack(alignment: .bottom, spacing: 0) {
-                if keepEditable {
-                    Text(".excalidraw")
-                        .lineLimit(1)
-                        .frame(height: 20)
-#if os(iOS)
-                        .padding(.bottom, 4)
-#endif
-                }
-                HStack(
-                    alignment: .bottom,
-                    spacing: {
-                        #if os(macOS)
-                        -2
-                        #else
-                        -8
-                        #endif
-                    }()
-                ) {
-                    Text(".")
-#if os(macOS)
-                        .offset(y: -2)
-#endif
-                        // .padding(.bottom, 4)
+        HStack(alignment: .center, spacing: 8) {
+            fileNameTextField
 
-                    Picker(selection: $imageType) {
-                        Text("png").tag(0)
-                        Text("svg").tag(1)
-                    } label: {
-                    }
-                    .pickerStyle(.menu)
-                    .buttonStyle(.borderless)
-                    .menuIndicator(.visible)
+            if keepEditable {
+                Text(".excalidraw")
+                    .lineLimit(1)
                     .fixedSize()
-#if os(macOS)
-                    .offset(y: -2)
-#endif
-                }
             }
+
+            Picker(selection: $imageType) {
+                Text(".png").tag(0)
+                Text(".svg").tag(1)
+            } label: {
+                EmptyView()
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .menuIndicator(.visible)
+            .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
+            .fixedSize()
+        }
+    }
+
+    @ViewBuilder
+    private var fileNameTextField: some View {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            TextField("", text: $fileName)
+                .textFieldStyle(.plain)
+                .padding(.horizontal, 12)
+                .frame(height: 30)
+                .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 10))
+        } else {
+            TextField("", text: $fileName)
+                .textFieldStyle(.roundedBorder)
+                .frame(height: 30)
         }
     }
     
@@ -337,36 +335,66 @@ struct ExportImageView: View {
         exportEditableSettingRow
         exportScaleSettingRow
 #else
-        VStack(alignment: .leading, spacing: 12) {
-            exportScopeSettingRow
-
-            HStack {
-                exportColorSchemePicker
-
-                exportWithBackgroundToggle
-
-                exportEditableToggle
-            }
-
-            exportScaleSettingRow
+        if #available(macOS 26.0, *) {
+            macOSSettingsGrid
+                .buttonSizing(.flexible)
+        } else {
+            macOSSettingsGrid
         }
 #endif
     }
+
+#if os(macOS)
+    private var macOSSettingsGrid: some View {
+        Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 8) {
+            GridRow {
+                Text(localizable: .exportImageScopeLabel)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                exportScopePicker
+                    .gridColumnAlignment(.trailing)
+            }
+            GridRow {
+                Text(localizable: .exportImagePickerColorSchemeLabel)
+                exportColorSchemePicker
+                    .labelsHidden()
+            }
+            GridRow {
+                Text(localizable: .exportImageToggleWithBackground)
+                exportWithBackgroundToggle
+                    .labelsHidden()
+            }
+            GridRow {
+                Text(localizable: .exportImageToggleEditable)
+                exportEditableToggle
+                    .labelsHidden()
+            }
+            GridRow {
+                Text(localizable: .exportImageScaleTitle)
+                exportScalePicker
+            }
+        }
+    }
+#endif
 
     @ViewBuilder
     private var exportScopeSettingRow: some View {
         HStack {
             Text(localizable: .exportImageScopeLabel)
             Spacer(minLength: 0)
-            Picker(.localizable(.exportImageScopeLabel), selection: $exportScope) {
-                Text(.localizable(.exportImageScopeAll)).tag(ExportImageScope.all)
-                Text(.localizable(.exportImageScopeSelected)).tag(ExportImageScope.selected)
-            }
-            .labelsHidden()
-            .pickerStyle(.segmented)
-            .disabled(selectedContent.elements.isEmpty)
-            .frame(maxWidth: containerHorizontalSizeClass == .compact ? 180 : nil)
+            exportScopePicker
         }
+    }
+
+    private var exportScopePicker: some View {
+        Picker(.localizable(.exportImageScopeLabel), selection: $exportScope) {
+            Text(.localizable(.exportImageScopeAll)).tag(ExportImageScope.all)
+            Text(.localizable(.exportImageScopeSelected)).tag(ExportImageScope.selected)
+        }
+        .labelsHidden()
+        .pickerStyle(.segmented)
+        .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
+        .disabled(selectedContent.elements.isEmpty)
+        .frame(width: 180, alignment: .leading)
     }
 
     @ViewBuilder
@@ -378,6 +406,7 @@ struct ExportImageView: View {
 
             exportColorSchemePicker
                 .labelsHidden()
+                .fixedSize()
         }
     }
 
@@ -397,6 +426,13 @@ struct ExportImageView: View {
             Text(.localizable(.generalColorSchemeLight)).tag(ColorScheme.light)
             Text(.localizable(.generalColorSchemeDark)).tag(ColorScheme.dark)
         }
+#if os(macOS)
+        .pickerStyle(.segmented)
+        .frame(width: 180)
+#else
+        .pickerStyle(.menu)
+#endif
+        .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
         .disabled(imageType != 0)
     }
 
@@ -404,7 +440,8 @@ struct ExportImageView: View {
     private var exportWithBackgroundToggle: some View {
 #if os(macOS)
         Toggle(.localizable(.exportImageToggleWithBackground), isOn: $exportWithBackground)
-            .toggleStyle(.checkboxStyle)
+            .toggleStyle(.switch)
+            .controlSize(.small)
 #elseif os(iOS)
         Toggle(.localizable(.exportImageToggleWithBackground), isOn: $exportWithBackground)
             .toggleStyle(.switch)
@@ -415,7 +452,8 @@ struct ExportImageView: View {
     private var exportEditableToggle: some View {
 #if os(macOS)
         Toggle(.localizable(.exportImageToggleEditable), isOn: $keepEditable)
-            .toggleStyle(.checkboxStyle)
+            .toggleStyle(.switch)
+            .controlSize(.small)
 #elseif os(iOS)
         Toggle(.localizable(.exportImageToggleEditable), isOn: $keepEditable)
             .toggleStyle(.switch)
@@ -429,20 +467,21 @@ struct ExportImageView: View {
 
             Spacer(minLength: 0)
 
-            Picker(
-                .localizable(.exportImageScaleTitle),
-                selection: $exportScale
-            ) {
-                Text("1x").tag(1)
-                Text("2x").tag(2)
-                Text("3x").tag(3)
-            }
-            .labelsHidden()
-            .pickerStyle(.segmented)
-            .modernButtonStyle(style: .glass, shape: .capsule)
-            .frame(maxWidth: containerHorizontalSizeClass == .compact ? 180 : nil)
-            .disabled(imageType != 0)
+            exportScalePicker
         }
+    }
+
+    private var exportScalePicker: some View {
+        Picker(.localizable(.exportImageScaleTitle), selection: $exportScale) {
+            Text("1x").tag(1)
+            Text("2x").tag(2)
+            Text("3x").tag(3)
+        }
+        .labelsHidden()
+        .pickerStyle(.segmented)
+        .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
+        .frame(width: 180, alignment: .leading)
+        .disabled(imageType != 0)
     }
     
     @ViewBuilder
@@ -450,10 +489,18 @@ struct ExportImageView: View {
         HStack {
             actionItems(url)
         }
-        .modernButtonStyle(size: .regular, shape: .modern)
+        .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
         .disabled(!isExportReady)
 #if os(macOS)
         .frame(height: macOSActionsSectionHeight)
+#endif
+    }
+
+    private var actionItemMaxWidth: CGFloat? {
+#if os(macOS)
+        .infinity
+#else
+        containerHorizontalSizeClass == .compact ? .infinity : nil
 #endif
     }
 
@@ -463,21 +510,25 @@ struct ExportImageView: View {
             if #available(macOS 13.0, iOS 16.0, *) {
                 Label(.localizable(.exportActionCopy), systemSymbol: .clipboard)
                     .padding(.horizontal, 6)
+                    .frame(maxWidth: actionItemMaxWidth)
             } else {
                 Label(.localizable(.exportActionCopy), systemSymbol: .docOnClipboard)
                     .padding(.horizontal, 6)
+                    .frame(maxWidth: actionItemMaxWidth)
             }
 
             Label(.localizable(.exportActionSave), systemSymbol: .squareAndArrowDown)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 1)
+                .frame(maxWidth: actionItemMaxWidth)
 
             Label(.localizable(.exportActionShare), systemSymbol: .squareAndArrowUp)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 1)
+                .frame(maxWidth: actionItemMaxWidth)
         }
         .opacity(0.5)
-        .modernButtonStyle(size: .regular, shape: .modern)
+        .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
         .disabled(true)
 #if os(macOS)
         .frame(height: macOSActionsSectionHeight)
@@ -528,22 +579,22 @@ struct ExportImageView: View {
         if #available(macOS 13.0, iOS 16.0, *) {
             Label(.localizable(.exportActionCopy), systemSymbol: .clipboard)
                 .padding(.horizontal, 6)
-                .frame(maxWidth: containerHorizontalSizeClass == .compact ? .infinity : nil)
+                .frame(maxWidth: actionItemMaxWidth)
         } else {
             Label(.localizable(.exportActionCopy), systemSymbol: .docOnClipboard)
                 .padding(.horizontal, 6)
-                .frame(maxWidth: containerHorizontalSizeClass == .compact ? .infinity : nil)
+                .frame(maxWidth: actionItemMaxWidth)
         }
 
         Label(.localizable(.exportActionSave), systemSymbol: .squareAndArrowDown)
             .padding(.horizontal, 6)
             .padding(.vertical, 1)
-            .frame(maxWidth: containerHorizontalSizeClass == .compact ? .infinity : nil)
+            .frame(maxWidth: actionItemMaxWidth)
 
         Label(.localizable(.exportActionShare), systemSymbol: .squareAndArrowUp)
             .padding(.horizontal, 6)
             .padding(.vertical, 1)
-            .frame(maxWidth: containerHorizontalSizeClass == .compact ? .infinity : nil)
+            .frame(maxWidth: actionItemMaxWidth)
     }
     
     @ViewBuilder
@@ -610,7 +661,7 @@ struct ExportImageView: View {
                     }
                 }
             }
-            .frame(maxWidth: containerHorizontalSizeClass == .compact ? .infinity : nil)
+            .frame(maxWidth: actionItemMaxWidth)
         }
         .disabled(copied)
         
@@ -620,7 +671,7 @@ struct ExportImageView: View {
             Label(.localizable(.exportActionSave), systemSymbol: .squareAndArrowDown)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 1)
-                .frame(maxWidth: containerHorizontalSizeClass == .compact ? .infinity : nil)
+                .frame(maxWidth: actionItemMaxWidth)
         }
         .fileExporter(
             isPresented: $showFileExporter,
@@ -641,7 +692,7 @@ struct ExportImageView: View {
                 Label(.localizable(.exportActionShare), systemSymbol: .squareAndArrowUp)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 1)
-                    .frame(maxWidth: containerHorizontalSizeClass == .compact ? .infinity : nil)
+                    .frame(maxWidth: actionItemMaxWidth)
             }
         } else {
             Button {
@@ -649,7 +700,7 @@ struct ExportImageView: View {
             } label: {
                 Label(.localizable(.exportActionShare), systemSymbol: .squareAndArrowUp)
                     .padding(.horizontal, 6)
-                    .frame(maxWidth: containerHorizontalSizeClass == .compact ? .infinity : nil)
+                    .frame(maxWidth: actionItemMaxWidth)
             }
             .background(
                 SharingsPicker(

@@ -37868,109 +37868,109 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Export scope"
+            "value": "Scope"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "导出范围"
+            "value": "范围"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯出範圍"
+            "value": "範圍"
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "نطاق التصدير"
+            "value": "النطاق"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Exportbereich"
+            "value": "Bereich"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Contenido a exportar"
+            "value": "Ámbito"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Contenu à exporter"
+            "value": "Portée"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "निर्यात का दायरा"
+            "value": "दायरा"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Contenuto da esportare"
+            "value": "Ambito"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "書き出し範囲"
+            "value": "範囲"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "내보내기 범위"
+            "value": "범위"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Exportbereik"
+            "value": "Bereik"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zakres eksportu"
+            "value": "Zakres"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Conteúdo a exportar"
+            "value": "Âmbito"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Область экспорта"
+            "value": "Область"
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "ขอบเขตการส่งออก"
+            "value": "ขอบเขต"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dışa aktarma kapsamı"
+            "value": "Kapsam"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Phạm vi xuất"
+            "value": "Phạm vi"
           }
         }
       }
@@ -38094,109 +38094,109 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Selected elements"
+            "value": "Selected"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "选中元素"
+            "value": "已选"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "選取的元素"
+            "value": "已選"
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "العناصر المحددة"
+            "value": "المحدد"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ausgewählte Elemente"
+            "value": "Auswahl"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elementos seleccionados"
+            "value": "Selección"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Éléments sélectionnés"
+            "value": "Sélection"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "चयनित तत्व"
+            "value": "चयनित"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elementi selezionati"
+            "value": "Selezione"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "選択した要素"
+            "value": "選択中"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "선택한 요소"
+            "value": "선택"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Geselecteerde elementen"
+            "value": "Selectie"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wybrane elementy"
+            "value": "Wybrane"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elementos selecionados"
+            "value": "Seleção"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Выбранные элементы"
+            "value": "Выбранное"
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "องค์ประกอบที่เลือก"
+            "value": "ที่เลือก"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Seçili öğeler"
+            "value": "Seçili"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Các phần tử đã chọn"
+            "value": "Đã chọn"
           }
         }
       }
@@ -38220,7 +38220,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "scale"
+            "value": "Scale"
           }
         },
         "es": {
