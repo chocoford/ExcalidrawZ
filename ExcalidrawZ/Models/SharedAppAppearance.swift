@@ -9,10 +9,17 @@ enum SharedAppAppearance: String {
     case light
     case dark
     case auto
+
+    /// Automatic canvas appearance inherits the app preference; automatic app
+    /// appearance leaves the final choice to the system.
+    static func resolve(canvas: Self, app: Self) -> Self {
+        canvas == .auto ? app : canvas
+    }
 }
 
 enum SharedAppAppearanceStore {
     static let appearanceKey = "appearance"
+    static let canvasAppearanceKey = "excalidrawAppearance"
 
     private static let appGroupInfoKey = "ExcalidrawZAppGroupIdentifier"
 
@@ -27,7 +34,11 @@ enum SharedAppAppearanceStore {
         return defaults
     }()
 
-    static func save(_ appearance: SharedAppAppearance) {
+    static func save(
+        _ appearance: SharedAppAppearance,
+        canvasAppearance: SharedAppAppearance
+    ) {
         defaults.set(appearance.rawValue, forKey: appearanceKey)
+        defaults.set(canvasAppearance.rawValue, forKey: canvasAppearanceKey)
     }
 }
