@@ -19,6 +19,9 @@ struct PresentationInspectorContent: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+#if os(macOS)
+    @Environment(\.openWindow) private var openWindow
+#endif
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var layoutState: LayoutState
     @EnvironmentObject private var appPreference: AppPreference
@@ -86,11 +89,13 @@ struct PresentationInspectorContent: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .toolbar {
             if layoutState.isInspectorPresented {
+#if os(macOS)
+                ToolbarItemGroup(placement: .destructiveAction) {
+                    openViewerButton
+                }
+#endif
                 if usesInspectorToolbarChrome {
-                    InspectorHeaderToolbar(
-                        title: String(localizable: .presentationTitle),
-                        isInspectorPresented: layoutState.isInspectorPresented
-                    )
+                    presentationHeaderToolbar
                 }
                 if store.canUsePresentation {
                     ToolbarItem(placement: .primaryAction) {
@@ -99,6 +104,22 @@ struct PresentationInspectorContent: View {
                 }
             }
         }
+    }
+
+    @ToolbarContentBuilder
+    private var presentationHeaderToolbar: some ToolbarContent {
+#if os(macOS)
+        if #available(macOS 26.0, *) {
+            // Match Library: separate the leading action from the title's glass background.
+            ToolbarItemGroup(placement: .principal) {
+                Spacer()
+            }
+        }
+#endif
+        InspectorHeaderToolbar(
+            title: String(localizable: .presentationTitle),
+            isInspectorPresented: layoutState.isInspectorPresented
+        )
     }
 
     private var contentView: some View {
@@ -131,6 +152,35 @@ struct PresentationInspectorContent: View {
                 pendingReloadTask = nil
             }
     }
+
+#if os(macOS)
+    private var canShowViewerTip: Bool {
+        switch fileState.currentActiveFile {
+            case .file, .localFile, .temporaryFile, .cloudStorageFile:
+                true
+            case .collaborationFile, nil:
+                false
+        }
+    }
+
+    private var openViewerButton: some View {
+        Button {
+            ViewerMirrorController.shared.prepareForOpeningViewer()
+            openWindow(id: ViewerMirrorController.windowID)
+        } label: {
+            Label(
+                String(localizable: .menubarOpenViewerWindow),
+                systemSymbol: .macwindowOnRectangle
+            )
+            .labelStyle(.iconOnly)
+        }
+        .help(String(localizable: .menubarOpenViewerWindow))
+        .modifier(FeatureDiscoveryTipModifier(
+            kind: .viewerWindow,
+            isEnabled: canShowViewerTip
+        ))
+    }
+#endif
 
     private var startPresentationButton: some View {
         Button(action: startPresentation) {

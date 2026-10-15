@@ -28,11 +28,21 @@ final class ViewerMirrorController: ObservableObject {
         }
     }
 
+    @Published var pointerAppearance = ViewerPointerAppearance.load() {
+        didSet {
+            guard pointerAppearance != oldValue else { return }
+            pointerAppearance.save()
+            session?.setPointerAppearance(pointerAppearance)
+        }
+    }
+
     private static let followDefaultsKey = "ViewerFollowsEditorCamera"
     private let logger = Logger(label: "ViewerMirrorController")
     /// Registered editor cores, most recently key (or registered) first.
     private var editors: [WeakEditor] = []
+    private weak var viewerWindow: NSWindow?
     private var keyWindowCancellable: AnyCancellable?
+    private var closeWindowCancellable: AnyCancellable?
 
     private init() {
         isFollowingCamera = UserDefaults.standard.object(forKey: Self.followDefaultsKey) as? Bool ?? true
@@ -41,6 +51,12 @@ final class ViewerMirrorController: ObservableObject {
             .compactMap { $0.object as? NSWindow }
             .sink { [weak self] window in
                 self?.windowDidBecomeKey(window)
+            }
+        closeWindowCancellable = NotificationCenter.default
+            .publisher(for: NSWindow.willCloseNotification)
+            .compactMap { $0.object as? NSWindow }
+            .sink { [weak self] window in
+                self?.windowWillClose(window)
             }
     }
 
@@ -56,16 +72,31 @@ final class ViewerMirrorController: ObservableObject {
         session?.refreshEditorBinding()
     }
 
-    func viewerDidAppear() {
+    func editorDocumentDidChange(_ editor: ExcalidrawCore) {
+        session?.editorDocumentDidChange(editor)
+    }
+
+    /// SwiftUI may reuse a Window scene's content after it closes. Prepare the
+    /// session at the open action rather than relying on its view task restarting.
+    func prepareForOpeningViewer() {
+        FeatureDiscoveryTips.didOpenViewer()
         if session == nil {
-            session = ViewerMirrorSession(isFollowingCamera: isFollowingCamera) { [weak self] in
+            session = ViewerMirrorSession(
+                isFollowingCamera: isFollowingCamera,
+                pointerAppearance: pointerAppearance
+            ) { [weak self] in
                 self?.currentEditorCore
             }
         }
         session?.refreshEditorBinding()
     }
 
-    func viewerDidDisappear() {
+    func attachViewerWindow(_ window: NSWindow) {
+        viewerWindow = window
+    }
+
+    private func windowWillClose(_ window: NSWindow) {
+        guard window === viewerWindow else { return }
         session?.close()
         session = nil
     }
@@ -76,6 +107,11 @@ final class ViewerMirrorController: ObservableObject {
     }
 
     private func windowDidBecomeKey(_ window: NSWindow) {
+        if window === viewerWindow {
+            // Also covers a cached scene reopened through the system Window menu.
+            prepareForOpeningViewer()
+            return
+        }
         guard let index = editors.firstIndex(where: { $0.core?.webView.window === window }),
               index != 0 else {
             return

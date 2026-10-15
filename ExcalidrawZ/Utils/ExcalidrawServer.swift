@@ -34,18 +34,16 @@ struct ExcalidrawServerLogger: Logging {
 }
 
 class ExcalidrawServer {
-    // Bind to IPv4 loopback to match the WebView URLs and prevent LAN access.
     #if DEBUG
-    let server = HTTPServer(
-        address: try! .inet(ip4: "127.0.0.1", port: 8486),
-        logger: ExcalidrawServerLogger()
-    )
+    static let port: UInt16 = 8486
     #else
+    static let port: UInt16 = 8487
+    #endif
+    // Keep both the editor resources and local Viewer transport on loopback.
     let server = HTTPServer(
-        address: try! .inet(ip4: "127.0.0.1", port: 8487),
+        address: try! .inet(ip4: "127.0.0.1", port: ExcalidrawServer.port),
         logger: ExcalidrawServerLogger()
     )
-    #endif
     init(autoStart: Bool = true) {
         if isPreview { return }
         if autoStart {
@@ -63,6 +61,10 @@ class ExcalidrawServer {
     }
     
     func start() async throws {
+#if os(macOS)
+        // Register before the catch-all resource route.
+        await server.appendRoute("GET /viewer/*", to: ViewerLocalRouteHandler())
+#endif
         await server.appendRoute(
             "GET /*",
             to: .directory(

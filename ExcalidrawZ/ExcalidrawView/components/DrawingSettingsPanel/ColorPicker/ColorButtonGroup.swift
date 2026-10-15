@@ -14,16 +14,33 @@ struct ColorButtonGroup: View {
 
     let colors: [String]
     let selectedColor: String
+    let supportsOpacity: Bool
+    let adaptsToDarkMode: Bool
     let onSelect: (String) -> Void
     @State private var showFullPicker = false
+
+    init(
+        colors: [String],
+        selectedColor: String,
+        supportsOpacity: Bool = true,
+        adaptsToDarkMode: Bool = true,
+        onSelect: @escaping (String) -> Void
+    ) {
+        self.colors = colors
+        self.selectedColor = selectedColor
+        self.supportsOpacity = supportsOpacity
+        self.adaptsToDarkMode = adaptsToDarkMode
+        self.onSelect = onSelect
+    }
     
     var body: some View {
         HStack(spacing: 8) {
             // Quick pick colors
-            ForEach(colors, id: \.self) { color in
+            ForEach(colors.filter { supportsOpacity || $0 != "transparent" }, id: \.self) { color in
                 ColorButton(
                     color: color,
-                    isSelected: selectedColor == color
+                    isSelected: selectedColor == color,
+                    adaptsToDarkMode: adaptsToDarkMode
                 ) {
                     onSelect(color)
                 }
@@ -45,7 +62,7 @@ struct ColorButtonGroup: View {
                             Image(platformImage: platformImage)
                                 .resizable(resizingMode: .tile)
                                 .apply { content in
-                                    if colorScheme == .dark {
+                                    if adaptsToDarkMode && colorScheme == .dark {
                                         content
                                             .colorInvert()
                                             .hueRotation(Angle(degrees: 180))
@@ -58,7 +75,7 @@ struct ColorButtonGroup: View {
                         // Solid color background
                         Color(hexString: selectedColor)
                             .apply { content in
-                                if colorScheme == .dark {
+                                if adaptsToDarkMode && colorScheme == .dark {
                                     content
                                         .colorInvert()
                                         .hueRotation(Angle(degrees: 180))
@@ -82,6 +99,8 @@ struct ColorButtonGroup: View {
             .popover(isPresented: $showFullPicker) {
                 ColorPickerWithFooter(
                     selectedColor: selectedColor,
+                    supportsOpacity: supportsOpacity,
+                    adaptsToDarkMode: adaptsToDarkMode,
                     onSelect: onSelect
                 )
             }
@@ -94,6 +113,8 @@ struct ColorButtonGroup: View {
 /// Full color picker with hex input and native color picker
 private struct ColorPickerWithFooter: View {
     let selectedColor: String
+    let supportsOpacity: Bool
+    let adaptsToDarkMode: Bool
     let onSelect: (String) -> Void
 
     @State private var hexInput: String = ""
@@ -101,7 +122,9 @@ private struct ColorPickerWithFooter: View {
     @State private var isUpdatingFromExternal: Bool = false
 
     var body: some View {
-        FullColorPicker(selectedColor: selectedColor) { color in
+        FullColorPicker(selectedColor: selectedColor,
+                        supportsOpacity: supportsOpacity,
+                        adaptsToDarkMode: adaptsToDarkMode) { color in
             onSelect(color)
             updateStateFromHex(color)
         } footer: {
@@ -130,7 +153,7 @@ private struct ColorPickerWithFooter: View {
                         }
 
                     // Native color picker
-                    ColorPicker("", selection: $nativeColor)
+                    ColorPicker("", selection: $nativeColor, supportsOpacity: supportsOpacity)
                         .labelsHidden()
                         .frame(width: 28, height: 28)
                         .watch(value: nativeColor) { oldValue, newValue in
